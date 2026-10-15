@@ -18,6 +18,12 @@ Implemented muted legends/separators, bold structure, signed-change colors and w
 
 Verification: renderer guards preserve plain-text content and alignment after removing styling, check root/workspace legends, signed changes and unavailable explanations, and preserve Markdown without ANSI. The initial separator and Markdown-legend checks failed before implementation. The full public suite and subsequent focused renderer tests pass, as do Clippy and executable README workflows. A local pseudo-terminal probe verifies real terminal styling, `NO_COLOR`, `TERM=dumb`, pipe parity, JSON and independent stderr warning/error styling. No measurement semantics changed; private counting replay was not rerun.
 
+## Positional Scan Directory — Complete
+
+Implemented 2026-10-16: `locmetry DIR` selects the same root as `--root DIR`, including root configuration discovery. Command names retain precedence independently of directory existence; `./compare` or `--root compare` measures a directory named like a command. [Project configuration](PRODUCT.md#project-configuration) owns the selection contract. Root arguments before subcommands remain rejected, and scripts can use `--root` to avoid reserved names.
+
+Verification: positional-root equivalence and command-precedence regression tests failed before their fixes and pass afterward. Coverage includes relative/absolute paths, spaces, configuration discovery, explicit command-name paths and conflicting roots. The full public suite, formatting, Clippy and executable README workflows pass. No counting behavior changed; private replay was not rerun.
+
 ## Development Release — Pending
 
 The S1–S5 changes and review corrections identify as `0.2.0-dev.1`, distinct from the unchanged v0.1.6 tag. They are unreleased; no push, tag, release or tap update is authorized by this plan.

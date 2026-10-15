@@ -242,9 +242,12 @@ The version must identify the development series (`0.2.0-dev.1` here); do not co
 ```sh
 cd your/project
 locmetry                      # table on a terminal
+locmetry ../another-project   # measure a directory without changing into it
 locmetry --format markdown    # full human report
 locmetry | jq .summary        # piped: JSON headline
 ```
+
+The optional directory argument is equivalent to `--root DIR`; use one or the other. Bare `compare`, `workspace`, `explain` and `help` select commands; use `locmetry ./compare` or `locmetry --root compare` to measure a directory with a command's name. In scripts, prefer `locmetry --root "$directory"` so directory names cannot select commands. Command options go after the command name.
 
 Without configuration, built-in exclusions, conventions, and language mappings apply. Add a `.locmetryrc` to the project root when the conventions cannot know something, such as which folders are vendored, generated, tooling, or experimental. Command-line options override it:
 
@@ -258,7 +261,7 @@ Personal defaults for every project, such as extra exclusions or language mappin
 
 | Option | Effect |
 | --- | --- |
-| `--root DIR` | Directory to measure; default: the current directory. |
+| `DIR` or `--root DIR` | Directory to measure; mutually exclusive. Default: the current directory. |
 | `--config FILE` | TOML configuration; default: `.locmetryrc` in the scan root, else built-in settings. The scan root stays unchanged. |
 | `--exclude GLOB` | Add a root-relative exclusion; repeatable. |
 | `--hidden true\|false` | Whether hidden files and directories are measured. |

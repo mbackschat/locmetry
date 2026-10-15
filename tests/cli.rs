@@ -1631,3 +1631,95 @@ fn measurement_help_explains_json_headline_and_full_report() {
         assert!(help.contains("--output - prints the full report"), "{help}");
     }
 }
+
+#[test]
+fn positional_directory_matches_explicit_root_and_discovers_its_config() {
+    let temp = fixture();
+    fs::write(temp.path().join("source/.locmetryrc"), APP_RS_RULE).unwrap();
+    let report = |args: &[&str]| {
+        let output = run(
+            temp.path(),
+            &[&["--files", "--output", "-"][..], args].concat(),
+        );
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        let mut value: Value = serde_json::from_slice(&output.stdout).unwrap();
+        value["metadata"]
+            .as_object_mut()
+            .unwrap()
+            .remove("measured_at_unix_seconds");
+        value
+    };
+    let expected = report(&["--root", "source"]);
+    assert_eq!(expected["files"][0]["purpose"], "production");
+    let absolute = temp.path().join("source");
+    for args in [
+        vec!["source"],
+        vec!["source", "--format", "json"],
+        vec!["--format", "json", "source"],
+        vec!["--", "source"],
+    ] {
+        assert_eq!(report(&args), expected, "{args:?}");
+    }
+    assert_eq!(
+        report(&[absolute.to_str().unwrap()]),
+        report(&["--root", absolute.to_str().unwrap()])
+    );
+    fs::rename(temp.path().join("source"), temp.path().join("source tree")).unwrap();
+    assert_eq!(report(&["source tree"]), report(&["--root", "source tree"]));
+}
+
+#[test]
+fn positional_directory_disambiguates_command_names_and_rejects_multiple_roots() {
+    let temp = fixture();
+    for name in ["compare", "explain", "workspace", "help"] {
+        fs::create_dir(temp.path().join(name)).unwrap();
+        fs::write(temp.path().join(name).join("main.py"), "print(1)\n").unwrap();
+        for args in [vec![format!("./{name}")], vec!["--".into(), name.into()]] {
+            let args: Vec<_> = args.iter().map(String::as_str).collect();
+            let (ok, report, err) = headline(temp.path(), &args);
+            assert!(ok, "{err}");
+            assert_eq!(report["summary"]["source"]["code"], 1);
+        }
+        let args = match name {
+            "help" => vec!["help"],
+            _ => vec![name, "--help"],
+        };
+        let output = run(temp.path(), &args);
+        assert!(
+            output.status.success(),
+            "{name}: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        assert!(String::from_utf8_lossy(&output.stdout).contains("Usage:"));
+    }
+    for args in [
+        vec!["source", "--root", "source"],
+        vec!["--root", "source", "source"],
+        vec!["source", "other"],
+        vec!["source", "workspace", "--root", "other"],
+    ] {
+        let output = run(temp.path(), &args);
+        assert_eq!(output.status.code(), Some(1), "{args:?}");
+        assert!(output.stdout.is_empty());
+    }
+}
+
+#[test]
+fn root_options_do_not_turn_subcommand_names_into_directories() {
+    let temp = fixture();
+    for name in ["compare", "workspace", "explain"] {
+        fs::create_dir(temp.path().join(name)).unwrap();
+        fs::write(temp.path().join(name).join("main.py"), "print(1)\n").unwrap();
+        let output = run(temp.path(), &["--files", name]);
+        assert_eq!(output.status.code(), Some(1), "{name}");
+        assert!(output.stdout.is_empty(), "{name}");
+        assert!(String::from_utf8_lossy(&output.stderr).contains(name));
+        let (ok, value, err) = headline(temp.path(), &["--root", name]);
+        assert!(ok, "{err}");
+        assert_eq!(value["summary"]["source"]["code"], 1);
+    }
+}

@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use clap::{Parser, Subcommand, ValueEnum};
+use clap::{CommandFactory, FromArgMatches, Parser, Subcommand, ValueEnum};
 use locmetry::contract::{self, MeasurementReport};
 use locmetry::style::{Role, Theme};
 use locmetry::{
@@ -66,11 +66,14 @@ fn default_format(stdout_is_terminal: bool, report_to_stdout: bool) -> Format {
 #[command(
     version,
     about = "Measure source code by language, folder, and purpose: production, test, or unclassified. JSON defaults to a compact headline; --output - prints the full report.",
-    args_conflicts_with_subcommands = true
+    after_help = "Command names are reserved. To measure a directory named compare, use ./compare or --root compare."
 )]
 struct Cli {
     #[command(subcommand)]
     command: Option<Command>,
+    /// Directory to measure, instead of --root [default: the current directory].
+    #[arg(value_name = "DIR", conflicts_with = "root")]
+    directory: Option<PathBuf>,
     #[command(flatten)]
     root: RootArgs,
     #[command(flatten)]
@@ -363,7 +366,11 @@ fn run(cli: Cli) -> Result<Outcome> {
         Some(Command::Workspace(workspace)) => run_workspace(&workspace),
         Some(Command::Compare(args)) => run_compare(&args),
         Some(Command::Explain(args)) => run_explain(&args),
-        None => run_root(&cli.root, &cli.shared),
+        None => {
+            let mut root = cli.root;
+            root.root = root.root.or(cli.directory);
+            run_root(&root, &cli.shared)
+        }
     }
 }
 
@@ -961,9 +968,26 @@ fn report(
     Ok(Outcome::Complete)
 }
 
+fn parse_cli() -> clap::error::Result<Cli> {
+    let mut command = Cli::command();
+    let matches = command.try_get_matches_from_mut(std::env::args_os())?;
+    // Clap's args_conflicts_with_subcommands disables command recognition after
+    // root flags, allowing a reserved name to become DIR. Validate after parsing
+    // instead so command precedence is independent of preceding root options.
+    if let Some(name) = matches.subcommand_name() {
+        if matches.args_present() {
+            return Err(command.error(
+                clap::error::ErrorKind::ArgumentConflict,
+                format!("Root measurement arguments cannot be combined with the '{name}' subcommand; put that command's options after its name"),
+            ));
+        }
+    }
+    Cli::from_arg_matches(&matches)
+}
+
 fn main() -> ExitCode {
     // clap exits usage errors with 2, which is reserved for partial reports.
-    let cli = match Cli::try_parse() {
+    let cli = match parse_cli() {
         Ok(cli) => cli,
         Err(error) => {
             let _ = error.print();
