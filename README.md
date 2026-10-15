@@ -40,9 +40,8 @@ $ locmetry
  (root files)     3           2     0             1
 
  Not source code: 3 data files (19 lines), 1 documentation file (9 lines).
- Unclassified source: 9 code lines in 2 files, here:
-   prototypes    8 code lines  1 file
-   (root files)  1 code line   1 file
+ Unclaimed source: 8 code lines in 1 file, here:
+   prototypes  8 code lines  1 file
  Classify these folders with [[rules]] in .locmetryrc; --format markdown lists every file.
  Not counted: 1 unrecognized file (png: 1); missing lines are not zero.
 ```
@@ -60,7 +59,7 @@ What the table already handles for you:
 - **Understand an unfamiliar repository:** see in one screen which languages matter, where the tests live, and which code nobody claims.
 - **Track test investment:** follow the test-to-production ratio per folder and over time, without hand-maintained exclusion lists.
 - **Size a codebase honestly:** estimate a migration, a rewrite, an audit, an acquisition, or an outsourcing quote on maintained code only. Vendored, generated, and experimental code is excluded or labelled.
-- **Guard quality in CI:** fail a build when unclassified code grows or the test share drops, with one `jq` expression ([example](#continuous-integration)).
+- **Guard quality in CI:** fail a build when unclaimed code grows or the test share drops, with one `jq` expression ([example](#continuous-integration)).
 - **Compare parts of a monorepo:** the folder rows and the additive breakdown table compare packages, services, or layers by purpose.
 - **Watch a codebase change:** measure two releases or branches and compare production and test growth instead of raw line deltas, for example to see what an agent-written change really added.
 - **Give coding agents a reliable answer:** a compact JSON headline fits an agent's context, and follow-up questions are one `jq` query over the report file instead of improvised `find | xargs wc -l` pipelines.
@@ -207,7 +206,7 @@ Each file gets the first match of five stages:
 4. [build modules](#build-modules): the source layout that a build file declares, here in `backend` and `web`;
 5. the fallback, `unclassified` by default.
 
-So `OrderServiceTest.kt` and `cart.test.ts` are tests even though they sit inside the build modules' source trees. The Gradle scripts are `build-tooling`, and `gradlew` is a `third-party-wrapper`. The prototype falls through to `unclassified`, where the review list surfaces it. [PRODUCT.md](PRODUCT.md#project-configuration) documents every key, glob semantics, and `[[languages.mappings]]`.
+So `OrderServiceTest.kt` and `cart.test.ts` are tests even though they sit inside the build modules' source trees. The Gradle scripts are `build-tooling`, and `gradlew` is a `third-party-wrapper`. The prototype falls through to `unclassified`, where the review list surfaces it as unclaimed. A rule that gives it `purpose = "unclassified"` with a `category` such as `prototype` parks it on purpose: it still counts as unclassified but leaves the review list, as `gradlew` does. [PRODUCT.md](PRODUCT.md#project-configuration) documents every key, glob semantics, and `[[languages.mappings]]`.
 
 ### Build modules
 
@@ -237,7 +236,7 @@ Plain `locmetry` on a terminal prints the table shown [above](#what-you-see):
 
 - language rows, largest first;
 - top-level folders, whose rows add up to the total;
-- notes on content that is not source, the folders that hold unclassified source, and files that could not be counted.
+- notes on content that is not source, the folders that hold unclaimed source, and files that could not be counted.
 
 `--sort name` lists rows alphabetically instead, in the table and in Markdown.
 
@@ -288,8 +287,7 @@ When stdout is not a terminal, `locmetry` prints a compact JSON headline, under 
       "web": { "production": 31, "test": 10 }
     },
     "unclassified_folders": [
-      { "folder": "prototypes", "files": 1, "code": 8 },
-      { "folder": ".", "files": 1, "code": 1 }
+      { "folder": "prototypes", "files": 1, "code": 8 }
     ]
   }
 }
@@ -324,7 +322,6 @@ $ jq -c '[.breakdown[] | select(.kind == "source" and (.folder == "web" or (.fol
 # Which source still needs a rule?
 $ jq -c '.review[]' report.json
 {"path":"prototypes/pricing_experiment.py","language":"Python","category":"unclassified","rule":"fallback","code":8,"lines":11}
-{"path":"gradlew","language":"Shell","category":"third-party-wrapper","rule":"builtin:build-wrapper","code":1,"lines":3}
 ```
 
 `--files` adds one record per file with its language, kind, purpose, category, deciding rule, and counts, for debugging rules. `--output -` prints the full report to stdout instead.
@@ -359,17 +356,15 @@ $ jq -c '.review[]' report.json
 
 ## Source requiring review
 
-2 files.
+1 file of unclassified source that no rule, convention, or build module claims. Code an entry or convention leaves unclassified on purpose is not listed.
 
 | Folder | Files | Code |
 | --- | ---: | ---: |
 | prototypes | 1 | 8 |
-| (root files) | 1 | 1 |
 
 | Path | Code | Category |
 | --- | ---: | --- |
 | prototypes/pricing_experiment.py | 8 | unclassified |
-| gradlew | 1 | third-party-wrapper |
 
 ## Coverage
 
@@ -381,8 +376,8 @@ Files selected: 17; counted: 16, including 2 through language mappings; not reco
 The headline makes guardrails one-liners. `jq -e` exits nonzero when the expression is false:
 
 ```sh
-# Fail when more than 50 lines of source lack a classification
-locmetry | jq -e '(.summary.source_purpose.unclassified.code // 0) <= 50'
+# Fail when more than 50 lines of source are still unclaimed
+locmetry | jq -e '([.summary.unclassified_folders[].code] | add // 0) <= 50'
 
 # Print the test share of production code
 locmetry | jq -r '.summary.source_purpose | "test/production: \((.test.code // 0) * 100 / .production.code | floor)%"'

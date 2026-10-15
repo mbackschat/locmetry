@@ -245,7 +245,7 @@ fn table_format_splits_source_code_by_language_and_purpose() {
  proto      1           0     0             1
 
  Not source code: 1 data file (1 line), 1 documentation file (1 line).
- Unclassified source: 1 code line in 1 file, here:
+ Unclaimed source: 1 code line in 1 file, here:
    proto  1 code line  1 file
  Classify these folders with [[rules]] in .locmetryrc; --format markdown lists every file.
  Not counted: 1 unrecognized file (png: 1); missing lines are not zero.
@@ -332,6 +332,57 @@ fn unclassified_source_is_located_by_folder() {
         markdown.contains("| docs/planning/m1/evidence | 2 | 5 |"),
         "{markdown}"
     );
+}
+
+/// Review lists only source no stage decided: code an entry or convention
+/// deliberately leaves unclassified is counted as unclassified but not
+/// reported as still needing a decision.
+#[test]
+fn review_lists_only_unclaimed_source() {
+    const PARKED: &str = "version = 1\n[[rules]]\nid = \"parked\"\nmatch = [\"proto/**\"]\npurpose = \"unclassified\"\ncategory = \"prototype\"\n";
+    let temp = project(&[
+        (".locmetryrc", PARKED),
+        ("proto/model.py", "a = 1\nb = 2\n"),
+        ("gradlew", "#!/bin/sh\necho build\n"),
+        ("loose/y.py", "y = 1\n"),
+    ]);
+    let root = temp.path().join("project");
+    let (success, document, stderr) = report(&root, &[]);
+    assert!(success, "{stderr}");
+    assert_eq!(
+        document["summary"]["source_purpose"]["unclassified"]["files"],
+        3
+    );
+    assert_eq!(
+        document["summary"]["unclassified_folders"],
+        json!([{"folder": "loose", "files": 1, "code": 1}])
+    );
+    let reviewed: Vec<&str> = document["review"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|entry| entry["path"].as_str().unwrap())
+        .collect();
+    assert_eq!(reviewed, ["loose/y.py"]);
+
+    let table = String::from_utf8(run(&root, &["--format", "table"]).stdout).unwrap();
+    assert!(
+        table.contains(
+            " Unclaimed source: 1 code line in 1 file, here:\n   loose  1 code line  1 file\n"
+        ),
+        "{table}"
+    );
+    let markdown = String::from_utf8(run(&root, &["--format", "markdown"]).stdout).unwrap();
+    let review = &markdown[markdown.find("## Source requiring review").unwrap()..];
+    assert!(review.contains("| loose/y.py |"), "{review}");
+    assert!(
+        !review.contains("proto/model.py") && !review.contains("gradlew"),
+        "{review}"
+    );
+
+    fs::remove_dir_all(root.join("loose")).unwrap();
+    let table = String::from_utf8(run(&root, &["--format", "table"]).stdout).unwrap();
+    assert!(!table.contains("Unclaimed source"), "{table}");
 }
 
 /// A folder holding most of the unclassified code splits even when many

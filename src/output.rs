@@ -135,15 +135,12 @@ pub fn render_markdown(
         )
         .unwrap();
     }
-    let mut unknown: Vec<_> = rows
-        .iter()
-        .filter(|r| r.kind == Kind::Source && r.classification.purpose == Purpose::Unclassified)
-        .collect();
+    let mut unknown: Vec<_> = rows.iter().filter(|row| row.needs_review()).collect();
     unknown.sort_by(|a, b| b.counts.code.cmp(&a.counts.code).then(a.path.cmp(&b.path)));
     writeln!(
         output,
-        "\n## Source requiring review\n\n{} files.",
-        unknown.len()
+        "\n## Source requiring review\n\n{} of unclassified source that no rule, convention, or build module claims. Code an entry or convention leaves unclassified on purpose is not listed.",
+        counted(unknown.len() as u64, "file")
     )
     .unwrap();
     let folders = unclassified_folders(rows);
@@ -237,9 +234,9 @@ fn folder_label(folder: &str) -> &str {
     }
 }
 
-/// Where the unclassified source lives, as an aligned folder list, so a
-/// reader can inspect it instead of only learning its size.
-fn unclassified_note(total: &Counts, folders: &[FolderShare]) -> String {
+/// Where the unclaimed source lives, as an aligned folder list, so a reader
+/// can inspect it instead of only learning its size.
+fn unclaimed_note(folders: &[FolderShare]) -> String {
     let plural = |count: u64, noun: &str| match count {
         1 => noun.to_string(),
         _ => format!("{noun}s"),
@@ -265,9 +262,9 @@ fn unclassified_note(total: &Counts, folders: &[FolderShare]) -> String {
     };
     let (label, code, unit, files) = (width(0), width(1), width(2), width(3));
     let mut note = format!(
-        "Unclassified source: {} in {}, here:",
-        counted(total.code, "code line"),
-        counted(total.files, "file")
+        "Unclaimed source: {} in {}, here:",
+        counted(folders.iter().map(|share| share.code).sum(), "code line"),
+        counted(folders.iter().map(|share| share.files).sum(), "file")
     );
     for [folder, lines, lines_unit, count, count_unit] in &rows {
         write!(
@@ -408,12 +405,9 @@ pub fn render_table(
             .collect();
         notes.push(format!("Not source code: {}.", kinds.join(", ")));
     }
-    let unclassified = summary.totals.purpose(Purpose::Unclassified);
-    if unclassified.files > 0 {
-        notes.push(unclassified_note(
-            &unclassified,
-            &unclassified_folders(rows),
-        ));
+    let folders = unclassified_folders(rows);
+    if !folders.is_empty() {
+        notes.push(unclaimed_note(&folders));
     }
     let mut gaps = Vec::new();
     if coverage.unrecognized_files > 0 {

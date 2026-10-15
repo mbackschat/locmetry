@@ -132,7 +132,7 @@ pub enum Purpose {
     Production,
     /// Tests and their support code.
     Test,
-    /// Neither production nor test: code nothing claims, and code an entry deliberately parks, such as a prototype. Reports list it for review instead of counting it as production.
+    /// Neither production nor test. Code no stage claims is listed for review as `summary.unclassified_folders`; code an entry or convention deliberately parks, such as a prototype, is counted here but not listed.
     Unclassified,
 }
 
@@ -155,6 +155,15 @@ pub struct Classification {
     pub purpose: Purpose,
     pub category: String,
     pub rule: String,
+}
+
+impl Classification {
+    /// Whether no stage decided this file, so it still needs a decision.
+    /// Code an entry or convention leaves `unclassified` on purpose, such as a
+    /// parked prototype or a build wrapper, is decided.
+    pub fn is_unclaimed(&self) -> bool {
+        self.purpose == Purpose::Unclassified && self.rule == FALLBACK
+    }
 }
 
 /// Which files are measured. Scope applies before classification, so an excluded file appears nowhere in the report.

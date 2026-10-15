@@ -75,6 +75,13 @@ pub struct FileRecord {
     pub languages: BTreeMap<String, Counts>,
 }
 
+impl FileRecord {
+    /// Unclaimed source, which a configuration may still need to classify.
+    pub fn needs_review(&self) -> bool {
+        self.kind == Kind::Source && self.classification.is_unclaimed()
+    }
+}
+
 /// Counts of one file, without `files`, which is always 1 there.
 #[derive(Serialize)]
 struct LineCounts {
@@ -264,13 +271,11 @@ pub struct ReviewEntry {
     pub lines: u64,
 }
 
-/// Unclassified source files, largest first.
+/// Unclaimed source files, largest first.
 pub fn review(rows: &[FileRecord]) -> Vec<ReviewEntry> {
     let mut entries: Vec<_> = rows
         .iter()
-        .filter(|row| {
-            row.kind == Kind::Source && row.classification.purpose == Purpose::Unclassified
-        })
+        .filter(|row| row.needs_review())
         .map(|row| ReviewEntry {
             path: row.path.clone(),
             language: row.language.clone(),
@@ -284,7 +289,7 @@ pub fn review(rows: &[FileRecord]) -> Vec<ReviewEntry> {
     entries
 }
 
-/// Unclassified source code below one folder; `.` holds the files directly in
+/// Unclaimed source code below one folder; `.` holds the files directly in
 /// the scan root.
 #[derive(Debug, Serialize)]
 pub struct FolderShare {
@@ -305,7 +310,7 @@ fn below<'p>(path: &'p str, folder: &str) -> Option<&'p str> {
     }
 }
 
-/// Folders that together hold all unclassified source, largest first, so a
+/// Folders that together hold all unclaimed source, largest first, so a
 /// reader can inspect where it lives rather than only how much there is.
 ///
 /// Starting from the top-level folders, a chain of single subfolders
@@ -317,9 +322,7 @@ fn below<'p>(path: &'p str, folder: &str) -> Option<&'p str> {
 pub fn unclassified_folders(rows: &[FileRecord]) -> Vec<FolderShare> {
     let files: Vec<(&str, u64)> = rows
         .iter()
-        .filter(|row| {
-            row.kind == Kind::Source && row.classification.purpose == Purpose::Unclassified
-        })
+        .filter(|row| row.needs_review())
         .map(|row| (row.path.as_str(), row.counts.code))
         .collect();
     // Subfolders that hold files below `folder`, and whether files lie directly in it.
