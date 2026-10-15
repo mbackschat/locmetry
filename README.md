@@ -152,7 +152,7 @@ Personal defaults for every project, such as extra exclusions or language mappin
 
 ## Measure several repositories together
 
-`locmetry workspace` measures sibling repositories as one virtual monorepo. Each repository is measured with its own `.locmetryrc`, the repositories run in parallel, and the results merge into one report whose top-level folders are the repositories, so the table's folder rows compare them:
+`locmetry workspace` measures sibling repositories as one virtual monorepo. Each repository is measured with its own `.locmetryrc`, the repositories run in parallel, and the results merge into one report whose top-level folders are the repositories:
 
 ```sh
 locmetry workspace --root ../web --root ../api
@@ -171,7 +171,8 @@ locmetry workspace --file repos.toml
 
 - **Each repository keeps its policy:** `--config`, `--exclude`, `--hidden`, and `--respect-ignore-files` are rejected, because each repository's own configuration decides them, and options must follow `workspace`.
 - **Paths name the repository:** every path is prefixed with its repository's folder name, such as `web/src/index.ts`. Two repositories with the same folder name, a root given twice, or one root inside another fail before measuring.
-- **Findings stay with their repository:** `metadata.members` lists each repository's root, configuration path, scope, unused entries, and unused exclusions, and the table names it, as in `ghost (web)`.
+- **Repositories as a dimension:** `summary.members` holds each repository's totals by purpose, category, kind, and language, equal to a regular run of that repository. The table shows one row per repository with its test lines per production line and its share of the workspace, and the Markdown report adds grids of source categories and languages by repository.
+- **Findings stay with their repository:** `metadata.members` lists each repository's root, configuration path, scope, coverage counts, unused entries, and unused exclusions; table notes name the repository, as in `ghost (web)`, and list repositories with unclaimed, unrecognized, or unreadable files.
 - **All or nothing, always the same:** if one repository fails, for example with an invalid configuration, the run fails and names it; the order of the roots never changes the report.
 
 ## Configure with an agent
