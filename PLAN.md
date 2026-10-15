@@ -13,7 +13,7 @@ Decided 2026-10-15: licence MIT (dual MIT OR Apache-2.0 up to v0.1.1), repositor
 - [x] Create the GitHub repository, push, and confirm CI passes on both Linux targets (2026-10-15).
 - [x] Tag `v0.1.0` and verify the release archives and `SHA256SUMS`; the downloaded macOS archive passes its checksum and measures with an empty environment (2026-10-15).
 - [x] Publish the rendered formula to the tap and add Homebrew installation to the README; `brew install`, `brew test`, and `brew linkage` pass on macOS arm64 (2026-10-15).
-- [ ] Verify `brew install` and `brew test` on Linux x86_64 and aarch64.
+- [x] Verify `brew install` and `brew test` on Linux x86_64 and aarch64: both pass in the `homebrew/brew` container (Ubuntu 22.04), and `brew linkage` lists no libraries (2026-10-15). Homebrew there also installs its own gcc and glibc, because the host's are older than it requires for formulae without bottles; publishing bottles would avoid that.
 
 **Completion evidence:** CI passes on every target, the release carries archives and checksums, `brew install` and `brew test` pass on macOS arm64 and Linux, and publication was explicitly authorized.
 
