@@ -43,7 +43,7 @@ $ locmetry
  Production from build modules: gradle 42 code lines in 1 module, npm 31 code lines in 1 module.
  Unclaimed source: 8 code lines in 1 file, here:
    prototypes  8 code lines  1 file
- Classify them in the configuration; locmetry --schema config explains how, --format markdown lists every file.
+ Classify them in the configuration; locmetry --schema config explains how, --files --output - shows each file's rule.
  Not counted: 1 unrecognized file (png: 1); missing lines are not zero.
 ```
 
@@ -213,6 +213,8 @@ Each file gets the first match of five stages:
 4. [build modules](#build-modules): the source layout that a build file declares, here in `backend` and `web`;
 5. the fallback, `unclassified` by default.
 
+Only this stage order and the order of entries within each list matter, not where the tables appear in the file. User defaults and command-line flags may add exclusions or switch scope settings but never classify, and the same files and configuration always give the same report; [PRODUCT.md](PRODUCT.md#matching-and-precedence) defines the layers and tie-breaks.
+
 So `OrderServiceTest.kt` and `cart.test.ts` are tests even though they sit inside the build modules' source trees. The Gradle scripts are `build-tooling`, and `gradlew` is a `third-party-wrapper`. The prototype falls through to `unclassified`, where the review list surfaces it as unclaimed. A rule that gives it `purpose = "unclassified"` with a `category` such as `prototype` parks it on purpose: it still counts as unclassified but leaves the review list, as `gradlew` does. An optional `[categories]` table declares the category names entries may use, each with its meaning, so a typo fails instead of becoming a new category. [PRODUCT.md](PRODUCT.md#project-configuration) documents every key, glob semantics, and `[[languages.mappings]]`.
 
 ### Build modules
@@ -233,9 +235,9 @@ A build module is a folder whose build file declares where its source lives. Bui
 In the sample, `backend` and `web` are build modules, so `backend/src/main/**` and `web/src/**` are production without a rule.
 
 - **Tests stay tests:** test conventions run first, so `src/test/**` or `cart.test.ts` inside a production layout still count as tests.
-- **Nested modules:** the innermost build module containing a file decides, and build files sharing one folder, such as `build.gradle.kts` and `package.json`, combine their layouts.
+- **Nested modules:** the innermost build module containing a file decides, and build files sharing one folder, such as `build.gradle.kts` and `package.json`, combine their layouts; where those layouts overlap, the build system whose detector name sorts first is recorded.
 - **Only file names are read:** locmetry neither runs the build nor parses the build file, so source directories that a build file reconfigures need a rule.
-- **Rules win:** `[[rules]]` run before build modules, so one rule corrects a folder that detection gets wrong. `builtin_modules = false` under `[classification]` turns detection off.
+- **Rules win:** `[[rules]]` run before build modules, so one rule corrects a folder that detection gets wrong. The flip side: a broad rule also takes module source, so match only the folders a rule is about. `builtin_modules = false` under `[classification]` turns detection off.
 - **Traceable:** the table and the JSON headline (`summary.build_modules`) show each build system's modules and the code they classified, the Markdown report lists every module, and each file record from `--files` names the detector that decided it, such as `builtin:gradle-module`.
 
 ### Terminal table

@@ -119,6 +119,35 @@ fn config_schema_explains_precedence_and_switches() {
     assert!(modules.contains("`false`"));
 }
 
+/// Blind agents guessed the entry shape, widened rules over build-module
+/// source, and never reviewed source that modules claimed (drive 6, 2026-10-15,
+/// docs/research/local). The description must state placement, layering, that
+/// trap, and the review step, and its TOML example must be a valid configuration.
+#[test]
+fn config_schema_states_order_layers_and_a_valid_example() {
+    let schema = schema("config");
+    let root = description(&schema, "");
+    for statement in [
+        "where `[[overrides]]` and `[[rules]]` appear in the file does not matter",
+        "`--config` replaces `.locmetryrc`",
+        "same classification",
+        "source a build module would claim",
+        "`*` also matches names that start with a dot",
+        "`docs/**`",
+        "nothing reports it as unclaimed",
+    ] {
+        assert!(root.contains(statement), "{statement:?} missing in: {root}");
+    }
+    let example = root
+        .split("```toml\n")
+        .nth(1)
+        .and_then(|block| block.split("```").next())
+        .expect("a fenced TOML example");
+    assert!(is_valid(&schema, example), "{example}");
+    assert!(locmetry::Policy::from_toml(example).is_ok(), "{example}");
+    assert!(description(&schema, "/properties/rules").contains("build-module source"));
+}
+
 /// Agents test-driving the schema parked maintained tooling and examples as
 /// `unclassified` because the purposes read as "shipped" versus "not
 /// shipped"; the descriptions must carry PRODUCT.md's definition instead.

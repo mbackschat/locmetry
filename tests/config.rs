@@ -169,6 +169,36 @@ reason = "Owned application source."
     assert_eq!(rule(&disabled, "src/a.test.ts", Kind::Source), "app");
 }
 
+/// Locks the placement contract (PRODUCT.md, Matching and Precedence): the
+/// stage order is fixed, so where `[[overrides]]` and `[[rules]]` appear in
+/// the file is irrelevant, while order within each list decides overlaps.
+#[test]
+fn only_the_order_within_each_entry_list_matters() {
+    let entry = |table: &str, id: &str, glob: &str, purpose: &str| {
+        format!("[[{table}]]\nid = \"{id}\"\nmatch = [\"{glob}\"]\npurpose = \"{purpose}\"\n")
+    };
+    let archive = entry("overrides", "archive", "old/**", "unclassified");
+    let tools = entry("rules", "tools", "tools/**", "production");
+    let generated = entry("rules", "generated", "tools/gen/**", "unclassified");
+    let decisions = |entries: &[&str]| {
+        let policy = policy(&format!("version = 1\n{}", entries.concat()));
+        ["old/a.test.ts", "tools/gen/b.ts", "tools/c.ts"]
+            .map(|path| rule(&policy, path, Kind::Source))
+    };
+    let expected = ["archive", "tools", "tools"];
+    for placement in [
+        [archive.as_str(), &tools, &generated],
+        [&tools, &archive, &generated],
+        [&tools, &generated, &archive],
+    ] {
+        assert_eq!(decisions(&placement), expected, "{placement:?}");
+    }
+    assert_eq!(
+        decisions(&[&generated, &tools, &archive]),
+        ["archive", "generated", "tools"]
+    );
+}
+
 #[test]
 fn builtin_test_conventions_cover_common_layouts_but_not_ambiguous_fixtures() {
     let policy = Policy::defaults();

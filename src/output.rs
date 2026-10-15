@@ -357,7 +357,7 @@ fn unclaimed_note(folders: &[FolderShare]) -> String {
         )
         .unwrap();
     }
-    note + "\n Classify them in the configuration; locmetry --schema config explains how, --format markdown lists every file."
+    note + "\n Classify them in the configuration; locmetry --schema config explains how, --files --output - shows each file's rule."
 }
 
 /// Folders listed in the terminal note; the JSON headline lists all of them.

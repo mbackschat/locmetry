@@ -247,7 +247,7 @@ fn table_format_splits_source_code_by_language_and_purpose() {
  Not source code: 1 data file (1 line), 1 documentation file (1 line).
  Unclaimed source: 1 code line in 1 file, here:
    proto  1 code line  1 file
- Classify them in the configuration; locmetry --schema config explains how, --format markdown lists every file.
+ Classify them in the configuration; locmetry --schema config explains how, --files --output - shows each file's rule.
  Not counted: 1 unrecognized file (png: 1); missing lines are not zero.
 ";
     assert_eq!(String::from_utf8(output.stdout).unwrap(), expected);
@@ -944,6 +944,93 @@ fn the_innermost_module_decides_nested_layouts() {
             ),
         ]
     );
+}
+
+/// Locks the same-folder tie-break (PRODUCT.md, Module Detection): when
+/// layouts of build systems in one folder overlap, the detector whose ID sorts
+/// first decides, so provenance never depends on file or detector order.
+#[test]
+fn overlapping_layouts_in_one_folder_resolve_in_detector_id_order() {
+    let temp = project(&[
+        ("package.json", "{}\n"),
+        ("Cargo.toml", "[package]\n"),
+        ("build.gradle.kts", "plugins {}\n"),
+        ("src/lib.rs", "fn a() {}\n"),
+        ("src/main/kotlin/App.kt", "fun main() {}\n"),
+        ("src/web/ui.ts", "let d = 1;\n"),
+    ]);
+    let (success, document, stderr) = report(&temp.path().join("project"), &[]);
+    assert!(success, "{stderr}");
+    let source: Vec<_> = classifications(&document)
+        .into_iter()
+        .filter(|(path, _, _)| path.starts_with("src/"))
+        .collect();
+    assert_eq!(
+        source,
+        [
+            triple("src/lib.rs", "production", "builtin:cargo-module"),
+            triple(
+                "src/main/kotlin/App.kt",
+                "production",
+                "builtin:cargo-module"
+            ),
+            triple("src/web/ui.ts", "production", "builtin:cargo-module"),
+        ]
+    );
+}
+
+/// Locks determinism: module detection depends on the set of selected files,
+/// never on the order a file system or caller lists them.
+#[test]
+fn module_detection_ignores_the_order_files_are_listed_in() {
+    let files = [
+        "web/package.json",
+        "web/src/a.ts",
+        "Cargo.toml",
+        "app/build.gradle.kts",
+        "app/package.json",
+        "lib/pyproject.toml",
+        "lib/shop/__init__.py",
+    ];
+    let mut reversed = files;
+    reversed.reverse();
+    let mut rotated = files;
+    rotated.rotate_left(3);
+    let detected = locmetry::detect_modules(&files);
+    assert_eq!(locmetry::detect_modules(&reversed), detected);
+    assert_eq!(locmetry::detect_modules(&rotated), detected);
+}
+
+/// Locks determinism end to end: the same files measured in trees created in
+/// opposite orders give identical reports apart from the root path and the
+/// measurement time, so directory enumeration order never leaks into results.
+#[test]
+fn identical_trees_give_identical_reports_regardless_of_creation_order() {
+    let mut files = vec![
+        ("package.json", "{}\n"),
+        ("src/index.ts", "let a = 1;\n"),
+        ("src/index.test.ts", "let t = 1;\n"),
+        ("app/build.gradle.kts", "plugins {}\n"),
+        ("app/package.json", "{}\n"),
+        ("app/src/main/kotlin/App.kt", "fun main() {}\n"),
+        ("scripts/z.ts", "let z = 1;\n"),
+        ("scripts/a.ts", "let y = 1;\n"),
+        ("docs/guide.md", "# Guide\n"),
+        ("data/b.json", "{}\n"),
+        ("notes.unknownext", "x\n"),
+    ];
+    let measure = |files: &[(&str, &str)]| {
+        let temp = project(files);
+        let (success, mut document, stderr) = report(&temp.path().join("project"), &[]);
+        assert!(success, "{stderr}");
+        let metadata = document["metadata"].as_object_mut().unwrap();
+        metadata.remove("root");
+        metadata.remove("measured_at_unix_seconds");
+        serde_json::to_string(&document).unwrap()
+    };
+    let forward = measure(&files);
+    files.reverse();
+    assert_eq!(measure(&files), forward);
 }
 
 /// Python modules follow setuptools' discovery: the `src` layout, or flat

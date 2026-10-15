@@ -190,7 +190,7 @@ pub struct ScopeSettings {
     /// Whether the default exclusions apply; `false` is the only way to drop them.
     #[schemars(transform = schema::describe_default_excludes)]
     pub default_excludes: bool,
-    /// Globs of files to leave out, added after the default and personal exclusions; `--exclude` adds more. Use it for code that is not the project's own, such as vendored libraries, Git submodules (reports list them as `summary.submodules` until excluded), or copied reference material; the project's own code stays measured and gets an entry instead.
+    /// Globs of files to leave out, added after the default and personal exclusions; `--exclude` adds more. Use it for code that is not the project's own, such as vendored libraries, Git submodules (reports list them as `summary.submodules` until excluded), or copied reference material; exclude a folder as `<folder>/**`. The project's own code stays measured and gets an entry instead.
     #[schemars(extend("items" = {"type": "string", "description": "Root-relative glob."}))]
     pub exclude: Vec<String>,
 }
@@ -324,11 +324,24 @@ struct LanguageMapping {
 
 /// Locmetry project configuration: TOML in `.locmetryrc` at the scan root, or the file `--config` names.
 ///
-/// Every measured file gets one purpose (`production`, `test`, or `unclassified`) and a category from the first stage that matches: (1) `overrides`, in order; (2) built-in test conventions, then built-in build conventions; (3) `rules`, in order; (4) build modules, the source layout a build file declares; (5) the fallback. Scope exclusions apply before all stages. So a broad rule never swallows conventional tests or build scripts, while an override beats the conventions. Each file records the deciding stage in its `rule` field: an entry ID, `builtin:<convention>`, `builtin:<detector>-module`, or `fallback`.
+/// Every measured file gets one purpose (`production`, `test`, or `unclassified`) and a category from the first stage that matches: (1) `overrides`, in order; (2) built-in test conventions, then built-in build conventions; (3) `rules`, in order; (4) build modules, the source layout a build file declares; (5) the fallback. Scope exclusions apply before all stages. The stage order is fixed, so where `[[overrides]]` and `[[rules]]` appear in the file does not matter; only the order within each list decides between entries that match the same file. A broad rule never swallows conventional tests or build scripts, and an override beats the conventions; but a rule does take source a build module would claim, so match only the folders a rule is about. Each file records the deciding stage in its `rule` field: an entry ID, `builtin:<convention>`, `builtin:<detector>-module`, or `fallback`.
 ///
-/// Globs are root-relative, `/`-separated, and case-sensitive: `*` stays within a path segment, `**` spans directories, `?` matches one character, `[...]` a character class, `{a,b}` alternatives, and a backslash escapes. Negation, absolute paths, and basename-only matching are not supported, so `*.rs` matches only at the root; use `**/*.rs`.
+/// This file is the only one that classifies: `--config` replaces `.locmetryrc`, while user defaults (`--schema user-config`) and command-line flags only add exclusions and language mappings or switch scope settings. The same files and configuration always give the same classification, independent of the order in which files are found.
 ///
-/// To set up a project, run `locmetry`; decide the scope of any `summary.submodules`, which are often other teams' code; read `summary.unclassified_folders`, add entries for those folders, and measure again with `--config <file>` until `summary.unused_entries` is absent; `--files --output -` shows each file's `purpose`, `category`, and `rule`.
+/// Globs are root-relative, `/`-separated, and case-sensitive: `*` stays within a path segment, `**` spans directories, `?` matches one character, `[...]` a character class, `{a,b}` alternatives, and a backslash escapes. `*` also matches names that start with a dot. Negation, absolute paths, and basename-only matching are not supported, so `*.rs` matches only at the root; use `**/*.rs`. Globs match files, not folders: `docs/**` covers a folder, while `docs` matches only a file of that name.
+///
+/// To set up a project, run `locmetry`; decide the scope of any `summary.submodules`, which are often other teams' code; read `summary.unclassified_folders` and add entries for those folders. Then review the source that build modules made production, because nothing reports it as unclaimed: folder or file names that suggest tests, test support, fixtures, or examples need an entry. Measure again with `--config <file>` until `summary.unused_entries` is absent; `--files --output -` shows each file's `purpose`, `category`, and `rule`. An entry looks like this:
+///
+/// ```toml
+/// version = 1
+///
+/// [[rules]]
+/// id = "tooling"
+/// match = ["scripts/**"]
+/// purpose = "production"
+/// category = "tooling"
+/// reason = "Maintained release scripts"
+/// ```
 #[derive(Debug, Deserialize, Serialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 #[schemars(rename = "Configuration")]
@@ -350,7 +363,7 @@ struct ConfigFile {
     /// Entries checked first, before the built-in conventions; the first matching entry decides. Use them only for decisions that must beat a convention, such as a test-support package whose build scripts are test support, or archived code with test file names that must stay unclassified.
     #[serde(default)]
     overrides: Vec<EntryConfig>,
-    /// Entries checked after the built-in conventions and before build modules; the first matching entry decides. Use them for ordinary project knowledge: maintained tooling or examples as `production` with a category, unmaintained prototypes as `unclassified`, or source no build file declares; conventional tests, build scripts, and build-tool wrappers inside a matched tree keep their built-in classification.
+    /// Entries checked after the built-in conventions and before build modules; the first matching entry decides. Use them for ordinary project knowledge: maintained tooling or examples as `production` with a category, unmaintained prototypes as `unclassified`, or source no build file declares; conventional tests, build scripts, and build-tool wrappers inside a matched tree keep their built-in classification, but build-module source does not.
     #[serde(default)]
     rules: Vec<EntryConfig>,
 }

@@ -31,7 +31,7 @@ Report code, comments, blanks, and total lines separately. Preserve each file's 
 
 ## Project Configuration
 
-Use `.locmetryrc` in TOML. Discover it in the selected scan root (`--root`), which defaults to the current directory; an explicit `--config` path may select a different file without changing that root. Without a discovered or explicit configuration, built-in settings apply; an explicit configuration that cannot be read fails. A loaded configuration inside the scan root is policy, not project content: it is excluded as a literal path, which the effective exclusions record. All patterns remain relative to the scan root. Project configuration overrides built-in settings; explicit CLI settings override project settings: `--hidden BOOL`, `--respect-ignore-files BOOL`, and repeatable `--exclude GLOB`, which adds to the configured exclusions. A configuration file ending in `.json`, the retired JSON/regex profile format, is rejected with a hint to translate it to TOML.
+Use `.locmetryrc` in TOML. Discover it in the selected scan root (`--root`), which defaults to the current directory; an explicit `--config` path may select a different file without changing that root. Without a discovered or explicit configuration, built-in settings apply; an explicit configuration that cannot be read fails. A loaded configuration inside the scan root is policy, not project content: it is excluded as a literal path, which the effective exclusions record. All patterns remain relative to the scan root. How it combines with built-in settings, user defaults, and command-line flags is defined in [Matching and Precedence](#matching-and-precedence). A configuration file ending in `.json`, the retired JSON/regex profile format, is rejected with a hint to translate it to TOML.
 
 `locmetry --schema config` prints the JSON Schema (Draft 2020-12) of this file and `--schema user-config` that of personal defaults, then exits; `--schema report` describes the report (see [Reporting and Coverage](#reporting-and-coverage)). The schema is generated from the parser's types, so it accepts the same keys, types, and enums; checks it cannot express, such as glob syntax and unique IDs, still fail when the file loads. Its descriptions state each setting's default and meaning, the classification order, and this version's built-in conventions, build-module layouts, and language names, so an agent can write a configuration from the binary alone.
 
@@ -134,9 +134,20 @@ Production source is evidence from the build, not a guess: a build descriptor am
 | `lake` | `lakefile.lean`, `lakefile.toml` | every `*.lean` file; the lakefile is a build script, and test libraries named `<Name>Test/` or `<Name>Tests/` are tests through the `lean-test-library` convention |
 | `swift` | `Package.swift` | `Sources/**`; test targets in `Tests/` or `<Name>Tests/` are tests through the `swift-test-target` convention |
 
-The innermost module containing a file decides, as build tools treat nested projects: an outer module's layout never claims files of a module nested inside it, while build systems sharing one directory, such as Gradle and npm, combine their layouts. Test and build conventions run earlier, so tests inside these trees stay tests. Files outside every module's production source keep the fallback, which then means the build declares nothing about them. The report file lists the modules as `metadata.modules`; the summary's `build_modules`, the table, and the Markdown report, which lists every module, show the code each one classified, where `0` hints at a misleading build file.
+The innermost module containing a file decides, as build tools treat nested projects: an outer module's layout never claims files of a module nested inside it, while build systems sharing one directory, such as Gradle and npm, combine their layouts. Where those layouts overlap, the detector whose ID sorts first decides, such as `cargo` before `npm`; purpose and category are the same either way, so only provenance and the per-module totals depend on it. Test and build conventions run earlier, so tests inside these trees stay tests. Files outside every module's production source keep the fallback, which then means the build declares nothing about them. The report file lists the modules as `metadata.modules`; the summary's `build_modules`, the table, and the Markdown report, which lists every module, show the code each one classified, where `0` hints at a misleading build file.
 
 ### Matching and Precedence
+
+Four layers combine into the effective configuration; user defaults and the command line never classify, so a project is classified the same way for everyone:
+
+| Layer | Source | May set | Combination |
+| --- | --- | --- | --- |
+| Built-in | `version` | conventions, language mappings, default exclusions | applies unless the project switches it off |
+| User defaults | [User Defaults](#user-defaults) file | `scope.exclude`, `languages.mappings` | exclusions are added; mappings apply after the project's and before the built-in ones |
+| Project | `.locmetryrc` in the scan root, or the file `--config` names | every key | exactly one file: `--config` replaces discovery, and other `.locmetryrc` files are never read |
+| Command line | `--exclude GLOB`, `--hidden BOOL`, `--respect-ignore-files BOOL`, `--no-user-config` | scope | exclusions are added; the booleans replace the project's; `--no-user-config` drops the user layer |
+
+Exclusions from all layers form one union, so their order is irrelevant and no layer can re-include a file another excluded. Every file then takes the first matching stage:
 
 1. Apply scope exclusions and the selected ignore-file policy.
 2. Apply the first matching `overrides` entry.
@@ -146,6 +157,10 @@ The innermost module containing a file decides, as build tools treat nested proj
 6. Assign `classification.fallback` if no classification matched.
 
 An entry matches when any of its patterns matches the path and, if `kind` is present, the file's kind is listed. A match terminates purpose/category classification. Each file records its provenance as the matching entry ID, `builtin:<convention>`, or `fallback`; fallback files take the fallback purpose as their category. Broad production rules therefore do not swallow conventional tests or build scripts, while an explicit archived-evidence override can take precedence over test filenames. Entries that assign ownership of a whole tree, such as a test-only package whose build scripts are test support, belong in `overrides` so built-in conventions do not preempt them. No ordinary run requires an LLM; agent assistance proposes reviewable configuration.
+
+The stage order is fixed, so where `[[overrides]]`, `[[rules]]`, and other tables appear in the file is irrelevant. Order matters only within a list: the first matching entry of `overrides`, of `rules`, or of `languages.mappings` decides, and built-in conventions apply in their documented order. Because rules precede build modules, a rule also takes source a build module would claim; it should match only the folders it is about. Within the module stage, nesting and same-folder overlaps resolve as [Module Detection](#module-detection) defines.
+
+Measurement is deterministic: the same selected files, configuration layers, and Locmetry version give the same report, apart from `metadata.root` and `metadata.measured_at_unix_seconds`. No result depends on the order in which the file system lists files or build files are found, and every list in a report has a defined order.
 
 | Setting | Type and contract |
 | --- | --- |

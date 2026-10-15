@@ -162,7 +162,7 @@ pub static DETECTORS: &[&dyn ModuleDetector] = &[
 ];
 
 /// A module declared by a build descriptor.
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct Module {
     /// Root-relative directory, `.` for the scan root.
     pub path: String,
@@ -190,7 +190,7 @@ impl Module {
     }
 }
 
-/// Modules declared among the selected root-relative `files`, sorted by path.
+/// Modules declared among the selected root-relative `files`, sorted by path, then detector ID.
 pub fn detect(files: &[&str]) -> Vec<Module> {
     let mut declared = BTreeSet::new();
     for path in files {
@@ -220,6 +220,9 @@ pub fn detect(files: &[&str]) -> Vec<Module> {
             }
         })
         .collect();
-    modules.sort();
+    // Path, then detector ID: build systems sharing a folder are checked in
+    // detector-ID order, the documented tie-break for overlapping layouts
+    // (PRODUCT.md, Module Detection), independent of the `DETECTORS` order.
+    modules.sort_by(|a, b| (&a.path, a.detector).cmp(&(&b.path, b.detector)));
     modules
 }
