@@ -1,0 +1,58 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: macos-15
+            target: aarch64-apple-darwin
+          # musl gives Linux binaries without a glibc version floor; every
+          # dependency is pure Rust on the target side, so no C toolchain is needed.
+          - os: ubuntu-24.04
+            target: x86_64-unknown-linux-musl
+          - os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-musl
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Require the tag to match the crate version
+        run: test "${GITHUB_REF_NAME#v}" = "$(cargo pkgid | sed 's/.*[#@]//')"
+      - run: rustup toolchain install stable --profile minimal --target ${{ matrix.target }} && rustup default stable
+      - run: cargo test --locked
+      - run: cargo build --release --locked --target ${{ matrix.target }}
+      - name: Package
+        run: |
+          name="locmetry-${GITHUB_REF_NAME}-${{ matrix.target }}"
+          mkdir "$name"
+          cp "target/${{ matrix.target }}/release/locmetry" README.md LICENSE-MIT LICENSE-APACHE "$name/"
+          tar -czf "$name.tar.gz" "$name"
+          echo "BINARY=$PWD/$name/locmetry" >> "$GITHUB_ENV"
+      - name: Measure with an empty environment
+        run: env -i "$BINARY" --root src > /dev/null
+      - name: Require static linkage
+        if: runner.os == 'Linux'
+        run: file "$BINARY" | grep -E 'statically linked|static-pie linked'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+          path: locmetry-*.tar.gz
+
+  publish:
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+      - run: sha256sum locmetry-*.tar.gz > SHA256SUMS
+      - run: gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --generate-notes locmetry-*.tar.gz SHA256SUMS
+        env:
+          GH_TOKEN: ${{ github.token }}

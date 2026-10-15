@@ -3,6 +3,8 @@ name = "locmetry"
 version = "0.1.0"
 edition = "2021"
 description = "Codebase measurements with explicit scope and purpose classification"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/mbackschat/locmetry"
 publish = false
 
 [dependencies]
