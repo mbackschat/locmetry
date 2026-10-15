@@ -24,14 +24,17 @@ Implemented 2026-10-16: `locmetry DIR` selects the same root as `--root DIR`, in
 
 Verification: positional-root equivalence and command-precedence regression tests failed before their fixes and pass afterward. Coverage includes relative/absolute paths, spaces, configuration discovery, explicit command-name paths and conflicting roots. The full public suite, formatting, Clippy and executable README workflows pass. No counting behavior changed; private replay was not rerun.
 
-## Minor Release v0.2.0 — Publication in Progress
+## Minor Release v0.2.0 — Published
 
 Authorized by the owner on 2026-10-16: push the reviewed implementation, update GitHub description/topics, and publish the next minor release. Version `0.2.0` replaces the development identity `0.2.0-dev.1`; the v0.1.6 tag stays unchanged. [Release notes](releases/0.2.0.md) describe new commands, subfolder scope, counting/coverage corrections and compatibility boundaries.
 
 - [x] Prepare the final version, stable installation examples and release notes.
 - [x] Verify the full local public suite, formatting, Clippy and executable README workflows; keep producer-version and stable-install examples aligned.
-- [ ] Verify the release build and GitHub CI on all supported targets.
-- [ ] Publish v0.2.0 archives and checksums, verify the downloaded macOS executable, and update the Homebrew tap.
+- [x] Verify the local release build and GitHub CI on all supported targets.
+- [x] Publish v0.2.0 archives and checksums, verify the downloaded macOS executable, and update the Homebrew tap.
+- [x] Update the GitHub repository description and topics for measurement, comparison and explanation capabilities.
+
+Published 2026-10-16: [v0.2.0](https://github.com/mbackschat/locmetry/releases/tag/v0.2.0) points to `22e31eb`. [CI](https://github.com/mbackschat/locmetry/actions/runs/38825551746) and the [release workflow](https://github.com/mbackschat/locmetry/actions/runs/38825752736) pass for all three platforms, including license generation, empty-environment checks and static Linux linkage. All three downloaded archives match `SHA256SUMS` and include notices/licenses; the downloaded macOS executable passes independently expected source/purpose counts with an empty environment. [Tap commit e8ac495](https://github.com/mbackschat/homebrew-tap/commit/e8ac4950d45f2f03a0078095cebb033173eaab76) updates all platform URLs/checksums; Homebrew style, macOS upgrade and the formula test pass. Linux package execution was checked by the release workflow; a Linux Homebrew installation was not rerun for this release.
 
 ## Correctness Follow-ups — Complete
 
