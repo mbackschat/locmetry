@@ -190,7 +190,19 @@ fn headline(mut document: Value, report: Option<&Path>) -> Result<Value> {
 }
 
 fn main() -> ExitCode {
-    match run(Args::parse()) {
+    // clap exits usage errors with 2, which is reserved for partial reports.
+    let args = match Args::try_parse() {
+        Ok(args) => args,
+        Err(error) => {
+            let _ = error.print();
+            return if error.use_stderr() {
+                ExitCode::FAILURE
+            } else {
+                ExitCode::SUCCESS
+            };
+        }
+    };
+    match run(args) {
         Ok(Outcome::Complete) => ExitCode::SUCCESS,
         Ok(Outcome::Partial(message)) => {
             eprintln!("locmetry: {message}");

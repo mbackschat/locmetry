@@ -162,6 +162,24 @@ fn missing_root_and_invalid_config_fail_without_success_json() {
     }
 }
 
+/// Exit code 2 is reserved for partial reports, so usage errors must not use
+/// clap's default of 2.
+#[test]
+fn usage_errors_exit_1_while_help_and_version_succeed() {
+    let temp = fixture();
+    for args in [vec!["--bogus"], vec!["--hidden", "maybe"]] {
+        let result = run(temp.path(), &args);
+        assert_eq!(result.status.code(), Some(1));
+        assert!(result.stdout.is_empty());
+        assert!(!result.stderr.is_empty());
+    }
+    for args in [vec!["--help"], vec!["--version"]] {
+        let result = run(temp.path(), &args);
+        assert_eq!(result.status.code(), Some(0));
+        assert!(!result.stdout.is_empty());
+    }
+}
+
 #[test]
 fn markdown_format_writes_a_readable_report_to_stdout() {
     let temp = fixture();
