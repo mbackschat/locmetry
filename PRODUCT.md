@@ -196,8 +196,9 @@ Proposed 2026-10-15, not implemented; [PLAN.md](PLAN.md#workspace-mode--next) tr
 - The merged report keeps the regular shape: totals, `top_folders` (one per member), categories, `unclassified_folders`, `submodules`, `build_modules`, `review`, `breakdown`, and `files` are computed over the prefixed records. `project` joins the member names with ` + `.
 - `metadata.members` lists each member's `name`, `root`, `config_path`, `scope`, `unused_entries`, and `unused_exclusions`, plus its effective `config` in the report file. These settings and findings are relative to one member, so in workspace mode they appear there instead of in `metadata.root`, `metadata.scope`, `metadata.config_path`, `metadata.config`, and `summary.unused_entries`/`unused_exclusions`. Human notes name the member, such as `ghost (web)`.
 - `--output` must lie outside every member root.
+- `locmetry workspace --file FILE` reads the members from a TOML file instead of `--root`: `version = 1` and `roots`, an array of paths relative to the file's folder or absolute. The file is read only when named, never discovered; `--file` and `--root` exclude each other; reports record it as `metadata.workspace_path`; a member containing it does not measure it, and `--output` must not overwrite it. `--schema workspace` describes it.
 
-**Excluded:** a workspace file listing members, explicit member names, overlapping members, and any configuration shared or inherited across members.
+**Excluded:** discovering a workspace file, explicit member names, overlapping members, and any configuration shared or inherited across members.
 
 ## Reporting and Coverage
 

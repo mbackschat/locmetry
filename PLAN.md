@@ -25,6 +25,7 @@ Decided 2026-10-15: a `workspace` subcommand with repeatable `--root` that measu
 - [x] Validate members: at least one, unique names, no root twice, no nesting.
 - [x] Measure members in parallel, fail with the member's name, and merge prefixed records in name order.
 - [x] Report `metadata.members`, the merged summary, and member-qualified notes; extend `--schema report`.
+- [ ] Read members from `--file`, a TOML workspace file whose roots are relative to it, with `--schema workspace`.
 - [ ] Turn the proposal into contract text and document the mode in the README.
 
 **Completion evidence:** tests cover flag rejection, member validation, a merge that equals the per-member reports summed with prefixed paths, determinism, and the report schema; a workspace over real sibling repositories, recorded in `docs/research/local/`, matches the sum of their individual runs.
