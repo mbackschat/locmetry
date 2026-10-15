@@ -1,7 +1,7 @@
 use super::ParseFailureReason;
 use encoding_rs_io::DecodeReaderBytesBuilder;
 use serde::Deserialize;
-use std::{fs::File, io::Read, path::Path, str::FromStr};
+use std::{fs, io::Read, path::Path, str::FromStr};
 use tokei::{Config, LanguageType, Report};
 
 pub(super) enum Error {
@@ -104,11 +104,17 @@ impl Metadata {
 /// String/array sources and raw cells follow nbformat v4.5, pinned in
 /// docs/measurement.md; this checks countable structure, not all notebook metadata.
 pub(super) fn parse(path: &Path, config: &Config) -> Result<Report, Error> {
+    let bytes = fs::read(path).map_err(|_| Error::Read)?;
     let mut text = String::new();
     DecodeReaderBytesBuilder::new()
-        .build(File::open(path).map_err(|_| Error::Read)?)
+        .build(bytes.as_slice())
         .read_to_string(&mut text)
-        .map_err(|_| Error::Read)?;
+        .map_err(|error| {
+            Error::Content(
+                ParseFailureReason::InvalidNotebook,
+                format!("Cannot decode notebook encoding: {error}"),
+            )
+        })?;
     let notebook: Notebook = serde_json::from_str(&text).map_err(|error| {
         Error::Content(
             ParseFailureReason::InvalidNotebook,

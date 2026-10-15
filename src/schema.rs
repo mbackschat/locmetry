@@ -26,3 +26,25 @@ fn integer_bounds(schema: &mut Schema) {
         _ => {}
     }
 }
+
+/// Schemars does not constrain enum map keys by default; reuse the reader's enum schema.
+pub(crate) fn purpose_map<T: JsonSchema>(generator: &mut schemars::SchemaGenerator) -> Schema {
+    let mut schema = <std::collections::BTreeMap<String, T>>::json_schema(generator);
+    schema.insert(
+        "propertyNames".into(),
+        generator.subschema_for::<crate::Purpose>().to_value(),
+    );
+    schema
+}
+
+pub(crate) fn folder_purpose_map(generator: &mut schemars::SchemaGenerator) -> Schema {
+    let mut schema =
+        <std::collections::BTreeMap<String, std::collections::BTreeMap<String, u64>>>::json_schema(
+            generator,
+        );
+    schema.insert(
+        "additionalProperties".into(),
+        purpose_map::<u64>(generator).to_value(),
+    );
+    schema
+}

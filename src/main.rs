@@ -809,7 +809,7 @@ fn report(
         top_folders: summary.top_folders(),
         totals: summary.totals,
         members: member_totals,
-        unclassified_folders: unclassified_folders(&rows),
+        unclassified_folders: Some(unclassified_folders(&rows)),
         build_modules: build_systems(&module_shares)
             .into_iter()
             .map(|(k, v)| (k.into(), v))
@@ -871,7 +871,7 @@ fn report(
             metadata.scope = Some(scope);
             metadata.config_path = Some(config_path.map(|p| p.to_string_lossy().into()));
             metadata.config = Some(*config);
-            metadata.user_config_path = user_path.map(|p| p.to_string_lossy().into());
+            metadata.user_config_path = Some(user_path.map(|p| p.to_string_lossy().into()));
         }
         Location::Workspace {
             members,
@@ -880,7 +880,7 @@ fn report(
         } => {
             metadata.members = Some(members);
             metadata.workspace_path = workspace_path.map(|p| p.to_string_lossy().into());
-            metadata.user_config_path = user_path.map(|p| p.to_string_lossy().into());
+            metadata.user_config_path = Some(user_path.map(|p| p.to_string_lossy().into()));
         }
     }
     let document = MeasurementReport {

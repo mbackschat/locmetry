@@ -15,7 +15,8 @@ pub enum Version {
 
 /// Locmetry measurement headline or full report. Full reports add review, breakdown,
 /// kinds, modules, unrecognized paths and effective policy; --files adds file detail.
-/// Missing optional detail is not measured zero. Summary omissions alone mean zero.
+/// Missing optional detail is not measured zero. Aggregate summary omissions alone mean zero.
+/// Duplicate raw keys in dynamic JSON maps retain the last value; overwritten keys cannot be validated.
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 #[schemars(example = headline_example())]
@@ -71,8 +72,13 @@ pub struct Metadata {
     /// True means partial counts. Historical false does not certify notebook correctness.
     pub backend_inaccurate: bool,
     pub backend_configuration: String,
-    /// Loaded personal-default path or null; location is provenance, not identity.
-    pub user_config_path: Option<String>,
+    /// Loaded personal-default path or null; historical absence means not recorded. Location is provenance, not identity.
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "present"
+    )]
+    pub user_config_path: Option<Option<String>>,
     pub coverage: Coverage,
     /// Full report only: content-kind interpretation of language contributions.
     #[serde(
@@ -146,7 +152,9 @@ fn metadata_modes(schema: &mut schemars::Schema) {
 }
 
 /// Presence without null for optional report evidence; absence must survive decoding.
-fn present<'de, D: Deserializer<'de>, T: Deserialize<'de>>(d: D) -> Result<Option<T>, D::Error> {
+pub(crate) fn present<'de, D: Deserializer<'de>, T: Deserialize<'de>>(
+    d: D,
+) -> Result<Option<T>, D::Error> {
     T::deserialize(d).map(Some)
 }
 
@@ -267,7 +275,7 @@ pub struct MemberCoverage {
     pub parse_failed_files: Option<u64>,
 }
 
-/// Summary omissions mean zero. Language file counts are participation counts and may overlap;
+/// Aggregate omissions mean zero; historical missing unclassified-folder evidence stays unknown. Language file counts are participation counts and may overlap;
 /// all other totals and breakdown file counts count physical files once.
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
@@ -275,9 +283,16 @@ pub struct ReportSummary {
     #[serde(flatten)]
     pub totals: Summary,
     /// Source code by purpose, over disjoint top-level subtrees plus `.` for root files.
+    #[schemars(schema_with = "crate::schema::folder_purpose_map")]
     pub top_folders: BTreeMap<String, BTreeMap<Purpose, u64>>,
-    #[serde(default)]
-    pub unclassified_folders: Vec<crate::FolderShare>,
+    /// Recorded unclaimed folders; historical absence means not recorded, while [] records none.
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "present"
+    )]
+    #[schemars(with = "Vec<crate::FolderShare>")]
+    pub unclassified_folders: Option<Vec<crate::FolderShare>>,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub members: BTreeMap<String, Summary>,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]

@@ -107,6 +107,7 @@ pub struct Summary {
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     #[serde(default)]
     /// Source only, keyed production/test/unclassified; additive.
+    #[schemars(schema_with = "crate::schema::purpose_map::<Counts>")]
     pub source_purpose: BTreeMap<Purpose, Counts>,
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     #[serde(default)]

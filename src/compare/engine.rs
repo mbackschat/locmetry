@@ -93,7 +93,12 @@ fn context(
         paths: paths.iter().map(|s| s.to_string()).collect(),
     }
 }
-fn presence_finding(entity: Entity, p: Presence, member: Option<String>) -> Option<Finding> {
+fn presence_finding(
+    entity: Entity,
+    p: Presence,
+    member: Option<String>,
+    paths: &[&str],
+) -> Option<Finding> {
     if p == Presence::Both {
         return None;
     }
@@ -114,13 +119,8 @@ fn presence_finding(entity: Entity, p: Presence, member: Option<String>) -> Opti
             "Entity appears only in the after report; physical creation is not established.",
         ),
     };
-    let path = match entity {
-        Entity::Member { .. } => "/metadata/members",
-        Entity::Folder { .. } => "/breakdown",
-        Entity::Package { .. } => "/metadata/modules",
-    };
     Some(Finding::PresenceChanged {
-        context: context(side, message, member, &[path]),
+        context: context(side, message, member, paths),
         entity,
         presence: p,
     })
@@ -133,6 +133,7 @@ struct Pair {
 }
 #[derive(Default)]
 struct Folder {
+    evidence: BTreeSet<&'static str>,
     direct: Pair,
     recursive: Pair,
 }
@@ -142,10 +143,14 @@ fn parent(path: &str) -> &str {
 fn folders(report: &MeasurementReport) -> Result<BTreeMap<String, Folder>> {
     let mut result = BTreeMap::<String, Folder>::new();
     let workspace = report.metadata.members.is_some();
-    let mut add_path = |path: &str| {
+    let mut add_path = |path: &str, evidence: &'static str| {
         let mut path = path;
         loop {
-            result.entry(path.into()).or_default();
+            result
+                .entry(path.into())
+                .or_default()
+                .evidence
+                .insert(evidence);
             if path == "." || (workspace && !path.contains('/')) {
                 break;
             }
@@ -155,26 +160,26 @@ fn folders(report: &MeasurementReport) -> Result<BTreeMap<String, Folder>> {
     match &report.metadata.members {
         Some(members) => {
             for m in members {
-                add_path(&m.name);
+                add_path(&m.name, "/metadata/members");
             }
         }
-        None => add_path("."),
+        None => add_path(".", "/metadata/root"),
     }
     for row in report.breakdown.iter().flatten() {
-        add_path(&row.folder);
+        add_path(&row.folder, "/breakdown");
     }
     for module in report.metadata.modules.iter().flatten() {
-        add_path(&module.path);
+        add_path(&module.path, "/metadata/modules");
     }
     let coverage = &report.metadata.coverage;
-    for path in coverage
-        .unrecognized
-        .iter()
-        .flatten()
-        .chain(&coverage.unread)
-        .chain(coverage.parse_failures.iter().flatten().map(|f| &f.path))
-    {
-        add_path(parent(path));
+    for path in coverage.unrecognized.iter().flatten() {
+        add_path(parent(path), "/metadata/coverage/unrecognized");
+    }
+    for path in &coverage.unread {
+        add_path(parent(path), "/metadata/coverage/unread");
+    }
+    for failure in coverage.parse_failures.iter().flatten() {
+        add_path(parent(&failure.path), "/metadata/coverage/parse_failures");
     }
     for row in report.breakdown.iter().flatten() {
         let mut path = row.folder.as_str();
@@ -294,6 +299,7 @@ pub fn compare(
                 Entity::Member { name: name.clone() },
                 p,
                 Some(name.clone()),
+                &["/metadata/members"],
             ));
             members.insert(
                 name,
@@ -338,6 +344,13 @@ pub fn compare(
             Entity::Folder { path: path.clone() },
             p,
             member_for(&path, workspace),
+            &match p {
+                Presence::BeforeOnly => &av.evidence,
+                _ => &bv.evidence,
+            }
+            .iter()
+            .copied()
+            .collect::<Vec<_>>(),
         ));
     }
     result.folders = Some(folder_rows);
@@ -359,6 +372,7 @@ pub fn compare(
             },
             p,
             member_for(&key.0, workspace),
+            &["/metadata/modules"],
         ));
     }
     result.packages = Some(package_rows);

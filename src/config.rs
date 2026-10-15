@@ -233,9 +233,15 @@ struct ClassificationSettings {
     /// Whether built-in build conventions classify files, right after the test conventions: build scripts are `production` with category `build-tooling`, and build-tool wrappers are `unclassified` with category `third-party-wrapper`.
     #[schemars(transform = schema::describe_build_conventions)]
     builtin_build: bool,
-    /// Whether build modules classify files that no override, convention, or rule matched. A build module is a folder where a selected descriptor triggers conventional source-layout inference; build systems call it a module, project, package, or crate, and it is unrelated to modules or packages inside a language. The build system's default production layout in that folder is `production` with category `implementation`. The innermost build module containing a file decides, and build files in one folder combine their layouts. Only file names are read, never the build file's content, so a source directory that a build file reconfigures needs a rule. Set `false` when build files mislead and rules classify the production source; a rule alone corrects a single folder. The headline counts modules and their code per build system as `summary.build_modules`; the report file from `--output` lists every module as `metadata.modules`.
+    /// Defaults to true when loading project configuration; absent in historical saved policy means not recorded. Whether build modules classify files that no override, convention, or rule matched. A build module is a folder where a selected descriptor triggers conventional source-layout inference; build systems call it a module, project, package, or crate, and it is unrelated to modules or packages inside a language. The build system's default production layout in that folder is `production` with category `implementation`. The innermost build module containing a file decides, and build files in one folder combine their layouts. Only file names are read, never the build file's content, so a source directory that a build file reconfigures needs a rule. Set `false` when build files mislead and rules classify the production source; a rule alone corrects a single folder. The headline counts modules and their code per build system as `summary.build_modules`; the report file from `--output` lists every module as `metadata.modules`.
     #[schemars(transform = schema::describe_detectors)]
-    builtin_modules: bool,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "crate::contract::present"
+    )]
+    #[schemars(with = "bool")]
+    builtin_modules: Option<bool>,
     /// Purpose of files that no stage matched; their category equals the purpose, and their `rule` is `fallback`. Keep `unclassified` so unclaimed code is reported for review instead of silently counted.
     fallback: Purpose,
 }
@@ -245,7 +251,7 @@ impl Default for ClassificationSettings {
         Self {
             builtin_tests: true,
             builtin_build: true,
-            builtin_modules: true,
+            builtin_modules: None,
             fallback: Purpose::Unclassified,
         }
     }
@@ -869,7 +875,9 @@ impl Policy {
         Self::from_config(toml::from_str(input).context("Invalid TOML configuration")?)
     }
 
-    fn from_config(config: ConfigFile) -> Result<Self> {
+    fn from_config(mut config: ConfigFile) -> Result<Self> {
+        // Defaults belong to a new measurement, not to historical receipt decoding.
+        let detect_modules = *config.classification.builtin_modules.get_or_insert(true);
         ensure!(
             config.version == 1,
             "Unsupported configuration version {}",
@@ -979,7 +987,7 @@ impl Policy {
             overrides: entries(&config.overrides)?,
             conventions,
             rules: entries(&config.rules)?,
-            detect_modules: config.classification.builtin_modules,
+            detect_modules,
             modules: Vec::new(),
             module_entries: Vec::new(),
             fallback: (fallback, fallback.to_string()),

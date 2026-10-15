@@ -75,6 +75,7 @@ pub struct Dimensions {
     pub all_counted: CountChange,
     pub source: CountChange,
     pub by_kind_purpose: BTreeMap<String, CountChange>,
+    #[schemars(schema_with = "crate::schema::purpose_map::<CountChange>")]
     pub source_purpose: BTreeMap<Purpose, CountChange>,
     pub source_categories: BTreeMap<String, CountChange>,
     /// Lines add across languages, but file counts are overlapping language participation.

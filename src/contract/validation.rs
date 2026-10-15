@@ -267,7 +267,11 @@ impl MeasurementReport {
             "submodules",
         )?;
         unique(
-            self.summary.unclassified_folders.iter().map(|f| &f.folder),
+            self.summary
+                .unclassified_folders
+                .iter()
+                .flatten()
+                .map(|f| &f.folder),
             "unclassified_folders",
         )?;
         if let Some(review) = &self.review {
@@ -640,7 +644,7 @@ fn same_map<K: Ord>(
         if participation {
             a == b
         } else {
-            same_lines(a, b)
+            same_lines(a, b) && a.files >= b.files
         }
     })
 }

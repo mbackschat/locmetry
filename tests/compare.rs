@@ -247,6 +247,13 @@ fn workspace_arrivals_departures_and_empty_roots_reconcile_separately() {
     assert_eq!(composition["leaving"]["code"], 40);
     assert_eq!(full["members"]["empty"]["presence"], "after_only");
     assert_eq!(full["folders"]["empty"]["presence"], "after_only");
+    let empty_finding = full["findings"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|f| f["entity"]["kind"] == "folder" && f["entity"]["path"] == "empty")
+        .unwrap();
+    assert_eq!(empty_finding["paths"], json!(["/metadata/members"]));
     assert_eq!(
         full["presence_summary"]["members"],
         json!({"before_only":1,"after_only":2})
@@ -558,4 +565,57 @@ fn development_counter_is_distinct_from_the_last_release() {
         .unwrap()
         .iter()
         .any(|finding| finding["code"] == "counter_changed"));
+}
+
+#[test]
+fn folder_presence_points_to_the_evidence_that_establishes_it() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("project");
+    fs::create_dir(&root).unwrap();
+    let before_value = measure(&root);
+    let before = save(temp.path(), "before.json", &before_value);
+    write(&root, "unknown/deep/file.zzzz", "unknown\n");
+    write(&root, "failed/broken.ipynb", "{}");
+    let after_value = measure(&root);
+    let after = save(temp.path(), "after.json", &after_value);
+    let result = document(compare(&before, &after, &["--output", "-"]), 2);
+    for (folder, pointer) in [
+        ("unknown", "/metadata/coverage/unrecognized"),
+        ("unknown/deep", "/metadata/coverage/unrecognized"),
+        ("failed", "/metadata/coverage/parse_failures"),
+    ] {
+        let finding = result["findings"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|f| {
+                f["code"] == "presence_changed"
+                    && f["entity"]["kind"] == "folder"
+                    && f["entity"]["path"] == folder
+            })
+            .unwrap();
+        assert!(
+            finding["paths"]
+                .as_array()
+                .unwrap()
+                .contains(&json!(pointer)),
+            "{finding}"
+        );
+        assert!(!finding["paths"]
+            .as_array()
+            .unwrap()
+            .contains(&json!("/breakdown")));
+        assert!(after_value.pointer(pointer).is_some());
+    }
+    let mut module_only = before_value;
+    module_only["metadata"]["modules"] = json!([{"path":"module-only","detector":"npm"}]);
+    let module_report = save(temp.path(), "module.json", &module_only);
+    let result = document(compare(&before, &module_report, &["--output", "-"]), 0);
+    let finding = result["findings"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|f| f["entity"]["kind"] == "folder" && f["entity"]["path"] == "module-only")
+        .unwrap();
+    assert_eq!(finding["paths"], json!(["/metadata/modules"]));
 }

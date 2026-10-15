@@ -236,3 +236,108 @@ fn nonzero_physical_totals_need_counted_files() {
         .to_string()
         .contains("physical files"));
 }
+
+#[test]
+fn historical_reports_round_trip_without_inventing_provenance() {
+    for version in 0..=6 {
+        for mode in if version >= 4 {
+            vec!["root", "workspace"]
+        } else {
+            vec!["root"]
+        } {
+            let name = format!("v0.1.{version}-{mode}");
+            let original = fixture(&name);
+            let report: MeasurementReport = serde_json::from_value(original.clone()).unwrap();
+            assert_eq!(serde_json::to_value(report).unwrap(), original, "{name}");
+        }
+    }
+}
+
+#[test]
+fn schemas_and_reader_reject_invalid_purpose_map_keys() {
+    let schema = jsonschema::validator_for(&locmetry::report_schema()).unwrap();
+    for invalid in ["bogus", "Test"] {
+        for path in ["/summary/source_purpose", "/summary/top_folders/src"] {
+            let mut value = fixture("v0.1.6-root");
+            let map = value.pointer_mut(path).unwrap().as_object_mut().unwrap();
+            let valid = map.values().next().unwrap().clone();
+            map.insert(invalid.into(), valid);
+            assert!(serde_json::from_value::<MeasurementReport>(value.clone()).is_err());
+            assert!(!schema.is_valid(&value), "{path}: {invalid}");
+        }
+    }
+}
+
+#[test]
+fn language_participation_cannot_be_less_than_host_files_in_breakdown() {
+    let temp = tempfile::tempdir().unwrap();
+    std::fs::write(temp.path().join("one.py"), "print(1)\n").unwrap();
+    std::fs::write(temp.path().join("two.py"), "print(2)\n").unwrap();
+    for workspace in [false, true] {
+        let mut command = Command::new(env!("CARGO_BIN_EXE_locmetry"));
+        if workspace {
+            command.arg("workspace");
+        }
+        let output = command
+            .args([
+                "--root",
+                temp.path().to_str().unwrap(),
+                "--no-user-config",
+                "--output",
+                "-",
+            ])
+            .output()
+            .unwrap();
+        assert!(output.status.success());
+        let mut value: Value = serde_json::from_slice(&output.stdout).unwrap();
+        value["summary"]["source_languages"]["Python"]["files"] = json!(1);
+        if workspace {
+            let name = value["metadata"]["members"][0]["name"]
+                .as_str()
+                .unwrap()
+                .to_owned();
+            value["summary"]["members"][name]["source_languages"]["Python"]["files"] = json!(1);
+        }
+        let report: MeasurementReport = serde_json::from_value(value).unwrap();
+        assert!(
+            report.validate().is_err(),
+            "understated host participation: workspace={workspace}"
+        );
+    }
+}
+
+#[test]
+fn member_language_participation_is_checked_even_when_workspace_totals_reconcile() {
+    let temp = tempfile::tempdir().unwrap();
+    for member in ["a", "b"] {
+        let root = temp.path().join(member);
+        std::fs::create_dir(&root).unwrap();
+        for name in ["one.py", "two.py"] {
+            std::fs::write(root.join(name), "print(1)\n").unwrap();
+        }
+        std::fs::write(root.join("main.js"), "let a = 1;\n").unwrap();
+    }
+    let output = Command::new(env!("CARGO_BIN_EXE_locmetry"))
+        .args([
+            "workspace",
+            "--root",
+            temp.path().join("a").to_str().unwrap(),
+            "--root",
+            temp.path().join("b").to_str().unwrap(),
+            "--no-user-config",
+            "--output",
+            "-",
+        ])
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    let mut value: Value = serde_json::from_slice(&output.stdout).unwrap();
+    value["summary"]["members"]["a"]["source_languages"]["Python"]["files"] = json!(1);
+    value["summary"]["members"]["b"]["source_languages"]["Python"]["files"] = json!(3);
+    let report: MeasurementReport = serde_json::from_value(value).unwrap();
+    assert!(report
+        .validate()
+        .unwrap_err()
+        .to_string()
+        .contains("member breakdown: language counts conflict"));
+}

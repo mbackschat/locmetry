@@ -18,7 +18,7 @@ mod notebook;
 #[derive(Clone, Debug, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ParseFailureReason {
-    /// Invalid JSON or missing/invalid counting structure; includes zero-byte input.
+    /// Invalid encoding, JSON or counting structure; includes zero-byte input.
     InvalidNotebook,
     /// Notebook version outside the supported v4.0–v4.5 range; not necessarily invalid nbformat.
     UnsupportedNotebookVersion,

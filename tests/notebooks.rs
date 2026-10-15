@@ -353,3 +353,28 @@ fn unreadable_notebooks_remain_io_failures() {
     );
     assert_eq!(report["metadata"]["coverage"]["parse_failures"], json!([]));
 }
+
+#[test]
+fn readable_invalid_encoding_is_a_notebook_parse_failure() {
+    for bytes in [
+        b"{\"title\":\"caf\xe9\"}".as_slice(),
+        b"{\"title\":\"\xff\"}",
+    ] {
+        let temp = tempfile::tempdir().unwrap();
+        fs::write(temp.path().join("encoded.ipynb"), bytes).unwrap();
+        let output = run(temp.path(), &["--output", "-"]);
+        assert_eq!(output.status.code(), Some(2));
+        let report = checked_report(&output);
+        assert_eq!(report["metadata"]["coverage"]["unread"], json!([]));
+        assert_eq!(
+            report["metadata"]["coverage"]["parse_failures"][0]["reason"],
+            "invalid_notebook"
+        );
+        assert!(
+            report["metadata"]["coverage"]["parse_failures"][0]["message"]
+                .as_str()
+                .unwrap()
+                .contains("encoding")
+        );
+    }
+}
