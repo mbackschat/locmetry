@@ -12,7 +12,7 @@ The product rests on three pillars:
 
 ## Scope and Status
 
-- Required: embedded Tokei integration in a Rust executable, test/production classification, production source derived from build descriptors, project configuration, personal defaults, and CLI options, configurable exclusions, language mappings for files the backend does not recognize, folder breakdowns and sums, JSON, and human output that locates unclassified source.
+- Required: embedded Tokei integration in a Rust executable, test/production classification, production source derived from build descriptors, project configuration, personal defaults, and CLI options, a configuration schema that explains its semantics, configurable exclusions, language mappings for files the backend does not recognize, folder breakdowns and sums, JSON, and human output that locates unclassified source.
 - Optional: further module detectors, additional counting adapters, custom content-kind overrides, and configuration self-checks that assert expected classifications for named paths without requiring those files to exist.
 - Excluded initially: a new counting engine, a generic plugin framework (module detectors are compiled-in implementations of one trait, not loadable plugins), and semantic splitting of production/tests within individual files.
 
@@ -32,6 +32,8 @@ Report code, comments, blanks, and total lines separately. Preserve each file's 
 ## Project Configuration
 
 Use `.locmetryrc` in TOML. Discover it in the selected scan root (`--root`), which defaults to the current directory; an explicit `--config` path may select a different file without changing that root. Without a discovered or explicit configuration, built-in settings apply; an explicit configuration that cannot be read fails. A loaded configuration inside the scan root is policy, not project content: it is excluded as a literal path, which the effective exclusions record. All patterns remain relative to the scan root. Project configuration overrides built-in settings; explicit CLI settings override project settings: `--hidden BOOL`, `--respect-ignore-files BOOL`, and repeatable `--exclude GLOB`, which adds to the configured exclusions. A configuration file ending in `.json`, the retired JSON/regex profile format, is rejected with a hint to translate it to TOML.
+
+`locmetry --schema config` prints the JSON Schema (Draft 2020-12) of this file and `--schema user-config` that of personal defaults, then exits. The schema is generated from the parser's types, so it accepts the same keys, types, and enums; checks it cannot express, such as glob syntax and unique IDs, still fail when the file loads. Its descriptions state each setting's default and meaning, the classification order, and this version's built-in conventions, build-module layouts, and language names, so an agent can write a configuration from the binary alone.
 
 This example is synthetic:
 

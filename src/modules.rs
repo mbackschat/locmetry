@@ -13,8 +13,10 @@ use std::collections::BTreeSet;
 pub trait ModuleDetector: Sync {
     /// Build-system name; files it claims record `builtin:<id>-module`.
     fn id(&self) -> &'static str;
-    /// Whether a file with this name makes its directory a module.
-    fn is_descriptor(&self, file_name: &str) -> bool;
+    /// File names that make their directory a module.
+    fn descriptors(&self) -> &'static [&'static str];
+    /// The production layout in Markdown, for the configuration schema.
+    fn layout(&self) -> String;
     /// Globs of the production source of the module in `directory`, relative
     /// to it; `files` are all selected root-relative paths, for layouts that
     /// depend on what exists.
@@ -33,8 +35,16 @@ impl ModuleDetector for DefaultLayout {
         self.id
     }
 
-    fn is_descriptor(&self, file_name: &str) -> bool {
-        self.descriptors.contains(&file_name)
+    fn descriptors(&self) -> &'static [&'static str] {
+        self.descriptors
+    }
+
+    fn layout(&self) -> String {
+        self.sources
+            .iter()
+            .map(|glob| format!("`{glob}`"))
+            .collect::<Vec<_>>()
+            .join(", ")
     }
 
     fn production_sources(&self, _: &str, _: &[&str]) -> Vec<String> {
@@ -75,8 +85,12 @@ impl ModuleDetector for Python {
         "python"
     }
 
-    fn is_descriptor(&self, file_name: &str) -> bool {
-        ["pyproject.toml", "setup.py", "setup.cfg"].contains(&file_name)
+    fn descriptors(&self) -> &'static [&'static str] {
+        &["pyproject.toml", "setup.py", "setup.cfg"]
+    }
+
+    fn layout(&self) -> String {
+        "`src/**`, plus each top-level folder with an `__init__.py` except names such as `docs`, `scripts`, and `tools`".into()
     }
 
     fn production_sources(&self, directory: &str, files: &[&str]) -> Vec<String> {
@@ -156,7 +170,7 @@ pub fn detect(files: &[&str]) -> Vec<Module> {
     for path in files {
         let (directory, name) = path.rsplit_once('/').unwrap_or((".", path));
         for (index, detector) in DETECTORS.iter().enumerate() {
-            if detector.is_descriptor(name) {
+            if detector.descriptors().contains(&name) {
                 declared.insert((directory, index));
             }
         }

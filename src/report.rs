@@ -1,4 +1,5 @@
 use crate::{Classification, Purpose};
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize, Serializer};
 use std::{collections::BTreeMap, fmt};
 
@@ -25,13 +26,19 @@ impl Counts {
     }
 }
 
-/// Content kind of a counted file, derived from its backend language.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+/// Content kind of a counted file, derived from its language.
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, JsonSchema,
+)]
 #[serde(rename_all = "lowercase")]
 pub enum Kind {
+    /// Every language not listed as data or documentation; the only kind in source totals.
     Source,
+    /// Data and configuration formats such as JSON and YAML; reports list them in `metadata.kinds`.
     Data,
+    /// Prose formats such as Markdown; reports list them in `metadata.kinds`.
     Documentation,
+    /// Language names the embedded counter does not know, as in replayed older statistics.
     Other,
 }
 

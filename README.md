@@ -82,6 +82,7 @@ What the table already handles for you:
 - **Explicit scope:** root-relative globs, ignore files, hidden-file control, default exclusions for `.git`, `node_modules`, and `.build`, and optional personal exclusions shared by all projects.
 - **Honest coverage:** files that could not be recognized or read are listed, never reported as zero lines.
 - **Reproducible:** only the project's configuration, command-line options, and optional personal exclusions affect results, and every report records the effective scope and policy.
+- **Self-describing configuration:** `locmetry --schema config` prints a JSON Schema that explains every setting, the classification order, and the built-in conventions, so an agent can write the configuration without reading these docs.
 - **Three outputs, one measurement:** the terminal table, JSON, and Markdown are rendered from the same per-file records.
 
 ## Install
@@ -139,6 +140,22 @@ Personal defaults for every project, such as extra exclusions or language mappin
 | `--depth N` | Folder levels in the Markdown folder table; default: 2. |
 | `--output FILE` | Also write the full JSON report to `FILE`, outside the scan root; `-` prints it instead of the headline. |
 | `--files` | Add per-file records to the report. |
+| `--schema config\|user-config` | Print the JSON Schema of `.locmetryrc` or of personal defaults, and exit. |
+
+## Configure with an agent
+
+`locmetry --schema config` prints the JSON Schema of `.locmetryrc`. Besides keys, types, and defaults, its descriptions carry the semantics an agent needs to write a configuration: the classification order, when to use `[[overrides]]` instead of `[[rules]]`, what turning off built-in conventions or [build modules](#build-modules) changes, and the exact conventions, build-module layouts, and language names of the installed version. `--schema user-config` describes personal defaults.
+
+```sh
+locmetry --schema config | jq -r .description          # classification order, globs, workflow
+locmetry --schema config | jq '."$defs".Classification' # built-in stages and their switches
+```
+
+A prompt such as this one is enough:
+
+> Run `locmetry --schema config` to learn the configuration format, then run `locmetry` in this repository. Write a `.locmetryrc` that classifies the folders listed under `summary.unclassified_folders`, give each entry a `reason`, and measure again until only code that really is unclaimed stays unclassified.
+
+The schema checks keys, types, and enums. Locmetry itself also rejects invalid globs and duplicate IDs when it loads the file, so a final `locmetry` run validates the result.
 
 ## A tour of a sample project
 

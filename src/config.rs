@@ -1,9 +1,16 @@
 //! Measurement policy: which files are selected and how each one is classified.
 //!
 //! The input is the version-1 TOML contract in PRODUCT.md.
-use crate::{backend::relative_path, modules::Module, Kind};
+use crate::{
+    backend::relative_path,
+    modules::{Module, DETECTORS},
+    Kind,
+};
 use anyhow::{ensure, Context, Result};
 use globset::{Glob, GlobBuilder, GlobSet, GlobSetBuilder};
+use schemars::{
+    generate::SchemaSettings, transform::RecursiveTransform, JsonSchema, Schema, SchemaGenerator,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::{
@@ -114,11 +121,17 @@ const BUILTIN_LANGUAGES_V1: &[(&str, &[&str], LanguageType)] = &[
     ("java-properties", &["**/*.properties"], LanguageType::Ini),
 ];
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord)]
+/// What a file is for.
+#[derive(
+    Clone, Copy, Debug, Deserialize, Serialize, JsonSchema, PartialEq, Eq, PartialOrd, Ord,
+)]
 #[serde(rename_all = "lowercase")]
 pub enum Purpose {
+    /// Maintained code that is the product or builds and runs it.
     Production,
+    /// Tests and their support code.
     Test,
+    /// Neither production nor test: code nothing claims, and code an entry deliberately parks, such as a prototype. Reports list it for review instead of counting it as production.
     Unclassified,
 }
 
@@ -143,13 +156,20 @@ pub struct Classification {
     pub rule: String,
 }
 
-/// Selection settings of the `[scope]` table.
-#[derive(Clone, Debug, Deserialize, Serialize)]
+/// Which files are measured. Scope applies before classification, so an excluded file appears nowhere in the report.
+#[derive(Clone, Debug, Deserialize, Serialize, JsonSchema)]
 #[serde(default, deny_unknown_fields)]
+#[schemars(rename = "Scope")]
 pub struct ScopeSettings {
+    /// Whether hidden files and directories are measured; `--hidden` overrides it.
     pub hidden: bool,
+    /// Whether `.ignore`, `.tokeignore`, and, inside a Git work tree, `.gitignore` files limit the selection; `--respect-ignore-files` overrides it.
     pub respect_ignore_files: bool,
+    /// Whether the default exclusions apply; `false` is the only way to drop them.
+    #[schemars(transform = describe_default_excludes)]
     pub default_excludes: bool,
+    /// Globs of files to leave out, added after the default and personal exclusions; `--exclude` adds more. Use it for vendored, generated, or copied code that should not be measured at all; code that should be measured but not counted as production needs an entry instead.
+    #[schemars(extend("items" = {"type": "string", "description": "Root-relative glob."}))]
     pub exclude: Vec<String>,
 }
 
@@ -173,19 +193,29 @@ pub struct ScopeOverrides {
     pub exclude: Vec<String>,
 }
 
-#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
+/// The counting engine.
+#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
 enum Backend {
     #[default]
     Tokei,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+/// Switches for the built-in classification stages and the fallback.
+#[derive(Debug, Deserialize, Serialize, JsonSchema)]
 #[serde(default, deny_unknown_fields)]
+#[schemars(rename = "Classification")]
 struct ClassificationSettings {
+    /// Whether built-in test conventions classify files, after `overrides` and before `rules`. A test convention also wins over a `rules` entry that matches the same file, so tests inside production trees stay tests; an `overrides` entry is the way to beat one.
+    #[schemars(transform = describe_test_conventions)]
     builtin_tests: bool,
+    /// Whether built-in build conventions classify files, right after the test conventions: build scripts are `production` with category `build-tooling`, and build-tool wrappers are `unclassified` with category `third-party-wrapper`.
+    #[schemars(transform = describe_build_conventions)]
     builtin_build: bool,
+    /// Whether build modules classify files that no override, convention, or rule matched. A build module is a folder whose build file declares where its source lives; build systems call it a module, project, package, or crate, and it is unrelated to modules or packages inside a language. The build system's default production layout in that folder is `production` with category `implementation`. The innermost build module containing a file decides, and build files in one folder combine their layouts. Only file names are read, never the build file's content, so a source directory that a build file reconfigures needs a rule. Set `false` when build files mislead and rules classify the production source; a rule alone corrects a single folder. Reports list detected build modules as `metadata.modules`.
+    #[schemars(transform = describe_detectors)]
     builtin_modules: bool,
+    /// Purpose of files that no stage matched; their category equals the purpose, and their `rule` is `fallback`. Keep `unclassified` so unclaimed code is reported for review instead of silently counted.
     fallback: Purpose,
 }
 
@@ -200,25 +230,40 @@ impl Default for ClassificationSettings {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+/// A classification entry: files matching it get its purpose and category.
+#[derive(Debug, Deserialize, Serialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
+#[schemars(rename = "Entry")]
 struct EntryConfig {
+    /// Unique across `overrides` and `rules`; must not be `fallback` or start with `builtin:`. Files this entry decides record the ID as their `rule`.
+    #[schemars(length(min = 1))]
     id: String,
+    /// Root-relative globs; the entry matches a file when any of them matches.
     #[serde(rename = "match")]
+    #[schemars(length(min = 1), extend("items" = {"type": "string"}))]
     patterns: Vec<String>,
+    /// Restricts the entry to files of these content kinds; absent means every kind.
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[schemars(length(min = 1))]
     kind: Option<Vec<Kind>>,
     purpose: Purpose,
+    /// Free-form subcategory reported with the purpose, such as `implementation`, `tooling`, `generated`, `example`, or `test-support`; defaults to the purpose.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     category: Option<String>,
+    /// Why the entry exists, for reviewers; recorded in the report's effective configuration.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     reason: Option<String>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+/// How files that the counter does not recognize are counted.
+#[derive(Debug, Deserialize, Serialize, JsonSchema)]
 #[serde(default, deny_unknown_fields)]
+#[schemars(rename = "Languages")]
 struct LanguageSettings {
+    /// Whether the built-in language mappings apply, after `mappings`.
+    #[schemars(transform = describe_language_mappings)]
     builtin: bool,
+    /// Ordered mappings; the first matching one counts the file. They apply only to files the counter does not recognize, so they never change a recognized file's language. Reports list unrecognized files as `metadata.coverage.unrecognized`.
     mappings: Vec<MappingConfig>,
 }
 
@@ -231,12 +276,20 @@ impl Default for LanguageSettings {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+/// Counts matching unrecognized files as a known language.
+#[derive(Debug, Deserialize, Serialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
+#[schemars(rename = "LanguageMapping")]
 struct MappingConfig {
+    /// Unique among mappings; reports name it for files it counted.
+    #[schemars(length(min = 1))]
     id: String,
+    /// Root-relative globs; the mapping matches a file when any of them matches.
     #[serde(rename = "match")]
+    #[schemars(length(min = 1), extend("items" = {"type": "string"}))]
     patterns: Vec<String>,
+    /// Language whose parser counts the file.
+    #[schemars(schema_with = "language_names")]
     language: String,
 }
 
@@ -247,9 +300,19 @@ struct LanguageMapping {
     language: LanguageType,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+/// Locmetry project configuration: TOML in `.locmetryrc` at the scan root, or the file `--config` names.
+///
+/// Every measured file gets one purpose (`production`, `test`, or `unclassified`) and a category from the first stage that matches: (1) `overrides`, in order; (2) built-in test conventions, then built-in build conventions; (3) `rules`, in order; (4) build modules, the source layout a build file declares; (5) the fallback. Scope exclusions apply before all stages. So a broad rule never swallows conventional tests or build scripts, while an override beats the conventions. Each file records the deciding stage in its `rule` field: an entry ID, `builtin:<convention>`, `builtin:<detector>-module`, or `fallback`.
+///
+/// Globs are root-relative, `/`-separated, and case-sensitive: `*` stays within a path segment, `**` spans directories, `?` matches one character, `[...]` a character class, `{a,b}` alternatives, and a backslash escapes. Negation, absolute paths, and basename-only matching are not supported, so `*.rs` matches only at the root; use `**/*.rs`.
+///
+/// To set up a project, run `locmetry`, read `summary.unclassified_folders`, add entries for those folders, and measure again with `--config <file>`; `--files --output -` shows each file's `purpose`, `category`, and `rule`.
+#[derive(Debug, Deserialize, Serialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
+#[schemars(rename = "Configuration")]
 struct ConfigFile {
+    /// Contract version; must be `1`.
+    #[schemars(extend("const" = 1))]
     version: u32,
     #[serde(default)]
     backend: Backend,
@@ -259,17 +322,23 @@ struct ConfigFile {
     classification: ClassificationSettings,
     #[serde(default)]
     languages: LanguageSettings,
+    /// Entries checked first, before the built-in conventions; the first matching entry decides. Use them only for decisions that must beat a convention, such as a test-support package whose build scripts are test support, or archived code with test file names that must stay unclassified.
     #[serde(default)]
     overrides: Vec<EntryConfig>,
+    /// Entries checked after the built-in conventions and before build modules; the first matching entry decides. Use them for ordinary project knowledge such as tooling, examples, generated code, or source no build file declares; conventional tests, build scripts, and build-tool wrappers inside a matched tree keep their built-in classification.
     #[serde(default)]
     rules: Vec<EntryConfig>,
 }
 
-/// Personal defaults: settings that only narrow scope or teach languages, so
-/// a project is classified the same way for everyone (PRODUCT.md, User Defaults).
-#[derive(Debug, Deserialize)]
+/// Locmetry personal defaults: TOML in `$XDG_CONFIG_HOME/locmetry/config.toml`, else `~/.config/locmetry/config.toml`, applied to every project.
+///
+/// They may only narrow scope and teach languages, never classify, so a project is classified the same way for everyone. `--no-user-config` ignores them, and reports name the file as `metadata.user_config_path`.
+#[derive(Debug, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
+#[schemars(rename = "UserDefaults")]
 struct UserDefaults {
+    /// Contract version; must be `1`.
+    #[schemars(extend("const" = 1))]
     version: u32,
     #[serde(default)]
     scope: UserScope,
@@ -277,18 +346,149 @@ struct UserDefaults {
     languages: UserLanguages,
 }
 
-#[derive(Debug, Default, Deserialize)]
+/// Exclusions for every project.
+#[derive(Debug, Default, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 struct UserScope {
+    /// Root-relative globs of files to leave out, added after the default exclusions and before the project's.
     #[serde(default)]
+    #[schemars(extend("items" = {"type": "string"}))]
     exclude: Vec<String>,
 }
 
-#[derive(Debug, Default, Deserialize)]
+/// Language mappings for every project.
+#[derive(Debug, Default, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 struct UserLanguages {
+    /// Applied after the project's mappings and before the built-in ones; IDs must differ from the project's.
     #[serde(default)]
     mappings: Vec<MappingConfig>,
+}
+
+/// JSON Schema of the project configuration, with the semantics of each
+/// setting and the built-in sets it switches.
+pub fn config_schema() -> Value {
+    schema::<ConfigFile>()
+}
+
+/// JSON Schema of the personal defaults file.
+pub fn user_config_schema() -> Value {
+    schema::<UserDefaults>()
+}
+
+fn schema<T: JsonSchema>() -> Value {
+    SchemaSettings::draft2020_12()
+        .with_transform(RecursiveTransform(drop_null))
+        .into_generator()
+        .into_root_schema_for::<T>()
+        .to_value()
+}
+
+/// Narrows `Option` fields' `["T", "null"]` types to `T`: TOML has no null,
+/// so an optional key is simply absent.
+fn drop_null(schema: &mut Schema) {
+    let Some(Value::Array(types)) = schema.get_mut("type") else {
+        return;
+    };
+    types.retain(|name| name != "null");
+    if let [single] = types.as_slice() {
+        let single = single.clone();
+        schema.insert("type".into(), single);
+    }
+}
+
+fn language_names(_: &mut SchemaGenerator) -> Schema {
+    let names: Vec<&str> = LanguageType::list()
+        .iter()
+        .map(|(language, _)| language.name())
+        .collect();
+    schemars::json_schema!({"type": "string", "enum": names})
+}
+
+/// Appends a generated list to a schema description, so the schema states the
+/// built-in sets from the same constants that apply them.
+fn append_description(schema: &mut Schema, text: String) {
+    let description = match schema.get("description").and_then(Value::as_str) {
+        Some(existing) => format!("{existing} {text}"),
+        None => text,
+    };
+    schema.insert("description".into(), description.into());
+}
+
+fn globs(patterns: &[&str]) -> String {
+    patterns
+        .iter()
+        .map(|pattern| format!("`{pattern}`"))
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
+fn describe_conventions(schema: &mut Schema, set: &[Convention]) {
+    let list = set
+        .iter()
+        .map(|convention| {
+            format!(
+                "`{BUILTIN}{}` ({}, category `{}`): {}",
+                convention.id,
+                convention.purpose,
+                convention.category,
+                globs(convention.patterns)
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("; ");
+    append_description(schema, format!("Conventions, in order: {list}."));
+}
+
+fn describe_test_conventions(schema: &mut Schema) {
+    describe_conventions(schema, BUILTIN_TESTS_V1);
+}
+
+fn describe_build_conventions(schema: &mut Schema) {
+    describe_conventions(schema, BUILTIN_BUILD_V1);
+}
+
+fn describe_detectors(schema: &mut Schema) {
+    let list = DETECTORS
+        .iter()
+        .map(|detector| {
+            let build_files = detector
+                .descriptors()
+                .iter()
+                .map(|name| format!("`{name}`"))
+                .collect::<Vec<_>>()
+                .join(" or ");
+            format!(
+                "`{BUILTIN}{}-module`, a folder with {build_files}: {}",
+                detector.id(),
+                detector.layout()
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("; ");
+    append_description(
+        schema,
+        format!("Build files and production layouts: {list}."),
+    );
+}
+
+fn describe_default_excludes(schema: &mut Schema) {
+    append_description(schema, format!("They are {}.", globs(DEFAULT_EXCLUDES)));
+}
+
+fn describe_language_mappings(schema: &mut Schema) {
+    let list = BUILTIN_LANGUAGES_V1
+        .iter()
+        .map(|(id, patterns, language)| {
+            format!(
+                "`{BUILTIN}{id}`: {} as {}",
+                globs(patterns),
+                language.name()
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("; ");
+    append_description(schema, format!("Mappings: {list}."));
 }
 
 impl UserDefaults {

@@ -10,7 +10,8 @@ pub use backend::{
     DOCUMENTATION_LANGUAGES,
 };
 pub use config::{
-    user_defaults_file, Classification, Policy, Purpose, Scope, ScopeOverrides, CONFIG_FILE,
+    config_schema, user_config_schema, user_defaults_file, Classification, Policy, Purpose, Scope,
+    ScopeOverrides, CONFIG_FILE,
 };
 pub use modules::{detect as detect_modules, Module, ModuleDetector, DETECTORS};
 pub use output::{

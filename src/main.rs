@@ -31,6 +31,14 @@ enum Sort {
     Name,
 }
 
+#[derive(Clone, Copy, ValueEnum)]
+enum ConfigSchema {
+    /// The project configuration, `.locmetryrc`.
+    Config,
+    /// Personal defaults in ~/.config/locmetry/config.toml.
+    UserConfig,
+}
+
 /// The stdout format when `--format` is absent.
 ///
 /// People at a terminal get the table, while pipes keep the JSON headline that
@@ -83,6 +91,10 @@ struct Args {
     /// Deepest folder level listed in the Markdown folder table; JSON lists all.
     #[arg(long, default_value_t = 2, value_name = "N")]
     depth: usize,
+    /// Print the JSON Schema of a configuration file, which explains every
+    /// setting and the classification order, and exit.
+    #[arg(long, value_enum)]
+    schema: Option<ConfigSchema>,
 }
 
 /// Result of a run that produced a report.
@@ -93,6 +105,14 @@ enum Outcome {
 }
 
 fn run(args: Args) -> Result<Outcome> {
+    if let Some(schema) = args.schema {
+        let schema = match schema {
+            ConfigSchema::Config => locmetry::config_schema(),
+            ConfigSchema::UserConfig => locmetry::user_config_schema(),
+        };
+        println!("{}", serde_json::to_string_pretty(&schema)?);
+        return Ok(Outcome::Complete);
+    }
     let config_path = match &args.config {
         Some(path) => Some(path.clone()),
         None => {
