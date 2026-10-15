@@ -1,4 +1,5 @@
 use super::*;
+use crate::style::{Role, Theme};
 use std::fmt::Write;
 
 fn label(value: &str, markdown: bool) -> String {
@@ -7,7 +8,13 @@ fn label(value: &str, markdown: bool) -> String {
         false => crate::output::plain(value),
     }
 }
-fn grid(output: &mut String, title: &str, rows: Vec<(String, CountChange)>, markdown: bool) {
+fn grid(
+    output: &mut String,
+    title: &str,
+    rows: Vec<(String, CountChange)>,
+    markdown: bool,
+    theme: Theme,
+) {
     if rows.is_empty() {
         return;
     }
@@ -16,8 +23,15 @@ fn grid(output: &mut String, title: &str, rows: Vec<(String, CountChange)>, mark
     } else {
         writeln!(
             output,
-            "\n{title}\n{:<40} {:>12} {:>12} {:>12}",
-            "Source code", "Before", "After", "Net change"
+            "\n{}\n{}",
+            theme.paint(Role::Heading, title),
+            theme.paint(
+                Role::Heading,
+                &format!(
+                    "{:<40} {:>12} {:>12} {:>12}",
+                    "Source code", "Before", "After", "Net change"
+                )
+            )
         )
         .unwrap();
     }
@@ -25,44 +39,53 @@ fn grid(output: &mut String, title: &str, rows: Vec<(String, CountChange)>, mark
         if markdown {
             writeln!(
                 output,
-                "| {} | {} | {} | {:+} |",
+                "| {} | {} | {} | {} |",
                 self::label(&label, markdown),
                 c.before.code,
                 c.after.code,
-                c.delta.code
+                theme.delta(c.delta.code, 0)
             )
             .unwrap();
         } else {
             writeln!(
                 output,
-                "{:<40} {:>12} {:>12} {:>+12}",
+                "{:<40} {:>12} {:>12} {}",
                 self::label(&label, markdown),
                 c.before.code,
                 c.after.code,
-                c.delta.code
+                theme.delta(c.delta.code, 12)
             )
             .unwrap();
         }
     }
 }
-fn render(c: &Comparison, markdown: bool) -> String {
+fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
     let mut out = String::new();
-    writeln!(
-        out,
-        "{}Net change: {} → {}",
-        if markdown { "# " } else { "" },
+    let title = format!(
+        "Net change: {} → {}",
         label(&c.before.project, markdown),
         label(&c.after.project, markdown)
-    )
+    );
+    match markdown {
+        true => writeln!(out, "# {title}"),
+        false => writeln!(out, "{}", theme.paint(Role::Heading, &title)),
+    }
     .unwrap();
-    writeln!(out,"\nAfter minus before, over recorded counts. Unavailable lines are not estimated; presence does not prove physical creation or deletion.").unwrap();
+    writeln!(out,"\n{}", theme.paint(Role::Muted, "After minus before, over recorded counts. Unavailable lines are not estimated; presence does not prove physical creation or deletion.")).unwrap();
     if markdown {
         out.push_str("\n## Totals\n\n| Measure | Before | After | Net change |\n| --- | ---: | ---: | ---: |\n");
     } else {
         writeln!(
             out,
-            "\nTotals\n{:<40} {:>12} {:>12} {:>12}",
-            "Measure", "Before", "After", "Net change"
+            "\n{}\n{}",
+            theme.paint(Role::Heading, "Totals"),
+            theme.paint(
+                Role::Heading,
+                &format!(
+                    "{:<40} {:>12} {:>12} {:>12}",
+                    "Measure", "Before", "After", "Net change"
+                )
+            )
         )
         .unwrap();
     }
@@ -103,12 +126,21 @@ fn render(c: &Comparison, markdown: bool) -> String {
             ),
         ] {
             if markdown {
-                writeln!(out, "| {label} {metric} | {b} | {a} | {d:+} |").unwrap();
+                writeln!(
+                    out,
+                    "| {label} {metric} | {b} | {a} | {} |",
+                    theme.delta(d, 0)
+                )
+                .unwrap();
             } else {
                 writeln!(
                     out,
-                    "{:<40} {b:>12} {a:>12} {d:>+12}",
-                    format!("{label} {metric}")
+                    "{} {b:>12} {a:>12} {}",
+                    theme.paint(
+                        Role::Heading,
+                        &format!("{:<40}", format!("{label} {metric}"))
+                    ),
+                    theme.delta(d, 12)
                 )
                 .unwrap();
             }
@@ -125,6 +157,7 @@ fn render(c: &Comparison, markdown: bool) -> String {
             .map(|(k, v)| (k.to_string(), *v))
             .collect(),
         markdown,
+        theme,
     );
     grid(
         &mut out,
@@ -137,6 +170,7 @@ fn render(c: &Comparison, markdown: bool) -> String {
             .map(|(k, v)| (k.clone(), *v))
             .collect(),
         markdown,
+        theme,
     );
     if let Some(members) = &c.members {
         grid(
@@ -157,6 +191,7 @@ fn render(c: &Comparison, markdown: bool) -> String {
                 })
                 .collect(),
             markdown,
+            theme,
         );
     }
     if let Some(composition) = &c.summary.composition {
@@ -202,6 +237,7 @@ fn render(c: &Comparison, markdown: bool) -> String {
                 })
                 .collect(),
             markdown,
+            theme,
         );
     }
     writeln!(
@@ -230,7 +266,13 @@ fn render(c: &Comparison, markdown: bool) -> String {
             writeln!(
                 out,
                 "\n- {} ({:?}{}): {}{}",
-                f.code(),
+                theme.paint(
+                    match f {
+                        Finding::CoverageGap { .. } => Role::Warning,
+                        _ => Role::Information,
+                    },
+                    f.code()
+                ),
                 context.side,
                 context
                     .member
@@ -242,7 +284,7 @@ fn render(c: &Comparison, markdown: bool) -> String {
             .unwrap();
         }
     } else {
-        out.push_str("\nNo recorded differences in measurement settings. Reports do not fingerprint source, ignore files or executable builds; this does not prove source-only growth.\n");
+        writeln!(out, "\n{}", theme.paint(Role::Muted, "No recorded differences in measurement settings. Reports do not fingerprint source, ignore files or executable builds; this does not prove source-only growth.")).unwrap();
     }
     out
 }
@@ -254,8 +296,12 @@ fn presence_name(p: Presence) -> &'static str {
     }
 }
 pub fn render_table(c: &Comparison) -> String {
-    render(c, false)
+    render_table_with_theme(c, Theme::PLAIN)
 }
 pub fn render_markdown(c: &Comparison) -> String {
-    render(c, true)
+    render(c, true, Theme::MARKDOWN)
+}
+
+pub fn render_table_with_theme(c: &Comparison, theme: Theme) -> String {
+    render(c, false, theme)
 }

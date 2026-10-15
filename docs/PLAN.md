@@ -12,6 +12,12 @@ External review of `4ca626a` is [recorded with dispositions](plans/measurement-q
 
 The [follow-up review corrections](plans/measurement-quality-and-net-change.md#follow-up-review-corrections--2026-10-15) address missing-path diagnostics, configuration defaults, measurement help and false positives in the README workflow guard. Release preparation remains separate.
 
+## Human Output Hierarchy — Complete
+
+Implemented muted legends/separators, bold structure, signed-change colors and warning/error emphasis through one [semantic palette](../src/style.rs). Measurement, workspace, comparison and explanation output share the presentation roles. Markdown uses portable emphasis; redirected output and JSON receive no styling escapes. The [presentation contract](PRODUCT.md#human-presentation) owns stream behavior. Custom theme configuration remains outside scope; the palette provides a small implementation boundary without new dependencies.
+
+Verification: renderer guards preserve plain-text content and alignment after removing styling, check root/workspace legends, signed changes and unavailable explanations, and preserve Markdown without ANSI. The initial separator and Markdown-legend checks failed before implementation. The full public suite and subsequent focused renderer tests pass, as do Clippy and executable README workflows. A local pseudo-terminal probe verifies real terminal styling, `NO_COLOR`, `TERM=dumb`, pipe parity, JSON and independent stderr warning/error styling. No measurement semantics changed; private counting replay was not rerun.
+
 ## Development Release — Pending
 
 The S1–S5 changes and review corrections identify as `0.2.0-dev.1`, distinct from the unchanged v0.1.6 tag. They are unreleased; no push, tag, release or tap update is authorized by this plan.

@@ -20,6 +20,8 @@ Use rustfmt, four-space indentation, `snake_case` functions/modules, and `Pascal
 
 Keep documentation current in every implementation checkpoint: update README workflows, the supported PRODUCT contract, measurement semantics, executable schema descriptions and relevant guides when behavior changes. Add a focused document when the material no longer fits, and link it from the appropriate index. Update [PLAN.md](docs/PLAN.md) and its active work plan with verified progress, remaining gaps and material rationale; preserve source provenance. Keep proposed behavior distinct from shipped guarantees. The [measurement quality and net change plan](docs/plans/measurement-quality-and-net-change.md) owns the current accepted sequence and stage review criteria.
 
+Human presentation roles and palettes live in [src/style.rs](src/style.rs). Renderers select semantic roles and pad terminal cells before styling; keep escape sequences out of individual renderers and JSON. Configuration for custom themes remains outside the supported interface.
+
 ### Documentation ownership and checks
 
 Update the owner of a changed guarantee and its user-facing entry points in the same commit. Link to the owner instead of copying detailed rules into another guide.

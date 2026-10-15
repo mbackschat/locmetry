@@ -1,12 +1,13 @@
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand, ValueEnum};
 use locmetry::contract::{self, MeasurementReport};
+use locmetry::style::{Role, Theme};
 use locmetry::{
     breakdown, build_report, build_systems, git_submodules, module_shares, render_markdown,
-    render_table, report_text, review, scan, scope_policy, submodule_shares, unclassified_folders,
-    unused_entries, user_defaults_file, validate_output, write_report, Coverage, FileRecord,
-    Findings, MemberView, Module, ModuleShare, Policy, RowOrder, ScopeOverrides, SubmoduleShare,
-    BACKEND, CONFIG_FILE, DATA_LANGUAGES, DOCUMENTATION_LANGUAGES,
+    render_table_with_theme, report_text, review, scan, scope_policy, submodule_shares,
+    unclassified_folders, unused_entries, user_defaults_file, validate_output, write_report,
+    Coverage, FileRecord, Findings, MemberView, Module, ModuleShare, Policy, RowOrder,
+    ScopeOverrides, SubmoduleShare, BACKEND, CONFIG_FILE, DATA_LANGUAGES, DOCUMENTATION_LANGUAGES,
 };
 use std::collections::BTreeMap;
 use std::{
@@ -188,13 +189,21 @@ struct SharedArgs {
     depth: usize,
 }
 
-/// Whether the terminal table may use bold: only for a terminal, unless
+/// Whether human terminal output may use styling: only for a terminal, unless
 /// `NO_COLOR` is set to anything nonempty (https://no-color.org) or the
 /// terminal is `dumb`.
 fn emphasis(stdout_is_terminal: bool, no_color: Option<String>, term: Option<String>) -> bool {
     stdout_is_terminal
         && no_color.is_none_or(|value| value.is_empty())
         && term.as_deref() != Some("dumb")
+}
+
+fn terminal_theme(is_terminal: bool) -> Theme {
+    Theme::terminal(emphasis(
+        is_terminal,
+        std::env::var("NO_COLOR").ok(),
+        std::env::var("TERM").ok(),
+    ))
 }
 
 /// Result of a run that produced a report.
@@ -420,7 +429,10 @@ fn run_explain(args: &ExplainArgs) -> Result<Outcome> {
         .unwrap_or_else(|| default_format(io::stdout().is_terminal(), false))
     {
         Format::Json => println!("{}", serde_json::to_string_pretty(&explanation)?),
-        Format::Table => print!("{}", explanation.render(false)),
+        Format::Table => print!(
+            "{}",
+            explanation.render_with_theme(false, terminal_theme(io::stdout().is_terminal()))
+        ),
         Format::Markdown => print!("{}", explanation.render(true)),
     }
     Ok(if explanation.partial() {
@@ -459,7 +471,14 @@ fn run_compare(args: &CompareArgs) -> Result<Outcome> {
             )?;
             writeln!(stdout)?;
         }
-        Format::Table => write!(stdout, "{}", locmetry::compare::render_table(&result))?,
+        Format::Table => write!(
+            stdout,
+            "{}",
+            locmetry::compare::render_table_with_theme(
+                &result,
+                terminal_theme(io::stdout().is_terminal())
+            )
+        )?,
         Format::Markdown => write!(stdout, "{}", locmetry::compare::render_markdown(&result))?,
     }
     Ok(if partial {
@@ -774,18 +793,14 @@ fn report(
         Sort::Name => RowOrder::Name,
     };
     let mut human = match format {
-        Format::Table => render_table(
+        Format::Table => render_table_with_theme(
             &project,
             &summary,
             &rows,
             &findings,
             shared.categories,
             order,
-            emphasis(
-                io::stdout().is_terminal(),
-                std::env::var("NO_COLOR").ok(),
-                std::env::var("TERM").ok(),
-            ),
+            terminal_theme(io::stdout().is_terminal()),
         ),
         Format::Markdown => {
             render_markdown(&project, &summary, &rows, &findings, shared.depth, order)
@@ -793,7 +808,14 @@ fn report(
         Format::Json => String::new(),
     };
     if inaccurate && format != Format::Json {
-        human.push_str("\nBackend reported incomplete counts; inspect the JSON metadata.\n");
+        let theme = match format {
+            Format::Markdown => Theme::MARKDOWN,
+            _ => terminal_theme(io::stdout().is_terminal()),
+        };
+        human.push_str(&format!(
+            "\n{}; inspect the JSON metadata.\n",
+            theme.paint(Role::Warning, "Backend reported incomplete counts")
+        ));
     }
     let mut member_totals = BTreeMap::new();
     for member in &members {
@@ -955,11 +977,17 @@ fn main() -> ExitCode {
     match run(cli) {
         Ok(Outcome::Complete) => ExitCode::SUCCESS,
         Ok(Outcome::Partial(message)) => {
-            eprintln!("locmetry: {message}");
+            eprintln!(
+                "{} {message}",
+                terminal_theme(io::stderr().is_terminal()).paint(Role::Warning, "locmetry:")
+            );
             ExitCode::from(2)
         }
         Err(error) => {
-            eprintln!("locmetry: {error:#}");
+            eprintln!(
+                "{} {error:#}",
+                terminal_theme(io::stderr().is_terminal()).paint(Role::Error, "locmetry:")
+            );
             ExitCode::FAILURE
         }
     }

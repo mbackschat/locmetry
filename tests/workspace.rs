@@ -616,7 +616,7 @@ fn workspace_markdown_breaks_categories_and_languages_down_by_repository() {
         "## Repositories\n",
         "| Repository | **Code** | Production | Test | Unclassified | Test/prod | Share |\n",
         "| web | 6 | 3 | 1 | 2 | 0.33 | 60.0% |\n",
-        "| Total | 10 | 4 | 3 | 3 | 0.75 | 100.0% |\n",
+        "| **Total** | **10** | **4** | **3** | **3** | **0.75** | **100.0%** |\n",
         "Production + Test + Unclassified = Code; Test/prod = Test / Production; Share = Code / workspace Code.",
         "Total is the sum of the repository columns.",
         "## Source categories by repository\n",

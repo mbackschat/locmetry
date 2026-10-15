@@ -642,3 +642,38 @@ fn backend_inaccuracy_is_partial_even_without_identified_failure_paths() {
         .iter()
         .any(|f| f["code"] == "coverage_gap"));
 }
+
+#[test]
+fn comparison_theme_preserves_plain_text_and_distinguishes_signed_changes() {
+    use locmetry::style::Theme;
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("source");
+    write(&root, "main.py", "print(1)\n\n");
+    let before = save(temp.path(), "before.json", &measure(&root));
+    write(&root, "main.py", "print(1)\nprint(2)\n");
+    let after = save(temp.path(), "after.json", &measure(&root));
+    let value = document(compare(&before, &after, &["--output", "-"]), 0);
+    let report: locmetry::compare::Comparison = serde_json::from_value(value).unwrap();
+    let plain = locmetry::compare::render_table(&report);
+    let colored = locmetry::compare::render_table_with_theme(&report, Theme::TERMINAL);
+    for expected in [
+        "\x1b[36m          +1",
+        "\x1b[35m          -1",
+        "\x1b[90m          +0",
+    ] {
+        assert!(colored.contains(expected), "{colored}");
+    }
+    let stripped: String = colored
+        .split('\x1b')
+        .map(|s| match s.strip_prefix('[') {
+            Some(control) => control.split_once('m').unwrap().1,
+            None => s,
+        })
+        .collect();
+    assert_eq!(stripped, plain);
+    assert!(!plain.contains('\x1b'));
+    let markdown = locmetry::compare::render_markdown(&report);
+    assert!(markdown.contains("*After minus before"));
+    assert!(!markdown.contains('\x1b'));
+    assert!(markdown.contains("| Source code | 1 | 2 | +1 |"));
+}

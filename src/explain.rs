@@ -1,4 +1,5 @@
 //! Focused evidence for one existing path, using ordinary selection and counting.
+use crate::style::{Role, Theme};
 use crate::{backend, contract, Policy, ScopeOverrides};
 use anyhow::{ensure, Context, Result};
 use schemars::JsonSchema;
@@ -185,6 +186,17 @@ impl Explanation {
     }
 
     pub fn render(&self, markdown: bool) -> String {
+        self.render_with_theme(
+            markdown,
+            if markdown {
+                Theme::MARKDOWN
+            } else {
+                Theme::PLAIN
+            },
+        )
+    }
+
+    pub fn render_with_theme(&self, markdown: bool, theme: Theme) -> String {
         let mut rows = vec![("Path", self.path.clone()), ("Root", self.root.clone())];
         rows.push((
             "Project config",
@@ -261,17 +273,26 @@ impl Explanation {
             ]),
         }
         let mut text = if markdown {
-            "# Path explanation\n\n| Evidence | Value |\n| --- | --- |\n"
+            "# Path explanation\n\n| Evidence | Value |\n| --- | --- |\n".to_owned()
         } else {
-            "Path explanation\n"
-        }
-        .to_owned();
+            format!("{}\n", theme.paint(Role::Heading, "Path explanation"))
+        };
         for (key, value) in rows {
+            let role = match key {
+                "State" if self.partial() || matches!(self.result, PathResult::Unrecognized) => {
+                    Role::Warning
+                }
+                _ => Role::Heading,
+            };
             if markdown {
                 let value = crate::output::cell(&value);
-                text.push_str(&format!("| {key} | {value} |\n"));
+                text.push_str(&format!("| {} | {value} |\n", theme.paint(role, key)));
             } else {
-                text.push_str(&format!("{key}: {}\n", crate::output::plain(&value)));
+                text.push_str(&format!(
+                    "{}: {}\n",
+                    theme.paint(role, key),
+                    crate::output::plain(&value)
+                ));
             }
         }
         text
@@ -293,5 +314,28 @@ fn example() -> Explanation {
         user_config_path: None,
         scope: backend::scope_policy(&Policy::defaults()),
         result: PathResult::Unrecognized,
+    }
+}
+
+#[cfg(test)]
+mod style_tests {
+    use super::*;
+
+    #[test]
+    fn unavailable_state_is_prominent_and_plain_explanations_stay_unstyled() {
+        let mut explanation = example();
+        explanation.result = PathResult::Unread;
+        let styled = explanation.render_with_theme(false, Theme::TERMINAL);
+        assert!(styled.contains("\x1b[33mState\x1b[0m: unread: counts unavailable"));
+        assert_eq!(
+            styled
+                .replace("\x1b[1m", "")
+                .replace("\x1b[33m", "")
+                .replace("\x1b[0m", ""),
+            explanation.render(false)
+        );
+        let markdown = explanation.render(true);
+        assert!(markdown.contains("| **State** | unread: counts unavailable |"));
+        assert!(!markdown.contains('\x1b'));
     }
 }

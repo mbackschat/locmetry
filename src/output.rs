@@ -1,4 +1,5 @@
 use crate::report::Summary;
+use crate::style::{Role, Theme};
 use crate::{
     breakdown, build_systems, unclassified_folders, Counts, Coverage, FileRecord, FolderShare,
     Kind, ModuleShare, Purpose, ReportSummary, SubmoduleShare,
@@ -157,7 +158,8 @@ fn repository_grid(
     let names: Vec<&str> = members.iter().map(|member| member.name.as_str()).collect();
     writeln!(
         output,
-        "\n## {title}\n\nTotal is the sum of the repository columns.\n\n| {label} | {} | Total |\n| --- |{} ---: |",
+        "\n## {title}\n\n{}\n\n| {label} | {} | Total |\n| --- |{} ---: |",
+        Theme::MARKDOWN.paint(Role::Muted, "Total is the sum of the repository columns."),
         names
             .iter()
             .map(|name| cell(name))
@@ -263,7 +265,7 @@ pub fn render_markdown(
     depth: usize,
     order: RowOrder,
 ) -> String {
-    let mut output = format!("# {}: lines of code by purpose\n\nProduction means maintained non-test source, including separately categorized tooling. Data, configuration, and documentation are counted apart from source. Lines = Code + Comments + Blanks in every table with these columns, and the purpose rows add up to all source.\n\n## Source purpose\n\n| Purpose | Files | **Code** | Comments | Blanks | Lines |\n| --- | ---: | ---: | ---: | ---: | ---: |\n", cell(project));
+    let mut output = format!("# {}: lines of code by purpose\n\n{}\n\n## Source purpose\n\n| Purpose | Files | **Code** | Comments | Blanks | Lines |\n| --- | ---: | ---: | ---: | ---: | ---: |\n", cell(project), Theme::MARKDOWN.paint(Role::Muted, "Production means maintained non-test source, including separately categorized tooling. Data, configuration, and documentation are counted apart from source. Lines = Code + Comments + Blanks in every table with these columns, and the purpose rows add up to all source."));
     for purpose in Purpose::ALL {
         count_row(
             &mut output,
@@ -289,11 +291,26 @@ pub fn render_markdown(
             " ---: |".repeat(REPOSITORY_HEADER.len() - 1)
         )
         .unwrap();
-        for row in body.iter().chain([&total]) {
-            let cells: Vec<String> = row.iter().map(|value| cell(value)).collect();
+        for (row, is_total) in body.iter().map(|row| (row, false)).chain([(&total, true)]) {
+            let cells: Vec<String> = row
+                .iter()
+                .map(|value| {
+                    let value = cell(value);
+                    if is_total {
+                        Theme::MARKDOWN.paint(Role::Heading, &value)
+                    } else {
+                        value
+                    }
+                })
+                .collect();
             writeln!(output, "| {} |", cells.join(" | ")).unwrap();
         }
-        writeln!(output, "\n{REPOSITORY_LEGEND}").unwrap();
+        writeln!(
+            output,
+            "\n{}",
+            Theme::MARKDOWN.paint(Role::Muted, REPOSITORY_LEGEND)
+        )
+        .unwrap();
         repository_grid(
             &mut output,
             "Source categories by repository",
@@ -341,7 +358,7 @@ pub fn render_markdown(
         &summary.totals.source_languages,
         order,
     );
-    write!(output, "\n## Folder breakdown\n\nRecursive source code totals to depth {depth}. Parent rows include their children; do not sum all displayed rows. The report file's additive `breakdown` rows cover every depth. Multi-language files count once physically but contribute to each contained language. Production + Test + Unclassified = Total source code; Test/prod = Test / Production.\n\n| Folder | Production | Test | Unclassified | **Total source code** | Test/prod |\n| --- | ---: | ---: | ---: | ---: | ---: |\n").unwrap();
+    write!(output, "\n## Folder breakdown\n\n{}\n\n| Folder | Production | Test | Unclassified | **Total source code** | Test/prod |\n| --- | ---: | ---: | ---: | ---: | ---: |\n", Theme::MARKDOWN.paint(Role::Muted, &format!("Recursive source code totals to depth {depth}. Parent rows include their children; do not sum all displayed rows. The report file's additive `breakdown` rows cover every depth. Multi-language files count once physically but contribute to each contained language. Production + Test + Unclassified = Total source code; Test/prod = Test / Production."))).unwrap();
     // Compare by path components: as plain strings, `web-admin` would sort
     // between `web` and `web/src`, because `-` sorts before `/`.
     let mut folders: Vec<_> = summary.folders.iter().collect();
@@ -506,7 +523,7 @@ struct Layout {
 /// Aligned plain-text table: the first column left-aligned, the others right.
 /// A caption line labels the columns from index `group.0` on; rule lines
 /// separate the header, and the body from an optional total row. With
-/// `emphasis`, the strong column is bold; padding is applied first, so the
+/// a theme, headings and the strong column are emphasized; padding is applied first, so the
 /// escape codes never shift alignment.
 fn text_table(
     header: &[&str],
@@ -514,7 +531,7 @@ fn text_table(
     total: Option<Vec<String>>,
     group: (usize, &str),
     layout: &Layout,
-    emphasis: bool,
+    theme: Theme,
 ) -> String {
     let header: Vec<String> = header.iter().map(|title| title.to_string()).collect();
     let all = std::iter::once(&header).chain(body).chain(total.as_ref());
@@ -529,20 +546,21 @@ fn text_table(
         true => " │ ",
         false => "  ",
     };
-    let line = |row: &[String]| {
+    let line = |row: &[String], heading: bool| {
         let mut text = String::from(" ");
         for (column, (value, width)) in row.iter().zip(&widths).enumerate() {
             if column > 0 {
-                text += gap(column);
+                text += &theme.paint(Role::Muted, gap(column));
             }
             let cell = match column {
                 0 => format!("{value:<width$}"),
                 _ => format!("{value:>width$}"),
             };
-            match emphasis && layout.strong == Some(column) {
-                true => write!(text, "\x1b[1m{cell}\x1b[0m").unwrap(),
-                false => text += &cell,
-            }
+            text += &match (heading || layout.strong == Some(column), value.as_str()) {
+                (true, _) => theme.paint(Role::Heading, &cell),
+                (false, "-") => theme.paint(Role::Muted, &cell),
+                _ => cell,
+            };
         }
         text + "\n"
     };
@@ -563,13 +581,16 @@ fn text_table(
         + (1..=first)
             .map(|column| gap(column).chars().count())
             .sum::<usize>();
-    let mut output = format!("{:indent$}{caption}\n", "") + &line(&header) + &rule;
+    let rule = theme.paint(Role::Muted, &rule);
+    let mut output = format!("{:indent$}{}\n", "", theme.paint(Role::Heading, caption))
+        + &line(&header, true)
+        + &rule;
     for row in body {
-        output += &line(row);
+        output += &line(row, false);
     }
     if let Some(total) = total {
         output += &rule;
-        output += &line(&total);
+        output += &line(&total, true);
     }
     output
 }
@@ -584,7 +605,7 @@ fn folder_label(folder: &str) -> &str {
 
 /// Where the unclaimed source lives, as an aligned folder list, so a reader
 /// can inspect it instead of only learning its size.
-fn unclaimed_note(folders: &[FolderShare]) -> String {
+fn unclaimed_note(folders: &[FolderShare], theme: Theme) -> String {
     let plural = |count: u64, noun: &str| match count {
         1 => noun.to_string(),
         _ => format!("{noun}s"),
@@ -610,7 +631,8 @@ fn unclaimed_note(folders: &[FolderShare]) -> String {
     };
     let (label, code, unit, files) = (width(0), width(1), width(2), width(3));
     let mut note = format!(
-        "Unclaimed source: {} in {}, here:",
+        "{} {} in {}, here:",
+        theme.paint(Role::Warning, "Unclaimed source:"),
         counted(folders.iter().map(|share| share.code).sum(), "code line"),
         counted(folders.iter().map(|share| share.files).sum(), "file")
     );
@@ -640,8 +662,7 @@ const FOLDER_LINES: usize = 8;
 
 /// Terminal report for people: source code per language and top-level folder
 /// split by purpose, then one line each for what the tables leave out.
-/// The terminal table; `emphasis` bolds the Code columns, for a terminal
-/// that supports it.
+/// `emphasis` enables the default terminal palette; false keeps plain text.
 pub fn render_table(
     project: &str,
     summary: &ReportSummary,
@@ -650,6 +671,27 @@ pub fn render_table(
     categories: bool,
     order: RowOrder,
     emphasis: bool,
+) -> String {
+    render_table_with_theme(
+        project,
+        summary,
+        rows,
+        findings,
+        categories,
+        order,
+        Theme::terminal(emphasis),
+    )
+}
+
+/// Render a measurement table using semantic presentation roles.
+pub fn render_table_with_theme(
+    project: &str,
+    summary: &ReportSummary,
+    rows: &[FileRecord],
+    findings: &Findings,
+    categories: bool,
+    order: RowOrder,
+    theme: Theme,
 ) -> String {
     let mut languages = BTreeMap::<String, (Counts, BTreeMap<Purpose, u64>)>::new();
     for row in breakdown(rows)
@@ -688,7 +730,13 @@ pub fn render_table(
     total.extend(purpose_cells(&|purpose| {
         summary.totals.purpose(purpose).code
     }));
-    let mut output = format!("\n {project}: source code lines by purpose\n\n");
+    let mut output = format!(
+        "\n {}\n\n",
+        theme.paint(
+            Role::Heading,
+            &format!("{project}: source code lines by purpose")
+        )
+    );
     output += &text_table(
         &[
             "Language",
@@ -707,9 +755,9 @@ pub fn render_table(
             breaks: &[3, 5],
             strong: Some(2),
         },
-        emphasis,
+        theme,
     );
-    output += &format!(" {LANGUAGE_LEGEND}\n");
+    output += &format!(" {}\n", theme.paint(Role::Muted, LANGUAGE_LEGEND));
 
     let folder_code = |purposes: &BTreeMap<Purpose, u64>| purposes.values().sum::<u64>();
     // A workspace's top-level folders are its members, so repository rows,
@@ -726,9 +774,9 @@ pub fn render_table(
                 breaks: &[2, 5],
                 strong: Some(1),
             },
-            emphasis,
+            theme,
         );
-        output += &format!(" {REPOSITORY_LEGEND}\n");
+        output += &format!(" {}\n", theme.paint(Role::Muted, REPOSITORY_LEGEND));
     }
     let folders = ordered(
         summary.top_folders().into_iter().collect(),
@@ -772,9 +820,9 @@ pub fn render_table(
                 breaks: &[2, 5],
                 strong: Some(1),
             },
-            emphasis,
+            theme,
         );
-        output += &format!(" {FOLDER_LEGEND}\n");
+        output += &format!(" {}\n", theme.paint(Role::Muted, FOLDER_LEGEND));
     }
     if categories {
         let rows = summary
@@ -798,9 +846,9 @@ pub fn render_table(
                     breaks: &[],
                     strong: Some(2),
                 },
-                emphasis,
+                theme,
             );
-            output += &format!(" {CATEGORY_LEGEND}\n");
+            output += &format!(" {}\n", theme.paint(Role::Muted, CATEGORY_LEGEND));
         }
     }
 
@@ -827,7 +875,7 @@ pub fn render_table(
     notes.extend(submodules_note(findings.submodules));
     let folders = unclassified_folders(rows);
     if !folders.is_empty() {
-        notes.push(unclaimed_note(&folders));
+        notes.push(unclaimed_note(&folders, theme));
     }
     notes.extend(unused_entries_note(findings.unused_entries));
     notes.extend(unused_exclusions_note(findings.unused_exclusions));
@@ -867,7 +915,8 @@ pub fn render_table(
     }
     if !gaps.is_empty() {
         notes.push(format!(
-            "Not counted: {}; missing lines are not zero.",
+            "{} {}; missing lines are not zero.",
+            theme.paint(Role::Warning, "Not counted:"),
             gaps.join(", ")
         ));
     }
@@ -1023,6 +1072,59 @@ mod tests {
     use super::*;
 
     #[test]
+    fn legends_are_muted_in_root_and_workspace_tables_without_changing_plain_output() {
+        let rows = [];
+        let summary = crate::build_report(&rows);
+        let coverage = Coverage::default();
+        let member = [MemberView {
+            name: "api".into(),
+            unclaimed_files: 0,
+            unclaimed_code: 0,
+            unread_files: 0,
+            parse_failed_files: 0,
+        }];
+        for members in [&[][..], &member[..]] {
+            let findings = Findings {
+                coverage: &coverage,
+                modules: &[],
+                submodules: &[],
+                unused_entries: &[],
+                unused_exclusions: &[],
+                members,
+            };
+            let styled = render_table(
+                "example",
+                &summary,
+                &rows,
+                &findings,
+                false,
+                RowOrder::Name,
+                true,
+            );
+            let plain = render_table(
+                "example",
+                &summary,
+                &rows,
+                &findings,
+                false,
+                RowOrder::Name,
+                false,
+            );
+            assert!(styled.contains(&format!("\x1b[90m{LANGUAGE_LEGEND}\x1b[0m")));
+            if !members.is_empty() {
+                assert!(styled.contains(&format!("\x1b[90m{REPOSITORY_LEGEND}\x1b[0m")));
+            }
+            assert_eq!(
+                styled
+                    .replace("\x1b[1m", "")
+                    .replace("\x1b[90m", "")
+                    .replace("\x1b[0m", ""),
+                plain
+            );
+        }
+    }
+
+    #[test]
     fn grouped_inserts_a_comma_before_every_third_digit_from_the_right() {
         let cases = [
             (0, "0"),
@@ -1053,7 +1155,7 @@ mod tests {
             total.clone(),
             (2, "Split"),
             &layout,
-            false,
+            Theme::PLAIN,
         );
         let bold = text_table(
             &["Name", "Code", "Test"],
@@ -1061,11 +1163,20 @@ mod tests {
             total,
             (2, "Split"),
             &layout,
-            true,
+            Theme::TERMINAL,
+        );
+        assert!(
+            bold.contains("\x1b[90m"),
+            "separators should recede: {bold}"
         );
         assert!(bold.contains("\x1b[1mCode\x1b[0m"), "{bold}");
         assert!(bold.contains("\x1b[1m  12\x1b[0m"), "{bold}");
-        assert_eq!(bold.replace("\x1b[1m", "").replace("\x1b[0m", ""), plain);
+        assert_eq!(
+            bold.replace("\x1b[1m", "")
+                .replace("\x1b[90m", "")
+                .replace("\x1b[0m", ""),
+            plain
+        );
         assert!(!plain.contains('\x1b'));
     }
 }

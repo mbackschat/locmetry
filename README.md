@@ -657,6 +657,8 @@ printf '%s\n' "$report" | jq -r '
 
 The table and Markdown group thousands with commas, such as `12,345`, while JSON keeps plain integers for scripts.
 
+Terminal output uses gray legends, bold structure, cyan/magenta net changes and yellow/red warning/error labels. Use `NO_COLOR=1` to disable terminal styling; redirected output stays plain. Markdown uses italic legends and bold emphasis. See [human presentation](docs/PRODUCT.md#human-presentation) for the stream policy and theme boundary.
+
 ## Compared with line counters
 
 [cloc](https://github.com/AlDanial/cloc) provides source comparison and detailed filtering diagnostics; [scc](https://github.com/boyter/scc) provides additional analytics, configuration and integrations. Locmetry focuses on a combined contract: reviewable scope, whole-file purpose/category with provenance, source/data/documentation separation, explicit coverage, and independently configured workspace members. The dated [capability comparison](docs/research/tool-capability-comparison.md) records baseline evidence and differences; [the work plan](docs/plans/measurement-quality-and-net-change.md) records subsequent fixes and features; it is not an accuracy or performance ranking.
