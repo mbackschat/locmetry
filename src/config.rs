@@ -638,6 +638,18 @@ impl Scope {
         })
     }
 
+    pub(crate) fn with_overrides(&self, overrides: &ScopeOverrides) -> Result<Self> {
+        let mut settings = self.settings.clone();
+        if let Some(hidden) = overrides.hidden {
+            settings.hidden = hidden;
+        }
+        if let Some(respect) = overrides.respect_ignore_files {
+            settings.respect_ignore_files = respect;
+        }
+        settings.exclude.extend(overrides.exclude.iter().cloned());
+        Self::new(settings)
+    }
+
     fn patterns(settings: &ScopeSettings) -> Vec<String> {
         let defaults = DEFAULT_EXCLUDES
             .iter()
@@ -977,15 +989,7 @@ impl Policy {
     }
 
     pub fn override_scope(&mut self, overrides: &ScopeOverrides) -> Result<()> {
-        let mut settings = self.scope.settings.clone();
-        if let Some(hidden) = overrides.hidden {
-            settings.hidden = hidden;
-        }
-        if let Some(respect) = overrides.respect_ignore_files {
-            settings.respect_ignore_files = respect;
-        }
-        settings.exclude.extend(overrides.exclude.iter().cloned());
-        self.scope = Scope::new(settings)?;
+        self.scope = self.scope.with_overrides(overrides)?;
         Ok(())
     }
 
@@ -1073,12 +1077,8 @@ impl Policy {
     }
 
     pub fn classify(&self, path: &str, kind: Kind) -> Classification {
-        [&self.overrides, &self.conventions, &self.rules]
-            .into_iter()
-            .flatten()
-            .find(|entry| entry.matches(path, kind))
-            .map(Entry::classification)
-            .or_else(|| self.module_classification(path, kind))
+        self.deciding_entry(path, kind)
+            .map(|(_, entry, _)| entry.classification())
             .unwrap_or_else(|| Classification {
                 purpose: self.fallback.0,
                 category: self.fallback.1.clone(),
@@ -1086,11 +1086,68 @@ impl Policy {
             })
     }
 
+    fn deciding_entry(
+        &self,
+        path: &str,
+        kind: Kind,
+    ) -> Option<(crate::explain::Stage, &Entry, Option<&Module>)> {
+        use crate::explain::Stage;
+        for (stage, entries) in [
+            (Stage::Override, &self.overrides),
+            (Stage::Convention, &self.conventions),
+            (Stage::Rule, &self.rules),
+        ] {
+            if let Some(entry) = entries.iter().find(|entry| entry.matches(path, kind)) {
+                return Some((stage, entry, None));
+            }
+        }
+        self.module_entry(path, kind)
+            .map(|(module, entry)| (Stage::Module, entry, Some(module)))
+    }
+
+    pub(crate) fn decision(&self, path: &str, kind: Kind) -> crate::explain::Decision {
+        use crate::explain::{Decision, Stage};
+        let Some((stage, entry, module)) = self.deciding_entry(path, kind) else {
+            return Decision {
+                stage: Stage::Fallback,
+                matched_patterns: Vec::new(),
+                reason: None,
+                module: None,
+            };
+        };
+        let config = self
+            .snapshot
+            .configuration
+            .overrides
+            .iter()
+            .chain(&self.snapshot.configuration.rules)
+            .chain(&self.snapshot.builtin_conventions)
+            .find(|config| config.id == entry.id);
+        let patterns = match module {
+            Some(module) => &module.sources,
+            None => &config.expect("compiled entry has configuration").patterns,
+        };
+        Decision {
+            stage,
+            matched_patterns: entry
+                .matcher
+                .matches(path)
+                .iter()
+                .map(|&i| patterns[i].clone())
+                .collect(),
+            reason: config.and_then(|config| config.reason.clone()),
+            module: module.map(|module| crate::contract::Module {
+                path: module.path.clone(),
+                detector: module.detector.into(),
+            }),
+        }
+    }
+
     /// Classification by the innermost module containing `path`, as build
     /// tools treat nested projects: an outer module's layout never claims a
     /// nested module's files, while build systems sharing the innermost
     /// directory combine their layouts.
-    fn module_classification(&self, path: &str, kind: Kind) -> Option<Classification> {
+    fn module_entry(&self, path: &str, kind: Kind) -> Option<&(Module, Entry)> {
         let innermost = self
             .module_entries
             .iter()
@@ -1102,9 +1159,7 @@ impl Policy {
         self.module_entries
             .iter()
             .filter(|(module, _)| module.path == innermost)
-            .map(|(_, entry)| entry)
-            .find(|entry| entry.matches(path, kind))
-            .map(Entry::classification)
+            .find(|(_, entry)| entry.matches(path, kind))
     }
 
     pub fn is_excluded(&self, path: &str) -> bool {

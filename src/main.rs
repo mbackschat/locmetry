@@ -44,6 +44,8 @@ enum Schema {
     Report,
     /// Net-change comparison headline and full document.
     Comparison,
+    /// Selection, parser and classification evidence for one path.
+    Explanation,
     /// A workspace file for `locmetry workspace --file`.
     Workspace,
 }
@@ -74,7 +76,7 @@ struct Cli {
     shared: SharedArgs,
     /// Print a JSON Schema and exit: of a configuration file, which explains
     /// every setting and the classification order, of the JSON report, or of
-    /// a workspace file, or of a net-change comparison.
+    /// a workspace file, a net-change comparison, or a path explanation.
     #[arg(long, value_enum)]
     schema: Option<Schema>,
 }
@@ -86,6 +88,25 @@ enum Command {
     Workspace(WorkspaceArgs),
     /// Compare two saved full reports: net change is after minus before.
     Compare(CompareArgs),
+    /// Explain selection and classification of one existing root-relative file.
+    Explain(ExplainArgs),
+}
+
+#[derive(clap::Args)]
+struct ExplainArgs {
+    /// Root-relative file, or MEMBER/PATH with --workspace.
+    path: PathBuf,
+    #[command(flatten)]
+    root: RootArgs,
+    /// Workspace file; use the selected member's own policy.
+    #[arg(long, value_name = "FILE", conflicts_with_all = ["root", "config", "exclude", "hidden", "respect_ignore_files"])]
+    workspace: Option<PathBuf>,
+    /// Ignore personal defaults.
+    #[arg(long)]
+    no_user_config: bool,
+    /// Stdout format [default: table on a terminal, json otherwise].
+    #[arg(long, value_enum)]
+    format: Option<Format>,
 }
 
 #[derive(clap::Args)]
@@ -309,8 +330,8 @@ fn output_destination(output: &Option<PathBuf>, format: Option<Format>) -> Resul
     })
 }
 
-fn user_defaults(shared: &SharedArgs) -> Option<PathBuf> {
-    user_defaults_file().filter(|path| !shared.no_user_config && path.is_file())
+fn user_defaults(no_user_config: bool) -> Option<PathBuf> {
+    user_defaults_file().filter(|path| !no_user_config && path.is_file())
 }
 
 fn run(cli: Cli) -> Result<Outcome> {
@@ -320,6 +341,7 @@ fn run(cli: Cli) -> Result<Outcome> {
             Schema::UserConfig => locmetry::user_config_schema(),
             Schema::Report => locmetry::report_schema(),
             Schema::Comparison => locmetry::compare::schema(),
+            Schema::Explanation => locmetry::explain::schema(),
             Schema::Workspace => locmetry::workspace_schema(),
         };
         println!("{}", serde_json::to_string_pretty(&schema)?);
@@ -328,8 +350,81 @@ fn run(cli: Cli) -> Result<Outcome> {
     match cli.command {
         Some(Command::Workspace(workspace)) => run_workspace(&workspace),
         Some(Command::Compare(args)) => run_compare(&args),
+        Some(Command::Explain(args)) => run_explain(&args),
         None => run_root(&cli.root, &cli.shared),
     }
+}
+
+fn run_explain(args: &ExplainArgs) -> Result<Outcome> {
+    let user_path = user_defaults(args.no_user_config);
+    let workspace = args
+        .workspace
+        .as_deref()
+        .map(Path::canonicalize)
+        .transpose()
+        .context("Cannot read workspace file")?;
+    let (root, target, member) = match &workspace {
+        Some(file) => {
+            let members = workspace_members(&locmetry::workspace_roots(file)?)?;
+            let mut components = args.path.components();
+            let name = match components.next() {
+                Some(std::path::Component::Normal(name)) => {
+                    name.to_str().context("Member name must be UTF-8")?
+                }
+                _ => anyhow::bail!("Workspace query must be MEMBER/PATH"),
+            };
+            let (_, root) = members
+                .into_iter()
+                .find(|(member, _)| member == name)
+                .context("Unknown workspace member")?;
+            (root, components.as_path().to_owned(), Some(name.to_owned()))
+        }
+        None => (
+            args.root.root.clone().unwrap_or_else(|| PathBuf::from(".")),
+            args.path.clone(),
+            None,
+        ),
+    };
+    let overrides = ScopeOverrides {
+        hidden: args.root.hidden,
+        respect_ignore_files: args.root.respect_ignore_files,
+        exclude: args.root.exclude.clone(),
+    };
+    let mut prepared = prepare(
+        &root,
+        args.root.config.clone(),
+        user_path.as_deref(),
+        workspace.as_deref(),
+        &overrides,
+    )?;
+    let (path, result) = locmetry::explain::inspect(&prepared.root, &target, &mut prepared.policy)?;
+    let mut explanation = locmetry::explain::Explanation {
+        document_type: locmetry::explain::DocumentType::Explanation,
+        schema_version: contract::Version::V1,
+        root: prepared.root.to_string_lossy().into(),
+        path,
+        member: None,
+        config_path: prepared.config_path.map(|p| p.to_string_lossy().into()),
+        user_config_path: user_path.map(|p| p.to_string_lossy().into()),
+        scope: scope_policy(&prepared.policy),
+        result,
+    };
+    if let Some(member) = member {
+        explanation.qualify(member);
+    }
+    match args
+        .format
+        .unwrap_or_else(|| default_format(io::stdout().is_terminal(), false))
+    {
+        Format::Json => println!("{}", serde_json::to_string_pretty(&explanation)?),
+        Format::Table => print!("{}", explanation.render(false)),
+        Format::Markdown => print!("{}", explanation.render(true)),
+    }
+    Ok(if explanation.partial() {
+        Outcome::Partial(format!("Counts unavailable for {}", explanation.path))
+    } else {
+        Outcome::Complete
+    })
 }
 
 fn run_compare(args: &CompareArgs) -> Result<Outcome> {
@@ -376,7 +471,7 @@ fn run_compare(args: &CompareArgs) -> Result<Outcome> {
 fn run_root(args: &RootArgs, shared: &SharedArgs) -> Result<Outcome> {
     let root = args.root.as_deref().unwrap_or(Path::new("."));
     let destination = destination(shared)?;
-    let user_path = user_defaults(shared);
+    let user_path = user_defaults(shared.no_user_config);
     let overrides = ScopeOverrides {
         hidden: args.hidden,
         respect_ignore_files: args.respect_ignore_files,
@@ -487,7 +582,7 @@ fn run_workspace(args: &WorkspaceArgs) -> Result<Outcome> {
             validate_output(path, root, workspace_path.as_deref())?;
         }
     }
-    let user_path = user_defaults(shared);
+    let user_path = user_defaults(shared.no_user_config);
     let measured_at = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
     // Members run in parallel; collecting in name order keeps the merge and
     // the reported error deterministic whichever thread finishes first.

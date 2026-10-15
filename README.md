@@ -172,7 +172,7 @@ With the same selected file content, effective policy and Locmetry version, coun
 
 ### Self-describing configuration
 
-`locmetry --schema config` prints a JSON Schema that explains every setting, the classification order, and the built-in conventions, so an agent can write the configuration without reading these docs ([how](#configure-with-an-agent)). `--schema report`, `--schema comparison`, `--schema user-config`, and `--schema workspace` describe the other documents.
+`locmetry --schema config` prints a JSON Schema that explains every setting, the classification order, and the built-in conventions, so an agent can write the configuration without reading these docs ([how](#configure-with-an-agent)). `--schema report`, `--schema comparison`, `--schema explanation`, `--schema user-config`, and `--schema workspace` describe the other documents.
 
 ### Workspaces
 
@@ -254,7 +254,7 @@ Personal defaults for every project, such as extra exclusions or language mappin
 | `--output FILE` | Also write the full JSON report to `FILE`, outside the scan root; `-` prints it instead of the headline. |
 | `--files` | Add per-file records to the report. |
 | `--categories` | Add a table of source code per purpose and category to the terminal table. |
-| `--schema config\|user-config\|report\|comparison\|workspace` | Print the JSON Schema of `.locmetryrc`, of personal defaults, of the JSON headline and report, of a net-change comparison, or of a workspace file, and exit. |
+| `--schema config\|user-config\|report\|comparison\|explanation\|workspace` | Print the JSON Schema of `.locmetryrc`, of personal defaults, of the JSON headline and report, of a net-change comparison, of a path explanation, or of a workspace file, and exit. |
 
 `locmetry workspace` takes `--root DIR`, repeatable, or `--file FILE` instead, plus `--no-user-config` and the output options from `--format` to `--categories`; see [Measure several repositories together](#measure-several-repositories-together).
 
@@ -282,6 +282,19 @@ locmetry workspace --file repos.toml
 - **Repositories as a dimension:** `summary.members` holds each repository's totals by purpose, category, kind, and language, equal to a regular run of that repository. The table shows one row per repository with its test lines per production line and its share of the workspace, and the Markdown report adds grids of source categories and languages by repository.
 - **Findings stay with their repository:** `metadata.members` lists each repository's root, configuration path, scope, coverage counts, unused entries, and unused exclusions; table notes name the repository, as in `ghost (web)`, and list repositories with unclaimed source or unreadable files.
 - **All or nothing, always the same:** if one repository fails, for example with an invalid configuration, the run fails and names it; the order of the roots never changes the report.
+
+## Explain one file
+
+```sh
+locmetry explain src/main.rs
+locmetry explain src/main.rs --root /path/to/project --format markdown
+locmetry explain api/src/main.rs --workspace repos.toml
+locmetry --schema explanation
+```
+
+The explanation uses the same policy as measurement and reports either the counted file's parser, winning rule, matching patterns and module evidence, or why it has no counts. It counts only the target, while selected names still determine module layouts. Targets are root-relative; workspace targets start with the member name. Single-root configuration and scope flags are available, plus `--no-user-config` in either mode.
+
+Ignore and hidden filtering are checked with single-setting selection probes; the walker does not expose a winning ignore-file line. Unknown causes remain explicit. Exit 2 means the target's counts are unavailable; excluded or unrecognized targets are successful explanations with exit 0. [Troubleshooting guide](docs/troubleshooting.md) gives a runnable example, state meanings and policy/path details.
 
 ## Compare saved measurements
 
@@ -617,6 +630,7 @@ Known limits: classification is per file, so a file mixing production code and i
 
 - [Product vision and requirements](docs/PRODUCT.md): configuration contract, report schema, and guarantees.
 - [Measurement semantics and limits](docs/measurement.md): selection and counting details and known limits.
+- [Explain a file](docs/troubleshooting.md): selection, parser and classification diagnostics.
 - [Saved report compatibility](docs/report-compatibility.md): version-1 field history, validation and evidence required for comparison.
 - [Architecture and distribution](docs/tokei-integration.md): embedded counting engine, release binaries, and the Homebrew formula.
 - [Research](docs/research/README.md): counter capabilities and classification findings.

@@ -3,6 +3,7 @@ mod backend;
 pub mod compare;
 mod config;
 pub mod contract;
+pub mod explain;
 mod modules;
 mod output;
 mod report;

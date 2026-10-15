@@ -29,6 +29,7 @@ Update the owner of a changed guarantee and its user-facing entry points in the 
 | [README](README.md) | Tasks, CLI examples and navigation | Run affected examples; `bash scripts/check-doc-examples.sh` executes the README CI block with `jq`. |
 | [PRODUCT](docs/PRODUCT.md) | Supported public contract | Reconcile flags, report fields and compatibility with executable schemas and tests. |
 | [Measurement semantics](docs/measurement.md) | Counting, selection boundaries and limitations | Add independent regression oracles for changed measurement behavior. |
+| [Troubleshooting](docs/troubleshooting.md) | Focused path explanations and evidence limits | `cargo test --locked --test explain` checks documented result, shared measurement parity and schema examples. |
 | Executable schemas | Machine-readable structure and semantics | `cargo test --locked --test schema` checks emitted reports and documented TOML examples. |
 | [Active work plan](docs/plans/measurement-quality-and-net-change.md) | Stage status, decisions and verification | Record only verified completion; distinguish planned from supported behavior. |
 | [Research](docs/research/README.md) | Dated findings and provenance | Preserve the historical evidence; link its resolution from the active plan. |

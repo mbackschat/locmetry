@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::{
     collections::{BTreeMap, BTreeSet},
-    path::{Component, Path},
+    path::{Component, Path, PathBuf},
     sync::{Arc, Mutex},
 };
 use tokei::LanguageType;
@@ -220,13 +220,30 @@ impl Scan {
     }
 }
 
+pub(crate) struct Selection {
+    pub paths: Vec<PathBuf>,
+    applied: BTreeSet<usize>,
+    pub exclusion: Option<Exclusion>,
+}
+
+pub(crate) struct Exclusion {
+    pub at: String,
+    pub patterns: Vec<String>,
+}
+
 pub fn scan(root: &Path, policy: &Policy) -> Result<Scan> {
-    let root = root.canonicalize().context("Scan root does not exist")?;
-    ensure!(root.is_dir(), "Scan root must be a directory");
-    std::fs::read_dir(&root).context("Cannot read scan root")?;
+    scan_selection(root, policy, None).map(|(scan, _)| scan)
+}
+
+pub(crate) fn select_paths(
+    root: &Path,
+    scope: &crate::Scope,
+    target: Option<&str>,
+) -> Result<Selection> {
+    let root = root.to_owned();
     // Tokei v15 src/utils/fs.rs anchors overrides to CWD and uses gitignore
     // syntax; select scope here so root-relative globs keep docs/PRODUCT.md semantics.
-    let scope = policy.scope().clone();
+    let scope = scope.clone();
     let mut walker = WalkBuilder::new(&root);
     walker
         .standard_filters(scope.respect_ignore_files())
@@ -237,6 +254,9 @@ pub fn scan(root: &Path, policy: &Policy) -> Result<Scan> {
     let walk_root = root.clone();
     let applied = Arc::new(Mutex::new(BTreeSet::new()));
     let recorder = Arc::clone(&applied);
+    let exclusion = Arc::new(Mutex::new(None));
+    let trace = Arc::clone(&exclusion);
+    let target = target.map(str::to_owned);
     walker.filter_entry(move |entry| {
         let Ok(path) = entry
             .path()
@@ -249,6 +269,20 @@ pub fn scan(root: &Path, policy: &Policy) -> Result<Scan> {
         let directory = entry.file_type().is_some_and(|kind| kind.is_dir());
         let excluded_by = scope.excluded_by(&path, directory);
         let selected = excluded_by.is_empty();
+        if !selected
+            && target.as_ref().is_some_and(|target| {
+                target == &path || (directory && target.starts_with(&format!("{path}/")))
+            })
+        {
+            let patterns = scope.exclusions();
+            *trace.lock().expect("single-threaded traversal") = Some(Exclusion {
+                at: path,
+                patterns: excluded_by
+                    .iter()
+                    .map(|&index| patterns[index].clone())
+                    .collect(),
+            });
+        }
         recorder
             .lock()
             .expect("the walk records exclusions on one thread")
@@ -263,6 +297,35 @@ pub fn scan(root: &Path, policy: &Policy) -> Result<Scan> {
         }
     }
     let applied = std::mem::take(&mut *applied.lock().expect("the walk has finished"));
+    let exclusion = exclusion.lock().expect("the walk has finished").take();
+    Ok(Selection {
+        paths,
+        applied,
+        exclusion,
+    })
+}
+
+pub(crate) fn scan_selection(
+    root: &Path,
+    policy: &Policy,
+    target: Option<&str>,
+) -> Result<(Scan, Option<Exclusion>)> {
+    let root = root.canonicalize().context("Scan root does not exist")?;
+    ensure!(root.is_dir(), "Scan root must be a directory");
+    std::fs::read_dir(&root).context("Cannot read scan root")?;
+    let Selection {
+        mut paths,
+        applied,
+        exclusion,
+    } = select_paths(&root, policy.scope(), target)?;
+    let names = paths
+        .iter()
+        .map(|path| relative_path(path.strip_prefix(&root)?))
+        .collect::<Result<Vec<_>>>()?;
+    let modules = modules::detect(&names.iter().map(String::as_str).collect::<Vec<_>>());
+    if let Some(target) = target {
+        paths.retain(|path| path == &root.join(target));
+    }
     let unused_exclusions = policy.unused_exclusions(&applied);
     let mut languages = tokei::Languages::new();
     let config = tokei::Config {
@@ -309,11 +372,6 @@ pub fn scan(root: &Path, policy: &Policy) -> Result<Scan> {
     let mut inaccurate = languages.values().any(|language| language.inaccurate);
     let mut payload = serde_json::to_value(languages)?;
     let counted = normalize_reports(&mut payload, &root, policy)?;
-    let names = paths
-        .iter()
-        .map(|path| relative_path(path.strip_prefix(&root)?))
-        .collect::<Result<Vec<_>>>()?;
-    let modules = modules::detect(&names.iter().map(String::as_str).collect::<Vec<_>>());
     let failed: BTreeSet<_> = coverage
         .parse_failures
         .iter()
@@ -375,15 +433,18 @@ pub fn scan(root: &Path, policy: &Policy) -> Result<Scan> {
             .entry(extension.to_owned())
             .or_default() += 1;
     }
-    Ok(Scan {
-        payload,
-        mapped,
-        mappings,
-        coverage,
-        inaccurate,
-        modules,
-        unused_exclusions,
-    })
+    Ok((
+        Scan {
+            payload,
+            mapped,
+            mappings,
+            coverage,
+            inaccurate,
+            modules,
+            unused_exclusions,
+        },
+        exclusion,
+    ))
 }
 
 fn parse_file(
