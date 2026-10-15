@@ -145,6 +145,15 @@ struct SharedArgs {
     depth: usize,
 }
 
+/// Whether the terminal table may use bold: only for a terminal, unless
+/// `NO_COLOR` is set to anything nonempty (https://no-color.org) or the
+/// terminal is `dumb`.
+fn emphasis(stdout_is_terminal: bool, no_color: Option<String>, term: Option<String>) -> bool {
+    stdout_is_terminal
+        && no_color.is_none_or(|value| value.is_empty())
+        && term.as_deref() != Some("dumb")
+}
+
 /// Result of a run that produced a report.
 enum Outcome {
     Complete,
@@ -587,6 +596,11 @@ fn report(
             &findings,
             shared.categories,
             order,
+            emphasis(
+                io::stdout().is_terminal(),
+                std::env::var("NO_COLOR").ok(),
+                std::env::var("TERM").ok(),
+            ),
         ),
         Format::Markdown => {
             render_markdown(&project, &summary, &rows, &findings, shared.depth, order)
@@ -745,6 +759,17 @@ fn main() -> ExitCode {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Bold is for people at a terminal: redirected output stays plain
+    /// text, and `NO_COLOR` (no-color.org) or `TERM=dumb` turns it off.
+    #[test]
+    fn emphasis_needs_a_capable_terminal() {
+        assert!(emphasis(true, None, Some("xterm-256color".into())));
+        assert!(emphasis(true, Some(String::new()), None));
+        assert!(!emphasis(false, None, None));
+        assert!(!emphasis(true, Some("1".into()), None));
+        assert!(!emphasis(true, None, Some("dumb".into())));
+    }
 
     #[test]
     fn terminals_default_to_the_table_and_pipes_to_json() {

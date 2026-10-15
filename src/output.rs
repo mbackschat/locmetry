@@ -116,6 +116,16 @@ fn repository_rows(
     (body, cells("Total", &summary.totals))
 }
 
+/// Legends that state how a table's columns add up; readers otherwise
+/// misread Code as a sum of Comments and Blanks.
+const LANGUAGE_LEGEND: &str =
+    "Code + Comments + Blanks = all lines; Production + Test + Unclassified = Code.";
+const FOLDER_LEGEND: &str =
+    "Production + Test + Unclassified = Code; Test/prod = Test / Production.";
+const REPOSITORY_LEGEND: &str = "Production + Test + Unclassified = Code; Test/prod = Test / Production; Share = Code / workspace Code.";
+const CATEGORY_LEGEND: &str =
+    "Rows of one purpose add up to that purpose's Code; all rows add up to the total Code.";
+
 const REPOSITORY_HEADER: [&str; 7] = [
     "Repository",
     "Code",
@@ -140,7 +150,7 @@ fn repository_grid(
     let names: Vec<&str> = members.iter().map(|member| member.name.as_str()).collect();
     writeln!(
         output,
-        "\n## {title}\n\n| {label} | {} | Total |\n| --- |{} ---: |",
+        "\n## {title}\n\nTotal is the sum of the repository columns.\n\n| {label} | {} | Total |\n| --- |{} ---: |",
         names
             .iter()
             .map(|name| cell(name))
@@ -220,7 +230,7 @@ fn table(
     counts: &BTreeMap<String, Counts>,
     order: RowOrder,
 ) {
-    writeln!(output, "\n## {title}\n\n| {label} | Files | Code | Comments | Blanks | Lines |\n| --- | ---: | ---: | ---: | ---: | ---: |").unwrap();
+    writeln!(output, "\n## {title}\n\n| {label} | Files | **Code** | Comments | Blanks | Lines |\n| --- | ---: | ---: | ---: | ---: | ---: |").unwrap();
     let rows = counts
         .iter()
         .map(|(label, counts)| (label.clone(), counts))
@@ -238,7 +248,7 @@ pub fn render_markdown(
     depth: usize,
     order: RowOrder,
 ) -> String {
-    let mut output = format!("# {}: lines of code by purpose\n\nProduction means maintained non-test source, including separately categorized tooling. Data, configuration, and documentation are counted apart from source.\n\n## Source purpose\n\n| Purpose | Files | Code | Comments | Blanks | Lines |\n| --- | ---: | ---: | ---: | ---: | ---: |\n", cell(project));
+    let mut output = format!("# {}: lines of code by purpose\n\nProduction means maintained non-test source, including separately categorized tooling. Data, configuration, and documentation are counted apart from source. Lines = Code + Comments + Blanks in every table with these columns, and the purpose rows add up to all source.\n\n## Source purpose\n\n| Purpose | Files | **Code** | Comments | Blanks | Lines |\n| --- | ---: | ---: | ---: | ---: | ---: |\n", cell(project));
     for purpose in Purpose::ALL {
         count_row(
             &mut output,
@@ -248,10 +258,19 @@ pub fn render_markdown(
     }
     if !findings.members.is_empty() {
         let (body, total) = repository_rows(summary, findings.members, order);
+        // Bold Code marks the column the purpose columns split, as the
+        // terminal table does.
+        let header: Vec<String> = REPOSITORY_HEADER
+            .iter()
+            .map(|title| match *title {
+                "Code" => "**Code**".to_string(),
+                _ => title.to_string(),
+            })
+            .collect();
         writeln!(
             output,
             "\n## Repositories\n\n| {} |\n| --- |{}",
-            REPOSITORY_HEADER.join(" | "),
+            header.join(" | "),
             " ---: |".repeat(REPOSITORY_HEADER.len() - 1)
         )
         .unwrap();
@@ -259,6 +278,7 @@ pub fn render_markdown(
             let cells: Vec<String> = row.iter().map(|value| cell(value)).collect();
             writeln!(output, "| {} |", cells.join(" | ")).unwrap();
         }
+        writeln!(output, "\n{REPOSITORY_LEGEND}").unwrap();
         repository_grid(
             &mut output,
             "Source categories by repository",
@@ -306,7 +326,7 @@ pub fn render_markdown(
         &summary.totals.source_languages,
         order,
     );
-    write!(output, "\n## Folder breakdown\n\nRecursive source code totals to depth {depth}. Parent rows include their children; do not sum all displayed rows. The report file's additive `breakdown` rows cover every depth. Multi-language files count once physically but contribute to each contained language.\n\n| Folder | Production | Test | Unclassified | Total source code | Test/prod |\n| --- | ---: | ---: | ---: | ---: | ---: |\n").unwrap();
+    write!(output, "\n## Folder breakdown\n\nRecursive source code totals to depth {depth}. Parent rows include their children; do not sum all displayed rows. The report file's additive `breakdown` rows cover every depth. Multi-language files count once physically but contribute to each contained language. Production + Test + Unclassified = Total source code; Test/prod = Test / Production.\n\n| Folder | Production | Test | Unclassified | **Total source code** | Test/prod |\n| --- | ---: | ---: | ---: | ---: | ---: |\n").unwrap();
     // Compare by path components: as plain strings, `web-admin` would sort
     // between `web` and `web/src`, because `-` sorts before `/`.
     let mut folders: Vec<_> = summary.folders.iter().collect();
@@ -435,14 +455,29 @@ fn counted(count: u64, noun: &str) -> String {
     }
 }
 
+/// Column groups of a terminal table and the column that carries Code.
+///
+/// The purpose columns split Code, while Comments and Blanks sit beside it, so
+/// separators and a bold Code column show which numbers belong together.
+struct Layout {
+    /// Columns preceded by a `│` separator.
+    breaks: &'static [usize],
+    /// Column shown in bold when emphasis is on.
+    strong: Option<usize>,
+}
+
 /// Aligned plain-text table: the first column left-aligned, the others right.
 /// A caption line labels the columns from index `group.0` on; rule lines
-/// separate the header, and the body from an optional total row.
+/// separate the header, and the body from an optional total row. With
+/// `emphasis`, the strong column is bold; padding is applied first, so the
+/// escape codes never shift alignment.
 fn text_table(
     header: &[&str],
     body: &[Vec<String>],
     total: Option<Vec<String>>,
     group: (usize, &str),
+    layout: &Layout,
+    emphasis: bool,
 ) -> String {
     let header: Vec<String> = header.iter().map(|title| title.to_string()).collect();
     let all = std::iter::once(&header).chain(body).chain(total.as_ref());
@@ -452,24 +487,45 @@ fn text_table(
             *width = (*width).max(value.chars().count());
         }
     }
+    let separated = |column: usize| layout.breaks.contains(&column);
+    let gap = |column: usize| match separated(column) {
+        true => " │ ",
+        false => "  ",
+    };
     let line = |row: &[String]| {
-        let cells: Vec<String> = row
-            .iter()
-            .zip(&widths)
-            .enumerate()
-            .map(|(column, (value, width))| match column {
+        let mut text = String::from(" ");
+        for (column, (value, width)) in row.iter().zip(&widths).enumerate() {
+            if column > 0 {
+                text += gap(column);
+            }
+            let cell = match column {
                 0 => format!("{value:<width$}"),
                 _ => format!("{value:>width$}"),
-            })
-            .collect();
-        format!(" {}\n", cells.join("  "))
+            };
+            match emphasis && layout.strong == Some(column) {
+                true => write!(text, "\x1b[1m{cell}\x1b[0m").unwrap(),
+                false => text += &cell,
+            }
+        }
+        text + "\n"
     };
-    let rule = format!(
-        " {}\n",
-        "─".repeat(widths.iter().sum::<usize>() + 2 * (widths.len() - 1))
-    );
+    let mut rule = String::from(" ");
+    for (column, width) in widths.iter().enumerate() {
+        if column > 0 {
+            rule += match separated(column) {
+                true => "─┼─",
+                false => "──",
+            };
+        }
+        rule += &"─".repeat(*width);
+    }
+    rule += "\n";
     let (first, caption) = group;
-    let indent = 1 + widths[..first].iter().sum::<usize>() + 2 * first;
+    let indent = 1
+        + widths[..first].iter().sum::<usize>()
+        + (1..=first)
+            .map(|column| gap(column).chars().count())
+            .sum::<usize>();
     let mut output = format!("{:indent$}{caption}\n", "") + &line(&header) + &rule;
     for row in body {
         output += &line(row);
@@ -547,6 +603,8 @@ const FOLDER_LINES: usize = 8;
 
 /// Terminal report for people: source code per language and top-level folder
 /// split by purpose, then one line each for what the tables leave out.
+/// The terminal table; `emphasis` bolds the Code columns, for a terminal
+/// that supports it.
 pub fn render_table(
     project: &str,
     summary: &ReportSummary,
@@ -554,6 +612,7 @@ pub fn render_table(
     findings: &Findings,
     categories: bool,
     order: RowOrder,
+    emphasis: bool,
 ) -> String {
     let mut languages = BTreeMap::<String, (Counts, BTreeMap<Purpose, u64>)>::new();
     for row in breakdown(rows)
@@ -610,7 +669,13 @@ pub fn render_table(
         &body,
         Some(total),
         (5, "Code by purpose"),
+        &Layout {
+            breaks: &[3, 5],
+            strong: Some(2),
+        },
+        emphasis,
     );
+    output += &format!(" {LANGUAGE_LEGEND}\n");
 
     let folder_code = |purposes: &BTreeMap<Purpose, u64>| purposes.values().sum::<u64>();
     // A workspace's top-level folders are its members, so repository rows,
@@ -623,7 +688,13 @@ pub fn render_table(
             &body,
             Some(total),
             (2, "Code by purpose"),
+            &Layout {
+                breaks: &[2, 5],
+                strong: Some(1),
+            },
+            emphasis,
         );
+        output += &format!(" {REPOSITORY_LEGEND}\n");
     }
     let folders = ordered(
         summary.top_folders().into_iter().collect(),
@@ -663,7 +734,13 @@ pub fn render_table(
             &body,
             Some(total),
             (2, "Code by purpose"),
+            &Layout {
+                breaks: &[2, 5],
+                strong: Some(1),
+            },
+            emphasis,
         );
+        output += &format!(" {FOLDER_LEGEND}\n");
     }
     if categories {
         let rows = summary
@@ -685,7 +762,13 @@ pub fn render_table(
                 &body,
                 None,
                 (1, "Source code"),
+                &Layout {
+                    breaks: &[],
+                    strong: Some(2),
+                },
+                emphasis,
             );
+            output += &format!(" {CATEGORY_LEGEND}\n");
         }
     }
 
@@ -879,4 +962,41 @@ pub fn write_report(output: &Path, text: &str) -> Result<()> {
         fs::create_dir_all(parent)?;
     }
     fs::write(output, text).with_context(|| format!("Cannot write report {}", output.display()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Bold must not shift alignment: without its escape codes, an
+    /// emphasized table equals the plain one.
+    #[test]
+    fn emphasis_bolds_the_strong_column_without_shifting_alignment() {
+        let layout = Layout {
+            breaks: &[2],
+            strong: Some(1),
+        };
+        let body = [vec!["a".to_string(), "12".into(), "3".into()]];
+        let total = Some(vec!["Total".to_string(), "12".into(), "3".into()]);
+        let plain = text_table(
+            &["Name", "Code", "Test"],
+            &body,
+            total.clone(),
+            (2, "Split"),
+            &layout,
+            false,
+        );
+        let bold = text_table(
+            &["Name", "Code", "Test"],
+            &body,
+            total,
+            (2, "Split"),
+            &layout,
+            true,
+        );
+        assert!(bold.contains("\x1b[1mCode\x1b[0m"), "{bold}");
+        assert!(bold.contains("\x1b[1m  12\x1b[0m"), "{bold}");
+        assert_eq!(bold.replace("\x1b[1m", "").replace("\x1b[0m", ""), plain);
+        assert!(!plain.contains('\x1b'));
+    }
 }

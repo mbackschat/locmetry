@@ -521,7 +521,7 @@ fn workspace_summaries_break_totals_down_by_member() {
 }
 
 /// Cells of the table row whose first cell is `label`, below the header
-/// that starts with `header`.
+/// that starts with `header`; column-group separators are not cells.
 fn table_row(table: &str, header: &str, label: &str) -> Vec<String> {
     table
         .lines()
@@ -529,6 +529,7 @@ fn table_row(table: &str, header: &str, label: &str) -> Vec<String> {
         .find(|line| line.split_whitespace().next() == Some(label))
         .unwrap_or_else(|| panic!("no {label} row below {header} in:\n{table}"))
         .split_whitespace()
+        .filter(|cell| *cell != "│")
         .map(String::from)
         .collect()
 }
@@ -585,6 +586,10 @@ fn workspace_table_compares_repositories() {
     );
     assert!(!table.contains(" Folder "), "{table}");
     assert!(
+        table.contains(" Production + Test + Unclassified = Code; Test/prod = Test / Production; Share = Code / workspace Code.\n"),
+        "{table}"
+    );
+    assert!(
         table.contains(" Repositories to review: api: 1 unclaimed file (1 code line); web: 2 unclaimed files (2 code lines).\n"),
         "{table}"
     );
@@ -608,9 +613,11 @@ fn workspace_markdown_breaks_categories_and_languages_down_by_repository() {
     let markdown = String::from_utf8(output.stdout).unwrap();
     for expected in [
         "## Repositories\n",
-        "| Repository | Code | Production | Test | Unclassified | Test/prod | Share |\n",
+        "| Repository | **Code** | Production | Test | Unclassified | Test/prod | Share |\n",
         "| web | 6 | 3 | 1 | 2 | 0.33 | 60.0% |\n",
         "| Total | 10 | 4 | 3 | 3 | 0.75 | 100.0% |\n",
+        "Production + Test + Unclassified = Code; Test/prod = Test / Production; Share = Code / workspace Code.",
+        "Total is the sum of the repository columns.",
         "## Source categories by repository\n",
         "| Category | api | web | Total |\n",
         "| test:test | 2 | 1 | 3 |\n",

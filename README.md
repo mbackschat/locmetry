@@ -23,27 +23,29 @@ $ locmetry
 
  acme-orders: source code lines by purpose
 
-                                            Code by purpose
- Language    Files  Code  Comments  Blanks  Production  Test  Unclassified
- ─────────────────────────────────────────────────────────────────────────
- Kotlin          6    67         2      16          51    16             0
- TypeScript      2    21         1       4          11    10             0
- Python          2    20         2       8          12     0             8
- TSX             1    20         0       2          20     0             0
- Shell           1     1         2       0           0     0             1
- ─────────────────────────────────────────────────────────────────────────
- Total          12   129         7      30          94    26             9
+                                              Code by purpose
+ Language    Files  Code │ Comments  Blanks │ Production  Test  Unclassified
+ ────────────────────────┼──────────────────┼───────────────────────────────
+ Kotlin          6    67 │        2      16 │         51    16             0
+ TypeScript      2    21 │        1       4 │         11    10             0
+ Python          2    20 │        2       8 │         12     0             8
+ TSX             1    20 │        0       2 │         20     0             0
+ Shell           1     1 │        2       0 │          0     0             1
+ ────────────────────────┼──────────────────┼───────────────────────────────
+ Total          12   129 │        7      30 │         94    26             9
+ Code + Comments + Blanks = all lines; Production + Test + Unclassified = Code.
 
-                     Code by purpose
- Folder        Code  Production  Test  Unclassified  Test/prod
- ─────────────────────────────────────────────────────────────
- backend         65          49    16             0       0.33
- web             41          31    10             0       0.32
- scripts         12          12     0             0       0.00
- prototypes       8           0     0             8          -
- (root files)     3           2     0             1       0.00
- ─────────────────────────────────────────────────────────────
- Total          129          94    26             9       0.28
+                      Code by purpose
+ Folder        Code │ Production  Test  Unclassified │ Test/prod
+ ───────────────────┼────────────────────────────────┼──────────
+ backend         65 │         49    16             0 │      0.33
+ web             41 │         31    10             0 │      0.32
+ scripts         12 │         12     0             0 │      0.00
+ prototypes       8 │          0     0             8 │         -
+ (root files)     3 │          2     0             1 │      0.00
+ ───────────────────┼────────────────────────────────┼──────────
+ Total          129 │         94    26             9 │      0.28
+ Production + Test + Unclassified = Code; Test/prod = Test / Production.
 
  Not source code: 3 data files (19 lines), 1 documentation file (9 lines).
  Production from build modules: gradle 42 code lines in 1 module, npm 31 code lines in 1 module.
@@ -176,13 +178,14 @@ Only the project's configuration, command-line options, and optional personal ex
 
 ```text
 
-                   Code by purpose
- Repository  Code  Production  Test  Unclassified  Test/prod   Share
- ───────────────────────────────────────────────────────────────────
- api           14           6     8             0       1.33   51.9%
- web           13           7     5             1       0.71   48.1%
- ───────────────────────────────────────────────────────────────────
- Total         27          13    13             1       1.00  100.0%
+                    Code by purpose
+ Repository  Code │ Production  Test  Unclassified │ Test/prod   Share
+ ─────────────────┼────────────────────────────────┼──────────────────
+ api           14 │          6     8             0 │      1.33   51.9%
+ web           13 │          7     5             1 │      0.71   48.1%
+ ─────────────────┼────────────────────────────────┼──────────────────
+ Total         27 │         13    13             1 │      1.00  100.0%
+ Production + Test + Unclassified = Code; Test/prod = Test / Production; Share = Code / workspace Code.
 ```
 
 [Measure several repositories together](#measure-several-repositories-together) describes the mode.
@@ -378,6 +381,7 @@ Plain `locmetry` on a terminal prints the table shown [above](#what-you-see):
 
 - language rows, largest first;
 - top-level folders, whose rows add up to the total, each with `Test/prod`, its test code lines per production code line;
+- under each table, a legend stating how its columns add up, such as Production + Test + Unclassified = Code;
 - notes on content that is not source, the build modules that decided production, Git submodules, which are often other teams' code, the folders that hold unclaimed source, configuration entries that decided no file, and files that could not be counted.
 
 `--sort name` lists rows alphabetically instead, in the table and in Markdown. `--categories` adds a table of source code per `purpose:category`, such as `production:tooling`, to see what production consists of.
@@ -479,7 +483,7 @@ $ jq -c '.review[]' report.json
 ```markdown
 ## Source categories
 
-| Category | Files | Code | Comments | Blanks | Lines |
+| Category | Files | **Code** | Comments | Blanks | Lines |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | production:implementation | 5 | 73 | 3 | 15 | 91 |
 | test:test | 2 | 26 | 0 | 6 | 32 |
@@ -490,7 +494,7 @@ $ jq -c '.review[]' report.json
 
 ## Folder breakdown
 
-| Folder | Production | Test | Unclassified | Total source code | Test/prod |
+| Folder | Production | Test | Unclassified | **Total source code** | Test/prod |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | . | 94 | 26 | 9 | 129 | 0.28 |
 | backend | 49 | 16 | 0 | 65 | 0.33 |

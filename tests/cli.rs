@@ -198,7 +198,7 @@ fn markdown_format_writes_a_readable_report_to_stdout() {
     );
     let stdout = String::from_utf8(output.stdout).unwrap();
     assert!(stdout.starts_with(
-        "# source: lines of code by purpose\n\nProduction means maintained non-test source, including separately categorized tooling. Data, configuration, and documentation are counted apart from source.\n\n## Source purpose"
+        "# source: lines of code by purpose\n\nProduction means maintained non-test source, including separately categorized tooling. Data, configuration, and documentation are counted apart from source. Lines = Code + Comments + Blanks in every table with these columns, and the purpose rows add up to all source.\n\n## Source purpose"
     ));
     assert!(stdout.contains("| production | 1 | 1 | 0 | 0 | 1 |"));
     // Measurement caveats belong with coverage, not in the opening.
@@ -229,22 +229,24 @@ fn table_format_splits_source_code_by_language_and_purpose() {
     let expected = "
  project: source code lines by purpose
 
-                                          Code by purpose
- Language  Files  Code  Comments  Blanks  Production  Test  Unclassified
- ───────────────────────────────────────────────────────────────────────
- Rust          3     4         1       0           2     2             0
- Python        1     1         0       0           0     0             1
- ───────────────────────────────────────────────────────────────────────
- Total         4     5         1       0           2     2             1
+                                            Code by purpose
+ Language  Files  Code │ Comments  Blanks │ Production  Test  Unclassified
+ ──────────────────────┼──────────────────┼───────────────────────────────
+ Rust          3     4 │        1       0 │          2     2             0
+ Python        1     1 │        0       0 │          0     0             1
+ ──────────────────────┼──────────────────┼───────────────────────────────
+ Total         4     5 │        1       0 │          2     2             1
+ Code + Comments + Blanks = all lines; Production + Test + Unclassified = Code.
 
-               Code by purpose
- Folder  Code  Production  Test  Unclassified  Test/prod
- ───────────────────────────────────────────────────────
- src        2           2     0             0       0.00
- tests      2           0     2             0          -
- proto      1           0     0             1          -
- ───────────────────────────────────────────────────────
- Total      5           2     2             1       1.00
+                Code by purpose
+ Folder  Code │ Production  Test  Unclassified │ Test/prod
+ ─────────────┼────────────────────────────────┼──────────
+ src        2 │          2     0             0 │      0.00
+ tests      2 │          0     2             0 │         -
+ proto      1 │          0     0             1 │         -
+ ─────────────┼────────────────────────────────┼──────────
+ Total      5 │          2     2             1 │      1.00
+ Production + Test + Unclassified = Code; Test/prod = Test / Production.
 
  Not source code: 1 data file (1 line), 1 documentation file (1 line).
  Unclaimed source: 1 code line in 1 file, here:
@@ -257,7 +259,10 @@ fn table_format_splits_source_code_by_language_and_purpose() {
         String::from_utf8(run(&temp.path().join("project"), &["--format", "markdown"]).stdout)
             .unwrap();
     for row in [
-        "| Folder | Production | Test | Unclassified | Total source code | Test/prod |\n",
+        "Lines = Code + Comments + Blanks in every table with these columns",
+        "Production + Test + Unclassified = Total source code; Test/prod = Test / Production.",
+        "| Folder | Production | Test | Unclassified | **Total source code** | Test/prod |\n",
+        "| Purpose | Files | **Code** | Comments | Blanks | Lines |\n",
         "| . | 2 | 2 | 1 | 5 | 1.00 |\n",
         "| src | 2 | 0 | 0 | 2 | 0.00 |\n",
         "| tests | 0 | 2 | 0 | 2 | - |\n",
@@ -543,6 +548,7 @@ fn categories_table_is_shown_on_request() {
  unclassified:unclassified      1     2
  production:tooling             1     1
  test:test                      1     1
+ Rows of one purpose add up to that purpose's Code; all rows add up to the total Code.
 ";
     assert!(table.contains(expected), "{table}");
 }
