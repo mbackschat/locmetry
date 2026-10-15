@@ -17,6 +17,10 @@ Decided 2026-10-15: licence MIT (dual MIT OR Apache-2.0 up to v0.1.1), repositor
 
 **Completion evidence:** CI passes on every target, the release carries archives and checksums, `brew install` and `brew test` pass on macOS arm64 and Linux, and publication was explicitly authorized.
 
+## Ideas — Not Scheduled
+
+- [ ] A configuration skill for coding agents: decided 2026-10-15 to record, not build yet. Blind test drives showed agents already reach 99%+ agreement with human-reviewed configurations from `--help` and `--schema` alone, so the skill would add procedure rather than knowledge: keep the repository read-only until a human approves, require evidence and a `reason` for every entry, declare `[categories]`, resolve `summary.submodules` and `summary.unused_entries`, and end with the judgment calls a human must make. Acceptance: the same blind trials scored with and without the skill show a gain, not only more ceremony.
+
 ## Working Rules
 
 Contributor commands and conventions are in [CLAUDE.md](CLAUDE.md). Run the [private regression](docs/measurement.md#private-regression) when measurement behavior changes, and keep this plan current as work lands.
