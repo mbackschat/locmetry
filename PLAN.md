@@ -52,13 +52,13 @@ Implemented 2026-10-15. Provenance needs no separate stage field: entry IDs are 
 
 **Completion evidence:** tests prove broad production rules cannot swallow conventional tests, explicit evidence overrides can beat test names, test data remains data, and embedded documentation examples stay outside source totals.
 
-### 4. Reporting Contract and Profile Migration — Next
+### 4. Reporting Contract and Profile Migration — Done
 
-Current gap: JSON is provisional `poc-3`, Markdown folder depth is fixed at two, and JSON stdout changes shape when `--output` is supplied. Partial-result behavior exists but is not yet the settled product contract.
+Implemented 2026-10-15: JSON schema `1`, stdout shapes, exit codes, and Markdown depth are documented in [PRODUCT.md](PRODUCT.md#reporting-and-coverage).
 
-- [ ] Finalize versioned JSON fields, stdout behavior, and success/error/partial-result exit semantics; document them in the product contract.
-- [ ] Add the folder-depth CLI option without changing complete JSON totals or making recursive rows additive.
-- [ ] Test effective-policy metadata, classification provenance, incomplete results, empty scans, and agreement between human and JSON output.
+- [x] Finalize versioned JSON fields, stdout behavior, and success/error/partial-result exit semantics; document them in the product contract.
+- [x] Add the folder-depth CLI option without changing complete JSON totals or making recursive rows additive.
+- [x] Test effective-policy metadata, classification provenance, incomplete results, empty scans, and agreement between human and JSON output.
 - [x] Translate reviewed private profiles to TOML/globs. Keep every real profile and comparison Git-ignored.
 - [x] Compare equivalent file inventories and rule decisions; explain intentional changes caused by new defaults before retiring the provisional interface. Every file counted by both formats keeps its purpose, category, and counts; built-in language mappings add Gradle scripts, JSONC, JSON Lines, and properties files, all landing in the intended rules. Evidence is in the Git-ignored local migration note.
 - [x] Retire the JSON/regex profiles: `.json` configurations fail with a migration hint, and the private regression replays saved statistics through the TOML translations (2026-10-15).
@@ -66,7 +66,7 @@ Current gap: JSON is provisional `poc-3`, Markdown folder depth is fixed at two,
 
 **Completion evidence:** synthetic contract tests pass; private comparisons reconcile scope, classifications, and folder totals without silently accepting differences caused by changed working copies.
 
-### 5. Release Readiness for macOS and Linux
+### 5. Release Readiness for macOS and Linux — Next
 
 Current gap: the dependency model is documented, but there is no complete formula, tap, or published release. Builds and tests have only run on macOS.
 
@@ -81,13 +81,7 @@ Current gap: the dependency model is documented, but there is no complete formul
 
 ## Open Contract Decisions
 
-Record accepted decisions in [PRODUCT.md](PRODUCT.md) before implementing dependent behavior.
-
-| Decision | Recommendation and rationale |
-| --- | --- |
-| Legacy JSON profiles | Prefer a reviewed one-time migration over permanent dual-format support. Preserve historical inputs privately so equivalence remains checkable. |
-| JSON stdout with report files | Keep the same full JSON schema with and without `--output`; a stable shape is easier for agents to consume. |
-| Partial counts | Retain explicitly marked partial output with a nonzero exit; agents must not mistake incomplete results for a complete measurement. |
+None are open. Record future decisions in [PRODUCT.md](PRODUCT.md) before implementing dependent behavior. The last three were settled on 2026-10-15: legacy profiles were migrated once and retired; JSON stdout keeps the report shape but omits records when report files are written, because full reports reach megabytes; partial results exit with code 2.
 
 ## Optional and Excluded Scope
 

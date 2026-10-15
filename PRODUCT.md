@@ -123,7 +123,18 @@ Explicit exclusions still apply when ignore files are disabled. Removing a built
 
 Expose direct folder totals and recursive totals. A recursive parent contains its direct files plus its immediate children's recursive totals; displayed recursive rows are not all additive. Count original file reports and embedded statistics once.
 
-Keep output format and folder depth as CLI options initially. Exact flags, JSON fields, and incomplete-result exit behavior remain open. Recommend clear backend/version, scope, effective-policy, and classification-provenance fields, with diagnostics separated from JSON stdout.
+`--format json` (default) or `--format markdown` selects stdout. `--depth N` (default 2) limits the Markdown folder table; JSON always lists every folder. `--output PREFIX` writes `PREFIX.json`, `PREFIX.md`, and `PREFIX.tokei.json` (the backend's raw statistics) outside the scan root. Without `--output`, JSON stdout is the full report; with it, JSON stdout is the same document without `files` and `summary.folders`, plus `reports` naming the three written files, because full reports reach megabytes. Diagnostics go to stderr. Exit code 0 means a complete report, 2 a partial report whose missing counts come from unreadable files, and 1 a failure without a report.
+
+JSON schema version `1`:
+
+| Field | Contents |
+| --- | --- |
+| `schema_version`, `project` | `"1"` and the scan root's directory name. |
+| `metadata` | `root`, `measured_at_unix_seconds`, `locmetry_version`, `backend`, `backend_inaccurate`, `backend_configuration`; `scope` (effective hidden, ignore-file, symlink, and `exclude` settings); `kinds` (language lists per content kind); `coverage` (`selected_files`, `counted_files`, `mapped_files`, `unrecognized`, `unread`); `config_path`; and `config`, the effective configuration including `builtin_conventions` and `builtin_language_mappings`. |
+| `summary` | Counts for `all_counted` and `source`; `by_kind_purpose` keyed `kind:purpose`; `source_purpose`; `source_categories` keyed `purpose:category`; `source_languages`; and `folders` keyed by root-relative path (`.` for the root), each with `direct` and `recursive` summaries of the same shape without `folders`. |
+| `files` | One record per counted file, sorted by path: `path`, `language`, `kind`, optional `language_mapping`, `purpose`, `category`, `rule`, `counts`, and per-language `languages` counts. |
+
+Every count object has `files`, `code`, `comments`, `blanks`, and `lines`. Records carry enough provenance for agents and scripts to recompute any summary or answer questions the summary does not.
 
 Surface known counting-coverage limitations: report how many files were selected and counted, list selected files the backend did not recognize, and separately list recognized files it could not read. Path rules cannot recover source files omitted by the backend. Language mappings recover unrecognized files; absent records must not be represented as proven zero LOC. Inline tests in mixed files remain a whole-file classification limitation.
 

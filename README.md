@@ -24,7 +24,7 @@ locmetry --root . --config shared.toml          # explicit configuration; the ro
 locmetry --exclude 'generated/**' --hidden false --format markdown
 ```
 
-The scan root defaults to the current directory. Configuration is the TOML `.locmetryrc` contract in [PRODUCT.md](PRODUCT.md); without one, built-in defaults apply, including default exclusions and built-in test conventions. `--exclude`, `--hidden`, and `--respect-ignore-files` override project settings. JSON is the default stdout format; `--format markdown` produces human-readable output. `--output PREFIX` saves JSON, Markdown, and backend statistics outside the scan root. [Reports, limits, and private regression](poc/README.md) describes what a measurement contains.
+The scan root defaults to the current directory. Configuration is the TOML `.locmetryrc` contract in [PRODUCT.md](PRODUCT.md); without one, built-in defaults apply, including default exclusions and built-in test conventions. `--exclude`, `--hidden`, and `--respect-ignore-files` override project settings. JSON is the default stdout format; `--format markdown` produces human-readable output, with `--depth N` folder levels. `--output PREFIX` saves JSON, Markdown, and backend statistics outside the scan root. Exit code 2 marks a partial report with unreadable files. [PRODUCT.md](PRODUCT.md#reporting-and-coverage) documents the JSON schema. [Reports, limits, and private regression](poc/README.md) describes what a measurement contains.
 
 ## Documentation
 

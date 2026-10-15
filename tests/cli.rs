@@ -93,7 +93,7 @@ fn missing_root_and_invalid_config_fail_without_success_json() {
             .args(args)
             .output()
             .unwrap();
-        assert!(!result.status.success());
+        assert_eq!(result.status.code(), Some(1));
         assert!(result.stdout.is_empty());
     }
 }
@@ -182,7 +182,11 @@ fn unreadable_files_produce_partial_output_naming_them_and_fail() {
         .output()
         .unwrap();
     fs::set_permissions(&locked, fs::Permissions::from_mode(0o644)).unwrap();
-    assert!(!output.status.success());
+    assert_eq!(
+        output.status.code(),
+        Some(2),
+        "partial results use exit code 2"
+    );
     assert!(String::from_utf8_lossy(&output.stderr).contains("locked.py"));
     let document: Value = serde_json::from_slice(&output.stdout).unwrap();
     assert_eq!(document["metadata"]["backend_inaccurate"], true);
@@ -322,4 +326,110 @@ fn invalid_discovered_configuration_fails_before_scanning() {
         stderr.contains(".locmetryrc") && stderr.contains("Unsupported configuration version 2"),
         "{stderr}"
     );
+}
+
+#[test]
+fn stdout_with_report_files_is_the_report_without_records_plus_their_paths() {
+    let temp = fixture();
+    let prefix = temp.path().join("out/report");
+    let output = run_with_output(&temp, &prefix);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let headline: Value = serde_json::from_slice(&output.stdout).unwrap();
+    let full: Value =
+        serde_json::from_slice(&fs::read(temp.path().join("out/report.json")).unwrap()).unwrap();
+    assert_eq!(headline["schema_version"], "1");
+    assert_eq!(headline["metadata"], full["metadata"]);
+    assert_eq!(headline["summary"]["source"], full["summary"]["source"]);
+    assert!(headline.get("files").is_none());
+    assert!(headline["summary"].get("folders").is_none());
+    for (key, suffix) in [
+        ("json", "json"),
+        ("markdown", "md"),
+        ("tokei", "tokei.json"),
+    ] {
+        let path = headline["reports"][key].as_str().unwrap();
+        assert!(
+            path.ends_with(&format!("report.{suffix}")) && std::path::Path::new(path).exists(),
+            "{path}"
+        );
+    }
+}
+
+#[test]
+fn markdown_folder_depth_is_configurable_while_json_keeps_every_folder() {
+    let temp = project(&[("a/b/c/deep.rs", "fn deep() {}\n")]);
+    let root = temp.path().join("project");
+    let markdown = |extra: &[&str]| {
+        let output = Command::new(env!("CARGO_BIN_EXE_locmetry"))
+            .current_dir(&root)
+            .args(["--format", "markdown"])
+            .args(extra)
+            .output()
+            .unwrap();
+        String::from_utf8(output.stdout).unwrap()
+    };
+    assert!(!markdown(&[]).contains("| a/b/c |"));
+    assert!(markdown(&["--depth", "3"]).contains("| a/b/c |"));
+    let (_, document, _) = measure(&root, &[]);
+    assert!(document["summary"]["folders"].get("a/b/c").is_some());
+}
+
+#[test]
+fn empty_roots_report_zero_counts_successfully() {
+    let temp = project(&[]);
+    fs::create_dir_all(temp.path().join("project")).unwrap();
+    let (success, document, stderr) = measure(&temp.path().join("project"), &[]);
+    assert!(success, "{stderr}");
+    assert_eq!(document["metadata"]["coverage"]["selected_files"], 0);
+    assert_eq!(document["summary"]["all_counted"]["files"], 0);
+    assert_eq!(document["files"], json!([]));
+}
+
+#[test]
+fn markdown_and_json_report_the_same_totals() {
+    let temp = project(&[
+        ("src/a.ts", "let a = 1;\n// note\n\nlet b = 2;\n"),
+        ("src/a.test.ts", "let c = 1;\n"),
+        ("gradlew", "#!/bin/sh\necho hi\n"),
+    ]);
+    let root = temp.path().join("project");
+    let (_, document, _) = measure(&root, &[]);
+    let output = Command::new(env!("CARGO_BIN_EXE_locmetry"))
+        .current_dir(&root)
+        .args(["--format", "markdown"])
+        .output()
+        .unwrap();
+    let markdown = String::from_utf8(output.stdout).unwrap();
+    for purpose in ["production", "test", "unclassified"] {
+        let counts = &document["summary"]["source_purpose"][purpose];
+        let row = format!(
+            "| {purpose} | {} | {} | {} | {} | {} |",
+            counts["files"], counts["code"], counts["comments"], counts["blanks"], counts["lines"]
+        );
+        assert!(markdown.contains(&row), "missing {row}");
+    }
+}
+
+#[test]
+fn metadata_records_the_effective_policy() {
+    let temp = project(&[(".locmetryrc", APP_RULE), ("src/a.ts", "let a = 1;\n")]);
+    let (_, document, _) = measure(&temp.path().join("project"), &["--hidden", "false"]);
+    let metadata = &document["metadata"];
+    assert_eq!(metadata["scope"]["hidden"], false);
+    assert_eq!(metadata["config"]["rules"][0]["id"], "app");
+    let conventions = metadata["config"]["builtin_conventions"]
+        .as_array()
+        .unwrap();
+    assert!(conventions
+        .iter()
+        .any(|c| c["id"] == "builtin:build-wrapper"));
+    assert!(!metadata["config"]["builtin_language_mappings"]
+        .as_array()
+        .unwrap()
+        .is_empty());
+    assert_eq!(metadata["backend"], "tokei 15.0.0 (embedded)");
 }

@@ -42,12 +42,23 @@ struct Args {
     /// Write .json, .md, and .tokei.json reports at this prefix, outside the scan root.
     #[arg(long)]
     output: Option<PathBuf>,
-    /// Stdout format; with --output, JSON stdout is a compact summary.
+    /// Stdout format; with --output, JSON stdout omits file records and folders
+    /// and names the written report files.
     #[arg(long, value_enum, default_value = "json")]
     format: Format,
+    /// Deepest folder level listed in the Markdown folder table; JSON lists all.
+    #[arg(long, default_value_t = 2, value_name = "N")]
+    depth: usize,
 }
 
-fn run(args: Args) -> Result<()> {
+/// Result of a run that produced a report.
+enum Outcome {
+    Complete,
+    /// Counts are missing for unreadable files; the message names them.
+    Partial(String),
+}
+
+fn run(args: Args) -> Result<Outcome> {
     let config_path = match &args.config {
         Some(path) => Some(path.clone()),
         None => {
@@ -87,12 +98,12 @@ fn run(args: Args) -> Result<()> {
     let (inaccurate, coverage) = (scan.inaccurate, &scan.coverage);
     let rows = scan.records(&policy)?;
     let summary = build_report(&rows);
-    let mut markdown = render_markdown(&project, &summary, &rows, coverage);
+    let mut markdown = render_markdown(&project, &summary, &rows, coverage, args.depth);
     if inaccurate {
         markdown.push_str("\nBackend reported incomplete counts; inspect the JSON metadata.\n");
     }
     let document = json!({
-        "schema_version":"poc-3", "project":project,
+        "schema_version":"1", "project":project,
         "metadata":{
             "root":root_text, "measured_at_unix_seconds":measured_at,
             "locmetry_version":env!("CARGO_PKG_VERSION"), "backend":BACKEND,
@@ -108,22 +119,36 @@ fn run(args: Args) -> Result<()> {
         },
         "summary":summary, "files":rows
     });
-    if let Some(output) = &args.output {
-        write_reports(
+    let written = match &args.output {
+        Some(output) => Some(write_reports(
             output,
             &root,
             config_path.as_deref(),
             &document,
             &scan.payload,
             &markdown,
-        )?;
-    }
+        )?),
+        None => None,
+    };
     let mut stdout = io::stdout().lock();
     match args.format {
         Format::Json => {
-            let value = match args.output {
-                Some(_) => {
-                    json!({"project":project,"source":summary.totals.source,"purpose":summary.totals.source_purpose,"backend_inaccurate":inaccurate})
+            let value = match written {
+                // The full report can be megabytes; agents reading stdout get
+                // the same document without records, plus where to find them.
+                Some([json, markdown, tokei]) => {
+                    let mut headline = document;
+                    headline
+                        .as_object_mut()
+                        .context("Invalid report")?
+                        .remove("files");
+                    headline["summary"]
+                        .as_object_mut()
+                        .context("Invalid summary")?
+                        .remove("folders");
+                    headline["reports"] =
+                        json!({"json": json, "markdown": markdown, "tokei": tokei});
+                    headline
                 }
                 None => document,
             };
@@ -140,17 +165,21 @@ fn run(args: Args) -> Result<()> {
         if unread.is_empty() {
             unread.push("none identified".into());
         }
-        anyhow::bail!(
+        return Ok(Outcome::Partial(format!(
             "Backend reported incomplete counts; output contains partial results. Unreadable files: {}",
             unread.join(", ")
-        );
+        )));
     }
-    Ok(())
+    Ok(Outcome::Complete)
 }
 
 fn main() -> ExitCode {
     match run(Args::parse()) {
-        Ok(()) => ExitCode::SUCCESS,
+        Ok(Outcome::Complete) => ExitCode::SUCCESS,
+        Ok(Outcome::Partial(message)) => {
+            eprintln!("locmetry: {message}");
+            ExitCode::from(2)
+        }
         Err(error) => {
             eprintln!("locmetry: {error:#}");
             ExitCode::FAILURE
