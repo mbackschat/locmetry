@@ -58,8 +58,8 @@ Current gap: JSON is provisional `poc-3`, Markdown folder depth is fixed at two,
 - [ ] Finalize versioned JSON fields, stdout behavior, and success/error/partial-result exit semantics; document them in the product contract.
 - [ ] Add the folder-depth CLI option without changing complete JSON totals or making recursive rows additive.
 - [ ] Test effective-policy metadata, classification provenance, incomplete results, empty scans, and agreement between human and JSON output.
-- [ ] Translate reviewed private profiles to TOML/globs. Brace alternation and `kind` filters cover every reviewed regex rule (checked 2026-10-15); review any remaining semantic differences explicitly. Keep every real profile and comparison Git-ignored.
-- [ ] Compare equivalent file inventories and rule decisions; explain intentional changes caused by new defaults before retiring the provisional interface.
+- [x] Translate reviewed private profiles to TOML/globs. Keep every real profile and comparison Git-ignored.
+- [x] Compare equivalent file inventories and rule decisions; explain intentional changes caused by new defaults before retiring the provisional interface. Every file counted by both formats keeps its purpose, category, and counts; built-in language mappings add Gradle scripts, JSONC, JSON Lines, and properties files, all landing in the intended rules. Evidence is in the Git-ignored local migration note.
 - [ ] Update usage examples and contributor guidance to the implemented product interface.
 
 **Completion evidence:** synthetic contract tests pass; private comparisons reconcile scope, classifications, and folder totals without silently accepting differences caused by changed working copies.
