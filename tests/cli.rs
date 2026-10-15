@@ -1579,3 +1579,34 @@ fn report_metadata_records_the_effective_policy() {
         .is_empty());
     assert_eq!(metadata["backend"], locmetry::BACKEND);
 }
+
+/// People read grouped digits faster: tables, notes, and Markdown group
+/// thousands, while JSON keeps plain integers for machines.
+#[test]
+fn human_formats_group_thousands_and_json_keeps_plain_integers() {
+    let source = "let a = 1;\n".repeat(1234);
+    let temp = project(&[
+        ("package.json", "{}\n"),
+        ("src/big.ts", source.as_str()),
+        ("loose/x.ts", "let x = 1;\n"),
+    ]);
+    let root = temp.path().join("project");
+    let table = String::from_utf8(run(&root, &["--format", "table"]).stdout).unwrap();
+    for expected in [
+        " TypeScript      2  1,235 │",
+        " src     1,234 │",
+        "npm 1,234 code lines in 1 module",
+    ] {
+        assert!(
+            table.contains(expected),
+            "{expected:?} missing in:\n{table}"
+        );
+    }
+    let markdown = String::from_utf8(run(&root, &["--format", "markdown"]).stdout).unwrap();
+    assert!(
+        markdown.contains("| production | 1 | 1,234 | 0 | 0 | 1,234 |"),
+        "{markdown}"
+    );
+    let (_, document, _) = headline(&root, &[]);
+    assert_eq!(document["summary"]["source"]["code"], json!(1235));
+}

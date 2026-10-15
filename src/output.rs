@@ -27,11 +27,11 @@ fn count_row(output: &mut String, label: &str, counts: &Counts) {
         output,
         "| {} | {} | {} | {} | {} | {} |",
         cell(label),
-        counts.files,
-        counts.code,
-        counts.comments,
-        counts.blanks,
-        counts.lines
+        grouped(counts.files),
+        grouped(counts.code),
+        grouped(counts.comments),
+        grouped(counts.blanks),
+        grouped(counts.lines)
     )
     .unwrap();
 }
@@ -93,8 +93,8 @@ fn repository_rows(
                 totals.source.code as f64 * 100.0 / workspace_code as f64
             ),
         };
-        let mut row = vec![label.to_string(), totals.source.code.to_string()];
-        row.extend(Purpose::ALL.map(|purpose| code(purpose).to_string()));
+        let mut row = vec![label.to_string(), grouped(totals.source.code)];
+        row.extend(Purpose::ALL.map(|purpose| grouped(code(purpose))));
         row.extend([ratio, share]);
         row
     };
@@ -167,19 +167,21 @@ fn repository_grid(
         let cells: Vec<String> = names
             .iter()
             .map(|name| {
-                summary
-                    .folders
-                    .get(*name)
-                    .and_then(|folder| of(&folder.recursive).get(&key))
-                    .map_or(0, |counts| counts.code)
-                    .to_string()
+                grouped(
+                    summary
+                        .folders
+                        .get(*name)
+                        .and_then(|folder| of(&folder.recursive).get(&key))
+                        .map_or(0, |counts| counts.code),
+                )
             })
             .collect();
         writeln!(
             output,
-            "| {} | {} | {total} |",
+            "| {} | {} | {} |",
             cell(&key),
-            cells.join(" | ")
+            cells.join(" | "),
+            grouped(total)
         )
         .unwrap();
     }
@@ -342,10 +344,12 @@ pub fn render_markdown(
         );
         writeln!(
             output,
-            "| {} | {production} | {test} | {} | {} | {} |",
+            "| {} | {} | {} | {} | {} | {} |",
             cell(folder),
-            totals.purpose(Purpose::Unclassified).code,
-            totals.source.code,
+            grouped(production),
+            grouped(test),
+            grouped(totals.purpose(Purpose::Unclassified).code),
+            grouped(totals.source.code),
             test_ratio(production, test)
         )
         .unwrap();
@@ -367,8 +371,8 @@ pub fn render_markdown(
                 output,
                 "| {} | {} | {} |",
                 cell(folder_label(&share.folder)),
-                share.files,
-                share.code
+                grouped(share.files),
+                grouped(share.code)
             )
             .unwrap();
         }
@@ -379,7 +383,7 @@ pub fn render_markdown(
             output,
             "| {} | {} | {} |",
             cell(&row.path),
-            row.counts.code,
+            grouped(row.counts.code),
             cell(&row.classification.category)
         )
         .unwrap();
@@ -401,7 +405,13 @@ fn render_build_modules(output: &mut String, modules: &[ModuleShare], order: Row
         .map(|(id, system)| (id.to_string(), system))
         .collect();
     for (id, system) in ordered(systems, |system| system.code, order) {
-        writeln!(output, "| {id} | {} | {} |", system.modules, system.code).unwrap();
+        writeln!(
+            output,
+            "| {id} | {} | {} |",
+            grouped(system.modules),
+            grouped(system.code)
+        )
+        .unwrap();
     }
     output.push_str("\n| Module | Build system | Code |\n| --- | --- | ---: |\n");
     for module in modules {
@@ -414,7 +424,7 @@ fn render_build_modules(output: &mut String, modules: &[ModuleShare], order: Row
             "| {} | {} | {} |",
             cell(path),
             module.detector,
-            module.code
+            grouped(module.code)
         )
         .unwrap();
     }
@@ -448,10 +458,24 @@ fn build_modules_note(modules: &[ModuleShare], order: RowOrder) -> Option<String
     ))
 }
 
+/// `count` with a comma between groups of three digits, so large counts read
+/// at a glance in the human formats; the JSON report keeps plain integers.
+fn grouped(count: u64) -> String {
+    let digits = count.to_string();
+    let mut output = String::with_capacity(digits.len() + digits.len() / 3);
+    for (index, digit) in digits.chars().enumerate() {
+        if index > 0 && (digits.len() - index).is_multiple_of(3) {
+            output.push(',');
+        }
+        output.push(digit);
+    }
+    output
+}
+
 fn counted(count: u64, noun: &str) -> String {
     match count {
         1 => format!("1 {noun}"),
-        _ => format!("{count} {noun}s"),
+        _ => format!("{} {noun}s", grouped(count)),
     }
 }
 
@@ -558,9 +582,9 @@ fn unclaimed_note(folders: &[FolderShare]) -> String {
         .map(|share| {
             [
                 folder_label(&share.folder).to_string(),
-                share.code.to_string(),
+                grouped(share.code),
                 plural(share.code, "code line"),
-                share.files.to_string(),
+                grouped(share.files),
                 plural(share.files, "file"),
             ]
         })
@@ -631,16 +655,14 @@ pub fn render_table(
     let purpose_cells = |code: &dyn Fn(Purpose) -> u64| {
         Purpose::ALL
             .into_iter()
-            .map(|purpose| code(purpose).to_string())
+            .map(|purpose| grouped(code(purpose)))
             .collect::<Vec<_>>()
     };
     let body: Vec<Vec<String>> = languages
         .iter()
         .map(|(language, (counts, purposes))| {
             let mut row = vec![language.clone()];
-            row.extend(
-                [counts.files, counts.code, counts.comments, counts.blanks].map(|n| n.to_string()),
-            );
+            row.extend([counts.files, counts.code, counts.comments, counts.blanks].map(grouped));
             row.extend(purpose_cells(&|purpose| {
                 purposes.get(&purpose).copied().unwrap_or(0)
             }));
@@ -649,8 +671,7 @@ pub fn render_table(
         .collect();
     let source = &summary.totals.source;
     let mut total = vec!["Total".to_string()];
-    total
-        .extend([source.files, source.code, source.comments, source.blanks].map(|n| n.to_string()));
+    total.extend([source.files, source.code, source.comments, source.blanks].map(grouped));
     total.extend(purpose_cells(&|purpose| {
         summary.totals.purpose(purpose).code
     }));
@@ -711,14 +732,14 @@ pub fn render_table(
                     _ => folder.clone(),
                 };
                 let code = |purpose| purposes.get(&purpose).copied().unwrap_or(0);
-                let mut row = vec![label, folder_code(purposes).to_string()];
+                let mut row = vec![label, grouped(folder_code(purposes))];
                 row.extend(purpose_cells(&code));
                 row.push(test_ratio(code(Purpose::Production), code(Purpose::Test)));
                 row
             })
             .collect();
         let code = |purpose| summary.totals.purpose(purpose).code;
-        let mut total = vec!["Total".to_string(), summary.totals.source.code.to_string()];
+        let mut total = vec!["Total".to_string(), grouped(summary.totals.source.code)];
         total.extend(purpose_cells(&code));
         total.push(test_ratio(code(Purpose::Production), code(Purpose::Test)));
         output += "\n";
@@ -751,9 +772,7 @@ pub fn render_table(
             .collect();
         let body: Vec<Vec<String>> = ordered(rows, |counts| counts.code, order)
             .into_iter()
-            .map(|(category, counts)| {
-                vec![category, counts.files.to_string(), counts.code.to_string()]
-            })
+            .map(|(category, counts)| vec![category, grouped(counts.files), grouped(counts.code)])
             .collect();
         if !body.is_empty() {
             output += "\n";
@@ -808,8 +827,8 @@ pub fn render_table(
             .into_iter()
             .take(5)
             .map(|(extension, files)| match extension.as_str() {
-                "(none)" => format!("no extension: {files}"),
-                _ => format!("{extension}: {files}"),
+                "(none)" => format!("no extension: {}", grouped(*files as u64)),
+                _ => format!("{extension}: {}", grouped(*files as u64)),
             })
             .collect();
         gaps.push(format!(
@@ -838,13 +857,19 @@ pub fn render_table(
 
 fn render_coverage(output: &mut String, findings: &Findings) {
     let coverage = findings.coverage;
-    writeln!(output, "\n## Coverage\n\nFiles selected: {}; counted: {}, including {} through language mappings; not recognized: {}; recognized but unreadable: {}. Their lines are missing, not zero. Counts describe the working copy, including untracked files, not a commit.", coverage.selected_files, coverage.counted_files, coverage.mapped_files, coverage.unrecognized_files, coverage.unread.len()).unwrap();
+    writeln!(output, "\n## Coverage\n\nFiles selected: {}; counted: {}, including {} through language mappings; not recognized: {}; recognized but unreadable: {}. Their lines are missing, not zero. Counts describe the working copy, including untracked files, not a commit.", grouped(coverage.selected_files as u64), grouped(coverage.counted_files as u64), grouped(coverage.mapped_files as u64), grouped(coverage.unrecognized_files as u64), grouped(coverage.unread.len() as u64)).unwrap();
     let mut extensions: Vec<_> = coverage.unrecognized_extensions.iter().collect();
     extensions.sort_by(|a, b| b.1.cmp(a.1).then(a.0.cmp(b.0)));
     if !extensions.is_empty() {
         output.push_str("\n| Unrecognized extension | Files |\n| --- | ---: |\n");
         for (extension, files) in extensions.into_iter().take(15) {
-            writeln!(output, "| {} | {files} |", cell(extension)).unwrap();
+            writeln!(
+                output,
+                "| {} | {} |",
+                cell(extension),
+                grouped(*files as u64)
+            )
+            .unwrap();
         }
     }
     if !coverage.unread.is_empty() {
@@ -967,6 +992,21 @@ pub fn write_report(output: &Path, text: &str) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn grouped_inserts_a_comma_before_every_third_digit_from_the_right() {
+        let cases = [
+            (0, "0"),
+            (999, "999"),
+            (1_000, "1,000"),
+            (12_345, "12,345"),
+            (123_456, "123,456"),
+            (1_234_567, "1,234,567"),
+        ];
+        for (count, expected) in cases {
+            assert_eq!(grouped(count), expected);
+        }
+    }
 
     /// Bold must not shift alignment: without its escape codes, an
     /// emphasized table equals the plain one.

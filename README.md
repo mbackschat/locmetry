@@ -558,6 +558,8 @@ Exit codes:
 | Report file | `--output FILE`, or `--output -` for stdout | deeper questions | the headline plus review list, additive breakdown table, effective configuration, and with `--files` per-file records |
 | Markdown | `--format markdown` | reviews, wikis | purpose, category, kind, language, and folder tables, review list, and coverage |
 
+The table and Markdown group thousands with commas, such as `12,345`, while JSON keeps plain integers for scripts.
+
 ## Compared with line counters
 
 Line counters such as [cloc](https://github.com/AlDanial/cloc) and [scc](https://github.com/boyter/scc) report lines per language. locmetry adds what language totals lack: scope as reviewable policy, purpose and category per file with provenance, separation of data and documentation from source, and coverage that names what was not counted. [Research](docs/research/README.md) compares the tools in more detail.
