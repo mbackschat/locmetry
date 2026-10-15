@@ -4,8 +4,8 @@ use locmetry::{
     breakdown, build_report, build_systems, git_submodules, module_shares, render_markdown,
     render_table, report_text, review, scan, scope_policy, submodule_shares, unclassified_folders,
     unused_entries, user_defaults_file, validate_output, write_report, Coverage, FileRecord,
-    Findings, Module, ModuleShare, Policy, RowOrder, ScopeOverrides, SubmoduleShare, BACKEND,
-    CONFIG_FILE, DATA_LANGUAGES, DOCUMENTATION_LANGUAGES,
+    Findings, MemberView, Module, ModuleShare, Policy, RowOrder, ScopeOverrides, SubmoduleShare,
+    BACKEND, CONFIG_FILE, DATA_LANGUAGES, DOCUMENTATION_LANGUAGES,
 };
 use serde_json::{json, Value};
 use std::{
@@ -249,6 +249,8 @@ struct Results {
     /// Configuration findings as human notes name them.
     unused_entries: Vec<String>,
     unused_exclusions: Vec<String>,
+    /// Workspace members in name order; empty for a single root.
+    members: Vec<MemberView>,
 }
 
 /// The output destination and stdout format, checked before measuring so a
@@ -338,6 +340,7 @@ fn run_root(args: &RootArgs, shared: &SharedArgs) -> Result<Outcome> {
         coverage: measurement.coverage,
         inaccurate: measurement.inaccurate,
         rows: measurement.rows,
+        members: Vec::new(),
     };
     report(shared, &destination, results, metadata, measured_at, true)
 }
@@ -453,6 +456,7 @@ fn run_workspace(args: &WorkspaceArgs) -> Result<Outcome> {
         submodules: Vec::new(),
         unused_entries: Vec::new(),
         unused_exclusions: Vec::new(),
+        members: Vec::new(),
     };
     let mut records = Vec::new();
     for measurement in measurements {
@@ -468,8 +472,23 @@ fn run_workspace(args: &WorkspaceArgs) -> Result<Outcome> {
             "scope": scope_policy(&measurement.policy),
             "unused_entries": measurement.unused_entries,
             "unused_exclusions": measurement.unused_exclusions,
+            "coverage": {
+                "selected_files": measurement.coverage.selected_files,
+                "counted_files": measurement.coverage.counted_files,
+                "mapped_files": measurement.coverage.mapped_files,
+                "unrecognized_files": measurement.coverage.unrecognized_files,
+                "unread_files": measurement.coverage.unread.len(),
+            },
             "config": measurement.policy.snapshot(),
         }));
+        let unclaimed = measurement.rows.iter().filter(|row| row.needs_review());
+        results.members.push(MemberView {
+            name: name.clone(),
+            unclaimed_files: unclaimed.clone().count() as u64,
+            unclaimed_code: unclaimed.map(|row| row.counts.code).sum(),
+            unrecognized_files: measurement.coverage.unrecognized_files,
+            unread_files: measurement.coverage.unread.len(),
+        });
         results
             .rows
             .extend(measurement.rows.into_iter().map(|mut row| {
@@ -545,6 +564,7 @@ fn report(
         submodules,
         unused_entries,
         unused_exclusions,
+        members,
     } = results;
     let format = destination.format;
     let summary = build_report(&rows);
@@ -554,6 +574,7 @@ fn report(
         submodules: &submodules,
         unused_entries: &unused_entries,
         unused_exclusions: &unused_exclusions,
+        members: &members,
     };
     let order = match shared.sort {
         Sort::Code => RowOrder::Code,
@@ -578,6 +599,22 @@ fn report(
     }
     let mut summary_json = serde_json::to_value(&summary.totals)?;
     summary_json["top_folders"] = serde_json::to_value(summary.top_folders())?;
+    if !members.is_empty() {
+        // A member's top-level folder holds exactly its files, so its
+        // recursive totals are what a regular run of that member reports.
+        let totals = members
+            .iter()
+            .map(|member| {
+                let folder = summary.folders.get(&member.name);
+                let value = match folder {
+                    Some(folder) => serde_json::to_value(&folder.recursive)?,
+                    None => serde_json::to_value(locmetry::Summary::default())?,
+                };
+                Ok((member.name.clone(), value))
+            })
+            .collect::<Result<serde_json::Map<_, _>>>()?;
+        summary_json["members"] = Value::Object(totals);
+    }
     if !module_shares.is_empty() {
         summary_json["build_modules"] = serde_json::to_value(build_systems(&module_shares))?;
     }

@@ -465,3 +465,175 @@ fn invalid_workspace_files_fail_before_measuring() {
     ));
     assert!(overwrite.contains("overwrite"), "{overwrite}");
 }
+
+/// The summary keys a member's totals repeat; the oracle is that member's
+/// regular run.
+const MEMBER_TOTALS: [&str; 6] = [
+    "all_counted",
+    "source",
+    "by_kind_purpose",
+    "source_purpose",
+    "source_categories",
+    "source_languages",
+];
+
+#[test]
+fn workspace_summaries_break_totals_down_by_member() {
+    let temp = workspace();
+    let base = temp.path();
+    let merged = full_report(base, &["workspace", "--root", "web", "--root", "api"]);
+    let headline = json_of(&locmetry(
+        base,
+        &["workspace", "--root", "web", "--root", "api"],
+    ));
+    let members: Vec<&String> = merged["summary"]["members"]
+        .as_object()
+        .unwrap()
+        .keys()
+        .collect();
+    assert_eq!(members, ["api", "web"]);
+    for (index, member) in ["api", "web"].into_iter().enumerate() {
+        let own = full_report(&base.join(member), &[]);
+        let expected: Map<String, Value> = MEMBER_TOTALS
+            .iter()
+            .filter_map(|key| Some((key.to_string(), own["summary"].get(*key)?.clone())))
+            .collect();
+        assert_eq!(
+            merged["summary"]["members"][member],
+            Value::Object(expected)
+        );
+        assert_eq!(
+            headline["summary"]["members"][member],
+            merged["summary"]["members"][member]
+        );
+        let coverage = &own["metadata"]["coverage"];
+        assert_eq!(
+            merged["metadata"]["members"][index]["coverage"],
+            json!({
+                "selected_files": coverage["selected_files"],
+                "counted_files": coverage["counted_files"],
+                "mapped_files": coverage["mapped_files"],
+                "unrecognized_files": coverage["unrecognized_files"],
+                "unread_files": coverage["unread"].as_array().unwrap().len(),
+            })
+        );
+    }
+}
+
+/// Cells of the table row whose first cell is `label`, below the header
+/// that starts with `header`.
+fn table_row(table: &str, header: &str, label: &str) -> Vec<String> {
+    table
+        .lines()
+        .skip_while(|line| !line.trim_start().starts_with(header))
+        .find(|line| line.split_whitespace().next() == Some(label))
+        .unwrap_or_else(|| panic!("no {label} row below {header} in:\n{table}"))
+        .split_whitespace()
+        .map(String::from)
+        .collect()
+}
+
+#[test]
+fn workspace_table_compares_repositories() {
+    let temp = workspace();
+    let output = locmetry(
+        temp.path(),
+        &[
+            "workspace",
+            "--root",
+            "web",
+            "--root",
+            "api",
+            "--format",
+            "table",
+        ],
+    );
+    let table = String::from_utf8(output.stdout).unwrap();
+    assert_eq!(
+        table_row(&table, "Repository", "Repository"),
+        [
+            "Repository",
+            "Code",
+            "Production",
+            "Test",
+            "Unclassified",
+            "Test/prod",
+            "Share"
+        ]
+    );
+    assert_eq!(
+        table_row(&table, "Repository", "web"),
+        ["web", "6", "3", "1", "2", "0.33", "60.0%"]
+    );
+    assert_eq!(
+        table_row(&table, "Repository", "api"),
+        ["api", "4", "1", "2", "1", "2.00", "40.0%"]
+    );
+    assert_eq!(
+        table_row(&table, "Repository", "Total"),
+        ["Total", "10", "4", "3", "3", "0.75", "100.0%"]
+    );
+    let row_index = |label: &str| {
+        table
+            .lines()
+            .skip_while(|line| !line.starts_with(" Repository"))
+            .position(|line| line.starts_with(&format!(" {label} ")))
+    };
+    assert!(
+        row_index("web") < row_index("api"),
+        "largest first:\n{table}"
+    );
+    assert!(!table.contains(" Folder "), "{table}");
+    assert!(
+        table.contains(" Repositories to review: api: 1 unclaimed file (1 code line), 1 unrecognized file; web: 2 unclaimed files (2 code lines).\n"),
+        "{table}"
+    );
+}
+
+#[test]
+fn workspace_markdown_breaks_categories_and_languages_down_by_repository() {
+    let temp = workspace();
+    let output = locmetry(
+        temp.path(),
+        &[
+            "workspace",
+            "--root",
+            "web",
+            "--root",
+            "api",
+            "--format",
+            "markdown",
+        ],
+    );
+    let markdown = String::from_utf8(output.stdout).unwrap();
+    for expected in [
+        "## Repositories\n",
+        "| Repository | Code | Production | Test | Unclassified | Test/prod | Share |\n",
+        "| web | 6 | 3 | 1 | 2 | 0.33 | 60.0% |\n",
+        "| Total | 10 | 4 | 3 | 3 | 0.75 | 100.0% |\n",
+        "## Source categories by repository\n",
+        "| Category | api | web | Total |\n",
+        "| test:test | 2 | 1 | 3 |\n",
+        "| production:tooling | 0 | 1 | 1 |\n",
+        "## Source languages by repository\n",
+        "| Language | api | web | Total |\n",
+        "| TypeScript | 0 | 6 | 6 |\n",
+        "| Rust | 4 | 0 | 4 |\n",
+        "Repositories to review: api: 1 unclaimed file (1 code line), 1 unrecognized file; web: 2 unclaimed files (2 code lines).",
+    ] {
+        assert!(markdown.contains(expected), "{expected:?} missing in:\n{markdown}");
+    }
+}
+
+/// A regular run keeps its folder rows; the repository dimension exists only
+/// in workspace mode.
+#[test]
+fn regular_runs_have_no_repository_dimension() {
+    let temp = workspace();
+    let web = temp.path().join("web");
+    let headline = json_of(&locmetry(&web, &[]));
+    assert!(headline["summary"].get("members").is_none());
+    let table = String::from_utf8(locmetry(&web, &["--format", "table"]).stdout).unwrap();
+    assert!(table.contains(" Folder "), "{table}");
+    assert!(!table.contains("Repositor"), "{table}");
+}

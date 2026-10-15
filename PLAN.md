@@ -34,9 +34,9 @@ Decided 2026-10-15: a `workspace` subcommand with repeatable `--root` or a works
 
 Decided 2026-10-15: workspace reports break metrics down by member, as the [proposal](PRODUCT.md#per-repository-breakdown-proposal) defines.
 
-- [ ] Report `summary.members` and per-member coverage counts, and extend `--schema report`.
-- [ ] Show repository rows with test ratio and share in the table, and repository grids in Markdown.
-- [ ] Note members with unclaimed, unrecognized, or unreadable files.
+- [x] Report `summary.members` and per-member coverage counts, and extend `--schema report`.
+- [x] Show repository rows with test ratio and share in the table, and repository grids in Markdown.
+- [x] Note members with unclaimed, unrecognized, or unreadable files.
 - [ ] Turn the proposal into contract text and update the README.
 
 **Completion evidence:** tests show each member's totals equal its regular run, and the table, grids, and notes on a synthetic workspace; a workspace over real sibling repositories, recorded in `docs/research/local/`, shows the same per-member figures as their individual runs.

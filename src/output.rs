@@ -1,3 +1,4 @@
+use crate::report::Summary;
 use crate::{
     breakdown, build_systems, unclassified_folders, Counts, Coverage, FileRecord, FolderShare,
     Kind, ModuleShare, Purpose, ReportSummary, SubmoduleShare,
@@ -52,6 +53,151 @@ pub struct Findings<'a> {
     pub submodules: &'a [SubmoduleShare],
     pub unused_entries: &'a [String],
     pub unused_exclusions: &'a [String],
+    /// Workspace members in name order; empty for a single root.
+    pub members: &'a [MemberView],
+}
+
+/// A workspace member as the human formats show it: a repository row, and
+/// the findings of the per-repository note.
+pub struct MemberView {
+    pub name: String,
+    pub unclaimed_files: u64,
+    pub unclaimed_code: u64,
+    pub unrecognized_files: usize,
+    pub unread_files: usize,
+}
+
+/// Repository rows and the total row: source code, code per purpose, test
+/// lines per production line, and share of the workspace's source code.
+fn repository_rows(
+    summary: &ReportSummary,
+    members: &[MemberView],
+    order: RowOrder,
+) -> (Vec<Vec<String>>, Vec<String>) {
+    let workspace_code = summary.totals.source.code;
+    let cells = |label: &str, totals: &Summary| {
+        let code = |purpose| totals.purpose(purpose).code;
+        let (production, test) = (code(Purpose::Production), code(Purpose::Test));
+        let ratio = match production {
+            0 => "-".to_string(),
+            _ => format!("{:.2}", test as f64 / production as f64),
+        };
+        let share = match workspace_code {
+            0 => "-".to_string(),
+            _ => format!(
+                "{:.1}%",
+                totals.source.code as f64 * 100.0 / workspace_code as f64
+            ),
+        };
+        let mut row = vec![label.to_string(), totals.source.code.to_string()];
+        row.extend(Purpose::ALL.map(|purpose| code(purpose).to_string()));
+        row.extend([ratio, share]);
+        row
+    };
+    let empty = Summary::default();
+    let rows = members
+        .iter()
+        .map(|member| {
+            let totals = summary
+                .folders
+                .get(&member.name)
+                .map_or(&empty, |folder| &folder.recursive);
+            (member.name.clone(), totals)
+        })
+        .collect();
+    let body = ordered(rows, |totals| totals.source.code, order)
+        .into_iter()
+        .map(|(name, totals)| cells(&name, totals))
+        .collect();
+    (body, cells("Total", &summary.totals))
+}
+
+const REPOSITORY_HEADER: [&str; 7] = [
+    "Repository",
+    "Code",
+    "Production",
+    "Test",
+    "Unclassified",
+    "Test/prod",
+    "Share",
+];
+
+/// A Markdown grid of source code per `key` and member, with a total column;
+/// `of` selects the map, such as categories or languages, from a summary.
+fn repository_grid(
+    output: &mut String,
+    title: &str,
+    label: &str,
+    summary: &ReportSummary,
+    members: &[MemberView],
+    of: impl Fn(&Summary) -> &BTreeMap<String, Counts>,
+    order: RowOrder,
+) {
+    let names: Vec<&str> = members.iter().map(|member| member.name.as_str()).collect();
+    writeln!(
+        output,
+        "\n## {title}\n\n| {label} | {} | Total |\n| --- |{} ---: |",
+        names
+            .iter()
+            .map(|name| cell(name))
+            .collect::<Vec<_>>()
+            .join(" | "),
+        " ---: |".repeat(names.len())
+    )
+    .unwrap();
+    let rows = of(&summary.totals)
+        .iter()
+        .map(|(key, counts)| (key.clone(), counts.code))
+        .collect();
+    for (key, total) in ordered(rows, |code| *code, order) {
+        let cells: Vec<String> = names
+            .iter()
+            .map(|name| {
+                summary
+                    .folders
+                    .get(*name)
+                    .and_then(|folder| of(&folder.recursive).get(&key))
+                    .map_or(0, |counts| counts.code)
+                    .to_string()
+            })
+            .collect();
+        writeln!(
+            output,
+            "| {} | {} | {total} |",
+            cell(&key),
+            cells.join(" | ")
+        )
+        .unwrap();
+    }
+}
+
+/// Names members with unclaimed source, unrecognized files, or unreadable
+/// files, so a workspace shows which repository needs attention.
+fn repositories_note(members: &[MemberView]) -> Option<String> {
+    let parts: Vec<String> = members
+        .iter()
+        .filter_map(|member| {
+            let mut findings = Vec::new();
+            if member.unclaimed_files > 0 {
+                findings.push(format!(
+                    "{} ({})",
+                    counted(member.unclaimed_files, "unclaimed file"),
+                    counted(member.unclaimed_code, "code line")
+                ));
+            }
+            if member.unrecognized_files > 0 {
+                findings.push(counted(
+                    member.unrecognized_files as u64,
+                    "unrecognized file",
+                ));
+            }
+            if member.unread_files > 0 {
+                findings.push(counted(member.unread_files as u64, "unreadable file"));
+            }
+            (!findings.is_empty()).then(|| format!("{}: {}", member.name, findings.join(", ")))
+        })
+        .collect();
+    (!parts.is_empty()).then(|| format!("Repositories to review: {}.", parts.join("; ")))
 }
 
 /// Sorts labelled rows by `order`, where `code` gives a row's code lines.
@@ -98,6 +244,38 @@ pub fn render_markdown(
             &mut output,
             &purpose.to_string(),
             &summary.totals.purpose(purpose),
+        );
+    }
+    if !findings.members.is_empty() {
+        let (body, total) = repository_rows(summary, findings.members, order);
+        writeln!(
+            output,
+            "\n## Repositories\n\n| {} |\n| --- |{}",
+            REPOSITORY_HEADER.join(" | "),
+            " ---: |".repeat(REPOSITORY_HEADER.len() - 1)
+        )
+        .unwrap();
+        for row in body.iter().chain([&total]) {
+            let cells: Vec<String> = row.iter().map(|value| cell(value)).collect();
+            writeln!(output, "| {} |", cells.join(" | ")).unwrap();
+        }
+        repository_grid(
+            &mut output,
+            "Source categories by repository",
+            "Category",
+            summary,
+            findings.members,
+            |totals| &totals.source_categories,
+            order,
+        );
+        repository_grid(
+            &mut output,
+            "Source languages by repository",
+            "Language",
+            summary,
+            findings.members,
+            |totals| &totals.source_languages,
+            order,
         );
     }
     table(
@@ -432,12 +610,24 @@ pub fn render_table(
     );
 
     let folder_code = |purposes: &BTreeMap<Purpose, u64>| purposes.values().sum::<u64>();
+    // A workspace's top-level folders are its members, so repository rows,
+    // which add the test ratio and share, take the folder rows' place.
+    if !findings.members.is_empty() {
+        let (body, total) = repository_rows(summary, findings.members, order);
+        output += "\n";
+        output += &text_table(
+            &REPOSITORY_HEADER,
+            &body,
+            Some(total),
+            (2, "Code by purpose"),
+        );
+    }
     let folders = ordered(
         summary.top_folders().into_iter().collect(),
         folder_code,
         order,
     );
-    if !folders.is_empty() {
+    if !folders.is_empty() && findings.members.is_empty() {
         let body: Vec<Vec<String>> = folders
             .iter()
             .map(|(folder, purposes)| {
@@ -512,6 +702,7 @@ pub fn render_table(
     }
     notes.extend(unused_entries_note(findings.unused_entries));
     notes.extend(unused_exclusions_note(findings.unused_exclusions));
+    notes.extend(repositories_note(findings.members));
     let mut gaps = Vec::new();
     if coverage.unrecognized_files > 0 {
         let mut extensions: Vec<_> = coverage.unrecognized_extensions.iter().collect();
@@ -569,6 +760,7 @@ fn render_coverage(output: &mut String, findings: &Findings) {
         .into_iter()
         .chain(unused_entries_note(findings.unused_entries))
         .chain(unused_exclusions_note(findings.unused_exclusions))
+        .chain(repositories_note(findings.members))
     {
         writeln!(output, "\n{note}").unwrap();
     }

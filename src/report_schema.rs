@@ -118,9 +118,20 @@ pub fn report_schema() -> Value {
                         "scope": {"$ref": "#/$defs/Scope"},
                         "unused_entries": strings("The member's configuration entries that decided no file."),
                         "unused_exclusions": strings("The member's configured exclusions that left out nothing."),
+                        "coverage": strict(
+                            json!({
+                                "selected_files": {"type": "integer"},
+                                "counted_files": {"type": "integer"},
+                                "mapped_files": {"type": "integer"},
+                                "unrecognized_files": {"type": "integer"},
+                                "unread_files": {"type": "integer"},
+                            }),
+                            &["selected_files", "counted_files", "mapped_files", "unrecognized_files", "unread_files"],
+                            "Which of the member's selected files were counted; `metadata.coverage` lists the paths for the whole workspace.",
+                        ),
                         "config": {"type": "object", "description": "Full report only: the member's effective configuration."},
                     }),
-                    &["name", "root", "config_path", "scope", "unused_entries", "unused_exclusions"],
+                    &["name", "root", "config_path", "scope", "unused_entries", "unused_exclusions", "coverage"],
                     "One repository of the workspace, measured with its own configuration.",
                 ),
                 "description": "Present only in workspace mode (`locmetry workspace`), in name order. Settings and configuration findings relative to one member live here instead of in `root`, `scope`, `config_path`, `config`, and `summary.unused_entries` or `summary.unused_exclusions`.",
@@ -143,72 +154,91 @@ pub fn report_schema() -> Value {
         {"required": ["members"], "not": {"anyOf": [{"required": ["root"]}, {"required": ["scope"]}, {"required": ["config_path"]}]}},
     ]);
 
+    // The summary's own totals, which `summary.members` repeats per member.
+    let totals = json!({
+        "all_counted": {"$ref": "#/$defs/Counts", "description": "Every counted file of every kind."},
+        "source": {"$ref": "#/$defs/Counts", "description": "Source files only; every other summary below is restricted to source."},
+        "by_kind_purpose": counts_map("Counts keyed `kind:purpose`, such as `data:test`, over every kind."),
+        "source_purpose": counts_map("Source counts keyed by purpose: `production`, `test`, `unclassified`."),
+        "source_categories": counts_map("Source counts keyed `purpose:category`, such as `production:tooling`; filter `production:implementation` for product code alone."),
+        "source_languages": counts_map("Source counts keyed by language."),
+    });
+    let mut summary_properties = totals.clone();
+    let summary_properties_rest = json!({
+        "members": {
+            "type": "object",
+            "additionalProperties": {"$ref": "#/$defs/Totals"},
+            "description": "Workspace mode only: each member's totals, keyed by member name in name order; they equal what a regular run of that member reports.",
+        },
+        "top_folders": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "object",
+                "additionalProperties": {"type": "integer"},
+                "description": "Source code lines per purpose.",
+            },
+            "description": "Each top-level folder's whole subtree; `.` holds the files directly in the root. Together they cover every file once.",
+        },
+        "build_modules": {
+            "type": "object",
+            "additionalProperties": strict(
+                json!({
+                    "modules": {"type": "integer"},
+                    "code": {"type": "integer", "description": "Source code lines the modules' layouts classified as production; files that an earlier stage decided, such as build scripts, are not included."},
+                }),
+                &["modules", "code"],
+                "One build system.",
+            ),
+            "description": "Present when build modules were adopted; keyed by build system.",
+        },
+        "submodules": {
+            "type": "array",
+            "items": strict(
+                json!({
+                    "path": {"type": "string", "description": "Submodule path from `.gitmodules`."},
+                    "files": {"type": "integer"},
+                    "code": {"type": "integer", "description": "Source code lines measured inside it."},
+                }),
+                &["path", "files", "code"],
+                "One Git submodule with measured source.",
+            ),
+            "description": "Present when Git submodules declared in the scan root's `.gitmodules` hold measured source. Submodules are often other teams' code: decide their scope, usually with `scope.exclude`; an excluded submodule is no longer listed.",
+        },
+        "unused_entries": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Present when configuration entries decided no file: their globs match nothing, or an earlier stage, such as a test convention, always decides first. Check their `match` or move them to `overrides`.",
+        },
+        "unused_exclusions": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Present when configured exclusions, from the project, user defaults, or `--exclude`, left out no file or folder: a folder written without `/**`, a misspelled path, or one that ignore files or `hidden = false` already hide. Default exclusions and the configuration file's own path are never listed.",
+        },
+        "unclassified_folders": {
+            "type": "array",
+            "items": strict(
+                json!({
+                    "folder": {"type": "string", "description": "Root-relative folder; `.` holds files directly in the root."},
+                    "files": {"type": "integer"},
+                    "code": {"type": "integer"},
+                }),
+                &["folder", "files", "code"],
+                "Unclaimed source below one folder.",
+            ),
+            "description": "Non-overlapping folders that together hold all unclaimed source, largest first; empty when every file is decided. These are the folders a configuration still needs entries for.",
+        },
+    });
+    summary_properties
+        .as_object_mut()
+        .expect("an object")
+        .extend(
+            summary_properties_rest
+                .as_object()
+                .expect("an object")
+                .clone(),
+        );
     let summary = strict(
-        json!({
-            "all_counted": {"$ref": "#/$defs/Counts", "description": "Every counted file of every kind."},
-            "source": {"$ref": "#/$defs/Counts", "description": "Source files only; every other summary below is restricted to source."},
-            "by_kind_purpose": counts_map("Counts keyed `kind:purpose`, such as `data:test`, over every kind."),
-            "source_purpose": counts_map("Source counts keyed by purpose: `production`, `test`, `unclassified`."),
-            "source_categories": counts_map("Source counts keyed `purpose:category`, such as `production:tooling`; filter `production:implementation` for product code alone."),
-            "source_languages": counts_map("Source counts keyed by language."),
-            "top_folders": {
-                "type": "object",
-                "additionalProperties": {
-                    "type": "object",
-                    "additionalProperties": {"type": "integer"},
-                    "description": "Source code lines per purpose.",
-                },
-                "description": "Each top-level folder's whole subtree; `.` holds the files directly in the root. Together they cover every file once.",
-            },
-            "build_modules": {
-                "type": "object",
-                "additionalProperties": strict(
-                    json!({
-                        "modules": {"type": "integer"},
-                        "code": {"type": "integer", "description": "Source code lines the modules' layouts classified as production; files that an earlier stage decided, such as build scripts, are not included."},
-                    }),
-                    &["modules", "code"],
-                    "One build system.",
-                ),
-                "description": "Present when build modules were adopted; keyed by build system.",
-            },
-            "submodules": {
-                "type": "array",
-                "items": strict(
-                    json!({
-                        "path": {"type": "string", "description": "Submodule path from `.gitmodules`."},
-                        "files": {"type": "integer"},
-                        "code": {"type": "integer", "description": "Source code lines measured inside it."},
-                    }),
-                    &["path", "files", "code"],
-                    "One Git submodule with measured source.",
-                ),
-                "description": "Present when Git submodules declared in the scan root's `.gitmodules` hold measured source. Submodules are often other teams' code: decide their scope, usually with `scope.exclude`; an excluded submodule is no longer listed.",
-            },
-            "unused_entries": {
-                "type": "array",
-                "items": {"type": "string"},
-                "description": "Present when configuration entries decided no file: their globs match nothing, or an earlier stage, such as a test convention, always decides first. Check their `match` or move them to `overrides`.",
-            },
-            "unused_exclusions": {
-                "type": "array",
-                "items": {"type": "string"},
-                "description": "Present when configured exclusions, from the project, user defaults, or `--exclude`, left out no file or folder: a folder written without `/**`, a misspelled path, or one that ignore files or `hidden = false` already hide. Default exclusions and the configuration file's own path are never listed.",
-            },
-            "unclassified_folders": {
-                "type": "array",
-                "items": strict(
-                    json!({
-                        "folder": {"type": "string", "description": "Root-relative folder; `.` holds files directly in the root."},
-                        "files": {"type": "integer"},
-                        "code": {"type": "integer"},
-                    }),
-                    &["folder", "files", "code"],
-                    "Unclaimed source below one folder.",
-                ),
-                "description": "Non-overlapping folders that together hold all unclaimed source, largest first; empty when every file is decided. These are the folders a configuration still needs entries for.",
-            },
-        }),
+        summary_properties,
         &["all_counted", "top_folders", "unclassified_folders"],
         "Totals; zero counts and empty maps are omitted, so a missing entry means zero.",
     );
@@ -293,6 +323,10 @@ pub fn report_schema() -> Value {
             "files": {"type": "array", "items": file_record, "description": "With `--files`: one record per counted file."},
         },
         "required": ["schema_version", "project", "metadata", "summary"],
-        "$defs": {"Counts": counts, "Scope": scope},
+        "$defs": {
+            "Counts": counts,
+            "Scope": scope,
+            "Totals": strict(totals, &["all_counted"], "Counts of one member, shaped like the summary's totals."),
+        },
     })
 }
