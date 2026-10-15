@@ -74,6 +74,9 @@ struct Cli {
     /// Directory to measure, instead of --root [default: the current directory].
     #[arg(value_name = "DIR", conflicts_with = "root")]
     directory: Option<PathBuf>,
+    /// Measure this root-relative folder and descendants, retaining project configuration and module context.
+    #[arg(long, value_name = "DIR")]
+    subfolder: Option<PathBuf>,
     #[command(flatten)]
     root: RootArgs,
     #[command(flatten)]
@@ -187,7 +190,7 @@ struct SharedArgs {
     /// its path hierarchy, and the review list stays largest first.
     #[arg(long, value_enum, default_value = "code")]
     sort: Sort,
-    /// Deepest folder level listed in the Markdown folder table; JSON lists all.
+    /// Deepest Markdown folder level, relative to --subfolder when selected; JSON lists all.
     #[arg(long, default_value_t = 2, value_name = "N")]
     depth: usize,
 }
@@ -275,18 +278,25 @@ fn prepare(
     })
 }
 
-fn measure(prepared: Prepared) -> Result<Measurement> {
+fn measure(prepared: Prepared, subfolder: Option<&str>) -> Result<Measurement> {
     let Prepared {
         root,
         name,
         config_path,
         mut policy,
     } = prepared;
-    let scan = scan(&root, &policy)?;
+    let scan = match subfolder {
+        Some(folder) => locmetry::scan_subfolder(&root, &policy, folder)?,
+        None => scan(&root, &policy)?,
+    };
     policy.adopt_modules(&scan.modules)?;
     let rows = scan.records(&policy)?;
+    let mut modules = module_shares(policy.modules(), &rows);
+    if subfolder.is_some() {
+        modules.retain(|module| module.files > 0);
+    }
     Ok(Measurement {
-        modules: module_shares(policy.modules(), &rows),
+        modules,
         submodules: submodule_shares(&git_submodules(&root), &rows),
         unused_entries: unused_entries(policy.entry_ids(), &rows),
         unused_exclusions: scan.unused_exclusions,
@@ -369,7 +379,7 @@ fn run(cli: Cli) -> Result<Outcome> {
         None => {
             let mut root = cli.root;
             root.root = root.root.or(cli.directory);
-            run_root(&root, &cli.shared)
+            run_root(&root, &cli.shared, cli.subfolder.as_deref())
         }
     }
 }
@@ -497,7 +507,7 @@ fn run_compare(args: &CompareArgs) -> Result<Outcome> {
     })
 }
 
-fn run_root(args: &RootArgs, shared: &SharedArgs) -> Result<Outcome> {
+fn run_root(args: &RootArgs, shared: &SharedArgs, subfolder: Option<&Path>) -> Result<Outcome> {
     let root = args.root.as_deref().unwrap_or(Path::new("."));
     let destination = destination(shared)?;
     let user_path = user_defaults(shared.no_user_config);
@@ -517,10 +527,29 @@ fn run_root(args: &RootArgs, shared: &SharedArgs) -> Result<Outcome> {
     if let Some(path) = destination.report_path {
         validate_output(path, &prepared.root, prepared.config_path.as_deref())?;
     }
-    let measurement = measure(prepared)?;
+    let subfolder = subfolder
+        .map(|path| locmetry::subfolder_path(&prepared.root, path))
+        .transpose()?
+        .flatten();
+    if let Some(folder) = &subfolder {
+        let inactive = prepared.root.join(folder).join(CONFIG_FILE);
+        if inactive.is_file()
+            && prepared
+                .config_path
+                .as_ref()
+                .and_then(|p| p.canonicalize().ok())
+                != inactive.canonicalize().ok()
+        {
+            eprintln!("Warning: {} is inactive; project configuration: {}. --subfolder retains project policy.", inactive.display(), prepared.config_path.as_ref().map(|p| p.display().to_string()).unwrap_or_else(|| "none (built-in settings)".into()));
+        }
+    }
+    let measurement = measure(prepared, subfolder.as_deref())?;
+    let mut scope = scope_policy(&measurement.policy);
+    scope.subfolder = subfolder;
+
     let location = Location::Root {
         root: measurement.root,
-        scope: scope_policy(&measurement.policy),
+        scope,
         config_path: measurement.config_path,
         user_path,
         config: Box::new(measurement.policy.snapshot().clone()),
@@ -622,7 +651,10 @@ fn run_workspace(args: &WorkspaceArgs) -> Result<Outcome> {
                 let (user_path, workspace_path) = (user_path.as_deref(), workspace_path.as_deref());
                 let handle = threads.spawn(move || {
                     let overrides = ScopeOverrides::default();
-                    measure(prepare(root, None, user_path, workspace_path, &overrides)?)
+                    measure(
+                        prepare(root, None, user_path, workspace_path, &overrides)?,
+                        None,
+                    )
                 });
                 (name, handle)
             })
@@ -787,7 +819,12 @@ fn report(
     } = results;
     let format = destination.format;
     let summary = build_report(&rows);
+    let subfolder = match &location {
+        Location::Root { scope, .. } => scope.subfolder.as_deref(),
+        Location::Workspace { .. } => None,
+    };
     let findings = Findings {
+        subfolder,
         coverage: &coverage,
         modules: &module_shares,
         submodules: &submodules,

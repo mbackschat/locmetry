@@ -163,6 +163,7 @@ impl MeasurementReport {
         }
         validate_totals(&self.summary.totals, "summary")?;
         let coverage_paths = self.validate_coverage()?;
+        self.validate_subfolder(&coverage_paths)?;
         self.validate_findings()?;
         self.validate_breakdown()?;
         self.validate_files(&coverage_paths)?;
@@ -190,10 +191,145 @@ impl MeasurementReport {
                 );
                 unique(members.iter().map(|m| &m.name), "members")?;
                 for member in members {
+                    ensure!(
+                        member.scope.subfolder.is_none(),
+                        "subfolder restriction is unsupported in workspace members"
+                    );
                     ensure!(!member.name.contains('/'), "invalid member name");
                     path(&member.name, false)?;
                 }
             }
+        }
+        Ok(())
+    }
+
+    fn validate_subfolder(&self, coverage_paths: &[&String]) -> Result<()> {
+        let Some(folder) = self
+            .metadata
+            .scope
+            .as_ref()
+            .and_then(|s| s.subfolder.as_deref())
+        else {
+            return Ok(());
+        };
+        path(folder, false).context("invalid subfolder restriction")?;
+        let inside = |p: &str| {
+            p.strip_prefix(folder)
+                .is_some_and(|rest| rest.starts_with('/'))
+        };
+        let folder_inside = |p: &str| p == folder || inside(p);
+        for p in coverage_paths
+            .iter()
+            .copied()
+            .chain(self.files.iter().flatten().map(|f| &f.path))
+            .chain(self.review.iter().flatten().map(|r| &r.path))
+        {
+            ensure!(
+                inside(p),
+                "measured path {p:?} is outside subfolder {folder:?}"
+            );
+        }
+        for p in self.breakdown.iter().flatten().map(|r| &r.folder).chain(
+            self.summary
+                .unclassified_folders
+                .iter()
+                .flatten()
+                .map(|f| &f.folder),
+        ) {
+            ensure!(
+                folder_inside(p),
+                "measured folder {p:?} is outside subfolder {folder:?}"
+            );
+        }
+        let top = folder.split('/').next().expect("validated path");
+        ensure!(
+            self.summary.top_folders.keys().all(|p| p == top),
+            "top_folders is outside subfolder ancestry"
+        );
+        for share in &self.summary.submodules {
+            path(&share.path, true)?;
+            ensure!(
+                share.path == "."
+                    || folder_inside(&share.path)
+                    || folder
+                        .strip_prefix(&share.path)
+                        .is_some_and(|rest| rest.starts_with('/')),
+                "submodule share is disjoint from subfolder"
+            );
+            ensure!(
+                share.files > 0
+                    && share.files <= self.summary.totals.source.files
+                    && share.code <= self.summary.totals.source.code,
+                "submodule share exceeds measured source"
+            );
+        }
+        let production = self
+            .summary
+            .totals
+            .source_purpose
+            .get(&Purpose::Production)
+            .copied()
+            .unwrap_or_default();
+        let shares = &self.summary.build_modules;
+        ensure!(
+            checked_sum(shares.values().map(|s| s.modules), "build_modules")? <= production.files
+                && checked_sum(shares.values().map(|s| s.code), "build_modules")?
+                    <= production.code,
+            "build_modules exceeds measured production contributions"
+        );
+        for (detector, share) in shares {
+            ensure!(
+                share.modules > 0,
+                "build_modules must contain contributing modules"
+            );
+            if let Some(modules) = &self.metadata.modules {
+                ensure!(
+                    share.modules
+                        <= modules.iter().filter(|m| &m.detector == detector).count() as u64,
+                    "build_modules exceeds recorded module context"
+                );
+            }
+        }
+        if let (Some(files), Some(modules)) = (&self.files, &self.metadata.modules) {
+            let mut contributions = BTreeMap::<(&str, &str), u64>::new();
+            for file in files.iter().filter(|f| f.kind == Kind::Source) {
+                if let Some(owner) = modules
+                    .iter()
+                    .filter(|m| {
+                        file.rule == format!("builtin:{}-module", m.detector)
+                            && (m.path == "."
+                                || file
+                                    .path
+                                    .strip_prefix(&m.path)
+                                    .is_some_and(|rest| rest.starts_with('/')))
+                    })
+                    .max_by_key(|m| {
+                        if m.path == "." {
+                            0
+                        } else {
+                            m.path.split('/').count()
+                        }
+                    })
+                {
+                    let code = contributions
+                        .entry((&owner.detector, &owner.path))
+                        .or_default();
+                    *code = checked_sum([*code, file.counts.code], "module contribution")?;
+                }
+            }
+            let mut expected = BTreeMap::<&str, (u64, u64)>::new();
+            for ((detector, _), code) in contributions {
+                let entry = expected.entry(detector).or_default();
+                entry.0 += 1;
+                entry.1 = checked_sum([entry.1, code], "build_modules")?;
+            }
+            ensure!(
+                expected.len() == shares.len()
+                    && expected.iter().all(|(key, (modules, code))| shares
+                        .get(*key)
+                        .is_some_and(|s| s.modules == *modules && s.code == *code)),
+                "build_modules conflicts with measured file contributions"
+            );
         }
         Ok(())
     }

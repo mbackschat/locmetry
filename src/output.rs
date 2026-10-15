@@ -55,6 +55,7 @@ pub enum RowOrder {
 /// What a measurement found beside the per-file records, for the notes of
 /// both human formats.
 pub struct Findings<'a> {
+    pub subfolder: Option<&'a str>,
     pub coverage: &'a Coverage,
     pub modules: &'a [ModuleShare],
     pub submodules: &'a [SubmoduleShare],
@@ -265,7 +266,8 @@ pub fn render_markdown(
     depth: usize,
     order: RowOrder,
 ) -> String {
-    let mut output = format!("# {}: lines of code by purpose\n\n{}\n\n## Source purpose\n\n| Purpose | Files | **Code** | Comments | Blanks | Lines |\n| --- | ---: | ---: | ---: | ---: | ---: |\n", cell(project), Theme::MARKDOWN.paint(Role::Muted, "Production means maintained non-test source, including separately categorized tooling. Data, configuration, and documentation are counted apart from source. Lines = Code + Comments + Blanks in every table with these columns, and the purpose rows add up to all source."));
+    let project = display_project(project, findings.subfolder);
+    let mut output = format!("# {}: lines of code by purpose\n\n{}\n\n## Source purpose\n\n| Purpose | Files | **Code** | Comments | Blanks | Lines |\n| --- | ---: | ---: | ---: | ---: | ---: |\n", cell(&project), Theme::MARKDOWN.paint(Role::Muted, "Production means maintained non-test source, including separately categorized tooling. Data, configuration, and documentation are counted apart from source. Lines = Code + Comments + Blanks in every table with these columns, and the purpose rows add up to all source."));
     for purpose in Purpose::ALL {
         count_row(
             &mut output,
@@ -361,11 +363,11 @@ pub fn render_markdown(
     write!(output, "\n## Folder breakdown\n\n{}\n\n| Folder | Production | Test | Unclassified | **Total source code** | Test/prod |\n| --- | ---: | ---: | ---: | ---: | ---: |\n", Theme::MARKDOWN.paint(Role::Muted, &format!("Recursive source code totals to depth {depth}. Parent rows include their children; do not sum all displayed rows. The report file's additive `breakdown` rows cover every depth. Multi-language files count once physically but contribute to each contained language. Production + Test + Unclassified = Total source code; Test/prod = Test / Production."))).unwrap();
     // Compare by path components: as plain strings, `web-admin` would sort
     // between `web` and `web/src`, because `-` sorts before `/`.
-    let mut folders: Vec<_> = summary.folders.iter().collect();
+    let mut folders = human_folders(summary, findings.subfolder, depth);
     folders.sort_by(|a, b| a.0.split('/').cmp(b.0.split('/')));
     for (folder, values) in folders {
-        let totals = &values.recursive;
-        if folder.split('/').count() > depth || totals.source.files == 0 {
+        let totals = values;
+        if totals.source.files == 0 {
             continue;
         }
         let (production, test) = (
@@ -375,7 +377,7 @@ pub fn render_markdown(
         writeln!(
             output,
             "| {} | {} | {} | {} | {} | {} |",
-            cell(folder),
+            cell(&folder),
             grouped(production),
             grouped(test),
             grouped(totals.purpose(Purpose::Unclassified).code),
@@ -727,6 +729,7 @@ pub fn render_table_with_theme(
     total.extend(purpose_cells(&|purpose| {
         summary.totals.purpose(purpose).code
     }));
+    let project = display_project(project, findings.subfolder);
     let mut output = format!(
         " {}\n",
         theme.paint(Role::Primary, &format!("{project} · Source code"))
@@ -773,7 +776,7 @@ pub fn render_table_with_theme(
         output += &format!(" {}\n", theme.paint(Role::Muted, REPOSITORY_LEGEND));
     }
     let folders = ordered(
-        summary.top_folders().into_iter().collect(),
+        human_top_folders(summary, findings.subfolder),
         folder_code,
         order,
     );
@@ -871,8 +874,14 @@ pub fn render_table_with_theme(
     if !folders.is_empty() {
         notes.push(unclaimed_note(&folders, theme));
     }
-    notes.extend(unused_entries_note(findings.unused_entries));
-    notes.extend(unused_exclusions_note(findings.unused_exclusions));
+    notes.extend(unused_entries_note(
+        findings.unused_entries,
+        findings.subfolder,
+    ));
+    notes.extend(unused_exclusions_note(
+        findings.unused_exclusions,
+        findings.subfolder,
+    ));
     notes.extend(repositories_note(findings.members));
     let mut gaps = Vec::new();
     if coverage.unrecognized_files > 0 {
@@ -963,8 +972,14 @@ fn render_coverage(output: &mut String, findings: &Findings) {
     }
     for note in submodules_note(findings.submodules)
         .into_iter()
-        .chain(unused_entries_note(findings.unused_entries))
-        .chain(unused_exclusions_note(findings.unused_exclusions))
+        .chain(unused_entries_note(
+            findings.unused_entries,
+            findings.subfolder,
+        ))
+        .chain(unused_exclusions_note(
+            findings.unused_exclusions,
+            findings.subfolder,
+        ))
         .chain(repositories_note(findings.members))
     {
         writeln!(output, "\n{note}").unwrap();
@@ -989,16 +1004,27 @@ fn submodules_note(submodules: &[SubmoduleShare]) -> Option<String> {
 
 /// Names configuration entries that decided no file, which usually means a
 /// glob that matches nothing or an entry an earlier stage preempts.
-fn unused_entries_note(entries: &[String]) -> Option<String> {
-    (!entries.is_empty()).then(|| format!("Entries that decided no file: {}.", entries.join(", ")))
+fn unused_entries_note(entries: &[String], subfolder: Option<&str>) -> Option<String> {
+    (!entries.is_empty()).then(|| {
+        format!(
+            "Entries that decided no file{}: {}.",
+            if subfolder.is_some() {
+                " in this subtree"
+            } else {
+                ""
+            },
+            entries.join(", ")
+        )
+    })
 }
 
 /// Names exclusions that left out nothing, which usually means a folder
 /// written without `/**`, a misspelled path, or one an ignore file already hides.
-fn unused_exclusions_note(patterns: &[String]) -> Option<String> {
+fn unused_exclusions_note(patterns: &[String], subfolder: Option<&str>) -> Option<String> {
     (!patterns.is_empty()).then(|| {
         format!(
-            "Exclusions that excluded nothing: {}; exclude a folder as <folder>/**, and an ignore file may already hide the path.",
+            "Exclusions that excluded nothing{}: {}; exclude a folder as <folder>/**, and an ignore file may already hide the path.",
+            if subfolder.is_some() { " in this subtree" } else { "" },
             patterns.join(", ")
         )
     })
@@ -1061,6 +1087,64 @@ pub fn write_report(output: &Path, text: &str) -> Result<()> {
     fs::write(output, text).with_context(|| format!("Cannot write report {}", output.display()))
 }
 
+fn display_project(project: &str, subfolder: Option<&str>) -> String {
+    match subfolder {
+        Some(folder) => format!("{} · subfolder {}", plain(project), plain(folder)),
+        None => plain(project),
+    }
+}
+
+fn human_folders<'a>(
+    summary: &'a ReportSummary,
+    subfolder: Option<&str>,
+    depth: usize,
+) -> Vec<(String, &'a crate::Summary)> {
+    let mut folders = Vec::new();
+    if let Some(root) = subfolder.filter(|_| depth > 0) {
+        if let Some(folder) = summary.folders.get(root) {
+            if folder.direct.source.files > 0 {
+                folders.push((format!("{root} (direct files)"), &folder.direct));
+            }
+        }
+    }
+    for (path, folder) in &summary.folders {
+        let level = match subfolder {
+            Some(root) => match path.strip_prefix(root).and_then(|p| p.strip_prefix('/')) {
+                Some(relative) => relative.split('/').count(),
+                None => continue,
+            },
+            None => path.split('/').count(),
+        };
+        if level <= depth {
+            folders.push((path.clone(), &folder.recursive));
+        }
+    }
+    folders
+}
+
+fn human_top_folders(
+    summary: &ReportSummary,
+    subfolder: Option<&str>,
+) -> Vec<(String, BTreeMap<Purpose, u64>)> {
+    match subfolder {
+        None => summary.top_folders().into_iter().collect(),
+        Some(_) => human_folders(summary, subfolder, 1)
+            .into_iter()
+            .filter(|(_, totals)| totals.source.files > 0)
+            .map(|(path, totals)| {
+                (
+                    path,
+                    totals
+                        .source_purpose
+                        .iter()
+                        .map(|(purpose, counts)| (*purpose, counts.code))
+                        .collect(),
+                )
+            })
+            .collect(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1079,6 +1163,7 @@ mod tests {
         }];
         for members in [&[][..], &member[..]] {
             let findings = Findings {
+                subfolder: None,
                 coverage: &coverage,
                 modules: &[],
                 submodules: &[],

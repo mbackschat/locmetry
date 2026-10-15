@@ -81,11 +81,19 @@ Done 2026-10-15: reproduced Tokei 15.0.0's global-quote bug with independent syn
 
 **Completion evidence:** regression tests failed before the fix and pass afterward, covering both recognized extensions, language mappings, quote and comment boundaries, raw blocks, BOM decoding, and unreadable-file coverage. The public suite, private regression guard, formatting, and Clippy pass. No release is part of this change.
 
-## Proposals — Under Discussion
+## Subfolder Measurement — Complete
 
-- [Subtree measurement with project context](proposals/subtree-measurement.md): proposed `--subfolder DIR` for single-root measurements, retaining project policy and module context while restricting counts and coverage. Design requested 2026-10-16; implementation remains unapproved. Ancestor discovery and workspace subtree selection are excluded from this proposal.
+Approved and implemented 2026-10-16: `--subfolder DIR` restricts a single-root measurement while preserving project policy, module context and path identities. Shared selection, spelling checks and diagnostic probes also serve `explain`; reports record the restriction, comparisons require matching restrictions, and human folder views start at the selected folder. [PRODUCT](PRODUCT.md#subfolder-measurement) owns the contract. Ancestor discovery and workspace restrictions remain excluded; per-file comparison and other conditional features remain deferred.
+
+Verification: initial command and saved-receipt guards failed before implementation. Fourteen focused tests now cover record/breakdown parity, independent counts, context/coverage separation, filtered and empty directories, path identity, zero-code modules, scoped findings, restricted comparisons, output protection, descriptor removal, schema validation and human views. The full public suite, formatting, Clippy, private replay and executable README troubleshooting workflows pass. Private replay guards existing measurement behavior; synthetic scanning cases establish the feature. Verification was local on macOS, not Linux CI. [Detailed evidence](plans/measurement-quality-and-net-change.md#subfolder-implementation--2026-10-16) records limits and documentation ownership. External implementation review remains a recommended next check, not a completed one.
+
+## Known Display Follow-up
+
+- Terminal note escaping: the unclaimed-source folder notes can print control characters embedded in path names. The new subfolder title uses the shared plain-label sanitizer, but older note formatting needs its own focused correction and regression guard. JSON path identities must remain unchanged.
 
 ## Completed Design Decisions
+
+- [Subtree measurement — historical decision record](proposals/subtree-measurement.md): retained design rationale and acceptance criteria; [PRODUCT](PRODUCT.md#subfolder-measurement) owns the implemented contract.
 
 - [Net change between measurement reports — historical decision record](proposals/net-change.md): aggregate/topology comparison implemented as `0.2.0-dev.1`; retained for S4 acceptance evidence and design rationale. [PRODUCT](PRODUCT.md#net-change) owns supported behavior. The [conditional per-file follow-up](plans/measurement-quality-and-net-change.md#per-file-comparison) owns the deferred design and consumer-demand trigger.
 

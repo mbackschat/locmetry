@@ -101,4 +101,26 @@ status=0
 [[ $status == 2 ]]
 jq -s -e 'any(.[]; .code == "coverage_gap")' "$temporary/out" > /dev/null
 [[ $(<"$temporary/err") == *'partial input measurements'* ]]
-echo 'README examples pass: policy outcomes, compare, workspace compare, explain, and partial coverage.'
+# Keep troubleshooting queries executable against the README's synthetic layout.
+mkdir -p "$temporary/issues/acme-orders/"{web/src,prototypes,docs}
+printf '{}\n' > "$temporary/issues/acme-orders/web/package.json"
+printf 'const cart = 1;\n' > "$temporary/issues/acme-orders/web/src/cart.ts"
+printf 'test();\n' > "$temporary/issues/acme-orders/web/src/cart.test.ts"
+printf 'print(1)\n' > "$temporary/issues/acme-orders/prototypes/pricing_experiment.py"
+printf '# Architecture\n' > "$temporary/issues/acme-orders/docs/architecture.md"
+printf 'synthetic image bytes' > "$temporary/issues/acme-orders/docs/order-flow.png"
+for block in 1 2 3 4 5 6 7 8; do
+    extract_blocks 'Common issues and useful queries' "$temporary/issue-query.sh" "$block"
+    (cd "$temporary/issues" && bash "$temporary/issue-query.sh") > "$temporary/issue-out"
+    case "$block" in
+        1) grep -Fxq $'1\tPython\tprototypes/pricing_experiment.py' "$temporary/issue-out" ;;
+        2) jq -e '.files == 1 and .code == 1' "$temporary/issue-out" > /dev/null ;;
+        3) grep -Fxq $'1\tproduction\tbuiltin:npm-module\tweb/src/cart.ts' "$temporary/issue-out" ;;
+        4) grep -Fq 'subfolder web/src' "$temporary/issue-out"; grep -Fq 'web/src (direct files)' "$temporary/issue-out" ;;
+        5) jq -e '.result.state == "counted" and .result.file.purpose == "test"' "$temporary/issue-out" > /dev/null ;;
+        6) jq -e '.result.state == "unrecognized"' "$temporary/issue-out" > /dev/null ;;
+        7) jq -e '.unrecognized == ["docs/order-flow.png"] and .counted_files == 5' "$temporary/issue-out" > /dev/null ;;
+        8) grep -Fxq $'data\t1\tweb/package.json' "$temporary/issue-out"; grep -Fxq $'documentation\t1\tdocs/architecture.md' "$temporary/issue-out" ;;
+    esac
+done
+echo 'README examples pass: policy outcomes, compare, workspace compare, explain, partial coverage, and troubleshooting queries.'

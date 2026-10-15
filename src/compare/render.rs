@@ -71,6 +71,20 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
         false => writeln!(out, "{}", theme.paint(Role::Heading, &title)),
     }
     .unwrap();
+    if let Some(folder) = c
+        .before
+        .metadata
+        .scope
+        .as_ref()
+        .and_then(|s| s.subfolder.as_deref())
+    {
+        writeln!(
+            out,
+            "Subfolder: {} (project-relative; measured contributions only)",
+            label(folder, markdown)
+        )
+        .unwrap();
+    }
     writeln!(out,"\n{}", theme.paint(Role::Muted, "After minus before, over recorded counts. Unavailable lines are not estimated; presence does not prove physical creation or deletion.")).unwrap();
     if markdown {
         out.push_str("\n## Totals\n\n| Measure | Before | After | Net change |\n| --- | ---: | ---: | ---: |\n");

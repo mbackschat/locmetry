@@ -133,6 +133,7 @@ pub fn scope_policy(policy: &Policy) -> crate::contract::Selection {
         false => Vec::new(),
     };
     crate::contract::Selection {
+        subfolder: None,
         hidden: scope.hidden(),
         respect_ignore_files: scope.respect_ignore_files(),
         ignore_files: ignore_files.into_iter().map(String::from).collect(),
@@ -217,6 +218,7 @@ impl Scan {
 
 pub(crate) struct Selection {
     pub paths: Vec<PathBuf>,
+    pub target_selected: bool,
     applied: BTreeSet<usize>,
     pub exclusion: Option<Exclusion>,
 }
@@ -226,6 +228,122 @@ pub(crate) struct Exclusion {
     pub patterns: Vec<String>,
 }
 
+#[derive(Clone, Copy)]
+pub(crate) enum Target<'a> {
+    File(&'a str),
+    Subfolder(&'a str),
+}
+impl<'a> Target<'a> {
+    fn path(self) -> &'a str {
+        match self {
+            Self::File(path) | Self::Subfolder(path) => path,
+        }
+    }
+    fn contains(self, path: &str) -> bool {
+        match self {
+            Self::File(target) => target == path,
+            Self::Subfolder(target) => path
+                .strip_prefix(target)
+                .is_some_and(|rest| rest.starts_with('/')),
+        }
+    }
+}
+
+/// Check on-disk spelling before selection; aliases must not become false scope diagnoses.
+/// Project path identity follows directory entries, including on alias-tolerant APFS
+/// (docs/PRODUCT.md, Path Explanations and Subfolder Measurement).
+pub(crate) fn inspect_path(root: &Path, path: &str, label: &str) -> Result<Option<String>> {
+    let mut current = root.to_owned();
+    let mut relative = PathBuf::new();
+    for component in Path::new(path).components() {
+        let exact = std::fs::read_dir(&current)
+            .with_context(|| format!("Cannot inspect {label} path spelling"))?
+            .collect::<std::io::Result<Vec<_>>>()?
+            .iter()
+            .any(|entry| entry.file_name() == component.as_os_str());
+        current.push(component);
+        let metadata = std::fs::symlink_metadata(&current)
+            .with_context(|| format!("{label} target does not exist or cannot be inspected"))?;
+        ensure!(
+            exact,
+            "{label} target must use the exact spelling of directory entries: {path}"
+        );
+        relative.push(component);
+        if metadata.file_type().is_symlink() {
+            return Ok(Some(relative_path(&relative)?));
+        }
+    }
+    Ok(None)
+}
+
+/// Resolve one literal directory without changing the project's path base.
+pub fn subfolder_path(root: &Path, given: &Path) -> Result<Option<String>> {
+    ensure!(!given.as_os_str().is_empty(), "Subfolder must not be empty");
+    ensure!(
+        given
+            .components()
+            .all(|c| matches!(c, Component::Normal(_) | Component::CurDir)),
+        "Subfolder must be root-relative without parent components"
+    );
+    if given.components().all(|c| c == Component::CurDir) {
+        return Ok(None);
+    }
+    let path = relative_path(given)?;
+    ensure!(
+        inspect_path(root, &path, "Subfolder")?.is_none(),
+        "Subfolder must not pass through a symlink: {path}"
+    );
+    ensure!(
+        root.join(&path).is_dir(),
+        "Subfolder target must be a directory"
+    );
+    Ok(Some(path))
+}
+
+/// Measure a selected directory while retaining the ordinary project module context.
+pub fn scan_subfolder(root: &Path, policy: &Policy, subfolder: &str) -> Result<Scan> {
+    scan_selection(root, policy, Some(Target::Subfolder(subfolder))).map(|(scan, _)| scan)
+}
+
+#[derive(Serialize, schemars::JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum FilterReason {
+    /// Disabling only ignore filtering selects the target; no winning ignore-file rule is claimed.
+    IgnorePolicy,
+    /// Enabling only hidden paths selects the target.
+    HiddenPolicy,
+    /// No single-setting probe established a cause, including overlapping filters.
+    ReasonNotRecorded,
+}
+
+pub(crate) fn filter_reason(
+    root: &Path,
+    scope: &crate::Scope,
+    target: Target<'_>,
+) -> Result<FilterReason> {
+    let selected_with = |overrides| -> Result<bool> {
+        let scope = scope.with_overrides(&overrides)?;
+        Ok(select_paths(root, &scope, Some(target))?.target_selected)
+    };
+    if scope.respect_ignore_files()
+        && selected_with(crate::ScopeOverrides {
+            respect_ignore_files: Some(false),
+            ..Default::default()
+        })?
+    {
+        Ok(FilterReason::IgnorePolicy)
+    } else if !scope.hidden()
+        && selected_with(crate::ScopeOverrides {
+            hidden: Some(true),
+            ..Default::default()
+        })?
+    {
+        Ok(FilterReason::HiddenPolicy)
+    } else {
+        Ok(FilterReason::ReasonNotRecorded)
+    }
+}
+
 pub fn scan(root: &Path, policy: &Policy) -> Result<Scan> {
     scan_selection(root, policy, None).map(|(scan, _)| scan)
 }
@@ -233,7 +351,7 @@ pub fn scan(root: &Path, policy: &Policy) -> Result<Scan> {
 pub(crate) fn select_paths(
     root: &Path,
     scope: &crate::Scope,
-    target: Option<&str>,
+    target: Option<Target<'_>>,
 ) -> Result<Selection> {
     let root = root.to_owned();
     // Tokei v15 src/utils/fs.rs anchors overrides to CWD and uses gitignore
@@ -251,7 +369,11 @@ pub(crate) fn select_paths(
     let recorder = Arc::clone(&applied);
     let exclusion = Arc::new(Mutex::new(None));
     let trace = Arc::clone(&exclusion);
-    let target = target.map(str::to_owned);
+    let target_path = target.map(|t| t.path().to_owned());
+    let subfolder = match target {
+        Some(Target::Subfolder(path)) => Some(path.to_owned()),
+        _ => None,
+    };
     walker.filter_entry(move |entry| {
         let Ok(path) = entry
             .path()
@@ -265,28 +387,38 @@ pub(crate) fn select_paths(
         let excluded_by = scope.excluded_by(&path, directory);
         let selected = excluded_by.is_empty();
         if !selected
-            && target.as_ref().is_some_and(|target| {
+            && target_path.as_ref().is_some_and(|target| {
                 target == &path || (directory && target.starts_with(&format!("{path}/")))
             })
         {
             let patterns = scope.exclusions();
             *trace.lock().expect("single-threaded traversal") = Some(Exclusion {
-                at: path,
+                at: path.clone(),
                 patterns: excluded_by
                     .iter()
                     .map(|&index| patterns[index].clone())
                     .collect(),
             });
         }
-        recorder
-            .lock()
-            .expect("the walk records exclusions on one thread")
-            .extend(excluded_by);
+        if subfolder.as_ref().is_none_or(|folder| {
+            path == *folder
+                || Target::Subfolder(folder).contains(&path)
+                || (directory && Target::Subfolder(&path).contains(folder))
+        }) {
+            recorder
+                .lock()
+                .expect("the walk records exclusions on one thread")
+                .extend(excluded_by);
+        }
         selected
     });
     let mut paths = Vec::new();
+    let mut target_selected = false;
     for entry in walker.build() {
         let entry = entry.context("Cannot traverse scan root")?;
+        if target.is_some_and(|target| entry.path() == root.join(target.path())) {
+            target_selected = true;
+        }
         if entry.file_type().is_some_and(|kind| kind.is_file()) {
             paths.push(entry.into_path());
         }
@@ -295,6 +427,7 @@ pub(crate) fn select_paths(
     let exclusion = exclusion.lock().expect("the walk has finished").take();
     Ok(Selection {
         paths,
+        target_selected,
         applied,
         exclusion,
     })
@@ -303,23 +436,44 @@ pub(crate) fn select_paths(
 pub(crate) fn scan_selection(
     root: &Path,
     policy: &Policy,
-    target: Option<&str>,
+    target: Option<Target<'_>>,
 ) -> Result<(Scan, Option<Exclusion>)> {
     let root = root.canonicalize().context("Scan root does not exist")?;
     ensure!(root.is_dir(), "Scan root must be a directory");
     std::fs::read_dir(&root).context("Cannot read scan root")?;
     let Selection {
         mut paths,
+        target_selected,
         applied,
         exclusion,
     } = select_paths(&root, policy.scope(), target)?;
+    if let Some(Target::Subfolder(folder)) = target {
+        if !target_selected {
+            if let Some(excluded) = &exclusion {
+                bail!(
+                    "Subfolder {folder} is excluded at {} by {}; revise the exclusion policy",
+                    excluded.at,
+                    excluded.patterns.join(", ")
+                );
+            }
+            let reason = match filter_reason(&root, policy.scope(), Target::Subfolder(folder))? {
+                FilterReason::IgnorePolicy => "ignore policy; try --respect-ignore-files false (changes the whole project policy and module context)",
+                FilterReason::HiddenPolicy => "hidden policy; try --hidden true (changes the whole project policy and module context)",
+                FilterReason::ReasonNotRecorded => "cause could not be established; inspect overlapping scope filters",
+            };
+            bail!("Subfolder {folder} is not selected: {reason}");
+        }
+    }
     let names = paths
         .iter()
         .map(|path| relative_path(path.strip_prefix(&root)?))
         .collect::<Result<Vec<_>>>()?;
     let modules = modules::detect(&names.iter().map(String::as_str).collect::<Vec<_>>());
     if let Some(target) = target {
-        paths.retain(|path| path == &root.join(target));
+        paths.retain(|path| {
+            relative_path(path.strip_prefix(&root).expect("selected beneath root"))
+                .is_ok_and(|path| target.contains(&path))
+        });
     }
     let unused_exclusions = policy.unused_exclusions(&applied);
     let mut languages = tokei::Languages::new();

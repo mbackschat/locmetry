@@ -2,7 +2,7 @@
 
 # locmetry
 
-This checkout documents **0.2.0-dev.1 (unreleased)**. Notebook corrections, `parse_failures`, `compare` and `explain` are development features absent from released v0.1.6. The stable installation below remains v0.1.6; use a local build of this checkout for the new behavior.
+This checkout documents **0.2.0-dev.1 (unreleased)**. Notebook corrections, `parse_failures`, `compare`, `explain` and `--subfolder` are development features absent from released v0.1.6. The stable installation below remains v0.1.6; use a local build of this checkout for the new behavior.
 
 **Lines of code, split by purpose: production, tests, tooling, and what nobody claims.** `locmetry` measures selected files that its counters can recognize and read, gives each counted file a purpose and category, and records the rule that decided it. Coverage names files whose counts are unavailable.
 
@@ -257,6 +257,7 @@ Personal defaults for every project, such as extra exclusions or language mappin
 | Option | Effect |
 | --- | --- |
 | `DIR` or `--root DIR` | Directory to measure; mutually exclusive. Default: the current directory. |
+| `--subfolder DIR` | Measure one root-relative folder and descendants, retaining project policy and module context; single-root mode only. |
 | `--config FILE` | TOML configuration; default: `.locmetryrc` in the scan root, else built-in settings. The scan root stays unchanged. |
 | `--exclude GLOB` | Add a root-relative exclusion; repeatable. |
 | `--hidden true\|false` | Whether hidden files and directories are measured. |
@@ -365,6 +366,74 @@ case "$status" in
 esac
 exit "$status"
 ```
+
+## Common issues and useful queries
+
+These examples use the [sample project](#a-tour-of-a-sample-project). Run them from the directory containing `acme-orders`; queries require `jq`. Paths in reports stay relative to the project root. `--output -` supplies the full report rather than the compact JSON headline. Pipelines below are interactive inspection examples; use the [CI recipe](#continuous-integration) when preserving a partial measurement's exit status matters.
+
+### “Unclaimed source”: which files make up that folder total?
+
+The files were counted, but no rule, convention or module claimed their purpose. The full report's `review` list already contains every unclaimed source file, largest first; no `--files` is needed. List code lines, language and path for `prototypes/`, including descendants:
+
+```sh
+locmetry acme-orders --output - | jq -r '.review[] | select(.path | startswith("prototypes/")) | [.code, .language, .path] | @tsv'
+```
+
+Check the same folder's file count and code-line total, including the empty case:
+
+```sh
+locmetry acme-orders --output - | jq '[.review[] | select(.path | startswith("prototypes/"))] | {files: length, code: (map(.code) | add // 0)}'
+```
+
+For all counted source in `web/src/`, including production and tests, request file detail instead:
+
+```sh
+locmetry acme-orders --files --output - | jq -r '.files[] | select(.kind == "source" and (.path | startswith("web/src/"))) | [.counts.code, .purpose, .rule, .path] | @tsv'
+```
+
+### A subdirectory scan unexpectedly reports production files as unclaimed
+
+`locmetry acme-orders/web/src` treats `src` as an independent root. It does not discover the repository's `.locmetryrc` or the parent `web/package.json`. Supplying `--config` alone does not restore the project's path base or ancestor module evidence. Keep the project root and restrict the measurement explicitly:
+
+```sh
+locmetry acme-orders --subfolder web/src --format table
+```
+
+This retains project-relative rules and module context while counting only the selected folder. Human folder rows show its children. A target excluded, ignored or hidden by policy fails clearly instead of reporting an empty measurement. [Subfolder semantics](docs/PRODUCT.md#subfolder-measurement) explains context traversal, coverage, diagnostics and comparison compatibility. Ancestor configuration discovery is not automatic.
+
+### A counted file has an unexpected purpose
+
+An earlier classification stage may win over your rule. Explain the file using the same project root and policy as the measurement; inspect `result.file.rule` and `result.decision` before editing configuration:
+
+```sh
+locmetry explain web/src/cart.test.ts --root acme-orders --format json
+```
+
+The sample's test convention wins before module inference. When measuring a subfolder, use the same project-relative target and omit `--subfolder` from `explain`: the file already restricts counting. Entries listed as unused in a subtree may still decide files elsewhere. Only an unrestricted measurement supports the configuration-cleanup checks for `unused_entries` and `unused_exclusions`.
+
+### A file is absent from the counts
+
+Absence can mean exclusion, ignore/hidden filtering, an unrecognized format, or unavailable counts. Explain the path instead of assuming zero lines:
+
+```sh
+locmetry explain docs/order-flow.png --root acme-orders --format json
+```
+
+The sample image is unrecognized. The [explanation guide](docs/troubleshooting.md#interpret-the-evidence) covers other states and what their evidence supports. To inspect all unavailable-file evidence:
+
+```sh
+locmetry acme-orders --output - | jq '.metadata.coverage'
+```
+
+### “Not source code”: which files are data or documentation?
+
+Content kind is separate from purpose: these files contribute to `all_counted`, but not source totals. List their kinds, physical line counts and paths:
+
+```sh
+locmetry acme-orders --files --output - | jq -r '.files[] | select(.kind != "source") | [.kind, .counts.lines, .path] | @tsv'
+```
+
+For additional fields and their semantics, inspect `locmetry --schema report`. Summaries omit zero counts where documented; missing file detail or coverage evidence is not a measured zero.
 
 ## Configure with an agent
 

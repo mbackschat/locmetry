@@ -1,6 +1,6 @@
 //! Focused evidence for one existing path, using ordinary selection and counting.
 use crate::style::{Role, Theme};
-use crate::{backend, contract, Policy, ScopeOverrides};
+use crate::{backend, contract, Policy};
 use anyhow::{ensure, Context, Result};
 use schemars::JsonSchema;
 use serde::Serialize;
@@ -58,16 +58,7 @@ pub enum PathResult {
     Symlink { at: String },
 }
 
-#[derive(Serialize, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum FilterReason {
-    /// Disabling only respect_ignore_files makes the target selected; the winning ignore rule is unavailable.
-    IgnorePolicy,
-    /// Enabling only hidden makes the target selected; no other setting was changed.
-    HiddenPolicy,
-    /// No target exclusion trace or single-setting probe established a cause, including when filters mask one another.
-    ReasonNotRecorded,
-}
+pub use crate::backend::FilterReason;
 
 pub fn inspect(root: &Path, path: &Path, policy: &mut Policy) -> Result<(String, PathResult)> {
     let root = root.canonicalize().context("Scan root does not exist")?;
@@ -79,35 +70,15 @@ pub fn inspect(root: &Path, path: &Path, policy: &mut Policy) -> Result<(String,
         "Explanation target must be a file"
     );
     let path = backend::relative_path(path)?;
-    let mut current = root.to_owned();
-    let mut relative = std::path::PathBuf::new();
-    for component in Path::new(&path).components() {
-        // APFS can resolve case/Unicode aliases that the walk never emits. The
-        // root-relative contract uses directory-entry spelling (PRODUCT, Path Explanations).
-        let exact = std::fs::read_dir(&current)
-            .context("Cannot inspect explanation path spelling")?
-            .collect::<std::io::Result<Vec<_>>>()?
-            .iter()
-            .any(|entry| entry.file_name() == component.as_os_str());
-        current.push(component);
-        let metadata = std::fs::symlink_metadata(&current)
-            .context("Explanation target does not exist or cannot be inspected")?;
-        ensure!(
-            exact,
-            "Explanation target must use the exact spelling of directory entries: {path}"
-        );
-        relative.push(component);
-        if metadata.file_type().is_symlink() {
-            return Ok((
-                path,
-                PathResult::Symlink {
-                    at: backend::relative_path(&relative)?,
-                },
-            ));
-        }
+    if let Some(at) = backend::inspect_path(root, &path, "Explanation")? {
+        return Ok((path, PathResult::Symlink { at }));
     }
-    ensure!(current.is_file(), "Explanation target must be a file");
-    let (scan, exclusion) = backend::scan_selection(root, policy, Some(&path))?;
+    ensure!(
+        root.join(&path).is_file(),
+        "Explanation target must be a file"
+    );
+    let (scan, exclusion) =
+        backend::scan_selection(root, policy, Some(backend::Target::File(&path)))?;
     policy.adopt_modules(&scan.modules)?;
     let result = if let Some(file) = scan.records(policy)?.into_iter().next() {
         let decision = policy.decision(&path, file.kind);
@@ -127,28 +98,7 @@ pub fn inspect(root: &Path, path: &Path, policy: &mut Policy) -> Result<(String,
             patterns: exclusion.patterns,
         }
     } else {
-        let selected_with = |overrides| -> Result<bool> {
-            let scope = policy.scope().with_overrides(&overrides)?;
-            Ok(backend::select_paths(root, &scope, None)?
-                .paths
-                .contains(&root.join(&path)))
-        };
-        let reason = if policy.scope().respect_ignore_files()
-            && selected_with(ScopeOverrides {
-                respect_ignore_files: Some(false),
-                ..Default::default()
-            })? {
-            FilterReason::IgnorePolicy
-        } else if !policy.scope().hidden()
-            && selected_with(ScopeOverrides {
-                hidden: Some(true),
-                ..Default::default()
-            })?
-        {
-            FilterReason::HiddenPolicy
-        } else {
-            FilterReason::ReasonNotRecorded
-        };
+        let reason = backend::filter_reason(root, policy.scope(), backend::Target::File(&path))?;
         PathResult::NotSelected { reason }
     };
     Ok((path, result))

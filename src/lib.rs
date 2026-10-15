@@ -12,8 +12,9 @@ mod schema;
 pub mod style;
 
 pub use backend::{
-    file_records, git_submodules, language_kind, scan, scope_policy, Coverage, ParseFailure,
-    ParseFailureReason, Scan, DATA_LANGUAGES, DOCUMENTATION_LANGUAGES,
+    file_records, git_submodules, language_kind, scan, scan_subfolder, scope_policy,
+    subfolder_path, Coverage, ParseFailure, ParseFailureReason, Scan, DATA_LANGUAGES,
+    DOCUMENTATION_LANGUAGES,
 };
 pub use config::{
     config_schema, user_config_schema, user_defaults_file, workspace_roots, workspace_schema,

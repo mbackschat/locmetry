@@ -1,6 +1,6 @@
 # Subtree Measurement with Project Context
 
-Status: proposed design for review, 2026-10-16. The owner requested this design; the option name `--subfolder` is accepted. Implementation is not authorized by this document. Commands and report additions below are proposed, not supported behavior. [PRODUCT](../PRODUCT.md) remains the supported-contract owner.
+Status: historical decision record. The owner approved implementation on 2026-10-16; single-root `--subfolder` measurement is implemented in the `0.2.0-dev.1` development checkout. [PRODUCT](../PRODUCT.md#subfolder-measurement) owns the supported contract; the [work plan](../plans/measurement-quality-and-net-change.md#subfolder-implementation--2026-10-16) records verification. The sections below preserve reviewed design rationale and acceptance criteria, not a second live specification. Do not update this record to track behavior.
 
 ## Problem and Recommendation
 

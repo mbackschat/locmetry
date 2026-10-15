@@ -48,6 +48,8 @@ The target must use the exact directory-entry spelling, including case and Unico
 
 With `--workspace`, the target starts with the member's folder name; roots in the workspace file are relative to that file. Only the queried member's policy is loaded, while normal membership checks still reject duplicate names or nested roots. `--root`, `--config`, `--exclude`, `--hidden` and `--respect-ignore-files` cannot be combined with `--workspace`. Paths in the result are member-prefixed, but matching globs remain relative to that member's own root.
 
+For a report made with `--subfolder`, keep the project root and use the file's project-relative path in `explain`; no subfolder option is accepted or needed. A successful explanation does not establish inclusion in an earlier restricted report. Subfolder selection errors may suggest changing ignore/hidden settings, but those overrides also change module context across the project. See [subfolder measurement](PRODUCT.md#subfolder-measurement) and the README's [common issues and queries](../README.md#common-issues-and-useful-queries).
+
 ## Interpret the Evidence
 
 | Observation | Meaning and next step |

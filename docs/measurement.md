@@ -11,6 +11,12 @@
 
 `locmetry explain PATH` uses this same selection and the same per-file counters/classifier, while counting only the target. It traverses selected names to preserve module inference. Ignore/hidden probes establish only whether a single setting changes selection; they do not identify an ignore-file line or recover a historical report's scope. See the [troubleshooting guide](troubleshooting.md) for path bases, states and limitations.
 
+## Subfolder Context and Coverage
+
+[The subfolder contract](PRODUCT.md#subfolder-measurement) separates project context from measured content. Selection observes directories as well as file names, so an empty selected folder can be distinguished from one pruned by policy. Module discovery retains the ordinary selected project names, including ancestor descriptors and Python package markers; counting/decoding then visits only selected files inside the subfolder. Context traversal errors anywhere still abort, while unrelated source read/parse failures are not measured and do not make the subtree partial. Traversal cost can remain project-wide; no proportional speedup is guaranteed.
+
+With the same filesystem and policy, subtree records equal the corresponding whole-project file subset. Summing whole-project breakdown rows whose folder equals the subfolder or starts with it plus `/` gives an independent totals oracle. Coverage and unused-rule/exclusion findings apply to the restricted measurement; they do not justify deleting policy for other folders. Module metadata is context, not an additional source of counted lines.
+
 ## Counting
 
 - Content kind comes from the Tokei language through reviewed data and documentation lists, recorded in the report file as `metadata.kinds`; every other recognized language is source. A code snippet in Markdown remains documentation. Language names unknown to the embedded Tokei stay `other`.

@@ -247,6 +247,20 @@ pub fn compare(
         workspace == after.metadata.members.is_some(),
         "Cannot compare single-root and workspace measurements"
     );
+    let restriction = |report: &MeasurementReport| {
+        report
+            .metadata
+            .scope
+            .as_ref()
+            .and_then(|s| s.subfolder.as_deref())
+            .map(str::to_owned)
+    };
+    ensure!(
+        restriction(&before) == restriction(&after),
+        "Cannot compare different subfolder restrictions: before {:?}, after {:?}",
+        restriction(&before),
+        restriction(&after)
+    );
     normalize_metadata(&mut before.metadata);
     normalize_metadata(&mut after.metadata);
     let mut result = Comparison {

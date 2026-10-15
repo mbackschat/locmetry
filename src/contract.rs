@@ -88,7 +88,7 @@ pub struct Metadata {
     )]
     #[schemars(with = "Kinds")]
     pub kinds: Option<Kinds>,
-    /// Full report only, introduced in v0.1.2. Missing is unavailable package evidence.
+    /// Full report only, introduced in v0.1.2. Missing is unavailable package evidence. With subfolder selection this retains whole-project classification context, including modules without measured contributions.
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
@@ -162,6 +162,14 @@ pub(crate) fn present<'de, D: Deserializer<'de>, T: Deserialize<'de>>(
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct Selection {
+    /// Optional literal project-relative measured directory, without a trailing slash. Absence means no subfolder restriction. Module context remains project-wide; counts and coverage concern only this folder and descendants. Unsupported in workspace members.
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "present"
+    )]
+    #[schemars(with = "String", extend("pattern" = r"^[^/]+(?:/[^/]+)*$"))]
+    pub subfolder: Option<String>,
     pub hidden: bool,
     pub respect_ignore_files: bool,
     /// Ignore-file mechanisms enabled, not a complete inventory of participating paths.
@@ -244,7 +252,9 @@ pub struct Member {
     pub root: String,
     pub config_path: Option<String>,
     pub scope: Selection,
+    /// Entries deciding no measured file; with subfolder selection this says nothing about use elsewhere. Policy cleanup requires an unrestricted measurement.
     pub unused_entries: Vec<String>,
+    /// Exclusions leaving out no observed candidate in the measured selection. With subfolder selection, matches elsewhere do not count as use; policy cleanup requires an unrestricted measurement.
     pub unused_exclusions: Vec<String>,
     pub coverage: MemberCoverage,
     /// Full report only: this member's independently loaded policy.
@@ -295,13 +305,16 @@ pub struct ReportSummary {
     pub unclassified_folders: Option<Vec<crate::FolderShare>>,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub members: BTreeMap<String, Summary>,
+    /// Without subfolder selection: adopted modules. With it: only modules classifying at least one measured source file; code is their measured contribution. Context-only modules remain in metadata.modules.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub build_modules: BTreeMap<String, crate::BuildSystemShare>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub submodules: Vec<crate::SubmoduleShare>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    /// Entries deciding no measured file; with subfolder selection this says nothing about use elsewhere. Policy cleanup requires an unrestricted measurement.
     pub unused_entries: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    /// Exclusions leaving out no observed candidate in the measured selection. With subfolder selection, matches elsewhere do not count as use; policy cleanup requires an unrestricted measurement.
     pub unused_exclusions: Vec<String>,
 }
 
