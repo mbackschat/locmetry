@@ -199,6 +199,57 @@ fn markdown_format_writes_a_readable_report_to_stdout() {
 }
 
 #[cfg(unix)]
+/// Locks the terminal layout: languages and top-level folders sorted by code,
+/// then one line each for non-source content, review, and coverage gaps.
+#[test]
+fn table_format_splits_source_code_by_language_and_purpose() {
+    let temp = project(&[
+        (".locmetryrc", APP_RULE),
+        ("src/lib.rs", "fn a() {}\n"),
+        ("src/main.rs", "// entry\nfn main() {}\n"),
+        ("tests/it.rs", "#[test]\nfn t() {}\n"),
+        ("proto/x.py", "x = 1\n"),
+        ("config.json", "{}\n"),
+        ("README.md", "# Title\n"),
+        ("logo.png", "not an image\n"),
+    ]);
+    let output = run(&temp.path().join("project"), &["--format", "table"]);
+    assert!(output.status.success());
+    let expected = "
+ project: source code lines by purpose
+
+ Language  Files  Production  Test  Unclassified  Code  Comments  Blanks
+ ───────────────────────────────────────────────────────────────────────
+ Rust          3           2     2             0     4         1       0
+ Python        1           0     0             1     1         0       0
+ ───────────────────────────────────────────────────────────────────────
+ Total         4           2     2             1     5         1       0
+
+ Folder  Production  Test  Unclassified  Code
+ ────────────────────────────────────────────
+ src              2     0             0     2
+ tests            0     2             0     2
+ proto            0     0             1     1
+
+ Not source code: 1 data file (1 line), 1 documentation file (1 line).
+ Review: 1 unclassified source file (1 code line); details with --format markdown.
+ Not counted: 1 unrecognized file (png: 1); missing lines are not zero.
+";
+    assert_eq!(String::from_utf8(output.stdout).unwrap(), expected);
+}
+
+/// `--output -` prints the JSON report, so a human format cannot share stdout.
+#[test]
+fn table_format_cannot_share_stdout_with_the_json_report() {
+    let temp = fixture();
+    let result = run(
+        temp.path(),
+        &["--root", "source", "--format", "table", "--output", "-"],
+    );
+    assert_eq!(result.status.code(), Some(1));
+    assert!(result.stdout.is_empty());
+}
+
 /// Labelled counts read correctly for any number, including one.
 #[test]
 fn markdown_coverage_reads_correctly_for_single_files() {

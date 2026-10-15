@@ -13,7 +13,7 @@
 
 - Content kind comes from the Tokei language through reviewed data and documentation lists, recorded in the report file as `metadata.kinds`; every other recognized language is source. A code snippet in Markdown remains documentation. Language names unknown to the embedded Tokei stay `other`.
 - Counters are reconstructed once from original reports and nested blobs; aggregate `Total` or `children` views are not added again. A reported path counts once, even when it contributes multiple languages.
-- `breakdown` rows in the report file are additive. The Markdown folder table and `summary.top_folders` are recursive: a parent includes its subfolders, so displayed rows cannot all be summed together.
+- `breakdown` rows in the report file are additive. So are the top-level folders of `summary.top_folders` and the terminal table: each covers its whole subtree, and together with the root files they cover every file once. The Markdown folder table lists nested levels, where a parent includes its subfolders, so its rows cannot all be summed together.
 
 ## Limits
 

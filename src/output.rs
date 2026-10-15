@@ -1,4 +1,4 @@
-use crate::{Counts, Coverage, FileRecord, Kind, Purpose, ReportSummary};
+use crate::{breakdown, Counts, Coverage, FileRecord, Kind, Purpose, ReportSummary};
 use anyhow::{ensure, Context, Result};
 use serde_json::Value;
 use std::{
@@ -108,6 +108,201 @@ pub fn render_markdown(
         .unwrap();
     }
     render_coverage(&mut output, coverage);
+    output
+}
+
+/// `count` followed by `noun`, pluralized with `s` unless it is one.
+fn counted(count: u64, noun: &str) -> String {
+    match count {
+        1 => format!("1 {noun}"),
+        _ => format!("{count} {noun}s"),
+    }
+}
+
+/// Aligned plain-text table: the first column left-aligned, the others right.
+/// Rule lines separate the header, and the body from an optional total row.
+fn text_table(header: &[&str], body: &[Vec<String>], total: Option<Vec<String>>) -> String {
+    let header: Vec<String> = header.iter().map(|title| title.to_string()).collect();
+    let all = std::iter::once(&header).chain(body).chain(total.as_ref());
+    let mut widths = vec![0; header.len()];
+    for row in all {
+        for (width, value) in widths.iter_mut().zip(row) {
+            *width = (*width).max(value.chars().count());
+        }
+    }
+    let line = |row: &[String]| {
+        let cells: Vec<String> = row
+            .iter()
+            .zip(&widths)
+            .enumerate()
+            .map(|(column, (value, width))| match column {
+                0 => format!("{value:<width$}"),
+                _ => format!("{value:>width$}"),
+            })
+            .collect();
+        format!(" {}\n", cells.join("  "))
+    };
+    let rule = format!(
+        " {}\n",
+        "─".repeat(widths.iter().sum::<usize>() + 2 * (widths.len() - 1))
+    );
+    let mut output = line(&header) + &rule;
+    for row in body {
+        output += &line(row);
+    }
+    if let Some(total) = total {
+        output += &rule;
+        output += &line(&total);
+    }
+    output
+}
+
+/// Terminal report for people: source code per language and top-level folder
+/// split by purpose, then one line each for what the tables leave out.
+pub fn render_table(
+    project: &str,
+    summary: &ReportSummary,
+    rows: &[FileRecord],
+    coverage: &Coverage,
+) -> String {
+    let mut languages = BTreeMap::<String, (Counts, BTreeMap<Purpose, u64>)>::new();
+    for row in breakdown(rows)
+        .iter()
+        .filter(|row| row.kind == Kind::Source)
+    {
+        let (counts, purposes) = languages.entry(row.language.clone()).or_default();
+        counts.add(&row.counts);
+        *purposes.entry(row.purpose).or_default() += row.counts.code;
+    }
+    let mut languages: Vec<_> = languages.into_iter().collect();
+    languages.sort_by(|a, b| b.1 .0.code.cmp(&a.1 .0.code).then(a.0.cmp(&b.0)));
+    let purpose_cells = |code: &dyn Fn(Purpose) -> u64| {
+        Purpose::ALL
+            .into_iter()
+            .map(|purpose| code(purpose).to_string())
+            .collect::<Vec<_>>()
+    };
+    let body: Vec<Vec<String>> = languages
+        .iter()
+        .map(|(language, (counts, purposes))| {
+            let mut row = vec![language.clone(), counts.files.to_string()];
+            row.extend(purpose_cells(&|purpose| {
+                purposes.get(&purpose).copied().unwrap_or(0)
+            }));
+            row.extend([counts.code, counts.comments, counts.blanks].map(|n| n.to_string()));
+            row
+        })
+        .collect();
+    let source = &summary.totals.source;
+    let mut total = vec!["Total".to_string(), source.files.to_string()];
+    total.extend(purpose_cells(&|purpose| {
+        summary.totals.purpose(purpose).code
+    }));
+    total.extend([source.code, source.comments, source.blanks].map(|n| n.to_string()));
+    let mut output = format!("\n {project}: source code lines by purpose\n\n");
+    output += &text_table(
+        &[
+            "Language",
+            "Files",
+            "Production",
+            "Test",
+            "Unclassified",
+            "Code",
+            "Comments",
+            "Blanks",
+        ],
+        &body,
+        Some(total),
+    );
+
+    let mut folders: Vec<_> = summary.top_folders().into_iter().collect();
+    let folder_code = |purposes: &BTreeMap<Purpose, u64>| purposes.values().sum::<u64>();
+    folders.sort_by(|a, b| {
+        folder_code(&b.1)
+            .cmp(&folder_code(&a.1))
+            .then(a.0.cmp(&b.0))
+    });
+    if !folders.is_empty() {
+        let body: Vec<Vec<String>> = folders
+            .iter()
+            .map(|(folder, purposes)| {
+                // `.` in top_folders holds only the files directly in the root.
+                let label = match folder.as_str() {
+                    "." => "(root files)".to_string(),
+                    _ => folder.clone(),
+                };
+                let mut row = vec![label];
+                row.extend(purpose_cells(&|purpose| {
+                    purposes.get(&purpose).copied().unwrap_or(0)
+                }));
+                row.push(folder_code(purposes).to_string());
+                row
+            })
+            .collect();
+        output += "\n";
+        output += &text_table(
+            &["Folder", "Production", "Test", "Unclassified", "Code"],
+            &body,
+            None,
+        );
+    }
+
+    let mut notes = Vec::new();
+    let mut other_kinds = BTreeMap::<Kind, Counts>::new();
+    for row in rows.iter().filter(|row| row.kind != Kind::Source) {
+        other_kinds.entry(row.kind).or_default().add(&row.counts);
+    }
+    if !other_kinds.is_empty() {
+        let kinds: Vec<String> = other_kinds
+            .iter()
+            .map(|(kind, counts)| {
+                format!(
+                    "{} ({})",
+                    counted(counts.files, &format!("{kind} file")),
+                    counted(counts.lines, "line")
+                )
+            })
+            .collect();
+        notes.push(format!("Not source code: {}.", kinds.join(", ")));
+    }
+    let unclassified = summary.totals.purpose(Purpose::Unclassified);
+    if unclassified.files > 0 {
+        notes.push(format!(
+            "Review: {} ({}); details with --format markdown.",
+            counted(unclassified.files, "unclassified source file"),
+            counted(unclassified.code, "code line")
+        ));
+    }
+    let mut gaps = Vec::new();
+    if coverage.unrecognized_files > 0 {
+        let mut extensions: Vec<_> = coverage.unrecognized_extensions.iter().collect();
+        extensions.sort_by(|a, b| b.1.cmp(a.1).then(a.0.cmp(b.0)));
+        let extensions: Vec<String> = extensions
+            .into_iter()
+            .take(5)
+            .map(|(extension, files)| format!("{extension}: {files}"))
+            .collect();
+        gaps.push(format!(
+            "{} ({})",
+            counted(coverage.unrecognized_files as u64, "unrecognized file"),
+            extensions.join(", ")
+        ));
+    }
+    if !coverage.unread.is_empty() {
+        gaps.push(counted(coverage.unread.len() as u64, "unreadable file"));
+    }
+    if !gaps.is_empty() {
+        notes.push(format!(
+            "Not counted: {}; missing lines are not zero.",
+            gaps.join(", ")
+        ));
+    }
+    if !notes.is_empty() {
+        output += "\n";
+        for note in notes {
+            writeln!(output, " {note}").unwrap();
+        }
+    }
     output
 }
 

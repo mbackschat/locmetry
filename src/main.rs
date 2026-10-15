@@ -1,22 +1,37 @@
 use anyhow::{Context, Result};
 use clap::{Parser, ValueEnum};
 use locmetry::{
-    breakdown, build_report, render_markdown, report_text, review, scan, scope_policy,
-    validate_output, write_report, Policy, ScopeOverrides, BACKEND, CONFIG_FILE, DATA_LANGUAGES,
-    DOCUMENTATION_LANGUAGES,
+    breakdown, build_report, render_markdown, render_table, report_text, review, scan,
+    scope_policy, validate_output, write_report, Policy, ScopeOverrides, BACKEND, CONFIG_FILE,
+    DATA_LANGUAGES, DOCUMENTATION_LANGUAGES,
 };
 use serde_json::{json, Value};
 use std::{
-    io::{self, Write},
+    io::{self, IsTerminal, Write},
     path::{Path, PathBuf},
     process::ExitCode,
     time::{SystemTime, UNIX_EPOCH},
 };
 
-#[derive(Clone, Copy, ValueEnum)]
+#[derive(Clone, Copy, Debug, PartialEq, ValueEnum)]
 enum Format {
+    /// Source code per language and folder, split by purpose, for people.
+    Table,
+    /// The compact headline for agents and scripts.
     Json,
+    /// A full human report to save or paste into reviews.
     Markdown,
+}
+
+/// The stdout format when `--format` is absent.
+///
+/// People at a terminal get the table, while pipes keep the JSON headline that
+/// agents and scripts parse; `--output -` always prints the JSON report.
+fn default_format(stdout_is_terminal: bool, report_to_stdout: bool) -> Format {
+    match (report_to_stdout, stdout_is_terminal) {
+        (true, _) | (false, false) => Format::Json,
+        (false, true) => Format::Table,
+    }
 }
 
 #[derive(Parser)]
@@ -47,9 +62,9 @@ struct Args {
     /// Include per-file records in the report.
     #[arg(long)]
     files: bool,
-    /// Stdout format: a JSON headline (totals, top folders, coverage) or Markdown.
-    #[arg(long, value_enum, default_value = "json")]
-    format: Format,
+    /// Stdout format [default: table on a terminal, json otherwise].
+    #[arg(long, value_enum)]
+    format: Option<Format>,
     /// Deepest folder level listed in the Markdown folder table; JSON lists all.
     #[arg(long, default_value_t = 2, value_name = "N")]
     depth: usize,
@@ -104,18 +119,26 @@ fn run(args: Args) -> Result<Outcome> {
     if let Some(path) = report_path {
         validate_output(path, &root, config_path.as_deref())?;
     }
+    let report_to_stdout = args.output.is_some() && report_path.is_none();
+    let format = args
+        .format
+        .unwrap_or_else(|| default_format(io::stdout().is_terminal(), report_to_stdout));
     anyhow::ensure!(
-        report_path.is_some() || args.output.is_none() || matches!(args.format, Format::Json),
-        "--output - writes JSON to stdout and cannot be combined with --format markdown"
+        !report_to_stdout || format == Format::Json,
+        "--output - writes JSON to stdout and cannot be combined with --format table or markdown"
     );
     let measured_at = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
     let scan = scan(&root, &policy)?;
     let (inaccurate, coverage) = (scan.inaccurate, &scan.coverage);
     let rows = scan.records(&policy)?;
     let summary = build_report(&rows);
-    let mut markdown = render_markdown(&project, &summary, &rows, coverage, args.depth);
-    if inaccurate {
-        markdown.push_str("\nBackend reported incomplete counts; inspect the JSON metadata.\n");
+    let mut human = match format {
+        Format::Table => render_table(&project, &summary, &rows, coverage),
+        Format::Markdown => render_markdown(&project, &summary, &rows, coverage, args.depth),
+        Format::Json => String::new(),
+    };
+    if inaccurate && format != Format::Json {
+        human.push_str("\nBackend reported incomplete counts; inspect the JSON metadata.\n");
     }
     let mut summary_json = serde_json::to_value(&summary.totals)?;
     summary_json["top_folders"] = serde_json::to_value(summary.top_folders())?;
@@ -143,15 +166,13 @@ fn run(args: Args) -> Result<Outcome> {
         write_report(path, &report_text(&document)?)?;
     }
     let mut stdout = io::stdout().lock();
-    match (args.format, &args.output) {
-        (Format::Json, Some(_)) if report_path.is_none() => {
-            write!(stdout, "{}", report_text(&document)?)?
-        }
-        (Format::Json, _) => {
+    match format {
+        Format::Json if report_to_stdout => write!(stdout, "{}", report_text(&document)?)?,
+        Format::Json => {
             serde_json::to_writer(&mut stdout, &headline(document, report_path)?)?;
             writeln!(stdout)?;
         }
-        (Format::Markdown, _) => write!(stdout, "{markdown}")?,
+        Format::Table | Format::Markdown => write!(stdout, "{human}")?,
     }
     if inaccurate {
         let mut unread = coverage.unread.iter().take(10).cloned().collect::<Vec<_>>();
@@ -215,5 +236,18 @@ fn main() -> ExitCode {
             eprintln!("locmetry: {error:#}");
             ExitCode::FAILURE
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn terminals_default_to_the_table_and_pipes_to_json() {
+        assert_eq!(default_format(true, false), Format::Table);
+        assert_eq!(default_format(false, false), Format::Json);
+        assert_eq!(default_format(true, true), Format::Json);
+        assert_eq!(default_format(false, true), Format::Json);
     }
 }

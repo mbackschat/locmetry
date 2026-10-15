@@ -9,7 +9,7 @@ pub use backend::{
     DOCUMENTATION_LANGUAGES,
 };
 pub use config::{Classification, Policy, Purpose, Scope, ScopeOverrides, CONFIG_FILE};
-pub use output::{render_markdown, report_text, validate_output, write_report};
+pub use output::{render_markdown, render_table, report_text, validate_output, write_report};
 pub use report::{
     breakdown, build_report, review, BreakdownRow, Counts, FileRecord, Kind, ReportSummary,
     ReviewEntry,

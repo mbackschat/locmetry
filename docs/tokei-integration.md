@@ -8,7 +8,7 @@ Decision: implement Locmetry in Rust and embed the Tokei library to minimize ins
 Configuration + scan root
   → Locmetry selects files using root-relative scope and ignore rules
   → embedded Tokei recognizes languages and counts each selected file
-  → Locmetry maps unrecognized files, classifies, aggregates, and emits JSON or Markdown
+  → Locmetry maps unrecognized files, classifies, aggregates, and emits a terminal table, JSON, or Markdown
 ```
 
 [Cargo.toml](../Cargo.toml) pins Tokei 15.0.0 with `default-features = false`, disabling its default CLI feature. [Cargo.lock](../Cargo.lock) locks transitive dependencies. Cargo compiles the counter into Locmetry; there is no Tokei subprocess or runtime executable discovery. [Upstream crate manifest](https://github.com/XAMPPRocky/tokei/blob/v15.0.0/Cargo.toml)
