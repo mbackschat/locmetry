@@ -144,6 +144,24 @@ pub fn report_schema() -> Value {
                 ),
                 "description": "Present when build modules were adopted; keyed by build system.",
             },
+            "submodules": {
+                "type": "array",
+                "items": strict(
+                    json!({
+                        "path": {"type": "string", "description": "Submodule path from `.gitmodules`."},
+                        "files": {"type": "integer"},
+                        "code": {"type": "integer", "description": "Source code lines measured inside it."},
+                    }),
+                    &["path", "files", "code"],
+                    "One Git submodule with measured source.",
+                ),
+                "description": "Present when Git submodules declared in the scan root's `.gitmodules` hold measured source. Submodules are often other teams' code: decide their scope, usually with `scope.exclude`; an excluded submodule is no longer listed.",
+            },
+            "unused_entries": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Present when configuration entries decided no file: their globs match nothing, or an earlier stage, such as a test convention, always decides first. Check their `match` or move them to `overrides`.",
+            },
             "unclassified_folders": {
                 "type": "array",
                 "items": strict(

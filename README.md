@@ -242,7 +242,7 @@ Plain `locmetry` on a terminal prints the table shown [above](#what-you-see):
 
 - language rows, largest first;
 - top-level folders, whose rows add up to the total;
-- notes on content that is not source, the build modules that decided production, the folders that hold unclaimed source, and files that could not be counted.
+- notes on content that is not source, the build modules that decided production, Git submodules, which are often other teams' code, the folders that hold unclaimed source, configuration entries that decided no file, and files that could not be counted.
 
 `--sort name` lists rows alphabetically instead, in the table and in Markdown. `--categories` adds a table of source code per `purpose:category`, such as `production:tooling`, to see what production consists of.
 

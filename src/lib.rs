@@ -7,8 +7,8 @@ mod report;
 mod report_schema;
 
 pub use backend::{
-    file_records, language_kind, scan, scope_policy, Coverage, Scan, DATA_LANGUAGES,
-    DOCUMENTATION_LANGUAGES,
+    file_records, git_submodules, language_kind, scan, scope_policy, Coverage, Scan,
+    DATA_LANGUAGES, DOCUMENTATION_LANGUAGES,
 };
 pub use config::{
     config_schema, user_config_schema, user_defaults_file, Classification, Policy, Purpose, Scope,
@@ -16,12 +16,12 @@ pub use config::{
 };
 pub use modules::{detect as detect_modules, Module, ModuleDetector, DETECTORS};
 pub use output::{
-    render_markdown, render_table, report_text, validate_output, write_report, RowOrder,
+    render_markdown, render_table, report_text, validate_output, write_report, Findings, RowOrder,
 };
 pub use report::{
-    breakdown, build_report, build_systems, module_shares, review, unclassified_folders,
-    BreakdownRow, BuildSystemShare, Counts, FileRecord, FolderShare, Kind, ModuleShare,
-    ReportSummary, ReviewEntry,
+    breakdown, build_report, build_systems, module_shares, review, submodule_shares,
+    unclassified_folders, unused_entries, BreakdownRow, BuildSystemShare, Counts, FileRecord,
+    FolderShare, Kind, ModuleShare, ReportSummary, ReviewEntry, SubmoduleShare,
 };
 pub use report_schema::report_schema;
 

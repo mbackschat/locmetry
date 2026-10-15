@@ -1,6 +1,6 @@
 use crate::{
     breakdown, build_systems, unclassified_folders, Counts, Coverage, FileRecord, FolderShare,
-    Kind, ModuleShare, Purpose, ReportSummary,
+    Kind, ModuleShare, Purpose, ReportSummary, SubmoduleShare,
 };
 use anyhow::{ensure, Context, Result};
 use serde_json::Value;
@@ -44,6 +44,15 @@ pub enum RowOrder {
     Name,
 }
 
+/// What a measurement found beside the per-file records, for the notes of
+/// both human formats.
+pub struct Findings<'a> {
+    pub coverage: &'a Coverage,
+    pub modules: &'a [ModuleShare],
+    pub submodules: &'a [SubmoduleShare],
+    pub unused_entries: &'a [String],
+}
+
 /// Sorts labelled rows by `order`, where `code` gives a row's code lines.
 fn ordered<T>(
     mut rows: Vec<(String, T)>,
@@ -78,8 +87,7 @@ pub fn render_markdown(
     project: &str,
     summary: &ReportSummary,
     rows: &[FileRecord],
-    coverage: &Coverage,
-    modules: &[ModuleShare],
+    findings: &Findings,
     depth: usize,
     order: RowOrder,
 ) -> String {
@@ -136,7 +144,7 @@ pub fn render_markdown(
         )
         .unwrap();
     }
-    render_build_modules(&mut output, modules, order);
+    render_build_modules(&mut output, findings.modules, order);
     let mut unknown: Vec<_> = rows.iter().filter(|row| row.needs_review()).collect();
     unknown.sort_by(|a, b| b.counts.code.cmp(&a.counts.code).then(a.path.cmp(&b.path)));
     writeln!(
@@ -170,7 +178,7 @@ pub fn render_markdown(
         )
         .unwrap();
     }
-    render_coverage(&mut output, coverage);
+    render_coverage(&mut output, findings);
     output
 }
 
@@ -208,8 +216,11 @@ fn render_build_modules(output: &mut String, modules: &[ModuleShare], order: Row
 
 /// Code each build system classified, in one line.
 fn build_modules_note(modules: &[ModuleShare], order: RowOrder) -> Option<String> {
+    // A system whose layouts claimed nothing does not explain production;
+    // JSON and the Markdown module list keep it.
     let systems: Vec<_> = build_systems(modules)
         .into_iter()
+        .filter(|(_, system)| system.code > 0)
         .map(|(id, system)| (id.to_string(), system))
         .collect();
     if systems.is_empty() {
@@ -354,8 +365,7 @@ pub fn render_table(
     project: &str,
     summary: &ReportSummary,
     rows: &[FileRecord],
-    coverage: &Coverage,
-    modules: &[ModuleShare],
+    findings: &Findings,
     categories: bool,
     order: RowOrder,
 ) -> String {
@@ -488,11 +498,14 @@ pub fn render_table(
             .collect();
         notes.push(format!("Not source code: {}.", kinds.join(", ")));
     }
-    notes.extend(build_modules_note(modules, order));
+    let coverage = findings.coverage;
+    notes.extend(build_modules_note(findings.modules, order));
+    notes.extend(submodules_note(findings.submodules));
     let folders = unclassified_folders(rows);
     if !folders.is_empty() {
         notes.push(unclaimed_note(&folders));
     }
+    notes.extend(unused_entries_note(findings.unused_entries));
     let mut gaps = Vec::new();
     if coverage.unrecognized_files > 0 {
         let mut extensions: Vec<_> = coverage.unrecognized_extensions.iter().collect();
@@ -529,7 +542,8 @@ pub fn render_table(
     output
 }
 
-fn render_coverage(output: &mut String, coverage: &Coverage) {
+fn render_coverage(output: &mut String, findings: &Findings) {
+    let coverage = findings.coverage;
     writeln!(output, "\n## Coverage\n\nFiles selected: {}; counted: {}, including {} through language mappings; not recognized: {}; recognized but unreadable: {}. Their lines are missing, not zero. Counts describe the working copy, including untracked files, not a commit.", coverage.selected_files, coverage.counted_files, coverage.mapped_files, coverage.unrecognized_files, coverage.unread.len()).unwrap();
     let mut extensions: Vec<_> = coverage.unrecognized_extensions.iter().collect();
     extensions.sort_by(|a, b| b.1.cmp(a.1).then(a.0.cmp(b.0)));
@@ -545,6 +559,34 @@ fn render_coverage(output: &mut String, coverage: &Coverage) {
             writeln!(output, "| {} |", cell(path)).unwrap();
         }
     }
+    for note in submodules_note(findings.submodules)
+        .into_iter()
+        .chain(unused_entries_note(findings.unused_entries))
+    {
+        writeln!(output, "\n{note}").unwrap();
+    }
+}
+
+/// Points at Git submodules, often other teams' code, so a reader decides
+/// their scope instead of counting them unawares.
+fn submodules_note(submodules: &[SubmoduleShare]) -> Option<String> {
+    if submodules.is_empty() {
+        return None;
+    }
+    let shares: Vec<String> = submodules
+        .iter()
+        .map(|share| format!("{} ({})", share.path, counted(share.code, "code line")))
+        .collect();
+    Some(format!(
+        "Git submodules: {}; exclude them with scope.exclude if they are not this project's code.",
+        shares.join(", ")
+    ))
+}
+
+/// Names configuration entries that decided no file, which usually means a
+/// glob that matches nothing or an entry an earlier stage preempts.
+fn unused_entries_note(entries: &[String]) -> Option<String> {
+    (!entries.is_empty()).then(|| format!("Entries that decided no file: {}.", entries.join(", ")))
 }
 
 fn resolve_destination(path: &Path) -> Result<PathBuf> {

@@ -70,6 +70,23 @@ pub fn language_kind(name: &str) -> Kind {
     }
 }
 
+/// Submodule paths declared in the scan root's `.gitmodules`.
+///
+/// Locmetry never invokes Git (CLAUDE.md), so it reads the file's `path = …`
+/// lines (git-config syntax, `gitmodules(5)`). The paths only feed a scope
+/// hint, so an unreadable or missing file yields none rather than an error.
+pub fn git_submodules(root: &Path) -> Vec<String> {
+    let Ok(text) = std::fs::read_to_string(root.join(".gitmodules")) else {
+        return Vec::new();
+    };
+    text.lines()
+        .filter_map(|line| line.trim().strip_prefix("path"))
+        .filter_map(|rest| rest.trim_start().strip_prefix('='))
+        .map(|path| path.trim().trim_end_matches('/').to_string())
+        .filter(|path| !path.is_empty())
+        .collect()
+}
+
 /// Effective selection policy applied by [`scan`], recorded with every report.
 pub fn scope_policy(policy: &Policy) -> Value {
     let scope = policy.scope();

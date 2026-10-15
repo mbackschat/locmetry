@@ -187,8 +187,10 @@ fn report_fixture() -> tempfile::TempDir {
     let files = [
         (
             ".locmetryrc",
-            "version = 1\n[[rules]]\nid = \"tools\"\nmatch = [\"tools/**\"]\npurpose = \"production\"\ncategory = \"tooling\"\nreason = \"Maintained scripts.\"\n",
+            "version = 1\n[[rules]]\nid = \"tools\"\nmatch = [\"tools/**\"]\npurpose = \"production\"\ncategory = \"tooling\"\nreason = \"Maintained scripts.\"\n[[rules]]\nid = \"ghost\"\nmatch = [\"nowhere/**\"]\npurpose = \"production\"\n",
         ),
+        (".gitmodules", "[submodule \"lib\"]\n\tpath = vendor/lib\n"),
+        ("vendor/lib/a.py", "a = 1\n"),
         ("backend/build.gradle.kts", "plugins { kotlin(\"jvm\") }\n"),
         ("backend/src/main/kotlin/A.kt", "fun a() = 1\n"),
         ("backend/legacy.gradle", "apply plugin: 'java'\n"),
@@ -244,6 +246,9 @@ fn report_schema_describes_the_headline_and_the_full_report() {
         serde_json::from_str(&std::fs::read_to_string(&report_file).unwrap()).unwrap(),
     ];
     let full = &documents[2];
+    for key in ["submodules", "unused_entries"] {
+        assert!(full["summary"].get(key).is_some(), "fixture lacks {key}");
+    }
     assert!(full["files"]
         .as_array()
         .unwrap()

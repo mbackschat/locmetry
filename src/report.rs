@@ -467,3 +467,53 @@ pub fn build_systems(shares: &[ModuleShare]) -> BTreeMap<&'static str, BuildSyst
     }
     systems
 }
+
+/// Measured source of one Git submodule.
+#[derive(Debug, Serialize)]
+pub struct SubmoduleShare {
+    pub path: String,
+    pub files: u64,
+    pub code: u64,
+}
+
+/// Source measured inside each submodule `path`; submodules without measured
+/// source, because they are excluded or not checked out, are left out, so the
+/// hint disappears once the configuration decides their scope.
+pub fn submodule_shares(paths: &[String], rows: &[FileRecord]) -> Vec<SubmoduleShare> {
+    paths
+        .iter()
+        .map(|path| {
+            let mut share = SubmoduleShare {
+                path: path.clone(),
+                files: 0,
+                code: 0,
+            };
+            for row in rows.iter().filter(|row| row.kind == Kind::Source) {
+                if below(&row.path, path).is_some() {
+                    share.files += 1;
+                    share.code += row.counts.code;
+                }
+            }
+            share
+        })
+        .filter(|share| share.files > 0)
+        .collect()
+}
+
+/// IDs of `entries` that decided no file: a glob that matches nothing, or an
+/// entry an earlier stage always preempts, such as a rule behind a test
+/// convention.
+pub fn unused_entries<'a>(
+    entries: impl IntoIterator<Item = &'a str>,
+    rows: &[FileRecord],
+) -> Vec<String> {
+    let decided: std::collections::BTreeSet<&str> = rows
+        .iter()
+        .map(|row| row.classification.rule.as_str())
+        .collect();
+    entries
+        .into_iter()
+        .filter(|id| !decided.contains(id))
+        .map(String::from)
+        .collect()
+}

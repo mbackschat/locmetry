@@ -193,7 +193,7 @@ pub struct ScopeSettings {
     /// Whether the default exclusions apply; `false` is the only way to drop them.
     #[schemars(transform = describe_default_excludes)]
     pub default_excludes: bool,
-    /// Globs of files to leave out, added after the default and personal exclusions; `--exclude` adds more. Use it for code that is not the project's own, such as vendored libraries, submodules, or copied reference material; the project's own code stays measured and gets an entry instead.
+    /// Globs of files to leave out, added after the default and personal exclusions; `--exclude` adds more. Use it for code that is not the project's own, such as vendored libraries, Git submodules (reports list them as `summary.submodules` until excluded), or copied reference material; the project's own code stays measured and gets an entry instead.
     #[schemars(extend("items" = {"type": "string", "description": "Root-relative glob."}))]
     pub exclude: Vec<String>,
 }
@@ -331,7 +331,7 @@ struct LanguageMapping {
 ///
 /// Globs are root-relative, `/`-separated, and case-sensitive: `*` stays within a path segment, `**` spans directories, `?` matches one character, `[...]` a character class, `{a,b}` alternatives, and a backslash escapes. Negation, absolute paths, and basename-only matching are not supported, so `*.rs` matches only at the root; use `**/*.rs`.
 ///
-/// To set up a project, run `locmetry`, read `summary.unclassified_folders`, add entries for those folders, and measure again with `--config <file>`; `--files --output -` shows each file's `purpose`, `category`, and `rule`.
+/// To set up a project, run `locmetry`; decide the scope of any `summary.submodules`, which are often other teams' code; read `summary.unclassified_folders`, add entries for those folders, and measure again with `--config <file>` until `summary.unused_entries` is absent; `--files --output -` shows each file's `purpose`, `category`, and `rule`.
 #[derive(Debug, Deserialize, Serialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 #[schemars(rename = "Configuration")]
@@ -1007,6 +1007,14 @@ impl Policy {
             .collect::<Result<_>>()?;
         self.modules = modules.to_vec();
         Ok(())
+    }
+
+    /// IDs of the project's overrides and rules, in order.
+    pub fn entry_ids(&self) -> impl Iterator<Item = &str> {
+        self.overrides
+            .iter()
+            .chain(&self.rules)
+            .map(|entry| entry.id.as_str())
     }
 
     /// Modules whose source this policy classifies.

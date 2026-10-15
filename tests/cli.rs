@@ -388,6 +388,64 @@ fn review_lists_only_unclaimed_source() {
     assert_eq!(document["summary"]["unclassified_folders"], json!([]));
 }
 
+/// Git submodules are often other teams' code; locmetry points at them with
+/// their size, read from `.gitmodules` without invoking Git, and leaves the
+/// scope decision to the project.
+#[test]
+fn git_submodules_are_reported_until_excluded() {
+    let temp = project(&[
+        (
+            ".gitmodules",
+            "[submodule \"lib\"]\n\tpath = vendor/lib\n\turl = https://example.com/lib.git\n[submodule \"gone\"]\n\tpath = not-checked-out\n",
+        ),
+        ("vendor/lib/a.py", "a = 1\nb = 2\n"),
+        ("src/main.py", "x = 1\n"),
+    ]);
+    let root = temp.path().join("project");
+    let (success, document, stderr) = headline(&root, &[]);
+    assert!(success, "{stderr}");
+    assert_eq!(
+        document["summary"]["submodules"],
+        json!([{"path": "vendor/lib", "files": 1, "code": 2}])
+    );
+    let table = String::from_utf8(run(&root, &["--format", "table"]).stdout).unwrap();
+    assert!(
+        table.contains(" Git submodules: vendor/lib (2 code lines); exclude them with scope.exclude if they are not this project's code.\n"),
+        "{table}"
+    );
+    let (_, document, _) = headline(&root, &["--exclude", "vendor/lib/**"]);
+    assert!(document["summary"].get("submodules").is_none());
+    let table =
+        String::from_utf8(run(&root, &["--format", "table", "--exclude", "vendor/lib/**"]).stdout)
+            .unwrap();
+    assert!(!table.contains("Git submodules"), "{table}");
+}
+
+/// An entry that decides no file is a typo or is always preempted by an
+/// earlier stage, such as a rule losing to a test convention; reports name it
+/// without failing, since an entry may be empty in some checkouts.
+#[test]
+fn entries_that_decide_no_file_are_reported() {
+    let config = "version = 1\n[[rules]]\nid = \"used\"\nmatch = [\"src/**\"]\npurpose = \"production\"\n[[rules]]\nid = \"ghost\"\nmatch = [\"nowhere/**\"]\npurpose = \"production\"\n[[rules]]\nid = \"shadowed\"\nmatch = [\"**/*.test.ts\"]\npurpose = \"production\"\n";
+    let temp = project(&[
+        (".locmetryrc", config),
+        ("src/a.ts", "export const a = 1;\n"),
+        ("src/a.test.ts", "test('a', () => {});\n"),
+    ]);
+    let root = temp.path().join("project");
+    let (success, document, stderr) = headline(&root, &[]);
+    assert!(success, "{stderr}");
+    assert_eq!(
+        document["summary"]["unused_entries"],
+        json!(["ghost", "shadowed"])
+    );
+    let table = String::from_utf8(run(&root, &["--format", "table"]).stdout).unwrap();
+    assert!(
+        table.contains(" Entries that decided no file: ghost, shadowed.\n"),
+        "{table}"
+    );
+}
+
 /// Categories split each purpose; the terminal table shows them on request,
 /// one row per `purpose:category`, so it stays one screen by default.
 #[test]
@@ -426,13 +484,18 @@ fn reports_name_the_build_modules_that_decided_production() {
         ("web/src/a.ts", "export const a = 1;\n"),
         ("tools/package.json", "{}\n"),
         ("tools/lint.js", "let x = 1;\n"),
+        ("legacy/pom.xml", "<project/>\n"),
     ]);
     let root = temp.path().join("project");
     let (success, document, stderr) = headline(&root, &[]);
     assert!(success, "{stderr}");
     assert_eq!(
         document["summary"]["build_modules"],
-        json!({"gradle": {"modules": 1, "code": 2}, "npm": {"modules": 2, "code": 1}})
+        json!({
+            "gradle": {"modules": 1, "code": 2},
+            "maven": {"modules": 1, "code": 0},
+            "npm": {"modules": 2, "code": 1}
+        })
     );
     let table = String::from_utf8(run(&root, &["--format", "table"]).stdout).unwrap();
     assert!(
