@@ -40,25 +40,33 @@ pub fn report_schema() -> Value {
     counts["required"] = json!(["files", "code", "comments", "blanks", "lines"]);
     counts["description"] = json!("Line counts summed over files.");
 
-    let metadata = strict(
+    let scope = strict(
         json!({
-            "root": {"type": "string", "description": "Canonical scan root; symbolic links are resolved."},
+            "hidden": {"type": "boolean"},
+            "respect_ignore_files": {"type": "boolean"},
+            "ignore_files": strings("Ignore files that limited the selection."),
+            "symlinks": {"type": "string"},
+            "exclude": strings("Effective exclusion globs: defaults, personal defaults, the project's, the command line's, and the loaded configuration file itself."),
+        }),
+        &[
+            "hidden",
+            "respect_ignore_files",
+            "ignore_files",
+            "symlinks",
+            "exclude",
+        ],
+        "Effective file selection.",
+    );
+
+    let mut metadata = strict(
+        json!({
+            "root": {"type": "string", "description": "Canonical scan root; symbolic links are resolved. Absent in workspace mode, where each member has its own."},
             "measured_at_unix_seconds": {"type": "integer"},
             "locmetry_version": {"type": "string"},
             "backend": {"type": "string", "description": "The embedded counter and its version."},
             "backend_inaccurate": {"type": "boolean", "description": "Whether some files could not be read, so counts are partial; the exit code is then 2."},
             "backend_configuration": {"type": "string"},
-            "scope": strict(
-                json!({
-                    "hidden": {"type": "boolean"},
-                    "respect_ignore_files": {"type": "boolean"},
-                    "ignore_files": strings("Ignore files that limited the selection."),
-                    "symlinks": {"type": "string"},
-                    "exclude": strings("Effective exclusion globs: defaults, personal defaults, the project's, the command line's, and the loaded configuration file itself."),
-                }),
-                &["hidden", "respect_ignore_files", "ignore_files", "symlinks", "exclude"],
-                "Effective file selection.",
-            ),
+            "scope": {"$ref": "#/$defs/Scope", "description": "Effective file selection; absent in workspace mode, where each member has its own."},
             "kinds": strict(
                 json!({
                     "default": {"type": "string", "description": "Kind of every language not listed below."},
@@ -93,27 +101,46 @@ pub fn report_schema() -> Value {
                 ),
                 "description": "Full report only: every adopted build module; empty when `classification.builtin_modules` is false.",
             },
-            "config_path": {"type": ["string", "null"], "description": "Loaded project configuration, or null for built-in settings."},
+            "config_path": {"type": ["string", "null"], "description": "Loaded project configuration, or null for built-in settings; absent in workspace mode."},
             "user_config_path": {"type": ["string", "null"], "description": "Loaded personal defaults, or null."},
             "config": {
                 "type": "object",
-                "description": "Full report only: the effective configuration after merging personal defaults, shaped as `locmetry --schema config` describes, plus the applied `builtin_conventions` and `builtin_language_mappings`.",
+                "description": "Full report only: the effective configuration after merging personal defaults, shaped as `locmetry --schema config` describes, plus the applied `builtin_conventions` and `builtin_language_mappings`. Absent in workspace mode.",
+            },
+            "members": {
+                "type": "array",
+                "items": strict(
+                    json!({
+                        "name": {"type": "string", "description": "The member root's folder name, which prefixes its paths in this report."},
+                        "root": {"type": "string", "description": "Canonical member root."},
+                        "config_path": {"type": ["string", "null"], "description": "The member's `.locmetryrc`, or null for built-in settings."},
+                        "scope": {"$ref": "#/$defs/Scope"},
+                        "unused_entries": strings("The member's configuration entries that decided no file."),
+                        "unused_exclusions": strings("The member's configured exclusions that left out nothing."),
+                        "config": {"type": "object", "description": "Full report only: the member's effective configuration."},
+                    }),
+                    &["name", "root", "config_path", "scope", "unused_entries", "unused_exclusions"],
+                    "One repository of the workspace, measured with its own configuration.",
+                ),
+                "description": "Present only in workspace mode (`locmetry workspace`), in name order. Settings and configuration findings relative to one member live here instead of in `root`, `scope`, `config_path`, `config`, and `summary.unused_entries` or `summary.unused_exclusions`.",
             },
         }),
         &[
-            "root",
             "measured_at_unix_seconds",
             "locmetry_version",
             "backend",
             "backend_inaccurate",
             "backend_configuration",
-            "scope",
             "coverage",
-            "config_path",
             "user_config_path",
         ],
         "How the measurement was made.",
     );
+    // A regular run reports one root, a workspace its members; never both.
+    metadata["oneOf"] = json!([
+        {"required": ["root", "scope", "config_path"], "not": {"required": ["members"]}},
+        {"required": ["members"], "not": {"anyOf": [{"required": ["root"]}, {"required": ["scope"]}, {"required": ["config_path"]}]}},
+    ]);
 
     let summary = strict(
         json!({
@@ -265,6 +292,6 @@ pub fn report_schema() -> Value {
             "files": {"type": "array", "items": file_record, "description": "With `--files`: one record per counted file."},
         },
         "required": ["schema_version", "project", "metadata", "summary"],
-        "$defs": {"Counts": counts},
+        "$defs": {"Counts": counts, "Scope": scope},
     })
 }

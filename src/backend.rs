@@ -125,6 +125,27 @@ pub struct Coverage {
     pub unread: Vec<String>,
 }
 
+impl Coverage {
+    /// Adds `other`'s files, with its paths mapped through `path`, as a
+    /// workspace merges its members.
+    pub fn merge(&mut self, other: &Coverage, path: impl Fn(&str) -> String) {
+        self.selected_files += other.selected_files;
+        self.counted_files += other.counted_files;
+        self.mapped_files += other.mapped_files;
+        self.unrecognized_files += other.unrecognized_files;
+        for (extension, files) in &other.unrecognized_extensions {
+            *self
+                .unrecognized_extensions
+                .entry(extension.clone())
+                .or_default() += files;
+        }
+        self.unrecognized
+            .extend(other.unrecognized.iter().map(|name| path(name)));
+        self.unread
+            .extend(other.unread.iter().map(|name| path(name)));
+    }
+}
+
 pub struct Scan {
     /// Statistics as returned by Tokei, with root-relative paths.
     pub payload: Value,

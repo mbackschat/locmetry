@@ -305,3 +305,42 @@ fn report_schema_describes_the_headline_and_the_full_report() {
     );
     assert!(!code.is_empty());
 }
+
+/// Workspace reports keep the regular shape but replace the single-root
+/// metadata with `members`; both the headline and the full report must
+/// validate, so the schema cannot drift from either mode.
+#[test]
+fn report_schema_describes_workspace_reports() {
+    let schema = schema("report");
+    let validator = jsonschema::validator_for(&schema).unwrap();
+    let temp = report_fixture();
+    let output = |args: &[&str]| {
+        let output = Command::new(env!("CARGO_BIN_EXE_locmetry"))
+            .env("XDG_CONFIG_HOME", "/nonexistent/locmetry-tests")
+            .current_dir(temp.path())
+            .args(args)
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        serde_json::from_slice::<Value>(&output.stdout).unwrap()
+    };
+    let full = output(&["workspace", "--root", "project", "--files", "--output", "-"]);
+    let headline = output(&["workspace", "--root", "project"]);
+    assert!(full["metadata"]["members"][0].get("config").is_some());
+    for document in [&full, &headline] {
+        let errors: Vec<String> = validator
+            .iter_errors(document)
+            .map(|error| format!("{} at {}", error, error.instance_path()))
+            .collect();
+        assert!(errors.is_empty(), "{errors:#?}");
+    }
+    let members = schema
+        .pointer("/properties/metadata/properties/members/description")
+        .and_then(Value::as_str)
+        .unwrap();
+    assert!(members.contains("workspace"), "{members}");
+}

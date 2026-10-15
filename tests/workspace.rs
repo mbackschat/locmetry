@@ -1,0 +1,372 @@
+//! `locmetry workspace` measures several roots as one virtual monorepo; the
+//! oracle throughout is a regular run of each member (PRODUCT.md, Workspace
+//! Mode).
+use serde_json::{json, Map, Value};
+use std::{fs, path::Path, process::Command};
+
+/// The binary isolated from the developer's own user defaults.
+fn locmetry(cwd: &Path, args: &[&str]) -> std::process::Output {
+    Command::new(env!("CARGO_BIN_EXE_locmetry"))
+        .env("XDG_CONFIG_HOME", "/nonexistent/locmetry-tests")
+        .current_dir(cwd)
+        .args(args)
+        .output()
+        .unwrap()
+}
+
+fn json_of(output: &std::process::Output) -> Value {
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    serde_json::from_slice(&output.stdout).unwrap()
+}
+
+fn stderr_of(output: &std::process::Output) -> String {
+    assert!(!output.status.success(), "unexpected success");
+    String::from_utf8_lossy(&output.stderr).into_owned()
+}
+
+fn write(root: &Path, files: &[(&str, &str)]) {
+    for (path, content) in files {
+        let path = root.join(path);
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        fs::write(path, content).unwrap();
+    }
+}
+
+const WEB_CONFIG: &str = "version = 1\n[scope]\nexclude = [\"third_party\"]\n[[rules]]\nid = \"tooling\"\nmatch = [\"scripts/**\"]\npurpose = \"production\"\ncategory = \"tooling\"\n[[rules]]\nid = \"ghost\"\nmatch = [\"nowhere/**\"]\npurpose = \"production\"\n";
+
+/// Two sibling repositories, `web` (npm, with a configuration) and `api`
+/// (Cargo, with a Git submodule), beside an unrelated folder.
+fn workspace() -> tempfile::TempDir {
+    let temp = tempfile::tempdir().unwrap();
+    write(
+        &temp.path().join("web"),
+        &[
+            (".locmetryrc", WEB_CONFIG),
+            ("package.json", "{}\n"),
+            ("src/index.ts", "export const a = 1;\nexport const b = 2;\n"),
+            ("src/index.test.ts", "test('a', () => {});\n"),
+            ("scripts/release.ts", "let r = 1;\n"),
+            ("prototype/p.ts", "let p = 1;\n"),
+            ("third_party/x.ts", "let x = 1;\n"),
+            ("README.md", "# Web\n"),
+        ],
+    );
+    write(
+        &temp.path().join("api"),
+        &[
+            ("Cargo.toml", "[package]\nname = \"api\"\n"),
+            ("src/lib.rs", "pub fn a() {}\n"),
+            ("tests/it.rs", "#[test]\nfn t() {}\n"),
+            (
+                ".gitmodules",
+                "[submodule \"proto\"]\n\tpath = vendor/proto\n",
+            ),
+            ("vendor/proto/gen.rs", "fn g() {}\n"),
+            ("data/seed.json", "{}\n"),
+        ],
+    );
+    write(&temp.path().join("other"), &[("o.ts", "let o = 1;\n")]);
+    temp
+}
+
+/// Full report through `--output -`, without the measurement time.
+fn full_report(cwd: &Path, args: &[&str]) -> Value {
+    let args = [args, &["--output", "-", "--files"]].concat();
+    let mut report = json_of(&locmetry(cwd, &args));
+    report["metadata"]
+        .as_object_mut()
+        .unwrap()
+        .remove("measured_at_unix_seconds");
+    report
+}
+
+fn prefixed(member: &str, path: &str) -> String {
+    match path {
+        "." => member.to_string(),
+        _ => format!("{member}/{path}"),
+    }
+}
+
+fn add_counts(total: &mut Value, counts: &Value) {
+    for (key, value) in counts.as_object().unwrap() {
+        let sum = total[key].as_u64().unwrap_or(0) + value.as_u64().unwrap();
+        total[key] = json!(sum);
+    }
+}
+
+/// Sums `kind:purpose` counts over reports, the totals a merge must reproduce.
+fn summed_kind_purpose(reports: &[&Value]) -> Map<String, Value> {
+    let mut total = Map::new();
+    for report in reports {
+        for (key, counts) in report["summary"]["by_kind_purpose"].as_object().unwrap() {
+            add_counts(total.entry(key.clone()).or_insert(json!({})), counts);
+        }
+    }
+    total
+}
+
+#[test]
+fn workspace_merges_members_as_prefixed_top_level_folders() {
+    let temp = workspace();
+    let base = temp.path();
+    let web = full_report(&base.join("web"), &[]);
+    let api = full_report(&base.join("api"), &[]);
+    let merged = full_report(base, &["workspace", "--root", "web", "--root", "api"]);
+
+    assert_eq!(merged["project"], "api + web");
+    let mut expected_files: Vec<Value> = [("api", &api), ("web", &web)]
+        .into_iter()
+        .flat_map(|(member, report)| {
+            report["files"].as_array().unwrap().iter().map(move |file| {
+                let mut file = file.clone();
+                file["path"] = json!(prefixed(member, file["path"].as_str().unwrap()));
+                file
+            })
+        })
+        .collect();
+    expected_files.sort_by(|a, b| a["path"].as_str().cmp(&b["path"].as_str()));
+    assert_eq!(merged["files"], json!(expected_files));
+    assert_eq!(
+        merged["summary"]["by_kind_purpose"],
+        Value::Object(summed_kind_purpose(&[&web, &api]))
+    );
+    let top: Vec<&String> = merged["summary"]["top_folders"]
+        .as_object()
+        .unwrap()
+        .keys()
+        .collect();
+    assert_eq!(top, ["api", "web"]);
+    assert_eq!(
+        merged["summary"]["submodules"],
+        json!([{"path": "api/vendor/proto", "files": 1, "code": 1}])
+    );
+    assert_eq!(
+        merged["summary"]["build_modules"],
+        json!({"cargo": {"modules": 1, "code": 1}, "npm": {"modules": 1, "code": 2}})
+    );
+    assert_eq!(
+        merged["metadata"]["modules"],
+        json!([{"path": "api", "detector": "cargo"}, {"path": "web", "detector": "npm"}])
+    );
+    assert_eq!(
+        merged["summary"]["unclassified_folders"],
+        json!([
+            {"folder": "api/vendor/proto", "files": 1, "code": 1},
+            {"folder": "web/prototype", "files": 1, "code": 1},
+            {"folder": "web/third_party", "files": 1, "code": 1},
+        ])
+    );
+    assert_eq!(
+        merged["metadata"]["coverage"]["selected_files"],
+        json!(
+            api["metadata"]["coverage"]["selected_files"]
+                .as_u64()
+                .unwrap()
+                + web["metadata"]["coverage"]["selected_files"]
+                    .as_u64()
+                    .unwrap()
+        )
+    );
+
+    let metadata = merged["metadata"].as_object().unwrap();
+    for single_root in ["root", "scope", "config_path", "config"] {
+        assert!(!metadata.contains_key(single_root), "{single_root}");
+    }
+    let members = merged["metadata"]["members"].as_array().unwrap();
+    let names: Vec<&str> = members
+        .iter()
+        .map(|m| m["name"].as_str().unwrap())
+        .collect();
+    assert_eq!(names, ["api", "web"]);
+    let web_member = &members[1];
+    assert_eq!(web_member["root"], web["metadata"]["root"]);
+    let config = Path::new(web["metadata"]["root"].as_str().unwrap()).join(".locmetryrc");
+    assert_eq!(web_member["config_path"], json!(config));
+    assert_eq!(web_member["scope"], web["metadata"]["scope"]);
+    assert_eq!(web_member["config"], web["metadata"]["config"]);
+    assert_eq!(web_member["unused_entries"], json!(["ghost"]));
+    assert_eq!(web_member["unused_exclusions"], json!(["third_party"]));
+    assert_eq!(members[0]["config_path"], Value::Null);
+    assert_eq!(members[0]["unused_entries"], json!([]));
+    let summary = merged["summary"].as_object().unwrap();
+    assert!(!summary.contains_key("unused_entries"));
+    assert!(!summary.contains_key("unused_exclusions"));
+}
+
+/// The headline stays compact: members keep their findings but not their
+/// effective configuration, which only the report file carries.
+#[test]
+fn workspace_headline_drops_member_configurations() {
+    let temp = workspace();
+    let headline = json_of(&locmetry(
+        temp.path(),
+        &["workspace", "--root", "web", "--root", "api"],
+    ));
+    let members = headline["metadata"]["members"].as_array().unwrap();
+    assert!(members.iter().all(|member| member.get("config").is_none()));
+    assert_eq!(members[1]["unused_entries"], json!(["ghost"]));
+    assert!(headline.get("files").is_none());
+}
+
+/// Locks determinism: members run in parallel, yet the order of `--root`
+/// flags and of thread completion never changes the report.
+#[test]
+fn workspace_reports_do_not_depend_on_root_order() {
+    let temp = workspace();
+    let forward = full_report(
+        temp.path(),
+        &["workspace", "--root", "web", "--root", "api"],
+    );
+    let backward = full_report(
+        temp.path(),
+        &["workspace", "--root", "api", "--root", "web"],
+    );
+    assert_eq!(forward, backward);
+}
+
+#[test]
+fn workspace_notes_name_the_member_of_each_finding() {
+    let temp = workspace();
+    let args = ["workspace", "--root", "web", "--root", "api", "--format"];
+    let table =
+        String::from_utf8(locmetry(temp.path(), &[&args[..], &["table"]].concat()).stdout).unwrap();
+    assert!(
+        table.contains(" api + web: source code lines by purpose"),
+        "{table}"
+    );
+    assert!(
+        table.contains("Entries that decided no file: ghost (web)."),
+        "{table}"
+    );
+    assert!(
+        table.contains("Exclusions that excluded nothing: third_party (web);"),
+        "{table}"
+    );
+    assert!(
+        table.contains("Git submodules: api/vendor/proto"),
+        "{table}"
+    );
+    let markdown =
+        String::from_utf8(locmetry(temp.path(), &[&args[..], &["markdown"]].concat()).stdout)
+            .unwrap();
+    assert!(
+        markdown.contains("Entries that decided no file: ghost (web)."),
+        "{markdown}"
+    );
+}
+
+/// Single-root settings belong to each member's configuration, and a flag
+/// before the subcommand would leave the mode ambiguous.
+#[test]
+fn workspace_rejects_single_root_flags() {
+    let temp = workspace();
+    let roots = ["workspace", "--root", "web", "--root", "api"];
+    for extra in [
+        &["--config", "web/.locmetryrc"][..],
+        &["--exclude", "x/**"],
+        &["--hidden", "false"],
+        &["--respect-ignore-files", "false"],
+    ] {
+        let stderr = stderr_of(&locmetry(temp.path(), &[&roots[..], extra].concat()));
+        assert!(stderr.contains(extra[0]), "{extra:?}: {stderr}");
+    }
+    let before = stderr_of(&locmetry(
+        temp.path(),
+        &["--files", "workspace", "--root", "web"],
+    ));
+    assert!(before.contains("workspace"), "{before}");
+    stderr_of(&locmetry(temp.path(), &["workspace"]));
+    let accepted = locmetry(
+        temp.path(),
+        &[
+            &roots[..],
+            &[
+                "--no-user-config",
+                "--categories",
+                "--sort",
+                "name",
+                "--format",
+                "table",
+            ],
+        ]
+        .concat(),
+    );
+    assert!(
+        accepted.status.success(),
+        "{}",
+        String::from_utf8_lossy(&accepted.stderr)
+    );
+}
+
+#[test]
+fn workspace_members_must_be_distinct_and_disjoint() {
+    let temp = workspace();
+    write(&temp.path().join("copy/web"), &[("a.ts", "let a = 1;\n")]);
+    for (roots, message) in [
+        (&["web", "copy/web"][..], "web"),
+        (&["web", "./web"], "web"),
+        (&["web", "web/src"], "inside"),
+        (&["web", "missing"], "missing"),
+    ] {
+        let args: Vec<&str> = std::iter::once("workspace")
+            .chain(roots.iter().flat_map(|root| ["--root", root]))
+            .collect();
+        let stderr = stderr_of(&locmetry(temp.path(), &args));
+        assert!(stderr.contains(message), "{roots:?}: {stderr}");
+    }
+}
+
+#[test]
+fn an_invalid_member_configuration_fails_the_workspace_naming_the_member() {
+    let temp = workspace();
+    write(
+        &temp.path().join("api"),
+        &[(".locmetryrc", "version = 2\n")],
+    );
+    let stderr = stderr_of(&locmetry(
+        temp.path(),
+        &["workspace", "--root", "web", "--root", "api"],
+    ));
+    assert!(stderr.contains("Workspace member api"), "{stderr}");
+}
+
+#[test]
+fn workspace_reports_must_be_written_outside_every_member() {
+    let temp = workspace();
+    let stderr = stderr_of(&locmetry(
+        temp.path(),
+        &[
+            "workspace",
+            "--root",
+            "web",
+            "--root",
+            "api",
+            "--output",
+            "api/report.json",
+        ],
+    ));
+    assert!(stderr.contains("outside"), "{stderr}");
+    let report = temp.path().join("report.json");
+    let output = locmetry(
+        temp.path(),
+        &[
+            "workspace",
+            "--root",
+            "web",
+            "--root",
+            "api",
+            "--output",
+            report.to_str().unwrap(),
+        ],
+    );
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(report.is_file());
+}
