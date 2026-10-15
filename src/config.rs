@@ -39,13 +39,11 @@ const fn test_convention(id: &'static str, patterns: &'static [&'static str]) ->
 
 /// Version-1 test conventions.
 ///
-/// Ownership-ambiguous names such as `fixtures` are deliberately absent:
-/// reference projects disagree on whether they hold tests (PRODUCT.md).
+/// Ambiguous names are deliberately absent: reference projects disagree on
+/// whether `fixtures` hold tests, and one keeps specification tooling in a
+/// `spec` folder (PRODUCT.md; docs/research/local, 2026-10-15).
 const BUILTIN_TESTS_V1: &[Convention] = &[
-    test_convention(
-        "test-directory",
-        &["**/{test,tests,__test__,__tests__,spec}/**"],
-    ),
+    test_convention("test-directory", &["**/{test,tests,__test__,__tests__}/**"]),
     test_convention(
         "gradle-test-source-set",
         &["**/src/*Test/**", "**/src/testFixtures/**"],

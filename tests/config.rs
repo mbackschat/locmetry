@@ -144,7 +144,6 @@ fn builtin_test_conventions_cover_common_layouts_but_not_ambiguous_fixtures() {
     for (path, convention) in [
         ("tests/cli.rs", "test-directory"),
         ("pkg/src/__tests__/a.ts", "test-directory"),
-        ("spec/models/user_spec.rb", "test-directory"),
         ("core/src/commonTest/kotlin/A.kt", "gradle-test-source-set"),
         (
             "core/src/releaseGuardTest/java/A.java",
@@ -172,6 +171,9 @@ fn builtin_test_conventions_cover_common_layouts_but_not_ambiguous_fixtures() {
         "src/latest/a.ts",
         "src/main/java/Testing.java",
         "contest.py",
+        // `spec` folders also hold specifications, e.g. a reference project's
+        // `.claude/skills/spec/` tooling (docs/research/local, 2026-10-15).
+        ".claude/skills/spec/scripts/emit.mjs",
     ] {
         assert_eq!(rule(&policy, path, Kind::Source), "fallback", "{path}");
     }
