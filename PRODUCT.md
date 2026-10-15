@@ -183,6 +183,22 @@ Match normalized root-relative paths with case-sensitive globs: `*` stays within
 
 Explicit exclusions still apply when ignore files are disabled. Removing a built-in exclusion does not override a repository ignore rule; use the project's ignore exceptions or an explicit ignore-file policy. Backend pattern syntax must not silently alter these semantics.
 
+## Workspace Mode (Proposal)
+
+Proposed 2026-10-15, not implemented; [PLAN.md](PLAN.md#workspace-mode--next) tracks it. A workspace measures several repositories as one virtual monorepo: each member is measured exactly as a regular run would measure it, with its own `.locmetryrc`, and the results are merged into one report whose top-level folders are the members.
+
+**Required:**
+
+- `locmetry workspace --root DIR [--root DIR ...]` selects the mode; plain `locmetry` is unchanged. Flags given before `workspace` are rejected, so a mode is always explicit.
+- Single-root flags are rejected: `--config`, `--exclude`, `--hidden`, and `--respect-ignore-files`; each member's own configuration decides them. `--no-user-config` applies to every member. `--format`, `--output`, `--files`, `--categories`, `--sort`, and `--depth` apply to the merged report.
+- Each member is named after its root's folder name, and every report path is prefixed with it, so `web/src/a.ts`. At least one root is required; two members with the same name, the same root twice, or one root inside another fail before measuring.
+- Members are measured in parallel and merged in name order, so the report is deterministic. If any member fails, such as with an invalid configuration, the run fails and names that member; there is no partial merge.
+- The merged report keeps the regular shape: totals, `top_folders` (one per member), categories, `unclassified_folders`, `submodules`, `build_modules`, `review`, `breakdown`, and `files` are computed over the prefixed records. `project` joins the member names with ` + `.
+- `metadata.members` lists each member's `name`, `root`, `config_path`, `scope`, `unused_entries`, and `unused_exclusions`, plus its effective `config` in the report file. These settings and findings are relative to one member, so in workspace mode they appear there instead of in `metadata.root`, `metadata.scope`, `metadata.config_path`, `metadata.config`, and `summary.unused_entries`/`unused_exclusions`. Human notes name the member, such as `ghost (web)`.
+- `--output` must lie outside every member root.
+
+**Excluded:** a workspace file listing members, explicit member names, overlapping members, and any configuration shared or inherited across members.
+
 ## Reporting and Coverage
 
 Reports serve aggregation: totals by purpose, category, kind, language, and folder. Count original file reports and embedded statistics once. `breakdown` rows are additive, and so are top-level folder totals, which cover each subtree and, with the root files, every file once. The Markdown folder table lists nested levels, in which a parent includes its subfolders, so its rows are not all additive.

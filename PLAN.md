@@ -17,6 +17,18 @@ Decided 2026-10-15: licence MIT (dual MIT OR Apache-2.0 up to v0.1.1), repositor
 
 **Completion evidence:** CI passes on every target, the release carries archives and checksums, `brew install` and `brew test` pass on macOS arm64 and Linux, and publication was explicitly authorized.
 
+## Workspace Mode — Next
+
+Decided 2026-10-15: a `workspace` subcommand with repeatable `--root` that measures each member with its own configuration in parallel and merges the results, as the [proposal](PRODUCT.md#workspace-mode-proposal) defines.
+
+- [ ] Parse `locmetry workspace` and reject single-root flags and flags before the subcommand.
+- [ ] Validate members: at least one, unique names, no root twice, no nesting.
+- [ ] Measure members in parallel, fail with the member's name, and merge prefixed records in name order.
+- [ ] Report `metadata.members`, the merged summary, and member-qualified notes; extend `--schema report`.
+- [ ] Turn the proposal into contract text and document the mode in the README.
+
+**Completion evidence:** tests cover flag rejection, member validation, a merge that equals the per-member reports summed with prefixed paths, determinism, and the report schema; a workspace over real sibling repositories, recorded in `docs/research/local/`, matches the sum of their individual runs.
+
 ## Ideas — Not Scheduled
 
 - [ ] A configuration skill for coding agents: decided 2026-10-15 to record, not build yet. Blind test drives showed agents already reach 99%+ agreement with human-reviewed configurations from `--help` and `--schema` alone, so the skill would add procedure rather than knowledge: keep the repository read-only until a human approves, require evidence and a `reason` for every entry, declare `[categories]`, resolve `summary.submodules` and `summary.unused_entries`, and end with the judgment calls a human must make. Acceptance: the same blind trials scored with and without the skill show a gain, not only more ceremony.
