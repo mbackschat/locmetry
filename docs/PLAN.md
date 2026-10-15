@@ -4,7 +4,7 @@
 
 ## Measurement Quality and Net Change — Next
 
-Sequence accepted 2026-10-15. The [actionable work plan](plans/measurement-quality-and-net-change.md) owns detailed tasks, retained rationale, source provenance, acceptance checks, review checkpoints and live stage status. Implement in this order: notebook correctness, documentation corrections, shared report/schema contracts, net change, then selection explanations. S1 notebook correctness and failure reporting are complete; S2 documentation corrections are next. Optional follow-ups remain conditional in that plan.
+Sequence accepted 2026-10-15. The [actionable work plan](plans/measurement-quality-and-net-change.md) owns detailed tasks, retained rationale, source provenance, acceptance checks, review checkpoints and live stage status. Implement in this order: notebook correctness, documentation corrections, shared report/schema contracts, net change, then selection explanations. S1 notebook correctness/failure reporting and S2 documentation corrections are complete; S3 typed report/schema contracts are next. Optional follow-ups remain conditional in that plan.
 
 Consult the detailed plan before starting a stage and record verified completion there. Update affected documentation with each implementation checkpoint; S2 is the wider documentation audit, not a reason to delay documentation for S1. [PRODUCT.md](PRODUCT.md) continues to describe supported behavior; the [net-change proposal](proposals/net-change.md) remains the detailed design reference.
 

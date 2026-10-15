@@ -106,7 +106,7 @@ pub fn report_schema() -> Value {
                         "detector": {"type": "string", "description": "Build system, such as `gradle` or `npm`."},
                     }),
                     &["path", "detector"],
-                    "A folder whose build file declares a source layout.",
+                    "A folder with a selected build descriptor that triggers conventional source-layout inference; manifest contents are not parsed.",
                 ),
                 "description": "Full report only: every adopted build module; empty when `classification.builtin_modules` is false.",
             },

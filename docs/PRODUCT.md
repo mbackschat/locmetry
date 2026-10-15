@@ -8,7 +8,7 @@ The product rests on three pillars:
 
 - **Expressive configuration:** reviewable project policy covers real repositories' scope, ownership, and classification needs, including build tooling, examples, generated code, and evidence.
 - **Reuse with gap filling:** the embedded counter does the counting; Locmetry layers on top of its library and fills gaps it leaves, such as unrecognized file types, instead of reimplementing it.
-- **Rich output:** reports summarize the measurement, while JSON keeps every file record, provenance, and the effective policy so agents and scripts can answer further questions, including their own summations.
+- **Rich output:** reports summarize the measurement, while full JSON keeps provenance and the effective policy, with per-file records when `--files` is requested so agents and scripts can answer further questions, including their own summations.
 
 ## Scope and Status
 
@@ -100,7 +100,7 @@ category = "unmapped-source"
 
 ### User Defaults
 
-Personal defaults live in `$XDG_CONFIG_HOME/locmetry/config.toml`, or in `~/.config/locmetry/config.toml` when `XDG_CONFIG_HOME` is unset, on every platform. They may only narrow scope and teach languages, never classify, so a project is classified the same way for everyone:
+Personal defaults live in `$XDG_CONFIG_HOME/locmetry/config.toml`, or in `~/.config/locmetry/config.toml` when `XDG_CONFIG_HOME` is unset, on every platform. They may only narrow scope and teach languages, never assign purpose or category. Personal mappings can nevertheless change recognition and content kind, so reproducibility requires the same effective personal settings or `--no-user-config`:
 
 ```toml
 version = 1
@@ -121,7 +121,7 @@ language = "BASH"
 
 ### Module Detection
 
-Production source is evidence from the build, not a guess: a build descriptor among the selected files makes its directory a build module, and each build system's default source layout inside that module is production. Build systems call this unit a module, project, package, or crate; it is unrelated to language-level modules or packages, and this document's "module" always means a build module. Detectors only read selected file names and never run a build. Each build system is one detector, so supporting another one adds a detector without changing the stages.
+A selected build descriptor triggers conventional source-layout inference: its directory becomes a build module, and the detector's default source layout inside that module is production. This is whole-file classification, not semantic membership in build targets; custom manifest targets and scripts require explicit policy. Build systems call this unit a module, project, package, or crate; it is unrelated to language-level modules or packages, and this document's "module" always means a build module. Detectors inspect selected file names, without parsing manifests or running builds. Each build system is one detector, so supporting another one adds a detector without changing the stages.
 
 | Detector | Descriptor | Production source in the module |
 | --- | --- | --- |
@@ -134,11 +134,11 @@ Production source is evidence from the build, not a guess: a build descriptor am
 | `lake` | `lakefile.lean`, `lakefile.toml` | every `*.lean` file; the lakefile is a build script, and test libraries named `<Name>Test/` or `<Name>Tests/` are tests through the `lean-test-library` convention |
 | `swift` | `Package.swift` | `Sources/**`; test targets in `Tests/` or `<Name>Tests/` are tests through the `swift-test-target` convention |
 
-The innermost module containing a file decides, as build tools treat nested projects: an outer module's layout never claims files of a module nested inside it, while build systems sharing one directory, such as Gradle and npm, combine their layouts. Where those layouts overlap, the detector whose ID sorts first decides, such as `cargo` before `npm`; purpose and category are the same either way, so only provenance and the per-module totals depend on it. Test and build conventions run earlier, so tests inside these trees stay tests. Files outside every module's production source keep the fallback, which then means the build declares nothing about them. The report file lists the modules as `metadata.modules`; the summary's `build_modules`, the table, and the Markdown report, which lists every module, show the code each one classified, where `0` hints at a misleading build file.
+The innermost module containing a file decides, as build tools treat nested projects: an outer module's layout never claims files of a module nested inside it, while build systems sharing one directory, such as Gradle and npm, combine their layouts. Where those layouts overlap, the detector whose ID sorts first decides, such as `cargo` before `npm`; purpose and category are the same either way, so only provenance and the per-module totals depend on it. Test and build conventions run earlier, so tests inside these trees stay tests. Files outside every module's production source keep the fallback, because no applicable conventional layout claimed them. The report file lists the modules as `metadata.modules`; the summary's `build_modules`, the table, and the Markdown report, which lists every module, show the code each one classified, where `0` hints at a misleading build file.
 
 ### Matching and Precedence
 
-Four layers combine into the effective configuration; user defaults and the command line never classify, so a project is classified the same way for everyone:
+Four layers combine into the effective configuration. Only the project layer sets purpose/category policy; personal mappings and scope options can still affect which files and kinds enter that policy:
 
 | Layer | Source | May set | Combination |
 | --- | --- | --- | --- |
@@ -153,14 +153,14 @@ Exclusions from all layers form one union, so their order is irrelevant and no l
 2. Apply the first matching `overrides` entry.
 3. Apply built-in test conventions, then built-in build conventions, if enabled; provenance records the convention, for example `builtin:gradle-test-source-set`.
 4. Apply the first matching ordinary `rules` entry.
-5. Apply module detection, if enabled: source in the production layout of a module that a build descriptor declares is `production` with category `implementation`, and provenance names the detector, for example `builtin:npm-module`.
+5. Apply module detection, if enabled: source in a conventional production layout inferred from a selected build descriptor is `production` with category `implementation`, and provenance names the detector, for example `builtin:npm-module`.
 6. Assign `classification.fallback` if no classification matched.
 
 An entry matches when any of its patterns matches the path and, if `kind` is present, the file's kind is listed. A match terminates purpose/category classification. Each file records its provenance as the matching entry ID, `builtin:<convention>`, or `fallback`; fallback files take the fallback purpose as their category. Broad production rules therefore do not swallow conventional tests or build scripts, while an explicit archived-evidence override can take precedence over test filenames. Entries that assign ownership of a whole tree, such as a test-only package whose build scripts are test support, belong in `overrides` so built-in conventions do not preempt them. No ordinary run requires an LLM; agent assistance proposes reviewable configuration.
 
 The stage order is fixed, so where `[[overrides]]`, `[[rules]]`, and other tables appear in the file is irrelevant. Order matters only within a list: the first matching entry of `overrides`, of `rules`, or of `languages.mappings` decides, and built-in conventions apply in their documented order. Because rules precede build modules, a rule also takes source a build module would claim; it should match only the folders it is about. Within the module stage, nesting and same-folder overlaps resolve as [Module Detection](#module-detection) defines.
 
-Measurement is deterministic: the same selected files, configuration layers, and Locmetry version give the same report, apart from `metadata.root` and `metadata.measured_at_unix_seconds`. No result depends on the order in which the file system lists files or build files are found, and every list in a report has a defined order.
+Measurement counts and ordering are deterministic for identical selected file contents, effective configuration, backend settings and Locmetry version. Selection also depends on repository, parent and global ignore context. Timestamps, project/member names and contextual paths can differ across runs or locations; reports do not fingerprint source, ignore contents or executable builds. No counting result depends on traversal order, and report lists have defined ordering.
 
 | Setting | Type and contract |
 | --- | --- |
@@ -211,9 +211,9 @@ Excluded: detecting copies across members and comparing measurements over time.
 
 Reports serve aggregation: totals by purpose, category, kind, language, and folder. Count original file reports and embedded statistics once. `breakdown` rows are additive, and so are top-level folder totals, which cover each subtree and, with the root files, every file once. The Markdown folder table lists nested levels, in which a parent includes its subfolders, so its rows are not all additive; it also shows each folder's `Test/prod` ratio.
 
-Stdout defaults to `--format table` when it is a terminal and to `--format json` otherwise, so people and agents each get their format without a flag. `table` shows source code per language and per top-level folder, split by purpose, the folder rows with test code lines per production code line (`Test/prod`, `-` without production code) and a total row, each table with a legend stating how its columns add up, followed by notes on non-source content, the build systems whose modules classified code, Git submodules with measured source, the folders that hold unclaimed source, configuration entries that decided no file, and uncounted files; the Markdown report repeats the submodule and entry notes under Coverage. `json` prints a compact headline: the report without `review`, `breakdown`, `files`, `metadata.config`, `metadata.kinds`, and `metadata.coverage.unrecognized`. `markdown` prints a full human report for saving or reviews. Both human formats group thousands with commas, while JSON keeps plain integers. `--depth N` (default 2) limits the Markdown folder table. `--sort code` (default) orders the rows of both human formats by code, largest first with ties alphabetical, and `--sort name` alphabetically; the Markdown folder table keeps its path hierarchy, and the review list stays largest first. `--output FILE` writes the full report to one file outside the scan root, and the headline names it as `report`; `--output -` prints the full report to stdout instead of the headline and cannot be combined with `--format table` or `markdown`. `--files` adds per-file records to the report for rule debugging. Diagnostics go to stderr. Exit code 0 means a complete report, 2 a partial report whose missing counts come from unreadable files or invalid/unsupported notebook content, and 1 a failure without a report, including invalid command-line usage.
+Stdout defaults to `--format table` when it is a terminal and to `--format json` otherwise, so people and agents each get their format without a flag. `table` shows source code per language and per top-level folder, split by purpose, the folder rows with test code lines per production code line (`Test/prod`, `-` without production code) and a total row, each table with a legend stating how its columns add up, followed by notes on non-source content, the build systems whose modules classified code, Git submodules with measured source, the folders that hold unclaimed source, configuration entries that decided no file, and uncounted files; the Markdown report repeats the submodule and entry notes under Coverage. `json` prints a compact headline: the report without `review`, `breakdown`, `files`, `metadata.config`, `metadata.kinds`, `metadata.modules`, and `metadata.coverage.unrecognized`. `markdown` prints a full human report for saving or reviews. Both human formats group thousands with commas, while JSON keeps plain integers. `--depth N` (default 2) limits the Markdown folder table. `--sort code` (default) orders the rows of both human formats by code, largest first with ties alphabetical, and `--sort name` alphabetically; the Markdown folder table keeps its path hierarchy, and the review list stays largest first. `--output FILE` writes the full report to one file outside the scan root, and the headline names it as `report`; `--output -` prints the full report to stdout instead of the headline and cannot be combined with `--format table` or `markdown`. `--files` adds per-file records to the report for rule debugging. Diagnostics go to stderr. Exit code 0 means a complete report, 2 a partial report whose missing counts come from unreadable files or invalid/unsupported notebook content, and 1 a failure without a report, including invalid command-line usage.
 
-JSON schema version `1`, which `locmetry --schema report` prints as a JSON Schema covering the headline and the full report. That schema is written by hand, and tests validate real reports against it with unknown keys rejected:
+JSON schema version `1`, which `locmetry --schema report` prints as a JSON Schema covering the headline and the full report. The report schema is currently written by hand. Tests validate real reports and reject unknown fields at explicitly modeled object boundaries; some effective-policy nodes remain unconstrained pending the [typed-contract stage](plans/measurement-quality-and-net-change.md#s3--unify-typed-report-and-schema-contracts):
 
 | Field | Contents |
 | --- | --- |

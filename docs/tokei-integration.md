@@ -7,7 +7,7 @@ Decision: implement Locmetry in Rust and embed the Tokei library to minimize ins
 ```text
 Configuration + scan root
   → Locmetry selects files using root-relative scope and ignore rules
-  → embedded Tokei recognizes languages and counts each selected file
+  → embedded Tokei recognizes languages; supported counters measure readable content
   → Locmetry maps unrecognized files, classifies, aggregates, and emits a terminal table, JSON, or Markdown
 ```
 
@@ -16,6 +16,8 @@ Configuration + scan root
 The adapter uses Tokei's `Languages::get_statistics` API. Locmetry first selects paths using the `ignore` crate with normal ignore-file behavior and a scan-root-based exclusion matcher. This avoids Tokei 15's exclusion builder being anchored to the current working directory. Tokei receives the selected paths with further ignore filtering disabled. [Backend implementation](../src/backend.rs), [upstream traversal](https://github.com/XAMPPRocky/tokei/blob/v15.0.0/src/utils/fs.rs)
 
 Handlebars is counted by a [local lexical correction](../src/backend/handlebars.rs) before reports are normalized. Tokei 15.0.0's global quote handling mistakes apostrophes in template text for strings, corrupting subsequent blank and comment counts. The correction keeps Tokei's language recognition, report shape, BOM-aware decoding, and unreadable-file reporting; mapped Handlebars files use it too. Its syntax boundaries follow the [reference Handlebars lexer](https://github.com/handlebars-lang/handlebars.js/blob/v4.7.8/src/handlebars.l), with HTML comments and quoted attributes retained for HTML templates. [Measurement semantics](measurement.md#counting) defines the line categories. The decoder dependency is already in Tokei's dependency graph; no runtime executable is added.
+
+Notebooks use a [local container decoder](../src/backend/notebook.rs), with Tokei counting code-cell text. Tokei 15's private notebook parser both overlaps parent/blob totals and discards decoding failures. Locmetry constructs disjoint cell contributions and reports malformed or unsupported content as unavailable, with exit 2. Recognized and mapped notebook paths share this boundary; [notebook semantics](measurement.md#notebooks) owns supported shapes, cell treatment and language selection.
 
 Use `Config::default()` with explicit counting settings, never `Config::from_config_files()`. Ambient `tokei.toml` and `.tokeirc` settings therefore cannot silently change counting. Repository, parent, and global ignore rules still participate in scope; this is not a hermetic filesystem snapshot. [Tokei configuration](https://github.com/XAMPPRocky/tokei/blob/v15.0.0/src/config.rs)
 

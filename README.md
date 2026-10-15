@@ -2,17 +2,17 @@
 
 # locmetry
 
-**Lines of code, split by purpose: production, tests, tooling, and what nobody claims.** A line counter tells you a repository has 120,000 lines. It cannot tell you how much of that is product code, how much is tests, and how much is build glue, a vendored SDK, or a prototype nobody maintains. `locmetry` counts every file, gives it a purpose and a category, and records the rule that decided it.
+**Lines of code, split by purpose: production, tests, tooling, and what nobody claims.** `locmetry` measures selected files that its counters can recognize and read, gives each counted file a purpose and category, and records the rule that decided it. Coverage names files whose counts are unavailable.
 
-- **Useful without configuration:** test conventions and build files (npm, Gradle, Maven, Cargo, Go, Python, Lake, Swift) classify most code out of the box.
-- **Flexible, reviewable configuration:** a short `.locmetryrc` states only what conventions cannot know: what is out of scope, which folders are tooling or examples, which archived code must not count as tests, your own categories, and languages for unknown file types. The precedence is fixed and documented, so the same files and configuration always give the same numbers.
-- **Built for coding agents:** `locmetry --schema config` explains the configuration and its semantics from the binary alone. In blind trials, agents without access to these docs wrote configurations that agreed with human-reviewed ones on 99% or more of code lines ([trials](docs/research/real-project-trials.md)).
-- **JSON for agents and scripts:** a headline small enough for an agent's context, with totals by purpose, category, content kind, and language, per top-level folder and build system, plus the folders that still need a decision. `--output` adds a full report with additive breakdown rows and per-file records, and `--schema report` describes every key, so nothing has to be guessed or scraped, and every follow-up question is a `jq` query.
+- **Useful without configuration:** test conventions and build files (npm, Gradle, Maven, Cargo, Go, Python, Lake, Swift) recognize common source and test layouts out of the box.
+- **Flexible, reviewable configuration:** a short `.locmetryrc` states only what conventions cannot know: what is out of scope, which folders are tooling or examples, which archived code must not count as tests, your own categories, and languages for unknown file types. The precedence is fixed and documented, so classification decisions can be traced to effective policy.
+- **Built for coding agents:** `locmetry --schema config` explains the configuration and its semantics from the binary alone. In selected later blind trials, agents without these docs reached 99% or greater agreement with human-reviewed purpose classifications by code line ([population and rounds](docs/research/real-project-trials.md#agent-configuration-trials)). This measures classification agreement, not parser accuracy or performance on arbitrary repositories.
+- **JSON for agents and scripts:** a headline small enough for an agent's context, with totals by purpose, category, content kind, and language, per top-level folder and build system, plus the folders that still need a decision. `--output` writes a full report with additive breakdown rows; add `--files` for per-file records. `--schema report` describes the structure and semantics for further queries.
 - **Ready-made metrics:** the tables show test lines per production line for every folder, and a workspace adds each repository's ratio and share. The JSON keeps exact counts, so any other ratio, such as a test-share guard in CI, is one `jq` expression.
 - **Several repositories as one:** `locmetry workspace` measures sibling repositories, each with its own configuration, as one virtual monorepo with a row per repository.
 - **Three outputs from one measurement:** a terminal table for people, JSON for agents and scripts, and Markdown for reviews and wikis.
 
-It is one static binary for macOS arm64 and Linux x86_64 and aarch64, with no runtime dependencies.
+It is a self-contained executable for macOS arm64 and Linux x86_64 and aarch64, with no separately installed runtime. Linux releases are statically linked; macOS uses operating-system libraries.
 
 ## What you see
 
@@ -57,7 +57,7 @@ $ locmetry
 
 What the table already handles for you:
 
-- **No language list to maintain:** every programming language counts, while JSON, YAML, Markdown, and other data or documentation stay out of the source totals.
+- **No language list to maintain:** recognized programming languages count, while JSON, YAML, Markdown, and other data or documentation stay out of the source totals.
 - **Production from the build:** `backend/build.gradle.kts` and `web/package.json` mark their source trees as production, with no rule, and the table names both build systems.
 - **Tests found by convention:** test files count as tests even inside the application's source tree.
 - **Scope as policy:** the vendored SDK is excluded by one line of configuration.
@@ -67,11 +67,11 @@ What the table already handles for you:
 
 - **Understand an unfamiliar repository:** see in one screen which languages matter, where the tests live, and which code nobody claims.
 - **Track test investment:** follow the test-to-production ratio per folder and over time, without hand-maintained exclusion lists.
-- **Size a codebase honestly:** estimate a migration, a rewrite, an audit, an acquisition, or an outsourcing quote on maintained code only. Vendored, generated, and experimental code is excluded or labelled.
+- **Size a codebase honestly:** estimate a migration, a rewrite, an audit, an acquisition, or an outsourcing quote on maintained code only. Use configuration to exclude or label vendored, generated, and experimental code; these are not automatically identified.
 - **Guard quality in CI:** fail a build when unclaimed code grows or the test share drops, with one `jq` expression ([example](#continuous-integration)).
 - **Compare parts of a monorepo:** the folder rows and the additive breakdown table compare packages, services, or layers by purpose.
 - **Measure several repositories as one:** `locmetry workspace` merges sibling repositories, each measured with its own configuration, into one virtual monorepo whose folder rows compare the repositories ([how](#measure-several-repositories-together)).
-- **Watch a codebase change:** measure two releases or branches and compare production and test growth instead of raw line deltas, for example to see what an agent-written change really added.
+- **Watch a codebase change:** save full JSON reports from two checkouts and compare their recorded counts externally. A built-in [net-change command](docs/proposals/net-change.md) is planned; current reports do not establish Git revisions.
 - **Let an agent configure a project:** a coding agent working in a repository writes its `.locmetryrc` itself. `locmetry --help` leads it to `--schema config`, which explains the configuration and its semantics, and the measurement shows which folders still need a decision ([how](#configure-with-an-agent)).
 - **Give coding agents a reliable answer:** a compact JSON headline fits an agent's context, and follow-up questions are one `jq` query over the report file instead of improvised `find | xargs wc -l` pipelines.
 - **Report to people:** paste the Markdown report into a pull request, an architecture review, or a wiki page.
@@ -84,7 +84,7 @@ Code, comment, and blank lines per file, including code embedded in other langua
 
 ### Purpose, category, and provenance per file
 
-Every file gets a purpose, `production`, `test`, or `unclassified`, an optional category such as `implementation`, `tooling`, `build-tooling`, or `example`, and the rule that decided it. For the [sample project](#a-tour-of-a-sample-project), `locmetry --files --output - | jq …` lists:
+Every counted file gets a purpose, `production`, `test`, or `unclassified`, an optional category such as `implementation`, `tooling`, `build-tooling`, or `example`, and the rule that decided it. For the [sample project](#a-tour-of-a-sample-project), `locmetry --files --output - | jq …` lists:
 
 ```text
 path                                                     purpose       category             rule
@@ -116,7 +116,7 @@ A release may add conventions, which can reclassify files, but changing or remov
 
 ### Production from the build
 
-A folder with an npm, Gradle, Maven, Cargo, Go, Python, Lake, or Swift build file is a [build module](#build-modules), and that build system's source layout inside it counts as production. Nothing is assumed where no build declares anything, and the table says which build systems decided:
+A selected npm, Gradle, Maven, Cargo, Go, Python, Lake, or Swift descriptor identifies a [build module](#build-modules). Locmetry infers production from that system's conventional layout, without reading manifest targets or scripts. Custom layouts need configuration. The table says which detectors decided:
 
 ```text
  Production from build modules: gradle 42 code lines in 1 module, npm 31 code lines in 1 module.
@@ -168,7 +168,7 @@ Invalid or unsupported notebook content appears in `metadata.coverage.parse_fail
 
 ### Reproducible and deterministic
 
-Only the project's configuration, command-line options, and optional personal exclusions affect results, and every report records the effective scope and policy. The same files and configuration always give the same report, independent of the order in which files are found; [PRODUCT.md](docs/PRODUCT.md#matching-and-precedence) defines the precedence.
+With the same selected file content, effective policy and Locmetry version, counts and ordering are deterministic. Personal exclusions and language mappings, repository/parent/global ignore rules, and CLI scope options can change what is measured. Reports record effective settings, but do not fingerprint source content, ignore files or executable builds; timestamps and contextual names/paths can differ. [PRODUCT.md](docs/PRODUCT.md#matching-and-precedence) defines the guarantee and precedence.
 
 ### Self-describing configuration
 
@@ -347,16 +347,25 @@ Each file gets the first match of five stages:
 1. `[[overrides]]`, for decisions that must beat everything;
 2. built-in test conventions, then built-in build conventions;
 3. `[[rules]]`;
-4. [build modules](#build-modules): the source layout that a build file declares, here in `backend` and `web`;
+4. [build modules](#build-modules): conventional source layouts inferred from selected descriptors, here in `backend` and `web`;
 5. the fallback, `unclassified` by default.
 
-Only this stage order and the order of entries within each list matter, not where the tables appear in the file. User defaults and command-line flags may add exclusions or switch scope settings but never classify, and the same files and configuration always give the same report; [PRODUCT.md](docs/PRODUCT.md#matching-and-precedence) defines the layers and tie-breaks.
+Only this stage order and the order of entries within each list matter, not where the tables appear in the file. Personal settings cannot assign purpose or category, but their language mappings can change recognition and content kind. Command-line flags can change scope; [PRODUCT.md](docs/PRODUCT.md#matching-and-precedence) defines the layers and tie-breaks.
 
 So `OrderServiceTest.kt` and `cart.test.ts` are tests even though they sit inside the build modules' source trees. The Gradle scripts are `build-tooling`, and `gradlew` is a `third-party-wrapper`. The prototype falls through to `unclassified`, where the review list surfaces it as unclaimed. A rule that gives it `purpose = "unclassified"` with a `category` such as `prototype` parks it on purpose: it still counts as unclassified but leaves the review list, as `gradlew` does. An optional `[categories]` table declares the category names entries may use, each with its meaning, so a typo fails instead of becoming a new category. [PRODUCT.md](docs/PRODUCT.md#project-configuration) documents every key, glob semantics, and `[[languages.mappings]]`.
 
+To measure a root from another directory, discover its policy with `--root`. An explicit config replaces only project discovery; `--no-user-config` separately removes personal defaults:
+
+```sh
+locmetry --root ../service
+locmetry --root ../service --config ./policies/service.toml --no-user-config
+```
+
+Both commands match patterns relative to `../service`, not the configuration's directory. Exclusions from all active layers form a union; moving one later cannot re-include a file. Ordered rules and mappings instead use the first match. [Workspace members](#measure-several-repositories-together) discover their own policy independently.
+
 ### Build modules
 
-A build module is a folder whose build file declares where its source lives. Build systems call this unit a module, project, package, or crate; locmetry says build module throughout. It has nothing to do with modules or packages inside a language, such as a Python file or a Rust `mod`. Wherever one of these build files is among the measured files, the build system's default production layout in its folder counts as production with category `implementation`:
+A build module is a folder with a selected build descriptor that triggers conventional source-layout inference. Build systems call this unit a module, project, package, or crate; locmetry says build module throughout. It has nothing to do with modules or packages inside a language, such as a Python file or a Rust `mod`. Wherever one of these build files is among the measured files, the build system's default production layout in its folder counts as production with category `implementation`:
 
 | Build file | Production source in its folder |
 | --- | --- |
@@ -409,7 +418,8 @@ When stdout is not a terminal, `locmetry` prints a compact JSON headline, under 
       "mapped_files": 2,
       "unrecognized_files": 1,
       "unrecognized_extensions": { "png": 1 },
-      "unread": []
+      "unread": [],
+      "parse_failures": []
     }
   },
   "summary": {
@@ -445,7 +455,7 @@ When stdout is not a terminal, `locmetry` prints a compact JSON headline, under 
 }
 ```
 
-Summaries omit zero counts, so a missing entry means zero. The full schema is in [PRODUCT.md](docs/PRODUCT.md#reporting-and-coverage).
+Summary count objects omit zero counts; this does not apply to missing coverage evidence or optional detail. The report contract is in [PRODUCT.md](docs/PRODUCT.md#reporting-and-coverage).
 
 ### Report file for any question
 
@@ -456,7 +466,7 @@ Summaries omit zero counts, so a missing entry means zero. The full schema is in
 {"folder":"backend/src/test/kotlin/acme/orders","kind":"source","purpose":"test","category":"test","language":"Kotlin","files":1,"code":16,"comments":0,"blanks":4,"lines":20},
 ```
 
-Because rows are additive, any question is a filter and a sum:
+Because rows are additive, recorded dimensions can be filtered and summed:
 
 ```sh
 $ locmetry --output report.json > /dev/null
@@ -532,23 +542,29 @@ Files selected: 17; counted: 16, including 2 through language mappings; not reco
 
 ## Continuous integration
 
-The headline makes guardrails one-liners. `jq -e` exits nonzero when the expression is false:
+Capture the measurement before applying a policy check, preserving Locmetry's exit status. This script refuses partial reports, fails when more than 50 source lines remain unclaimed, and prints the test/production ratio only when production code is nonzero. `jq -e` fails when the policy expression is false:
 
 ```sh
-# Fail when more than 50 lines of source are still unclaimed
-locmetry | jq -e '([.summary.unclassified_folders[].code] | add // 0) <= 50'
-
-# Print the test share of production code
-locmetry | jq -r '.summary.source_purpose | "test/production: \((.test.code // 0) * 100 / .production.code | floor)%"'
-# test/production: 27%
+set -eu
+report=$(locmetry --format json) || exit "$?"
+printf '%s\n' "$report" | jq -e '([.summary.unclassified_folders[].code] | add // 0) <= 50'
+printf '%s\n' "$report" | jq -r '
+  (.summary.source_purpose // {}) as $p |
+  if ($p.production.code // 0) == 0 then
+    "test/production: n/a (no production code)"
+  else
+    "test/production: \(($p.test.code // 0) * 100 / $p.production.code | floor)%"
+  end'
 ```
+
+[CI executes this block](scripts/check-doc-examples.sh) against empty, healthy, partial, invalid-configuration and policy-failing projects. The Cargo tests separately guard its JSON and exit-code assumptions without requiring `jq`.
 
 Exit codes:
 
 | Code | Meaning |
 | --- | --- |
 | 0 | Complete report. |
-| 2 | Partial report: some files could not be read. |
+| 2 | Partial report: unreadable files, invalid/unsupported notebook content, or backend inaccuracy. |
 | 1 | Failure, such as invalid configuration or usage. |
 
 ## Output formats
@@ -564,7 +580,7 @@ The table and Markdown group thousands with commas, such as `12,345`, while JSON
 
 ## Compared with line counters
 
-Line counters such as [cloc](https://github.com/AlDanial/cloc) and [scc](https://github.com/boyter/scc) report lines per language. locmetry adds what language totals lack: scope as reviewable policy, purpose and category per file with provenance, separation of data and documentation from source, and coverage that names what was not counted. [Research](docs/research/README.md) compares the tools in more detail.
+[cloc](https://github.com/AlDanial/cloc) provides source comparison and detailed filtering diagnostics; [scc](https://github.com/boyter/scc) provides additional analytics, configuration and integrations. Locmetry focuses on a combined contract: reviewable scope, whole-file purpose/category with provenance, source/data/documentation separation, explicit coverage, and independently configured workspace members. The pinned [capability comparison](docs/research/tool-capability-comparison.md) records the evidence and differences; it is not an accuracy or performance ranking.
 
 Known limits: classification is per file, so a file mixing production code and inline tests counts as one purpose. Git is not invoked, so a measurement describes the working copy rather than a commit. [Measurement semantics and limits](docs/measurement.md) lists the details.
 

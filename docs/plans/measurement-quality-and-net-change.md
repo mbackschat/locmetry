@@ -1,6 +1,6 @@
 # Measurement Quality and Net Change Work Plan
 
-Status: sequence accepted by the owner on 2026-10-15; S1 implemented, later stages pending. The accepted order is notebook correctness, documentation corrections, shared report/schema contracts, net change, then selection explanations. This file makes those recommendations executable and retains their rationale. Detailed public-interface choices remain recommendations until resolved at the relevant stage; accepting the sequence does not implement or publish a feature.
+Status: sequence accepted by the owner on 2026-10-15; S1 and S2 implemented, later stages pending. The accepted order is notebook correctness, documentation corrections, shared report/schema contracts, net change, then selection explanations. This file makes those recommendations executable and retains their rationale. Detailed public-interface choices remain recommendations until resolved at the relevant stage; accepting the sequence does not implement or publish a feature.
 
 [Development plan](../PLAN.md) indexes this work. [PRODUCT.md](../PRODUCT.md) remains the supported contract. The [net-change proposal](../proposals/net-change.md) owns the proposed comparison design; this plan owns sequencing, tasks, review checkpoints and completion evidence. The [capability comparison](../research/tool-capability-comparison.md), [configuration/documentation audit](../research/configuration-and-documentation.md), and [lessons and gaps](../research/tool-lessons-and-gaps.md) preserve the research evidence.
 
@@ -18,7 +18,7 @@ Resolve ordinary implementation details within the accepted scope. Record materi
 | --- | --- | --- | --- |
 | S1a | Correct notebook normalization | Shared S1 decoder design below | Done 2026-10-15. Nine end-to-end notebook tests, public suite and private replay pass; checkpoint subject: `fix(counting): decode notebooks once and report unavailable counts`. |
 | S1b | Expose structured-document parse failure | The shared S1 decoder and its failure result | Done with S1a. Always-emitted `parse_failures`, member counts, partial exit 2, human output and historical schema absence verified. |
-| S2 | Correct documentation and executable examples | None for existing documentation drift; S1 behavior for its final wording | Not started. Audit identifies affected sections. |
+| S2 | Correct documentation and executable examples | None for existing documentation drift; S1 behavior for its final wording | Done 2026-10-15. Audited claims corrected; actual README recipe passes five synthetic scenarios. Checkpoint subject: `docs(usage): align measurement guidance and verify CI recipes`. |
 | S3 | Unify typed report and schema contracts | S1b representation | Not started. Inventory version-1 shapes across release tags. |
 | S4 | Implement aggregate and topology net change | S3 | Not started. Detailed design remains in the proposal. |
 | S5 | Add a focused selection-explanation workflow | No technical dependency on S4 | Not started. Public interface requires a bounded design. |
@@ -82,15 +82,15 @@ Row order is the accepted work order; the technical-prerequisite column is not a
 
 **Provenance.** The [location-by-location audit](../research/configuration-and-documentation.md#documentation-deserves-the-same-consistency-checks-as-code) links current Locmetry sections and peer evidence. Tokei's [README](https://github.com/XAMPPRocky/tokei/blob/v15.0.0/README.md) and [CLI](https://github.com/XAMPPRocky/tokei/blob/v15.0.0/src/cli.rs), and pygount's [JSON reference](https://github.com/roskakori/pygount/blob/v3.2.0/docs/json.md) and [serializer](https://github.com/roskakori/pygount/blob/v3.2.0/pygount/write.py), illustrate concrete drift.
 
-- [ ] Qualify universal counting claims with selection, recognition, decoding/parsing and coverage boundaries; describe Tokei reuse plus local corrections.
-- [ ] State when per-file records require `--files`; align headline/full-report descriptions with emitted fields, including module metadata.
-- [ ] Distinguish self-contained executables from explicitly static Linux builds.
-- [ ] Qualify reproducibility with versions, personal settings, ignore context and evidence absent from reports. Keep classification trial claims tied to their population and task.
-- [ ] Describe modules as descriptor-triggered layout inference; distinguish whole-file purpose from semantic build membership.
-- [ ] Update competitor comparisons to acknowledge diagnostics, configuration, analytics and integrations. Describe the combined Locmetry contract without unsupported uniqueness or accuracy claims.
-- [ ] Make CI recipes preserve failure/partial exit status and define missing/zero-production behavior. Exercise the actual shell/`jq` recipes with synthetic inputs in [GitHub CI](../../.github/workflows/ci.yml), explicitly ensuring `jq` is available. Keep public Cargo tests free of external executable requirements; test the JSON values and exit semantics those recipes consume in Rust.
-- [ ] Explain configuration discovery and path anchors with examples: explicit replacement, personal settings, first-match order, exclusion union and workspace member policy. Check examples against actual parser/help behavior.
-- [ ] Keep net change visibly proposed until S4 lands; add task-oriented documentation links where readers need them.
+- [x] Qualify universal counting claims with selection, recognition, decoding/parsing and coverage boundaries; describe Tokei reuse plus local corrections.
+- [x] State when per-file records require `--files`; align headline/full-report descriptions with emitted fields, including module metadata.
+- [x] Distinguish self-contained executables from explicitly static Linux builds.
+- [x] Qualify reproducibility with versions, personal settings, ignore context and evidence absent from reports. Keep classification trial claims tied to their population and task.
+- [x] Describe modules as descriptor-triggered layout inference; distinguish whole-file purpose from semantic build membership.
+- [x] Update competitor comparisons to acknowledge diagnostics, configuration, analytics and integrations. Describe the combined Locmetry contract without unsupported uniqueness or accuracy claims.
+- [x] Make CI recipes preserve failure/partial exit status and define missing/zero-production behavior. Exercise the actual shell/`jq` recipes with synthetic inputs in [GitHub CI](../../.github/workflows/ci.yml), explicitly ensuring `jq` is available. Keep public Cargo tests free of external executable requirements; test the JSON values and exit semantics those recipes consume in Rust.
+- [x] Explain configuration discovery and path anchors with examples: explicit replacement, personal settings, first-match order, exclusion union and workspace member policy. Check examples against actual parser/help behavior.
+- [x] Keep net change visibly proposed until S4 lands; add task-oriented documentation links where readers need them.
 
 **Completion check.** Each audit item has a correction or a documented disposition with evidence. CLI flags and schema examples agree with the executable; CI examples demonstrably retain failure status and avoid division by zero. Test behavior-sensitive examples rather than snapshotting prose merely to detect edits.
 
@@ -186,11 +186,11 @@ For each implementation checkpoint, record tested behavior and the commit subjec
 
 Review documentation in every checkpoint: README for workflows, PRODUCT for shipped guarantees, measurement semantics for counting/coverage, schema descriptions for agents, and a focused new guide when existing documents would become overloaded. Update this plan with verified progress in the same commit. Link rather than duplicate authoritative contracts; update the proposal when design changes and the product contract when behavior ships. No release or push is implied by completion of this plan.
 
-Decision record, 2026-10-15: the owner accepted the proposed sequence and requested an actionable plan retaining rationale, source provenance and ongoing assessment, with documentation maintained throughout. This checkpoint records that plan only; all implementation stages remain unstarted.
+Decision record, 2026-10-15: the owner accepted the proposed sequence and requested an actionable plan retaining rationale, source provenance and ongoing assessment, with documentation maintained throughout. At the original planning checkpoint (`4ca626a`), all implementation stages were unstarted; the live status table above records subsequent work.
 
 ## External Review Disposition — 2026-10-15
 
-The owner supplied an external review of `4ca626a`, concluding S1 is ready with non-blocking plan corrections. This follow-up checks the local Tokei source, current schema/exit paths, historical tag sources, the pinned nbformat schema, and synthetic notebook/descriptor probes. Runtime source remains identical to `bece839`; no fixes or new production tests are included in this disposition. All stages remain unstarted.
+The owner supplied an external review of `4ca626a`, concluding S1 is ready with non-blocking plan corrections. This follow-up checks the local Tokei source, current schema/exit paths, historical tag sources, the pinned nbformat schema, and synthetic notebook/descriptor probes. At the review-disposition checkpoint (`94f2b42`), runtime source was still identical to `bece839` and all stages were unstarted; subsequent implementation is recorded in the live status table.
 
 | Finding | Disposition and rationale | Implementation obligation |
 | --- | --- | --- |
@@ -209,3 +209,5 @@ The owner supplied an external review of `4ca626a`, concluding S1 is ready with 
 The headline-size concern remains an S4 design decision with the bounded-summary recommendation recorded above. The private regression cannot establish the notebook fix because it bypasses scanning. The Lingua Franca observation is reviewer-reported and outside this change; no universal physical-line equality guarantee is inferred. Historical research documents remain unchanged; this disposition supplies the qualification and next actions.
 
 Decision and completion record, 2026-10-15 (S1): implemented the shared decoder for v4.0–v4.5; name precedence is `language_info.name`, `kernelspec.language`, then `language_info.file_extension`, with Python only for absent declarations. Markdown/raw text is host comments, and empty cells need no language inference. New reports always record `parse_failures: [{path, reason, message}]`; members record `parse_failed_files`. Invalid/unsupported content is unavailable with exit 2, while historical absence remains unknown in the schema. The initial seven new tests failed before implementation (including the original 2-versus-1 count); all nine final notebook tests, the public suite, formatting, Clippy and private replay pass. The private log remains ignored; it is regression evidence, not the notebook oracle. No dependencies, release or push were added.
+
+Decision and completion record, 2026-10-15 (S2): corrected selection/recognition claims, optional file detail, module inference, macOS/Linux linkage, reproducibility, peer capabilities, trial population, and config discovery/path anchors. Updated the executable module description too. The README CI recipe failed on an empty project before correction (division by missing production); it now preserves measurement exit status and passes empty, healthy, partial, invalid-config and unclaimed-policy scenarios. CI executes the README block directly with `jq`; existing Rust tests own the JSON/exit semantics, and documented TOML examples pass schema/parser checks. Repository guidelines now name documentation owners and checkpoint checks. Static prose still needs review; schema hardening is S3 and built-in net change remains proposed until S4. S1 checkpoint: `3e2684f`.

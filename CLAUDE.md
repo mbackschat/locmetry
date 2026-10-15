@@ -20,6 +20,21 @@ Use rustfmt, four-space indentation, `snake_case` functions/modules, and `Pascal
 
 Keep documentation current in every implementation checkpoint: update README workflows, the supported PRODUCT contract, measurement semantics, executable schema descriptions and relevant guides when behavior changes. Add a focused document when the material no longer fits, and link it from the appropriate index. Update [PLAN.md](docs/PLAN.md) and its active work plan with verified progress, remaining gaps and material rationale; preserve source provenance. Keep proposed behavior distinct from shipped guarantees. The [measurement quality and net change plan](docs/plans/measurement-quality-and-net-change.md) owns the current accepted sequence and stage review criteria.
 
+### Documentation ownership and checks
+
+Update the owner of a changed guarantee and its user-facing entry points in the same commit. Link to the owner instead of copying detailed rules into another guide.
+
+| Document | Owns | Check when behavior changes |
+| --- | --- | --- |
+| [README](README.md) | Tasks, CLI examples and navigation | Run affected examples; `bash scripts/check-doc-examples.sh` executes the README CI block with `jq`. |
+| [PRODUCT](docs/PRODUCT.md) | Supported public contract | Reconcile flags, report fields and compatibility with executable schemas and tests. |
+| [Measurement semantics](docs/measurement.md) | Counting, selection boundaries and limitations | Add independent regression oracles for changed measurement behavior. |
+| Executable schemas | Machine-readable structure and semantics | `cargo test --locked --test schema` checks emitted reports and documented TOML examples. |
+| [Active work plan](docs/plans/measurement-quality-and-net-change.md) | Stage status, decisions and verification | Record only verified completion; distinguish planned from supported behavior. |
+| [Research](docs/research/README.md) | Dated findings and provenance | Preserve the historical evidence; link its resolution from the active plan. |
+
+CI checks executable examples and schema agreement; it cannot establish that every prose claim is current. Review affected prose at each checkpoint. The example script is a development check, not a dependency of the executable or public Cargo tests.
+
 ## Testing Guidelines
 
 Use red/green TDD. Name tests after observable behavior and guard precedence, scope boundaries, embedded-language deduplication, and folder reconciliation. No coverage threshold is set. Public tests must run without external executables. Private regression instructions are in [measurement semantics](docs/measurement.md#private-regression). Keep reference projects read-only; do not run their builds or tests merely to count files.
