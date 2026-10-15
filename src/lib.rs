@@ -1,5 +1,6 @@
 //! Scope, classification, and reporting around the embedded Tokei counter.
 mod backend;
+pub mod compare;
 mod config;
 pub mod contract;
 mod modules;

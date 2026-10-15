@@ -71,7 +71,7 @@ What the table already handles for you:
 - **Guard quality in CI:** fail a build when unclaimed code grows or the test share drops, with one `jq` expression ([example](#continuous-integration)).
 - **Compare parts of a monorepo:** the folder rows and the additive breakdown table compare packages, services, or layers by purpose.
 - **Measure several repositories as one:** `locmetry workspace` merges sibling repositories, each measured with its own configuration, into one virtual monorepo whose folder rows compare the repositories ([how](#measure-several-repositories-together)).
-- **Watch a codebase change:** save full JSON reports from two checkouts and compare their recorded counts externally. A built-in [net-change command](docs/proposals/net-change.md) is planned; current reports do not establish Git revisions.
+- **Watch a codebase change:** save full JSON reports and use `locmetry compare before.json after.json` to see net change by purpose, language, folder and workspace member, including package/root arrivals and departures ([how](#compare-saved-measurements)). Reports do not establish Git revisions.
 - **Let an agent configure a project:** a coding agent working in a repository writes its `.locmetryrc` itself. `locmetry --help` leads it to `--schema config`, which explains the configuration and its semantics, and the measurement shows which folders still need a decision ([how](#configure-with-an-agent)).
 - **Give coding agents a reliable answer:** a compact JSON headline fits an agent's context, and follow-up questions are one `jq` query over the report file instead of improvised `find | xargs wc -l` pipelines.
 - **Report to people:** paste the Markdown report into a pull request, an architecture review, or a wiki page.
@@ -172,7 +172,7 @@ With the same selected file content, effective policy and Locmetry version, coun
 
 ### Self-describing configuration
 
-`locmetry --schema config` prints a JSON Schema that explains every setting, the classification order, and the built-in conventions, so an agent can write the configuration without reading these docs ([how](#configure-with-an-agent)). `--schema report`, `--schema user-config`, and `--schema workspace` describe the other files.
+`locmetry --schema config` prints a JSON Schema that explains every setting, the classification order, and the built-in conventions, so an agent can write the configuration without reading these docs ([how](#configure-with-an-agent)). `--schema report`, `--schema comparison`, `--schema user-config`, and `--schema workspace` describe the other documents.
 
 ### Workspaces
 
@@ -254,7 +254,7 @@ Personal defaults for every project, such as extra exclusions or language mappin
 | `--output FILE` | Also write the full JSON report to `FILE`, outside the scan root; `-` prints it instead of the headline. |
 | `--files` | Add per-file records to the report. |
 | `--categories` | Add a table of source code per purpose and category to the terminal table. |
-| `--schema config\|user-config\|report\|workspace` | Print the JSON Schema of `.locmetryrc`, of personal defaults, of the JSON headline and report, or of a workspace file, and exit. |
+| `--schema config\|user-config\|report\|comparison\|workspace` | Print the JSON Schema of `.locmetryrc`, of personal defaults, of the JSON headline and report, of a net-change comparison, or of a workspace file, and exit. |
 
 `locmetry workspace` takes `--root DIR`, repeatable, or `--file FILE` instead, plus `--no-user-config` and the output options from `--format` to `--categories`; see [Measure several repositories together](#measure-several-repositories-together).
 
@@ -282,6 +282,35 @@ locmetry workspace --file repos.toml
 - **Repositories as a dimension:** `summary.members` holds each repository's totals by purpose, category, kind, and language, equal to a regular run of that repository. The table shows one row per repository with its test lines per production line and its share of the workspace, and the Markdown report adds grids of source categories and languages by repository.
 - **Findings stay with their repository:** `metadata.members` lists each repository's root, configuration path, scope, coverage counts, unused entries, and unused exclusions; table notes name the repository, as in `ghost (web)`, and list repositories with unclaimed source or unreadable files.
 - **All or nothing, always the same:** if one repository fails, for example with an invalid configuration, the run fails and names it; the order of the roots never changes the report.
+
+## Compare saved measurements
+
+Save full reports with `--output`; the default JSON headline lacks the detail needed for comparison. The command reads only those reports, so the source checkouts need not exist:
+
+```sh
+locmetry --root ./service --output ./before.json > /dev/null
+# After changing the source or its measurement policy:
+locmetry --root ./service --output ./after.json > /dev/null
+locmetry compare before.json after.json
+locmetry compare before.json after.json --format markdown
+locmetry compare before.json after.json --output net-change.json
+locmetry --schema comparison
+```
+
+Net change is **after minus before**, in argument order. A terminal gets a table, redirected stdout gets a JSON headline, and `--output -` prints full JSON. The headline includes presence counts; full output includes every folder, package and breakdown row. `--output FILE` must not overwrite an input, including symlink/hard-link aliases. Aggregate comparison does not require `--files`; per-file comparison is not implemented.
+
+The same command compares workspace exports, even when their root lists differ:
+
+```sh
+locmetry workspace --file repos.toml --output before-workspace.json > /dev/null
+# After changing code or the workspace root list:
+locmetry workspace --file repos.toml --output after-workspace.json > /dev/null
+locmetry compare before-workspace.json after-workspace.json --format markdown
+```
+
+Workspace totals separate changes inside retained roots from counts entering and leaving the measurement. Names match members; renamed members appear as a departure and arrival. A folder or package disappearing from a report does not prove source deletion. Removing only a build descriptor can change purpose and package presence while source LOC stays unchanged.
+
+Inspect `findings` before interpreting growth: versions, policy, module detection and coverage can differ. Unreadable files or parsing failures make the comparison partial (exit 2); missing historical failure evidence produces a finding without exit 2 by itself. Recorded counts exclude unavailable lines, whose size remains unknown. [The contract](docs/PRODUCT.md#net-change) defines the output and limits; [report compatibility](docs/report-compatibility.md) lists eligible older exports.
 
 ## Configure with an agent
 

@@ -37,7 +37,7 @@ New full reports and headlines always emit `parse_failures`, even when empty. Wo
 
 ## Saved Reports
 
-[Report compatibility](report-compatibility.md) records historical field availability and validation limits. The typed contract preserves current measurement shapes and missing failure evidence; semantic validation is internal until the planned comparison command consumes saved reports. It cannot prove historical counting correctness.
+[Report compatibility](report-compatibility.md) records historical field availability and validation limits. The typed contract preserves current measurement shapes and missing failure evidence; semantic validation is used by `compare` when it reads saved reports. It cannot prove historical counting correctness.
 
 ## Private Regression
 

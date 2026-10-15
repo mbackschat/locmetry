@@ -42,6 +42,8 @@ enum Schema {
     UserConfig,
     /// The JSON headline and full report.
     Report,
+    /// Net-change comparison headline and full document.
+    Comparison,
     /// A workspace file for `locmetry workspace --file`.
     Workspace,
 }
@@ -72,7 +74,7 @@ struct Cli {
     shared: SharedArgs,
     /// Print a JSON Schema and exit: of a configuration file, which explains
     /// every setting and the classification order, of the JSON report, or of
-    /// a workspace file.
+    /// a workspace file, or of a net-change comparison.
     #[arg(long, value_enum)]
     schema: Option<Schema>,
 }
@@ -82,6 +84,22 @@ enum Command {
     /// Measure several repositories as one virtual monorepo: each root with its
     /// own .locmetryrc, merged with paths prefixed by the root's folder name.
     Workspace(WorkspaceArgs),
+    /// Compare two saved full reports: net change is after minus before.
+    Compare(CompareArgs),
+}
+
+#[derive(clap::Args)]
+struct CompareArgs {
+    /// Full JSON measurement before the change.
+    before: PathBuf,
+    /// Full JSON measurement after the change.
+    after: PathBuf,
+    /// Stdout format [default: table on a terminal, json otherwise].
+    #[arg(long, value_enum)]
+    format: Option<Format>,
+    /// Write full comparison to FILE; - prints full JSON to stdout.
+    #[arg(long, value_name = "FILE")]
+    output: Option<PathBuf>,
 }
 
 /// Settings of a single scan root, which a workspace leaves to each member's
@@ -272,14 +290,14 @@ struct Destination<'a> {
 }
 
 fn destination(shared: &SharedArgs) -> Result<Destination<'_>> {
-    let report_path = shared
-        .output
-        .as_deref()
-        .filter(|path| *path != Path::new("-"));
-    let report_to_stdout = shared.output.is_some() && report_path.is_none();
-    let format = shared
-        .format
-        .unwrap_or_else(|| default_format(io::stdout().is_terminal(), report_to_stdout));
+    output_destination(&shared.output, shared.format)
+}
+
+fn output_destination(output: &Option<PathBuf>, format: Option<Format>) -> Result<Destination<'_>> {
+    let report_path = output.as_deref().filter(|path| *path != Path::new("-"));
+    let report_to_stdout = output.is_some() && report_path.is_none();
+    let format =
+        format.unwrap_or_else(|| default_format(io::stdout().is_terminal(), report_to_stdout));
     anyhow::ensure!(
         !report_to_stdout || format == Format::Json,
         "--output - writes JSON to stdout and cannot be combined with --format table or markdown"
@@ -301,6 +319,7 @@ fn run(cli: Cli) -> Result<Outcome> {
             Schema::Config => locmetry::config_schema(),
             Schema::UserConfig => locmetry::user_config_schema(),
             Schema::Report => locmetry::report_schema(),
+            Schema::Comparison => locmetry::compare::schema(),
             Schema::Workspace => locmetry::workspace_schema(),
         };
         println!("{}", serde_json::to_string_pretty(&schema)?);
@@ -308,8 +327,50 @@ fn run(cli: Cli) -> Result<Outcome> {
     }
     match cli.command {
         Some(Command::Workspace(workspace)) => run_workspace(&workspace),
+        Some(Command::Compare(args)) => run_compare(&args),
         None => run_root(&cli.root, &cli.shared),
     }
+}
+
+fn run_compare(args: &CompareArgs) -> Result<Outcome> {
+    let destination = output_destination(&args.output, args.format)?;
+    let before = locmetry::compare::read_input(&args.before)?;
+    let after = locmetry::compare::read_input(&args.after)?;
+    if let Some(path) = destination.report_path {
+        locmetry::compare::validate_destination(path, [&args.before, &args.after])?;
+    }
+    let result = locmetry::compare::compare(
+        before,
+        after,
+        args.before.to_string_lossy().into(),
+        args.after.to_string_lossy().into(),
+    )?;
+    let partial = result.partial();
+    if let Some(path) = destination.report_path {
+        write_report(path, &report_text(&serde_json::to_value(&result)?)?)?;
+    }
+    let mut stdout = io::stdout().lock();
+    match destination.format {
+        Format::Json if destination.report_to_stdout => {
+            write!(stdout, "{}", report_text(&serde_json::to_value(&result)?)?)?
+        }
+        Format::Json => {
+            serde_json::to_writer(
+                &mut stdout,
+                &result.headline(destination.report_path.map(|p| p.to_string_lossy().into())),
+            )?;
+            writeln!(stdout)?;
+        }
+        Format::Table => write!(stdout, "{}", locmetry::compare::render_table(&result))?,
+        Format::Markdown => write!(stdout, "{}", locmetry::compare::render_markdown(&result))?,
+    }
+    Ok(if partial {
+        Outcome::Partial(
+            "Net change uses partial input measurements; inspect coverage findings.".into(),
+        )
+    } else {
+        Outcome::Complete
+    })
 }
 
 fn run_root(args: &RootArgs, shared: &SharedArgs) -> Result<Outcome> {

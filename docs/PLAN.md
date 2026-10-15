@@ -4,7 +4,7 @@
 
 ## Measurement Quality and Net Change — Next
 
-Sequence accepted 2026-10-15. The [actionable work plan](plans/measurement-quality-and-net-change.md) owns detailed tasks, retained rationale, source provenance, acceptance checks, review checkpoints and live stage status. Implement in this order: notebook correctness, documentation corrections, shared report/schema contracts, net change, then selection explanations. S1 notebook correctness/failure reporting, S2 documentation corrections and S3 typed report/schema contracts are complete; S4 net change is next. Optional follow-ups remain conditional in that plan.
+Sequence accepted 2026-10-15. The [actionable work plan](plans/measurement-quality-and-net-change.md) owns detailed tasks, retained rationale, source provenance, acceptance checks, review checkpoints and live stage status. Implement in this order: notebook correctness, documentation corrections, shared report/schema contracts, net change, then selection explanations. S1 notebook correctness/failure reporting, S2 documentation corrections, S3 typed report/schema contracts and S4 net change are complete; S5 selection explanations are next. Optional follow-ups remain conditional in that plan.
 
 Consult the detailed plan before starting a stage and record verified completion there. Update affected documentation with each implementation checkpoint; S2 is the wider documentation audit, not a reason to delay documentation for S1. [PRODUCT.md](PRODUCT.md) continues to describe supported behavior; the [net-change proposal](proposals/net-change.md) remains the detailed design reference.
 
@@ -55,9 +55,9 @@ Done 2026-10-15: reproduced Tokei 15.0.0's global-quote bug with independent syn
 
 **Completion evidence:** regression tests failed before the fix and pass afterward, covering both recognized extensions, language mappings, quote and comment boundaries, raw blocks, BOM decoding, and unreadable-file coverage. The public suite, private regression guard, formatting, and Clippy pass. No release is part of this change.
 
-## Proposals — Under Discussion
+## Design References
 
-- [Net change between measurement reports](proposals/net-change.md): compare saved single-root or workspace reports, expose the comparison schema through the shared contract mechanism, and show packages, folders, and roots entering or leaving the measurement. The owner confirmed the term, topology support and [work sequence](plans/measurement-quality-and-net-change.md); detailed interface choices remain proposed until resolved at their stage, and the feature is not implemented.
+- [Net change between measurement reports](proposals/net-change.md): aggregate/topology comparison is implemented, with a shared generated schema and explicit coverage/settings findings. Optional per-file comparison remains deferred; [PRODUCT](PRODUCT.md#net-change) owns supported behavior.
 
 ## Ideas — Not Scheduled
 

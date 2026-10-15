@@ -380,18 +380,26 @@ impl MeasurementReport {
         self.review = None;
         self.breakdown = None;
         self.files = None;
-        self.metadata.config = None;
-        self.metadata.modules = None;
-        self.metadata.kinds = None;
-        self.metadata.coverage.unrecognized = None;
-        for member in self.metadata.members.iter_mut().flatten() {
+        self.metadata = self.metadata.headline();
+        self
+    }
+}
+
+impl Metadata {
+    /// Shared compact metadata projection for measurement and comparison headlines.
+    pub fn headline(mut self) -> Self {
+        self.config = None;
+        self.modules = None;
+        self.kinds = None;
+        self.coverage.unrecognized = None;
+        for member in self.members.iter_mut().flatten() {
             member.config = None;
         }
         self
     }
 }
 
-fn headline_example() -> serde_json::Value {
+pub(crate) fn headline_example() -> serde_json::Value {
     serde_json::json!({
         "schema_version":"1", "project":"empty-example",
         "metadata":{

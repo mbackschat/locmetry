@@ -982,25 +982,14 @@ pub fn validate_output(output: &Path, root: &Path, config: Option<&Path>) -> Res
     Ok(())
 }
 
-/// Report keys in output order; absent keys are skipped.
-const REPORT_KEYS: [&str; 7] = [
-    "schema_version",
-    "project",
-    "metadata",
-    "summary",
-    "review",
-    "breakdown",
-    "files",
-];
-
 /// Serializes a report with one top-level key per line and one table row per
 /// line: still one JSON document, but `grep`, `wc -l`, and `diff` work on rows.
 pub fn report_text(document: &Value) -> Result<String> {
     let mut entries = Vec::new();
-    for key in REPORT_KEYS {
-        let Some(value) = document.get(key) else {
-            continue;
-        };
+    for (key, value) in document
+        .as_object()
+        .context("Report must be a JSON object")?
+    {
         let value = match value {
             Value::Array(rows) if !rows.is_empty() => {
                 let rows = rows
