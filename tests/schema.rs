@@ -112,6 +112,13 @@ fn config_schema_explains_precedence_and_switches() {
         .and_then(|reference| reference.strip_prefix('#'))
         .unwrap();
     let switch = |name: &str| description(&schema, &format!("{classification}/properties/{name}"));
+    for name in ["builtin_tests", "builtin_build", "builtin_modules"] {
+        assert_eq!(
+            schema.pointer(&format!("{classification}/properties/{name}/default")),
+            Some(&json!(true)),
+            "{name} must advertise its configuration default"
+        );
+    }
     assert!(switch("builtin_tests").contains("swift-test-target"));
     assert!(switch("builtin_build").contains("build-wrapper"));
     let modules = switch("builtin_modules");

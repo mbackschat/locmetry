@@ -1610,3 +1610,17 @@ fn human_formats_group_thousands_and_json_keeps_plain_integers() {
     let (_, document, _) = headline(&root, &[]);
     assert_eq!(document["summary"]["source"]["code"], json!(1235));
 }
+
+#[test]
+fn measurement_help_explains_json_headline_and_full_report() {
+    for args in [vec!["--help"], vec!["workspace", "--help"]] {
+        let output = locmetry().args(args).output().unwrap();
+        assert!(output.status.success());
+        let help = String::from_utf8(output.stdout).unwrap();
+        assert!(
+            help.contains("JSON defaults to a compact headline"),
+            "{help}"
+        );
+        assert!(help.contains("--output - prints the full report"), "{help}");
+    }
+}

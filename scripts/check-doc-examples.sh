@@ -13,14 +13,19 @@ export XDG_CONFIG_HOME="$temporary/no-user-config"
 
 # Execute the README itself, so edited flags or policy logic cannot evade the guard.
 extract_blocks() {
-    local heading=$1 destination=$2 wanted=${3:-0}
+    local heading=$1 destination=$2 wanted=${3:-0} change_source=${4:-0}
     printf 'set -eu\n' > "$destination"
-    awk -v heading="$heading" -v wanted="$wanted" '
+    awk -v heading="$heading" -v wanted="$wanted" -v change_source="$change_source" '
         $0 == "## " heading { section = 1; next }
         section && /^## / { exit }
         section && /^```(sh|bash)$/ { block = 1; number++; next }
         block && /^```$/ { block = 0; next }
-        block && (wanted == 0 || wanted == number) { print }
+        block && (wanted == 0 || wanted == number) {
+            print
+            if (change_source && /^# After changing/) {
+                print "printf '\''fn added() {}\\n'\'' >> service/src/main.rs"
+            }
+        }
     ' "$repository/README.md" >> "$destination"
     [[ $(wc -l < "$destination") -gt 1 ]]
 }
@@ -64,10 +69,26 @@ for project in '' service/ api/; do
     printf 'fn main() {}\n' > "$temporary/workflows/${project}src/main.rs"
 done
 printf 'version = 1\nroots = ["api", "service"]\n' > "$temporary/workflows/repos.toml"
-extract_blocks 'Explain one file' "$temporary/explain.sh"
-extract_blocks 'Compare saved measurements' "$temporary/compare.sh"
-(cd "$temporary/workflows" && bash "$temporary/explain.sh" && bash "$temporary/compare.sh") > "$temporary/workflow-output"
-jq -e '.document_type == "comparison" and .summary.source.delta.code == 0' "$temporary/workflows/net-change.json" > /dev/null
+for block in 1 3; do
+    extract_blocks 'Explain one file' "$temporary/explain.sh" "$block"
+    (cd "$temporary/workflows" && bash "$temporary/explain.sh") > "$temporary/explanation.json"
+    jq -e '.result.state == "counted" and .result.file.counts.code == 1' "$temporary/explanation.json" > /dev/null
+done
+extract_blocks 'Explain one file' "$temporary/explain-markdown.sh" 2
+(cd "$temporary/workflows" && bash "$temporary/explain-markdown.sh") > "$temporary/explanation.md"
+grep -Fq 'counted' "$temporary/explanation.md"
+extract_blocks 'Explain one file' "$temporary/explain-schema.sh" 4
+(cd "$temporary/workflows" && bash "$temporary/explain-schema.sh") > "$temporary/explanation-schema.json"
+jq -e '."$schema"' "$temporary/explanation-schema.json" > /dev/null
+
+# Supply the edit explicitly requested by each README comment between snapshots.
+extract_blocks 'Compare saved measurements' "$temporary/compare.sh" 1 1
+(cd "$temporary/workflows" && bash "$temporary/compare.sh") > "$temporary/workflow-output"
+jq -e '.document_type == "comparison" and .summary.source.delta.code == 1' "$temporary/workflows/net-change.json" > /dev/null
+extract_blocks 'Compare saved measurements' "$temporary/workspace-compare.sh" 2 1
+(cd "$temporary/workflows" && bash "$temporary/workspace-compare.sh") > "$temporary/workspace-change.md"
+grep -Fxq '| Source code | 3 | 4 | +1 |' "$temporary/workspace-change.md"
+grep -Fxq '| service (both) | 2 | 3 | +1 |' "$temporary/workspace-change.md"
 
 # The same documented inspection recipe must retain an actual partial-input status.
 printf '{}\n' > "$temporary/workflows/service/broken.ipynb"

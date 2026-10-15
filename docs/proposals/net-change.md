@@ -1,15 +1,17 @@
 # Net Change Between Measurement Reports
 
-Status: aggregate/topology net change is implemented in S4. [PRODUCT.md](../PRODUCT.md#net-change) owns the supported contract and [README workflows](../../README.md#compare-saved-measurements) show usage. This document preserves the design and rationale; the optional per-file extension remains deferred. The [work plan](../plans/measurement-quality-and-net-change.md) records completion evidence and subsequent work.
+Status: historical decision record. Aggregate and topology net change was implemented on 2026-10-15 as `0.2.0-dev.1`. [PRODUCT.md](../PRODUCT.md#net-change) owns the supported contract; this file records the S4 design rationale and acceptance criteria. Do not update it to track behavior. [README workflows](../../README.md#compare-saved-measurements) show current usage; the [work plan](../plans/measurement-quality-and-net-change.md) owns completion evidence and conditional follow-ups.
+
+The sections below preserve the design considered for S4. Their imperative wording, output descriptions and examples are historical acceptance evidence, not a second supported contract. This record carries no live scope; the deferred per-file design has moved to the plan's [conditional follow-up](../plans/measurement-quality-and-net-change.md#per-file-comparison).
 
 ## Purpose and Scope
 
 Compare two saved Locmetry measurements and explain how their recorded counts differ. A net change is always `after − before`. It cannot establish Git line additions/deletions, editing effort, or whether a changed count was caused by source edits rather than measurement policy.
 
-| Scope | Contract |
+| Original scope | S4 design record |
 | --- | --- |
 | Required | Compare full JSON reports for two single roots or two workspaces; counts by purpose, kind, category, language, and folder; workspace member totals and membership changes; package detection changes; JSON, terminal tables, and Markdown; a discoverable, described comparison schema; explicit measurement and coverage findings. |
-| Optional | Per-file comparison with an explicit `--files` flag, requiring file records in both inputs. Aggregate comparison must work without file records. |
+| Deferred at S4 | Per-file comparison was not implemented. Its design and activation trigger now live in the plan's [conditional follow-up](../plans/measurement-quality-and-net-change.md#per-file-comparison). |
 | Excluded | Git invocation, checkouts, source-content diffs, churn, automatic commit identification, rename detection, matching a single-root report to a workspace report, arbitrary member remapping, history storage, charts, and a generic schema/plugin framework. |
 
 The comparison reads only the two report files. It neither rescans their roots nor reloads current configuration or ignore files. Source checkouts need not exist. Reports can be named after Git revisions by the caller; their filenames do not constitute verified Git provenance.
@@ -126,7 +128,7 @@ Counts remain exact JSON integers. Arithmetic must be checked: if a sum exceeds 
 | `presence_summary` | Fixed keys `members`, `folders`, and `packages`, each holding `before_only: u64` and `after_only: u64` entity counts. Always present in headline and full output, including zeros; single-root member counts are zero. These are presence counts, not LOC contributions. |
 | `breakdown` | Union of the measurement breakdown keys `(folder, kind, purpose, category, language)` with `CountChange` values; workspace folder paths retain their member prefix. |
 | `findings` | Structured findings with a stable code, human-readable message, before/after applicability, optional member, and affected metadata/report paths. Agents branch on codes rather than parsing prose. |
-| `files` | Optional extension described below; absent when file detail was not requested. |
+| `files` | Proposed extension, not part of the implemented S4 output; design moved to the plan's [per-file follow-up](../plans/measurement-quality-and-net-change.md#per-file-comparison). |
 | `report` | Headline only when `--output FILE` was supplied: the destination of the full comparison. |
 
 The recommended headline projection omits `folders`, `packages`, `breakdown`, `files`, and individual `presence_changed` findings, and projects input metadata to the same compact metadata view used by measurement headlines. It retains summary, member changes, other findings, and `presence_summary`, so zero-code arrivals/departures stay visible without one headline finding per changed folder/package. Only this topology-summary portion is fixed-size; member rows and coverage findings still scale with their evidence. The full comparison retains all rows, including unchanged ones, and every individual finding. S4 adopts this projection and defines its schema with the typed result. Maps and row arrays have deterministic identity ordering, and findings sort by code, member, side, and path. Human folder views retain the hierarchy.
@@ -157,9 +159,7 @@ JSON Schema validates structure and numeric bounds. Shared semantic validation e
 
 ## Optional File Detail
 
-Recommendation: keep file detail optional so the required comparison works with ordinary full exports. If included, `compare --files` requires both inputs to contain file records and fails clearly if either lacks them. Match paths over their union, including relevant unreadable/unrecognized coverage paths. Each side distinguishes counted, not present in the report, unreadable, and unrecognized; unavailable counts are `null`, not fabricated zero source measurements.
-
-Report numeric per-file deltas only when both sides are counted. S1's failed-decoding/counting state must also be represented as unavailable if this optional extension is adopted. For paths counted on just one side, show that side's count and its contribution to the recorded totals, without claiming on-disk creation/deletion. Preserve before/after language, kind, purpose, category, rule, and language-mapping provenance. Classification-only changes remain visible with zero total line delta; they explain transfers between aggregate buckets but do not prove unchanged source content. Rename detection and content-change detection remain excluded.
+Deferred at S4. The design is retained in the work plan's [per-file comparison follow-up](../plans/measurement-quality-and-net-change.md#per-file-comparison), with a consumer-demand trigger. This heading remains for historical links; it defines no active scope.
 
 ## Acceptance Criteria and Decisions
 
@@ -169,4 +169,4 @@ Report numeric per-file deltas only when both sides are counted. S1's failed-dec
 - Contracts: eligible historical full reports remain consumable; per-release fixtures distinguish valid measurement reports from comparison-eligible ones. Missing failure evidence is distinct from recorded empty evidence. Actual measurement and comparison outputs validate against generated schemas. Invalid negative counts, overflow, unsupported versions, headlines supplied as full inputs, duplicate array rows, and inconsistent aggregates fail clearly; dynamic-map duplicate-key behavior is tested and documented separately.
 - Agent use: schema-only examples explain direction, presence, missing evidence, file-count overlap, and findings; all example documents validate. JSON, text, and Markdown agree on totals and findings, and headline presence summaries reconcile with all full-report presence rows, including large zero-net restructures.
 
-Recommended decisions to accept with the design: require aggregate and topology comparison first; keep per-file detail optional; use existing build modules as the package definition; produce comparisons with explicit findings for changed measurement conditions; include the focused measurement-contract refactor so all schemas use one mechanism. Physical empty-folder tracking, verified Git identity, and full measurement reproducibility require evidence absent from existing reports and remain excluded.
+Decisions adopted for S4: require aggregate and topology comparison first; keep per-file detail optional; use existing build modules as the package definition; produce comparisons with explicit findings for changed measurement conditions; include the focused measurement-contract refactor so all schemas use one mechanism. Physical empty-folder tracking, verified Git identity, and full measurement reproducibility require evidence absent from existing reports and remain excluded.

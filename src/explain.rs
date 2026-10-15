@@ -88,14 +88,14 @@ pub fn inspect(root: &Path, path: &Path, policy: &mut Policy) -> Result<(String,
             .collect::<std::io::Result<Vec<_>>>()?
             .iter()
             .any(|entry| entry.file_name() == component.as_os_str());
+        current.push(component);
+        let metadata = std::fs::symlink_metadata(&current)
+            .context("Explanation target does not exist or cannot be inspected")?;
         ensure!(
             exact,
             "Explanation target must use the exact spelling of directory entries: {path}"
         );
-        current.push(component);
         relative.push(component);
-        let metadata = std::fs::symlink_metadata(&current)
-            .context("Explanation target does not exist or cannot be inspected")?;
         if metadata.file_type().is_symlink() {
             return Ok((
                 path,

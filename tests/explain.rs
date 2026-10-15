@@ -42,6 +42,21 @@ fn document(output: Output, status: i32) -> Value {
     value
 }
 #[test]
+fn missing_targets_report_absence_instead_of_a_spelling_alias() {
+    let temp = tempfile::tempdir().unwrap();
+    write(temp.path(), "src/main.rs", "fn main() {}\n");
+    for path in ["src/missing.rs", "missing/x.py"] {
+        let output = run(temp.path(), path, &[]);
+        assert_eq!(output.status.code(), Some(1));
+        let error = String::from_utf8(output.stderr).unwrap();
+        assert!(
+            error.contains("Explanation target does not exist or cannot be inspected"),
+            "{error}"
+        );
+        assert!(!error.contains("exact spelling"), "{error}");
+    }
+}
+#[test]
 fn explains_first_match_module_inference_and_mapping_with_actual_file_counts() {
     let temp = tempfile::tempdir().unwrap();
     let root = temp.path();
@@ -174,6 +189,13 @@ fn workspace_queries_use_member_policy_and_qualified_paths() {
         Some(1)
     );
     assert_eq!(run("missing/main.py", &[]).status.code(), Some(1));
+    for path in ["api/missing.py", "api/missing/main.py"] {
+        let output = run(path, &[]);
+        assert_eq!(output.status.code(), Some(1));
+        assert!(String::from_utf8(output.stderr)
+            .unwrap()
+            .contains("Explanation target does not exist or cannot be inspected"));
+    }
 }
 
 #[test]

@@ -6,9 +6,11 @@
 
 Sequence accepted 2026-10-15. The [actionable work plan](plans/measurement-quality-and-net-change.md) owns detailed tasks, retained rationale, source provenance, acceptance checks, review checkpoints and live stage status. Implement in this order: notebook correctness, documentation corrections, shared report/schema contracts, net change, then selection explanations. S1 notebook correctness/failure reporting, S2 documentation corrections, S3 typed report/schema contracts, S4 net change and S5 selection explanations are complete. The public suite, formatting, Clippy, executable README recipe, schema/documented examples and private replay pass; implementation checkpoints have not been pushed or released. Optional follow-ups remain conditional in that plan.
 
-The detailed plan records stage decisions and verified completion. Update affected documentation with each implementation checkpoint; S2 is the wider documentation audit, not a reason to delay documentation for S1. [PRODUCT.md](PRODUCT.md) continues to describe supported behavior; the [net-change proposal](proposals/net-change.md) remains the detailed design reference.
+The detailed plan records stage decisions and verified completion. Update affected documentation with each implementation checkpoint; S2 is the wider documentation audit, not a reason to delay documentation for S1. [PRODUCT.md](PRODUCT.md) continues to describe supported behavior; the [historical net-change decision record](proposals/net-change.md) preserves S4 rationale and acceptance criteria. Conditional design work belongs in the detailed plan.
 
 External review of `4ca626a` is [recorded with dispositions](plans/measurement-quality-and-net-change.md#external-review-disposition--2026-10-15). The review established a shared notebook decoder with end-to-end fixtures; Tokei retains cell-content counting. The plan now distinguishes technical prerequisites from work order and records historical-report compatibility, missing failure evidence and review boundaries. S1 subsequently implemented those corrections; its tests and compatibility evidence are recorded in the detailed plan.
+
+The [follow-up review corrections](plans/measurement-quality-and-net-change.md#follow-up-review-corrections--2026-10-15) address missing-path diagnostics, configuration defaults, measurement help and false positives in the README workflow guard. Release preparation remains separate.
 
 ## Development Release — Pending
 
@@ -61,9 +63,9 @@ Done 2026-10-15: reproduced Tokei 15.0.0's global-quote bug with independent syn
 
 **Completion evidence:** regression tests failed before the fix and pass afterward, covering both recognized extensions, language mappings, quote and comment boundaries, raw blocks, BOM decoding, and unreadable-file coverage. The public suite, private regression guard, formatting, and Clippy pass. No release is part of this change.
 
-## Design References
+## Completed Design Decisions
 
-- [Net change between measurement reports](proposals/net-change.md): aggregate/topology comparison is implemented, with a shared generated schema and explicit coverage/settings findings. Optional per-file comparison remains deferred; [PRODUCT](PRODUCT.md#net-change) owns supported behavior.
+- [Net change between measurement reports — historical decision record](proposals/net-change.md): aggregate/topology comparison implemented as `0.2.0-dev.1`; retained for S4 acceptance evidence and design rationale. [PRODUCT](PRODUCT.md#net-change) owns supported behavior. The [conditional per-file follow-up](plans/measurement-quality-and-net-change.md#per-file-comparison) owns the deferred design and consumer-demand trigger.
 
 ## Ideas — Not Scheduled
 

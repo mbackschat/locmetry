@@ -64,7 +64,7 @@ fn default_format(stdout_is_terminal: bool, report_to_stdout: bool) -> Format {
 #[derive(Parser)]
 #[command(
     version,
-    about = "Measure source code by language, folder, and purpose: production, test, or unclassified",
+    about = "Measure source code by language, folder, and purpose: production, test, or unclassified. JSON defaults to a compact headline; --output - prints the full report.",
     args_conflicts_with_subcommands = true
 )]
 struct Cli {
@@ -85,6 +85,7 @@ struct Cli {
 enum Command {
     /// Measure several repositories as one virtual monorepo: each root with its
     /// own .locmetryrc, merged with paths prefixed by the root's folder name.
+    /// JSON defaults to a compact headline; --output - prints the full report.
     Workspace(WorkspaceArgs),
     /// Compare two saved full reports: net change is after minus before. JSON defaults
     /// to a headline; --output - prints the full comparison.

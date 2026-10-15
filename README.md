@@ -303,8 +303,23 @@ locmetry workspace --file repos.toml
 
 ```sh
 locmetry explain src/main.rs
+```
+
+For Markdown from another scan root:
+
+```sh
 locmetry explain src/main.rs --root ./service --format markdown
+```
+
+For a workspace member, prefix the path with its member name:
+
+```sh
 locmetry explain api/src/main.rs --workspace repos.toml
+```
+
+Discover the complete explanation contract:
+
+```sh
 locmetry --schema explanation
 ```
 
