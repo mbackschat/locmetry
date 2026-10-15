@@ -164,6 +164,24 @@ pub struct Module {
     pub sources: Vec<String>,
 }
 
+impl Module {
+    /// Whether the root-relative `path` lies in this module's directory.
+    pub(crate) fn contains(&self, path: &str) -> bool {
+        self.path == "."
+            || path
+                .strip_prefix(self.path.as_str())
+                .is_some_and(|rest| rest.starts_with('/'))
+    }
+
+    /// Directory depth, `0` for the scan root; deeper modules nest in shallower ones.
+    pub(crate) fn depth(&self) -> usize {
+        match self.path.as_str() {
+            "." => 0,
+            path => path.split('/').count(),
+        }
+    }
+}
+
 /// Modules declared among the selected root-relative `files`, sorted by path.
 pub fn detect(files: &[&str]) -> Vec<Module> {
     let mut declared = BTreeSet::new();

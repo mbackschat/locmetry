@@ -1,6 +1,6 @@
 use crate::{
-    breakdown, unclassified_folders, Counts, Coverage, FileRecord, FolderShare, Kind, Purpose,
-    ReportSummary,
+    breakdown, build_systems, unclassified_folders, Counts, Coverage, FileRecord, FolderShare,
+    Kind, ModuleShare, Purpose, ReportSummary,
 };
 use anyhow::{ensure, Context, Result};
 use serde_json::Value;
@@ -79,6 +79,7 @@ pub fn render_markdown(
     summary: &ReportSummary,
     rows: &[FileRecord],
     coverage: &Coverage,
+    modules: &[ModuleShare],
     depth: usize,
     order: RowOrder,
 ) -> String {
@@ -135,6 +136,7 @@ pub fn render_markdown(
         )
         .unwrap();
     }
+    render_build_modules(&mut output, modules, order);
     let mut unknown: Vec<_> = rows.iter().filter(|row| row.needs_review()).collect();
     unknown.sort_by(|a, b| b.counts.code.cmp(&a.counts.code).then(a.path.cmp(&b.path)));
     writeln!(
@@ -173,6 +175,59 @@ pub fn render_markdown(
 }
 
 /// `count` followed by `noun`, pluralized with `s` unless it is one.
+/// Build systems and every module, so a reader can see which build files
+/// decided production and spot a module whose layout claimed nothing.
+fn render_build_modules(output: &mut String, modules: &[ModuleShare], order: RowOrder) {
+    if modules.is_empty() {
+        return;
+    }
+    output.push_str("\n## Build modules\n\nFolders whose build file declares a source layout; that layout counts as production where no override, convention, or rule decided first. Code is the source each module classified; 0 means other stages claimed its files or its layout matched none.\n\n| Build system | Modules | Code |\n| --- | ---: | ---: |\n");
+    let systems = build_systems(modules)
+        .into_iter()
+        .map(|(id, system)| (id.to_string(), system))
+        .collect();
+    for (id, system) in ordered(systems, |system| system.code, order) {
+        writeln!(output, "| {id} | {} | {} |", system.modules, system.code).unwrap();
+    }
+    output.push_str("\n| Module | Build system | Code |\n| --- | --- | ---: |\n");
+    for module in modules {
+        let path = match module.path.as_str() {
+            "." => "(scan root)",
+            path => path,
+        };
+        writeln!(
+            output,
+            "| {} | {} | {} |",
+            cell(path),
+            module.detector,
+            module.code
+        )
+        .unwrap();
+    }
+}
+
+/// Code each build system classified, in one line.
+fn build_modules_note(modules: &[ModuleShare], order: RowOrder) -> Option<String> {
+    let systems: Vec<_> = build_systems(modules)
+        .into_iter()
+        .map(|(id, system)| (id.to_string(), system))
+        .collect();
+    if systems.is_empty() {
+        return None;
+    }
+    let systems: Vec<String> = ordered(systems, |system| system.code, order)
+        .into_iter()
+        .map(|(id, system)| {
+            format!(
+                "{id} {} ({})",
+                counted(system.modules, "module"),
+                counted(system.code, "code line")
+            )
+        })
+        .collect();
+    Some(format!("Build modules: {}.", systems.join(", ")))
+}
+
 fn counted(count: u64, noun: &str) -> String {
     match count {
         1 => format!("1 {noun}"),
@@ -297,6 +352,7 @@ pub fn render_table(
     summary: &ReportSummary,
     rows: &[FileRecord],
     coverage: &Coverage,
+    modules: &[ModuleShare],
     order: RowOrder,
 ) -> String {
     let mut languages = BTreeMap::<String, (Counts, BTreeMap<Purpose, u64>)>::new();
@@ -405,6 +461,7 @@ pub fn render_table(
             .collect();
         notes.push(format!("Not source code: {}.", kinds.join(", ")));
     }
+    notes.extend(build_modules_note(modules, order));
     let folders = unclassified_folders(rows);
     if !folders.is_empty() {
         notes.push(unclaimed_note(&folders));

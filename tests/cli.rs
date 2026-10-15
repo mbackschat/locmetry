@@ -385,6 +385,58 @@ fn review_lists_only_unclaimed_source() {
     assert!(!table.contains("Unclaimed source"), "{table}");
 }
 
+/// Readers see which build systems decided production and how much code each
+/// one claimed; a module whose layout claimed nothing hints at a misleading
+/// build file.
+#[test]
+fn reports_name_the_build_modules_that_decided_production() {
+    let temp = project(&[
+        ("backend/build.gradle.kts", "plugins { kotlin(\"jvm\") }\n"),
+        ("backend/src/main/kotlin/A.kt", "fun a() = 1\nfun b() = 2\n"),
+        ("backend/src/test/kotlin/ATest.kt", "fun t() = 1\n"),
+        ("web/package.json", "{}\n"),
+        ("web/src/a.ts", "export const a = 1;\n"),
+        ("tools/package.json", "{}\n"),
+        ("tools/lint.js", "let x = 1;\n"),
+    ]);
+    let root = temp.path().join("project");
+    let (success, document, stderr) = headline(&root, &[]);
+    assert!(success, "{stderr}");
+    assert_eq!(
+        document["summary"]["build_modules"],
+        json!({"gradle": {"modules": 1, "code": 2}, "npm": {"modules": 2, "code": 1}})
+    );
+    let table = String::from_utf8(run(&root, &["--format", "table"]).stdout).unwrap();
+    assert!(
+        table.contains(
+            " Build modules: gradle 1 module (2 code lines), npm 2 modules (1 code line).\n"
+        ),
+        "{table}"
+    );
+    let markdown = String::from_utf8(run(&root, &["--format", "markdown"]).stdout).unwrap();
+    let section = &markdown[markdown.find("## Build modules").expect(&markdown)..];
+    for row in [
+        "| gradle | 1 | 2 |",
+        "| npm | 2 | 1 |",
+        "| backend | gradle | 2 |",
+        "| tools | npm | 0 |",
+    ] {
+        assert!(section.contains(row), "{row} in {section}");
+    }
+
+    fs::write(
+        root.join(".locmetryrc"),
+        "version = 1\n[classification]\nbuiltin_modules = false\n",
+    )
+    .unwrap();
+    let (_, document, _) = headline(&root, &[]);
+    assert!(document["summary"].get("build_modules").is_none());
+    let table = String::from_utf8(run(&root, &["--format", "table"]).stdout).unwrap();
+    assert!(!table.contains("Build modules"), "{table}");
+    let markdown = String::from_utf8(run(&root, &["--format", "markdown"]).stdout).unwrap();
+    assert!(!markdown.contains("## Build modules"), "{markdown}");
+}
+
 /// A folder holding most of the unclassified code splits even when many
 /// top-level folders already fill the list, so the bulk is located precisely.
 #[test]

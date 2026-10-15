@@ -40,6 +40,7 @@ $ locmetry
  (root files)     3           2     0             1
 
  Not source code: 3 data files (19 lines), 1 documentation file (9 lines).
+ Build modules: gradle 1 module (42 code lines), npm 1 module (31 code lines).
  Unclaimed source: 8 code lines in 1 file, here:
    prototypes  8 code lines  1 file
  Classify these folders with [[rules]] in .locmetryrc; --format markdown lists every file.
@@ -49,7 +50,7 @@ $ locmetry
 What the table already handles for you:
 
 - **No language list to maintain:** every programming language counts, while JSON, YAML, Markdown, and other data or documentation stay out of the source totals.
-- **Production from the build:** `backend/build.gradle.kts` and `web/package.json` mark their source trees as production, with no rule.
+- **Production from the build:** `backend/build.gradle.kts` and `web/package.json` mark their source trees as production, with no rule, and the table names both build systems.
 - **Tests found by convention:** test files count as tests even inside the application's source tree.
 - **Scope as policy:** the vendored SDK is excluded by one line of configuration.
 - **Nothing silently promoted:** build scripts and tooling stay apart from implementation, and code no rule claims is reported for review instead of being counted as production.
@@ -228,7 +229,7 @@ In the sample, `backend` and `web` are build modules, so `backend/src/main/**` a
 - **Nested modules:** the innermost build module containing a file decides, and build files sharing one folder, such as `build.gradle.kts` and `package.json`, combine their layouts.
 - **Only file names are read:** locmetry neither runs the build nor parses the build file, so source directories that a build file reconfigures need a rule.
 - **Rules win:** `[[rules]]` run before build modules, so one rule corrects a folder that detection gets wrong. `builtin_modules = false` under `[classification]` turns detection off.
-- **Traceable:** the report file lists the detected build modules as `metadata.modules`, and each file record from `--files` names the detector that decided it, such as `builtin:gradle-module`.
+- **Traceable:** the table and the JSON headline (`summary.build_modules`) show each build system's modules and the code they classified, the Markdown report lists every module, and each file record from `--files` names the detector that decided it, such as `builtin:gradle-module`.
 
 ### Terminal table
 
@@ -236,7 +237,7 @@ Plain `locmetry` on a terminal prints the table shown [above](#what-you-see):
 
 - language rows, largest first;
 - top-level folders, whose rows add up to the total;
-- notes on content that is not source, the folders that hold unclaimed source, and files that could not be counted.
+- notes on content that is not source, the build modules that decided production, the folders that hold unclaimed source, and files that could not be counted.
 
 `--sort name` lists rows alphabetically instead, in the table and in Markdown.
 
@@ -285,6 +286,10 @@ When stdout is not a terminal, `locmetry` prints a compact JSON headline, under 
       "prototypes": { "unclassified": 8 },
       "scripts": { "production": 12 },
       "web": { "production": 31, "test": 10 }
+    },
+    "build_modules": {
+      "gradle": { "modules": 1, "code": 42 },
+      "npm": { "modules": 1, "code": 31 }
     },
     "unclassified_folders": [
       { "folder": "prototypes", "files": 1, "code": 8 }
@@ -353,6 +358,13 @@ $ jq -c '.review[]' report.json
 | scripts | 12 | 0 | 0 | 12 |
 | web | 31 | 10 | 0 | 41 |
 | web/src | 31 | 10 | 0 | 41 |
+
+## Build modules
+
+| Build system | Modules | Code |
+| --- | ---: | ---: |
+| gradle | 1 | 42 |
+| npm | 1 | 31 |
 
 ## Source requiring review
 

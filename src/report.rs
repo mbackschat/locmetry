@@ -1,4 +1,4 @@
-use crate::{Classification, Purpose};
+use crate::{config::module_rule, modules::Module, Classification, Purpose};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize, Serializer};
 use std::{collections::BTreeMap, fmt};
@@ -409,4 +409,61 @@ pub fn build_report(rows: &[FileRecord]) -> ReportSummary {
         }
     }
     ReportSummary { totals, folders }
+}
+
+/// Source code that one build module classified as production.
+#[derive(Debug, Serialize)]
+pub struct ModuleShare {
+    pub path: String,
+    pub detector: &'static str,
+    pub files: u64,
+    pub code: u64,
+}
+
+/// Source code each adopted module classified, in module order. A file
+/// belongs to the innermost module of the detector that decided it, which is
+/// the module whose layout claimed it.
+pub fn module_shares(modules: &[Module], rows: &[FileRecord]) -> Vec<ModuleShare> {
+    let mut shares: Vec<ModuleShare> = modules
+        .iter()
+        .map(|module| ModuleShare {
+            path: module.path.clone(),
+            detector: module.detector,
+            files: 0,
+            code: 0,
+        })
+        .collect();
+    for row in rows.iter().filter(|row| row.kind == Kind::Source) {
+        let owner = modules
+            .iter()
+            .enumerate()
+            .filter(|(_, module)| {
+                row.classification.rule == module_rule(module.detector)
+                    && module.contains(&row.path)
+            })
+            .max_by_key(|(_, module)| module.depth());
+        if let Some((index, _)) = owner {
+            shares[index].files += 1;
+            shares[index].code += row.counts.code;
+        }
+    }
+    shares
+}
+
+/// Modules and classified source code of one build system.
+#[derive(Debug, Default, Serialize)]
+pub struct BuildSystemShare {
+    pub modules: u64,
+    pub code: u64,
+}
+
+/// [`module_shares`] per build system, keyed by detector ID.
+pub fn build_systems(shares: &[ModuleShare]) -> BTreeMap<&'static str, BuildSystemShare> {
+    let mut systems = BTreeMap::<_, BuildSystemShare>::new();
+    for share in shares {
+        let system = systems.entry(share.detector).or_default();
+        system.modules += 1;
+        system.code += share.code;
+    }
+    systems
 }

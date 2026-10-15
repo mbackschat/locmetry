@@ -18,8 +18,9 @@ pub use output::{
     render_markdown, render_table, report_text, validate_output, write_report, RowOrder,
 };
 pub use report::{
-    breakdown, build_report, review, unclassified_folders, BreakdownRow, Counts, FileRecord,
-    FolderShare, Kind, ReportSummary, ReviewEntry,
+    breakdown, build_report, build_systems, module_shares, review, unclassified_folders,
+    BreakdownRow, BuildSystemShare, Counts, FileRecord, FolderShare, Kind, ModuleShare,
+    ReportSummary, ReviewEntry,
 };
 
 pub const BACKEND: &str = "tokei 15.0.0 (embedded)";

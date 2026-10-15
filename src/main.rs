@@ -1,9 +1,10 @@
 use anyhow::{Context, Result};
 use clap::{Parser, ValueEnum};
 use locmetry::{
-    breakdown, build_report, render_markdown, render_table, report_text, review, scan,
-    scope_policy, unclassified_folders, user_defaults_file, validate_output, write_report, Policy,
-    RowOrder, ScopeOverrides, BACKEND, CONFIG_FILE, DATA_LANGUAGES, DOCUMENTATION_LANGUAGES,
+    breakdown, build_report, build_systems, module_shares, render_markdown, render_table,
+    report_text, review, scan, scope_policy, unclassified_folders, user_defaults_file,
+    validate_output, write_report, Policy, RowOrder, ScopeOverrides, BACKEND, CONFIG_FILE,
+    DATA_LANGUAGES, DOCUMENTATION_LANGUAGES,
 };
 use serde_json::{json, Value};
 use std::{
@@ -166,13 +167,16 @@ fn run(args: Args) -> Result<Outcome> {
     policy.adopt_modules(&scan.modules)?;
     let rows = scan.records(&policy)?;
     let summary = build_report(&rows);
+    let modules = module_shares(policy.modules(), &rows);
     let order = match args.sort {
         Sort::Code => RowOrder::Code,
         Sort::Name => RowOrder::Name,
     };
     let mut human = match format {
-        Format::Table => render_table(&project, &summary, &rows, coverage, order),
-        Format::Markdown => render_markdown(&project, &summary, &rows, coverage, args.depth, order),
+        Format::Table => render_table(&project, &summary, &rows, coverage, &modules, order),
+        Format::Markdown => render_markdown(
+            &project, &summary, &rows, coverage, &modules, args.depth, order,
+        ),
         Format::Json => String::new(),
     };
     if inaccurate && format != Format::Json {
@@ -180,6 +184,9 @@ fn run(args: Args) -> Result<Outcome> {
     }
     let mut summary_json = serde_json::to_value(&summary.totals)?;
     summary_json["top_folders"] = serde_json::to_value(summary.top_folders())?;
+    if !modules.is_empty() {
+        summary_json["build_modules"] = serde_json::to_value(build_systems(&modules))?;
+    }
     let unclassified = unclassified_folders(&rows);
     if !unclassified.is_empty() {
         summary_json["unclassified_folders"] = serde_json::to_value(&unclassified)?;

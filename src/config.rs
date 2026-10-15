@@ -469,8 +469,8 @@ fn describe_detectors(schema: &mut Schema) {
                 .collect::<Vec<_>>()
                 .join(" or ");
             format!(
-                "`{BUILTIN}{}-module`, a folder with {build_files}: {}",
-                detector.id(),
+                "`{}`, a folder with {build_files}: {}",
+                module_rule(detector.id()),
                 detector.layout()
             )
         })
@@ -550,6 +550,11 @@ pub fn user_defaults_file() -> Option<PathBuf> {
         .filter(|path| path.is_absolute())
         .or_else(|| std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".config")))?;
     Some(base.join("locmetry").join("config.toml"))
+}
+
+/// Provenance of files a build module of `detector` classifies.
+pub(crate) fn module_rule(detector: &str) -> String {
+    format!("{BUILTIN}{detector}-module")
 }
 
 /// Escapes glob metacharacters so `path` matches only itself.
@@ -729,9 +734,9 @@ pub struct Policy {
     detect_modules: bool,
     /// Modules adopted from the scan; empty when detection is disabled.
     modules: Vec<Module>,
-    /// One production entry per adopted module, with the module's directory;
-    /// applied after rules and before the fallback.
-    module_entries: Vec<(String, Entry)>,
+    /// One production entry per adopted module; applied after rules and
+    /// before the fallback.
+    module_entries: Vec<(Module, Entry)>,
     fallback: (Purpose, String),
     /// Project mappings first, then built-in ones.
     languages: Vec<LanguageMapping>,
@@ -940,13 +945,13 @@ impl Policy {
             .iter()
             .map(|module| {
                 let entry = Entry {
-                    id: format!("{BUILTIN}{}-module", module.detector),
+                    id: module_rule(module.detector),
                     matcher: glob_set(module.sources.iter().map(String::as_str))?,
                     kinds: None,
                     purpose: Purpose::Production,
                     category: "implementation".into(),
                 };
-                Ok((module.path.clone(), entry))
+                Ok((module.clone(), entry))
             })
             .collect::<Result<_>>()?;
         self.modules = modules.to_vec();
@@ -977,25 +982,17 @@ impl Policy {
     /// nested module's files, while build systems sharing the innermost
     /// directory combine their layouts.
     fn module_classification(&self, path: &str, kind: Kind) -> Option<Classification> {
-        let depth = |directory: &str| match directory {
-            "." => 0,
-            _ => directory.split('/').count(),
-        };
-        let contains = |directory: &str| {
-            directory == "."
-                || path
-                    .strip_prefix(directory)
-                    .is_some_and(|rest| rest.starts_with('/'))
-        };
         let innermost = self
             .module_entries
             .iter()
-            .map(|(directory, _)| directory.as_str())
-            .filter(|directory| contains(directory))
-            .max_by_key(|directory| depth(directory))?;
+            .map(|(module, _)| module)
+            .filter(|module| module.contains(path))
+            .max_by_key(|module| module.depth())?
+            .path
+            .as_str();
         self.module_entries
             .iter()
-            .filter(|(directory, _)| directory == innermost)
+            .filter(|(module, _)| module.path == innermost)
             .map(|(_, entry)| entry)
             .find(|entry| entry.matches(path, kind))
             .map(Entry::classification)
