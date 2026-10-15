@@ -93,7 +93,7 @@ fn binary_measures_without_any_executables_on_path() {
         document["summary"]["source_purpose"]["production"]["code"],
         1
     );
-    assert_eq!(document["metadata"]["backend"], "tokei 15.0.0 (embedded)");
+    assert_eq!(document["metadata"]["backend"], locmetry::BACKEND);
     assert_eq!(document["metadata"]["backend_inaccurate"], false);
 }
 
@@ -1430,5 +1430,5 @@ fn report_metadata_records_the_effective_policy() {
         .as_array()
         .unwrap()
         .is_empty());
-    assert_eq!(metadata["backend"], "tokei 15.0.0 (embedded)");
+    assert_eq!(metadata["backend"], locmetry::BACKEND);
 }

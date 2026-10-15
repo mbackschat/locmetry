@@ -630,3 +630,18 @@ fn display_names_match_serialized_names() {
         assert_eq!(serde_json::json!(kind), kind.to_string());
     }
 }
+
+/// Reports name the embedded counter's version; `BACKEND` states it by hand
+/// because Cargo exposes no dependency versions to code, so it must follow the
+/// exact pin in Cargo.toml on every upgrade.
+#[test]
+fn backend_name_follows_the_pinned_tokei_version() {
+    let manifest =
+        std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/Cargo.toml")).unwrap();
+    let pin = manifest
+        .lines()
+        .find_map(|line| line.strip_prefix("tokei = { version = \"="))
+        .and_then(|rest| rest.split('"').next())
+        .expect("Cargo.toml pins tokei exactly");
+    assert_eq!(locmetry::BACKEND, format!("tokei {pin} (embedded)"));
+}
