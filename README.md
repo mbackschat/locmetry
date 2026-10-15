@@ -40,10 +40,10 @@ $ locmetry
  (root files)     3           2     0             1
 
  Not source code: 3 data files (19 lines), 1 documentation file (9 lines).
- Build modules: gradle 1 module (42 code lines), npm 1 module (31 code lines).
+ Production from build modules: gradle 42 code lines in 1 module, npm 31 code lines in 1 module.
  Unclaimed source: 8 code lines in 1 file, here:
    prototypes  8 code lines  1 file
- Classify these folders with [[rules]] in .locmetryrc; --format markdown lists every file.
+ Classify them in the configuration; locmetry --schema config explains how, --format markdown lists every file.
  Not counted: 1 unrecognized file (png: 1); missing lines are not zero.
 ```
 
@@ -141,20 +141,22 @@ Personal defaults for every project, such as extra exclusions or language mappin
 | `--depth N` | Folder levels in the Markdown folder table; default: 2. |
 | `--output FILE` | Also write the full JSON report to `FILE`, outside the scan root; `-` prints it instead of the headline. |
 | `--files` | Add per-file records to the report. |
-| `--schema config\|user-config` | Print the JSON Schema of `.locmetryrc` or of personal defaults, and exit. |
+| `--schema config\|user-config\|report` | Print the JSON Schema of `.locmetryrc`, of personal defaults, or of the JSON headline and report, and exit. |
 
 ## Configure with an agent
 
-`locmetry --schema config` prints the JSON Schema of `.locmetryrc`. Besides keys, types, and defaults, its descriptions carry the semantics an agent needs to write a configuration: the classification order, when to use `[[overrides]]` instead of `[[rules]]`, what turning off built-in conventions or [build modules](#build-modules) changes, and the exact conventions, build-module layouts, and language names of the installed version. `--schema user-config` describes personal defaults.
+`locmetry --schema config` prints the JSON Schema of `.locmetryrc`. Besides keys, types, and defaults, its descriptions carry the semantics an agent needs to write a configuration: the classification order, when to use `[[overrides]]` instead of `[[rules]]`, what turning off built-in conventions or [build modules](#build-modules) changes, and the exact conventions, build-module layouts, and language names of the installed version. `--schema user-config` describes personal defaults, and `--schema report` the JSON headline and report, including per-file records.
 
 ```sh
 locmetry --schema config | jq -r .description          # classification order, globs, workflow
 locmetry --schema config | jq '."$defs".Classification' # built-in stages and their switches
 ```
 
-A prompt such as this one is enough:
+A one-line task is enough, because `--help` leads to the schema and the schema states the workflow:
 
-> Run `locmetry --schema config` to learn the configuration format, then run `locmetry` in this repository. Write a `.locmetryrc` that classifies the folders listed under `summary.unclassified_folders`, give each entry a `reason`, and measure again until only code that really is unclaimed stays unclassified.
+> Create a locmetry configuration for this repository.
+
+The agent measures, reads `summary.unclassified_folders`, inspects the project for evidence, writes entries with a `reason`, and measures again until no folder is left undecided.
 
 The schema checks keys, types, and enums. Locmetry itself also rejects invalid globs and duplicate IDs when it loads the file, so a final `locmetry` run validates the result.
 

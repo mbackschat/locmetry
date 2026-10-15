@@ -247,7 +247,7 @@ fn table_format_splits_source_code_by_language_and_purpose() {
  Not source code: 1 data file (1 line), 1 documentation file (1 line).
  Unclaimed source: 1 code line in 1 file, here:
    proto  1 code line  1 file
- Classify these folders with [[rules]] in .locmetryrc; --format markdown lists every file.
+ Classify them in the configuration; locmetry --schema config explains how, --format markdown lists every file.
  Not counted: 1 unrecognized file (png: 1); missing lines are not zero.
 ";
     assert_eq!(String::from_utf8(output.stdout).unwrap(), expected);
@@ -383,6 +383,9 @@ fn review_lists_only_unclaimed_source() {
     fs::remove_dir_all(root.join("loose")).unwrap();
     let table = String::from_utf8(run(&root, &["--format", "table"]).stdout).unwrap();
     assert!(!table.contains("Unclaimed source"), "{table}");
+    // The documented next step stays readable when it is done: an empty list, not a missing key.
+    let (_, document, _) = headline(&root, &[]);
+    assert_eq!(document["summary"]["unclassified_folders"], json!([]));
 }
 
 /// Readers see which build systems decided production and how much code each
@@ -409,7 +412,7 @@ fn reports_name_the_build_modules_that_decided_production() {
     let table = String::from_utf8(run(&root, &["--format", "table"]).stdout).unwrap();
     assert!(
         table.contains(
-            " Build modules: gradle 1 module (2 code lines), npm 2 modules (1 code line).\n"
+            " Production from build modules: gradle 2 code lines in 1 module, npm 1 code line in 2 modules.\n"
         ),
         "{table}"
     );

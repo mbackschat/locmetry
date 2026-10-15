@@ -178,3 +178,96 @@ fn user_config_schema_allows_only_scope_and_language_defaults() {
     }
     assert!(description(&schema, "").contains("never classify"));
 }
+
+/// A project exercising every optional report field: a rule with a reason,
+/// a build module, a mapped language, embedded languages, an unrecognized
+/// file, and unclaimed source.
+fn report_fixture() -> tempfile::TempDir {
+    let temp = tempfile::tempdir().unwrap();
+    let files = [
+        (
+            ".locmetryrc",
+            "version = 1\n[[rules]]\nid = \"tools\"\nmatch = [\"tools/**\"]\npurpose = \"production\"\ncategory = \"tooling\"\nreason = \"Maintained scripts.\"\n",
+        ),
+        ("backend/build.gradle.kts", "plugins { kotlin(\"jvm\") }\n"),
+        ("backend/src/main/kotlin/A.kt", "fun a() = 1\n"),
+        ("backend/legacy.gradle", "apply plugin: 'java'\n"),
+        ("tools/run.py", "print(1)\n"),
+        ("proto/x.py", "x = 1\n"),
+        ("README.md", "# Title\n\n```rust\nfn main() {}\n```\n"),
+        ("logo.png", "not an image\n"),
+    ];
+    for (path, content) in files {
+        let path = temp.path().join("project").join(path);
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(path, content).unwrap();
+    }
+    temp
+}
+
+fn measure(temp: &tempfile::TempDir, args: &[&str]) -> Value {
+    let output = Command::new(env!("CARGO_BIN_EXE_locmetry"))
+        .env("XDG_CONFIG_HOME", "/nonexistent/locmetry-tests")
+        .current_dir(temp.path().join("project"))
+        .args(args)
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    serde_json::from_slice(&output.stdout).unwrap()
+}
+
+/// The report schema is written by hand because the report is assembled as
+/// JSON; validating real output, with unknown keys rejected, keeps it from
+/// drifting in either direction.
+#[test]
+fn report_schema_describes_the_headline_and_the_full_report() {
+    let schema = schema("report");
+    let validator = jsonschema::validator_for(&schema).unwrap();
+    let temp = report_fixture();
+    let report_file = temp.path().join("report.json");
+    let documents = [
+        measure(&temp, &["--format", "json"]),
+        measure(
+            &temp,
+            &[
+                "--format",
+                "json",
+                "--output",
+                report_file.to_str().unwrap(),
+            ],
+        ),
+        measure(&temp, &["--files", "--output", "-"]),
+        serde_json::from_str(&std::fs::read_to_string(&report_file).unwrap()).unwrap(),
+    ];
+    let full = &documents[2];
+    assert!(full["files"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|file| file.get("languages").is_some() && file.get("language_mapping").is_none()));
+    assert!(full["files"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|file| file.get("language_mapping").is_some()));
+    for document in &documents {
+        let errors: Vec<String> = validator
+            .iter_errors(document)
+            .map(|error| format!("{} at {}", error, error.instance_path()))
+            .collect();
+        assert!(errors.is_empty(), "{errors:#?}");
+    }
+    let mut surprise = full.clone();
+    surprise["summary"]["surprise"] = json!(1);
+    assert!(!validator.is_valid(&surprise), "unknown keys must fail");
+
+    let code = description(
+        &schema,
+        "/properties/files/items/properties/counts/properties/code",
+    );
+    assert!(!code.is_empty());
+}

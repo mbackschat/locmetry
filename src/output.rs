@@ -219,13 +219,16 @@ fn build_modules_note(modules: &[ModuleShare], order: RowOrder) -> Option<String
         .into_iter()
         .map(|(id, system)| {
             format!(
-                "{id} {} ({})",
-                counted(system.modules, "module"),
-                counted(system.code, "code line")
+                "{id} {} in {}",
+                counted(system.code, "code line"),
+                counted(system.modules, "module")
             )
         })
         .collect();
-    Some(format!("Build modules: {}.", systems.join(", ")))
+    Some(format!(
+        "Production from build modules: {}.",
+        systems.join(", ")
+    ))
 }
 
 fn counted(count: u64, noun: &str) -> String {
@@ -339,7 +342,7 @@ fn unclaimed_note(folders: &[FolderShare]) -> String {
         )
         .unwrap();
     }
-    note + "\n Classify these folders with [[rules]] in .locmetryrc; --format markdown lists every file."
+    note + "\n Classify them in the configuration; locmetry --schema config explains how, --format markdown lists every file."
 }
 
 /// Folders listed in the terminal note; the JSON headline lists all of them.

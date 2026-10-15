@@ -33,11 +33,13 @@ enum Sort {
 }
 
 #[derive(Clone, Copy, ValueEnum)]
-enum ConfigSchema {
+enum Schema {
     /// The project configuration, `.locmetryrc`.
     Config,
     /// Personal defaults in ~/.config/locmetry/config.toml.
     UserConfig,
+    /// The JSON headline and full report.
+    Report,
 }
 
 /// The stdout format when `--format` is absent.
@@ -92,10 +94,10 @@ struct Args {
     /// Deepest folder level listed in the Markdown folder table; JSON lists all.
     #[arg(long, default_value_t = 2, value_name = "N")]
     depth: usize,
-    /// Print the JSON Schema of a configuration file, which explains every
-    /// setting and the classification order, and exit.
+    /// Print a JSON Schema and exit: of a configuration file, which explains
+    /// every setting and the classification order, or of the JSON report.
     #[arg(long, value_enum)]
-    schema: Option<ConfigSchema>,
+    schema: Option<Schema>,
 }
 
 /// Result of a run that produced a report.
@@ -108,8 +110,9 @@ enum Outcome {
 fn run(args: Args) -> Result<Outcome> {
     if let Some(schema) = args.schema {
         let schema = match schema {
-            ConfigSchema::Config => locmetry::config_schema(),
-            ConfigSchema::UserConfig => locmetry::user_config_schema(),
+            Schema::Config => locmetry::config_schema(),
+            Schema::UserConfig => locmetry::user_config_schema(),
+            Schema::Report => locmetry::report_schema(),
         };
         println!("{}", serde_json::to_string_pretty(&schema)?);
         return Ok(Outcome::Complete);
@@ -187,10 +190,8 @@ fn run(args: Args) -> Result<Outcome> {
     if !modules.is_empty() {
         summary_json["build_modules"] = serde_json::to_value(build_systems(&modules))?;
     }
-    let unclassified = unclassified_folders(&rows);
-    if !unclassified.is_empty() {
-        summary_json["unclassified_folders"] = serde_json::to_value(&unclassified)?;
-    }
+    // Always present, even empty: it is the documented next step for configuration.
+    summary_json["unclassified_folders"] = serde_json::to_value(unclassified_folders(&rows))?;
     let mut document = json!({
         "schema_version":"1", "project":project,
         "metadata":{

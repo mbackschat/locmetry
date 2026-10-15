@@ -4,6 +4,7 @@ mod config;
 mod modules;
 mod output;
 mod report;
+mod report_schema;
 
 pub use backend::{
     file_records, language_kind, scan, scope_policy, Coverage, Scan, DATA_LANGUAGES,
@@ -22,5 +23,6 @@ pub use report::{
     BreakdownRow, BuildSystemShare, Counts, FileRecord, FolderShare, Kind, ModuleShare,
     ReportSummary, ReviewEntry,
 };
+pub use report_schema::report_schema;
 
 pub const BACKEND: &str = "tokei 15.0.0 (embedded)";
