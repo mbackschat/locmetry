@@ -100,7 +100,12 @@ fn direct_and_recursive_folder_totals_reconcile() {
         8
     );
     let empty = serde_json::to_value(build_report(&[])).unwrap();
-    assert_eq!(empty["folders"]["."]["recursive"]["source"]["files"], 0);
+    // An empty root keeps its zero `all_counted`; absent `source` means zero.
+    assert_eq!(
+        empty["folders"]["."]["recursive"]["all_counted"]["files"],
+        0
+    );
+    assert!(empty["folders"]["."]["recursive"].get("source").is_none());
 }
 
 #[test]

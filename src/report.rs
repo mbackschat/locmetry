@@ -1,5 +1,5 @@
 use crate::{Classification, Purpose};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, Serializer};
 use std::{collections::BTreeMap, fmt};
 
 #[derive(Clone, Copy, Debug, Default, Serialize, PartialEq, Eq)]
@@ -12,6 +12,10 @@ pub struct Counts {
 }
 
 impl Counts {
+    pub fn is_empty(&self) -> bool {
+        self.files == 0
+    }
+
     pub fn add(&mut self, other: &Self) {
         self.files += other.files;
         self.code += other.code;
@@ -53,37 +57,81 @@ pub struct FileRecord {
     pub language_mapping: Option<String>,
     #[serde(flatten)]
     pub classification: Classification,
+    #[serde(serialize_with = "line_counts")]
     pub counts: Counts,
+    /// Per-language counts; serialized only for files with embedded languages,
+    /// because a single entry repeats `language` and `counts`.
+    #[serde(
+        skip_serializing_if = "single_language",
+        serialize_with = "language_line_counts"
+    )]
     pub languages: BTreeMap<String, Counts>,
 }
 
-#[derive(Debug, Serialize)]
-pub struct Summary {
-    pub all_counted: Counts,
-    pub source: Counts,
-    pub by_kind_purpose: BTreeMap<String, Counts>,
-    pub source_purpose: BTreeMap<Purpose, Counts>,
-    pub source_categories: BTreeMap<String, Counts>,
-    pub source_languages: BTreeMap<String, Counts>,
+/// Counts of one file, without `files`, which is always 1 there.
+#[derive(Serialize)]
+struct LineCounts {
+    code: u64,
+    comments: u64,
+    blanks: u64,
+    lines: u64,
 }
 
-impl Default for Summary {
-    fn default() -> Self {
+impl From<&Counts> for LineCounts {
+    fn from(counts: &Counts) -> Self {
         Self {
-            all_counted: Counts::default(),
-            source: Counts::default(),
-            by_kind_purpose: BTreeMap::new(),
-            source_purpose: Purpose::ALL
-                .into_iter()
-                .map(|p| (p, Counts::default()))
-                .collect(),
-            source_categories: BTreeMap::new(),
-            source_languages: BTreeMap::new(),
+            code: counts.code,
+            comments: counts.comments,
+            blanks: counts.blanks,
+            lines: counts.lines,
         }
     }
 }
 
+fn line_counts<S: Serializer>(counts: &Counts, serializer: S) -> Result<S::Ok, S::Error> {
+    LineCounts::from(counts).serialize(serializer)
+}
+
+fn language_line_counts<S: Serializer>(
+    languages: &BTreeMap<String, Counts>,
+    serializer: S,
+) -> Result<S::Ok, S::Error> {
+    serializer.collect_map(
+        languages
+            .iter()
+            .map(|(name, counts)| (name, LineCounts::from(counts))),
+    )
+}
+
+fn single_language(languages: &BTreeMap<String, Counts>) -> bool {
+    languages.len() <= 1
+}
+
+/// Aggregated counts; zero counts and empty maps are omitted from JSON
+/// (except `all_counted`), so an absent entry means zero.
+#[derive(Debug, Default, Serialize)]
+pub struct Summary {
+    pub all_counted: Counts,
+    #[serde(skip_serializing_if = "Counts::is_empty")]
+    pub source: Counts,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub by_kind_purpose: BTreeMap<String, Counts>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub source_purpose: BTreeMap<Purpose, Counts>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub source_categories: BTreeMap<String, Counts>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub source_languages: BTreeMap<String, Counts>,
+}
+
 impl Summary {
+    pub fn purpose(&self, purpose: Purpose) -> Counts {
+        self.source_purpose
+            .get(&purpose)
+            .copied()
+            .unwrap_or_default()
+    }
+
     fn add(&mut self, row: &FileRecord) {
         self.all_counted.add(&row.counts);
         let purpose = row.classification.purpose;

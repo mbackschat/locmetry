@@ -152,7 +152,7 @@ fn run(args: Args) -> Result<Outcome> {
                 }
                 None => document,
             };
-            serde_json::to_writer_pretty(&mut stdout, &value)?;
+            serde_json::to_writer(&mut stdout, &value)?;
             writeln!(stdout)?;
         }
         Format::Markdown => write!(stdout, "{markdown}")?,

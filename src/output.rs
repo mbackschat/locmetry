@@ -51,7 +51,7 @@ pub fn render_markdown(
         count_row(
             &mut output,
             &purpose.to_string(),
-            &summary.totals.source_purpose[&purpose],
+            &summary.totals.purpose(purpose),
         );
     }
     table(
@@ -84,9 +84,9 @@ pub fn render_markdown(
             output,
             "| {} | {} | {} | {} | {} |",
             cell(folder),
-            totals.source_purpose[&Purpose::Production].code,
-            totals.source_purpose[&Purpose::Test].code,
-            totals.source_purpose[&Purpose::Unclassified].code,
+            totals.purpose(Purpose::Production).code,
+            totals.purpose(Purpose::Test).code,
+            totals.purpose(Purpose::Unclassified).code,
             totals.source.code
         )
         .unwrap();
@@ -198,10 +198,7 @@ pub fn write_reports(
     let output = validate_output(output, root, config)?;
     fs::create_dir_all(output.parent().context("Missing output parent")?)?;
     let [json, md, tokei] = destinations(&output)?;
-    fs::write(
-        &json,
-        format!("{}\n", serde_json::to_string_pretty(document)?),
-    )?;
+    fs::write(&json, format!("{}\n", serde_json::to_string(document)?))?;
     fs::write(&tokei, format!("{}\n", serde_json::to_string(raw)?))?;
     fs::write(&md, markdown)?;
     Ok([json, md, tokei])

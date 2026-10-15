@@ -28,7 +28,7 @@ Output uses JSON schema `1` (field reference in [PRODUCT.md](../PRODUCT.md#repor
 
 Ambient Tokei configuration is not loaded. Git is not invoked, so reports do not claim a commit revision or unchanged working tree. Configuration and traversal errors fail before output with exit code 1; unreadable files produce partial output and exit code 2 with a message naming them. Classification is per file, so mixed production/test files are not split, and Locmetry does not establish whether a source file is handwritten.
 
-Without `--output`, stdout contains the full JSON report. With `--output`, JSON stdout omits file records and folders and names the written report files. Use `--format markdown` for readable stdout and `--depth N` to deepen its folder table. An output prefix whose reports would overwrite the configuration is rejected before scanning.
+JSON is compact and omits redundant or zero counts, as specified in [PRODUCT.md](../PRODUCT.md#reporting-and-coverage). Without `--output`, stdout contains the full JSON report. With `--output`, JSON stdout omits file records and folders and names the written report files. Use `--format markdown` for readable stdout and `--depth N` to deepen its folder table. An output prefix whose reports would overwrite the configuration is rejected before scanning.
 
 ## Privacy
 

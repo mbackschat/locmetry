@@ -29,6 +29,49 @@ fn current_kind_spelling(value: Value) -> Value {
     }
 }
 
+fn is_count(value: &Value) -> bool {
+    value.get("code").is_some()
+}
+
+/// Applies the leaner schema-1 serialization to a saved measurement.
+///
+/// Saved measurements predate it: records then repeated single-language counts
+/// and `counts.files`, and summaries listed zero counts. No count changes.
+fn current_serialization(value: Value) -> Value {
+    match value {
+        Value::Object(map) if map.contains_key("code") => Value::Object(map),
+        Value::Object(map) => Value::Object(
+            map.into_iter()
+                .map(|(key, value)| (key, current_serialization(value)))
+                .filter(|(key, value)| {
+                    let zero = is_count(value) && value["files"] == 0 && key != "all_counted";
+                    let empty = value.as_object().is_some_and(|map| map.is_empty());
+                    !(zero || empty)
+                })
+                .collect(),
+        ),
+        other => other,
+    }
+}
+
+/// Removes per-record redundancy the way schema 1 serializes file records.
+fn current_record(mut record: Value) -> Value {
+    let record_map = record.as_object_mut().unwrap();
+    record_map["counts"]
+        .as_object_mut()
+        .unwrap()
+        .remove("files");
+    let languages = record_map["languages"].as_object_mut().unwrap();
+    if languages.len() <= 1 {
+        record_map.remove("languages");
+    } else {
+        for counts in languages.values_mut() {
+            counts.as_object_mut().unwrap().remove("files");
+        }
+    }
+    record
+}
+
 /// Drops the rule ID of files the historical profiles left unmatched.
 ///
 /// Those profiles reported `fallback`; their TOML translations end with an
@@ -93,9 +136,15 @@ fn reviewed_configurations_reproduce_saved_measurements() {
         let rows = file_records(raw, &policy).unwrap();
         let actual = serde_json::to_value(&rows).unwrap();
         let actual = actual.as_array().unwrap();
-        let expected = baseline["files"].as_array().unwrap();
+        let expected: Vec<_> = baseline["files"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .cloned()
+            .map(current_record)
+            .collect();
         assert_eq!(actual.len(), expected.len(), "File inventory size differs");
-        for (actual, expected) in actual.iter().zip(expected) {
+        for (actual, expected) in actual.iter().zip(&expected) {
             assert_eq!(
                 without_fallback_rule(actual.clone(), expected),
                 without_fallback_rule(expected.clone(), expected),
@@ -103,7 +152,8 @@ fn reviewed_configurations_reproduce_saved_measurements() {
             );
         }
         assert!(
-            serde_json::to_value(build_report(&rows)).unwrap() == baseline["summary"],
+            serde_json::to_value(build_report(&rows)).unwrap()
+                == current_serialization(baseline["summary"].clone()),
             "Totals differ from saved measurement"
         );
         checked += 1;

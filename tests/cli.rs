@@ -405,10 +405,16 @@ fn markdown_and_json_report_the_same_totals() {
         .unwrap();
     let markdown = String::from_utf8(output.stdout).unwrap();
     for purpose in ["production", "test", "unclassified"] {
+        // Absent purposes are zero in JSON; Markdown lists every purpose.
         let counts = &document["summary"]["source_purpose"][purpose];
+        let count = |metric: &str| counts[metric].as_u64().unwrap_or(0);
         let row = format!(
             "| {purpose} | {} | {} | {} | {} | {} |",
-            counts["files"], counts["code"], counts["comments"], counts["blanks"], counts["lines"]
+            count("files"),
+            count("code"),
+            count("comments"),
+            count("blanks"),
+            count("lines")
         );
         assert!(markdown.contains(&row), "missing {row}");
     }
@@ -432,4 +438,59 @@ fn metadata_records_the_effective_policy() {
         .unwrap()
         .is_empty());
     assert_eq!(metadata["backend"], "tokei 15.0.0 (embedded)");
+}
+
+#[test]
+fn reports_are_compact_and_omit_redundant_or_zero_counts() {
+    let temp = project(&[
+        ("src/a.rs", "fn a() {}\n"),
+        (
+            "web/index.html",
+            "<p>x</p>\n<script>\nlet x = 1;\n</script>\n",
+        ),
+    ]);
+    let root = temp.path().join("project");
+    let prefix = temp.path().join("out/report");
+    let output = Command::new(env!("CARGO_BIN_EXE_locmetry"))
+        .current_dir(&root)
+        .arg("--output")
+        .arg(&prefix)
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let text = fs::read_to_string(temp.path().join("out/report.json")).unwrap();
+    assert_eq!(text.lines().count(), 1, "report JSON is not pretty-printed");
+    assert_eq!(String::from_utf8(output.stdout).unwrap().lines().count(), 1);
+    let report: Value = serde_json::from_str(&text).unwrap();
+    let record = |path: &str| {
+        report["files"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|file| file["path"] == path)
+            .unwrap()
+            .clone()
+    };
+    let rust = record("src/a.rs");
+    assert!(
+        rust.get("languages").is_none(),
+        "single-language records repeat no counts"
+    );
+    assert!(rust["counts"].get("files").is_none());
+    assert_eq!(rust["counts"]["code"], 1);
+    let html = record("web/index.html");
+    assert_eq!(html["languages"]["JavaScript"]["code"], 1);
+    assert!(html["languages"]["JavaScript"].get("files").is_none());
+    let folder = &report["summary"]["folders"]["src"]["direct"];
+    assert!(
+        folder["source_purpose"].get("test").is_none(),
+        "zero entries are omitted"
+    );
+    assert_eq!(folder["source_purpose"]["unclassified"]["code"], 1);
+    let web = &report["summary"]["folders"]["web"]["direct"];
+    assert_eq!(web["source_languages"]["JavaScript"]["code"], 1);
 }
