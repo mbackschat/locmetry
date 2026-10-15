@@ -596,3 +596,58 @@ fn subfolder_human_labels_flatten_controls_while_json_preserves_path_identity() 
         "{text}"
     );
 }
+
+#[test]
+fn module_contributions_follow_deciding_rules_and_deepest_matching_directories() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path();
+    write(root, "package.json", "{}\n");
+    write(root, "src/top.ts", "const top = 1;\n");
+    write(root, "src/plugin/package.json", "{}\n");
+    write(
+        root,
+        "src/plugin/src/view.ts",
+        "const a = 1;\nconst b = 2;\n",
+    );
+    write(root, "src/plugin/build.gradle", "plugins {}\n");
+    write(
+        root,
+        "src/plugin/src/main/kotlin/App.kt",
+        "class App {\nval x = 1\n}\n",
+    );
+    write(
+        root,
+        "src/plugin-old/file.ts",
+        "const a = 1;\nconst b = 2;\nconst c = 3;\nconst d = 4;\n",
+    );
+    write(root, "src/empty/package.json", "{}\n");
+    write(root, "src/empty/src/zero.ts", "");
+    write(root, "src/manual.ts", "const manual = 1;\n");
+    write(
+        root,
+        ".locmetryrc",
+        "version=1\n[[overrides]]\nid='manual'\nmatch=['src/manual.ts']\npurpose='production'\n",
+    );
+    let value = report(root, &["--subfolder", "src"], 0);
+    assert_eq!(
+        value["summary"]["build_modules"],
+        json!({
+            "npm": {"modules": 3, "code": 7},
+            "gradle": {"modules": 1, "code": 3},
+        })
+    );
+    assert_eq!(value["summary"]["source_purpose"]["production"]["code"], 12);
+    let mut forged = value;
+    forged["summary"]["build_modules"]["npm"]["code"] = json!(6);
+    forged["summary"]["build_modules"]["gradle"]["code"] = json!(4);
+    let error = serde_json::from_value::<locmetry::contract::MeasurementReport>(forged)
+        .unwrap()
+        .validate()
+        .unwrap_err();
+    assert!(
+        error
+            .to_string()
+            .contains("build_modules conflicts with measured file contributions"),
+        "{error}"
+    );
+}

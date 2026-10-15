@@ -293,24 +293,14 @@ impl MeasurementReport {
         if let (Some(files), Some(modules)) = (&self.files, &self.metadata.modules) {
             let mut contributions = BTreeMap::<(&str, &str), u64>::new();
             for file in files.iter().filter(|f| f.kind == Kind::Source) {
-                if let Some(owner) = modules
-                    .iter()
-                    .filter(|m| {
-                        file.rule == format!("builtin:{}-module", m.detector)
-                            && (m.path == "."
-                                || file
-                                    .path
-                                    .strip_prefix(&m.path)
-                                    .is_some_and(|rest| rest.starts_with('/')))
-                    })
-                    .max_by_key(|m| {
-                        if m.path == "." {
-                            0
-                        } else {
-                            m.path.split('/').count()
-                        }
-                    })
-                {
+                if let Some(index) = crate::modules::module_owner(
+                    modules
+                        .iter()
+                        .map(|m| (m.path.as_str(), m.detector.as_str())),
+                    &file.path,
+                    &file.rule,
+                ) {
+                    let owner = &modules[index];
                     let code = contributions
                         .entry((&owner.detector, &owner.path))
                         .or_default();

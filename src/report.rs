@@ -1,4 +1,7 @@
-use crate::{config::module_rule, modules::Module, Classification, Purpose};
+use crate::{
+    modules::{module_owner, Module},
+    Classification, Purpose,
+};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize, Serializer};
 use std::{collections::BTreeMap, fmt};
@@ -418,15 +421,11 @@ pub fn module_shares(modules: &[Module], rows: &[FileRecord]) -> Vec<ModuleShare
         })
         .collect();
     for row in rows.iter().filter(|row| row.kind == Kind::Source) {
-        let owner = modules
-            .iter()
-            .enumerate()
-            .filter(|(_, module)| {
-                row.classification.rule == module_rule(module.detector)
-                    && module.contains(&row.path)
-            })
-            .max_by_key(|(_, module)| module.depth());
-        if let Some((index, _)) = owner {
+        if let Some(index) = module_owner(
+            modules.iter().map(|m| (m.path.as_str(), m.detector)),
+            &row.path,
+            &row.classification.rule,
+        ) {
             shares[index].files += 1;
             shares[index].code += row.counts.code;
         }

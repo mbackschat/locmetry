@@ -5,7 +5,7 @@
 //! another build system means adding a detector there. Detectors only look at
 //! the selected files and never run a build (CLAUDE.md, reference projects
 //! stay read-only).
-use crate::config::literal_glob;
+use crate::config::{literal_glob, module_rule};
 use serde::Serialize;
 use std::collections::BTreeSet;
 
@@ -175,19 +175,42 @@ pub struct Module {
 impl Module {
     /// Whether the root-relative `path` lies in this module's directory.
     pub(crate) fn contains(&self, path: &str) -> bool {
-        self.path == "."
-            || path
-                .strip_prefix(self.path.as_str())
-                .is_some_and(|rest| rest.starts_with('/'))
+        contains(&self.path, path)
     }
 
     /// Directory depth, `0` for the scan root; deeper modules nest in shallower ones.
     pub(crate) fn depth(&self) -> usize {
-        match self.path.as_str() {
-            "." => 0,
-            path => path.split('/').count(),
-        }
+        depth(&self.path)
     }
+}
+
+fn contains(folder: &str, path: &str) -> bool {
+    folder == "."
+        || path
+            .strip_prefix(folder)
+            .is_some_and(|rest| rest.starts_with('/'))
+}
+
+fn depth(folder: &str) -> usize {
+    match folder {
+        "." => 0,
+        path => path.split('/').count(),
+    }
+}
+
+/// Index of the innermost module of the detector that decided the file.
+/// Borrowed identities keep live summaries and saved-report validation on the
+/// same ownership rule without requiring detection-only layout data.
+pub(crate) fn module_owner<'a>(
+    modules: impl Iterator<Item = (&'a str, &'a str)>,
+    path: &str,
+    rule: &str,
+) -> Option<usize> {
+    modules
+        .enumerate()
+        .filter(|(_, (folder, detector))| rule == module_rule(detector) && contains(folder, path))
+        .max_by_key(|(_, (folder, _))| depth(folder))
+        .map(|(index, _)| index)
 }
 
 /// Modules declared among the selected root-relative `files`, sorted by path, then detector ID.
