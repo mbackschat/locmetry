@@ -798,6 +798,43 @@ fn check_ids<'a>(ids: impl IntoIterator<Item = &'a str>) -> Result<()> {
     Ok(())
 }
 
+#[derive(Serialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum Stage {
+    Override,
+    Convention,
+    Rule,
+    Module,
+    Fallback,
+}
+
+impl std::fmt::Display for Stage {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Self::Override => "override",
+            Self::Convention => "convention",
+            Self::Rule => "rule",
+            Self::Module => "module",
+            Self::Fallback => "fallback",
+        })
+    }
+}
+
+/// Evidence from the same first-match decision as measurement: overrides, conventions, rules, innermost module, fallback. Later matching entries do not decide the file.
+#[derive(Serialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct Decision {
+    pub stage: Stage,
+    /// Matching globs of the winning entry, relative to the member's root. Empty for fallback.
+    pub matched_patterns: Vec<String>,
+    /// The winning user entry's stated reason, when supplied.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+    /// Winning descriptor-inferred module; this is layout inference, not semantic build membership.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub module: Option<crate::contract::Module>,
+}
+
 /// Scope and classification for one measurement.
 #[derive(Debug)]
 pub struct Policy {
@@ -1086,12 +1123,7 @@ impl Policy {
             })
     }
 
-    fn deciding_entry(
-        &self,
-        path: &str,
-        kind: Kind,
-    ) -> Option<(crate::explain::Stage, &Entry, Option<&Module>)> {
-        use crate::explain::Stage;
+    fn deciding_entry(&self, path: &str, kind: Kind) -> Option<(Stage, &Entry, Option<&Module>)> {
         for (stage, entries) in [
             (Stage::Override, &self.overrides),
             (Stage::Convention, &self.conventions),
@@ -1105,8 +1137,7 @@ impl Policy {
             .map(|(module, entry)| (Stage::Module, entry, Some(module)))
     }
 
-    pub(crate) fn decision(&self, path: &str, kind: Kind) -> crate::explain::Decision {
-        use crate::explain::{Decision, Stage};
+    pub(crate) fn decision(&self, path: &str, kind: Kind) -> Decision {
         let Some((stage, entry, module)) = self.deciding_entry(path, kind) else {
             return Decision {
                 stage: Stage::Fallback,

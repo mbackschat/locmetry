@@ -1,11 +1,11 @@
 use super::*;
 use std::fmt::Write;
 
-fn safe(value: &str) -> String {
-    value
-        .replace('&', "&amp;")
-        .replace('|', "&#124;")
-        .replace(['\r', '\n', '\t'], " ")
+fn label(value: &str, markdown: bool) -> String {
+    match markdown {
+        true => crate::output::cell(value),
+        false => crate::output::plain(value),
+    }
 }
 fn grid(output: &mut String, title: &str, rows: Vec<(String, CountChange)>, markdown: bool) {
     if rows.is_empty() {
@@ -26,7 +26,7 @@ fn grid(output: &mut String, title: &str, rows: Vec<(String, CountChange)>, mark
             writeln!(
                 output,
                 "| {} | {} | {} | {:+} |",
-                safe(&label),
+                self::label(&label, markdown),
                 c.before.code,
                 c.after.code,
                 c.delta.code
@@ -36,7 +36,7 @@ fn grid(output: &mut String, title: &str, rows: Vec<(String, CountChange)>, mark
             writeln!(
                 output,
                 "{:<40} {:>12} {:>12} {:>+12}",
-                safe(&label),
+                self::label(&label, markdown),
                 c.before.code,
                 c.after.code,
                 c.delta.code
@@ -51,17 +51,20 @@ fn render(c: &Comparison, markdown: bool) -> String {
         out,
         "{}Net change: {} → {}",
         if markdown { "# " } else { "" },
-        safe(&c.before.project),
-        safe(&c.after.project)
+        label(&c.before.project, markdown),
+        label(&c.after.project, markdown)
     )
     .unwrap();
     writeln!(out,"\nAfter minus before, over recorded counts. Unavailable lines are not estimated; presence does not prove physical creation or deletion.").unwrap();
     if markdown {
         out.push_str("\n## Totals\n\n| Measure | Before | After | Net change |\n| --- | ---: | ---: | ---: |\n");
     } else {
-        out.push_str(
-            "\nTotals\nMeasure                                  Before        After   Net change\n",
-        );
+        writeln!(
+            out,
+            "\nTotals\n{:<40} {:>12} {:>12} {:>12}",
+            "Measure", "Before", "After", "Net change"
+        )
+        .unwrap();
     }
     for (label, change) in [
         ("All counted", c.summary.dimensions.all_counted),
@@ -232,9 +235,9 @@ fn render(c: &Comparison, markdown: bool) -> String {
                 context
                     .member
                     .as_ref()
-                    .map_or(String::new(), |m| format!(", {}", safe(m))),
-                safe(&entity),
-                safe(&context.message)
+                    .map_or(String::new(), |m| format!(", {}", label(m, markdown))),
+                label(&entity, markdown),
+                label(&context.message, markdown)
             )
             .unwrap();
         }

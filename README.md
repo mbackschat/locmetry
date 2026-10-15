@@ -2,6 +2,8 @@
 
 # locmetry
 
+This checkout documents **0.2.0-dev.1 (unreleased)**. Notebook corrections, `parse_failures`, `compare` and `explain` are development features absent from released v0.1.6. The stable installation below remains v0.1.6; use a local build of this checkout for the new behavior.
+
 **Lines of code, split by purpose: production, tests, tooling, and what nobody claims.** `locmetry` measures selected files that its counters can recognize and read, gives each counted file a purpose and category, and records the rule that decided it. Coverage names files whose counts are unavailable.
 
 - **Useful without configuration:** test conventions and build files (npm, Gradle, Maven, Cargo, Go, Python, Lake, Swift) recognize common source and test layouts out of the box.
@@ -198,6 +200,8 @@ The [terminal table](#terminal-table), [JSON](#json-headline-for-agents-and-scri
 
 ## Install
 
+### Stable release (v0.1.6)
+
 With Homebrew on macOS arm64 or Linux x86_64 and aarch64, which installs the prebuilt binary:
 
 ```sh
@@ -220,6 +224,18 @@ Or build from source with a Rust toolchain:
 ```sh
 cargo install --locked --git https://github.com/mbackschat/locmetry --tag v0.1.6
 ```
+
+### Development checkout (unreleased)
+
+From this checkout, build or install the development binary:
+
+```sh
+cargo build --locked
+cargo install --locked --path .
+locmetry --version
+```
+
+The version must identify the development series (`0.2.0-dev.1` here); do not compare changed counters while labeling both producers as the same released version. Installing this checkout does not publish a release.
 
 ## Quick start
 
@@ -449,11 +465,11 @@ When stdout is not a terminal, `locmetry` prints a compact JSON headline, under 
   "project": "acme-orders",
   "metadata": {
     "root": "/work/acme-orders",
-    "locmetry_version": "0.1.6",
+    "locmetry_version": "0.2.0-dev.1",
     "scope": {
       "exclude": ["**/.git/**", "**/node_modules/**", "**/.build/**", "**/.lake/**", "third_party/**", ".locmetryrc"]
     },
-    "config_path": "acme-orders/.locmetryrc",
+    "config_path": "./.locmetryrc",
     "coverage": {
       "selected_files": 17,
       "counted_files": 16,

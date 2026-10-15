@@ -378,3 +378,56 @@ fn troubleshooting_example_matches_the_executable() {
         expected
     );
 }
+
+#[test]
+fn aliases_and_directory_queries_fail_instead_of_claiming_filtering() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path();
+    write(root, "src/main.rs", "fn main() {}\n");
+    write(root, "cafe\u{301}.py", "print(1)\n");
+    for alias in ["SRC/MAIN.RS", "café.py"] {
+        let output = run(root, alias, &[]);
+        assert_eq!(
+            output.status.code(),
+            Some(1),
+            "{alias}: {}",
+            String::from_utf8_lossy(&output.stdout)
+        );
+        if root.join(alias).exists() {
+            assert!(String::from_utf8_lossy(&output.stderr).contains("exact spelling"));
+        }
+    }
+    for directory in [".", "./", "src"] {
+        let output = run(root, directory, &[]);
+        assert_eq!(output.status.code(), Some(1));
+        assert!(String::from_utf8_lossy(&output.stderr).contains("target must be a file"));
+    }
+    write(root, "repos.toml", "version = 1\nroots = [\"src\"]\n");
+    let output = Command::new(env!("CARGO_BIN_EXE_locmetry"))
+        .args([
+            "explain",
+            "src",
+            "--workspace",
+            root.join("repos.toml").to_str().unwrap(),
+            "--no-user-config",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("target must be a file"));
+}
+
+#[test]
+fn command_help_describes_formats_without_promising_measurement_headlines() {
+    for command in ["explain", "compare"] {
+        let output = Command::new(env!("CARGO_BIN_EXE_locmetry"))
+            .args([command, "--help"])
+            .output()
+            .unwrap();
+        assert!(output.status.success());
+        let help = String::from_utf8(output.stdout).unwrap();
+        assert!(!help.contains("compact headline"));
+        assert!(!help.contains("Source code per language and folder"));
+        assert!(help.contains("JSON"));
+    }
+}

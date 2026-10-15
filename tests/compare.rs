@@ -509,3 +509,53 @@ fn full_comparison_output_is_written_and_human_folders_keep_their_hierarchy() {
         Some(1)
     );
 }
+
+#[test]
+fn rendering_escapes_markdown_but_preserves_plain_text_labels() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("R&D");
+    write(&root, "main.py", "print(1)\n");
+    let before = save(temp.path(), "before.json", &measure(&root));
+    write(
+        &root,
+        "<img src=x onerror=alert(1)>`|/main.py",
+        "print(2)\n",
+    );
+    let after = save(temp.path(), "after.json", &measure(&root));
+    let markdown =
+        String::from_utf8(compare(&before, &after, &["--format", "markdown"]).stdout).unwrap();
+    assert!(!markdown.contains("<img"));
+    assert!(markdown.contains("&lt;img src=x onerror=alert(1)&gt;&#96;&#124;"));
+    let table = String::from_utf8(compare(&before, &after, &["--format", "table"]).stdout).unwrap();
+    assert!(table.contains("R&D"));
+    assert!(!table.contains("&amp;"));
+    let header = table
+        .lines()
+        .find(|line| line.starts_with("Measure "))
+        .unwrap();
+    assert_eq!(
+        header,
+        format!(
+            "{:<40} {:>12} {:>12} {:>12}",
+            "Measure", "Before", "After", "Net change"
+        )
+    );
+}
+
+#[test]
+fn development_counter_is_distinct_from_the_last_release() {
+    let temp = tempfile::tempdir().unwrap();
+    write(temp.path(), "main.py", "print(1)\n");
+    let current = measure(temp.path());
+    assert_ne!(current["metadata"]["locmetry_version"], "0.1.6");
+    let mut released = current.clone();
+    released["metadata"]["locmetry_version"] = json!("0.1.6");
+    let before = save(temp.path(), "before.json", &released);
+    let after = save(temp.path(), "after.json", &current);
+    let result = document(compare(&before, &after, &[]), 0);
+    assert!(result["findings"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|finding| finding["code"] == "counter_changed"));
+}

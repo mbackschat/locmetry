@@ -18,11 +18,11 @@ use std::{
 
 #[derive(Clone, Copy, Debug, PartialEq, ValueEnum)]
 enum Format {
-    /// Source code per language and folder, split by purpose, for people.
+    /// Human-readable tables and evidence.
     Table,
-    /// The compact headline for agents and scripts.
+    /// Structured JSON for agents and scripts; see the command description.
     Json,
-    /// A full human report to save or paste into reviews.
+    /// Markdown tables and evidence to save or paste into reviews.
     Markdown,
 }
 
@@ -86,9 +86,11 @@ enum Command {
     /// Measure several repositories as one virtual monorepo: each root with its
     /// own .locmetryrc, merged with paths prefixed by the root's folder name.
     Workspace(WorkspaceArgs),
-    /// Compare two saved full reports: net change is after minus before.
+    /// Compare two saved full reports: net change is after minus before. JSON defaults
+    /// to a headline; --output - prints the full comparison.
     Compare(CompareArgs),
     /// Explain selection and classification of one existing root-relative file.
+    /// JSON prints the complete explanation; there is no separate headline.
     Explain(ExplainArgs),
 }
 

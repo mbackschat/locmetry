@@ -12,14 +12,20 @@ use std::{
     path::{Path, PathBuf},
 };
 
-fn cell(value: &str) -> String {
+pub(crate) fn plain(value: &str) -> String {
     value
+        .chars()
+        .map(|c| if c.is_control() { ' ' } else { c })
+        .collect()
+}
+
+pub(crate) fn cell(value: &str) -> String {
+    plain(value)
         .replace('&', "&amp;")
         .replace('<', "&lt;")
         .replace('>', "&gt;")
         .replace('|', "&#124;")
         .replace('`', "&#96;")
-        .replace(['\r', '\n'], " ")
 }
 
 fn count_row(output: &mut String, label: &str, counts: &Counts) {

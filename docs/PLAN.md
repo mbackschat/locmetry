@@ -10,7 +10,13 @@ The detailed plan records stage decisions and verified completion. Update affect
 
 External review of `4ca626a` is [recorded with dispositions](plans/measurement-quality-and-net-change.md#external-review-disposition--2026-10-15). The review established a shared notebook decoder with end-to-end fixtures; Tokei retains cell-content counting. The plan now distinguishes technical prerequisites from work order and records historical-report compatibility, missing failure evidence and review boundaries. S1 subsequently implemented those corrections; its tests and compatibility evidence are recorded in the detailed plan.
 
-## Release for macOS and Linux — Next
+## Development Release — Pending
+
+The S1–S5 changes and review corrections identify as `0.2.0-dev.1`, distinct from the unchanged v0.1.6 tag. They are unreleased; no push, tag, release or tap update is authorized by this plan.
+
+- [ ] When a release is requested, choose the final version, rerun release checks, publish the new binaries and update the tap and README stable installation together. Include the notebook counting/coverage changes, saved-report compatibility, net change and explanation commands in release notes.
+
+## Release for macOS and Linux — Initial Distribution Complete
 
 Decided 2026-10-15: licence MIT (dual MIT OR Apache-2.0 up to v0.1.1), repository `github.com/mbackschat/locmetry`, an own tap `mbackschat/homebrew-tap` before any homebrew-core submission, and targets macOS arm64 plus Linux x86_64 and aarch64. [Tokei integration and distribution](tokei-integration.md#distribution) describes the release path.
 

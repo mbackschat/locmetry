@@ -33,42 +33,7 @@ pub struct Explanation {
     pub result: PathResult,
 }
 
-#[derive(Serialize, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum Stage {
-    Override,
-    Convention,
-    Rule,
-    Module,
-    Fallback,
-}
-
-impl std::fmt::Display for Stage {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(match self {
-            Self::Override => "override",
-            Self::Convention => "convention",
-            Self::Rule => "rule",
-            Self::Module => "module",
-            Self::Fallback => "fallback",
-        })
-    }
-}
-
-/// Evidence from the same first-match decision as measurement: overrides, conventions, rules, innermost module, fallback. Later matching entries do not decide the file.
-#[derive(Serialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
-pub struct Decision {
-    pub stage: Stage,
-    /// Matching globs of the winning entry, relative to the member's root. Empty for fallback.
-    pub matched_patterns: Vec<String>,
-    /// The winning user entry's stated reason, when supplied.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub reason: Option<String>,
-    /// Winning descriptor-inferred module; this is layout inference, not semantic build membership.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub module: Option<contract::Module>,
-}
+pub use crate::config::{Decision, Stage};
 
 #[derive(Serialize, JsonSchema)]
 #[serde(tag = "state", rename_all = "snake_case", deny_unknown_fields)]
@@ -107,10 +72,26 @@ pub fn inspect(root: &Path, path: &Path, policy: &mut Policy) -> Result<(String,
     let root = root.canonicalize().context("Scan root does not exist")?;
     ensure!(root.is_dir(), "Scan root must be a directory");
     let root = root.as_path();
+    ensure!(
+        path.components()
+            .any(|part| part != std::path::Component::CurDir),
+        "Explanation target must be a file"
+    );
     let path = backend::relative_path(path)?;
     let mut current = root.to_owned();
     let mut relative = std::path::PathBuf::new();
     for component in Path::new(&path).components() {
+        // APFS can resolve case/Unicode aliases that the walk never emits. The
+        // root-relative contract uses directory-entry spelling (PRODUCT, Path Explanations).
+        let exact = std::fs::read_dir(&current)
+            .context("Cannot inspect explanation path spelling")?
+            .collect::<std::io::Result<Vec<_>>>()?
+            .iter()
+            .any(|entry| entry.file_name() == component.as_os_str());
+        ensure!(
+            exact,
+            "Explanation target must use the exact spelling of directory entries: {path}"
+        );
         current.push(component);
         relative.push(component);
         let metadata = std::fs::symlink_metadata(&current)
@@ -286,17 +267,11 @@ impl Explanation {
         }
         .to_owned();
         for (key, value) in rows {
-            let value = value.replace(['\r', '\n', '\t'], " ");
             if markdown {
-                let value = value
-                    .replace('&', "&amp;")
-                    .replace('<', "&lt;")
-                    .replace('>', "&gt;")
-                    .replace('|', "&#124;")
-                    .replace('`', "&#96;");
+                let value = crate::output::cell(&value);
                 text.push_str(&format!("| {key} | {value} |\n"));
             } else {
-                text.push_str(&format!("{key}: {value}\n"));
+                text.push_str(&format!("{key}: {}\n", crate::output::plain(&value)));
             }
         }
         text
