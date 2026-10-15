@@ -290,7 +290,7 @@ fn normalize_reports(
 /// The platform's own path parser splits components, so `:` and `\\` stay
 /// literal in Unix file names, while Windows drive prefixes, absolute paths,
 /// and parent references are rejected as escaping the scan root.
-fn relative_path(path: &Path) -> Result<String> {
+pub(crate) fn relative_path(path: &Path) -> Result<String> {
     let mut parts = Vec::new();
     for component in path.components() {
         match component {

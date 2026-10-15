@@ -1,7 +1,7 @@
 //! Measurement policy: which files are selected and how each one is classified.
 //!
 //! The input is the version-1 TOML contract in PRODUCT.md.
-use crate::Kind;
+use crate::{backend::relative_path, Kind};
 use anyhow::{ensure, Context, Result};
 use globset::{Glob, GlobBuilder, GlobSet, GlobSetBuilder};
 use serde::{Deserialize, Serialize};
@@ -564,6 +564,34 @@ impl Policy {
         settings.exclude.extend(overrides.exclude.iter().cloned());
         self.scope = Scope::new(settings)?;
         Ok(())
+    }
+
+    /// Excludes the loaded configuration file when it lies inside the
+    /// canonical scan `root`.
+    ///
+    /// The configuration is measurement policy, not project content. Its path
+    /// is escaped so glob metacharacters in its name match only itself.
+    pub fn exclude_configuration(&mut self, root: &Path, config: &Path) -> Result<()> {
+        let config = config
+            .canonicalize()
+            .with_context(|| format!("Cannot resolve configuration {}", config.display()))?;
+        let Ok(relative) = config.strip_prefix(root) else {
+            return Ok(());
+        };
+        let literal =
+            relative_path(relative)?
+                .chars()
+                .fold(String::new(), |mut literal, character| {
+                    if "\\*?[]{}!".contains(character) {
+                        literal.push('\\');
+                    }
+                    literal.push(character);
+                    literal
+                });
+        self.override_scope(&ScopeOverrides {
+            exclude: vec![literal],
+            ..Default::default()
+        })
     }
 
     pub fn classify(&self, path: &str, kind: Kind) -> Classification {

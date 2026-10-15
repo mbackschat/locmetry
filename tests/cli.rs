@@ -241,6 +241,43 @@ fn configuration_is_discovered_in_the_scan_root_from_another_directory() {
         .ends_with(".locmetryrc"));
 }
 
+/// The configuration is measurement policy, not project content, so the loaded
+/// file must not appear as a selected file or a coverage gap.
+#[test]
+fn loaded_configuration_inside_the_scan_root_is_not_measured() {
+    let temp = project(&[(".locmetryrc", APP_RULE), ("src/a.ts", "let a = 1;\n")]);
+    let (success, document, stderr) = report(temp.path(), &["--root", "project"]);
+    assert!(success, "{stderr}");
+    let metadata = &document["metadata"];
+    assert_eq!(metadata["coverage"]["selected_files"], 1);
+    assert_eq!(metadata["coverage"]["unrecognized"], json!([]));
+    assert!(metadata["scope"]["exclude"]
+        .as_array()
+        .unwrap()
+        .contains(&json!(".locmetryrc")));
+}
+
+/// Glob metacharacters in the configuration's name match literally, so its
+/// exclusion cannot hide a sibling that the unescaped pattern would match.
+#[test]
+fn explicit_configuration_inside_the_scan_root_is_excluded_literally() {
+    let temp = project(&[
+        ("cfg/lo[c].toml", APP_RULE),
+        ("cfg/loc.toml", "answer = 42\n"),
+        ("src/a.ts", "let a = 1;\n"),
+    ]);
+    let (success, document, stderr) = report(
+        &temp.path().join("project"),
+        &["--config", "cfg/lo[c].toml"],
+    );
+    assert!(success, "{stderr}");
+    let paths: Vec<_> = rules_by_path(&document)
+        .into_iter()
+        .map(|(path, _)| path)
+        .collect();
+    assert_eq!(paths, ["cfg/loc.toml", "src/a.ts"]);
+}
+
 #[test]
 fn explicit_configuration_does_not_change_the_scan_root() {
     let temp = project(&[("src/a.ts", "let a = 1;\n")]);
@@ -302,7 +339,8 @@ fn cli_scope_settings_override_the_project_configuration() {
             "**/node_modules/**",
             "**/.build/**",
             "gen/**",
-            "vendor/**"
+            "vendor/**",
+            ".locmetryrc"
         ])
     );
 }

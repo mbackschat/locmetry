@@ -89,6 +89,9 @@ fn run(args: Args) -> Result<Outcome> {
         .unwrap_or(Path::new("."))
         .canonicalize()
         .context("Scan root does not exist")?;
+    if let Some(path) = &config_path {
+        policy.exclude_configuration(&root, path)?;
+    }
     let root_text = root.to_str().context("Scan root must be valid UTF-8")?;
     let project = root.file_name().map_or_else(
         || root_text.to_owned(),

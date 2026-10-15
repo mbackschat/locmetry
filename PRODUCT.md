@@ -31,7 +31,7 @@ Report code, comments, blanks, and total lines separately. Preserve each file's 
 
 ## Project Configuration
 
-Use `.locmetryrc` in TOML. Discover it in the selected scan root, which defaults to the current directory; an explicit `--config` path may select a different file without changing that root. Without a discovered or explicit configuration, built-in settings apply; an explicit configuration that cannot be read fails. All patterns remain relative to the scan root. Project configuration overrides built-in settings; explicit CLI settings override project settings: `--hidden BOOL`, `--respect-ignore-files BOOL`, and repeatable `--exclude GLOB`, which adds to the configured exclusions. A configuration file ending in `.json`, the retired JSON/regex profile format, is rejected with a hint to translate it to TOML.
+Use `.locmetryrc` in TOML. Discover it in the selected scan root, which defaults to the current directory; an explicit `--config` path may select a different file without changing that root. Without a discovered or explicit configuration, built-in settings apply; an explicit configuration that cannot be read fails. A loaded configuration inside the scan root is policy, not project content: it is excluded as a literal path, which the effective exclusions record. All patterns remain relative to the scan root. Project configuration overrides built-in settings; explicit CLI settings override project settings: `--hidden BOOL`, `--respect-ignore-files BOOL`, and repeatable `--exclude GLOB`, which adds to the configured exclusions. A configuration file ending in `.json`, the retired JSON/regex profile format, is rejected with a hint to translate it to TOML.
 
 This example is synthetic:
 
