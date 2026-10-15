@@ -6,7 +6,11 @@ use anyhow::{ensure, Context, Result};
 use globset::{Glob, GlobBuilder, GlobSet, GlobSetBuilder};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use std::{collections::BTreeSet, fmt, path::Path};
+use std::{
+    collections::BTreeSet,
+    fmt,
+    path::{Path, PathBuf},
+};
 use tokei::LanguageType;
 
 /// Configuration file discovered in the scan root.
@@ -255,6 +259,83 @@ struct ConfigFile {
     rules: Vec<EntryConfig>,
 }
 
+/// Personal defaults: settings that only narrow scope or teach languages, so
+/// a project is classified the same way for everyone (PRODUCT.md, User Defaults).
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct UserDefaults {
+    version: u32,
+    #[serde(default)]
+    scope: UserScope,
+    #[serde(default)]
+    languages: UserLanguages,
+}
+
+#[derive(Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct UserScope {
+    #[serde(default)]
+    exclude: Vec<String>,
+}
+
+#[derive(Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct UserLanguages {
+    #[serde(default)]
+    mappings: Vec<MappingConfig>,
+}
+
+impl UserDefaults {
+    fn load(path: &Path) -> Result<Self> {
+        let input = std::fs::read_to_string(path)
+            .with_context(|| format!("Cannot read user defaults {}", path.display()))?;
+        let defaults: Self = toml::from_str(&input).with_context(|| {
+            format!(
+                "Invalid user defaults {}; they may set only `version`, `scope.exclude`, and `[[languages.mappings]]`",
+                path.display()
+            )
+        })?;
+        ensure!(
+            defaults.version == 1,
+            "Unsupported version {} in user defaults {}",
+            defaults.version,
+            path.display()
+        );
+        Ok(defaults)
+    }
+
+    /// Adds user exclusions before the project's and user mappings after the
+    /// project's, so the project's own mappings take precedence.
+    fn merge_into(self, config: &mut ConfigFile, path: &Path) -> Result<()> {
+        for mapping in &self.languages.mappings {
+            ensure!(
+                config
+                    .languages
+                    .mappings
+                    .iter()
+                    .all(|project| project.id != mapping.id),
+                "Language mapping {:?} in user defaults {} is also defined by the project",
+                mapping.id,
+                path.display()
+            );
+        }
+        config.scope.exclude.splice(0..0, self.scope.exclude);
+        config.languages.mappings.extend(self.languages.mappings);
+        Ok(())
+    }
+}
+
+/// The user defaults file: `$XDG_CONFIG_HOME/locmetry/config.toml`, else
+/// `~/.config/locmetry/config.toml`, on every platform (PRODUCT.md). A relative
+/// `XDG_CONFIG_HOME` is ignored, as the XDG Base Directory specification requires.
+pub fn user_defaults_file() -> Option<PathBuf> {
+    let base = std::env::var_os("XDG_CONFIG_HOME")
+        .map(PathBuf::from)
+        .filter(|path| path.is_absolute())
+        .or_else(|| std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".config")))?;
+    Some(base.join("locmetry").join("config.toml"))
+}
+
 /// Compiles a root-relative glob with the separator semantics of PRODUCT.md.
 ///
 /// globset lets `*` cross `/` and makes `\` platform-dependent by default
@@ -430,7 +511,10 @@ impl Policy {
     }
 
     pub fn from_toml(input: &str) -> Result<Self> {
-        let config: ConfigFile = toml::from_str(input).context("Invalid TOML configuration")?;
+        Self::from_config(toml::from_str(input).context("Invalid TOML configuration")?)
+    }
+
+    fn from_config(config: ConfigFile) -> Result<Self> {
         ensure!(
             config.version == 1,
             "Unsupported configuration version {}",
@@ -541,16 +625,38 @@ impl Policy {
 
     /// Loads an explicit or discovered TOML configuration file.
     pub fn load(path: &Path) -> Result<Self> {
-        // JSON/regex profiles were retired after strict TOML translations
-        // reproduced every reviewed classification (PLAN.md section 4).
-        ensure!(
-            path.extension().is_none_or(|extension| extension != "json"),
-            "{} looks like a retired JSON/regex profile; translate it to TOML (PRODUCT.md)",
-            path.display()
-        );
-        let input = std::fs::read_to_string(path)
-            .with_context(|| format!("Cannot read configuration {}", path.display()))?;
-        Self::from_toml(&input).with_context(|| format!("Invalid configuration {}", path.display()))
+        Self::load_layers(Some(path), None)
+    }
+
+    /// Builds the policy from an optional project configuration merged with
+    /// optional user defaults; without either, built-in settings apply.
+    pub fn load_layers(project: Option<&Path>, user: Option<&Path>) -> Result<Self> {
+        let mut config: ConfigFile = match project {
+            Some(path) => {
+                // JSON/regex profiles were retired after strict TOML translations
+                // reproduced every reviewed classification (PLAN.md section 4).
+                ensure!(
+                    path.extension().is_none_or(|extension| extension != "json"),
+                    "{} looks like a retired JSON/regex profile; translate it to TOML (PRODUCT.md)",
+                    path.display()
+                );
+                let input = std::fs::read_to_string(path)
+                    .with_context(|| format!("Cannot read configuration {}", path.display()))?;
+                toml::from_str(&input)
+                    .with_context(|| format!("Invalid configuration {}", path.display()))?
+            }
+            None => toml::from_str("version = 1").expect("built-in configuration is valid"),
+        };
+        if let Some(path) = user {
+            UserDefaults::load(path)?.merge_into(&mut config, path)?;
+        }
+        let sources: Vec<String> = [project, user]
+            .into_iter()
+            .flatten()
+            .map(|path| path.display().to_string())
+            .collect();
+        Self::from_config(config)
+            .with_context(|| format!("Invalid configuration {}", sources.join(" with ")))
     }
 
     pub fn override_scope(&mut self, overrides: &ScopeOverrides) -> Result<()> {

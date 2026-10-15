@@ -2,8 +2,8 @@ use anyhow::{Context, Result};
 use clap::{Parser, ValueEnum};
 use locmetry::{
     breakdown, build_report, render_markdown, render_table, report_text, review, scan,
-    scope_policy, validate_output, write_report, Policy, ScopeOverrides, BACKEND, CONFIG_FILE,
-    DATA_LANGUAGES, DOCUMENTATION_LANGUAGES,
+    scope_policy, user_defaults_file, validate_output, write_report, Policy, ScopeOverrides,
+    BACKEND, CONFIG_FILE, DATA_LANGUAGES, DOCUMENTATION_LANGUAGES,
 };
 use serde_json::{json, Value};
 use std::{
@@ -49,6 +49,9 @@ struct Args {
     /// Add a root-relative exclusion glob; repeatable.
     #[arg(long, value_name = "GLOB")]
     exclude: Vec<String>,
+    /// Ignore user defaults in ~/.config/locmetry/config.toml.
+    #[arg(long)]
+    no_user_config: bool,
     /// Override whether hidden files and directories are measured.
     #[arg(long, value_name = "BOOL")]
     hidden: Option<bool>,
@@ -89,10 +92,8 @@ fn run(args: Args) -> Result<Outcome> {
             discovered.is_file().then_some(discovered)
         }
     };
-    let mut policy = match &config_path {
-        Some(path) => Policy::load(path)?,
-        None => Policy::defaults(),
-    };
+    let user_path = user_defaults_file().filter(|path| !args.no_user_config && path.is_file());
+    let mut policy = Policy::load_layers(config_path.as_deref(), user_path.as_deref())?;
     policy.override_scope(&ScopeOverrides {
         hidden: args.hidden,
         respect_ignore_files: args.respect_ignore_files,
@@ -104,7 +105,7 @@ fn run(args: Args) -> Result<Outcome> {
         .unwrap_or(Path::new("."))
         .canonicalize()
         .context("Scan root does not exist")?;
-    if let Some(path) = &config_path {
+    for path in [&config_path, &user_path].into_iter().flatten() {
         policy.exclude_configuration(&root, path)?;
     }
     let root_text = root.to_str().context("Scan root must be valid UTF-8")?;
@@ -155,7 +156,7 @@ fn run(args: Args) -> Result<Outcome> {
                 "data":DATA_LANGUAGES.iter().map(|l| l.name()).collect::<Vec<_>>(),
                 "documentation":DOCUMENTATION_LANGUAGES.iter().map(|l| l.name()).collect::<Vec<_>>()
             },
-            "coverage":coverage, "config_path":config_path, "config":policy.snapshot()
+            "coverage":coverage, "config_path":config_path, "user_config_path":user_path, "config":policy.snapshot()
         },
         "summary":summary_json, "review":review(&rows), "breakdown":breakdown(&rows)
     });

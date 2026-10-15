@@ -52,8 +52,8 @@ fallback = "unclassified"
 builtin = true
 
 [[languages.mappings]]
-id = "task-scripts"
-match = ["scripts/*.task"]
+id = "runbooks"
+match = ["scripts/*.runbook"]
 language = "BASH"
 
 [[overrides]]
@@ -89,6 +89,27 @@ kind = ["source"]
 purpose = "unclassified"
 category = "unmapped-source"
 ```
+
+### User Defaults
+
+Personal defaults live in `$XDG_CONFIG_HOME/locmetry/config.toml`, or in `~/.config/locmetry/config.toml` when `XDG_CONFIG_HOME` is unset, on every platform. They may only narrow scope and teach languages, never classify, so a project is classified the same way for everyone:
+
+```toml
+version = 1
+
+[scope]
+exclude = ["**/*.generated.ts"]
+
+[[languages.mappings]]
+id = "runbooks"
+match = ["**/*.runbook"]
+language = "BASH"
+```
+
+- `version` is required and must be `1`. `scope.exclude` is added after the default exclusions and before the project's. `languages.mappings` apply after the project's mappings and before the built-in ones; mapping IDs must be unique across both files.
+- Any other key fails, as does invalid content; a missing file is ignored.
+- Reports record the file as `metadata.user_config_path`, or `null`. `--no-user-config` skips it, for CI or for comparing measurements across machines.
+- Excluded: user-level classification entries, scope booleans, and nested project configurations.
 
 ### Matching and Precedence
 
@@ -131,7 +152,7 @@ JSON schema version `1`:
 | --- | --- |
 | `schema_version`, `project` | `"1"` and the scan root's directory name. |
 | `report` | Headline only, with `--output FILE`: the report file's path. |
-| `metadata` | `root`, `measured_at_unix_seconds`, `locmetry_version`, `backend`, `backend_inaccurate`, `backend_configuration`; `scope` (effective hidden, ignore-file, symlink, and `exclude` settings); `kinds` (language lists per content kind); `coverage` (`selected_files`, `counted_files`, `mapped_files`, `unrecognized_files`, `unrecognized_extensions`, the `unrecognized` paths, and the `unread` paths); `config_path`; and `config`, the effective configuration including `builtin_conventions` and `builtin_language_mappings`. |
+| `metadata` | `root`, `measured_at_unix_seconds`, `locmetry_version`, `backend`, `backend_inaccurate`, `backend_configuration`; `scope` (effective hidden, ignore-file, symlink, and `exclude` settings); `kinds` (language lists per content kind); `coverage` (`selected_files`, `counted_files`, `mapped_files`, `unrecognized_files`, `unrecognized_extensions`, the `unrecognized` paths, and the `unread` paths); `config_path` and `user_config_path`; and `config`, the effective configuration after merging user defaults including `builtin_conventions` and `builtin_language_mappings`. |
 | `summary` | Totals: `all_counted` (every kind) and `source`; `by_kind_purpose` keyed `kind:purpose`; `source_purpose`, `source_categories` keyed `purpose:category`, and `source_languages`, all restricted to `kind = source`; and `top_folders`, source code lines per purpose for each top-level folder (`.` holds files directly in the root). |
 | `review` | Unclassified source files, largest first: `path`, `language`, `category`, `rule`, `code`, `lines`. These are the files a configuration may still need to classify. |
 | `breakdown` | One row per folder, kind, purpose, category, and language with `files`, `code`, `comments`, `blanks`, and `lines`. `folder` is each file's parent (`.` for the root); a folder's recursive totals are the sum over rows whose folder equals it or starts with it plus `/`. Embedded-language rows count lines but zero `files`, so every column is additive. |

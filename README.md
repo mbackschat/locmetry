@@ -94,7 +94,7 @@ There is no language list to maintain:
   The configuration `version` pins the convention set, so upgrades never silently reclassify files.
 - **Content kinds:** source, data, documentation, and other are counted separately, so a large JSON fixture or a README never inflates code totals.
 - **Language mappings:** files Tokei does not recognize can be counted with a known parser. `.gradle` (as Groovy), `.jsonc`, `.jsonl`, and `.properties` are built in, and you can add your own.
-- **Explicit scope:** root-relative globs, ignore files, hidden-file control, and default exclusions for `.git`, `node_modules`, and `.build`.
+- **Explicit scope:** root-relative globs, ignore files, hidden-file control, default exclusions for `.git`, `node_modules`, and `.build`, and optional personal exclusions shared by all projects.
 - **Honest coverage:** files that could not be recognized or read are listed, never reported as zero lines.
 - **Reproducible:** ambient Tokei configuration is ignored, and every report records the effective scope and policy.
 - **Three outputs, one measurement:** the terminal table, JSON, and Markdown are rendered from the same per-file records.
@@ -136,6 +136,8 @@ Without configuration, built-in exclusions, conventions, and language mappings a
 ```sh
 locmetry --exclude 'generated/**' --hidden false
 ```
+
+Personal defaults for every project, such as extra exclusions or language mappings, go in `~/.config/locmetry/config.toml` (or under `$XDG_CONFIG_HOME`). They never change classification, reports name the file, and `--no-user-config` ignores it, for example in CI. [PRODUCT.md](PRODUCT.md#user-defaults) lists what they may set.
 
 ## A tour of a sample project
 
