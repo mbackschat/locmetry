@@ -113,7 +113,7 @@ language = "BASH"
 
 ### Module Detection
 
-Production source is evidence from the build, not a guess: a build descriptor among the selected files makes its directory a module, and each build system's default source layout inside that module is production. Detectors only read selected file names and never run a build. Each build system is one detector, so supporting another one adds a detector without changing the stages.
+Production source is evidence from the build, not a guess: a build descriptor among the selected files makes its directory a build module, and each build system's default source layout inside that module is production. Build systems call this unit a module, project, package, or crate; it is unrelated to language-level modules or packages, and this document's "module" always means a build module. Detectors only read selected file names and never run a build. Each build system is one detector, so supporting another one adds a detector without changing the stages.
 
 | Detector | Descriptor | Production source in the module |
 | --- | --- | --- |

@@ -50,6 +50,7 @@ $ locmetry
 What the table already handles for you:
 
 - **No language list to maintain:** every programming language counts, while JSON, YAML, Markdown, and other data or documentation stay out of the source totals.
+- **Production from the build:** `backend/build.gradle.kts` and `web/package.json` mark their source trees as production, with no rule.
 - **Tests found by convention:** test files count as tests even inside the application's source tree.
 - **Scope as policy:** the vendored SDK is excluded by one line of configuration.
 - **Nothing silently promoted:** build scripts and tooling stay apart from implementation, and code no rule claims is reported for review instead of being counted as production.
@@ -57,10 +58,10 @@ What the table already handles for you:
 ## Use cases
 
 - **Understand an unfamiliar repository:** see in one screen which languages matter, where the tests live, and which code nobody claims.
-- **Track test investment:** follow the test-to-production ratio per module and over time, without hand-maintained exclusion lists.
+- **Track test investment:** follow the test-to-production ratio per folder and over time, without hand-maintained exclusion lists.
 - **Size a codebase honestly:** estimate a migration, a rewrite, an audit, an acquisition, or an outsourcing quote on maintained code only. Vendored, generated, and experimental code is excluded or labelled.
 - **Guard quality in CI:** fail a build when unclassified code grows or the test share drops, with one `jq` expression ([example](#continuous-integration)).
-- **Compare modules in a monorepo:** the folder rows and the additive breakdown table compare packages, services, or layers by purpose.
+- **Compare parts of a monorepo:** the folder rows and the additive breakdown table compare packages, services, or layers by purpose.
 - **Watch a codebase change:** measure two releases or branches and compare production and test growth instead of raw line deltas, for example to see what an agent-written change really added.
 - **Give coding agents a reliable answer:** a compact JSON headline fits an agent's context, and follow-up questions are one `jq` query over the report file instead of improvised `find | xargs wc -l` pipelines.
 - **Report to people:** paste the Markdown report into a pull request, an architecture review, or a wiki page.
@@ -75,7 +76,7 @@ What the table already handles for you:
   - build-tool wrappers such as `gradlew`.
 
   The configuration `version` pins the convention set, so upgrades never silently reclassify files.
-- **Production from the build:** npm, Gradle, Maven, Cargo, Go, Python, and Swift project files declare modules, and each build system's source layout inside them counts as production. Nothing is assumed where no build declares anything.
+- **Production from the build:** a folder with an npm, Gradle, Maven, Cargo, Go, Python, or Swift build file is a [build module](#build-modules), and that build system's source layout inside it counts as production. Nothing is assumed where no build declares anything.
 - **Content kinds:** source, data, documentation, and other are counted separately, so a large JSON fixture or a README never inflates code totals.
 - **Language mappings:** files with an unknown extension can be counted as a known language. `.gradle` (as Groovy), `.jsonc`, `.jsonl`, and `.properties` are built in, and you can add your own.
 - **Explicit scope:** root-relative globs, ignore files, hidden-file control, default exclusions for `.git`, `node_modules`, and `.build`, and optional personal exclusions shared by all projects.
@@ -166,7 +167,7 @@ acme-orders
 
 ### Configuration
 
-Its `.locmetryrc` states only what conventions cannot know: the vendored SDK is out of scope, `scripts/` is maintained tooling, and the two `src` trees are the application.
+Its `.locmetryrc` states only what conventions and build files cannot know: the vendored SDK is out of scope, and `scripts/` is maintained tooling.
 
 ```toml
 version = 1
@@ -179,12 +180,6 @@ id = "tooling"
 match = ["scripts/**"]
 purpose = "production"
 category = "tooling"
-
-[[rules]]
-id = "application"
-match = ["backend/src/**", "web/src/**"]
-purpose = "production"
-category = "implementation"
 ```
 
 Each file gets the first match of five stages:
@@ -192,10 +187,32 @@ Each file gets the first match of five stages:
 1. `[[overrides]]`, for decisions that must beat everything;
 2. built-in test conventions, then built-in build conventions;
 3. `[[rules]]`;
-4. module detection: source that a build descriptor declares, here `backend/build.gradle.kts` and `web/package.json`;
+4. [build modules](#build-modules): the source layout that a build file declares, here in `backend` and `web`;
 5. the fallback, `unclassified` by default.
 
-So `OrderServiceTest.kt` and `cart.test.ts` are tests even though the `application` rule matches their paths. The Gradle scripts are `build-tooling`, and `gradlew` is a `third-party-wrapper`. The prototype falls through to `unclassified`, where the review list surfaces it. [PRODUCT.md](PRODUCT.md#project-configuration) documents every key, glob semantics, and `[[languages.mappings]]`.
+So `OrderServiceTest.kt` and `cart.test.ts` are tests even though they sit inside the build modules' source trees. The Gradle scripts are `build-tooling`, and `gradlew` is a `third-party-wrapper`. The prototype falls through to `unclassified`, where the review list surfaces it. [PRODUCT.md](PRODUCT.md#project-configuration) documents every key, glob semantics, and `[[languages.mappings]]`.
+
+### Build modules
+
+A build module is a folder whose build file declares where its source lives. Build systems call this unit a module, project, package, or crate; locmetry says build module throughout. It has nothing to do with modules or packages inside a language, such as a Python file or a Rust `mod`. Wherever one of these build files is among the measured files, the build system's default production layout in its folder counts as production with category `implementation`:
+
+| Build file | Production source in its folder |
+| --- | --- |
+| `package.json` (npm) | `src/**` |
+| `build.gradle`, `build.gradle.kts` (Gradle) | `src/main/**`, Kotlin Multiplatform `src/*Main/**` |
+| `pom.xml` (Maven) | `src/main/**` |
+| `Cargo.toml` (Cargo) | `src/**` |
+| `go.mod` (Go) | every `.go` file |
+| `pyproject.toml`, `setup.py`, `setup.cfg` (Python) | `src/**`, or the top-level packages that contain `__init__.py` |
+| `Package.swift` (Swift) | `Sources/**` |
+
+In the sample, `backend` and `web` are build modules, so `backend/src/main/**` and `web/src/**` are production without a rule.
+
+- **Tests stay tests:** test conventions run first, so `src/test/**` or `cart.test.ts` inside a production layout still count as tests.
+- **Nested modules:** the innermost build module containing a file decides, and build files sharing one folder, such as `build.gradle.kts` and `package.json`, combine their layouts.
+- **Only file names are read:** locmetry neither runs the build nor parses the build file, so source directories that a build file reconfigures need a rule.
+- **Rules win:** `[[rules]]` run before build modules, so one rule corrects a folder that detection gets wrong. `builtin_modules = false` under `[classification]` turns detection off.
+- **Traceable:** the report file lists the detected build modules as `metadata.modules`, and each file record from `--files` names the detector that decided it, such as `builtin:gradle-module`.
 
 ### Terminal table
 
