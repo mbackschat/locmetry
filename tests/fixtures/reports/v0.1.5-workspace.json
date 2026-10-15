@@ -1,0 +1,705 @@
+{
+  "schema_version": "1",
+  "project": "fixture",
+  "metadata": {
+    "measured_at_unix_seconds": 0,
+    "locmetry_version": "0.1.5",
+    "backend": "tokei 15.0.0 (embedded)",
+    "backend_inaccurate": false,
+    "backend_configuration": "Explicit defaults; ambient Tokei configuration is not loaded",
+    "kinds": {
+      "default": "source",
+      "data": [
+        "Bean",
+        ".NET Resource",
+        "Edn",
+        "FEN",
+        "Forge Config",
+        "HEX",
+        "hledger",
+        "INI",
+        "Intel HEX",
+        "JSON",
+        "MSBuild",
+        "NuGet Config",
+        "PO File",
+        "Rusty Object Notation",
+        "SVG",
+        "TOML",
+        "Unreal Plugin",
+        "Unreal Project",
+        "Ur/Web Project",
+        "Verilog Args File",
+        "Visual Studio Project",
+        "Visual Studio Solution",
+        "Xcode Config",
+        "XML",
+        "YAML"
+      ],
+      "documentation": [
+        "AsciiDoc",
+        "Djot",
+        "Markdown",
+        "MDX",
+        "Org",
+        "ReStructuredText",
+        "TeX",
+        "Plain Text",
+        "Typst",
+        "Unreal Markdown"
+      ]
+    },
+    "coverage": {
+      "selected_files": 7,
+      "counted_files": 5,
+      "mapped_files": 0,
+      "unrecognized_files": 2,
+      "unrecognized_extensions": {
+        "(none)": 1,
+        "zzz": 1
+      },
+      "unrecognized": [
+        "fixture/.gitmodules",
+        "fixture/unknown.zzz"
+      ],
+      "unread": []
+    },
+    "modules": [
+      {
+        "path": "fixture",
+        "detector": "npm"
+      }
+    ],
+    "user_config_path": null,
+    "members": [
+      {
+        "name": "fixture",
+        "root": "/private/synthetic/fixture",
+        "config_path": "/private/synthetic/fixture/.locmetryrc",
+        "scope": {
+          "hidden": true,
+          "respect_ignore_files": true,
+          "ignore_files": [
+            ".gitignore (inside a Git work tree)",
+            ".ignore",
+            ".tokeignore"
+          ],
+          "symlinks": "not followed",
+          "exclude": [
+            "**/.git/**",
+            "**/node_modules/**",
+            "**/.build/**",
+            "**/.lake/**",
+            "absent/**",
+            ".locmetryrc"
+          ]
+        },
+        "unused_entries": [
+          "unused"
+        ],
+        "unused_exclusions": [
+          "absent/**"
+        ],
+        "coverage": {
+          "selected_files": 7,
+          "counted_files": 5,
+          "mapped_files": 0,
+          "unrecognized_files": 2,
+          "unread_files": 0
+        },
+        "config": {
+          "version": 1,
+          "backend": "tokei",
+          "scope": {
+            "hidden": true,
+            "respect_ignore_files": true,
+            "default_excludes": true,
+            "exclude": [
+              "absent/**"
+            ]
+          },
+          "classification": {
+            "builtin_tests": true,
+            "builtin_build": true,
+            "builtin_modules": true,
+            "fallback": "unclassified"
+          },
+          "languages": {
+            "builtin": true,
+            "mappings": []
+          },
+          "overrides": [],
+          "rules": [
+            {
+              "id": "unused",
+              "match": [
+                "absent/**"
+              ],
+              "purpose": "production"
+            }
+          ],
+          "builtin_language_mappings": [
+            {
+              "id": "builtin:gradle-script",
+              "match": [
+                "**/*.gradle"
+              ],
+              "language": "Groovy"
+            },
+            {
+              "id": "builtin:jsonc",
+              "match": [
+                "**/*.jsonc"
+              ],
+              "language": "JSON"
+            },
+            {
+              "id": "builtin:json-lines",
+              "match": [
+                "**/*.jsonl"
+              ],
+              "language": "JSON"
+            },
+            {
+              "id": "builtin:java-properties",
+              "match": [
+                "**/*.properties"
+              ],
+              "language": "INI"
+            }
+          ],
+          "builtin_conventions": [
+            {
+              "id": "builtin:test-directory",
+              "match": [
+                "**/{test,tests,__test__,__tests__}/**"
+              ],
+              "purpose": "test",
+              "category": "test"
+            },
+            {
+              "id": "builtin:gradle-test-source-set",
+              "match": [
+                "**/src/*Test/**",
+                "**/src/testFixtures/**"
+              ],
+              "purpose": "test",
+              "category": "test"
+            },
+            {
+              "id": "builtin:snapshot-directory",
+              "match": [
+                "**/__snapshots__/**"
+              ],
+              "purpose": "test",
+              "category": "test"
+            },
+            {
+              "id": "builtin:js-test-file",
+              "match": [
+                "**/*.{test,spec}.{js,jsx,mjs,cjs,ts,tsx,mts,cts}"
+              ],
+              "purpose": "test",
+              "category": "test"
+            },
+            {
+              "id": "builtin:jvm-test-class",
+              "match": [
+                "**/*{Test,Tests,TestCase}.{java,kt,kts,groovy,scala}"
+              ],
+              "purpose": "test",
+              "category": "test"
+            },
+            {
+              "id": "builtin:go-test-file",
+              "match": [
+                "**/*_test.go"
+              ],
+              "purpose": "test",
+              "category": "test"
+            },
+            {
+              "id": "builtin:swift-test-target",
+              "match": [
+                "**/*Tests/**/*.swift"
+              ],
+              "purpose": "test",
+              "category": "test"
+            },
+            {
+              "id": "builtin:lean-test-library",
+              "match": [
+                "**/*{Test,Tests}/**/*.lean"
+              ],
+              "purpose": "test",
+              "category": "test"
+            },
+            {
+              "id": "builtin:python-test-file",
+              "match": [
+                "**/test_*.py",
+                "**/*_test.py",
+                "**/conftest.py"
+              ],
+              "purpose": "test",
+              "category": "test"
+            },
+            {
+              "id": "builtin:build-script",
+              "match": [
+                "**/{build,settings}.gradle",
+                "**/{build,settings}.gradle.kts",
+                "**/pom.xml",
+                "**/CMakeLists.txt",
+                "**/*.cmake",
+                "**/{Makefile,makefile,GNUmakefile}",
+                "**/lakefile.lean"
+              ],
+              "purpose": "production",
+              "category": "build-tooling"
+            },
+            {
+              "id": "builtin:build-wrapper",
+              "match": [
+                "**/{gradlew,gradlew.bat,mvnw,mvnw.cmd}",
+                "**/gradle/wrapper/**",
+                "**/.mvn/wrapper/**"
+              ],
+              "purpose": "unclassified",
+              "category": "third-party-wrapper"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "summary": {
+    "all_counted": {
+      "files": 5,
+      "code": 5,
+      "comments": 3,
+      "blanks": 1,
+      "lines": 9
+    },
+    "source": {
+      "files": 3,
+      "code": 3,
+      "comments": 0,
+      "blanks": 0,
+      "lines": 3
+    },
+    "by_kind_purpose": {
+      "data:unclassified": {
+        "files": 1,
+        "code": 1,
+        "comments": 0,
+        "blanks": 0,
+        "lines": 1
+      },
+      "documentation:unclassified": {
+        "files": 1,
+        "code": 1,
+        "comments": 3,
+        "blanks": 1,
+        "lines": 5
+      },
+      "source:production": {
+        "files": 1,
+        "code": 1,
+        "comments": 0,
+        "blanks": 0,
+        "lines": 1
+      },
+      "source:test": {
+        "files": 1,
+        "code": 1,
+        "comments": 0,
+        "blanks": 0,
+        "lines": 1
+      },
+      "source:unclassified": {
+        "files": 1,
+        "code": 1,
+        "comments": 0,
+        "blanks": 0,
+        "lines": 1
+      }
+    },
+    "source_purpose": {
+      "production": {
+        "files": 1,
+        "code": 1,
+        "comments": 0,
+        "blanks": 0,
+        "lines": 1
+      },
+      "test": {
+        "files": 1,
+        "code": 1,
+        "comments": 0,
+        "blanks": 0,
+        "lines": 1
+      },
+      "unclassified": {
+        "files": 1,
+        "code": 1,
+        "comments": 0,
+        "blanks": 0,
+        "lines": 1
+      }
+    },
+    "source_categories": {
+      "production:implementation": {
+        "files": 1,
+        "code": 1,
+        "comments": 0,
+        "blanks": 0,
+        "lines": 1
+      },
+      "test:test": {
+        "files": 1,
+        "code": 1,
+        "comments": 0,
+        "blanks": 0,
+        "lines": 1
+      },
+      "unclassified:unclassified": {
+        "files": 1,
+        "code": 1,
+        "comments": 0,
+        "blanks": 0,
+        "lines": 1
+      }
+    },
+    "source_languages": {
+      "JavaScript": {
+        "files": 1,
+        "code": 1,
+        "comments": 0,
+        "blanks": 0,
+        "lines": 1
+      },
+      "Python": {
+        "files": 2,
+        "code": 2,
+        "comments": 0,
+        "blanks": 0,
+        "lines": 2
+      }
+    },
+    "top_folders": {
+      "fixture": {
+        "production": 1,
+        "test": 1,
+        "unclassified": 1
+      }
+    },
+    "members": {
+      "fixture": {
+        "all_counted": {
+          "files": 5,
+          "code": 5,
+          "comments": 3,
+          "blanks": 1,
+          "lines": 9
+        },
+        "source": {
+          "files": 3,
+          "code": 3,
+          "comments": 0,
+          "blanks": 0,
+          "lines": 3
+        },
+        "by_kind_purpose": {
+          "data:unclassified": {
+            "files": 1,
+            "code": 1,
+            "comments": 0,
+            "blanks": 0,
+            "lines": 1
+          },
+          "documentation:unclassified": {
+            "files": 1,
+            "code": 1,
+            "comments": 3,
+            "blanks": 1,
+            "lines": 5
+          },
+          "source:production": {
+            "files": 1,
+            "code": 1,
+            "comments": 0,
+            "blanks": 0,
+            "lines": 1
+          },
+          "source:test": {
+            "files": 1,
+            "code": 1,
+            "comments": 0,
+            "blanks": 0,
+            "lines": 1
+          },
+          "source:unclassified": {
+            "files": 1,
+            "code": 1,
+            "comments": 0,
+            "blanks": 0,
+            "lines": 1
+          }
+        },
+        "source_purpose": {
+          "production": {
+            "files": 1,
+            "code": 1,
+            "comments": 0,
+            "blanks": 0,
+            "lines": 1
+          },
+          "test": {
+            "files": 1,
+            "code": 1,
+            "comments": 0,
+            "blanks": 0,
+            "lines": 1
+          },
+          "unclassified": {
+            "files": 1,
+            "code": 1,
+            "comments": 0,
+            "blanks": 0,
+            "lines": 1
+          }
+        },
+        "source_categories": {
+          "production:implementation": {
+            "files": 1,
+            "code": 1,
+            "comments": 0,
+            "blanks": 0,
+            "lines": 1
+          },
+          "test:test": {
+            "files": 1,
+            "code": 1,
+            "comments": 0,
+            "blanks": 0,
+            "lines": 1
+          },
+          "unclassified:unclassified": {
+            "files": 1,
+            "code": 1,
+            "comments": 0,
+            "blanks": 0,
+            "lines": 1
+          }
+        },
+        "source_languages": {
+          "JavaScript": {
+            "files": 1,
+            "code": 1,
+            "comments": 0,
+            "blanks": 0,
+            "lines": 1
+          },
+          "Python": {
+            "files": 2,
+            "code": 2,
+            "comments": 0,
+            "blanks": 0,
+            "lines": 2
+          }
+        }
+      }
+    },
+    "build_modules": {
+      "npm": {
+        "modules": 1,
+        "code": 1
+      }
+    },
+    "submodules": [
+      {
+        "path": "fixture/vendor/lib",
+        "files": 1,
+        "code": 1
+      }
+    ],
+    "unclassified_folders": [
+      {
+        "folder": "fixture/vendor/lib",
+        "files": 1,
+        "code": 1
+      }
+    ]
+  },
+  "review": [
+    {
+      "path": "fixture/vendor/lib/a.py",
+      "language": "Python",
+      "category": "unclassified",
+      "rule": "fallback",
+      "code": 1,
+      "lines": 1
+    }
+  ],
+  "breakdown": [
+    {
+      "folder": "fixture",
+      "kind": "data",
+      "purpose": "unclassified",
+      "category": "unclassified",
+      "language": "JSON",
+      "files": 1,
+      "code": 1,
+      "comments": 0,
+      "blanks": 0,
+      "lines": 1
+    },
+    {
+      "folder": "fixture",
+      "kind": "documentation",
+      "purpose": "unclassified",
+      "category": "unclassified",
+      "language": "Markdown",
+      "files": 1,
+      "code": 0,
+      "comments": 3,
+      "blanks": 1,
+      "lines": 4
+    },
+    {
+      "folder": "fixture",
+      "kind": "documentation",
+      "purpose": "unclassified",
+      "category": "unclassified",
+      "language": "Python",
+      "files": 0,
+      "code": 1,
+      "comments": 0,
+      "blanks": 0,
+      "lines": 1
+    },
+    {
+      "folder": "fixture/src",
+      "kind": "source",
+      "purpose": "production",
+      "category": "implementation",
+      "language": "JavaScript",
+      "files": 1,
+      "code": 1,
+      "comments": 0,
+      "blanks": 0,
+      "lines": 1
+    },
+    {
+      "folder": "fixture/tests",
+      "kind": "source",
+      "purpose": "test",
+      "category": "test",
+      "language": "Python",
+      "files": 1,
+      "code": 1,
+      "comments": 0,
+      "blanks": 0,
+      "lines": 1
+    },
+    {
+      "folder": "fixture/vendor/lib",
+      "kind": "source",
+      "purpose": "unclassified",
+      "category": "unclassified",
+      "language": "Python",
+      "files": 1,
+      "code": 1,
+      "comments": 0,
+      "blanks": 0,
+      "lines": 1
+    }
+  ],
+  "files": [
+    {
+      "path": "fixture/README.md",
+      "language": "Markdown",
+      "kind": "documentation",
+      "purpose": "unclassified",
+      "category": "unclassified",
+      "rule": "fallback",
+      "counts": {
+        "code": 1,
+        "comments": 3,
+        "blanks": 1,
+        "lines": 5
+      },
+      "languages": {
+        "Markdown": {
+          "code": 0,
+          "comments": 3,
+          "blanks": 1,
+          "lines": 4
+        },
+        "Python": {
+          "code": 1,
+          "comments": 0,
+          "blanks": 0,
+          "lines": 1
+        }
+      }
+    },
+    {
+      "path": "fixture/package.json",
+      "language": "JSON",
+      "kind": "data",
+      "purpose": "unclassified",
+      "category": "unclassified",
+      "rule": "fallback",
+      "counts": {
+        "code": 1,
+        "comments": 0,
+        "blanks": 0,
+        "lines": 1
+      }
+    },
+    {
+      "path": "fixture/src/main.js",
+      "language": "JavaScript",
+      "kind": "source",
+      "purpose": "production",
+      "category": "implementation",
+      "rule": "builtin:npm-module",
+      "counts": {
+        "code": 1,
+        "comments": 0,
+        "blanks": 0,
+        "lines": 1
+      }
+    },
+    {
+      "path": "fixture/tests/check.py",
+      "language": "Python",
+      "kind": "source",
+      "purpose": "test",
+      "category": "test",
+      "rule": "builtin:test-directory",
+      "counts": {
+        "code": 1,
+        "comments": 0,
+        "blanks": 0,
+        "lines": 1
+      }
+    },
+    {
+      "path": "fixture/vendor/lib/a.py",
+      "language": "Python",
+      "kind": "source",
+      "purpose": "unclassified",
+      "category": "unclassified",
+      "rule": "fallback",
+      "counts": {
+        "code": 1,
+        "comments": 0,
+        "blanks": 0,
+        "lines": 1
+      }
+    }
+  ]
+}

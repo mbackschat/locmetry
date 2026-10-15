@@ -3,12 +3,18 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize, Serializer};
 use std::{collections::BTreeMap, fmt};
 
-#[derive(Clone, Copy, Debug, Default, Serialize, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
 pub struct Counts {
+    /// Physical files, except source-language summaries where this counts participation and may overlap.
     pub files: u64,
+    /// Nonnegative code lines.
     pub code: u64,
+    /// Nonnegative comment lines, including documentation embedded in source.
     pub comments: u64,
+    /// Nonnegative blank lines.
     pub blanks: u64,
+    /// Total lines: code + comments + blanks. Validation rejects overflow and inconsistent sums.
     pub lines: u64,
 }
 
@@ -57,26 +63,23 @@ impl fmt::Display for Kind {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
 pub struct FileRecord {
     pub path: String,
     pub language: String,
     pub kind: Kind,
-    /// Language mapping that supplied `language` for a file the backend does
-    /// not recognize; absent when the backend detected the language.
-    #[serde(skip_serializing_if = "Option::is_none")]
+    /// Mapping provenance when recognition needed an explicit language.
     pub language_mapping: Option<String>,
-    #[serde(flatten)]
     pub classification: Classification,
-    #[serde(serialize_with = "line_counts")]
     pub counts: Counts,
-    /// Per-language counts; serialized only for files with embedded languages,
-    /// because a single entry repeats `language` and `counts`.
-    #[serde(
-        skip_serializing_if = "single_language",
-        serialize_with = "language_line_counts"
-    )]
+    /// Runtime participation includes the host; the public contract omits redundant single-language detail.
     pub languages: BTreeMap<String, Counts>,
+}
+
+impl Serialize for FileRecord {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        crate::contract::File::from(self).serialize(serializer)
+    }
 }
 
 impl FileRecord {
@@ -86,59 +89,32 @@ impl FileRecord {
     }
 }
 
-/// Counts of one file, without `files`, which is always 1 there.
-#[derive(Serialize)]
-struct LineCounts {
-    code: u64,
-    comments: u64,
-    blanks: u64,
-    lines: u64,
-}
-
-impl From<&Counts> for LineCounts {
-    fn from(counts: &Counts) -> Self {
-        Self {
-            code: counts.code,
-            comments: counts.comments,
-            blanks: counts.blanks,
-            lines: counts.lines,
-        }
-    }
-}
-
-fn line_counts<S: Serializer>(counts: &Counts, serializer: S) -> Result<S::Ok, S::Error> {
-    LineCounts::from(counts).serialize(serializer)
-}
-
-fn language_line_counts<S: Serializer>(
-    languages: &BTreeMap<String, Counts>,
-    serializer: S,
-) -> Result<S::Ok, S::Error> {
-    serializer.collect_map(
-        languages
-            .iter()
-            .map(|(name, counts)| (name, LineCounts::from(counts))),
-    )
-}
-
-fn single_language(languages: &BTreeMap<String, Counts>) -> bool {
-    languages.len() <= 1
-}
-
 /// Aggregated counts; zero counts and empty maps are omitted from JSON
 /// (except `all_counted`), so an absent entry means zero.
-#[derive(Debug, Default, Serialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct Summary {
+    /// All counted kinds; always present, even when empty.
     pub all_counted: Counts,
     #[serde(skip_serializing_if = "Counts::is_empty")]
+    #[serde(default)]
+    /// Source kind only; omitted when no source files were counted.
     pub source: Counts,
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    #[serde(default)]
+    /// All kinds, keyed kind:purpose; additive across keys.
     pub by_kind_purpose: BTreeMap<String, Counts>,
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    #[serde(default)]
+    /// Source only, keyed production/test/unclassified; additive.
     pub source_purpose: BTreeMap<Purpose, Counts>,
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    #[serde(default)]
+    /// Source only, keyed purpose:category; additive.
     pub source_categories: BTreeMap<String, Counts>,
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    #[serde(default)]
+    /// Source line contributions by language; line categories add, file participation can overlap.
     pub source_languages: BTreeMap<String, Counts>,
 }
 
@@ -219,7 +195,8 @@ impl ReportSummary {
 /// `folder` is each file's parent, so a folder's recursive totals are the sum
 /// over rows whose folder equals it or starts with it plus `/`. Embedded
 /// languages add lines but not files, keeping `files` additive.
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct BreakdownRow {
     pub folder: String,
     pub kind: Kind,
@@ -265,7 +242,8 @@ pub fn breakdown(rows: &[FileRecord]) -> Vec<BreakdownRow> {
 }
 
 /// An unclassified source file, listed so configurations can be tuned.
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct ReviewEntry {
     pub path: String,
     pub language: String,
@@ -295,7 +273,8 @@ pub fn review(rows: &[FileRecord]) -> Vec<ReviewEntry> {
 
 /// Unclaimed source code below one folder; `.` holds the files directly in
 /// the scan root.
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct FolderShare {
     pub folder: String,
     pub files: u64,
@@ -455,7 +434,8 @@ pub fn module_shares(modules: &[Module], rows: &[FileRecord]) -> Vec<ModuleShare
 }
 
 /// Modules and classified source code of one build system.
-#[derive(Debug, Default, Serialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct BuildSystemShare {
     pub modules: u64,
     pub code: u64,
@@ -473,7 +453,8 @@ pub fn build_systems(shares: &[ModuleShare]) -> BTreeMap<&'static str, BuildSyst
 }
 
 /// Measured source of one Git submodule.
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct SubmoduleShare {
     pub path: String,
     pub files: u64,

@@ -6,7 +6,6 @@ use anyhow::{ensure, Context, Result};
 use globset::{Glob, GlobBuilder, GlobSet, GlobSetBuilder};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
 use std::{
     collections::{BTreeMap, BTreeSet},
     fmt,
@@ -224,7 +223,7 @@ enum Backend {
 }
 
 /// Switches for the built-in classification stages and the fallback.
-#[derive(Debug, Deserialize, Serialize, JsonSchema)]
+#[derive(Clone, Debug, Deserialize, Serialize, JsonSchema)]
 #[serde(default, deny_unknown_fields)]
 #[schemars(rename = "Classification")]
 struct ClassificationSettings {
@@ -234,7 +233,7 @@ struct ClassificationSettings {
     /// Whether built-in build conventions classify files, right after the test conventions: build scripts are `production` with category `build-tooling`, and build-tool wrappers are `unclassified` with category `third-party-wrapper`.
     #[schemars(transform = schema::describe_build_conventions)]
     builtin_build: bool,
-    /// Whether build modules classify files that no override, convention, or rule matched. A build module is a folder whose build file declares where its source lives; build systems call it a module, project, package, or crate, and it is unrelated to modules or packages inside a language. The build system's default production layout in that folder is `production` with category `implementation`. The innermost build module containing a file decides, and build files in one folder combine their layouts. Only file names are read, never the build file's content, so a source directory that a build file reconfigures needs a rule. Set `false` when build files mislead and rules classify the production source; a rule alone corrects a single folder. The headline counts modules and their code per build system as `summary.build_modules`; the report file from `--output` lists every module as `metadata.modules`.
+    /// Whether build modules classify files that no override, convention, or rule matched. A build module is a folder where a selected descriptor triggers conventional source-layout inference; build systems call it a module, project, package, or crate, and it is unrelated to modules or packages inside a language. The build system's default production layout in that folder is `production` with category `implementation`. The innermost build module containing a file decides, and build files in one folder combine their layouts. Only file names are read, never the build file's content, so a source directory that a build file reconfigures needs a rule. Set `false` when build files mislead and rules classify the production source; a rule alone corrects a single folder. The headline counts modules and their code per build system as `summary.build_modules`; the report file from `--output` lists every module as `metadata.modules`.
     #[schemars(transform = schema::describe_detectors)]
     builtin_modules: bool,
     /// Purpose of files that no stage matched; their category equals the purpose, and their `rule` is `fallback`. Keep `unclassified` so unclaimed code is reported for review instead of silently counted.
@@ -253,7 +252,7 @@ impl Default for ClassificationSettings {
 }
 
 /// A classification entry: files matching it get its purpose and category.
-#[derive(Debug, Deserialize, Serialize, JsonSchema)]
+#[derive(Clone, Debug, Deserialize, Serialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 #[schemars(rename = "Entry")]
 struct EntryConfig {
@@ -278,7 +277,7 @@ struct EntryConfig {
 }
 
 /// How files that the counter does not recognize are counted.
-#[derive(Debug, Deserialize, Serialize, JsonSchema)]
+#[derive(Clone, Debug, Deserialize, Serialize, JsonSchema)]
 #[serde(default, deny_unknown_fields)]
 #[schemars(rename = "Languages")]
 struct LanguageSettings {
@@ -299,7 +298,7 @@ impl Default for LanguageSettings {
 }
 
 /// Counts matching unrecognized files as a known language.
-#[derive(Debug, Deserialize, Serialize, JsonSchema)]
+#[derive(Clone, Debug, Deserialize, Serialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 #[schemars(rename = "LanguageMapping")]
 struct MappingConfig {
@@ -324,7 +323,7 @@ struct LanguageMapping {
 
 /// Locmetry project configuration: TOML in `.locmetryrc` at the scan root, or the file `--config` names.
 ///
-/// Every measured file gets one purpose (`production`, `test`, or `unclassified`) and a category from the first stage that matches: (1) `overrides`, in order; (2) built-in test conventions, then built-in build conventions; (3) `rules`, in order; (4) build modules, the source layout a build file declares; (5) the fallback. Scope exclusions apply before all stages. The stage order is fixed, so where `[[overrides]]` and `[[rules]]` appear in the file does not matter; only the order within each list decides between entries that match the same file. A broad rule never swallows conventional tests or build scripts, and an override beats the conventions; but a rule does take source a build module would claim, so match only the folders a rule is about. Each file records the deciding stage in its `rule` field: an entry ID, `builtin:<convention>`, `builtin:<detector>-module`, or `fallback`.
+/// Every measured file gets one purpose (`production`, `test`, or `unclassified`) and a category from the first stage that matches: (1) `overrides`, in order; (2) built-in test conventions, then built-in build conventions; (3) `rules`, in order; (4) build modules, conventional source layouts inferred from descriptors; (5) the fallback. Scope exclusions apply before all stages. The stage order is fixed, so where `[[overrides]]` and `[[rules]]` appear in the file does not matter; only the order within each list decides between entries that match the same file. A broad rule never swallows conventional tests or build scripts, and an override beats the conventions; but a rule does take source a build module would claim, so match only the folders a rule is about. Each file records the deciding stage in its `rule` field: an entry ID, `builtin:<convention>`, `builtin:<detector>-module`, or `fallback`.
 ///
 /// This file is the only one that classifies: `--config` replaces `.locmetryrc`, while user defaults (`--schema user-config`) and command-line flags only add exclusions and language mappings or switch scope settings. The same files and configuration always give the same classification, independent of the order in which files are found.
 ///
@@ -342,7 +341,7 @@ struct LanguageMapping {
 /// category = "tooling"
 /// reason = "Maintained release scripts"
 /// ```
-#[derive(Debug, Deserialize, Serialize, JsonSchema)]
+#[derive(Clone, Debug, Deserialize, Serialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 #[schemars(rename = "Configuration")]
 struct ConfigFile {
@@ -368,9 +367,82 @@ struct ConfigFile {
     rules: Vec<EntryConfig>,
 }
 
+/// Effective project policy with the exact built-in sets applied by the producer.
+/// Configuration field semantics share the TOML parser's types; no current config is loaded when reading this receipt.
+#[derive(Clone, Debug, Deserialize, Serialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct EffectiveConfig {
+    #[serde(flatten)]
+    configuration: ConfigFile,
+    /// Ordered conventions applied by this measurement, not today's compiled-in set.
+    builtin_conventions: Vec<EntryConfig>,
+    /// Ordered mappings applied after user/project mappings.
+    builtin_language_mappings: Vec<MappingConfig>,
+}
+
+impl EffectiveConfig {
+    pub(crate) fn validate(&self) -> Result<()> {
+        let config = &self.configuration;
+        ensure!(
+            config.version == 1,
+            "Unsupported effective configuration version {}",
+            config.version
+        );
+        check_ids(
+            config
+                .overrides
+                .iter()
+                .chain(&config.rules)
+                .map(|entry| entry.id.as_str()),
+        )?;
+        check_ids(
+            config
+                .languages
+                .mappings
+                .iter()
+                .map(|mapping| mapping.id.as_str()),
+        )?;
+        check_categories(config)?;
+        for entry in config
+            .overrides
+            .iter()
+            .chain(&config.rules)
+            .chain(&self.builtin_conventions)
+        {
+            ensure!(
+                !entry.patterns.is_empty(),
+                "Effective classification entry needs match patterns"
+            );
+            ensure!(
+                entry.kind.as_ref().is_none_or(|kinds| !kinds.is_empty()),
+                "Effective classification kind list must not be empty"
+            );
+            glob_set(entry.patterns.iter().map(String::as_str))?;
+        }
+        for mapping in config
+            .languages
+            .mappings
+            .iter()
+            .chain(&self.builtin_language_mappings)
+        {
+            ensure!(
+                !mapping.patterns.is_empty(),
+                "Effective language mapping needs match patterns"
+            );
+            ensure!(
+                LanguageType::from_name(&mapping.language).is_some(),
+                "Unknown effective mapping language {}",
+                mapping.language
+            );
+            glob_set(mapping.patterns.iter().map(String::as_str))?;
+        }
+        Ok(())
+    }
+}
+
 /// Locmetry personal defaults: TOML in `$XDG_CONFIG_HOME/locmetry/config.toml`, else `~/.config/locmetry/config.toml`, applied to every project.
 ///
-/// They may only narrow scope and teach languages, never classify, so a project is classified the same way for everyone. `--no-user-config` ignores them, and reports name the file as `metadata.user_config_path`.
+/// They may only narrow scope and teach languages, never classify by purpose or category. Personal mappings can still change recognition and content kind. `--no-user-config` ignores them, and reports name the file as `metadata.user_config_path`.
 #[derive(Debug, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 #[schemars(rename = "UserDefaults")]
@@ -735,7 +807,7 @@ pub struct Policy {
     configuration_exclusions: BTreeSet<String>,
     /// Project mappings first, then built-in ones.
     languages: Vec<LanguageMapping>,
-    snapshot: Value,
+    snapshot: EffectiveConfig,
 }
 
 impl Policy {
@@ -775,15 +847,17 @@ impl Policy {
         .filter(|(enabled, _)| *enabled)
         .flat_map(|(_, set)| set.iter())
         .collect::<Vec<_>>();
-        let convention_snapshot = json!(conventions
+        let convention_snapshot = conventions
             .iter()
-            .map(|convention| json!({
-                "id": format!("{BUILTIN}{}", convention.id),
-                "match": convention.patterns,
-                "purpose": convention.purpose,
-                "category": convention.category,
-            }))
-            .collect::<Vec<_>>());
+            .map(|convention| EntryConfig {
+                id: format!("{BUILTIN}{}", convention.id),
+                patterns: convention.patterns.iter().map(|s| s.to_string()).collect(),
+                purpose: convention.purpose,
+                category: Some(convention.category.into()),
+                kind: None,
+                reason: None,
+            })
+            .collect();
         let conventions = conventions
             .into_iter()
             .map(|convention| {
@@ -838,14 +912,18 @@ impl Policy {
                 language: *language,
             });
         }
-        let mut snapshot = serde_json::to_value(&config)?;
-        snapshot["builtin_language_mappings"] = json!(builtin_languages
-            .iter()
-            .map(|(id, patterns, language)| {
-                json!({"id": format!("{BUILTIN}{id}"), "match": patterns, "language": language.name()})
-            })
-            .collect::<Vec<_>>());
-        snapshot["builtin_conventions"] = convention_snapshot;
+        let snapshot = EffectiveConfig {
+            configuration: config.clone(),
+            builtin_language_mappings: builtin_languages
+                .iter()
+                .map(|(id, patterns, language)| MappingConfig {
+                    id: format!("{BUILTIN}{id}"),
+                    patterns: patterns.iter().map(|s| s.to_string()).collect(),
+                    language: language.name().into(),
+                })
+                .collect(),
+            builtin_conventions: convention_snapshot,
+        };
         let fallback = config.classification.fallback;
         Ok(Self {
             scope: Scope::new(config.scope.clone())?,
@@ -1045,7 +1123,7 @@ impl Policy {
         &self.scope
     }
 
-    pub fn snapshot(&self) -> &Value {
+    pub fn snapshot(&self) -> &EffectiveConfig {
         &self.snapshot
     }
 }

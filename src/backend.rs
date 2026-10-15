@@ -2,7 +2,7 @@ use crate::{modules, Counts, FileRecord, Kind, Module, Policy};
 use anyhow::{bail, ensure, Context, Result};
 use ignore::WalkBuilder;
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::Value;
 use std::{
     collections::{BTreeMap, BTreeSet},
     path::{Component, Path},
@@ -15,12 +15,16 @@ use LanguageType::*;
 mod handlebars;
 mod notebook;
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ParseFailureReason {
+    /// Invalid JSON or missing/invalid counting structure; includes zero-byte input.
     InvalidNotebook,
+    /// Notebook version outside the supported v4.0–v4.5 range; not necessarily invalid nbformat.
     UnsupportedNotebookVersion,
+    /// Explicit code-language declaration unavailable to the cell counter.
     UnsupportedNotebookLanguage,
+    /// Cell type outside code, markdown and raw; the whole notebook remains uncounted.
     UnsupportedNotebookCell,
 }
 
@@ -35,10 +39,14 @@ impl std::fmt::Display for ParseFailureReason {
     }
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct ParseFailure {
+    /// Root-relative path, prefixed with its member name in workspace reports.
     pub path: String,
+    /// Stable reason for unavailable counts; branch on this code instead of message text.
     pub reason: ParseFailureReason,
+    /// Human-readable detail, without a stable text-parsing contract.
     pub message: String,
 }
 
@@ -119,7 +127,7 @@ pub fn git_submodules(root: &Path) -> Vec<String> {
 }
 
 /// Effective selection policy applied by [`scan`], recorded with every report.
-pub fn scope_policy(policy: &Policy) -> Value {
+pub fn scope_policy(policy: &Policy) -> crate::contract::Selection {
     let scope = policy.scope();
     let ignore_files = match scope.respect_ignore_files() {
         true => vec![
@@ -129,13 +137,13 @@ pub fn scope_policy(policy: &Policy) -> Value {
         ],
         false => Vec::new(),
     };
-    json!({
-        "hidden": scope.hidden(),
-        "respect_ignore_files": scope.respect_ignore_files(),
-        "ignore_files": ignore_files,
-        "symlinks": "not followed",
-        "exclude": scope.exclusions(),
-    })
+    crate::contract::Selection {
+        hidden: scope.hidden(),
+        respect_ignore_files: scope.respect_ignore_files(),
+        ignore_files: ignore_files.into_iter().map(String::from).collect(),
+        symlinks: "not followed".into(),
+        exclude: scope.exclusions(),
+    }
 }
 
 /// Files selected for counting that are missing from the backend's records.

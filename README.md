@@ -588,6 +588,7 @@ Known limits: classification is per file, so a file mixing production code and i
 
 - [Product vision and requirements](docs/PRODUCT.md): configuration contract, report schema, and guarantees.
 - [Measurement semantics and limits](docs/measurement.md): selection and counting details and known limits.
+- [Saved report compatibility](docs/report-compatibility.md): version-1 field history, validation and evidence required for comparison.
 - [Architecture and distribution](docs/tokei-integration.md): embedded counting engine, release binaries, and the Homebrew formula.
 - [Research](docs/research/README.md): counter capabilities and classification findings.
 - [Development plan](docs/PLAN.md): remaining work and completion evidence.

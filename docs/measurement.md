@@ -35,6 +35,10 @@ Nonblank Markdown and raw-cell lines are host comments, including fenced example
 
 New full reports and headlines always emit `parse_failures`, even when empty. Workspace paths are member-prefixed and each member emits `parse_failed_files`, including zero. The version-1 schema permits historical absence of these new fields: absent means not recorded, not no failures. Older strict schemas can reject the newly added fields and should be updated to the executable's current schema. Older successful notebook reports may contain doubled or missing counts; the new field cannot retrospectively repair them. Recognized and explicitly mapped notebook files share this behavior and BOM-aware decoding.
 
+## Saved Reports
+
+[Report compatibility](report-compatibility.md) records historical field availability and validation limits. The typed contract preserves current measurement shapes and missing failure evidence; semantic validation is internal until the planned comparison command consumes saved reports. It cannot prove historical counting correctness.
+
 ## Private Regression
 
 Keep real-project configurations and reports exclusively in Git-ignored `docs/research/local/`, as [CLAUDE.md](../CLAUDE.md#sensitive-analysis) requires, and verify destinations with `git check-ignore` before running. The CLI requires outputs outside the scan root but does not enforce this repository-specific directory:

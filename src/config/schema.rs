@@ -5,9 +5,7 @@ use super::{
     BUILTIN_LANGUAGES_V1, BUILTIN_TESTS_V1, DEFAULT_EXCLUDES,
 };
 use crate::modules::DETECTORS;
-use schemars::{
-    generate::SchemaSettings, transform::RecursiveTransform, JsonSchema, Schema, SchemaGenerator,
-};
+use schemars::{transform::RecursiveTransform, JsonSchema, Schema, SchemaGenerator};
 use serde_json::Value;
 use tokei::LanguageType;
 
@@ -28,7 +26,7 @@ pub fn workspace_schema() -> Value {
 }
 
 fn schema<T: JsonSchema>() -> Value {
-    SchemaSettings::draft2020_12()
+    crate::schema::settings()
         .with_transform(RecursiveTransform(drop_null))
         .into_generator()
         .into_root_schema_for::<T>()
@@ -49,9 +47,10 @@ fn drop_null(schema: &mut Schema) {
 }
 
 pub(super) fn language_names(_: &mut SchemaGenerator) -> Schema {
-    let names: Vec<&str> = LanguageType::list()
+    // Tokei 15's language_type.tera.rs:345 accepts both display and enum names.
+    let names: std::collections::BTreeSet<String> = LanguageType::list()
         .iter()
-        .map(|(language, _)| language.name())
+        .flat_map(|(language, _)| [language.name().to_string(), format!("{language:?}")])
         .collect();
     schemars::json_schema!({"type": "string", "enum": names})
 }

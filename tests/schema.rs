@@ -258,9 +258,7 @@ fn measure(temp: &tempfile::TempDir, args: &[&str]) -> Value {
     serde_json::from_slice(&output.stdout).unwrap()
 }
 
-/// The report schema is written by hand because the report is assembled as
-/// JSON; validating real output, with unknown keys rejected, keeps it from
-/// drifting in either direction.
+/// Actual output must satisfy the generated contract, including strict nested objects.
 #[test]
 fn report_schema_describes_the_headline_and_the_full_report() {
     let schema = schema("report");
@@ -306,10 +304,7 @@ fn report_schema_describes_the_headline_and_the_full_report() {
     surprise["summary"]["surprise"] = json!(1);
     assert!(!validator.is_valid(&surprise), "unknown keys must fail");
 
-    let code = description(
-        &schema,
-        "/properties/files/items/properties/counts/properties/code",
-    );
+    let code = description(&schema, "/$defs/LineCounts/properties/code");
     assert!(!code.is_empty());
 }
 
@@ -353,7 +348,7 @@ fn report_schema_describes_workspace_reports() {
         assert!(errors.is_empty(), "{errors:#?}");
     }
     let members = schema
-        .pointer("/properties/metadata/properties/members/description")
+        .pointer("/$defs/Metadata/properties/members/description")
         .and_then(Value::as_str)
         .unwrap();
     assert!(members.contains("workspace"), "{members}");
@@ -373,4 +368,44 @@ fn workspace_schema_describes_the_member_file() {
     assert!(!is_valid(&schema, "version = 1"));
     let roots = description(&schema, "/properties/roots");
     assert!(roots.contains("relative to"), "{roots}");
+}
+
+#[test]
+fn report_schema_rejects_negative_counts_and_unknown_effective_policy() {
+    let schema = schema("report");
+    let validator = jsonschema::validator_for(&schema).unwrap();
+    let temp = report_fixture();
+    let full = measure(&temp, &["--files", "--output", "-"]);
+    for pointer in [
+        "/summary/all_counted/code",
+        "/metadata/coverage/selected_files",
+        "/breakdown/0/files",
+        "/files/0/counts/lines",
+    ] {
+        let mut invalid = full.clone();
+        *invalid.pointer_mut(pointer).unwrap() = json!(-1);
+        assert!(!validator.is_valid(&invalid), "negative count at {pointer}");
+    }
+    let mut invalid = full.clone();
+    invalid["metadata"]["config"]["surprise"] = json!(true);
+    assert!(
+        !validator.is_valid(&invalid),
+        "unknown effective-policy key"
+    );
+    let mut invalid = full;
+    invalid["metadata"]["config"]["rules"][0]["purpose"] = json!("shipped");
+    assert!(
+        !validator.is_valid(&invalid),
+        "invalid effective-policy purpose"
+    );
+}
+
+#[test]
+fn mapping_schemas_accept_backend_variant_names_as_well_as_display_names() {
+    let schema = schema("config");
+    for language in ["Bash", "Cpp"] {
+        let config=format!("version = 1\n[[languages.mappings]]\nid = \"custom\"\nmatch = [\"**/*.custom\"]\nlanguage = \"{language}\"\n");
+        locmetry::Policy::from_toml(&config).unwrap();
+        assert!(is_valid(&schema, &config), "backend accepts {language}");
+    }
 }

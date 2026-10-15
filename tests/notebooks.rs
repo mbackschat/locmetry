@@ -46,6 +46,13 @@ fn full(root: &Path) -> Value {
         "{}",
         String::from_utf8_lossy(&output.stderr)
     );
+    checked_report(&output)
+}
+
+fn checked_report(output: &Output) -> Value {
+    let report: locmetry::contract::MeasurementReport =
+        serde_json::from_slice(&output.stdout).unwrap();
+    report.validate().unwrap();
     serde_json::from_slice(&output.stdout).unwrap()
 }
 
@@ -186,7 +193,7 @@ fn malformed_and_unsupported_notebooks_are_unavailable_instead_of_zero() {
         for args in [vec!["--files", "--output", "-"], vec!["--format", "json"]] {
             let output = run(root.path(), &args);
             assert_eq!(output.status.code(), Some(2), "{reason}");
-            let report: Value = serde_json::from_slice(&output.stdout).unwrap();
+            let report = checked_report(&output);
             assert_eq!(report["metadata"]["backend_inaccurate"], true);
             let coverage = &report["metadata"]["coverage"];
             assert_eq!(coverage["selected_files"], 2);
@@ -226,7 +233,7 @@ fn mapped_notebooks_use_the_same_counter_and_failure_reporting() {
     fs::write(root.path().join("bad.customnb"), "{}").unwrap();
     let output = run(root.path(), &["--files", "--output", "-"]);
     assert_eq!(output.status.code(), Some(2));
-    let report: Value = serde_json::from_slice(&output.stdout).unwrap();
+    let report = checked_report(&output);
     assert_eq!(report["files"][0]["counts"], counts(1, 0, 0));
     assert_eq!(report["files"][0]["language_mapping"], "notebooks");
     assert_eq!(report["metadata"]["coverage"]["mapped_files"], 1);
@@ -264,7 +271,7 @@ fn workspace_notebook_failures_retain_member_coverage_and_prefixed_paths() {
             .unwrap();
         assert_eq!(output.status.code(), Some(2));
         if format == "json" {
-            let report: Value = serde_json::from_slice(&output.stdout).unwrap();
+            let report = checked_report(&output);
             assert_eq!(
                 report["metadata"]["coverage"]["parse_failures"][0]["path"],
                 "bad/broken.ipynb"
@@ -339,7 +346,7 @@ fn unreadable_notebooks_remain_io_failures() {
         return;
     }
     assert_eq!(output.status.code(), Some(2));
-    let report: Value = serde_json::from_slice(&output.stdout).unwrap();
+    let report = checked_report(&output);
     assert_eq!(
         report["metadata"]["coverage"]["unread"],
         json!(["example.ipynb"])

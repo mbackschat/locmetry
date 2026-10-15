@@ -66,7 +66,10 @@ fn declared_categories_restrict_entry_categories() {
     let snapshot = policy(&format!("{declared}{}", entry("proof")))
         .snapshot()
         .clone();
-    assert_eq!(snapshot["categories"]["proof"], "Machine-checked theorems.");
+    assert_eq!(
+        serde_json::to_value(snapshot).unwrap()["categories"]["proof"],
+        "Machine-checked theorems."
+    );
 }
 
 #[test]

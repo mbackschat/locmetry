@@ -1,5 +1,6 @@
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand, ValueEnum};
+use locmetry::contract::{self, MeasurementReport};
 use locmetry::{
     breakdown, build_report, build_systems, git_submodules, module_shares, render_markdown,
     render_table, report_text, review, scan, scope_policy, submodule_shares, unclassified_folders,
@@ -7,7 +8,7 @@ use locmetry::{
     Findings, MemberView, Module, ModuleShare, Policy, RowOrder, ScopeOverrides, SubmoduleShare,
     BACKEND, CONFIG_FILE, DATA_LANGUAGES, DOCUMENTATION_LANGUAGES,
 };
-use serde_json::{json, Value};
+use std::collections::BTreeMap;
 use std::{
     io::{self, IsTerminal, Write},
     path::{Path, PathBuf},
@@ -332,13 +333,13 @@ fn run_root(args: &RootArgs, shared: &SharedArgs) -> Result<Outcome> {
         validate_output(path, &prepared.root, prepared.config_path.as_deref())?;
     }
     let measurement = measure(prepared)?;
-    let metadata = json!({
-        "root": measurement.root,
-        "scope": scope_policy(&measurement.policy),
-        "config_path": measurement.config_path,
-        "user_config_path": user_path,
-        "config": measurement.policy.snapshot(),
-    });
+    let location = Location::Root {
+        root: measurement.root,
+        scope: scope_policy(&measurement.policy),
+        config_path: measurement.config_path,
+        user_path,
+        config: Box::new(measurement.policy.snapshot().clone()),
+    };
     let results = Results {
         project: measurement.name,
         modules: measurement.policy.modules().to_vec(),
@@ -351,7 +352,7 @@ fn run_root(args: &RootArgs, shared: &SharedArgs) -> Result<Outcome> {
         rows: measurement.rows,
         members: Vec::new(),
     };
-    report(shared, &destination, results, metadata, measured_at, true)
+    report(shared, &destination, results, location, measured_at, true)
 }
 
 /// Canonical member roots sorted by name, after the checks that make a merge
@@ -474,23 +475,26 @@ fn run_workspace(args: &WorkspaceArgs) -> Result<Outcome> {
             "." => name.clone(),
             _ => format!("{name}/{path}"),
         };
-        records.push(json!({
-            "name": name,
-            "root": measurement.root,
-            "config_path": measurement.config_path,
-            "scope": scope_policy(&measurement.policy),
-            "unused_entries": measurement.unused_entries,
-            "unused_exclusions": measurement.unused_exclusions,
-            "coverage": {
-                "selected_files": measurement.coverage.selected_files,
-                "counted_files": measurement.coverage.counted_files,
-                "mapped_files": measurement.coverage.mapped_files,
-                "unrecognized_files": measurement.coverage.unrecognized_files,
-                "unread_files": measurement.coverage.unread.len(),
-                "parse_failed_files": measurement.coverage.parse_failures.len(),
+        records.push(contract::Member {
+            name: name.clone(),
+            root: measurement.root.to_string_lossy().into(),
+            config_path: measurement
+                .config_path
+                .as_ref()
+                .map(|p| p.to_string_lossy().into()),
+            scope: scope_policy(&measurement.policy),
+            unused_entries: measurement.unused_entries.clone(),
+            unused_exclusions: measurement.unused_exclusions.clone(),
+            coverage: contract::MemberCoverage {
+                selected_files: measurement.coverage.selected_files as u64,
+                counted_files: measurement.coverage.counted_files as u64,
+                mapped_files: measurement.coverage.mapped_files as u64,
+                unrecognized_files: measurement.coverage.unrecognized_files as u64,
+                unread_files: measurement.coverage.unread.len() as u64,
+                parse_failed_files: Some(measurement.coverage.parse_failures.len() as u64),
             },
-            "config": measurement.policy.snapshot(),
-        }));
+            config: Some(measurement.policy.snapshot().clone()),
+        });
         let unclaimed = measurement.rows.iter().filter(|row| row.needs_review());
         results.members.push(MemberView {
             name: name.clone(),
@@ -547,16 +551,32 @@ fn run_workspace(args: &WorkspaceArgs) -> Result<Outcome> {
         .parse_failures
         .sort_by(|a, b| a.path.cmp(&b.path));
     results.coverage.unrecognized.sort();
-    let mut metadata = json!({"user_config_path": user_path, "members": records});
-    if let Some(path) = workspace_path {
-        metadata["workspace_path"] = json!(path);
-    }
-    report(shared, &destination, results, metadata, measured_at, false)
+    let location = Location::Workspace {
+        members: records,
+        workspace_path,
+        user_path,
+    };
+    report(shared, &destination, results, location, measured_at, false)
+}
+
+enum Location {
+    Root {
+        root: PathBuf,
+        scope: contract::Selection,
+        config_path: Option<PathBuf>,
+        user_path: Option<PathBuf>,
+        config: Box<locmetry::EffectiveConfig>,
+    },
+    Workspace {
+        members: Vec<contract::Member>,
+        workspace_path: Option<PathBuf>,
+        user_path: Option<PathBuf>,
+    },
 }
 
 /// Writes the report, headline, or human output for `results`.
 ///
-/// `metadata` holds the mode's own keys: a single root's root, scope, and
+/// `location` holds the mode's own keys: a single root's root, scope, and
 /// configuration, or a workspace's members. Configuration findings enter the
 /// summary only for a single root, because a workspace's entry IDs and
 /// exclusion patterns are relative to one member.
@@ -564,7 +584,7 @@ fn report(
     shared: &SharedArgs,
     destination: &Destination,
     results: Results,
-    metadata: Value,
+    location: Location,
     measured_at: u64,
     summary_findings: bool,
 ) -> Result<Outcome> {
@@ -616,71 +636,121 @@ fn report(
     if inaccurate && format != Format::Json {
         human.push_str("\nBackend reported incomplete counts; inspect the JSON metadata.\n");
     }
-    let mut summary_json = serde_json::to_value(&summary.totals)?;
-    summary_json["top_folders"] = serde_json::to_value(summary.top_folders())?;
-    if !members.is_empty() {
-        // A member's top-level folder holds exactly its files, so its
-        // recursive totals are what a regular run of that member reports.
-        let totals = members
-            .iter()
-            .map(|member| {
-                let folder = summary.folders.get(&member.name);
-                let value = match folder {
-                    Some(folder) => serde_json::to_value(&folder.recursive)?,
-                    None => serde_json::to_value(locmetry::Summary::default())?,
-                };
-                Ok((member.name.clone(), value))
-            })
-            .collect::<Result<serde_json::Map<_, _>>>()?;
-        summary_json["members"] = Value::Object(totals);
+    let mut member_totals = BTreeMap::new();
+    for member in &members {
+        member_totals.insert(
+            member.name.clone(),
+            summary
+                .folders
+                .get(&member.name)
+                .map(|f| f.recursive.clone())
+                .unwrap_or_default(),
+        );
     }
-    if !module_shares.is_empty() {
-        summary_json["build_modules"] = serde_json::to_value(build_systems(&module_shares))?;
-    }
-    if !submodules.is_empty() {
-        summary_json["submodules"] = serde_json::to_value(&submodules)?;
-    }
-    if summary_findings && !unused_entries.is_empty() {
-        summary_json["unused_entries"] = serde_json::to_value(&unused_entries)?;
-    }
-    if summary_findings && !unused_exclusions.is_empty() {
-        summary_json["unused_exclusions"] = serde_json::to_value(&unused_exclusions)?;
-    }
-    // Always present, even empty: it is the documented next step for configuration.
-    summary_json["unclassified_folders"] = serde_json::to_value(unclassified_folders(&rows))?;
-    let mut document = json!({
-        "schema_version":"1", "project":project,
-        "metadata":{
-            "measured_at_unix_seconds":measured_at,
-            "locmetry_version":env!("CARGO_PKG_VERSION"), "backend":BACKEND,
-            "backend_inaccurate":inaccurate,
-            "backend_configuration":"Explicit defaults; ambient Tokei configuration is not loaded",
-            "kinds":{
-                "default":"source",
-                "data":DATA_LANGUAGES.iter().map(|l| l.name()).collect::<Vec<_>>(),
-                "documentation":DOCUMENTATION_LANGUAGES.iter().map(|l| l.name()).collect::<Vec<_>>()
-            },
-            "coverage":coverage, "modules":modules,
+    let summary_document = contract::ReportSummary {
+        top_folders: summary.top_folders(),
+        totals: summary.totals,
+        members: member_totals,
+        unclassified_folders: unclassified_folders(&rows),
+        build_modules: build_systems(&module_shares)
+            .into_iter()
+            .map(|(k, v)| (k.into(), v))
+            .collect(),
+        submodules,
+        unused_entries: if summary_findings {
+            unused_entries
+        } else {
+            Vec::new()
         },
-        "summary":summary_json, "review":review(&rows), "breakdown":breakdown(&rows)
-    });
-    let fields = metadata.as_object().context("Invalid metadata")?;
-    for (key, value) in fields {
-        document["metadata"][key] = value.clone();
+        unused_exclusions: if summary_findings {
+            unused_exclusions
+        } else {
+            Vec::new()
+        },
+    };
+    let mut metadata = contract::Metadata {
+        measured_at_unix_seconds: measured_at,
+        locmetry_version: env!("CARGO_PKG_VERSION").into(),
+        backend: BACKEND.into(),
+        backend_inaccurate: inaccurate,
+        backend_configuration: "Explicit defaults; ambient Tokei configuration is not loaded"
+            .into(),
+        kinds: Some(contract::Kinds {
+            default: locmetry::Kind::Source,
+            data: DATA_LANGUAGES.iter().map(|l| l.name().into()).collect(),
+            documentation: DOCUMENTATION_LANGUAGES
+                .iter()
+                .map(|l| l.name().into())
+                .collect(),
+        }),
+        coverage: contract::Coverage::from(&coverage),
+        modules: Some(
+            modules
+                .iter()
+                .map(|m| contract::Module {
+                    path: m.path.clone(),
+                    detector: m.detector.into(),
+                })
+                .collect(),
+        ),
+        root: None,
+        scope: None,
+        config_path: None,
+        config: None,
+        members: None,
+        workspace_path: None,
+        user_config_path: None,
+    };
+    match location {
+        Location::Root {
+            root,
+            scope,
+            config_path,
+            user_path,
+            config,
+        } => {
+            metadata.root = Some(root.to_string_lossy().into());
+            metadata.scope = Some(scope);
+            metadata.config_path = Some(config_path.map(|p| p.to_string_lossy().into()));
+            metadata.config = Some(*config);
+            metadata.user_config_path = user_path.map(|p| p.to_string_lossy().into());
+        }
+        Location::Workspace {
+            members,
+            workspace_path,
+            user_path,
+        } => {
+            metadata.members = Some(members);
+            metadata.workspace_path = workspace_path.map(|p| p.to_string_lossy().into());
+            metadata.user_config_path = user_path.map(|p| p.to_string_lossy().into());
+        }
     }
-    if shared.files {
-        document["files"] = serde_json::to_value(&rows)?;
-    }
+    let document = MeasurementReport {
+        schema_version: contract::Version::V1,
+        project,
+        metadata,
+        summary: summary_document,
+        review: Some(review(&rows)),
+        breakdown: Some(breakdown(&rows)),
+        files: shared
+            .files
+            .then(|| rows.iter().map(contract::File::from).collect()),
+        report: None,
+    };
+    let serialized = serde_json::to_value(&document)?;
     if let Some(path) = destination.report_path {
-        write_report(path, &report_text(&document)?)?;
+        write_report(path, &report_text(&serialized)?)?;
     }
     let mut stdout = io::stdout().lock();
     match format {
         Format::Json if destination.report_to_stdout => {
-            write!(stdout, "{}", report_text(&document)?)?
+            write!(stdout, "{}", report_text(&serialized)?)?
         }
         Format::Json => {
-            serde_json::to_writer(&mut stdout, &headline(document, destination.report_path)?)?;
+            serde_json::to_writer(
+                &mut stdout,
+                &document.headline(destination.report_path.map(|p| p.to_string_lossy().into())),
+            )?;
             writeln!(stdout)?;
         }
         Format::Table | Format::Markdown => write!(stdout, "{human}")?,
@@ -708,41 +778,6 @@ fn report(
         )));
     }
     Ok(Outcome::Complete)
-}
-
-/// The report without its tables, policy echo, or path lists: what an agent
-/// reads into its context, so it is compact. The full report stays in the
-/// report file or `--output -`.
-fn headline(mut document: Value, report: Option<&Path>) -> Result<Value> {
-    let object = document.as_object_mut().context("Invalid report")?;
-    for table in ["review", "breakdown", "files"] {
-        object.remove(table);
-    }
-    let metadata = document["metadata"]
-        .as_object_mut()
-        .context("Invalid metadata")?;
-    metadata.remove("config");
-    metadata.remove("modules");
-    for member in metadata
-        .get_mut("members")
-        .and_then(Value::as_array_mut)
-        .into_iter()
-        .flatten()
-    {
-        member
-            .as_object_mut()
-            .context("Invalid member")?
-            .remove("config");
-    }
-    metadata.remove("kinds");
-    metadata["coverage"]
-        .as_object_mut()
-        .context("Invalid coverage")?
-        .remove("unrecognized");
-    if let Some(path) = report {
-        document["report"] = json!(path);
-    }
-    Ok(document)
 }
 
 fn main() -> ExitCode {
