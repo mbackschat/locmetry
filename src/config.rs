@@ -31,7 +31,8 @@ const BUILTIN: &str = "builtin:";
 
 const DEFAULT_EXCLUDES: &[&str] = &["**/.git/**", "**/node_modules/**", "**/.build/**"];
 
-/// A built-in classification entry; configuration `version = 1` pins each set.
+/// A built-in classification entry. The configuration `version` selects each
+/// set, and releases may only add entries to it (PRODUCT.md, `version`).
 struct Convention {
     id: &'static str,
     patterns: &'static [&'static str],

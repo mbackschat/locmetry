@@ -75,7 +75,7 @@ What the table already handles for you:
   - Gradle, Maven, CMake, and Make build scripts;
   - build-tool wrappers such as `gradlew`.
 
-  The configuration `version` pins the convention set, so upgrades never silently reclassify files.
+  A release may add conventions, which can reclassify files, but changing or removing one requires a new configuration `version`; every report records the conventions it applied.
 - **Production from the build:** a folder with an npm, Gradle, Maven, Cargo, Go, Python, or Swift build file is a [build module](#build-modules), and that build system's source layout inside it counts as production. Nothing is assumed where no build declares anything.
 - **Content kinds:** source, data, documentation, and other are counted separately, so a large JSON fixture or a README never inflates code totals.
 - **Language mappings:** files with an unknown extension can be counted as a known language. `.gradle` (as Groovy), `.jsonc`, `.jsonl`, and `.properties` are built in, and you can add your own.
