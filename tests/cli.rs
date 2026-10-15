@@ -388,6 +388,28 @@ fn review_lists_only_unclaimed_source() {
     assert_eq!(document["summary"]["unclassified_folders"], json!([]));
 }
 
+/// The Markdown folder table keeps the path hierarchy: a folder's subfolders
+/// follow it directly, even when a sibling name sorts between them as a plain
+/// string (`-` sorts before `/`).
+#[test]
+fn markdown_folder_table_keeps_subfolders_under_their_parent() {
+    let temp = project(&[
+        ("web/src/a.ts", "export const a = 1;\n"),
+        ("web-admin/b.ts", "export const b = 1;\n"),
+    ]);
+    let markdown =
+        String::from_utf8(run(&temp.path().join("project"), &["--format", "markdown"]).stdout)
+            .unwrap();
+    let table = &markdown[markdown.find("## Folder breakdown").unwrap()..];
+    assert!(
+        is_ascending(&positions(
+            table,
+            &["| web |", "| web/src |", "| web-admin |"]
+        )),
+        "{table}"
+    );
+}
+
 /// Git submodules are often other teams' code; locmetry points at them with
 /// their size, read from `.gitmodules` without invoking Git, and leaves the
 /// scope decision to the project.

@@ -128,7 +128,11 @@ pub fn render_markdown(
         order,
     );
     write!(output, "\n## Folder breakdown\n\nRecursive source code totals to depth {depth}. Parent rows include their children; do not sum all displayed rows. The report file's additive `breakdown` rows cover every depth. Multi-language files count once physically but contribute to each contained language.\n\n| Folder | Production | Test | Unclassified | Total source code |\n| --- | ---: | ---: | ---: | ---: |\n").unwrap();
-    for (folder, values) in &summary.folders {
+    // Compare by path components: as plain strings, `web-admin` would sort
+    // between `web` and `web/src`, because `-` sorts before `/`.
+    let mut folders: Vec<_> = summary.folders.iter().collect();
+    folders.sort_by(|a, b| a.0.split('/').cmp(b.0.split('/')));
+    for (folder, values) in folders {
         let totals = &values.recursive;
         if folder.split('/').count() > depth || totals.source.files == 0 {
             continue;
