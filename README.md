@@ -70,12 +70,12 @@ What the table already handles for you:
 - **Accurate counting for more than 300 languages:** code, comment, and blank lines, including code embedded in other languages, such as snippets in Markdown.
 - **Purpose and category per file:** `production`, `test`, or `unclassified`, with an optional category such as `implementation`, `tooling`, `build-tooling`, or `example`. Every file records the rule that decided it.
 - **Built-in conventions:** these are recognized out of the box:
-  - test directories, Gradle and Kotlin test source sets, `*.test.ts`, `*Test.kt`, `*_test.go`, `test_*.py`, and snapshot folders;
+  - test directories, Gradle and Kotlin test source sets, Swift test targets, `*.test.ts`, `*Test.kt`, `*_test.go`, `test_*.py`, and snapshot folders;
   - Gradle, Maven, CMake, and Make build scripts;
   - build-tool wrappers such as `gradlew`.
 
   The configuration `version` pins the convention set, so upgrades never silently reclassify files.
-- **Production from the build:** `package.json`, Gradle, Maven, Cargo, Go, and Python descriptors declare modules, and each build system's source layout inside them counts as production. Nothing is assumed where no build declares anything.
+- **Production from the build:** npm, Gradle, Maven, Cargo, Go, Python, and Swift project files declare modules, and each build system's source layout inside them counts as production. Nothing is assumed where no build declares anything.
 - **Content kinds:** source, data, documentation, and other are counted separately, so a large JSON fixture or a README never inflates code totals.
 - **Language mappings:** files with an unknown extension can be counted as a known language. `.gradle` (as Groovy), `.jsonc`, `.jsonl`, and `.properties` are built in, and you can add your own.
 - **Explicit scope:** root-relative globs, ignore files, hidden-file control, default exclusions for `.git`, `node_modules`, and `.build`, and optional personal exclusions shared by all projects.

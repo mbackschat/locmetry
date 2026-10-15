@@ -62,6 +62,10 @@ const BUILTIN_TESTS_V1: &[Convention] = &[
         &["**/*{Test,Tests,TestCase}.{java,kt,kts,groovy,scala}"],
     ),
     test_convention("go-test-file", &["**/*_test.go"]),
+    // Swift Package Manager keeps test targets in `Tests/`, and Xcode names
+    // test targets `<Name>Tests`; both start with a capital T, which the
+    // lowercase test-directory convention does not match.
+    test_convention("swift-test-target", &["**/*Tests/**/*.swift"]),
     test_convention(
         "python-test-file",
         &["**/test_*.py", "**/*_test.py", "**/conftest.py"],

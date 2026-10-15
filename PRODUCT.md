@@ -13,7 +13,7 @@ The product rests on three pillars:
 ## Scope and Status
 
 - Required: embedded Tokei integration in a Rust executable, test/production classification, production source derived from build descriptors, project configuration, personal defaults, and CLI options, configurable exclusions, language mappings for files the backend does not recognize, folder breakdowns and sums, JSON, and human output that locates unclassified source.
-- Optional: further module detectors, such as Swift Package Manager, additional counting adapters, custom content-kind overrides, and configuration self-checks that assert expected classifications for named paths without requiring those files to exist.
+- Optional: further module detectors, additional counting adapters, custom content-kind overrides, and configuration self-checks that assert expected classifications for named paths without requiring those files to exist.
 - Excluded initially: a new counting engine, a generic plugin framework (module detectors are compiled-in implementations of one trait, not loadable plugins), and semantic splitting of production/tests within individual files.
 
 Locmetry is a Rust executable with the Tokei library embedded. The installed executable must not require Python, Git, a separate Tokei executable, or a separately installed Rust runtime; the Homebrew formula installs the prebuilt release executable without runtime formula dependencies, needing Rust only to build `--HEAD`. [Tokei integration and distribution](docs/tokei-integration.md) records the backend boundary and packaging.
@@ -123,6 +123,7 @@ Production source is evidence from the build, not a guess: a build descriptor am
 | `cargo` | `Cargo.toml` | `src/**` |
 | `go` | `go.mod` | every `*.go` file |
 | `python` | `pyproject.toml`, `setup.py`, `setup.cfg` | `src/**`, plus top-level packages with `__init__.py` as setuptools discovers them, excluding names such as `docs`, `scripts`, and `tools` |
+| `swift` | `Package.swift` | `Sources/**`; test targets in `Tests/` or `<Name>Tests/` are tests through the `swift-test-target` convention |
 
 The innermost module containing a file decides, as build tools treat nested projects: an outer module's layout never claims files of a module nested inside it, while build systems sharing one directory, such as Gradle and npm, combine their layouts. Test and build conventions run earlier, so tests inside these trees stay tests. Files outside every module's production source keep the fallback, which then means the build declares nothing about them. The report file lists the modules as `metadata.modules`.
 

@@ -768,6 +768,46 @@ fn python_modules_follow_setuptools_package_discovery() {
     );
 }
 
+/// Swift packages: `Sources/` is production, and test targets in `Tests/` or
+/// Xcode-style `<Name>Tests/` folders are tests wherever they live.
+#[test]
+fn swift_packages_and_test_targets_are_recognized() {
+    let temp = project(&[
+        ("Package.swift", "// swift-tools-version:5.9\n"),
+        ("Sources/App/main.swift", "print(1)\n"),
+        ("Tests/AppTests/AppTests.swift", "import XCTest\n"),
+        ("Plugins/Gen/plugin.swift", "let p = 1\n"),
+        ("ios/MyAppTests/LoginTests.swift", "import XCTest\n"),
+    ]);
+    let (success, document, stderr) = report(&temp.path().join("project"), &[]);
+    assert!(success, "{stderr}");
+    let source: Vec<_> = classifications(&document)
+        .into_iter()
+        .filter(|(path, _, _)| path != "Package.swift")
+        .collect();
+    assert_eq!(
+        source,
+        [
+            triple("Plugins/Gen/plugin.swift", "unclassified", "fallback"),
+            triple(
+                "Sources/App/main.swift",
+                "production",
+                "builtin:swift-module"
+            ),
+            triple(
+                "Tests/AppTests/AppTests.swift",
+                "test",
+                "builtin:swift-test-target"
+            ),
+            triple(
+                "ios/MyAppTests/LoginTests.swift",
+                "test",
+                "builtin:swift-test-target"
+            ),
+        ]
+    );
+}
+
 /// Project knowledge beats generic detection, and detection can be disabled.
 #[test]
 fn project_rules_precede_module_detection_which_can_be_disabled() {

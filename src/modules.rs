@@ -102,8 +102,8 @@ impl ModuleDetector for Python {
 
 /// Built-in detectors. Layouts follow each tool's documented defaults: npm
 /// and Cargo `src/`, Maven and Gradle `src/main/` plus Kotlin Multiplatform
-/// `src/<target>Main/`, Go packages anywhere below `go.mod`, and Python's
-/// `src` or flat layout. Test conventions run earlier, so test files inside
+/// `src/<target>Main/`, Go packages anywhere below `go.mod`, Python's `src`
+/// or flat layout, and Swift Package Manager's `Sources/`. Test conventions run earlier, so test files inside
 /// these trees stay tests.
 pub static DETECTORS: &[&dyn ModuleDetector] = &[
     &DefaultLayout {
@@ -132,6 +132,11 @@ pub static DETECTORS: &[&dyn ModuleDetector] = &[
         sources: &["**/*.go"],
     },
     &Python,
+    &DefaultLayout {
+        id: "swift",
+        descriptors: &["Package.swift"],
+        sources: &["Sources/**"],
+    },
 ];
 
 /// A module declared by a build descriptor.
