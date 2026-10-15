@@ -29,7 +29,15 @@ const FALLBACK: &str = "fallback";
 /// Provenance prefix of built-in test and build conventions.
 const BUILTIN: &str = "builtin:";
 
-const DEFAULT_EXCLUDES: &[&str] = &["**/.git/**", "**/node_modules/**", "**/.build/**"];
+/// Version control, dependency checkouts, and the build folders of SwiftPM
+/// (`.build`) and Lake (`.lake`, which also holds dependency checkouts such as
+/// mathlib).
+const DEFAULT_EXCLUDES: &[&str] = &[
+    "**/.git/**",
+    "**/node_modules/**",
+    "**/.build/**",
+    "**/.lake/**",
+];
 
 /// A built-in classification entry. The configuration `version` selects each
 /// set, and releases may only add entries to it (PRODUCT.md, `version`).
@@ -74,6 +82,9 @@ const BUILTIN_TESTS_V1: &[Convention] = &[
     // test targets `<Name>Tests`; both start with a capital T, which the
     // lowercase test-directory convention does not match.
     test_convention("swift-test-target", &["**/*Tests/**/*.swift"]),
+    // Lake test libraries are named `<Name>Test` or `<Name>Tests`, such as
+    // mathlib4's `MathlibTest/` and Batteries' `BatteriesTest/`.
+    test_convention("lean-test-library", &["**/*{Test,Tests}/**/*.lean"]),
     test_convention(
         "python-test-file",
         &["**/test_*.py", "**/*_test.py", "**/conftest.py"],
@@ -95,6 +106,7 @@ const BUILTIN_BUILD_V1: &[Convention] = &[
             "**/CMakeLists.txt",
             "**/*.cmake",
             "**/{Makefile,makefile,GNUmakefile}",
+            "**/lakefile.lean",
         ],
         purpose: Purpose::Production,
         category: "build-tooling",

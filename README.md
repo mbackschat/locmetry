@@ -72,15 +72,15 @@ What the table already handles for you:
 - **Accurate counting for more than 300 languages:** code, comment, and blank lines, including code embedded in other languages, such as snippets in Markdown.
 - **Purpose and category per file:** `production`, `test`, or `unclassified`, with an optional category such as `implementation`, `tooling`, `build-tooling`, or `example`. Every file records the rule that decided it.
 - **Built-in conventions:** these are recognized out of the box:
-  - test directories, Gradle and Kotlin test source sets, Swift test targets, `*.test.ts`, `*Test.kt`, `*_test.go`, `test_*.py`, and snapshot folders;
-  - Gradle, Maven, CMake, and Make build scripts;
+  - test directories, Gradle and Kotlin test source sets, Swift test targets, Lean test libraries, `*.test.ts`, `*Test.kt`, `*_test.go`, `test_*.py`, and snapshot folders;
+  - Gradle, Maven, CMake, Make, and Lake build scripts;
   - build-tool wrappers such as `gradlew`.
 
   A release may add conventions, which can reclassify files, but changing or removing one requires a new configuration `version`; every report records the conventions it applied.
-- **Production from the build:** a folder with an npm, Gradle, Maven, Cargo, Go, Python, or Swift build file is a [build module](#build-modules), and that build system's source layout inside it counts as production. Nothing is assumed where no build declares anything.
+- **Production from the build:** a folder with an npm, Gradle, Maven, Cargo, Go, Python, Lake, or Swift build file is a [build module](#build-modules), and that build system's source layout inside it counts as production. Nothing is assumed where no build declares anything.
 - **Content kinds:** source, data, documentation, and other are counted separately, so a large JSON fixture or a README never inflates code totals.
 - **Language mappings:** files with an unknown extension can be counted as a known language. `.gradle` (as Groovy), `.jsonc`, `.jsonl`, and `.properties` are built in, and you can add your own.
-- **Explicit scope:** root-relative globs, ignore files, hidden-file control, default exclusions for `.git`, `node_modules`, and `.build`, and optional personal exclusions shared by all projects.
+- **Explicit scope:** root-relative globs, ignore files, hidden-file control, default exclusions for `.git`, `node_modules`, and the `.build` and `.lake` build folders, and optional personal exclusions shared by all projects.
 - **Honest coverage:** files that could not be recognized or read are listed, never reported as zero lines.
 - **Reproducible:** only the project's configuration, command-line options, and optional personal exclusions affect results, and every report records the effective scope and policy.
 - **Self-describing configuration:** `locmetry --schema config` prints a JSON Schema that explains every setting, the classification order, and the built-in conventions, so an agent can write the configuration without reading these docs.
@@ -224,6 +224,7 @@ A build module is a folder whose build file declares where its source lives. Bui
 | `Cargo.toml` (Cargo) | `src/**` |
 | `go.mod` (Go) | every `.go` file |
 | `pyproject.toml`, `setup.py`, `setup.cfg` (Python) | `src/**`, or the top-level packages that contain `__init__.py` |
+| `lakefile.lean`, `lakefile.toml` (Lake) | every `.lean` file |
 | `Package.swift` (Swift) | `Sources/**` |
 
 In the sample, `backend` and `web` are build modules, so `backend/src/main/**` and `web/src/**` are production without a rule.
@@ -256,7 +257,7 @@ When stdout is not a terminal, `locmetry` prints a compact JSON headline, under 
     "root": "/work/acme-orders",
     "locmetry_version": "0.1.2",
     "scope": {
-      "exclude": ["**/.git/**", "**/node_modules/**", "**/.build/**", "third_party/**", ".locmetryrc"]
+      "exclude": ["**/.git/**", "**/node_modules/**", "**/.build/**", "**/.lake/**", "third_party/**", ".locmetryrc"]
     },
     "config_path": "acme-orders/.locmetryrc",
     "coverage": {

@@ -608,6 +608,7 @@ fn user_defaults_add_exclusions_and_language_mappings() {
             "**/.git/**",
             "**/node_modules/**",
             "**/.build/**",
+            "**/.lake/**",
             "**/*.generated.ts",
             "vendor/**",
             ".locmetryrc"
@@ -914,6 +915,40 @@ fn swift_packages_and_test_targets_are_recognized() {
     );
 }
 
+/// Lean 4 Lake packages keep their sources at the package root, so every
+/// `.lean` file below a lakefile is production, except the lakefile itself,
+/// test libraries named like mathlib4's `MathlibTest/`, and the `.lake/`
+/// build and dependency folder.
+#[test]
+fn lake_packages_and_test_libraries_are_recognized() {
+    let temp = project(&[
+        (
+            "lakefile.lean",
+            "import Lake\nopen Lake DSL\npackage demo\n",
+        ),
+        ("Demo.lean", "import Demo.Core\n"),
+        ("Demo/Core.lean", "def answer : Nat := 42\n"),
+        ("DemoTest/Basic.lean", "example : 1 + 1 = 2 := rfl\n"),
+        (".lake/packages/dep/lakefile.toml", "name = \"dep\"\n"),
+        (".lake/packages/dep/Dep.lean", "def dep : Nat := 1\n"),
+    ]);
+    let (success, document, stderr) = report(&temp.path().join("project"), &[]);
+    assert!(success, "{stderr}");
+    assert_eq!(
+        classifications(&document),
+        [
+            triple("Demo.lean", "production", "builtin:lake-module"),
+            triple("Demo/Core.lean", "production", "builtin:lake-module"),
+            triple("DemoTest/Basic.lean", "test", "builtin:lean-test-library"),
+            triple("lakefile.lean", "production", "builtin:build-script"),
+        ]
+    );
+    assert_eq!(
+        document["metadata"]["modules"],
+        json!([{"path": ".", "detector": "lake"}])
+    );
+}
+
 /// Project knowledge beats generic detection, and detection can be disabled.
 #[test]
 fn project_rules_precede_module_detection_which_can_be_disabled() {
@@ -1048,6 +1083,7 @@ fn cli_scope_settings_override_the_project_configuration() {
             "**/.git/**",
             "**/node_modules/**",
             "**/.build/**",
+            "**/.lake/**",
             "gen/**",
             "vendor/**",
             ".locmetryrc"

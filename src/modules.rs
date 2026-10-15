@@ -117,8 +117,9 @@ impl ModuleDetector for Python {
 /// Built-in detectors. Layouts follow each tool's documented defaults: npm
 /// and Cargo `src/`, Maven and Gradle `src/main/` plus Kotlin Multiplatform
 /// `src/<target>Main/`, Go packages anywhere below `go.mod`, Python's `src`
-/// or flat layout, and Swift Package Manager's `Sources/`. Test conventions run earlier, so test files inside
-/// these trees stay tests.
+/// or flat layout, Lean sources anywhere below a Lake lakefile, and Swift
+/// Package Manager's `Sources/`. Test conventions run earlier, so test files
+/// inside these trees stay tests.
 pub static DETECTORS: &[&dyn ModuleDetector] = &[
     &DefaultLayout {
         id: "npm",
@@ -146,6 +147,13 @@ pub static DETECTORS: &[&dyn ModuleDetector] = &[
         sources: &["**/*.go"],
     },
     &Python,
+    // Lake's `lean_lib` defaults to `srcDir = "."`, so Lean sources sit at the
+    // package root; the lakefile itself is a build script, matched earlier.
+    &DefaultLayout {
+        id: "lake",
+        descriptors: &["lakefile.lean", "lakefile.toml"],
+        sources: &["**/*.lean"],
+    },
     &DefaultLayout {
         id: "swift",
         descriptors: &["Package.swift"],
