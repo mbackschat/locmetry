@@ -8,6 +8,8 @@ Sequence accepted 2026-10-15. The [actionable work plan](plans/measurement-quali
 
 Consult the detailed plan before starting a stage and record verified completion there. Update affected documentation with each implementation checkpoint; S2 is the wider documentation audit, not a reason to delay documentation for S1. [PRODUCT.md](PRODUCT.md) continues to describe supported behavior; the [net-change proposal](proposals/net-change.md) remains the detailed design reference.
 
+External review of `4ca626a` is [recorded with dispositions](plans/measurement-quality-and-net-change.md#external-review-disposition--2026-10-15). S1 is ready to begin with one shared notebook decoder and end-to-end fixtures; Tokei retains cell-content counting. The plan now distinguishes technical prerequisites from work order and records historical-report compatibility, missing failure evidence and review boundaries. These are planning corrections, not completed runtime fixes.
+
 ## Release for macOS and Linux — Next
 
 Decided 2026-10-15: licence MIT (dual MIT OR Apache-2.0 up to v0.1.1), repository `github.com/mbackschat/locmetry`, an own tap `mbackschat/homebrew-tap` before any homebrew-core submission, and targets macOS arm64 plus Linux x86_64 and aarch64. [Tokei integration and distribution](tokei-integration.md#distribution) describes the release path.
