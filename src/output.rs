@@ -578,7 +578,7 @@ fn submodules_note(submodules: &[SubmoduleShare]) -> Option<String> {
         .map(|share| format!("{} ({})", share.path, counted(share.code, "code line")))
         .collect();
     Some(format!(
-        "Git submodules: {}; exclude them with scope.exclude if they are not this project's code.",
+        "Git submodules: {}; exclude them with --exclude or scope.exclude if they are not this project's code.",
         shares.join(", ")
     ))
 }

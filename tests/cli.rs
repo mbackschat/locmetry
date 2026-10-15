@@ -410,7 +410,7 @@ fn git_submodules_are_reported_until_excluded() {
     );
     let table = String::from_utf8(run(&root, &["--format", "table"]).stdout).unwrap();
     assert!(
-        table.contains(" Git submodules: vendor/lib (2 code lines); exclude them with scope.exclude if they are not this project's code.\n"),
+        table.contains(" Git submodules: vendor/lib (2 code lines); exclude them with --exclude or scope.exclude if they are not this project's code.\n"),
         "{table}"
     );
     let (_, document, _) = headline(&root, &["--exclude", "vendor/lib/**"]);
