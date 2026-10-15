@@ -2,7 +2,7 @@
 
 # locmetry
 
-This checkout documents **0.2.0-dev.1 (unreleased)**. Notebook corrections, `parse_failures`, `compare`, `explain` and `--subfolder` are development features absent from released v0.1.6. The stable installation below remains v0.1.6; use a local build of this checkout for the new behavior.
+This checkout documents **0.2.0**. See the [release notes](docs/releases/0.2.0.md) for net-change comparisons, path explanations, subfolder measurement and counting corrections since v0.1.6.
 
 **Lines of code, split by purpose: production, tests, tooling, and what nobody claims.** `locmetry` measures selected files that its counters can recognize and read, gives each counted file a purpose and category, and records the rule that decided it. Coverage names files whose counts are unavailable.
 
@@ -195,7 +195,7 @@ The [terminal table](#terminal-table), [JSON](#json-headline-for-agents-and-scri
 
 ## Install
 
-### Stable release (v0.1.6)
+### Stable release (v0.2.0)
 
 With Homebrew on macOS arm64 or Linux x86_64 and aarch64, which installs the prebuilt binary:
 
@@ -210,19 +210,19 @@ The same binaries are on the [releases page](https://github.com/mbackschat/locme
 ```sh
 # Linux targets: x86_64-unknown-linux-musl or aarch64-unknown-linux-musl
 target=aarch64-apple-darwin
-curl -fsSL "https://github.com/mbackschat/locmetry/releases/download/v0.1.6/locmetry-v0.1.6-$target.tar.gz" | tar -xz
-install "locmetry-v0.1.6-$target/locmetry" ~/.local/bin/
+curl -fsSL "https://github.com/mbackschat/locmetry/releases/download/v0.2.0/locmetry-v0.2.0-$target.tar.gz" | tar -xz
+install "locmetry-v0.2.0-$target/locmetry" ~/.local/bin/
 ```
 
 Or build from source with a Rust toolchain:
 
 ```sh
-cargo install --locked --git https://github.com/mbackschat/locmetry --tag v0.1.6
+cargo install --locked --git https://github.com/mbackschat/locmetry --tag v0.2.0
 ```
 
-### Development checkout (unreleased)
+### Local checkout
 
-From this checkout, build or install the development binary:
+From this checkout, build or install the binary:
 
 ```sh
 cargo build --locked
@@ -230,7 +230,7 @@ cargo install --locked --path .
 locmetry --version
 ```
 
-The version must identify the development series (`0.2.0-dev.1` here); do not compare changed counters while labeling both producers as the same released version. Installing this checkout does not publish a release.
+This release checkout identifies as `0.2.0`. Development changes to counting must use a distinct producer version so comparisons can identify counter changes. Installing a checkout does not publish a release.
 
 ## Quick start
 
@@ -559,7 +559,7 @@ When stdout is not a terminal, `locmetry` prints a compact JSON headline, under 
   "project": "acme-orders",
   "metadata": {
     "root": "/work/acme-orders",
-    "locmetry_version": "0.2.0-dev.1",
+    "locmetry_version": "0.2.0",
     "scope": {
       "exclude": ["**/.git/**", "**/node_modules/**", "**/.build/**", "**/.lake/**", "third_party/**", ".locmetryrc"]
     },

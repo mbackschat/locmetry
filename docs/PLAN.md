@@ -4,13 +4,13 @@
 
 ## Measurement Quality and Net Change — Complete
 
-Sequence accepted 2026-10-15. The [actionable work plan](plans/measurement-quality-and-net-change.md) owns detailed tasks, retained rationale, source provenance, acceptance checks, review checkpoints and live stage status. Implement in this order: notebook correctness, documentation corrections, shared report/schema contracts, net change, then selection explanations. S1 notebook correctness/failure reporting, S2 documentation corrections, S3 typed report/schema contracts, S4 net change and S5 selection explanations are complete. The public suite, formatting, Clippy, executable README recipe, schema/documented examples and private replay pass; implementation checkpoints have not been pushed or released. Optional follow-ups remain conditional in that plan.
+Sequence accepted 2026-10-15. The [actionable work plan](plans/measurement-quality-and-net-change.md) owns detailed tasks, retained rationale, source provenance, acceptance checks, review checkpoints and live stage status. Implement in this order: notebook correctness, documentation corrections, shared report/schema contracts, net change, then selection explanations. S1 notebook correctness/failure reporting, S2 documentation corrections, S3 typed report/schema contracts, S4 net change and S5 selection explanations are complete. The public suite, formatting, Clippy, executable README recipe, schema/documented examples and private replay pass; release publication is tracked below. Optional follow-ups remain conditional in that plan.
 
 The detailed plan records stage decisions and verified completion. Update affected documentation with each implementation checkpoint; S2 is the wider documentation audit, not a reason to delay documentation for S1. [PRODUCT.md](PRODUCT.md) continues to describe supported behavior; the [historical net-change decision record](proposals/net-change.md) preserves S4 rationale and acceptance criteria. Conditional design work belongs in the detailed plan.
 
 External review of `4ca626a` is [recorded with dispositions](plans/measurement-quality-and-net-change.md#external-review-disposition--2026-10-15). The review established a shared notebook decoder with end-to-end fixtures; Tokei retains cell-content counting. The plan now distinguishes technical prerequisites from work order and records historical-report compatibility, missing failure evidence and review boundaries. S1 subsequently implemented those corrections; its tests and compatibility evidence are recorded in the detailed plan.
 
-The [follow-up review corrections](plans/measurement-quality-and-net-change.md#follow-up-review-corrections--2026-10-15) address missing-path diagnostics, configuration defaults, measurement help and false positives in the README workflow guard. Release preparation remains separate.
+The [follow-up review corrections](plans/measurement-quality-and-net-change.md#follow-up-review-corrections--2026-10-15) address missing-path diagnostics, configuration defaults, measurement help and false positives in the README workflow guard. Release publication is tracked below.
 
 ## Human Output Hierarchy — Complete
 
@@ -24,11 +24,14 @@ Implemented 2026-10-16: `locmetry DIR` selects the same root as `--root DIR`, in
 
 Verification: positional-root equivalence and command-precedence regression tests failed before their fixes and pass afterward. Coverage includes relative/absolute paths, spaces, configuration discovery, explicit command-name paths and conflicting roots. The full public suite, formatting, Clippy and executable README workflows pass. No counting behavior changed; private replay was not rerun.
 
-## Development Release — Pending
+## Minor Release v0.2.0 — Publication in Progress
 
-The S1–S5 changes and review corrections identify as `0.2.0-dev.1`, distinct from the unchanged v0.1.6 tag. They are unreleased; no push, tag, release or tap update is authorized by this plan.
+Authorized by the owner on 2026-10-16: push the reviewed implementation, update GitHub description/topics, and publish the next minor release. Version `0.2.0` replaces the development identity `0.2.0-dev.1`; the v0.1.6 tag stays unchanged. [Release notes](releases/0.2.0.md) describe new commands, subfolder scope, counting/coverage corrections and compatibility boundaries.
 
-- [ ] When a release is requested, choose the final version, rerun release checks, publish the new binaries and update the tap and README stable installation together. Include the notebook counting/coverage changes, saved-report compatibility, net change and explanation commands in release notes.
+- [x] Prepare the final version, stable installation examples and release notes.
+- [x] Verify the full local public suite, formatting, Clippy and executable README workflows; keep producer-version and stable-install examples aligned.
+- [ ] Verify the release build and GitHub CI on all supported targets.
+- [ ] Publish v0.2.0 archives and checksums, verify the downloaded macOS executable, and update the Homebrew tap.
 
 ## Correctness Follow-ups — Complete
 

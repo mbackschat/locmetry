@@ -550,9 +550,14 @@ fn rendering_escapes_markdown_but_preserves_plain_text_labels() {
 }
 
 #[test]
-fn development_counter_is_distinct_from_the_last_release() {
+fn released_counter_and_installation_docs_identify_the_current_version() {
     let readme = include_str!("../README.md");
-    assert!(readme.contains(&format!("**{} (unreleased)**", env!("CARGO_PKG_VERSION"))));
+    assert!(readme.contains(&format!("**{}**", env!("CARGO_PKG_VERSION"))));
+    assert!(readme.contains(&format!(
+        "### Stable release (v{})",
+        env!("CARGO_PKG_VERSION")
+    )));
+    assert!(readme.contains(&format!("--tag v{}", env!("CARGO_PKG_VERSION"))));
     assert!(readme.contains(&format!(
         "\"locmetry_version\": \"{}\"",
         env!("CARGO_PKG_VERSION")
