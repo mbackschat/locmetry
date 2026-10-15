@@ -41,6 +41,8 @@ enum Schema {
     UserConfig,
     /// The JSON headline and full report.
     Report,
+    /// A workspace file for `locmetry workspace --file`.
+    Workspace,
 }
 
 /// The stdout format when `--format` is absent.
@@ -104,8 +106,12 @@ struct RootArgs {
 #[derive(clap::Args)]
 struct WorkspaceArgs {
     /// Member root; repeatable. Its folder name prefixes its paths in the report.
-    #[arg(long = "root", value_name = "DIR", required = true)]
+    #[arg(long = "root", value_name = "DIR", required_unless_present = "file")]
     roots: Vec<PathBuf>,
+    /// Read the member roots from a TOML workspace file instead; its roots are
+    /// relative to the file (see --schema workspace).
+    #[arg(long, value_name = "FILE", conflicts_with = "roots")]
+    file: Option<PathBuf>,
     #[command(flatten)]
     shared: SharedArgs,
 }
@@ -160,10 +166,13 @@ struct Measurement {
     unused_exclusions: Vec<String>,
 }
 
+/// Measures `root`; `workspace_path` names a workspace file, which, like the
+/// configurations, is excluded when it lies inside the root.
 fn measure(
     root: &Path,
     config: Option<PathBuf>,
     user_path: Option<&Path>,
+    workspace_path: Option<&Path>,
     overrides: &ScopeOverrides,
 ) -> Result<Measurement> {
     let config_path = config.or_else(|| {
@@ -173,7 +182,10 @@ fn measure(
     let mut policy = Policy::load_layers(config_path.as_deref(), user_path)?;
     policy.override_scope(overrides)?;
     let root = root.canonicalize().context("Scan root does not exist")?;
-    for path in [config_path.as_deref(), user_path].into_iter().flatten() {
+    for path in [config_path.as_deref(), user_path, workspace_path]
+        .into_iter()
+        .flatten()
+    {
         policy.exclude_configuration(&root, path)?;
     }
     let root_text = root.to_str().context("Scan root must be valid UTF-8")?;
@@ -252,6 +264,7 @@ fn run(cli: Cli) -> Result<Outcome> {
             Schema::Config => locmetry::config_schema(),
             Schema::UserConfig => locmetry::user_config_schema(),
             Schema::Report => locmetry::report_schema(),
+            Schema::Workspace => locmetry::workspace_schema(),
         };
         println!("{}", serde_json::to_string_pretty(&schema)?);
         return Ok(Outcome::Complete);
@@ -272,7 +285,13 @@ fn run_root(args: &RootArgs, shared: &SharedArgs) -> Result<Outcome> {
         exclude: args.exclude.clone(),
     };
     let measured_at = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
-    let measurement = measure(root, args.config.clone(), user_path.as_deref(), &overrides)?;
+    let measurement = measure(
+        root,
+        args.config.clone(),
+        user_path.as_deref(),
+        None,
+        &overrides,
+    )?;
     if let Some(path) = destination.report_path {
         validate_output(path, &measurement.root, measurement.config_path.as_deref())?;
     }
@@ -350,10 +369,22 @@ fn workspace_members(roots: &[PathBuf]) -> Result<Vec<(String, PathBuf)>> {
 fn run_workspace(args: &WorkspaceArgs) -> Result<Outcome> {
     let shared = &args.shared;
     let destination = destination(shared)?;
-    let members = workspace_members(&args.roots)?;
+    let workspace_path = args
+        .file
+        .as_deref()
+        .map(|file| {
+            file.canonicalize()
+                .with_context(|| format!("Cannot read workspace file {}", file.display()))
+        })
+        .transpose()?;
+    let roots = match &workspace_path {
+        Some(file) => locmetry::workspace_roots(file)?,
+        None => args.roots.clone(),
+    };
+    let members = workspace_members(&roots)?;
     if let Some(path) = destination.report_path {
         for (_, root) in &members {
-            validate_output(path, root, None)?;
+            validate_output(path, root, workspace_path.as_deref())?;
         }
     }
     let user_path = user_defaults(shared);
@@ -364,9 +395,11 @@ fn run_workspace(args: &WorkspaceArgs) -> Result<Outcome> {
         let handles: Vec<_> = members
             .iter()
             .map(|(name, root)| {
-                let user_path = user_path.as_deref();
-                let handle = threads
-                    .spawn(move || measure(root, None, user_path, &ScopeOverrides::default()));
+                let (user_path, workspace_path) = (user_path.as_deref(), workspace_path.as_deref());
+                let handle = threads.spawn(move || {
+                    let overrides = ScopeOverrides::default();
+                    measure(root, None, user_path, workspace_path, &overrides)
+                });
                 (name, handle)
             })
             .collect();
@@ -455,7 +488,10 @@ fn run_workspace(args: &WorkspaceArgs) -> Result<Outcome> {
     results.rows.sort_by(|a, b| a.path.cmp(&b.path));
     results.coverage.unread.sort();
     results.coverage.unrecognized.sort();
-    let metadata = json!({"user_config_path": user_path, "members": records});
+    let mut metadata = json!({"user_config_path": user_path, "members": records});
+    if let Some(path) = workspace_path {
+        metadata["workspace_path"] = json!(path);
+    }
     report(shared, &destination, results, metadata, measured_at, false)
 }
 

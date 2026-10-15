@@ -1,7 +1,7 @@
 //! JSON Schemas of the configuration files, whose descriptions state the
 //! built-in sets from the same constants that apply them.
 use super::{
-    module_rule, ConfigFile, Convention, UserDefaults, BUILTIN, BUILTIN_BUILD_V1,
+    module_rule, ConfigFile, Convention, UserDefaults, WorkspaceFile, BUILTIN, BUILTIN_BUILD_V1,
     BUILTIN_LANGUAGES_V1, BUILTIN_TESTS_V1, DEFAULT_EXCLUDES,
 };
 use crate::modules::DETECTORS;
@@ -20,6 +20,11 @@ pub fn config_schema() -> Value {
 /// JSON Schema of the personal defaults file.
 pub fn user_config_schema() -> Value {
     schema::<UserDefaults>()
+}
+
+/// JSON Schema of a workspace file.
+pub fn workspace_schema() -> Value {
+    schema::<WorkspaceFile>()
 }
 
 fn schema<T: JsonSchema>() -> Value {

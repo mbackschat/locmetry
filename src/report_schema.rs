@@ -107,6 +107,7 @@ pub fn report_schema() -> Value {
                 "type": "object",
                 "description": "Full report only: the effective configuration after merging personal defaults, shaped as `locmetry --schema config` describes, plus the applied `builtin_conventions` and `builtin_language_mappings`. Absent in workspace mode.",
             },
+            "workspace_path": {"type": "string", "description": "Workspace mode only: the canonical workspace file that `--file` named; absent when `--root` named the members."},
             "members": {
                 "type": "array",
                 "items": strict(
@@ -138,7 +139,7 @@ pub fn report_schema() -> Value {
     );
     // A regular run reports one root, a workspace its members; never both.
     metadata["oneOf"] = json!([
-        {"required": ["root", "scope", "config_path"], "not": {"required": ["members"]}},
+        {"required": ["root", "scope", "config_path"], "not": {"anyOf": [{"required": ["members"]}, {"required": ["workspace_path"]}]}},
         {"required": ["members"], "not": {"anyOf": [{"required": ["root"]}, {"required": ["scope"]}, {"required": ["config_path"]}]}},
     ]);
 

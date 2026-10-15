@@ -15,7 +15,7 @@ use std::{
 use tokei::LanguageType;
 
 mod schema;
-pub use schema::{config_schema, user_config_schema};
+pub use schema::{config_schema, user_config_schema, workspace_schema};
 
 /// Configuration file discovered in the scan root.
 pub const CONFIG_FILE: &str = ".locmetryrc";
@@ -443,6 +443,42 @@ impl UserDefaults {
     }
 }
 
+/// Locmetry workspace: TOML naming the repositories that `locmetry workspace --file` measures as one virtual monorepo.
+///
+/// Each root is measured with its own `.locmetryrc` and becomes a top-level folder of the report, named after the root's folder. The file is read only when `--file` names it, never discovered, and a member that contains it does not measure it.
+#[derive(Debug, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+#[schemars(rename = "Workspace")]
+pub(crate) struct WorkspaceFile {
+    /// Contract version; must be `1`.
+    #[schemars(extend("const" = 1))]
+    version: u32,
+    /// Member roots, each relative to the folder of this file or absolute; folder names must be unique, and no root may lie inside another.
+    #[schemars(length(min = 1), extend("items" = {"type": "string"}))]
+    roots: Vec<PathBuf>,
+}
+
+/// The member roots a workspace file lists, resolved against its folder.
+pub fn workspace_roots(path: &Path) -> Result<Vec<PathBuf>> {
+    let input = std::fs::read_to_string(path)
+        .with_context(|| format!("Cannot read workspace file {}", path.display()))?;
+    let file: WorkspaceFile = toml::from_str(&input)
+        .with_context(|| format!("Invalid workspace file {}", path.display()))?;
+    ensure!(
+        file.version == 1,
+        "Unsupported version {} in workspace file {}",
+        file.version,
+        path.display()
+    );
+    ensure!(
+        !file.roots.is_empty(),
+        "Workspace file {} lists no roots",
+        path.display()
+    );
+    let folder = path.parent().unwrap_or(Path::new("."));
+    Ok(file.roots.iter().map(|root| folder.join(root)).collect())
+}
+
 /// The user defaults file: `$XDG_CONFIG_HOME/locmetry/config.toml`, else
 /// `~/.config/locmetry/config.toml`, on every platform (PRODUCT.md). A relative
 /// `XDG_CONFIG_HOME` is ignored, as the XDG Base Directory specification requires.
@@ -694,8 +730,9 @@ pub struct Policy {
     /// before the fallback.
     module_entries: Vec<(Module, Entry)>,
     fallback: (Purpose, String),
-    /// The literal exclusion of the loaded configuration file, if it lies in the scan root.
-    configuration_exclusion: Option<String>,
+    /// Literal exclusions of the policy files inside the scan root: the
+    /// project configuration, user defaults, or a workspace file.
+    configuration_exclusions: BTreeSet<String>,
     /// Project mappings first, then built-in ones.
     languages: Vec<LanguageMapping>,
     snapshot: Value,
@@ -819,7 +856,7 @@ impl Policy {
             modules: Vec::new(),
             module_entries: Vec::new(),
             fallback: (fallback, fallback.to_string()),
-            configuration_exclusion: None,
+            configuration_exclusions: BTreeSet::new(),
             languages,
             snapshot,
         })
@@ -887,7 +924,7 @@ impl Policy {
             return Ok(());
         };
         let pattern = literal_glob(&relative_path(relative)?);
-        self.configuration_exclusion = Some(pattern.clone());
+        self.configuration_exclusions.insert(pattern.clone());
         self.override_scope(&ScopeOverrides {
             exclude: vec![pattern],
             ..Default::default()
@@ -909,7 +946,7 @@ impl Policy {
         let mut unused: Vec<String> = Vec::new();
         for pattern in &patterns[self.scope.default_count()..] {
             if !used.contains(pattern.as_str())
-                && self.configuration_exclusion.as_ref() != Some(pattern)
+                && !self.configuration_exclusions.contains(pattern)
                 && !unused.contains(pattern)
             {
                 unused.push(pattern.clone());

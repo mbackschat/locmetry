@@ -370,3 +370,98 @@ fn workspace_reports_must_be_written_outside_every_member() {
     );
     assert!(report.is_file());
 }
+
+/// A workspace file spares repeating `--root`: its roots are relative to the
+/// file, not the working directory, so the run is the same from anywhere.
+#[test]
+fn a_workspace_file_lists_roots_relative_to_itself() {
+    let temp = workspace();
+    let base = temp.path();
+    let api = base.join("api").canonicalize().unwrap();
+    let file = base.join("defs/cg.toml");
+    write(
+        base,
+        &[(
+            "defs/cg.toml",
+            &format!(
+                "version = 1\nroots = [\"../web\", {:?}]\n",
+                api.to_str().unwrap()
+            ),
+        )],
+    );
+    let from_roots = full_report(base, &["workspace", "--root", "web", "--root", "api"]);
+    let mut from_file = full_report(
+        &base.join("other"),
+        &["workspace", "--file", "../defs/cg.toml"],
+    );
+    assert_eq!(
+        from_file["metadata"]["workspace_path"],
+        json!(file.canonicalize().unwrap())
+    );
+    from_file["metadata"]
+        .as_object_mut()
+        .unwrap()
+        .remove("workspace_path");
+    assert_eq!(from_file, from_roots);
+    assert!(from_roots["metadata"].get("workspace_path").is_none());
+}
+
+/// Like a project configuration, a workspace file is measurement policy, not
+/// content, so the member that contains it does not count it.
+#[test]
+fn a_workspace_file_inside_a_member_is_not_measured() {
+    let temp = workspace();
+    write(
+        temp.path(),
+        &[(
+            "web/workspace.toml",
+            "version = 1\nroots = [\".\", \"../api\"]\n",
+        )],
+    );
+    let report = full_report(temp.path(), &["workspace", "--file", "web/workspace.toml"]);
+    let paths: Vec<&str> = report["files"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|file| file["path"].as_str().unwrap())
+        .collect();
+    assert!(!paths.contains(&"web/workspace.toml"), "{paths:?}");
+    assert_eq!(
+        report["metadata"]["members"][1]["unused_exclusions"],
+        json!(["third_party"])
+    );
+}
+
+#[test]
+fn invalid_workspace_files_fail_before_measuring() {
+    let temp = workspace();
+    write(
+        temp.path(),
+        &[
+            ("v2.toml", "version = 2\nroots = [\"web\"]\n"),
+            (
+                "extra.toml",
+                "version = 1\nroots = [\"web\"]\nexclude = [\"x\"]\n",
+            ),
+            ("ok.toml", "version = 1\nroots = [\"web\"]\n"),
+        ],
+    );
+    for (file, message) in [
+        ("v2.toml", "version"),
+        ("extra.toml", "exclude"),
+        ("missing.toml", "missing.toml"),
+    ] {
+        let stderr = stderr_of(&locmetry(temp.path(), &["workspace", "--file", file]));
+        assert!(stderr.contains(message), "{file}: {stderr}");
+    }
+    let both = stderr_of(&locmetry(
+        temp.path(),
+        &["workspace", "--file", "ok.toml", "--root", "api"],
+    ));
+    assert!(both.contains("--root"), "{both}");
+    let overwrite = stderr_of(&locmetry(
+        temp.path(),
+        &["workspace", "--file", "ok.toml", "--output", "ok.toml"],
+    ));
+    assert!(overwrite.contains("overwrite"), "{overwrite}");
+}

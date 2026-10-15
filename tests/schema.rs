@@ -330,8 +330,15 @@ fn report_schema_describes_workspace_reports() {
     };
     let full = output(&["workspace", "--root", "project", "--files", "--output", "-"]);
     let headline = output(&["workspace", "--root", "project"]);
+    std::fs::write(
+        temp.path().join("ws.toml"),
+        "version = 1\nroots = [\"project\"]\n",
+    )
+    .unwrap();
+    let from_file = output(&["workspace", "--file", "ws.toml"]);
     assert!(full["metadata"]["members"][0].get("config").is_some());
-    for document in [&full, &headline] {
+    assert!(from_file["metadata"].get("workspace_path").is_some());
+    for document in [&full, &headline, &from_file] {
         let errors: Vec<String> = validator
             .iter_errors(document)
             .map(|error| format!("{} at {}", error, error.instance_path()))
@@ -343,4 +350,20 @@ fn report_schema_describes_workspace_reports() {
         .and_then(Value::as_str)
         .unwrap();
     assert!(members.contains("workspace"), "{members}");
+}
+
+#[test]
+fn workspace_schema_describes_the_member_file() {
+    let schema = schema("workspace");
+    assert!(is_valid(
+        &schema,
+        "version = 1\nroots = [\"../web\", \"/srv/api\"]"
+    ));
+    assert!(!is_valid(
+        &schema,
+        "version = 1\nroots = [\"web\"]\nexclude = []"
+    ));
+    assert!(!is_valid(&schema, "version = 1"));
+    let roots = description(&schema, "/properties/roots");
+    assert!(roots.contains("relative to"), "{roots}");
 }
