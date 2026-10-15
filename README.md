@@ -62,6 +62,7 @@ What the table already handles for you:
 - **Size a codebase honestly:** estimate a migration, a rewrite, an audit, an acquisition, or an outsourcing quote on maintained code only. Vendored, generated, and experimental code is excluded or labelled.
 - **Guard quality in CI:** fail a build when unclaimed code grows or the test share drops, with one `jq` expression ([example](#continuous-integration)).
 - **Compare parts of a monorepo:** the folder rows and the additive breakdown table compare packages, services, or layers by purpose.
+- **Measure several repositories as one:** `locmetry workspace` merges sibling repositories, each measured with its own configuration, into one virtual monorepo whose folder rows compare the repositories ([how](#measure-several-repositories-together)).
 - **Watch a codebase change:** measure two releases or branches and compare production and test growth instead of raw line deltas, for example to see what an agent-written change really added.
 - **Let an agent configure a project:** a coding agent working in a repository writes its `.locmetryrc` itself. `locmetry --help` leads it to `--schema config`, which explains the configuration and its semantics, and the measurement shows which folders still need a decision ([how](#configure-with-an-agent)).
 - **Give coding agents a reliable answer:** a compact JSON headline fits an agent's context, and follow-up questions are one `jq` query over the report file instead of improvised `find | xargs wc -l` pipelines.
@@ -84,6 +85,7 @@ What the table already handles for you:
 - **Honest coverage:** files that could not be recognized or read are listed, never reported as zero lines.
 - **Reproducible:** only the project's configuration, command-line options, and optional personal exclusions affect results, and every report records the effective scope and policy.
 - **Self-describing configuration:** `locmetry --schema config` prints a JSON Schema that explains every setting, the classification order, and the built-in conventions, so an agent can write the configuration without reading these docs.
+- **Workspaces:** several repositories measured in parallel with their own configurations and merged into one deterministic report.
 - **Three outputs, one measurement:** the terminal table, JSON, and Markdown are rendered from the same per-file records.
 
 ## Install
@@ -144,7 +146,33 @@ Personal defaults for every project, such as extra exclusions or language mappin
 | `--output FILE` | Also write the full JSON report to `FILE`, outside the scan root; `-` prints it instead of the headline. |
 | `--files` | Add per-file records to the report. |
 | `--categories` | Add a table of source code per purpose and category to the terminal table. |
-| `--schema config\|user-config\|report` | Print the JSON Schema of `.locmetryrc`, of personal defaults, or of the JSON headline and report, and exit. |
+| `--schema config\|user-config\|report\|workspace` | Print the JSON Schema of `.locmetryrc`, of personal defaults, of the JSON headline and report, or of a workspace file, and exit. |
+
+`locmetry workspace` takes `--root DIR`, repeatable, or `--file FILE` instead, plus `--no-user-config` and the output options from `--format` to `--categories`; see [Measure several repositories together](#measure-several-repositories-together).
+
+## Measure several repositories together
+
+`locmetry workspace` measures sibling repositories as one virtual monorepo. Each repository is measured with its own `.locmetryrc`, the repositories run in parallel, and the results merge into one report whose top-level folders are the repositories, so the table's folder rows compare them:
+
+```sh
+locmetry workspace --root ../web --root ../api
+```
+
+Roots are relative to the current directory or absolute. To avoid repeating them, list them in a workspace file, where they are relative to the file itself or absolute, and name it with `--file`; `locmetry --schema workspace` describes the format:
+
+```toml
+version = 1
+roots = ["web", "api", "/srv/shared/billing"]
+```
+
+```sh
+locmetry workspace --file repos.toml
+```
+
+- **Each repository keeps its policy:** `--config`, `--exclude`, `--hidden`, and `--respect-ignore-files` are rejected, because each repository's own configuration decides them, and options must follow `workspace`.
+- **Paths name the repository:** every path is prefixed with its repository's folder name, such as `web/src/index.ts`. Two repositories with the same folder name, a root given twice, or one root inside another fail before measuring.
+- **Findings stay with their repository:** `metadata.members` lists each repository's root, configuration path, scope, unused entries, and unused exclusions, and the table names it, as in `ghost (web)`.
+- **All or nothing, always the same:** if one repository fails, for example with an invalid configuration, the run fails and names it; the order of the roots never changes the report.
 
 ## Configure with an agent
 

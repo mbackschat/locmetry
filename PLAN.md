@@ -17,16 +17,16 @@ Decided 2026-10-15: licence MIT (dual MIT OR Apache-2.0 up to v0.1.1), repositor
 
 **Completion evidence:** CI passes on every target, the release carries archives and checksums, `brew install` and `brew test` pass on macOS arm64 and Linux, and publication was explicitly authorized.
 
-## Workspace Mode — Next
+## Workspace Mode — Done
 
-Decided 2026-10-15: a `workspace` subcommand with repeatable `--root` that measures each member with its own configuration in parallel and merges the results, as the [proposal](PRODUCT.md#workspace-mode-proposal) defines.
+Decided 2026-10-15: a `workspace` subcommand with repeatable `--root` or a workspace file that measures each member with its own configuration in parallel and merges the results, as [PRODUCT.md](PRODUCT.md#workspace-mode) defines. Done 2026-10-15: a workspace over four real sibling repositories reproduced the sum of their individual runs exactly and took under a second.
 
 - [x] Parse `locmetry workspace` and reject single-root flags and flags before the subcommand.
 - [x] Validate members: at least one, unique names, no root twice, no nesting.
 - [x] Measure members in parallel, fail with the member's name, and merge prefixed records in name order.
 - [x] Report `metadata.members`, the merged summary, and member-qualified notes; extend `--schema report`.
 - [x] Read members from `--file`, a TOML workspace file whose roots are relative to it, with `--schema workspace`.
-- [ ] Turn the proposal into contract text and document the mode in the README.
+- [x] Turn the proposal into contract text and document the mode in the README.
 
 **Completion evidence:** tests cover flag rejection, member validation, a merge that equals the per-member reports summed with prefixed paths, determinism, and the report schema; a workspace over real sibling repositories, recorded in `docs/research/local/`, matches the sum of their individual runs.
 

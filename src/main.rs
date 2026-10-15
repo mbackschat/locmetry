@@ -70,7 +70,8 @@ struct Cli {
     #[command(flatten)]
     shared: SharedArgs,
     /// Print a JSON Schema and exit: of a configuration file, which explains
-    /// every setting and the classification order, or of the JSON report.
+    /// every setting and the classification order, of the JSON report, or of
+    /// a workspace file.
     #[arg(long, value_enum)]
     schema: Option<Schema>,
 }
@@ -166,15 +167,24 @@ struct Measurement {
     unused_exclusions: Vec<String>,
 }
 
-/// Measures `root`; `workspace_path` names a workspace file, which, like the
-/// configurations, is excluded when it lies inside the root.
-fn measure(
+/// A root with its loaded policy, ready to scan; preparing first lets output
+/// paths be checked before anything is scanned.
+struct Prepared {
+    root: PathBuf,
+    name: String,
+    config_path: Option<PathBuf>,
+    policy: Policy,
+}
+
+/// Loads the policy for `root`; `workspace_path` names a workspace file,
+/// which, like the configurations, is excluded when it lies inside the root.
+fn prepare(
     root: &Path,
     config: Option<PathBuf>,
     user_path: Option<&Path>,
     workspace_path: Option<&Path>,
     overrides: &ScopeOverrides,
-) -> Result<Measurement> {
+) -> Result<Prepared> {
     let config_path = config.or_else(|| {
         let discovered = root.join(CONFIG_FILE);
         discovered.is_file().then_some(discovered)
@@ -193,6 +203,21 @@ fn measure(
         || root_text.to_owned(),
         |name| name.to_string_lossy().into(),
     );
+    Ok(Prepared {
+        root,
+        name,
+        config_path,
+        policy,
+    })
+}
+
+fn measure(prepared: Prepared) -> Result<Measurement> {
+    let Prepared {
+        root,
+        name,
+        config_path,
+        mut policy,
+    } = prepared;
     let scan = scan(&root, &policy)?;
     policy.adopt_modules(&scan.modules)?;
     let rows = scan.records(&policy)?;
@@ -285,7 +310,7 @@ fn run_root(args: &RootArgs, shared: &SharedArgs) -> Result<Outcome> {
         exclude: args.exclude.clone(),
     };
     let measured_at = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
-    let measurement = measure(
+    let prepared = prepare(
         root,
         args.config.clone(),
         user_path.as_deref(),
@@ -293,8 +318,9 @@ fn run_root(args: &RootArgs, shared: &SharedArgs) -> Result<Outcome> {
         &overrides,
     )?;
     if let Some(path) = destination.report_path {
-        validate_output(path, &measurement.root, measurement.config_path.as_deref())?;
+        validate_output(path, &prepared.root, prepared.config_path.as_deref())?;
     }
+    let measurement = measure(prepared)?;
     let metadata = json!({
         "root": measurement.root,
         "scope": scope_policy(&measurement.policy),
@@ -398,7 +424,7 @@ fn run_workspace(args: &WorkspaceArgs) -> Result<Outcome> {
                 let (user_path, workspace_path) = (user_path.as_deref(), workspace_path.as_deref());
                 let handle = threads.spawn(move || {
                     let overrides = ScopeOverrides::default();
-                    measure(root, None, user_path, workspace_path, &overrides)
+                    measure(prepare(root, None, user_path, workspace_path, &overrides)?)
                 });
                 (name, handle)
             })

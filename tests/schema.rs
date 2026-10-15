@@ -43,23 +43,30 @@ fn description<'a>(schema: &'a Value, pointer: &str) -> &'a str {
         .unwrap_or_else(|| panic!("no description at {pointer}"))
 }
 
+/// Every documented TOML example must load: workspace files, recognized by
+/// their `roots`, against the workspace schema, all others as configurations.
 #[test]
-fn documented_configurations_satisfy_the_config_schema() {
+fn documented_examples_satisfy_their_schemas() {
     let schema = schema("config");
     assert_eq!(
         schema["$schema"],
         "https://json-schema.org/draft/2020-12/schema"
     );
-    let blocks: Vec<String> = ["README.md", "PRODUCT.md"]
+    let (workspaces, blocks): (Vec<String>, Vec<String>) = ["README.md", "PRODUCT.md"]
         .iter()
         .flat_map(|path| toml_blocks(path))
-        .collect();
+        .partition(|block| block.lines().any(|line| line.starts_with("roots")));
     assert!(blocks.len() >= 3);
     // TOML has no null, so a schema allowing it would mislead editors and agents.
     assert!(!schema.to_string().contains("\"null\""));
     for block in blocks {
         assert!(is_valid(&schema, &block), "invalid per schema:\n{block}");
         locmetry::Policy::from_toml(&block).unwrap();
+    }
+    let workspace = self::schema("workspace");
+    assert!(!workspaces.is_empty(), "the README shows a workspace file");
+    for block in workspaces {
+        assert!(is_valid(&workspace, &block), "invalid per schema:\n{block}");
     }
 }
 
