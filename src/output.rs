@@ -178,7 +178,7 @@ fn repository_grid(
 /// Names members with unclaimed source or unreadable files, which a person
 /// can act on. Unrecognized files are left to the "Not counted" note: on real
 /// repositories they are mostly images, so listing them named every member
-/// (four repositories, docs/research/local, 2026-10-15).
+/// (docs/research/real-project-trials.md#workspace-run).
 fn repositories_note(members: &[MemberView]) -> Option<String> {
     let parts: Vec<String> = members
         .iter()

@@ -29,6 +29,8 @@ Recommend ordered, root-relative project rules with visible rule provenance and 
 
 Keep language, purpose, and optional category separate. Production can mean maintained non-test source, but tooling, examples, benchmarks, and third-party bootstrap files should remain visible as distinct categories. This definition must accompany totals rather than imply all included code ships to users.
 
+The version-1 built-in sets follow the reference projects. A `fixtures` folder held tests in one project and supported example data in another, and one project keeps specification tooling under `.claude/skills/spec/`, so neither name is a test convention. Every reviewed reference configuration wrote equivalent rules by hand for build scripts and for build-tool wrappers such as `gradlew`, which became the build conventions. `.gradle`, `.jsonc`, `.jsonl`, and `.properties` files were selected but uncounted in the reference projects' coverage, which made them the built-in language mappings.
+
 Classification cannot recover a file the backend does not recognize. A language mapping can count a known-source extension with a supported parser; otherwise the file must be reported as a coverage gap rather than equated with zero source lines.
 
 ## Aggregation and Output

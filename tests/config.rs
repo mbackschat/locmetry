@@ -233,7 +233,7 @@ fn builtin_test_conventions_cover_common_layouts_but_not_ambiguous_fixtures() {
         "src/main/java/Testing.java",
         "contest.py",
         // `spec` folders also hold specifications, e.g. a reference project's
-        // `.claude/skills/spec/` tooling (docs/research/local, 2026-10-15).
+        // `.claude/skills/spec/` tooling (docs/research/loc-counting-tools.md).
         ".claude/skills/spec/scripts/emit.mjs",
     ] {
         assert_eq!(rule(&policy, path, Kind::Source), "fallback", "{path}");

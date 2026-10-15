@@ -127,8 +127,8 @@ fn config_schema_explains_precedence_and_switches() {
 }
 
 /// Blind agents guessed the entry shape, widened rules over build-module
-/// source, and never reviewed source that modules claimed (drive 6, 2026-10-15,
-/// docs/research/local). The description must state placement, layering, that
+/// source, and never reviewed source that modules claimed (round 4,
+/// docs/research/real-project-trials.md). The description must state placement, layering, that
 /// trap, and the review step, and its TOML example must be a valid configuration.
 #[test]
 fn config_schema_states_order_layers_and_a_valid_example() {
