@@ -72,6 +72,7 @@ What the table already handles for you:
   - build-tool wrappers such as `gradlew`.
 
   The configuration `version` pins the convention set, so upgrades never silently reclassify files.
+- **Production from the build:** `package.json`, Gradle, Maven, Cargo, Go, and Python descriptors declare modules, and each build system's source layout inside them counts as production. Nothing is assumed where no build declares anything.
 - **Content kinds:** source, data, documentation, and other are counted separately, so a large JSON fixture or a README never inflates code totals.
 - **Language mappings:** files with an unknown extension can be counted as a known language. `.gradle` (as Groovy), `.jsonc`, `.jsonl`, and `.properties` are built in, and you can add your own.
 - **Explicit scope:** root-relative globs, ignore files, hidden-file control, default exclusions for `.git`, `node_modules`, and `.build`, and optional personal exclusions shared by all projects.
@@ -167,12 +168,13 @@ purpose = "production"
 category = "implementation"
 ```
 
-Each file gets the first match of four stages:
+Each file gets the first match of five stages:
 
 1. `[[overrides]]`, for decisions that must beat everything;
 2. built-in test conventions, then built-in build conventions;
 3. `[[rules]]`;
-4. the fallback, `unclassified` by default.
+4. module detection: source that a build descriptor declares, here `backend/build.gradle.kts` and `web/package.json`;
+5. the fallback, `unclassified` by default.
 
 So `OrderServiceTest.kt` and `cart.test.ts` are tests even though the `application` rule matches their paths. The Gradle scripts are `build-tooling`, and `gradlew` is a `third-party-wrapper`. The prototype falls through to `unclassified`, where the review list surfaces it. [PRODUCT.md](PRODUCT.md#project-configuration) documents every key, glob semantics, and `[[languages.mappings]]`.
 

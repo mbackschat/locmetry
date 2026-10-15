@@ -505,6 +505,194 @@ fn user_defaults_reject_classification_scope_widening_and_id_clashes() {
     }
 }
 
+fn classifications(document: &Value) -> Vec<(String, String, String)> {
+    document["files"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|file| {
+            (
+                file["path"].as_str().unwrap().into(),
+                file["purpose"].as_str().unwrap().into(),
+                file["rule"].as_str().unwrap().into(),
+            )
+        })
+        .collect()
+}
+
+fn triple(path: &str, purpose: &str, rule: &str) -> (String, String, String) {
+    (path.into(), purpose.into(), rule.into())
+}
+
+/// Build descriptors declare modules, and each build system's source layout
+/// inside a module is production; tests, build scripts, and anything outside
+/// a declared source root keep their own classification.
+#[test]
+fn declared_modules_make_their_source_production() {
+    let temp = project(&[
+        ("packages/core/package.json", "{}\n"),
+        ("packages/core/src/a.ts", "let a = 1;\n"),
+        ("packages/core/src/a.test.ts", "let b = 1;\n"),
+        ("packages/core/scripts/release.ts", "let c = 1;\n"),
+        ("app/build.gradle.kts", "plugins {}\n"),
+        ("app/src/main/kotlin/App.kt", "fun main() {}\n"),
+        ("app/src/commonMain/kotlin/Shared.kt", "val x = 1\n"),
+        ("app/src/test/kotlin/AppTest.kt", "fun t() {}\n"),
+        ("legacy/pom.xml", "<project/>\n"),
+        ("legacy/src/main/java/A.java", "class A {}\n"),
+        ("crates/util/Cargo.toml", "[package]\n"),
+        ("crates/util/src/lib.rs", "fn util() {}\n"),
+        ("svc/go.mod", "module svc\n"),
+        ("svc/main.go", "package main\n"),
+        ("svc/internal/store.go", "package internal\n"),
+        ("svc/main_test.go", "package main\n"),
+        ("docs/probe.js", "let d = 1;\n"),
+    ]);
+    let (success, document, stderr) = report(&temp.path().join("project"), &[]);
+    assert!(success, "{stderr}");
+    let source: Vec<_> = classifications(&document)
+        .into_iter()
+        .filter(|(path, _, _)| {
+            !path.ends_with(".json")
+                && !path.ends_with(".xml")
+                && !path.ends_with(".mod")
+                && !path.ends_with(".toml")
+        })
+        .collect();
+    assert_eq!(
+        source,
+        [
+            triple("app/build.gradle.kts", "production", "builtin:build-script"),
+            triple(
+                "app/src/commonMain/kotlin/Shared.kt",
+                "production",
+                "builtin:gradle-module"
+            ),
+            triple(
+                "app/src/main/kotlin/App.kt",
+                "production",
+                "builtin:gradle-module"
+            ),
+            triple(
+                "app/src/test/kotlin/AppTest.kt",
+                "test",
+                "builtin:test-directory"
+            ),
+            triple(
+                "crates/util/src/lib.rs",
+                "production",
+                "builtin:cargo-module"
+            ),
+            triple("docs/probe.js", "unclassified", "fallback"),
+            triple(
+                "legacy/src/main/java/A.java",
+                "production",
+                "builtin:maven-module"
+            ),
+            triple(
+                "packages/core/scripts/release.ts",
+                "unclassified",
+                "fallback"
+            ),
+            triple(
+                "packages/core/src/a.test.ts",
+                "test",
+                "builtin:js-test-file"
+            ),
+            triple("packages/core/src/a.ts", "production", "builtin:npm-module"),
+            triple("svc/internal/store.go", "production", "builtin:go-module"),
+            triple("svc/main.go", "production", "builtin:go-module"),
+            triple("svc/main_test.go", "test", "builtin:go-test-file"),
+        ]
+    );
+    assert_eq!(
+        document["metadata"]["modules"],
+        json!([
+            {"path": "app", "detector": "gradle"},
+            {"path": "crates/util", "detector": "cargo"},
+            {"path": "legacy", "detector": "maven"},
+            {"path": "packages/core", "detector": "npm"},
+            {"path": "svc", "detector": "go"}
+        ])
+    );
+}
+
+/// Python modules follow setuptools' discovery: the `src` layout, or flat
+/// top-level packages with `__init__.py`, never names such as `scripts`.
+#[test]
+fn python_modules_follow_setuptools_package_discovery() {
+    let temp = project(&[
+        ("flat/pyproject.toml", "[project]\n"),
+        ("flat/shop/__init__.py", "\n"),
+        ("flat/shop/cart.py", "total = 0\n"),
+        ("flat/scripts/__init__.py", "\n"),
+        ("flat/scripts/seed.py", "seed = 1\n"),
+        ("flat/tests/test_cart.py", "def test(): pass\n"),
+        ("flat/notebook.py", "x = 1\n"),
+        ("layered/setup.py", "setup()\n"),
+        ("layered/src/pkg/core.py", "core = 1\n"),
+    ]);
+    let (success, document, stderr) = report(&temp.path().join("project"), &[]);
+    assert!(success, "{stderr}");
+    let source: Vec<_> = classifications(&document)
+        .into_iter()
+        .filter(|(path, _, _)| {
+            path.ends_with(".py") && !path.ends_with("__init__.py") && !path.ends_with("setup.py")
+        })
+        .collect();
+    assert_eq!(
+        source,
+        [
+            triple("flat/notebook.py", "unclassified", "fallback"),
+            triple("flat/scripts/seed.py", "unclassified", "fallback"),
+            triple("flat/shop/cart.py", "production", "builtin:python-module"),
+            triple("flat/tests/test_cart.py", "test", "builtin:test-directory"),
+            triple(
+                "layered/src/pkg/core.py",
+                "production",
+                "builtin:python-module"
+            ),
+        ]
+    );
+}
+
+/// Project knowledge beats generic detection, and detection can be disabled.
+#[test]
+fn project_rules_precede_module_detection_which_can_be_disabled() {
+    let legacy = "version = 1\n[[rules]]\nid = \"legacy\"\nmatch = [\"lib/src/legacy/**\"]\npurpose = \"unclassified\"\ncategory = \"legacy\"\n";
+    let disabled = "version = 1\n[classification]\nbuiltin_modules = false\n";
+    for (config, expected) in [
+        (
+            legacy,
+            [
+                triple("lib/src/legacy/old.ts", "unclassified", "legacy"),
+                triple("lib/src/new.ts", "production", "builtin:npm-module"),
+            ],
+        ),
+        (
+            disabled,
+            [
+                triple("lib/src/legacy/old.ts", "unclassified", "fallback"),
+                triple("lib/src/new.ts", "unclassified", "fallback"),
+            ],
+        ),
+    ] {
+        let temp = project(&[
+            (".locmetryrc", config),
+            ("lib/package.json", "{}\n"),
+            ("lib/src/legacy/old.ts", "let a = 1;\n"),
+            ("lib/src/new.ts", "let b = 1;\n"),
+        ]);
+        let (success, document, stderr) = report(&temp.path().join("project"), &[]);
+        assert!(success, "{stderr}");
+        let source: Vec<_> = classifications(&document)
+            .into_iter()
+            .filter(|(path, _, _)| path.ends_with(".ts"))
+            .collect();
+        assert_eq!(source, expected);
+    }
+}
+
 /// The configuration is measurement policy, not project content, so the loaded
 /// file must not appear as a selected file or a coverage gap.
 #[test]

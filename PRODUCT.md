@@ -111,13 +111,29 @@ language = "BASH"
 - Reports record the file as `metadata.user_config_path`, or `null`. `--no-user-config` skips it, for CI or for comparing measurements across machines.
 - Excluded: user-level classification entries, scope booleans, and nested project configurations.
 
+### Module Detection
+
+Production source is evidence from the build, not a guess: a build descriptor among the selected files makes its directory a module, and each build system's default source layout inside that module is production. Detectors only read selected file names and never run a build. Each build system is one detector, so supporting another one adds a detector without changing the stages.
+
+| Detector | Descriptor | Production source in the module |
+| --- | --- | --- |
+| `npm` | `package.json` | `src/**` |
+| `gradle` | `build.gradle`, `build.gradle.kts` | `src/main/**`, Kotlin Multiplatform `src/*Main/**` |
+| `maven` | `pom.xml` | `src/main/**` |
+| `cargo` | `Cargo.toml` | `src/**` |
+| `go` | `go.mod` | every `*.go` file |
+| `python` | `pyproject.toml`, `setup.py`, `setup.cfg` | `src/**`, plus top-level packages with `__init__.py` as setuptools discovers them, excluding names such as `docs`, `scripts`, and `tools` |
+
+Test and build conventions run earlier, so tests inside these trees stay tests. Files outside every module's production source keep the fallback, which then means the build declares nothing about them. The report file lists the modules as `metadata.modules`.
+
 ### Matching and Precedence
 
 1. Apply scope exclusions and the selected ignore-file policy.
 2. Apply the first matching `overrides` entry.
 3. Apply built-in test conventions, then built-in build conventions, if enabled; provenance records the convention, for example `builtin:gradle-test-source-set`.
 4. Apply the first matching ordinary `rules` entry.
-5. Assign `classification.fallback` if no classification matched.
+5. Apply module detection, if enabled: source in the production layout of a module that a build descriptor declares is `production` with category `implementation`, and provenance names the detector, for example `builtin:npm-module`.
+6. Assign `classification.fallback` if no classification matched.
 
 An entry matches when any of its patterns matches the path and, if `kind` is present, the file's kind is listed. A match terminates purpose/category classification. Each file records its provenance as the matching entry ID, `builtin:<convention>`, or `fallback`; fallback files take the fallback purpose as their category. Broad production rules therefore do not swallow conventional tests or build scripts, while an explicit archived-evidence override can take precedence over test filenames. Entries that assign ownership of a whole tree, such as a test-only package whose build scripts are test support, belong in `overrides` so built-in conventions do not preempt them. No ordinary run requires an LLM; agent assistance proposes reviewable configuration.
 
@@ -131,6 +147,7 @@ An entry matches when any of its patterns matches the path and, if `kind` is pre
 | `scope.default_excludes` | Boolean, default `true`; applies `**/.git/**`, `**/node_modules/**`, and `**/.build/**`. `false` is the only way to drop them. `build` directories are not excluded by default because they can hold maintained source; ignore files normally exclude build output. |
 | `classification.builtin_tests` | Boolean, default `true`; enables documented test conventions. The configuration `version` pins the convention set, so upgrading Locmetry does not silently reclassify files. Conventions cover common test directories, test filename suffixes, and framework source sets such as Gradle/Kotlin `src/*Test/**` and `testFixtures`. Ambiguous names such as `fixtures` and `spec` are left to project entries. The version-1 set is defined by `BUILTIN_TESTS_V1` in [src/config.rs](src/config.rs) and recorded in every report as `metadata.config.builtin_conventions`. |
 | `classification.builtin_build` | Boolean, default `true`; enables documented build conventions, pinned by the configuration `version`. Build scripts such as Gradle, Maven, CMake, and Make files are `production` with category `build-tooling`, so they stay separate from implementation; build-tool wrappers such as `gradlew` and `mvnw` are `unclassified` with category `third-party-wrapper`. The set is defined by `BUILTIN_BUILD_V1` in [src/config.rs](src/config.rs) and recorded with the test conventions. |
+| `classification.builtin_modules` | Boolean, default `true`; enables module detection (see [Module Detection](#module-detection)). It runs after `rules`, so it changes only files that would otherwise reach the fallback. |
 | `classification.fallback` | Purpose enum, default `unclassified`; projects can explicitly choose another purpose. |
 | `languages.builtin` | Boolean, default `true`; enables documented language mappings for common file types the backend does not recognize, such as `.gradle` scripts as Groovy and `.jsonc` as JSON. The configuration `version` pins the set, defined by `BUILTIN_LANGUAGES_V1` in [src/config.rs](src/config.rs) and recorded in every report as `metadata.config.builtin_language_mappings`. |
 | `languages.mappings` | Ordered array of `{id, match, language}` entries, applied before built-in mappings. `language` must be a backend language name. Mappings apply only to selected files the backend does not recognize; backend detection is never overridden. The first matching mapping counts the file with the backend's parser for that language. |
@@ -152,7 +169,7 @@ JSON schema version `1`:
 | --- | --- |
 | `schema_version`, `project` | `"1"` and the scan root's directory name. |
 | `report` | Headline only, with `--output FILE`: the report file's path. |
-| `metadata` | `root`, `measured_at_unix_seconds`, `locmetry_version`, `backend`, `backend_inaccurate`, `backend_configuration`; `scope` (effective hidden, ignore-file, symlink, and `exclude` settings); `kinds` (language lists per content kind); `coverage` (`selected_files`, `counted_files`, `mapped_files`, `unrecognized_files`, `unrecognized_extensions`, the `unrecognized` paths, and the `unread` paths); `config_path` and `user_config_path`; and `config`, the effective configuration after merging user defaults including `builtin_conventions` and `builtin_language_mappings`. |
+| `metadata` | `root`, `measured_at_unix_seconds`, `locmetry_version`, `backend`, `backend_inaccurate`, `backend_configuration`; `scope` (effective hidden, ignore-file, symlink, and `exclude` settings); `kinds` (language lists per content kind); `coverage` (`selected_files`, `counted_files`, `mapped_files`, `unrecognized_files`, `unrecognized_extensions`, the `unrecognized` paths, and the `unread` paths); `modules` (report file only: detected modules with `path` and `detector`); `config_path` and `user_config_path`; and `config`, the effective configuration after merging user defaults including `builtin_conventions` and `builtin_language_mappings`. |
 | `summary` | Totals: `all_counted` (every kind) and `source`; `by_kind_purpose` keyed `kind:purpose`; `source_purpose`, `source_categories` keyed `purpose:category`, and `source_languages`, all restricted to `kind = source`; and `top_folders`, source code lines per purpose for each top-level folder (`.` holds files directly in the root). |
 | `review` | Unclassified source files, largest first: `path`, `language`, `category`, `rule`, `code`, `lines`. These are the files a configuration may still need to classify. |
 | `breakdown` | One row per folder, kind, purpose, category, and language with `files`, `code`, `comments`, `blanks`, and `lines`. `folder` is each file's parent (`.` for the root); a folder's recursive totals are the sum over rows whose folder equals it or starts with it plus `/`. Embedded-language rows count lines but zero `files`, so every column is additive. |

@@ -1,7 +1,7 @@
 //! Measurement policy: which files are selected and how each one is classified.
 //!
 //! The input is the version-1 TOML contract in PRODUCT.md.
-use crate::{backend::relative_path, Kind};
+use crate::{backend::relative_path, modules::Module, Kind};
 use anyhow::{ensure, Context, Result};
 use globset::{Glob, GlobBuilder, GlobSet, GlobSetBuilder};
 use serde::{Deserialize, Serialize};
@@ -181,6 +181,7 @@ enum Backend {
 struct ClassificationSettings {
     builtin_tests: bool,
     builtin_build: bool,
+    builtin_modules: bool,
     fallback: Purpose,
 }
 
@@ -189,6 +190,7 @@ impl Default for ClassificationSettings {
         Self {
             builtin_tests: true,
             builtin_build: true,
+            builtin_modules: true,
             fallback: Purpose::Unclassified,
         }
     }
@@ -334,6 +336,17 @@ pub fn user_defaults_file() -> Option<PathBuf> {
         .filter(|path| path.is_absolute())
         .or_else(|| std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".config")))?;
     Some(base.join("locmetry").join("config.toml"))
+}
+
+/// Escapes glob metacharacters so `path` matches only itself.
+pub(crate) fn literal_glob(path: &str) -> String {
+    path.chars().fold(String::new(), |mut literal, character| {
+        if "\\*?[]{}!".contains(character) {
+            literal.push('\\');
+        }
+        literal.push(character);
+        literal
+    })
 }
 
 /// Compiles a root-relative glob with the separator semantics of PRODUCT.md.
@@ -498,6 +511,12 @@ pub struct Policy {
     /// Built-in test conventions, then built-in build conventions.
     conventions: Vec<Entry>,
     rules: Vec<Entry>,
+    /// Whether build descriptors may declare production source.
+    detect_modules: bool,
+    /// Modules adopted from the scan; empty when detection is disabled.
+    modules: Vec<Module>,
+    /// One production entry per detector, after rules and before the fallback.
+    module_entries: Vec<Entry>,
     fallback: (Purpose, String),
     /// Project mappings first, then built-in ones.
     languages: Vec<LanguageMapping>,
@@ -617,6 +636,9 @@ impl Policy {
             overrides: entries(&config.overrides)?,
             conventions,
             rules: entries(&config.rules)?,
+            detect_modules: config.classification.builtin_modules,
+            modules: Vec::new(),
+            module_entries: Vec::new(),
             fallback: (fallback, fallback.to_string()),
             languages,
             snapshot,
@@ -684,24 +706,56 @@ impl Policy {
         let Ok(relative) = config.strip_prefix(root) else {
             return Ok(());
         };
-        let literal =
-            relative_path(relative)?
-                .chars()
-                .fold(String::new(), |mut literal, character| {
-                    if "\\*?[]{}!".contains(character) {
-                        literal.push('\\');
-                    }
-                    literal.push(character);
-                    literal
-                });
         self.override_scope(&ScopeOverrides {
-            exclude: vec![literal],
+            exclude: vec![literal_glob(&relative_path(relative)?)],
             ..Default::default()
         })
     }
 
+    /// Adopts the modules a scan detected, unless `builtin_modules = false`.
+    ///
+    /// Their production source is classified after the project's rules, so
+    /// project knowledge wins and only files that would otherwise reach the
+    /// fallback change (PRODUCT.md, Matching and Precedence).
+    pub fn adopt_modules(&mut self, modules: &[Module]) -> Result<()> {
+        if !self.detect_modules {
+            return Ok(());
+        }
+        let mut sources = std::collections::BTreeMap::<&str, Vec<&str>>::new();
+        for module in modules {
+            sources
+                .entry(module.detector)
+                .or_default()
+                .extend(module.sources.iter().map(String::as_str));
+        }
+        self.module_entries = sources
+            .into_iter()
+            .map(|(detector, globs)| {
+                Ok(Entry {
+                    id: format!("{BUILTIN}{detector}-module"),
+                    matcher: glob_set(globs)?,
+                    kinds: None,
+                    purpose: Purpose::Production,
+                    category: "implementation".into(),
+                })
+            })
+            .collect::<Result<_>>()?;
+        self.modules = modules.to_vec();
+        Ok(())
+    }
+
+    /// Modules whose source this policy classifies.
+    pub fn modules(&self) -> &[Module] {
+        &self.modules
+    }
+
     pub fn classify(&self, path: &str, kind: Kind) -> Classification {
-        let stages = [&self.overrides, &self.conventions, &self.rules];
+        let stages = [
+            &self.overrides,
+            &self.conventions,
+            &self.rules,
+            &self.module_entries,
+        ];
         match stages
             .into_iter()
             .flatten()

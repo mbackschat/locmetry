@@ -1,4 +1,4 @@
-use crate::{Counts, FileRecord, Kind, Policy};
+use crate::{modules, Counts, FileRecord, Kind, Module, Policy};
 use anyhow::{bail, ensure, Context, Result};
 use ignore::WalkBuilder;
 use serde::{Deserialize, Serialize};
@@ -117,6 +117,8 @@ pub struct Scan {
     pub coverage: Coverage,
     /// Some counts are missing because files could not be read.
     pub inaccurate: bool,
+    /// Modules that the selected build descriptors declare.
+    pub modules: Vec<Module>,
 }
 
 impl Scan {
@@ -180,6 +182,11 @@ pub fn scan(root: &Path, policy: &Policy) -> Result<Scan> {
     let mut inaccurate = languages.values().any(|language| language.inaccurate);
     let mut payload = serde_json::to_value(languages)?;
     let counted = normalize_reports(&mut payload, &root, policy)?;
+    let names = paths
+        .iter()
+        .map(|path| relative_path(path.strip_prefix(&root)?))
+        .collect::<Result<Vec<_>>>()?;
+    let modules = modules::detect(&names.iter().map(String::as_str).collect::<Vec<_>>());
     let mut coverage = Coverage {
         selected_files: paths.len(),
         ..Default::default()
@@ -233,6 +240,7 @@ pub fn scan(root: &Path, policy: &Policy) -> Result<Scan> {
         mappings,
         coverage,
         inaccurate,
+        modules,
     })
 }
 

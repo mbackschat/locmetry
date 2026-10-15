@@ -143,6 +143,7 @@ fn run(args: Args) -> Result<Outcome> {
     let measured_at = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
     let scan = scan(&root, &policy)?;
     let (inaccurate, coverage) = (scan.inaccurate, &scan.coverage);
+    policy.adopt_modules(&scan.modules)?;
     let rows = scan.records(&policy)?;
     let summary = build_report(&rows);
     let order = match args.sort {
@@ -172,7 +173,7 @@ fn run(args: Args) -> Result<Outcome> {
                 "data":DATA_LANGUAGES.iter().map(|l| l.name()).collect::<Vec<_>>(),
                 "documentation":DOCUMENTATION_LANGUAGES.iter().map(|l| l.name()).collect::<Vec<_>>()
             },
-            "coverage":coverage, "config_path":config_path, "user_config_path":user_path, "config":policy.snapshot()
+            "coverage":coverage, "modules":policy.modules(), "config_path":config_path, "user_config_path":user_path, "config":policy.snapshot()
         },
         "summary":summary_json, "review":review(&rows), "breakdown":breakdown(&rows)
     });
@@ -219,6 +220,7 @@ fn headline(mut document: Value, report: Option<&Path>) -> Result<Value> {
         .as_object_mut()
         .context("Invalid metadata")?;
     metadata.remove("config");
+    metadata.remove("modules");
     metadata.remove("kinds");
     metadata["coverage"]
         .as_object_mut()
