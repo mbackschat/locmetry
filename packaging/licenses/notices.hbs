@@ -1,0 +1,15 @@
+# Third-party notices
+
+The locmetry executable contains the following open-source crates. Each section gives one licence text and the crates distributed under it; the links lead to each crate's source.
+{{#each licenses}}
+
+## {{{name}}}
+
+{{#each used_by}}
+- [{{crate.name}} {{crate.version}}]({{#if crate.repository}}{{{crate.repository}}}{{else}}https://crates.io/crates/{{crate.name}}{{/if}})
+{{/each}}
+
+```text
+{{{text}}}
+```
+{{/each}}

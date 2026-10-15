@@ -34,6 +34,7 @@ class Locmetry < Formula
       system "cargo", "install", *std_cargo_args
     else
       bin.install "locmetry"
+      prefix.install "THIRD-PARTY-NOTICES.md"
     end
   end
 
