@@ -37,7 +37,7 @@ fn default_format(stdout_is_terminal: bool, report_to_stdout: bool) -> Format {
 #[derive(Parser)]
 #[command(
     version,
-    about = "Measure code with embedded Tokei and reviewed classification rules"
+    about = "Measure source code by language, folder, and purpose: production, test, or unclassified"
 )]
 struct Args {
     /// Scan root [default: the current directory].

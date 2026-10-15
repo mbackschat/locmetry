@@ -1,5 +1,5 @@
 class Locmetry < Formula
-  desc "Measure code with embedded Tokei and reviewed classification rules"
+  desc "Measure source code by language, folder, and purpose"
   homepage "https://github.com/mbackschat/locmetry"
   version "{{version}}"
   license "MIT"
