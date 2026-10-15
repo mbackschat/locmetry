@@ -119,6 +119,38 @@ fn config_schema_explains_precedence_and_switches() {
     assert!(modules.contains("`false`"));
 }
 
+/// Agents test-driving the schema parked maintained tooling and examples as
+/// `unclassified` because the purposes read as "shipped" versus "not
+/// shipped"; the descriptions must carry PRODUCT.md's definition instead.
+#[test]
+fn config_schema_defines_production_as_maintained_non_test_source() {
+    let schema = schema("config");
+    let purposes = schema
+        .pointer("/$defs/Purpose/oneOf")
+        .and_then(Value::as_array)
+        .unwrap();
+    let meaning = |purpose: &str| {
+        purposes
+            .iter()
+            .find(|variant| variant["const"] == purpose)
+            .and_then(|variant| variant["description"].as_str())
+            .unwrap()
+            .to_string()
+    };
+    let production = meaning("production");
+    for term in [
+        "Maintained non-test source",
+        "tooling",
+        "example",
+        "`category`",
+    ] {
+        assert!(production.contains(term), "{term} in {production}");
+    }
+    let unclassified = meaning("unclassified");
+    assert!(unclassified.contains("not maintained"), "{unclassified}");
+    assert!(unclassified.contains("is production"), "{unclassified}");
+}
+
 #[test]
 fn config_schema_lists_language_names() {
     let schema = schema("config");

@@ -122,17 +122,17 @@ const BUILTIN_LANGUAGES_V1: &[(&str, &[&str], LanguageType)] = &[
     ("java-properties", &["**/*.properties"], LanguageType::Ini),
 ];
 
-/// What a file is for.
+/// What a file is for, decided by whether code is maintained rather than whether it ships; `category` then says what kind of code it is, so `source_categories` separates the product from its tooling.
 #[derive(
     Clone, Copy, Debug, Deserialize, Serialize, JsonSchema, PartialEq, Eq, PartialOrd, Ord,
 )]
 #[serde(rename_all = "lowercase")]
 pub enum Purpose {
-    /// Maintained code that is the product or builds and runs it.
+    /// Maintained non-test source, not necessarily shipped runtime code: the product itself and the tooling, build logic, examples, and demos a project keeps working. Tell these apart with `category`, such as `implementation`, `tooling`, `build-tooling`, or `example`, not with another purpose.
     Production,
-    /// Tests and their support code.
+    /// Tests and code that exists only to support them, such as fixtures, harnesses, and test utilities.
     Test,
-    /// Neither production nor test. Code no stage claims is listed for review as `summary.unclassified_folders`; code an entry or convention deliberately parks, such as a prototype, is counted here but not listed.
+    /// Source that is not maintained or not yet judged, such as abandoned prototypes, archived experiments, and copied snippets. Code no stage claims lands here and is listed for review as `summary.unclassified_folders`; code an entry assigns here on purpose is counted but not listed. Maintained code that is not the product, such as tooling or examples, is production with its own category.
     Unclassified,
 }
 
@@ -178,7 +178,7 @@ pub struct ScopeSettings {
     /// Whether the default exclusions apply; `false` is the only way to drop them.
     #[schemars(transform = describe_default_excludes)]
     pub default_excludes: bool,
-    /// Globs of files to leave out, added after the default and personal exclusions; `--exclude` adds more. Use it for vendored, generated, or copied code that should not be measured at all; code that should be measured but not counted as production needs an entry instead.
+    /// Globs of files to leave out, added after the default and personal exclusions; `--exclude` adds more. Use it for code that is not the project's own, such as vendored libraries, submodules, or copied reference material; the project's own code stays measured and gets an entry instead.
     #[schemars(extend("items" = {"type": "string", "description": "Root-relative glob."}))]
     pub exclude: Vec<String>,
 }
@@ -222,7 +222,7 @@ struct ClassificationSettings {
     /// Whether built-in build conventions classify files, right after the test conventions: build scripts are `production` with category `build-tooling`, and build-tool wrappers are `unclassified` with category `third-party-wrapper`.
     #[schemars(transform = describe_build_conventions)]
     builtin_build: bool,
-    /// Whether build modules classify files that no override, convention, or rule matched. A build module is a folder whose build file declares where its source lives; build systems call it a module, project, package, or crate, and it is unrelated to modules or packages inside a language. The build system's default production layout in that folder is `production` with category `implementation`. The innermost build module containing a file decides, and build files in one folder combine their layouts. Only file names are read, never the build file's content, so a source directory that a build file reconfigures needs a rule. Set `false` when build files mislead and rules classify the production source; a rule alone corrects a single folder. Reports list detected build modules as `metadata.modules`.
+    /// Whether build modules classify files that no override, convention, or rule matched. A build module is a folder whose build file declares where its source lives; build systems call it a module, project, package, or crate, and it is unrelated to modules or packages inside a language. The build system's default production layout in that folder is `production` with category `implementation`. The innermost build module containing a file decides, and build files in one folder combine their layouts. Only file names are read, never the build file's content, so a source directory that a build file reconfigures needs a rule. Set `false` when build files mislead and rules classify the production source; a rule alone corrects a single folder. The headline counts modules and their code per build system as `summary.build_modules`; the report file from `--output` lists every module as `metadata.modules`.
     #[schemars(transform = describe_detectors)]
     builtin_modules: bool,
     /// Purpose of files that no stage matched; their category equals the purpose, and their `rule` is `fallback`. Keep `unclassified` so unclaimed code is reported for review instead of silently counted.
@@ -335,7 +335,7 @@ struct ConfigFile {
     /// Entries checked first, before the built-in conventions; the first matching entry decides. Use them only for decisions that must beat a convention, such as a test-support package whose build scripts are test support, or archived code with test file names that must stay unclassified.
     #[serde(default)]
     overrides: Vec<EntryConfig>,
-    /// Entries checked after the built-in conventions and before build modules; the first matching entry decides. Use them for ordinary project knowledge such as tooling, examples, generated code, or source no build file declares; conventional tests, build scripts, and build-tool wrappers inside a matched tree keep their built-in classification.
+    /// Entries checked after the built-in conventions and before build modules; the first matching entry decides. Use them for ordinary project knowledge: maintained tooling or examples as `production` with a category, unmaintained prototypes as `unclassified`, or source no build file declares; conventional tests, build scripts, and build-tool wrappers inside a matched tree keep their built-in classification.
     #[serde(default)]
     rules: Vec<EntryConfig>,
 }
