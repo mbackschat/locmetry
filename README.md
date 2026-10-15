@@ -2,7 +2,7 @@
 
 # locmetry
 
-**Lines of code that mean something.** A line counter tells you a repository has 120,000 lines. It cannot tell you how much of that is product code, how much is tests, and how much is build glue, a vendored SDK, or a prototype nobody maintains. `locmetry` counts with the [Tokei](https://github.com/XAMPPRocky/tokei) engine and classifies every file by purpose, using built-in conventions plus a few reviewable project rules. The numbers then answer the questions people actually ask.
+**Lines of code that mean something.** A line counter tells you a repository has 120,000 lines. It cannot tell you how much of that is product code, how much is tests, and how much is build glue, a vendored SDK, or a prototype nobody maintains. `locmetry` counts every file and classifies it by purpose, using built-in conventions plus a few reviewable project rules. The numbers then answer the questions people actually ask.
 
 - **For people:** a terminal table of source code by language, folder, and purpose.
 - **For agents and scripts:** compact JSON, plus a full report whose rows add up under any grouping.
@@ -10,31 +10,9 @@
 
 It is one static binary for macOS arm64 and Linux x86_64 and aarch64, with no runtime dependencies.
 
-## From `tokei -t=…` to answers
+## What you see
 
-Restricting Tokei to programming languages is a common way to keep JSON, YAML, and Markdown out of the totals. On the [sample project](#a-tour-of-a-sample-project) below, a typical invocation prints:
-
-```text
-$ tokei -t=Java,Kotlin,TypeScript,Lean,JavaScript,Python,Swift
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- Language              Files        Lines         Code     Comments       Blanks
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- JavaScript                1            3            3            0            0
- Kotlin                    6           85           67            2           16
- Python                    2           30           20            2            8
- TypeScript                2           26           21            1            4
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- Total                    11          144          111            5           28
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
-The total of 111 code lines looks plausible, but it is wrong in three ways:
-
-- The JavaScript is a vendored payment SDK.
-- `Checkout.tsx` is missing, because Tokei treats TSX as a separate language that the list forgot.
-- Kotlin and Python mix implementation with tests, Gradle build scripts, tooling, and an abandoned prototype.
-
-The same project with plain `locmetry`:
+Run `locmetry` in a project. For the [sample project](#a-tour-of-a-sample-project) used throughout this page:
 
 ```text
 $ locmetry
@@ -64,12 +42,12 @@ $ locmetry
  Not counted: 1 unrecognized file (png: 1); missing lines are not zero.
 ```
 
-There is no language list to maintain:
+What the table already handles for you:
 
-- Every recognized language counts, and content kinds keep data files and documentation out of the source totals automatically.
-- The vendored SDK is excluded by one line of configuration.
-- Tests are found by convention.
-- Unowned code is reported for review instead of being silently added to production.
+- **No language list to maintain:** every programming language counts, while JSON, YAML, Markdown, and other data or documentation stay out of the source totals.
+- **Tests found by convention:** test files count as tests even inside the application's source tree.
+- **Scope as policy:** the vendored SDK is excluded by one line of configuration.
+- **Nothing silently promoted:** build scripts and tooling stay apart from implementation, and code no rule claims is reported for review instead of being counted as production.
 
 ## Use cases
 
@@ -84,7 +62,7 @@ There is no language list to maintain:
 
 ## Features
 
-- **Embedded Tokei 15.0.0:** more than 300 languages, comment and blank-line detection, and code embedded in other languages, such as snippets in Markdown. It is compiled in, so nothing else needs installing.
+- **Accurate counting for more than 300 languages:** code, comment, and blank lines, including code embedded in other languages, such as snippets in Markdown.
 - **Purpose and category per file:** `production`, `test`, or `unclassified`, with an optional category such as `implementation`, `tooling`, `build-tooling`, or `example`. Every file records the rule that decided it.
 - **Built-in conventions:** these are recognized out of the box:
   - test directories, Gradle and Kotlin test source sets, `*.test.ts`, `*Test.kt`, `*_test.go`, `test_*.py`, and snapshot folders;
@@ -93,10 +71,10 @@ There is no language list to maintain:
 
   The configuration `version` pins the convention set, so upgrades never silently reclassify files.
 - **Content kinds:** source, data, documentation, and other are counted separately, so a large JSON fixture or a README never inflates code totals.
-- **Language mappings:** files Tokei does not recognize can be counted with a known parser. `.gradle` (as Groovy), `.jsonc`, `.jsonl`, and `.properties` are built in, and you can add your own.
+- **Language mappings:** files with an unknown extension can be counted as a known language. `.gradle` (as Groovy), `.jsonc`, `.jsonl`, and `.properties` are built in, and you can add your own.
 - **Explicit scope:** root-relative globs, ignore files, hidden-file control, default exclusions for `.git`, `node_modules`, and `.build`, and optional personal exclusions shared by all projects.
 - **Honest coverage:** files that could not be recognized or read are listed, never reported as zero lines.
-- **Reproducible:** ambient Tokei configuration is ignored, and every report records the effective scope and policy.
+- **Reproducible:** only the project's configuration, command-line options, and optional personal exclusions affect results, and every report records the effective scope and policy.
 - **Three outputs, one measurement:** the terminal table, JSON, and Markdown are rendered from the same per-file records.
 
 ## Install
@@ -198,7 +176,7 @@ So `OrderServiceTest.kt` and `cart.test.ts` are tests even though the `applicati
 
 ### Terminal table
 
-Plain `locmetry` on a terminal prints the table shown [above](#from-tokei--t-to-answers):
+Plain `locmetry` on a terminal prints the table shown [above](#what-you-see):
 
 - language rows sorted by code;
 - top-level folders, whose rows add up to the total;
@@ -215,7 +193,6 @@ When stdout is not a terminal, `locmetry` prints a compact JSON headline, under 
   "metadata": {
     "root": "/work/acme-orders",
     "locmetry_version": "0.1.1",
-    "backend": "tokei 15.0.0 (embedded)",
     "scope": {
       "exclude": ["**/.git/**", "**/node_modules/**", "**/.build/**", "third_party/**", ".locmetryrc"]
     },
@@ -359,9 +336,9 @@ Exit codes:
 | Report file | `--output FILE`, or `--output -` for stdout | deeper questions | the headline plus review list, additive breakdown table, effective configuration, and with `--files` per-file records |
 | Markdown | `--format markdown` | reviews, wikis | purpose, category, kind, language, and folder tables, review list, and coverage |
 
-## How it relates to other counters
+## Compared with line counters
 
-Tokei, [scc](https://github.com/boyter/scc), and [cloc](https://github.com/AlDanial/cloc) count lines well and group them by language. locmetry reuses Tokei's counting instead of competing with it, and adds what language totals lack: scope as reviewable policy, purpose and category per file with provenance, separation of data and documentation from source, and coverage that names what was not counted. [Research](docs/research/README.md) compares the tools in more detail.
+Line counters such as [cloc](https://github.com/AlDanial/cloc) and [scc](https://github.com/boyter/scc) report lines per language. locmetry adds what language totals lack: scope as reviewable policy, purpose and category per file with provenance, separation of data and documentation from source, and coverage that names what was not counted. [Research](docs/research/README.md) compares the tools in more detail.
 
 Known limits: classification is per file, so a file mixing production code and inline tests counts as one purpose. Git is not invoked, so a measurement describes the working copy rather than a commit. [Measurement semantics and limits](docs/measurement.md) lists the details.
 
@@ -369,11 +346,11 @@ Known limits: classification is per file, so a file mixing production code and i
 
 - [Product vision and requirements](PRODUCT.md): configuration contract, report schema, and guarantees.
 - [Measurement semantics and limits](docs/measurement.md): selection and counting details and known limits.
-- [Tokei integration and distribution](docs/tokei-integration.md): embedded backend, release binaries, and the Homebrew formula.
+- [Architecture and distribution](docs/tokei-integration.md): embedded counting engine, release binaries, and the Homebrew formula.
 - [Research](docs/research/README.md): counter capabilities and classification findings.
 - [Development plan](PLAN.md): remaining work and completion evidence.
 - [Repository guidelines](CLAUDE.md): contributor conventions and checks; `AGENTS.md` links to this file.
 
 ## License
 
-Licensed under either the [Apache License, Version 2.0](LICENSE-APACHE) or the [MIT License](LICENSE-MIT), at your option.
+Licensed under either the [Apache License, Version 2.0](LICENSE-APACHE) or the [MIT License](LICENSE-MIT), at your option. Line counting uses the embedded [Tokei](https://github.com/XAMPPRocky/tokei) library.
