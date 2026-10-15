@@ -38,6 +38,37 @@ fn invalid_configurations_fail_with_specific_messages() {
     }
 }
 
+/// A declared category list catches typos and invented names, while
+/// configurations without one keep free-form categories.
+#[test]
+fn declared_categories_restrict_entry_categories() {
+    let entry = |category: &str| {
+        format!("[[rules]]\nid = \"a\"\nmatch = [\"x/**\"]\npurpose = \"production\"\ncategory = \"{category}\"\n")
+    };
+    let declared = "version = 1\n[categories]\nproof = \"Machine-checked theorems.\"\n";
+    for allowed in [
+        "proof",
+        "implementation",
+        "build-tooling",
+        "third-party-wrapper",
+        "test",
+        "production",
+    ] {
+        Policy::from_toml(&format!("{declared}{}", entry(allowed))).unwrap();
+    }
+    let error = Policy::from_toml(&format!("{declared}{}", entry("prof"))).unwrap_err();
+    let message = format!("{error:#}");
+    assert!(
+        message.contains("\"prof\"") && message.contains("proof"),
+        "{message}"
+    );
+    Policy::from_toml(&format!("version = 1\n{}", entry("anything"))).unwrap();
+    let snapshot = policy(&format!("{declared}{}", entry("proof")))
+        .snapshot()
+        .clone();
+    assert_eq!(snapshot["categories"]["proof"], "Machine-checked theorems.");
+}
+
 #[test]
 fn globs_follow_the_root_relative_contract() {
     let policy = policy(

@@ -84,6 +84,9 @@ struct Args {
     /// Include per-file records in the report.
     #[arg(long)]
     files: bool,
+    /// Add a table of source code per purpose and category to the terminal table.
+    #[arg(long)]
+    categories: bool,
     /// Stdout format [default: table on a terminal, json otherwise].
     #[arg(long, value_enum)]
     format: Option<Format>,
@@ -176,7 +179,15 @@ fn run(args: Args) -> Result<Outcome> {
         Sort::Name => RowOrder::Name,
     };
     let mut human = match format {
-        Format::Table => render_table(&project, &summary, &rows, coverage, &modules, order),
+        Format::Table => render_table(
+            &project,
+            &summary,
+            &rows,
+            coverage,
+            &modules,
+            args.categories,
+            order,
+        ),
         Format::Markdown => render_markdown(
             &project, &summary, &rows, coverage, &modules, args.depth, order,
         ),

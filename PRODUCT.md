@@ -53,6 +53,12 @@ fallback = "unclassified"
 [languages]
 builtin = true
 
+[categories]
+evidence = "Archived probes kept for provenance, not maintained."
+test-support = "Helpers that exist only for tests."
+tooling = "Maintained scripts that build, check, or release the project."
+unmapped-source = "Source no entry claims yet."
+
 [[languages.mappings]]
 id = "runbooks"
 match = ["scripts/*.runbook"]
@@ -155,6 +161,7 @@ An entry matches when any of its patterns matches the path and, if `kind` is pre
 | `classification.fallback` | Purpose enum, default `unclassified`; projects can explicitly choose another purpose. |
 | `languages.builtin` | Boolean, default `true`; enables documented language mappings for common file types the backend does not recognize, such as `.gradle` scripts as Groovy and `.jsonc` as JSON. `version` selects the set, defined by `BUILTIN_LANGUAGES_V1` in [src/config.rs](src/config.rs) and recorded in every report as `metadata.config.builtin_language_mappings`. |
 | `languages.mappings` | Ordered array of `{id, match, language}` entries, applied before built-in mappings. `language` must be a backend language name. Mappings apply only to selected files the backend does not recognize; backend detection is never overridden. The first matching mapping counts the file with the backend's parser for that language. |
+| `categories` | Optional table mapping category names to their meanings. When present, every entry `category` must be declared there or be built in: a purpose name, `implementation`, or a built-in convention's category (`test`, `build-tooling`, `third-party-wrapper`). It catches typos and invented names; without it, categories are free-form. The effective configuration records the meanings. |
 | `overrides`, `rules` | Ordered arrays of entries; omitted arrays are empty. Each entry requires a unique string `id` (not `fallback`, which names the fallback provenance), a nonempty string-array `match`, and a valid `purpose`. `category` defaults to the purpose. `kind` is an optional nonempty array of kinds. `reason` is an optional string recorded in the effective-policy snapshot. |
 
 Match normalized root-relative paths with case-sensitive globs: `*` stays within a segment, `**` spans zero or more directories, `?` matches one non-separator character, `[...]` matches one character from a class, and `{a,b}` matches any listed alternative. Backslash escapes the next character on every platform. Any pattern in `match` selects its entry. Patterns do not use implicit basename matching, negation, or absolute paths. Reject invalid patterns, unknown keys, duplicate IDs, and invalid types/enums.

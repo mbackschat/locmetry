@@ -388,6 +388,31 @@ fn review_lists_only_unclaimed_source() {
     assert_eq!(document["summary"]["unclassified_folders"], json!([]));
 }
 
+/// Categories split each purpose; the terminal table shows them on request,
+/// one row per `purpose:category`, so it stays one screen by default.
+#[test]
+fn categories_table_is_shown_on_request() {
+    let temp = project(&[
+        (".locmetryrc", "version = 1\n[[rules]]\nid = \"tools\"\nmatch = [\"tools/**\"]\npurpose = \"production\"\ncategory = \"tooling\"\n"),
+        ("src/a.rs", "fn a() {}\nfn b() {}\n"),
+        ("tools/t.py", "x = 1\n"),
+        ("tests/t.rs", "fn t() {}\n"),
+    ]);
+    let root = temp.path().join("project");
+    let plain = String::from_utf8(run(&root, &["--format", "table"]).stdout).unwrap();
+    assert!(!plain.contains("Category"), "{plain}");
+    let table =
+        String::from_utf8(run(&root, &["--format", "table", "--categories"]).stdout).unwrap();
+    let expected = "
+ Category                   Files  Code
+ ──────────────────────────────────────
+ unclassified:unclassified      1     2
+ production:tooling             1     1
+ test:test                      1     1
+";
+    assert!(table.contains(expected), "{table}");
+}
+
 /// Readers see which build systems decided production and how much code each
 /// one claimed; a module whose layout claimed nothing hints at a misleading
 /// build file.

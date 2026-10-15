@@ -356,6 +356,7 @@ pub fn render_table(
     rows: &[FileRecord],
     coverage: &Coverage,
     modules: &[ModuleShare],
+    categories: bool,
     order: RowOrder,
 ) -> String {
     let mut languages = BTreeMap::<String, (Counts, BTreeMap<Purpose, u64>)>::new();
@@ -444,6 +445,29 @@ pub fn render_table(
             None,
             (2, "Code by purpose"),
         );
+    }
+    if categories {
+        let rows = summary
+            .totals
+            .source_categories
+            .iter()
+            .map(|(category, counts)| (category.clone(), *counts))
+            .collect();
+        let body: Vec<Vec<String>> = ordered(rows, |counts| counts.code, order)
+            .into_iter()
+            .map(|(category, counts)| {
+                vec![category, counts.files.to_string(), counts.code.to_string()]
+            })
+            .collect();
+        if !body.is_empty() {
+            output += "\n";
+            output += &text_table(
+                &["Category", "Files", "Code"],
+                &body,
+                None,
+                (1, "Source code"),
+            );
+        }
     }
 
     let mut notes = Vec::new();

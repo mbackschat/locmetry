@@ -141,6 +141,7 @@ Personal defaults for every project, such as extra exclusions or language mappin
 | `--depth N` | Folder levels in the Markdown folder table; default: 2. |
 | `--output FILE` | Also write the full JSON report to `FILE`, outside the scan root; `-` prints it instead of the headline. |
 | `--files` | Add per-file records to the report. |
+| `--categories` | Add a table of source code per purpose and category to the terminal table. |
 | `--schema config\|user-config\|report` | Print the JSON Schema of `.locmetryrc`, of personal defaults, or of the JSON headline and report, and exit. |
 
 ## Configure with an agent
@@ -210,7 +211,7 @@ Each file gets the first match of five stages:
 4. [build modules](#build-modules): the source layout that a build file declares, here in `backend` and `web`;
 5. the fallback, `unclassified` by default.
 
-So `OrderServiceTest.kt` and `cart.test.ts` are tests even though they sit inside the build modules' source trees. The Gradle scripts are `build-tooling`, and `gradlew` is a `third-party-wrapper`. The prototype falls through to `unclassified`, where the review list surfaces it as unclaimed. A rule that gives it `purpose = "unclassified"` with a `category` such as `prototype` parks it on purpose: it still counts as unclassified but leaves the review list, as `gradlew` does. [PRODUCT.md](PRODUCT.md#project-configuration) documents every key, glob semantics, and `[[languages.mappings]]`.
+So `OrderServiceTest.kt` and `cart.test.ts` are tests even though they sit inside the build modules' source trees. The Gradle scripts are `build-tooling`, and `gradlew` is a `third-party-wrapper`. The prototype falls through to `unclassified`, where the review list surfaces it as unclaimed. A rule that gives it `purpose = "unclassified"` with a `category` such as `prototype` parks it on purpose: it still counts as unclassified but leaves the review list, as `gradlew` does. An optional `[categories]` table declares the category names entries may use, each with its meaning, so a typo fails instead of becoming a new category. [PRODUCT.md](PRODUCT.md#project-configuration) documents every key, glob semantics, and `[[languages.mappings]]`.
 
 ### Build modules
 
@@ -243,7 +244,7 @@ Plain `locmetry` on a terminal prints the table shown [above](#what-you-see):
 - top-level folders, whose rows add up to the total;
 - notes on content that is not source, the build modules that decided production, the folders that hold unclaimed source, and files that could not be counted.
 
-`--sort name` lists rows alphabetically instead, in the table and in Markdown.
+`--sort name` lists rows alphabetically instead, in the table and in Markdown. `--categories` adds a table of source code per `purpose:category`, such as `production:tooling`, to see what production consists of.
 
 ### JSON headline for agents and scripts
 

@@ -14,7 +14,7 @@ use schemars::{
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::{
-    collections::BTreeSet,
+    collections::{BTreeMap, BTreeSet},
     fmt,
     path::{Path, PathBuf},
 };
@@ -25,6 +25,9 @@ pub const CONFIG_FILE: &str = ".locmetryrc";
 
 /// Provenance of files that no entry matched.
 const FALLBACK: &str = "fallback";
+
+/// Category of source that a build module classifies.
+const MODULE_CATEGORY: &str = "implementation";
 
 /// Provenance prefix of built-in test and build conventions.
 const BUILTIN: &str = "builtin:";
@@ -344,6 +347,9 @@ struct ConfigFile {
     classification: ClassificationSettings,
     #[serde(default)]
     languages: LanguageSettings,
+    /// Optional list of the categories entries may use, each mapped to its meaning, such as `proof = "Machine-checked theorems behind the assurance claim"`. When present, an entry's `category` must be listed here or be built in: a purpose name, `implementation`, or a built-in convention's category. Declaring categories catches typos and keeps names consistent; reports record the meanings in the effective configuration.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    categories: BTreeMap<String, String>,
     /// Entries checked first, before the built-in conventions; the first matching entry decides. Use them only for decisions that must beat a convention, such as a test-support package whose build scripts are test support, or archived code with test file names that must stay unclassified.
     #[serde(default)]
     overrides: Vec<EntryConfig>,
@@ -718,6 +724,38 @@ impl Entry {
     }
 }
 
+/// Rejects entry categories that a declared `[categories]` list does not
+/// name; without a list, categories stay free-form.
+fn check_categories(config: &ConfigFile) -> Result<()> {
+    if config.categories.is_empty() {
+        return Ok(());
+    }
+    let builtin: BTreeSet<String> = Purpose::ALL
+        .iter()
+        .map(Purpose::to_string)
+        .chain(std::iter::once(MODULE_CATEGORY.to_string()))
+        .chain(
+            BUILTIN_TESTS_V1
+                .iter()
+                .chain(BUILTIN_BUILD_V1)
+                .map(|convention| convention.category.to_string()),
+        )
+        .collect();
+    for entry in config.overrides.iter().chain(&config.rules) {
+        let Some(category) = &entry.category else {
+            continue;
+        };
+        ensure!(
+            config.categories.contains_key(category) || builtin.contains(category),
+            "Entry {} uses category {category:?}, which [categories] does not declare; declared: {}; built in: {}",
+            entry.id,
+            config.categories.keys().cloned().collect::<Vec<_>>().join(", "),
+            builtin.into_iter().collect::<Vec<_>>().join(", ")
+        );
+    }
+    Ok(())
+}
+
 /// Rejects empty, duplicate, and reserved entry IDs across all stages.
 fn check_ids<'a>(ids: impl IntoIterator<Item = &'a str>) -> Result<()> {
     let mut seen = BTreeSet::new();
@@ -778,6 +816,7 @@ impl Policy {
                 .chain(&config.rules)
                 .map(|entry| entry.id.as_str()),
         )?;
+        check_categories(&config)?;
         let entries = |list: &[EntryConfig]| {
             list.iter()
                 .map(Entry::from_config)
@@ -961,7 +1000,7 @@ impl Policy {
                     matcher: glob_set(module.sources.iter().map(String::as_str))?,
                     kinds: None,
                     purpose: Purpose::Production,
-                    category: "implementation".into(),
+                    category: MODULE_CATEGORY.into(),
                 };
                 Ok((module.clone(), entry))
             })
