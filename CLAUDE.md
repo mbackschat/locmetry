@@ -24,7 +24,7 @@ Use red/green TDD. Name tests after observable behavior and guard precedence, sc
 
 ## Sensitive Analysis
 
-Keep measured-project names, paths, profiles, counts, and reports exclusively in Git-ignored `docs/research/local/`. Use synthetic public fixtures. Never force-add local analysis files.
+Keep measured-project names, paths, profiles, counts, and reports exclusively in Git-ignored `docs/research/local/`. Use synthetic public fixtures. Never force-add local analysis files. Exception, decided 2026-10-15 by the owner: a12-rulekit and bpmn-lean-experiment may be named in public documents; their paths, profiles, and counts stay local.
 
 ## Commit & Pull Request Guidelines
 

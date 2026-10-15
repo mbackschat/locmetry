@@ -1,6 +1,6 @@
 # Trials on Real Projects
 
-Conducted on 2026-10-15. This page publishes the method, anonymized results, and resulting changes of trials on real repositories; project names, paths, sizes, and configurations stay in Git-ignored `docs/research/local/`, as [CLAUDE.md](../../CLAUDE.md#sensitive-analysis) requires.
+Conducted on 2026-10-15. This page publishes the method, results, and resulting changes of trials on real repositories. Only a12-rulekit and bpmn-lean-experiment are named; other projects stay anonymous, and paths, sizes, and configurations stay in Git-ignored `docs/research/local/`, as [CLAUDE.md](../../CLAUDE.md#sensitive-analysis) requires.
 
 ## Agent Configuration Trials
 
@@ -10,11 +10,11 @@ Conducted on 2026-10-15. This page publishes the method, anonymized results, and
 
 - Each trial gives a fresh agent a one-line task, "create a locmetry configuration for this project", and nothing else: no locmetry source, no documentation, and no mention of `--schema`. The agent may read the repository but not change it, and passes its configuration with `--config` from outside.
 - The oracle is a human-reviewed configuration per repository. A score is the share of source code lines whose purpose, `production`, `test`, or `unclassified`, matches the reference, file by file. From round 3 on, the reference is measured again right before scoring, because the repositories kept changing.
-- Repository A is a Kotlin Multiplatform library with nonstandard Gradle test source sets and test corpora, B a TypeScript research monorepo with Git submodules of other teams' code, and C a TypeScript monorepo with archived evidence whose files are named like tests.
+- a12-rulekit is a Kotlin Multiplatform library with nonstandard Gradle test source sets and test corpora, repository B a TypeScript research monorepo with Git submodules of other teams' code, and repository C a TypeScript monorepo with archived evidence whose files are named like tests.
 
 **Results:**
 
-| Round | Binary | Model | A | B | C |
+| Round | Binary | Model | a12-rulekit | B | C |
 | --- | --- | --- | ---: | ---: | ---: |
 | No configuration | | | 94.7% | 21.8% | 95.9% |
 | 1 | `ed89e2f` | Sonnet | 97.2% | 98.4% | 92.5% |
@@ -25,7 +25,7 @@ Conducted on 2026-10-15. This page publishes the method, anonymized results, and
 - Every agent found `--schema config` from `--help` and followed the setup steps its description states, in 9 to 17 tool calls and under two minutes.
 - All agents of C used an override for the archived evidence, because test conventions beat rules, and all agents of B excluded the submodules.
 - Remaining differences are judgment calls, such as test-support helpers inside a production source tree or reference material excluded rather than counted.
-- In a Lean project without a reference configuration, two models agreed on 95.0% of source; nearly all of the rest was whether machine-checked conformance theorems are tests or production.
+- In [bpmn-lean-experiment](https://github.com/mbackschat/bpmn-lean-experiment), a Lean project with a Lake build and no reference configuration, two models agreed on 95.0% of source; nearly all of the rest was whether machine-checked conformance theorems are tests or production.
 
 **Open question without configuration:** asked "how much test code compared to production code?" in B, an agent without configuration counted the submodules as production and answered 0.58 test lines per production line instead of about 1.0. After `2703a79` pointed at Git submodules, a Haiku agent excluded them and answered about 1.05.
 
