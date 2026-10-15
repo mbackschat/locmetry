@@ -209,14 +209,14 @@ The same binaries are on the [releases page](https://github.com/mbackschat/locme
 ```sh
 # Linux targets: x86_64-unknown-linux-musl or aarch64-unknown-linux-musl
 target=aarch64-apple-darwin
-curl -fsSL "https://github.com/mbackschat/locmetry/releases/download/v0.1.5/locmetry-v0.1.5-$target.tar.gz" | tar -xz
-install "locmetry-v0.1.5-$target/locmetry" ~/.local/bin/
+curl -fsSL "https://github.com/mbackschat/locmetry/releases/download/v0.1.6/locmetry-v0.1.6-$target.tar.gz" | tar -xz
+install "locmetry-v0.1.6-$target/locmetry" ~/.local/bin/
 ```
 
 Or build from source with a Rust toolchain:
 
 ```sh
-cargo install --locked --git https://github.com/mbackschat/locmetry --tag v0.1.5
+cargo install --locked --git https://github.com/mbackschat/locmetry --tag v0.1.6
 ```
 
 ## Quick start
@@ -396,7 +396,7 @@ When stdout is not a terminal, `locmetry` prints a compact JSON headline, under 
   "project": "acme-orders",
   "metadata": {
     "root": "/work/acme-orders",
-    "locmetry_version": "0.1.5",
+    "locmetry_version": "0.1.6",
     "scope": {
       "exclude": ["**/.git/**", "**/node_modules/**", "**/.build/**", "**/.lake/**", "third_party/**", ".locmetryrc"]
     },
