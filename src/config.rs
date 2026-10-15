@@ -1,16 +1,10 @@
 //! Measurement policy: which files are selected and how each one is classified.
 //!
 //! The input is the version-1 TOML contract in PRODUCT.md.
-use crate::{
-    backend::relative_path,
-    modules::{Module, DETECTORS},
-    Kind,
-};
+use crate::{backend::relative_path, modules::Module, Kind};
 use anyhow::{ensure, Context, Result};
 use globset::{Glob, GlobBuilder, GlobSet, GlobSetBuilder};
-use schemars::{
-    generate::SchemaSettings, transform::RecursiveTransform, JsonSchema, Schema, SchemaGenerator,
-};
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::{
@@ -19,6 +13,9 @@ use std::{
     path::{Path, PathBuf},
 };
 use tokei::LanguageType;
+
+mod schema;
+pub use schema::{config_schema, user_config_schema};
 
 /// Configuration file discovered in the scan root.
 pub const CONFIG_FILE: &str = ".locmetryrc";
@@ -191,7 +188,7 @@ pub struct ScopeSettings {
     /// Whether `.ignore`, `.tokeignore`, and, inside a Git work tree, `.gitignore` files limit the selection; `--respect-ignore-files` overrides it.
     pub respect_ignore_files: bool,
     /// Whether the default exclusions apply; `false` is the only way to drop them.
-    #[schemars(transform = describe_default_excludes)]
+    #[schemars(transform = schema::describe_default_excludes)]
     pub default_excludes: bool,
     /// Globs of files to leave out, added after the default and personal exclusions; `--exclude` adds more. Use it for code that is not the project's own, such as vendored libraries, Git submodules (reports list them as `summary.submodules` until excluded), or copied reference material; the project's own code stays measured and gets an entry instead.
     #[schemars(extend("items" = {"type": "string", "description": "Root-relative glob."}))]
@@ -232,13 +229,13 @@ enum Backend {
 #[schemars(rename = "Classification")]
 struct ClassificationSettings {
     /// Whether built-in test conventions classify files, after `overrides` and before `rules`. A test convention also wins over a `rules` entry that matches the same file, so tests inside production trees stay tests; an `overrides` entry is the way to beat one.
-    #[schemars(transform = describe_test_conventions)]
+    #[schemars(transform = schema::describe_test_conventions)]
     builtin_tests: bool,
     /// Whether built-in build conventions classify files, right after the test conventions: build scripts are `production` with category `build-tooling`, and build-tool wrappers are `unclassified` with category `third-party-wrapper`.
-    #[schemars(transform = describe_build_conventions)]
+    #[schemars(transform = schema::describe_build_conventions)]
     builtin_build: bool,
     /// Whether build modules classify files that no override, convention, or rule matched. A build module is a folder whose build file declares where its source lives; build systems call it a module, project, package, or crate, and it is unrelated to modules or packages inside a language. The build system's default production layout in that folder is `production` with category `implementation`. The innermost build module containing a file decides, and build files in one folder combine their layouts. Only file names are read, never the build file's content, so a source directory that a build file reconfigures needs a rule. Set `false` when build files mislead and rules classify the production source; a rule alone corrects a single folder. The headline counts modules and their code per build system as `summary.build_modules`; the report file from `--output` lists every module as `metadata.modules`.
-    #[schemars(transform = describe_detectors)]
+    #[schemars(transform = schema::describe_detectors)]
     builtin_modules: bool,
     /// Purpose of files that no stage matched; their category equals the purpose, and their `rule` is `fallback`. Keep `unclassified` so unclaimed code is reported for review instead of silently counted.
     fallback: Purpose,
@@ -286,7 +283,7 @@ struct EntryConfig {
 #[schemars(rename = "Languages")]
 struct LanguageSettings {
     /// Whether the built-in language mappings apply, after `mappings`.
-    #[schemars(transform = describe_language_mappings)]
+    #[schemars(transform = schema::describe_language_mappings)]
     builtin: bool,
     /// Ordered mappings; the first matching one counts the file. They apply only to files the counter does not recognize, so they never change a recognized file's language. Reports list unrecognized files as `metadata.coverage.unrecognized`.
     mappings: Vec<MappingConfig>,
@@ -314,7 +311,7 @@ struct MappingConfig {
     #[schemars(length(min = 1), extend("items" = {"type": "string"}))]
     patterns: Vec<String>,
     /// Language whose parser counts the file.
-    #[schemars(schema_with = "language_names")]
+    #[schemars(schema_with = "schema::language_names")]
     language: String,
 }
 
@@ -391,132 +388,6 @@ struct UserLanguages {
     /// Applied after the project's mappings and before the built-in ones; IDs must differ from the project's.
     #[serde(default)]
     mappings: Vec<MappingConfig>,
-}
-
-/// JSON Schema of the project configuration, with the semantics of each
-/// setting and the built-in sets it switches.
-pub fn config_schema() -> Value {
-    schema::<ConfigFile>()
-}
-
-/// JSON Schema of the personal defaults file.
-pub fn user_config_schema() -> Value {
-    schema::<UserDefaults>()
-}
-
-fn schema<T: JsonSchema>() -> Value {
-    SchemaSettings::draft2020_12()
-        .with_transform(RecursiveTransform(drop_null))
-        .into_generator()
-        .into_root_schema_for::<T>()
-        .to_value()
-}
-
-/// Narrows `Option` fields' `["T", "null"]` types to `T`: TOML has no null,
-/// so an optional key is simply absent.
-fn drop_null(schema: &mut Schema) {
-    let Some(Value::Array(types)) = schema.get_mut("type") else {
-        return;
-    };
-    types.retain(|name| name != "null");
-    if let [single] = types.as_slice() {
-        let single = single.clone();
-        schema.insert("type".into(), single);
-    }
-}
-
-fn language_names(_: &mut SchemaGenerator) -> Schema {
-    let names: Vec<&str> = LanguageType::list()
-        .iter()
-        .map(|(language, _)| language.name())
-        .collect();
-    schemars::json_schema!({"type": "string", "enum": names})
-}
-
-/// Appends a generated list to a schema description, so the schema states the
-/// built-in sets from the same constants that apply them.
-fn append_description(schema: &mut Schema, text: String) {
-    let description = match schema.get("description").and_then(Value::as_str) {
-        Some(existing) => format!("{existing} {text}"),
-        None => text,
-    };
-    schema.insert("description".into(), description.into());
-}
-
-fn globs(patterns: &[&str]) -> String {
-    patterns
-        .iter()
-        .map(|pattern| format!("`{pattern}`"))
-        .collect::<Vec<_>>()
-        .join(", ")
-}
-
-fn describe_conventions(schema: &mut Schema, set: &[Convention]) {
-    let list = set
-        .iter()
-        .map(|convention| {
-            format!(
-                "`{BUILTIN}{}` ({}, category `{}`): {}",
-                convention.id,
-                convention.purpose,
-                convention.category,
-                globs(convention.patterns)
-            )
-        })
-        .collect::<Vec<_>>()
-        .join("; ");
-    append_description(schema, format!("Conventions, in order: {list}."));
-}
-
-fn describe_test_conventions(schema: &mut Schema) {
-    describe_conventions(schema, BUILTIN_TESTS_V1);
-}
-
-fn describe_build_conventions(schema: &mut Schema) {
-    describe_conventions(schema, BUILTIN_BUILD_V1);
-}
-
-fn describe_detectors(schema: &mut Schema) {
-    let list = DETECTORS
-        .iter()
-        .map(|detector| {
-            let build_files = detector
-                .descriptors()
-                .iter()
-                .map(|name| format!("`{name}`"))
-                .collect::<Vec<_>>()
-                .join(" or ");
-            format!(
-                "`{}`, a folder with {build_files}: {}",
-                module_rule(detector.id()),
-                detector.layout()
-            )
-        })
-        .collect::<Vec<_>>()
-        .join("; ");
-    append_description(
-        schema,
-        format!("Build files and production layouts: {list}."),
-    );
-}
-
-fn describe_default_excludes(schema: &mut Schema) {
-    append_description(schema, format!("They are {}.", globs(DEFAULT_EXCLUDES)));
-}
-
-fn describe_language_mappings(schema: &mut Schema) {
-    let list = BUILTIN_LANGUAGES_V1
-        .iter()
-        .map(|(id, patterns, language)| {
-            format!(
-                "`{BUILTIN}{id}`: {} as {}",
-                globs(patterns),
-                language.name()
-            )
-        })
-        .collect::<Vec<_>>()
-        .join("; ");
-    append_description(schema, format!("Mappings: {list}."));
 }
 
 impl UserDefaults {
