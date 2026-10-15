@@ -1,11 +1,58 @@
+//! Measurement policy: which files are selected and how each one is classified.
+//!
+//! Two inputs build the same [`Policy`]: the version-1 TOML contract in
+//! PRODUCT.md and the provisional JSON/regex profiles kept for migration.
+use crate::Kind;
 use anyhow::{ensure, Context, Result};
+use globset::{Glob, GlobBuilder, GlobSet, GlobSetBuilder};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
-use std::{collections::BTreeSet, fmt, path::PathBuf};
+use serde_json::{json, Value};
+use std::{
+    collections::BTreeSet,
+    fmt,
+    path::{Path, PathBuf},
+};
 
-/// Provenance of files that no rule matched.
+/// Configuration file discovered in the scan root.
+pub const CONFIG_FILE: &str = ".locmetryrc";
+
+/// Provenance of files that no entry matched.
 const FALLBACK: &str = "fallback";
+
+/// Provenance prefix of built-in test conventions.
+const BUILTIN: &str = "builtin:";
+
+const DEFAULT_EXCLUDES: &[&str] = &["**/.git/**", "**/node_modules/**", "**/.build/**"];
+
+/// Version-1 test conventions; configuration `version = 1` pins this set.
+///
+/// Ownership-ambiguous names such as `fixtures` are deliberately absent:
+/// reference projects disagree on whether they hold tests (PRODUCT.md).
+const BUILTIN_TESTS_V1: &[(&str, &[&str])] = &[
+    (
+        "test-directory",
+        &["**/{test,tests,__test__,__tests__,spec}/**"],
+    ),
+    (
+        "gradle-test-source-set",
+        &["**/src/*Test/**", "**/src/testFixtures/**"],
+    ),
+    ("snapshot-directory", &["**/__snapshots__/**"]),
+    (
+        "js-test-file",
+        &["**/*.{test,spec}.{js,jsx,mjs,cjs,ts,tsx,mts,cts}"],
+    ),
+    (
+        "jvm-test-class",
+        &["**/*{Test,Tests,TestCase}.{java,kt,kts,groovy,scala}"],
+    ),
+    ("go-test-file", &["**/*_test.go"]),
+    (
+        "python-test-file",
+        &["**/test_*.py", "**/*_test.py", "**/conftest.py"],
+    ),
+];
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "lowercase")]
@@ -36,9 +83,93 @@ pub struct Classification {
     pub rule: String,
 }
 
+/// Selection settings shared by both configuration formats.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct ScopeSettings {
+    pub hidden: bool,
+    pub respect_ignore_files: bool,
+    pub default_excludes: bool,
+    pub exclude: Vec<String>,
+}
+
+impl Default for ScopeSettings {
+    fn default() -> Self {
+        Self {
+            hidden: true,
+            respect_ignore_files: true,
+            default_excludes: true,
+            exclude: Vec::new(),
+        }
+    }
+}
+
+/// Explicit CLI settings, which take precedence over project settings.
+#[derive(Debug, Default)]
+pub struct ScopeOverrides {
+    pub hidden: Option<bool>,
+    pub respect_ignore_files: Option<bool>,
+    /// Added to the configured exclusions.
+    pub exclude: Vec<String>,
+}
+
+#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+enum Backend {
+    #[default]
+    Tokei,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(default, deny_unknown_fields)]
+struct ClassificationSettings {
+    builtin_tests: bool,
+    fallback: Purpose,
+}
+
+impl Default for ClassificationSettings {
+    fn default() -> Self {
+        Self {
+            builtin_tests: true,
+            fallback: Purpose::Unclassified,
+        }
+    }
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
-pub struct Rule {
+struct EntryConfig {
+    id: String,
+    #[serde(rename = "match")]
+    patterns: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    kind: Option<Vec<Kind>>,
+    purpose: Purpose,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    category: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    reason: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+struct ConfigFile {
+    version: u32,
+    #[serde(default)]
+    backend: Backend,
+    #[serde(default)]
+    scope: ScopeSettings,
+    #[serde(default)]
+    classification: ClassificationSettings,
+    #[serde(default)]
+    overrides: Vec<EntryConfig>,
+    #[serde(default)]
+    rules: Vec<EntryConfig>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+struct LegacyRule {
     id: String,
     pattern: String,
     purpose: Purpose,
@@ -48,105 +179,371 @@ pub struct Rule {
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
-struct ProfileData {
+struct LegacyProfile {
     project: String,
     root: PathBuf,
     #[serde(default)]
     exclude_prefixes: Vec<String>,
-    rules: Vec<Rule>,
+    rules: Vec<LegacyRule>,
     #[serde(default)]
     notes: Vec<String>,
     #[serde(default)]
     examples: Vec<Value>,
 }
 
-#[derive(Debug)]
-pub struct Profile {
-    data: ProfileData,
-    patterns: Vec<Regex>,
-    prefixes: Vec<String>,
+/// Compiles a root-relative glob with the separator semantics of PRODUCT.md.
+///
+/// globset lets `*` cross `/` and makes `\` platform-dependent by default
+/// (globset 0.4 `GlobBuilder` docs), so both options are set explicitly.
+fn glob(pattern: &str) -> Result<Glob> {
+    ensure!(
+        !pattern.starts_with('!'),
+        "Pattern {pattern:?} uses negation, which is not supported"
+    );
+    ensure!(
+        !pattern.starts_with('/')
+            && pattern
+                .split('/')
+                .all(|part| !matches!(part, "" | "." | "..")),
+        "Pattern {pattern:?} must be a relative path glob without empty, `.`, or `..` segments"
+    );
+    GlobBuilder::new(pattern)
+        .literal_separator(true)
+        .backslash_escape(true)
+        .build()
+        .with_context(|| format!("Invalid glob {pattern:?}"))
 }
 
-impl Profile {
-    pub fn from_json(input: &str) -> Result<Self> {
-        let data: ProfileData = serde_json::from_str(input).context("Invalid JSON profile")?;
-        let mut ids = BTreeSet::new();
-        let patterns = data
-            .rules
-            .iter()
-            .map(|rule| {
-                ensure!(
-                    !rule.id.is_empty() && ids.insert(&rule.id),
-                    "Rule IDs must be nonempty and unique"
-                );
-                ensure!(
-                    rule.id != FALLBACK,
-                    "Rule ID {FALLBACK} is reserved for unmatched files"
-                );
-                Regex::new(&rule.pattern)
-                    .with_context(|| format!("Invalid regex in rule {}", rule.id))
-            })
-            .collect::<Result<Vec<_>>>()?;
-        let prefixes = data
-            .exclude_prefixes
-            .iter()
-            .map(|prefix| {
-                let prefix = prefix.trim_end_matches('/');
-                ensure!(
-                    !prefix.is_empty()
-                        && !prefix.contains(['?', '*', '[', ']', '\\', '!', '{', '}', ':'])
-                        && prefix
-                            .split('/')
-                            .all(|part| !matches!(part, "" | "." | "..")),
-                    "Exclusion must be a literal root-relative directory prefix: {prefix}"
-                );
-                Ok(prefix.to_owned())
-            })
-            .collect::<Result<Vec<_>>>()?;
+fn glob_set<'a>(patterns: impl IntoIterator<Item = &'a str>) -> Result<GlobSet> {
+    let mut set = GlobSetBuilder::new();
+    for pattern in patterns {
+        set.add(glob(pattern)?);
+    }
+    Ok(set.build()?)
+}
+
+/// Compiled selection policy.
+#[derive(Clone, Debug)]
+pub struct Scope {
+    settings: ScopeSettings,
+    excludes: GlobSet,
+    /// Directories whose every descendant is excluded, from `<dir>/**` patterns.
+    pruned_directories: GlobSet,
+}
+
+impl Scope {
+    fn new(settings: ScopeSettings) -> Result<Self> {
+        let patterns = Self::patterns(&settings);
+        let excludes =
+            glob_set(patterns.iter().map(String::as_str)).context("Invalid scope exclusion")?;
+        let pruned_directories = glob_set(
+            patterns
+                .iter()
+                .filter_map(|pattern| pattern.strip_suffix("/**")),
+        )?;
         Ok(Self {
-            data,
-            patterns,
-            prefixes,
+            settings,
+            excludes,
+            pruned_directories,
         })
     }
 
-    pub fn classify(&self, path: &str) -> Classification {
-        for (rule, pattern) in self.data.rules.iter().zip(&self.patterns) {
-            if pattern.is_match(path) {
-                return Classification {
+    fn patterns(settings: &ScopeSettings) -> Vec<String> {
+        let defaults = DEFAULT_EXCLUDES
+            .iter()
+            .filter(|_| settings.default_excludes)
+            .map(|pattern| pattern.to_string());
+        defaults.chain(settings.exclude.iter().cloned()).collect()
+    }
+
+    pub fn hidden(&self) -> bool {
+        self.settings.hidden
+    }
+
+    pub fn respect_ignore_files(&self) -> bool {
+        self.settings.respect_ignore_files
+    }
+
+    /// Effective exclusion patterns, defaults first.
+    pub fn exclusions(&self) -> Vec<String> {
+        Self::patterns(&self.settings)
+    }
+
+    pub fn is_excluded(&self, path: &str) -> bool {
+        self.excludes.is_match(path)
+    }
+
+    pub fn prunes_directory(&self, path: &str) -> bool {
+        self.pruned_directories.is_match(path)
+    }
+}
+
+#[derive(Debug)]
+enum Matcher {
+    Glob(GlobSet),
+    /// Provisional JSON profiles: unanchored Rust regex search.
+    Regex(Regex),
+}
+
+#[derive(Debug)]
+struct Entry {
+    id: String,
+    matcher: Matcher,
+    kinds: Option<Vec<Kind>>,
+    purpose: Purpose,
+    category: String,
+}
+
+impl Entry {
+    fn matches(&self, path: &str, kind: Kind) -> bool {
+        let path_matches = match &self.matcher {
+            Matcher::Glob(set) => set.is_match(path),
+            Matcher::Regex(regex) => regex.is_match(path),
+        };
+        path_matches
+            && self
+                .kinds
+                .as_ref()
+                .is_none_or(|kinds| kinds.contains(&kind))
+    }
+
+    fn classification(&self) -> Classification {
+        Classification {
+            purpose: self.purpose,
+            category: self.category.clone(),
+            rule: self.id.clone(),
+        }
+    }
+
+    fn from_config(entry: &EntryConfig) -> Result<Self> {
+        ensure!(
+            !entry.patterns.is_empty(),
+            "Entry {} needs a nonempty match array",
+            entry.id
+        );
+        ensure!(
+            entry.kind.as_ref().is_none_or(|kinds| !kinds.is_empty()),
+            "Entry {} needs a nonempty kind array when kind is present",
+            entry.id
+        );
+        Ok(Self {
+            id: entry.id.clone(),
+            matcher: Matcher::Glob(
+                glob_set(entry.patterns.iter().map(String::as_str))
+                    .with_context(|| format!("Invalid match in entry {}", entry.id))?,
+            ),
+            kinds: entry.kind.clone(),
+            purpose: entry.purpose,
+            category: entry
+                .category
+                .clone()
+                .unwrap_or_else(|| entry.purpose.to_string()),
+        })
+    }
+}
+
+/// Rejects empty, duplicate, and reserved entry IDs across all stages.
+fn check_ids<'a>(ids: impl IntoIterator<Item = &'a str>) -> Result<()> {
+    let mut seen = BTreeSet::new();
+    for id in ids {
+        ensure!(
+            !id.is_empty() && seen.insert(id),
+            "Entry IDs must be nonempty and unique: {id:?}"
+        );
+        ensure!(
+            id != FALLBACK && !id.starts_with(BUILTIN),
+            "Entry ID {id:?} is reserved for {FALLBACK} or {BUILTIN} provenance"
+        );
+    }
+    Ok(())
+}
+
+/// Scope and classification for one measurement.
+#[derive(Debug)]
+pub struct Policy {
+    project: Option<String>,
+    root: Option<PathBuf>,
+    scope: Scope,
+    overrides: Vec<Entry>,
+    builtin_tests: Vec<Entry>,
+    rules: Vec<Entry>,
+    fallback: (Purpose, String),
+    snapshot: Value,
+}
+
+impl Policy {
+    /// Built-in settings used when no configuration file exists.
+    pub fn defaults() -> Self {
+        Self::from_toml("version = 1").expect("built-in configuration is valid")
+    }
+
+    pub fn from_toml(input: &str) -> Result<Self> {
+        let config: ConfigFile = toml::from_str(input).context("Invalid TOML configuration")?;
+        ensure!(
+            config.version == 1,
+            "Unsupported configuration version {}",
+            config.version
+        );
+        check_ids(
+            config
+                .overrides
+                .iter()
+                .chain(&config.rules)
+                .map(|entry| entry.id.as_str()),
+        )?;
+        let entries = |list: &[EntryConfig]| {
+            list.iter()
+                .map(Entry::from_config)
+                .collect::<Result<Vec<_>>>()
+        };
+        let builtin_tests = match config.classification.builtin_tests {
+            true => BUILTIN_TESTS_V1
+                .iter()
+                .map(|(id, patterns)| {
+                    Ok(Entry {
+                        id: format!("{BUILTIN}{id}"),
+                        matcher: Matcher::Glob(glob_set(patterns.iter().copied())?),
+                        kinds: None,
+                        purpose: Purpose::Test,
+                        category: Purpose::Test.to_string(),
+                    })
+                })
+                .collect::<Result<Vec<_>>>()?,
+            false => Vec::new(),
+        };
+        let mut snapshot = serde_json::to_value(&config)?;
+        snapshot["builtin_test_conventions"] = json!(builtin_tests
+            .iter()
+            .zip(BUILTIN_TESTS_V1)
+            .map(|(entry, (_, patterns))| json!({"id": entry.id, "match": patterns}))
+            .collect::<Vec<_>>());
+        let fallback = config.classification.fallback;
+        Ok(Self {
+            project: None,
+            root: None,
+            scope: Scope::new(config.scope.clone())?,
+            overrides: entries(&config.overrides)?,
+            builtin_tests,
+            rules: entries(&config.rules)?,
+            fallback: (fallback, fallback.to_string()),
+            snapshot,
+        })
+    }
+
+    /// Provisional JSON/regex profile, retained until profiles are migrated.
+    pub fn from_legacy_json(input: &str) -> Result<Self> {
+        let data: LegacyProfile = serde_json::from_str(input).context("Invalid JSON profile")?;
+        check_ids(data.rules.iter().map(|rule| rule.id.as_str()))?;
+        let rules = data
+            .rules
+            .iter()
+            .map(|rule| {
+                Ok(Entry {
+                    id: rule.id.clone(),
+                    matcher: Matcher::Regex(
+                        Regex::new(&rule.pattern)
+                            .with_context(|| format!("Invalid regex in rule {}", rule.id))?,
+                    ),
+                    kinds: None,
                     purpose: rule.purpose,
                     category: rule
                         .category
                         .clone()
                         .unwrap_or_else(|| rule.purpose.to_string()),
-                    rule: rule.id.clone(),
-                };
-            }
+                })
+            })
+            .collect::<Result<Vec<_>>>()?;
+        // Profiles always excluded Git metadata and accept only literal
+        // directory prefixes, which translate exactly to `<prefix>/**`.
+        let mut exclude = vec!["**/.git/**".to_owned()];
+        for prefix in &data.exclude_prefixes {
+            let prefix = prefix.trim_end_matches('/');
+            ensure!(
+                !prefix.is_empty()
+                    && !prefix.contains(['?', '*', '[', ']', '\\', '!', '{', '}', ':'])
+                    && prefix
+                        .split('/')
+                        .all(|part| !matches!(part, "" | "." | "..")),
+                "Exclusion must be a literal root-relative directory prefix: {prefix}"
+            );
+            exclude.push(format!("{prefix}/**"));
         }
-        Classification {
-            purpose: Purpose::Unclassified,
-            category: "unmapped".into(),
-            rule: FALLBACK.into(),
+        let scope = Scope::new(ScopeSettings {
+            default_excludes: false,
+            exclude,
+            ..ScopeSettings::default()
+        })?;
+        Ok(Self {
+            project: Some(data.project.clone()),
+            root: Some(data.root.clone()),
+            scope,
+            overrides: Vec::new(),
+            builtin_tests: Vec::new(),
+            rules,
+            fallback: (Purpose::Unclassified, "unmapped".into()),
+            snapshot: serde_json::to_value(&data)?,
+        })
+    }
+
+    /// Loads an explicit configuration file; `.json` selects a legacy profile.
+    pub fn load(path: &Path) -> Result<Self> {
+        let input = std::fs::read_to_string(path)
+            .with_context(|| format!("Cannot read configuration {}", path.display()))?;
+        match path.extension().and_then(|extension| extension.to_str()) {
+            Some("json") => Self::from_legacy_json(&input),
+            _ => Self::from_toml(&input),
+        }
+        .with_context(|| format!("Invalid configuration {}", path.display()))
+    }
+
+    pub fn override_scope(&mut self, overrides: &ScopeOverrides) -> Result<()> {
+        let mut settings = self.scope.settings.clone();
+        if let Some(hidden) = overrides.hidden {
+            settings.hidden = hidden;
+        }
+        if let Some(respect) = overrides.respect_ignore_files {
+            settings.respect_ignore_files = respect;
+        }
+        settings.exclude.extend(overrides.exclude.iter().cloned());
+        self.scope = Scope::new(settings)?;
+        Ok(())
+    }
+
+    pub fn classify(&self, path: &str, kind: Kind) -> Classification {
+        let stages = [&self.overrides, &self.builtin_tests, &self.rules];
+        match stages
+            .into_iter()
+            .flatten()
+            .find(|entry| entry.matches(path, kind))
+        {
+            Some(entry) => entry.classification(),
+            None => Classification {
+                purpose: self.fallback.0,
+                category: self.fallback.1.clone(),
+                rule: FALLBACK.into(),
+            },
         }
     }
 
     pub fn is_excluded(&self, path: &str) -> bool {
-        self.prefixes.iter().any(|prefix| {
-            path.strip_prefix(prefix)
-                .is_some_and(|rest| rest.starts_with('/'))
-        })
+        self.scope.is_excluded(path)
     }
 
-    pub fn project(&self) -> &str {
-        &self.data.project
+    pub fn scope(&self) -> &Scope {
+        &self.scope
     }
-    pub fn root(&self) -> &std::path::Path {
-        &self.data.root
+
+    /// Project name of a legacy profile.
+    pub fn project(&self) -> Option<&str> {
+        self.project.as_deref()
     }
-    pub fn prefixes(&self) -> &[String] {
-        &self.prefixes
+
+    /// Scan root of a legacy profile.
+    pub fn root(&self) -> Option<&Path> {
+        self.root.as_deref()
     }
-    pub fn snapshot(&self) -> Result<Value> {
-        Ok(serde_json::to_value(&self.data)?)
+
+    pub fn snapshot(&self) -> &Value {
+        &self.snapshot
     }
 }

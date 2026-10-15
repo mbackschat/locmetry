@@ -8,7 +8,7 @@ pub use backend::{
     file_records, language_kind, scan, scope_policy, Coverage, Scan, DATA_LANGUAGES,
     DOCUMENTATION_LANGUAGES,
 };
-pub use config::{Classification, Profile, Purpose};
+pub use config::{Classification, Policy, Purpose, Scope, ScopeOverrides, CONFIG_FILE};
 pub use output::{render_markdown, validate_output, write_reports};
 pub use report::{build_report, Counts, FileRecord, Kind, ReportSummary};
 

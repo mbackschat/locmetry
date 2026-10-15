@@ -1,6 +1,6 @@
-use crate::{Counts, FileRecord, Kind, Profile};
+use crate::{Counts, FileRecord, Kind, Policy};
 use anyhow::{bail, ensure, Context, Result};
-use ignore::{overrides::OverrideBuilder, WalkBuilder};
+use ignore::WalkBuilder;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::{
@@ -70,15 +70,23 @@ pub fn language_kind(name: &str) -> Kind {
     }
 }
 
-/// Selection policy applied by [`scan`], recorded with every report.
-pub fn scope_policy(profile: &Profile) -> Value {
+/// Effective selection policy applied by [`scan`], recorded with every report.
+pub fn scope_policy(policy: &Policy) -> Value {
+    let scope = policy.scope();
+    let ignore_files = match scope.respect_ignore_files() {
+        true => vec![
+            ".gitignore (inside a Git work tree)",
+            ".ignore",
+            TOOL_IGNORE_FILE,
+        ],
+        false => Vec::new(),
+    };
     json!({
-        "hidden": true,
-        "respect_ignore_files": true,
-        "ignore_files": [".gitignore (inside a Git work tree)", ".ignore", TOOL_IGNORE_FILE],
+        "hidden": scope.hidden(),
+        "respect_ignore_files": scope.respect_ignore_files(),
+        "ignore_files": ignore_files,
         "symlinks": "not followed",
-        "exclude_git_metadata": true,
-        "exclude_prefixes": profile.prefixes(),
+        "exclude": scope.exclusions(),
     })
 }
 
@@ -98,22 +106,35 @@ pub struct Scan {
     pub coverage: Coverage,
 }
 
-pub fn scan(root: &Path, profile: &Profile) -> Result<Scan> {
+pub fn scan(root: &Path, policy: &Policy) -> Result<Scan> {
     let root = root.canonicalize().context("Scan root does not exist")?;
     ensure!(root.is_dir(), "Scan root must be a directory");
     std::fs::read_dir(&root).context("Cannot read scan root")?;
-    // Tokei v15 src/utils/fs.rs anchors overrides to CWD; select scope here so
-    // root-relative exclusions remain independent of the caller's directory.
-    let mut overrides = OverrideBuilder::new(&root);
-    overrides.add("!.git")?;
-    for prefix in profile.prefixes() {
-        overrides.add(&format!("!/{prefix}/"))?;
-    }
+    // Tokei v15 src/utils/fs.rs anchors overrides to CWD and uses gitignore
+    // syntax; select scope here so root-relative globs keep PRODUCT.md semantics.
+    let scope = policy.scope().clone();
     let mut walker = WalkBuilder::new(&root);
     walker
-        .hidden(false)
-        .add_custom_ignore_filename(TOOL_IGNORE_FILE)
-        .overrides(overrides.build()?);
+        .standard_filters(scope.respect_ignore_files())
+        .hidden(!scope.hidden());
+    if scope.respect_ignore_files() {
+        walker.add_custom_ignore_filename(TOOL_IGNORE_FILE);
+    }
+    let walk_root = root.clone();
+    walker.filter_entry(move |entry| {
+        let Ok(path) = entry
+            .path()
+            .strip_prefix(&walk_root)
+            .map_err(anyhow::Error::from)
+            .and_then(relative_path)
+        else {
+            return true; // The root itself; non-UTF-8 names fail later with context.
+        };
+        match entry.file_type() {
+            Some(kind) if kind.is_dir() => !scope.prunes_directory(&path),
+            _ => !scope.is_excluded(&path),
+        }
+    });
     let mut paths = Vec::new();
     for entry in walker.build() {
         let entry = entry.context("Cannot traverse scan root")?;
@@ -163,7 +184,7 @@ pub fn scan(root: &Path, profile: &Profile) -> Result<Scan> {
                         .context("Backend path escaped scan root")?,
                 )?;
                 ensure!(
-                    !profile.is_excluded(&name),
+                    !policy.is_excluded(&name),
                     "Backend returned an excluded file: {name}"
                 );
                 counted.insert(name.clone());
@@ -278,7 +299,7 @@ fn language_counts(
     total.files = 1;
 }
 
-pub fn file_records(payload: Value, profile: &Profile) -> Result<Vec<FileRecord>> {
+pub fn file_records(payload: Value, policy: &Policy) -> Result<Vec<FileRecord>> {
     let mut groups = payload
         .as_object()
         .context("Invalid backend language map")?
@@ -293,7 +314,7 @@ pub fn file_records(payload: Value, profile: &Profile) -> Result<Vec<FileRecord>
             let path = relative_path(Path::new(&report.name))?;
             ensure!(seen.insert(path.clone()), "Duplicate physical file: {path}");
             ensure!(
-                !profile.is_excluded(&path),
+                !policy.is_excluded(&path),
                 "Backend returned an excluded file: {path}"
             );
             let kind = language_kind(&language);
@@ -305,7 +326,7 @@ pub fn file_records(payload: Value, profile: &Profile) -> Result<Vec<FileRecord>
             }
             counts.files = 1;
             rows.push(FileRecord {
-                classification: profile.classify(&path),
+                classification: policy.classify(&path, kind),
                 path,
                 language: language.clone(),
                 kind,

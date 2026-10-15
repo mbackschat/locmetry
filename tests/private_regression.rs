@@ -1,9 +1,32 @@
-use locmetry::{build_report, file_records, Profile};
+use locmetry::{build_report, file_records, Kind, Policy};
 use serde_json::Value;
 use std::{env, fs, path::Path};
 
 fn read_json(path: &Path) -> Value {
     serde_json::from_slice(&fs::read(path).unwrap()).unwrap()
+}
+
+/// Renames the historical `data/config` kind to its current `data` spelling.
+///
+/// Saved measurements predate the rename in schema `poc-3`; everything else,
+/// including every count and classification, must still match exactly.
+fn current_kind_spelling(value: Value) -> Value {
+    match value {
+        Value::String(text) if text == "data/config" => Value::String("data".into()),
+        Value::Array(items) => Value::Array(items.into_iter().map(current_kind_spelling).collect()),
+        Value::Object(map) => Value::Object(
+            map.into_iter()
+                .map(|(key, value)| {
+                    let key = match key.strip_prefix("data/config:") {
+                        Some(purpose) => format!("data:{purpose}"),
+                        None => key,
+                    };
+                    (key, current_kind_spelling(value))
+                })
+                .collect(),
+        ),
+        other => other,
+    }
 }
 
 #[test]
@@ -21,24 +44,27 @@ fn reviewed_profiles_reproduce_saved_measurements() {
         else {
             continue;
         };
-        let profile = Profile::from_json(&fs::read_to_string(&path).unwrap()).unwrap();
+        let profile = Policy::from_legacy_json(&fs::read_to_string(&path).unwrap()).unwrap();
+        let root = profile.root().unwrap();
         let config = read_json(&path);
         for example in config["examples"].as_array().unwrap() {
             let name = example["path"].as_str().unwrap();
             assert!(
-                profile.root().join(name).exists(),
+                root.join(name).exists(),
                 "Reviewed example no longer exists"
             );
             match example["excluded"].as_bool() {
                 Some(true) => assert!(profile.is_excluded(name)),
                 _ => {
-                    let result = profile.classify(name);
+                    let result = profile.classify(name, Kind::Source);
                     assert_eq!(result.purpose.to_string(), example["purpose"]);
                     assert_eq!(result.category, example["category"]);
                 }
             }
         }
-        let baseline = read_json(&path.with_file_name(format!("{stem}-measurement.json")));
+        let baseline = current_kind_spelling(read_json(
+            &path.with_file_name(format!("{stem}-measurement.json")),
+        ));
         let raw = read_json(&path.with_file_name(format!("{stem}-measurement.tokei.json")));
         {
             let rows = file_records(raw, &profile).unwrap();

@@ -1,5 +1,5 @@
 use crate::{Classification, Purpose};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, fmt};
 
 #[derive(Clone, Copy, Debug, Default, Serialize, PartialEq, Eq)]
@@ -22,8 +22,8 @@ impl Counts {
 }
 
 /// Content kind of a counted file, derived from its backend language.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
-#[serde(into = "&'static str")]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Kind {
     Source,
     Data,
@@ -31,21 +31,14 @@ pub enum Kind {
     Other,
 }
 
-impl From<Kind> for &'static str {
-    fn from(kind: Kind) -> Self {
-        match kind {
-            Kind::Source => "source",
-            // PoC schema spelling; PRODUCT.md names this kind `data`.
-            Kind::Data => "data/config",
-            Kind::Documentation => "documentation",
-            Kind::Other => "other",
-        }
-    }
-}
-
 impl fmt::Display for Kind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str((*self).into())
+        f.write_str(match self {
+            Kind::Source => "source",
+            Kind::Data => "data",
+            Kind::Documentation => "documentation",
+            Kind::Other => "other",
+        })
     }
 }
 

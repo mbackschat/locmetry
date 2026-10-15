@@ -1,14 +1,14 @@
-use locmetry::{build_report, file_records, scan, Kind, Profile};
+use locmetry::{build_report, file_records, scan, Kind, Policy};
 use serde_json::{json, Value};
 use std::fs;
 
-fn profile(extra: Value) -> Profile {
+fn profile(extra: Value) -> Policy {
     let mut value = json!({"project":"example", "root":".", "rules":[]});
     value
         .as_object_mut()
         .unwrap()
         .extend(extra.as_object().unwrap().clone());
-    Profile::from_json(&value.to_string()).unwrap()
+    Policy::from_legacy_json(&value.to_string()).unwrap()
 }
 
 fn stats(code: u64) -> Value {
@@ -25,15 +25,20 @@ fn ordered_rules_preserve_exceptions_and_unknowns() {
         {"id":"demo","pattern":"^test-support/demo/","purpose":"production","category":"example"},
         {"id":"support","pattern":"^test-support/","purpose":"test","category":"test-support"}
     ]}));
-    assert_eq!(config.classify("test-support/demo/main.ts").rule, "demo");
     assert_eq!(
         config
-            .classify("test-support/helpers.ts")
+            .classify("test-support/demo/main.ts", Kind::Source)
+            .rule,
+        "demo"
+    );
+    assert_eq!(
+        config
+            .classify("test-support/helpers.ts", Kind::Source)
             .purpose
             .to_string(),
         "test"
     );
-    assert_eq!(config.classify("unknown.ts").rule, "fallback");
+    assert_eq!(config.classify("unknown.ts", Kind::Source).rule, "fallback");
 }
 
 #[test]
@@ -68,7 +73,7 @@ fn fixtures_remain_data_and_shell_and_rust_are_source() {
     .unwrap();
     let summary = serde_json::to_value(build_report(&rows)).unwrap();
     assert_eq!(summary["source"]["code"], 11);
-    assert_eq!(summary["by_kind_purpose"]["data/config:test"]["code"], 100);
+    assert_eq!(summary["by_kind_purpose"]["data:test"]["code"], 100);
 }
 
 #[test]
@@ -153,7 +158,7 @@ fn invalid_rules_and_scope_fail_before_scanning() {
             .as_object_mut()
             .unwrap()
             .extend(extra.as_object().unwrap().clone());
-        let error = Profile::from_json(&value.to_string()).unwrap_err();
+        let error = Policy::from_legacy_json(&value.to_string()).unwrap_err();
         assert!(format!("{error:#}").contains(message), "{error:#}");
     }
 }

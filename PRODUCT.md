@@ -10,7 +10,7 @@ Measure a project's own codebase with understandable scope, test/production dist
 - Optional: additional counting adapters, custom content-kind overrides, supported language/extension mappings, and configuration self-checks that assert expected classifications for named paths without requiring those files to exist.
 - Excluded initially: a new counting engine, a generic plugin framework, and semantic splitting of production/tests within individual files.
 
-The configuration below is the agreed product direction. The [existing PoC](poc/README.md) still uses JSON/regex profiles; TOML, glob matching, and the separate override/default/rule stages are not implemented yet. The PoC is implemented in Rust with the Tokei library embedded. The installed executable must not require Python, Git, a separate Tokei executable, or a separately installed Rust runtime. Homebrew Rust dependencies are build-only; release bottles should require no runtime formula dependencies. [Tokei integration and Homebrew distribution](docs/tokei-integration.md) records the implemented boundary and planned packaging.
+The configuration below is implemented. Provisional [JSON/regex profiles](poc/README.md) remain accepted until existing profiles are migrated. Locmetry is implemented in Rust with the Tokei library embedded. The installed executable must not require Python, Git, a separate Tokei executable, or a separately installed Rust runtime. Homebrew Rust dependencies are build-only; release bottles should require no runtime formula dependencies. [Tokei integration and Homebrew distribution](docs/tokei-integration.md) records the implemented boundary and planned packaging.
 
 ## Measurement Model
 
@@ -25,7 +25,7 @@ Report code, comments, blanks, and total lines separately. Preserve each file's 
 
 ## Project Configuration
 
-Use `.locmetryrc` in TOML. Discover it in the selected scan root; an explicit configuration path may select a different file without changing that root. All patterns remain relative to the scan root. Project configuration overrides built-in settings; explicit CLI settings override project settings.
+Use `.locmetryrc` in TOML. Discover it in the selected scan root, which defaults to the current directory; an explicit `--config` path may select a different file without changing that root. Without a discovered or explicit configuration, built-in settings apply; an explicit configuration that cannot be read fails. All patterns remain relative to the scan root. Project configuration overrides built-in settings; explicit CLI settings override project settings: `--hidden BOOL`, `--respect-ignore-files BOOL`, and repeatable `--exclude GLOB`, which adds to the configured exclusions.
 
 This example is synthetic:
 
@@ -84,7 +84,7 @@ category = "unmapped-source"
 4. Apply the first matching ordinary `rules` entry.
 5. Assign `classification.fallback` if no classification matched.
 
-An entry matches when any of its patterns matches the path and, if `kind` is present, the file's kind is listed. A match terminates purpose/category classification. Broad production rules therefore do not swallow conventional tests, while an explicit archived-evidence override can take precedence over test filenames. No ordinary run requires an LLM; agent assistance proposes reviewable configuration.
+An entry matches when any of its patterns matches the path and, if `kind` is present, the file's kind is listed. A match terminates purpose/category classification. Each file records its provenance as the matching entry ID, `builtin:<convention>`, or `fallback`; fallback files take the fallback purpose as their category. Broad production rules therefore do not swallow conventional tests, while an explicit archived-evidence override can take precedence over test filenames. No ordinary run requires an LLM; agent assistance proposes reviewable configuration.
 
 | Setting | Type and contract |
 | --- | --- |
@@ -94,7 +94,7 @@ An entry matches when any of its patterns matches the path and, if `kind` is pre
 | `scope.respect_ignore_files` | Boolean, default `true`; controls the adapter's ignore-file policy. |
 | `scope.exclude` | Array of root-relative glob strings, default empty, added to the default exclusions. |
 | `scope.default_excludes` | Boolean, default `true`; applies `**/.git/**`, `**/node_modules/**`, and `**/.build/**`. `false` is the only way to drop them. `build` directories are not excluded by default because they can hold maintained source; ignore files normally exclude build output. |
-| `classification.builtin_tests` | Boolean, default `true`; enables documented test conventions. The configuration `version` pins the convention set, so upgrading Locmetry does not silently reclassify files. Conventions cover common test directories, test filename suffixes, and framework source sets such as Gradle/Kotlin `src/*Test/**` and `testFixtures`. Ownership-ambiguous names such as `fixtures` are left to project entries. |
+| `classification.builtin_tests` | Boolean, default `true`; enables documented test conventions. The configuration `version` pins the convention set, so upgrading Locmetry does not silently reclassify files. Conventions cover common test directories, test filename suffixes, and framework source sets such as Gradle/Kotlin `src/*Test/**` and `testFixtures`. Ownership-ambiguous names such as `fixtures` are left to project entries. The version-1 set is defined by `BUILTIN_TESTS_V1` in [src/config.rs](src/config.rs) and recorded in every report as `metadata.config.builtin_test_conventions`. |
 | `classification.fallback` | Purpose enum, default `unclassified`; projects can explicitly choose another purpose. |
 | `overrides`, `rules` | Ordered arrays of entries; omitted arrays are empty. Each entry requires a unique string `id` (not `fallback`, which names the fallback provenance), a nonempty string-array `match`, and a valid `purpose`. `category` defaults to the purpose. `kind` is an optional nonempty array of kinds. `reason` is an optional string recorded in the effective-policy snapshot. |
 

@@ -178,3 +178,138 @@ fn unreadable_files_produce_partial_output_naming_them_and_fail() {
     assert_eq!(document["metadata"]["backend_inaccurate"], true);
     assert_eq!(document["metadata"]["coverage"]["unread"][0], "locked.py");
 }
+
+fn project(files: &[(&str, &str)]) -> tempfile::TempDir {
+    let temp = tempfile::tempdir().unwrap();
+    for (path, content) in files {
+        let path = temp.path().join("project").join(path);
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        fs::write(path, content).unwrap();
+    }
+    temp
+}
+
+fn measure(cwd: &std::path::Path, args: &[&str]) -> (bool, Value, String) {
+    let output = Command::new(env!("CARGO_BIN_EXE_locmetry"))
+        .current_dir(cwd)
+        .args(args)
+        .output()
+        .unwrap();
+    let stderr = String::from_utf8_lossy(&output.stderr).into_owned();
+    let document = serde_json::from_slice(&output.stdout).unwrap_or(Value::Null);
+    (output.status.success(), document, stderr)
+}
+
+fn rules_by_path(document: &Value) -> Vec<(String, String)> {
+    document["files"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|file| {
+            (
+                file["path"].as_str().unwrap().into(),
+                file["rule"].as_str().unwrap().into(),
+            )
+        })
+        .collect()
+}
+
+const APP_RULE: &str =
+    "version = 1\n[[rules]]\nid = \"app\"\nmatch = [\"src/**\"]\npurpose = \"production\"\n";
+
+#[test]
+fn configuration_is_discovered_in_the_scan_root_from_another_directory() {
+    let temp = project(&[(".locmetryrc", APP_RULE), ("src/a.ts", "let a = 1;\n")]);
+    let (success, document, stderr) = measure(temp.path(), &["--root", "project"]);
+    assert!(success, "{stderr}");
+    assert_eq!(
+        rules_by_path(&document),
+        [("src/a.ts".into(), "app".into())]
+    );
+    assert_eq!(document["project"], "project");
+    assert!(document["metadata"]["config_path"]
+        .as_str()
+        .unwrap()
+        .ends_with(".locmetryrc"));
+}
+
+#[test]
+fn explicit_configuration_does_not_change_the_scan_root() {
+    let temp = project(&[("src/a.ts", "let a = 1;\n")]);
+    fs::write(temp.path().join("shared.toml"), APP_RULE).unwrap();
+    fs::write(temp.path().join("outside.ts"), "let b = 1;\n").unwrap();
+    let (success, document, stderr) = measure(
+        &temp.path().join("project"),
+        &["--config", "../shared.toml"],
+    );
+    assert!(success, "{stderr}");
+    assert_eq!(
+        rules_by_path(&document),
+        [("src/a.ts".into(), "app".into())]
+    );
+}
+
+#[test]
+fn without_configuration_built_in_defaults_apply() {
+    let temp = project(&[
+        ("src/a.ts", "let a = 1;\n"),
+        ("src/a.test.ts", "let b = 1;\n"),
+        ("node_modules/x/index.js", "let c = 1;\n"),
+    ]);
+    let (success, document, stderr) = measure(&temp.path().join("project"), &[]);
+    assert!(success, "{stderr}");
+    assert_eq!(
+        rules_by_path(&document),
+        [
+            ("src/a.test.ts".into(), "builtin:js-test-file".into()),
+            ("src/a.ts".into(), "fallback".into()),
+        ]
+    );
+    assert_eq!(document["metadata"]["config_path"], Value::Null);
+}
+
+#[test]
+fn cli_scope_settings_override_the_project_configuration() {
+    let config = format!("{APP_RULE}[scope]\nhidden = true\nexclude = [\"gen/**\"]\n");
+    let temp = project(&[
+        (".locmetryrc", config.as_str()),
+        ("src/a.ts", "let a = 1;\n"),
+        ("gen/a.ts", "let b = 1;\n"),
+        ("vendor/a.ts", "let c = 1;\n"),
+        (".tool/a.ts", "let d = 1;\n"),
+    ]);
+    let (success, document, stderr) = measure(
+        &temp.path().join("project"),
+        &["--hidden", "false", "--exclude", "vendor/**"],
+    );
+    assert!(success, "{stderr}");
+    assert_eq!(
+        rules_by_path(&document),
+        [("src/a.ts".into(), "app".into())]
+    );
+    assert_eq!(
+        document["metadata"]["scope"]["exclude"],
+        json!([
+            "**/.git/**",
+            "**/node_modules/**",
+            "**/.build/**",
+            "gen/**",
+            "vendor/**"
+        ])
+    );
+}
+
+#[test]
+fn invalid_discovered_configuration_fails_before_scanning() {
+    let temp = project(&[
+        (".locmetryrc", "version = 2\n"),
+        ("src/a.ts", "let a = 1;\n"),
+    ]);
+    let (success, document, stderr) = measure(&temp.path().join("project"), &[]);
+    assert!(!success);
+    assert_eq!(document, Value::Null);
+    assert!(
+        stderr.contains(".locmetryrc") && stderr.contains("Unsupported configuration version 2"),
+        "{stderr}"
+    );
+}

@@ -16,41 +16,41 @@ The [integration and packaging document](docs/tokei-integration.md) records the 
 
 ## Required Work
 
-### 1. TOML Configuration and Discovery — Next
+### 1. TOML Configuration and Discovery — Done
 
-Current gap: `--config` is mandatory and reads a JSON profile containing a scan root. There is no `.locmetryrc` discovery, versioned TOML parser, or layered configuration resolution.
+Implemented 2026-10-15; evidence in [configuration tests](tests/config.rs) and [CLI tests](tests/cli.rs). JSON profiles remain loadable for migration (§4).
 
-- [ ] Parse and validate the version-1 TOML contract, including unknown keys, unsupported versions/backends, duplicate IDs, and invalid values.
-- [ ] Select the scan root independently of configuration; discover `.locmetryrc` only at that root. An explicit configuration path must not change the root.
-- [ ] Resolve built-in defaults, project settings, and explicit CLI settings in the agreed precedence order; record the effective policy.
-- [ ] Settle missing-config behavior and the transition from provisional profiles using the recommendations below.
+- [x] Parse and validate the version-1 TOML contract, including unknown keys, unsupported versions/backends, duplicate IDs, and invalid values.
+- [x] Select the scan root independently of configuration; discover `.locmetryrc` only at that root. An explicit configuration path must not change the root.
+- [x] Resolve built-in defaults, project settings, and explicit CLI settings in the agreed precedence order; record the effective policy.
+- [x] Settle missing-config behavior (built-in defaults; recorded in [PRODUCT.md](PRODUCT.md)). Profiles stay loadable through `.json` configurations until the migration in §4.
 
 **Completion evidence:** synthetic CLI tests cover discovery from another working directory, explicit configuration outside the scan root, precedence, and validation failures before scanning. The product's example configuration runs successfully.
 
-### 2. Glob Matching and Configurable Scope
+### 2. Glob Matching and Configurable Scope — Done
 
-Current gap: exclusions are literal root-directory prefixes; hidden files and ignore-file handling are fixed. Only Git metadata is excluded unconditionally by Locmetry itself.
+Implemented 2026-10-15. Selection uses Locmetry's own globset matcher; directories are pruned only for `<dir>/**` exclusions, which exclude every descendant.
 
-- [ ] Implement the root-relative, case-sensitive glob contract from [PRODUCT.md](PRODUCT.md#matching-and-precedence), without inheriting different backend matching semantics.
-- [ ] Apply the default exclusions unless `scope.default_excludes = false`, and add `scope.exclude` to them; remove the PoC's unconditional Git exclusion where the effective policy permits inclusion.
-- [ ] Wire hidden-file and ignore-file settings through selection, with explicit exclusions effective even when ignore files are disabled.
-- [ ] Expose the necessary scope overrides through the CLI and document their precedence.
+- [x] Implement the root-relative, case-sensitive glob contract from [PRODUCT.md](PRODUCT.md#matching-and-precedence), without inheriting different backend matching semantics.
+- [x] Apply the default exclusions unless `scope.default_excludes = false`, and add `scope.exclude` to them; remove the PoC's unconditional Git exclusion where the effective policy permits inclusion.
+- [x] Wire hidden-file and ignore-file settings through selection, with explicit exclusions effective even when ignore files are disabled.
+- [x] Expose the necessary scope overrides through the CLI and document their precedence.
 
 **Completion evidence:** boundary tests distinguish root-only and recursive patterns, zero-directory `**` matches, directory/file names, case, invalid patterns, default opt-out, hidden files, and ignore exceptions. Excluded files never enter counting results.
 
-### 3. Classification Stages and Content Coverage
+### 3. Classification Stages and Content Coverage — Done
 
-Current gap: classification uses one regex rule list and a fixed fallback; there are no built-in test conventions, separate override stage, entry `kind` filters, or entry reasons.
+Implemented 2026-10-15. Provenance needs no separate stage field: entry IDs are unique across stages, conventions use `builtin:`, and unmatched files use `fallback`.
 
-- [ ] Implement scope → first override → built-in tests → first ordinary rule → configured fallback.
-- [ ] Match entries by path and optional `kind`; record optional `reason` in the effective-policy snapshot.
-- [ ] Define and document versioned test conventions, covering common test directories, filename conventions, and framework source sets with synthetic examples. Keep ambiguous ownership configurable.
-- [ ] Report the matching stage and rule/convention identity, including fallback provenance; settle omitted-category behavior.
+- [x] Implement scope → first override → built-in tests → first ordinary rule → configured fallback.
+- [x] Match entries by path and optional `kind`; record optional `reason` in the effective-policy snapshot.
+- [x] Define and document versioned test conventions, covering common test directories, filename conventions, and framework source sets with synthetic examples. Keep ambiguous ownership configurable.
+- [x] Report the matching stage and rule/convention identity, including fallback provenance; settle omitted-category behavior.
 - [x] Review the language-to-kind mapping for the supported release scope. Keep unsupported or unmapped content visible and document coverage limits. Evidence: kind and coverage tests in [measurement tests](tests/measurement.rs).
 
 **Completion evidence:** tests prove broad production rules cannot swallow conventional tests, explicit evidence overrides can beat test names, test data remains data, and embedded documentation examples stay outside source totals.
 
-### 4. Reporting Contract and Profile Migration
+### 4. Reporting Contract and Profile Migration — Next
 
 Current gap: JSON is provisional `poc-3`, Markdown folder depth is fixed at two, and JSON stdout changes shape when `--output` is supplied. Partial-result behavior exists but is not yet the settled product contract.
 
@@ -82,9 +82,7 @@ Record accepted decisions in [PRODUCT.md](PRODUCT.md) before implementing depend
 
 | Decision | Recommendation and rationale |
 | --- | --- |
-| No discovered configuration | Run with documented defaults; an explicitly requested missing configuration must fail. This supports immediate use without hiding a mistaken path. |
 | Legacy JSON profiles | Prefer a reviewed one-time migration over permanent dual-format support. Preserve historical inputs privately so equivalence remains checkable. |
-| Omitted category | Default to the assigned purpose; use provenance to distinguish fallback. This keeps category behavior predictable without encoding classification stages twice. |
 | JSON stdout with report files | Keep the same full JSON schema with and without `--output`; a stable shape is easier for agents to consume. |
 | Language/extension mappings | Add a small built-in mapping for unrecognized extensions that are common in the reference projects, such as `.gradle` build scripts and `.jsonc` configuration, before offering user-configurable mappings. Coverage now lists these files, so absence is visible either way; a mapping makes them countable. |
 | Partial counts | Retain explicitly marked partial output with a nonzero exit; agents must not mistake incomplete results for a complete measurement. |
