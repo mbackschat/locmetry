@@ -47,6 +47,10 @@ Done 2026-10-15: reproduced Tokei 15.0.0's global-quote bug with independent syn
 
 **Completion evidence:** regression tests failed before the fix and pass afterward, covering both recognized extensions, language mappings, quote and comment boundaries, raw blocks, BOM decoding, and unreadable-file coverage. The public suite, private regression guard, formatting, and Clippy pass. No release is part of this change.
 
+## Proposals — Under Discussion
+
+- [Net change between measurement reports](proposals/net-change.md): compare saved single-root or workspace reports, expose the comparison schema through the shared contract mechanism, and show packages, folders, and roots entering or leaving the measurement. The owner confirmed the term “net change” and topology-change support; the remaining design is proposed, not implemented.
+
 ## Ideas — Not Scheduled
 
 - [ ] A configuration skill for coding agents: decided 2026-10-15 to record, not build yet. Blind test drives showed agents already reach 99%+ agreement with human-reviewed configurations from `--help` and `--schema` alone, so the skill would add procedure rather than knowledge: keep the repository read-only until a human approves, require evidence and a `reason` for every entry, declare `[categories]`, resolve `summary.submodules` and `summary.unused_entries`, and end with the judgment calls a human must make. Acceptance: the same blind trials scored with and without the skill show a gain, not only more ceremony.
