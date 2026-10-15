@@ -16,7 +16,7 @@ The product rests on three pillars:
 - Optional: additional counting adapters, custom content-kind overrides, and configuration self-checks that assert expected classifications for named paths without requiring those files to exist.
 - Excluded initially: a new counting engine, a generic plugin framework, and semantic splitting of production/tests within individual files.
 
-The configuration below is implemented. Provisional [JSON/regex profiles](poc/README.md) remain accepted until existing profiles are migrated. Locmetry is implemented in Rust with the Tokei library embedded. The installed executable must not require Python, Git, a separate Tokei executable, or a separately installed Rust runtime. Homebrew Rust dependencies are build-only; release bottles should require no runtime formula dependencies. [Tokei integration and Homebrew distribution](docs/tokei-integration.md) records the implemented boundary and planned packaging.
+The configuration below is implemented; it replaced provisional JSON/regex profiles after strict translations reproduced every reviewed classification. Locmetry is implemented in Rust with the Tokei library embedded. The installed executable must not require Python, Git, a separate Tokei executable, or a separately installed Rust runtime. Homebrew Rust dependencies are build-only; release bottles should require no runtime formula dependencies. [Tokei integration and Homebrew distribution](docs/tokei-integration.md) records the implemented boundary and planned packaging.
 
 ## Measurement Model
 

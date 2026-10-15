@@ -24,14 +24,14 @@ locmetry --root . --config shared.toml          # explicit configuration; the ro
 locmetry --exclude 'generated/**' --hidden false --format markdown
 ```
 
-The scan root defaults to the current directory. Configuration is the TOML `.locmetryrc` contract in [PRODUCT.md](PRODUCT.md); without one, built-in defaults apply, including default exclusions and built-in test conventions. `--exclude`, `--hidden`, and `--respect-ignore-files` override project settings. JSON is the default stdout format; `--format markdown` produces human-readable output. `--output PREFIX` saves JSON, Markdown, and backend statistics outside the scan root. A `--config` file ending in `.json` selects a provisional JSON/regex profile, retained until existing profiles are migrated; see [legacy profiles](poc/README.md).
+The scan root defaults to the current directory. Configuration is the TOML `.locmetryrc` contract in [PRODUCT.md](PRODUCT.md); without one, built-in defaults apply, including default exclusions and built-in test conventions. `--exclude`, `--hidden`, and `--respect-ignore-files` override project settings. JSON is the default stdout format; `--format markdown` produces human-readable output. `--output PREFIX` saves JSON, Markdown, and backend statistics outside the scan root. [Reports, limits, and private regression](poc/README.md) describes what a measurement contains.
 
 ## Documentation
 
 - [Product vision and requirements](PRODUCT.md): scope, configuration contract, and guarantees.
 - [Tokei integration and Homebrew distribution](docs/tokei-integration.md): embedded backend, dependencies, and packaging.
 - [Research](docs/research/README.md): counter capabilities and classification findings.
-- [Legacy profiles and reports](poc/README.md): provisional JSON/regex profiles, report contents, limitations, and private regression checks.
+- [Reports, limits, and private regression](poc/README.md): report contents, known limits, and the private regression.
 - [Development plan](PLAN.md): remaining work and acceptance evidence.
 - [Repository guidelines](CLAUDE.md): contributor conventions; `AGENTS.md` links to this file.
 

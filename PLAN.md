@@ -7,7 +7,7 @@ Move the working Rust PoC to the configuration and reporting contract in [PRODUC
 ## Completed Foundation
 
 - [x] Rust executable with embedded Tokei and locked Cargo dependencies; no Python, Git, or separate counter executable required at runtime.
-- [x] Ordered JSON/regex classification profiles with explicit exclusions, purpose/category provenance, and an unclassified fallback.
+- [x] Ordered JSON/regex classification profiles with explicit exclusions, purpose/category provenance, and an unclassified fallback; retired in favor of TOML (§4).
 - [x] Per-file counting, embedded-language deduplication, direct/recursive folder totals, JSON, and Markdown output.
 - [x] Synthetic integration tests, an empty-`PATH` runtime test, and opt-in private measurement regression checks.
 - [x] Review hardening (2026-10-15): report suffixes are appended so dotted prefixes stay distinct, and outputs never overwrite the configuration; paths are split by the platform parser, so Unix names containing `:` or `\` stay literal; raw backend payloads contain only root-relative paths; content kinds use a reviewed Tokei language mapping with source as the default; JSON and Markdown report unrecognized and unreadable files; documentation embedded in source counts as host comments. The private regression still reproduces all saved measurements.
@@ -61,7 +61,8 @@ Current gap: JSON is provisional `poc-3`, Markdown folder depth is fixed at two,
 - [ ] Test effective-policy metadata, classification provenance, incomplete results, empty scans, and agreement between human and JSON output.
 - [x] Translate reviewed private profiles to TOML/globs. Keep every real profile and comparison Git-ignored.
 - [x] Compare equivalent file inventories and rule decisions; explain intentional changes caused by new defaults before retiring the provisional interface. Every file counted by both formats keeps its purpose, category, and counts; built-in language mappings add Gradle scripts, JSONC, JSON Lines, and properties files, all landing in the intended rules. Evidence is in the Git-ignored local migration note.
-- [ ] Update usage examples and contributor guidance to the implemented product interface.
+- [x] Retire the JSON/regex profiles: `.json` configurations fail with a migration hint, and the private regression replays saved statistics through the TOML translations (2026-10-15).
+- [x] Update usage examples and contributor guidance to the implemented product interface.
 
 **Completion evidence:** synthetic contract tests pass; private comparisons reconcile scope, classifications, and folder totals without silently accepting differences caused by changed working copies.
 

@@ -24,11 +24,10 @@ enum Format {
     about = "Measure code with embedded Tokei and reviewed classification rules"
 )]
 struct Args {
-    /// Scan root [default: a legacy profile's root, else the current directory].
+    /// Scan root [default: the current directory].
     #[arg(long)]
     root: Option<PathBuf>,
-    /// Configuration file [default: .locmetryrc in the scan root, else built-in
-    /// settings]. A .json file selects a provisional regex profile.
+    /// TOML configuration [default: .locmetryrc in the scan root, else built-in settings].
     #[arg(long)]
     config: Option<PathBuf>,
     /// Add a root-relative exclusion glob; repeatable.
@@ -72,18 +71,14 @@ fn run(args: Args) -> Result<()> {
     let root = args
         .root
         .as_deref()
-        .or(policy.root())
         .unwrap_or(Path::new("."))
         .canonicalize()
         .context("Scan root does not exist")?;
     let root_text = root.to_str().context("Scan root must be valid UTF-8")?;
-    let project = match policy.project() {
-        Some(project) => project.to_owned(),
-        None => root.file_name().map_or_else(
-            || root_text.to_owned(),
-            |name| name.to_string_lossy().into(),
-        ),
-    };
+    let project = root.file_name().map_or_else(
+        || root_text.to_owned(),
+        |name| name.to_string_lossy().into(),
+    );
     if let Some(output) = &args.output {
         validate_output(output, &root, config_path.as_deref())?;
     }

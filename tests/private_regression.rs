@@ -1,6 +1,6 @@
-use locmetry::{build_report, file_records, Kind, Policy};
+use locmetry::{build_report, file_records, language_kind, Kind, Policy};
 use serde_json::Value;
-use std::{env, fs, path::Path};
+use std::{collections::BTreeMap, env, fs, path::Path};
 
 fn read_json(path: &Path) -> Value {
     serde_json::from_slice(&fs::read(path).unwrap()).unwrap()
@@ -29,9 +29,20 @@ fn current_kind_spelling(value: Value) -> Value {
     }
 }
 
+/// Drops the rule ID of files the historical profiles left unmatched.
+///
+/// Those profiles reported `fallback`; their TOML translations end with an
+/// explicit catch-all entry that reproduces the same purpose and category.
+fn without_fallback_rule(mut record: Value, expected: &Value) -> Value {
+    if expected["rule"] == "fallback" {
+        record.as_object_mut().unwrap().remove("rule");
+    }
+    record
+}
+
 #[test]
-#[ignore = "Requires private profiles, saved measurements, and local reviewed example paths"]
-fn reviewed_profiles_reproduce_saved_measurements() {
+#[ignore = "Requires private configurations, saved measurements, and local reviewed example paths"]
+fn reviewed_configurations_reproduce_saved_measurements() {
     let directory = env::var("LOCMETRY_PRIVATE_FIXTURES")
         .expect("Set LOCMETRY_PRIVATE_FIXTURES to the ignored fixture directory");
     let mut checked = 0;
@@ -40,47 +51,62 @@ fn reviewed_profiles_reproduce_saved_measurements() {
         let Some(stem) = path
             .file_name()
             .and_then(|n| n.to_str())
-            .and_then(|n| n.strip_suffix("-rules.json"))
+            .and_then(|n| n.strip_suffix(".locmetry.toml"))
         else {
             continue;
         };
-        let profile = Policy::from_legacy_json(&fs::read_to_string(&path).unwrap()).unwrap();
-        let root = profile.root().unwrap();
-        let config = read_json(&path);
-        for example in config["examples"].as_array().unwrap() {
+        let sibling = |suffix: &str| path.with_file_name(format!("{stem}{suffix}"));
+        let policy = Policy::load(&path).unwrap();
+        let baseline = current_kind_spelling(read_json(&sibling("-measurement.json")));
+        let raw = read_json(&sibling("-measurement.tokei.json"));
+        let reviewed = read_json(&sibling(".examples.json"));
+        let kinds: BTreeMap<_, _> = baseline["files"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|file| {
+                (
+                    file["path"].as_str().unwrap(),
+                    file["language"].as_str().unwrap(),
+                )
+            })
+            .collect();
+        let root = Path::new(reviewed["root"].as_str().unwrap());
+        for example in reviewed["examples"].as_array().unwrap() {
             let name = example["path"].as_str().unwrap();
             assert!(
                 root.join(name).exists(),
                 "Reviewed example no longer exists"
             );
             match example["excluded"].as_bool() {
-                Some(true) => assert!(profile.is_excluded(name)),
+                Some(true) => assert!(policy.is_excluded(name)),
                 _ => {
-                    let result = profile.classify(name, Kind::Source);
+                    let kind = kinds
+                        .get(name)
+                        .map_or(Kind::Source, |language| language_kind(language));
+                    let result = policy.classify(name, kind);
                     assert_eq!(result.purpose.to_string(), example["purpose"]);
                     assert_eq!(result.category, example["category"]);
                 }
             }
         }
-        let baseline = current_kind_spelling(read_json(
-            &path.with_file_name(format!("{stem}-measurement.json")),
-        ));
-        let raw = read_json(&path.with_file_name(format!("{stem}-measurement.tokei.json")));
-        {
-            let rows = file_records(raw, &profile).unwrap();
-            let actual = serde_json::to_value(&rows).unwrap();
-            let actual = actual.as_array().unwrap();
-            let expected = baseline["files"].as_array().unwrap();
-            assert_eq!(actual.len(), expected.len(), "File inventory size differs");
-            for (actual, expected) in actual.iter().zip(expected) {
-                assert_eq!(actual, expected, "File record differs");
-            }
-            assert!(
-                serde_json::to_value(build_report(&rows)).unwrap() == baseline["summary"],
-                "Totals differ from saved measurement"
+        let rows = file_records(raw, &policy).unwrap();
+        let actual = serde_json::to_value(&rows).unwrap();
+        let actual = actual.as_array().unwrap();
+        let expected = baseline["files"].as_array().unwrap();
+        assert_eq!(actual.len(), expected.len(), "File inventory size differs");
+        for (actual, expected) in actual.iter().zip(expected) {
+            assert_eq!(
+                without_fallback_rule(actual.clone(), expected),
+                without_fallback_rule(expected.clone(), expected),
+                "File record differs"
             );
         }
+        assert!(
+            serde_json::to_value(build_report(&rows)).unwrap() == baseline["summary"],
+            "Totals differ from saved measurement"
+        );
         checked += 1;
     }
-    assert!(checked > 0, "No private profiles found");
+    assert!(checked > 0, "No private configurations found");
 }

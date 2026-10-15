@@ -1,6 +1,6 @@
-# Legacy Profiles and Reports
+# Reports, Limits, and Private Regression
 
-The TOML/glob configuration in [PRODUCT.md](../PRODUCT.md) is the product interface; [README](../README.md) shows its usage. This page documents the provisional JSON/regex profiles that preceded it, which `--config <file>.json` still loads until existing profiles are migrated, and the report behavior shared by both formats. The implementation is Rust with Tokei embedded. Build using `cargo build --release --locked`; the resulting executable needs no Python, Git, or external Tokei.
+[README](../README.md) shows CLI usage, and [PRODUCT.md](../PRODUCT.md) defines the TOML configuration. This page describes what a measurement contains, its known limits, and the opt-in regression against private reference projects. The earlier JSON/regex profiles are retired: strict TOML translations reproduced every reviewed classification, and `--config` rejects `.json` files with a migration hint.
 
 ## Run from the repository root
 
@@ -8,68 +8,38 @@ Keep real-project configurations and outputs exclusively in Git-ignored `docs/re
 
 ```sh
 cargo build --release --locked
-./target/release/locmetry --config docs/research/local/project-rules.json --root /path/to/project --output docs/research/local/measurement
-cargo test --locked
+./target/release/locmetry --root /path/to/project --config docs/research/local/project.locmetry.toml --output docs/research/local/measurement
 ```
 
-The configuration path above is a placeholder, not a bundled project. `--root` overrides the configuration's local path. Each run replaces `.md`, `.json`, and `.tokei.json` files at the output prefix, appending each suffix to the full prefix name so `run.v1` and `run.v2` stay distinct: readable breakdowns, classified records/folder totals, and the raw backend response. The runner does not modify target source/configuration or run target builds/tests.
-
-## Configuration
-
-This synthetic example illustrates the PoC format. Rust regular expressions are provisional; they are not the chosen product configuration syntax.
-
-```json
-{
-  "project": "example",
-  "root": "/path/to/project",
-  "exclude_prefixes": ["reference-material/"],
-  "rules": [
-    {
-      "id": "test-trees",
-      "pattern": "(^|/)(tests|commonTest)/",
-      "purpose": "test",
-      "category": "tests-and-support",
-      "reason": "Explicit test source sets."
-    },
-    {
-      "id": "application",
-      "pattern": "^src/",
-      "purpose": "production",
-      "category": "implementation",
-      "reason": "Project-owned application source after test exceptions."
-    }
-  ]
-}
-```
+The configuration path above is a placeholder, not a bundled project. Each run replaces `.md`, `.json`, and `.tokei.json` files at the output prefix, appending each suffix to the full prefix name so `run.v1` and `run.v2` stay distinct: readable breakdowns, classified records/folder totals, and the raw backend response. Locmetry does not modify the measured project or run its builds or tests.
 
 ## Measurement Contract
 
-- Profiles scan hidden and untracked nonignored files, exclude Git metadata, and preserve existing ignore behavior; TOML configurations make hidden-file and ignore-file selection configurable. Ignore behavior: `.ignore` and `.tokeignore` files always apply, `.gitignore` applies only inside a Git work tree, and symbolic links are not followed. Apply configured root-prefix exclusions before counting and check that they did not leak into the response.
-- `exclude_prefixes` contains literal project-root-relative directories, not globs; each becomes the root-relative glob `<prefix>/**`. `reference-material/` does not match a nested directory of that name. CLI scope options apply to profiles as well.
-- Match `rules` in order against root-relative POSIX paths using Rust `regex` matching; first match wins. Patterns are unanchored unless they use `^` or `$`, so `test` also matches `latest/`. Preserve the rule ID and leave unmatched files unclassified with rule `fallback`, which is reserved. A rule without `category` uses its purpose as the category. Path components come from the platform's path parser, so Unix file names may contain `:` or `\`.
-- Keep purpose (`production`, `test`, `unclassified`) separate from content kind (`source`, `data/config`, `documentation`, `other`). Production means maintained non-test source, including separately categorized tooling/examples, not just shipped runtime code.
-- Derive content kind from the Tokei language: reviewed data/configuration and documentation lists, with every other recognized language counted as source. `metadata.kinds` records the lists. A code snippet in Markdown remains documentation. Documentation embedded in source, such as Rust `///` doc comments and their doctests, counts as comment lines of the host language. Language names unknown to the embedded Tokei stay `other`.
-- Reconstruct counters from original reports and nested blobs once. Do not add aggregate `Total` or `children` views. A reported path counts once, even when it contributes multiple languages.
-- Expose direct and recursive folder totals. A recursive parent includes its children; displayed recursive rows cannot all be summed together.
+- Selection: untracked nonignored files are included. With ignore files respected, `.ignore` and `.tokeignore` files always apply and `.gitignore` applies only inside a Git work tree. Symbolic links are not followed. Exclusions are checked again against the backend response so excluded files cannot leak into counts.
+- Paths: rules match root-relative `/`-separated paths. Components come from the platform's path parser, so Unix file names may contain `:` or `\`.
+- Purpose (`production`, `test`, `unclassified`) stays separate from content kind (`source`, `data`, `documentation`, `other`). Production means maintained non-test source, including separately categorized tooling and examples, not just shipped runtime code.
+- Content kind comes from the Tokei language: reviewed data/configuration and documentation lists, with every other recognized language counted as source. `metadata.kinds` records the lists. A code snippet in Markdown remains documentation. Documentation embedded in source, such as Rust `///` doc comments and their doctests, counts as comment lines of the host language. Language names unknown to the embedded Tokei stay `other`.
+- Counters are reconstructed once from original reports and nested blobs; aggregate `Total` or `children` views are not added again. A reported path counts once, even when it contributes multiple languages.
+- Folders expose direct and recursive totals. A recursive parent includes its children; displayed recursive rows cannot all be summed together.
 
 ## Evidence and Limits
 
-Output uses schema `poc-3` with engine identity, Unix timestamp, effective scope, kind lists, coverage, rule snapshot, and backend inaccuracy flags. `metadata.coverage` counts selected and counted files and lists selected files the backend did not recognize separately from recognized files it could not read; the Markdown report summarizes both. Missing files are not proven zero LOC. Compared with `poc-2`, `metadata.source_languages` is replaced by `metadata.kinds`, the `data/config` kind is spelled `data`, `metadata.scope` lists effective exclusion globs, coverage counts `mapped_files`, and records of files counted through a language mapping carry `language_mapping`. Profiles apply no language mappings, and the raw `.tokei.json` contains only the backend's own statistics. Ambient Tokei configuration is not loaded; normal repository/parent/global ignore behavior remains. Git is not invoked, so reports do not claim a commit revision or unchanged working tree. Traversal/configuration errors fail the command; backend inaccuracy produces partial output and a nonzero exit whose message names unreadable files. The PoC does not split mixed production/test files or establish whether every source file is handwritten.
+Output uses schema `poc-3` with engine identity, Unix timestamp, effective scope, kind lists, coverage, configuration path and snapshot, and backend inaccuracy flags. `metadata.coverage` counts selected, counted, and language-mapped files and lists selected files that neither the backend nor a mapping recognizes, separately from recognized files that could not be read; the Markdown report summarizes both. Missing files are not proven zero LOC. Records of files counted through a language mapping carry `language_mapping`; the raw `.tokei.json` contains only the backend's own statistics. Compared with `poc-2`, `metadata.source_languages` is replaced by `metadata.kinds`, and the `data/config` kind is spelled `data`.
 
-Without `--output`, stdout contains the full JSON report. With `--output`, JSON stdout is a compact summary and full records go to the report files. Use `--format markdown` for readable stdout. Invalid regex syntax, unknown configuration keys, duplicate or reserved rule IDs, and invalid purposes fail before scanning. An output prefix whose reports would overwrite the configuration is rejected before scanning. Rust regex does not support lookaround or backreferences. Relative scan roots resolve against the invocation directory. A profile's `root` is used only when `--root` is absent.
+Ambient Tokei configuration is not loaded. Git is not invoked, so reports do not claim a commit revision or unchanged working tree. Configuration and traversal errors fail before output; unreadable files produce partial output and a nonzero exit whose message names them. Classification is per file, so mixed production/test files are not split, and Locmetry does not establish whether a source file is handwritten.
 
-Synthetic tests guard precedence, fallback, root exclusions, source/data separation, embedded-language deduplication, folder rollups, and duplicate paths. Real-project rule guards and analyses belong in Git-ignored local documentation; they are not needed to run the public tests.
+Without `--output`, stdout contains the full JSON report. With `--output`, JSON stdout is a compact summary and full records go to the report files. Use `--format markdown` for readable stdout. An output prefix whose reports would overwrite the configuration is rejected before scanning.
 
 ## Privacy
 
-Never put measured-project names, paths, rule examples, counts, or reports in shared documentation or fixtures. For this repository’s sensitive analysis, choose `docs/research/local/` for every profile and report and verify destinations with `git check-ignore` before running. The portable CLI enforces outputs outside the scan root but does not enforce this repository-specific privacy directory. Keep the local directory ignored and never force-add it.
+Never put measured-project names, paths, rule examples, counts, or reports in shared documentation or fixtures. For this repository's sensitive analysis, choose `docs/research/local/` for every configuration and report and verify destinations with `git check-ignore` before running. The portable CLI enforces outputs outside the scan root but does not enforce this repository-specific privacy directory. Keep the local directory ignored and never force-add it.
 
-## Private migration regression
+## Private regression
 
-The optional Rust guard checks reviewed local examples and reconstructs saved historical measurements from raw backend statistics. It is skipped by ordinary `cargo test` runs:
+The optional guard replays saved raw backend statistics through each reviewed TOML configuration and requires the saved file records and totals; it also checks reviewed example paths. It is skipped by ordinary `cargo test` runs:
 
 ```sh
 LOCMETRY_PRIVATE_FIXTURES=docs/research/local/poc cargo test --locked --test private_regression -- --ignored
 ```
 
-The directory must contain matching `*-rules.json`, `*-measurement.json`, and `*-measurement.tokei.json` files. Fresh scans can differ when a working copy changes; compare equivalent snapshots before attributing differences to the counter.
+For each `<name>.locmetry.toml`, the directory must contain `<name>-measurement.json`, `<name>-measurement.tokei.json`, and `<name>.examples.json` with the checkout `root` and reviewed `examples`. Saved measurements predate language mappings, so files they never counted are absent from both sides. Fresh scans can differ when a working copy changes; compare equivalent snapshots before attributing differences to the counter.

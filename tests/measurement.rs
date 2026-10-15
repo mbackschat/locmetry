@@ -2,13 +2,8 @@ use locmetry::{build_report, file_records, scan, Kind, Policy};
 use serde_json::{json, Value};
 use std::fs;
 
-fn profile(extra: Value) -> Policy {
-    let mut value = json!({"project":"example", "root":".", "rules":[]});
-    value
-        .as_object_mut()
-        .unwrap()
-        .extend(extra.as_object().unwrap().clone());
-    Policy::from_legacy_json(&value.to_string()).unwrap()
+fn policy(toml: &str) -> Policy {
+    Policy::from_toml(&format!("version = 1\n{toml}")).unwrap()
 }
 
 fn stats(code: u64) -> Value {
@@ -21,10 +16,19 @@ fn report(path: &str, code: u64) -> Value {
 
 #[test]
 fn ordered_rules_preserve_exceptions_and_unknowns() {
-    let config = profile(json!({"rules":[
-        {"id":"demo","pattern":"^test-support/demo/","purpose":"production","category":"example"},
-        {"id":"support","pattern":"^test-support/","purpose":"test","category":"test-support"}
-    ]}));
+    let config = policy(
+        r#"[[rules]]
+id = "demo"
+match = ["test-support/demo/**"]
+purpose = "production"
+category = "example"
+[[rules]]
+id = "support"
+match = ["test-support/**"]
+purpose = "test"
+category = "test-support"
+"#,
+    );
     assert_eq!(
         config
             .classify("test-support/demo/main.ts", Kind::Source)
@@ -49,7 +53,7 @@ fn embedded_languages_count_once_and_docs_stay_out_of_source() {
         "JavaScript":{"reports":[],"children":{"HTML":[report("src/index.html",7)]}},
         "Total":{"reports":[report("duplicate",999)]}
     });
-    let rows = file_records(payload, &profile(json!({}))).unwrap();
+    let rows = file_records(payload, &policy("")).unwrap();
     let summary = serde_json::to_value(build_report(&rows)).unwrap();
     assert_eq!(rows.len(), 2);
     assert_eq!(summary["source"]["code"], 10);
@@ -60,8 +64,7 @@ fn embedded_languages_count_once_and_docs_stay_out_of_source() {
 
 #[test]
 fn fixtures_remain_data_and_shell_and_rust_are_source() {
-    let config =
-        profile(json!({"rules":[{"id":"tests","pattern":"(^|/)tests/","purpose":"test"}]}));
+    let config = policy("[[rules]]\nid = \"tests\"\nmatch = [\"**/tests/**\"]\npurpose = \"test\"");
     let rows = file_records(
         json!({
             "JSON":{"reports":[report("tests/data.json",100)]},
@@ -82,7 +85,7 @@ fn direct_and_recursive_folder_totals_reconcile() {
         json!({"TypeScript":{"reports":[
             report("root.ts",2),report("packages/a/main.ts",3),report("packages/a/tests/main.ts",5)
         ]}}),
-        &profile(json!({})),
+        &policy(""),
     )
     .unwrap();
     let summary = serde_json::to_value(build_report(&rows)).unwrap();
@@ -120,51 +123,13 @@ fn invalid_paths_duplicates_and_counts_fail() {
             "Invalid backend statistics",
         ),
     ] {
-        let error = file_records(payload, &profile(json!({}))).unwrap_err();
+        let error = file_records(payload, &policy("")).unwrap_err();
         assert!(format!("{error:#}").contains(message), "{error:#}");
     }
 }
 
 #[test]
-fn invalid_rules_and_scope_fail_before_scanning() {
-    for (extra, message) in [
-        (
-            json!({"rules":[{"id":"bad","pattern":".*","purpose":"maybe"}]}),
-            "unknown variant",
-        ),
-        (
-            json!({"rules":[{"id":"bad","pattern":"[","purpose":"test"}]}),
-            "Invalid regex",
-        ),
-        (
-            json!({"rules":[{"id":"fallback","pattern":".*","purpose":"test"}]}),
-            "reserved",
-        ),
-        (
-            json!({"exclude_prefixes":["../outside"]}),
-            "literal root-relative",
-        ),
-        (
-            json!({"exclude_prefixes":["**/materials"]}),
-            "literal root-relative",
-        ),
-        (
-            json!({"exclude_prefixes":["/absolute"]}),
-            "literal root-relative",
-        ),
-    ] {
-        let mut value = json!({"project":"example","root":".","rules":[]});
-        value
-            .as_object_mut()
-            .unwrap()
-            .extend(extra.as_object().unwrap().clone());
-        let error = Policy::from_legacy_json(&value.to_string()).unwrap_err();
-        assert!(format!("{error:#}").contains(message), "{error:#}");
-    }
-}
-
-#[test]
-fn embedded_scan_respects_root_prefixes_and_ignores_but_not_ambient_config() {
+fn embedded_scan_respects_root_exclusions_and_ignores_but_not_ambient_config() {
     let temp = tempfile::tempdir().unwrap();
     for path in [
         "src/main.ts",
@@ -181,7 +146,7 @@ fn embedded_scan_respects_root_prefixes_and_ignores_but_not_ambient_config() {
     }
     fs::write(temp.path().join(".ignore"), "ignored/\n").unwrap();
     fs::write(temp.path().join("tokei.toml"), "types = [\"Python\"]\n").unwrap();
-    let config = profile(json!({"exclude_prefixes":["materials/"]}));
+    let config = policy("[scope]\nexclude = [\"materials/**\"]");
     let result = scan(temp.path(), &config).unwrap();
     let rows = file_records(result.payload, &config).unwrap();
     let paths: Vec<_> = rows.iter().map(|row| row.path.as_str()).collect();
@@ -218,7 +183,7 @@ fn legal_unix_names_with_colons_and_backslashes_keep_their_identity() {
             ("a/b.rs", "fn c() {}\n"),
         ],
     );
-    let config = profile(json!({}));
+    let config = policy("");
     let rows = file_records(scan(temp.path(), &config).unwrap().payload, &config).unwrap();
     let paths: Vec<_> = rows.iter().map(|row| row.path.as_str()).collect();
     assert_eq!(paths, ["a/b.rs", "a:file.rs", "a\\b.rs"]);
@@ -234,7 +199,7 @@ fn raw_backend_payload_contains_only_root_relative_paths() {
             "<p>x</p>\n<script>\nlet x = 1;\n</script>\n",
         )],
     );
-    let payload = scan(temp.path(), &profile(json!({}))).unwrap().payload;
+    let payload = scan(temp.path(), &policy("")).unwrap().payload;
     let root = temp.path().canonicalize().unwrap();
     let raw = payload.to_string();
     assert!(raw.contains("web/index.html"));
@@ -244,7 +209,7 @@ fn raw_backend_payload_contains_only_root_relative_paths() {
 fn scan_rows(files: &[(&str, &str)]) -> Vec<locmetry::FileRecord> {
     let temp = tempfile::tempdir().unwrap();
     write_tree(temp.path(), files);
-    let config = profile(json!({}));
+    let config = policy("");
     file_records(scan(temp.path(), &config).unwrap().payload, &config).unwrap()
 }
 
@@ -285,7 +250,7 @@ fn coverage_lists_selected_files_the_backend_did_not_count() {
             ("assets/logo.unknownext", "x\n"),
         ],
     );
-    let coverage = scan(temp.path(), &profile(json!({}))).unwrap().coverage;
+    let coverage = scan(temp.path(), &policy("")).unwrap().coverage;
     assert_eq!(coverage.selected_files, 2);
     assert_eq!(coverage.counted_files, 1);
     assert_eq!(coverage.unrecognized, ["assets/logo.unknownext"]);
@@ -303,7 +268,7 @@ fn coverage_separates_unreadable_recognized_files() {
     if fs::read(&locked).is_ok() {
         return; // Permission bits do not restrict this user (for example root).
     }
-    let coverage = scan(temp.path(), &profile(json!({}))).unwrap().coverage;
+    let coverage = scan(temp.path(), &policy("")).unwrap().coverage;
     fs::set_permissions(&locked, fs::Permissions::from_mode(0o644)).unwrap();
     assert_eq!(coverage.unread, ["locked.py"]);
     assert!(coverage.unrecognized.is_empty());

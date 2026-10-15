@@ -44,6 +44,6 @@ Use a maintained tap for an initial release. A release URL/checksum, project lic
 
 ## Migration Contract
 
-The TOML/glob configuration replaces the earlier profiles, but `.json` configurations still load as ordered JSON/regex profiles with unchanged file/folder report fields. Regex syntax follows Rust's `regex` crate; lookaround and backreferences are unsupported. Invalid profiles fail before counting. Content kind comes from reviewed data/configuration and documentation language lists for Tokei 15.0.0; every other recognized language counts as source.
+The TOML/glob configuration replaced the earlier JSON/regex profiles after strict translations reproduced every reviewed classification; file and folder report fields are unchanged. Invalid configurations fail before counting. Content kind comes from reviewed data/configuration and documentation language lists for Tokei 15.0.0; every other recognized language counts as source.
 
 JSON metadata is versioned as `poc-3`: it identifies the embedded engine, records a Unix timestamp, explicit scope, kind lists, and file coverage, and removes subprocess commands, Git revision/status, and captured subprocess stderr. Locmetry does not invoke Git. Private validation may compare working-tree status externally. Historical reports stay available in ignored local documentation.

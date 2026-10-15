@@ -419,16 +419,13 @@ category = "build-tooling"
 }
 
 #[test]
-fn disabled_builtin_mappings_and_legacy_profiles_leave_unrecognized_files_visible() {
+fn disabled_builtin_mappings_leave_unrecognized_files_visible() {
     let temp = mapped_tree();
     let disabled = policy("version = 1\n[languages]\nbuiltin = false");
-    let legacy = Policy::from_legacy_json(r#"{"project":"p","root":".","rules":[]}"#).unwrap();
-    for policy in [disabled, legacy] {
-        let scan = scan(temp.path(), &policy).unwrap();
-        assert_eq!(scan.coverage.mapped_files, 0);
-        assert_eq!(scan.coverage.unrecognized.len(), 5);
-        assert!(scan.records(&policy).unwrap().is_empty());
-    }
+    let scan = scan(temp.path(), &disabled).unwrap();
+    assert_eq!(scan.coverage.mapped_files, 0);
+    assert_eq!(scan.coverage.unrecognized.len(), 5);
+    assert!(scan.records(&disabled).unwrap().is_empty());
 }
 
 #[cfg(unix)]
@@ -574,4 +571,16 @@ fn ownership_overrides_and_disabling_take_precedence_over_build_conventions() {
     );
     let disabled = policy("version = 1\n[classification]\nbuiltin_build = false");
     assert_eq!(rule(&disabled, "build.gradle", Kind::Source), "fallback");
+}
+
+#[test]
+fn retired_json_profiles_fail_with_a_migration_hint() {
+    let temp = tempfile::tempdir().unwrap();
+    let path = temp.path().join("rules.json");
+    fs::write(&path, r#"{"project":"p","root":".","rules":[]}"#).unwrap();
+    let error = Policy::load(&path).unwrap_err();
+    assert!(
+        format!("{error:#}").contains("translate it to TOML"),
+        "{error:#}"
+    );
 }

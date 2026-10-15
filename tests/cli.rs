@@ -5,16 +5,21 @@ fn fixture() -> tempfile::TempDir {
     let temp = tempfile::tempdir().unwrap();
     fs::create_dir(temp.path().join("source")).unwrap();
     fs::write(temp.path().join("source/main.rs"), "fn main() {}\n").unwrap();
-    fs::write(
-        temp.path().join("rules.json"),
-        json!({
-            "project":"synthetic", "root":temp.path().join("source"),
-            "rules":[{"id":"app","pattern":"\\.rs$","purpose":"production"}]
-        })
-        .to_string(),
-    )
-    .unwrap();
+    fs::write(temp.path().join("rules.toml"), APP_RS_RULE).unwrap();
     temp
+}
+
+const APP_RS_RULE: &str =
+    "version = 1\n[[rules]]\nid = \"app\"\nmatch = [\"**/*.rs\"]\npurpose = \"production\"\n";
+
+/// Scan root and configuration of [`fixture`]; the configuration lies outside the root.
+fn config_args(temp: &tempfile::TempDir) -> [std::path::PathBuf; 4] {
+    [
+        "--root".into(),
+        temp.path().join("source"),
+        "--config".into(),
+        temp.path().join("rules.toml"),
+    ]
 }
 
 #[test]
@@ -22,8 +27,7 @@ fn binary_measures_without_any_executables_on_path() {
     let temp = fixture();
     let output = Command::new(env!("CARGO_BIN_EXE_locmetry"))
         .env("PATH", "")
-        .args(["--config"])
-        .arg(temp.path().join("rules.json"))
+        .args(config_args(&temp))
         .output()
         .unwrap();
     assert!(
@@ -45,8 +49,7 @@ fn report_files_are_generated_outside_the_scan_root() {
     let temp = fixture();
     let prefix = temp.path().join("output/report");
     let output = Command::new(env!("CARGO_BIN_EXE_locmetry"))
-        .arg("--config")
-        .arg(temp.path().join("rules.json"))
+        .args(config_args(&temp))
         .arg("--output")
         .arg(&prefix)
         .output()
@@ -68,8 +71,7 @@ fn report_files_are_generated_outside_the_scan_root() {
 fn output_in_scan_root_is_rejected_before_writing() {
     let temp = fixture();
     let output = Command::new(env!("CARGO_BIN_EXE_locmetry"))
-        .arg("--config")
-        .arg(temp.path().join("rules.json"))
+        .args(config_args(&temp))
         .arg("--output")
         .arg(temp.path().join("source/reports/report"))
         .output()
@@ -83,8 +85,8 @@ fn output_in_scan_root_is_rejected_before_writing() {
 fn missing_root_and_invalid_config_fail_without_success_json() {
     let temp = fixture();
     for args in [
-        vec!["--config", "absent.json"],
-        vec!["--config", "rules.json", "--root", "absent"],
+        vec!["--config", "absent.toml"],
+        vec!["--config", "rules.toml", "--root", "absent"],
     ] {
         let result = Command::new(env!("CARGO_BIN_EXE_locmetry"))
             .current_dir(temp.path())
@@ -98,8 +100,7 @@ fn missing_root_and_invalid_config_fail_without_success_json() {
 
 fn run_with_output(temp: &tempfile::TempDir, prefix: &std::path::Path) -> std::process::Output {
     Command::new(env!("CARGO_BIN_EXE_locmetry"))
-        .arg("--config")
-        .arg(temp.path().join("rules.json"))
+        .args(config_args(temp))
         .arg("--output")
         .arg(prefix)
         .output()
@@ -129,20 +130,30 @@ fn dotted_output_prefixes_keep_distinct_report_files() {
 #[test]
 fn output_prefix_that_would_overwrite_the_configuration_is_rejected() {
     let temp = fixture();
-    let config = fs::read(temp.path().join("rules.json")).unwrap();
-    let output = run_with_output(&temp, &temp.path().join("rules"));
+    // Any file name can hold a TOML configuration, including a report suffix.
+    let config = temp.path().join("rules.md");
+    fs::write(&config, APP_RS_RULE).unwrap();
+    let output = Command::new(env!("CARGO_BIN_EXE_locmetry"))
+        .arg("--root")
+        .arg(temp.path().join("source"))
+        .arg("--config")
+        .arg(&config)
+        .arg("--output")
+        .arg(temp.path().join("rules"))
+        .output()
+        .unwrap();
     assert!(!output.status.success());
     assert!(String::from_utf8_lossy(&output.stderr).contains("configuration"));
-    assert_eq!(fs::read(temp.path().join("rules.json")).unwrap(), config);
-    assert!(!temp.path().join("rules.md").exists());
+    assert_eq!(fs::read_to_string(&config).unwrap(), APP_RS_RULE);
+    assert!(!temp.path().join("rules.json").exists());
 }
 
 #[test]
 fn markdown_format_writes_a_readable_report_to_stdout() {
     let temp = fixture();
     let output = Command::new(env!("CARGO_BIN_EXE_locmetry"))
-        .args(["--format", "markdown", "--config"])
-        .arg(temp.path().join("rules.json"))
+        .args(["--format", "markdown"])
+        .args(config_args(&temp))
         .output()
         .unwrap();
     assert!(
@@ -151,7 +162,7 @@ fn markdown_format_writes_a_readable_report_to_stdout() {
         String::from_utf8_lossy(&output.stderr)
     );
     let stdout = String::from_utf8(output.stdout).unwrap();
-    assert!(stdout.starts_with("# synthetic measured classification"));
+    assert!(stdout.starts_with("# source measured classification"));
     assert!(stdout.contains("| production | 1 | 1 | 0 | 0 | 1 |"));
 }
 
@@ -167,8 +178,7 @@ fn unreadable_files_produce_partial_output_naming_them_and_fail() {
         return; // Permission bits do not restrict this user (for example root).
     }
     let output = Command::new(env!("CARGO_BIN_EXE_locmetry"))
-        .arg("--config")
-        .arg(temp.path().join("rules.json"))
+        .args(config_args(&temp))
         .output()
         .unwrap();
     fs::set_permissions(&locked, fs::Permissions::from_mode(0o644)).unwrap();

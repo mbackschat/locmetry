@@ -1,18 +1,12 @@
 //! Measurement policy: which files are selected and how each one is classified.
 //!
-//! Two inputs build the same [`Policy`]: the version-1 TOML contract in
-//! PRODUCT.md and the provisional JSON/regex profiles kept for migration.
+//! The input is the version-1 TOML contract in PRODUCT.md.
 use crate::Kind;
 use anyhow::{ensure, Context, Result};
 use globset::{Glob, GlobBuilder, GlobSet, GlobSetBuilder};
-use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use std::{
-    collections::BTreeSet,
-    fmt,
-    path::{Path, PathBuf},
-};
+use std::{collections::BTreeSet, fmt, path::Path};
 use tokei::LanguageType;
 
 /// Configuration file discovered in the scan root.
@@ -263,30 +257,6 @@ struct ConfigFile {
     rules: Vec<EntryConfig>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
-#[serde(deny_unknown_fields)]
-struct LegacyRule {
-    id: String,
-    pattern: String,
-    purpose: Purpose,
-    category: Option<String>,
-    reason: Option<String>,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-#[serde(deny_unknown_fields)]
-struct LegacyProfile {
-    project: String,
-    root: PathBuf,
-    #[serde(default)]
-    exclude_prefixes: Vec<String>,
-    rules: Vec<LegacyRule>,
-    #[serde(default)]
-    notes: Vec<String>,
-    #[serde(default)]
-    examples: Vec<Value>,
-}
-
 /// Compiles a root-relative glob with the separator semantics of PRODUCT.md.
 ///
 /// globset lets `*` cross `/` and makes `\` platform-dependent by default
@@ -375,16 +345,9 @@ impl Scope {
 }
 
 #[derive(Debug)]
-enum Matcher {
-    Glob(GlobSet),
-    /// Provisional JSON profiles: unanchored Rust regex search.
-    Regex(Regex),
-}
-
-#[derive(Debug)]
 struct Entry {
     id: String,
-    matcher: Matcher,
+    matcher: GlobSet,
     kinds: Option<Vec<Kind>>,
     purpose: Purpose,
     category: String,
@@ -392,11 +355,7 @@ struct Entry {
 
 impl Entry {
     fn matches(&self, path: &str, kind: Kind) -> bool {
-        let path_matches = match &self.matcher {
-            Matcher::Glob(set) => set.is_match(path),
-            Matcher::Regex(regex) => regex.is_match(path),
-        };
-        path_matches
+        self.matcher.is_match(path)
             && self
                 .kinds
                 .as_ref()
@@ -424,10 +383,8 @@ impl Entry {
         );
         Ok(Self {
             id: entry.id.clone(),
-            matcher: Matcher::Glob(
-                glob_set(entry.patterns.iter().map(String::as_str))
-                    .with_context(|| format!("Invalid match in entry {}", entry.id))?,
-            ),
+            matcher: glob_set(entry.patterns.iter().map(String::as_str))
+                .with_context(|| format!("Invalid match in entry {}", entry.id))?,
             kinds: entry.kind.clone(),
             purpose: entry.purpose,
             category: entry
@@ -457,8 +414,6 @@ fn check_ids<'a>(ids: impl IntoIterator<Item = &'a str>) -> Result<()> {
 /// Scope and classification for one measurement.
 #[derive(Debug)]
 pub struct Policy {
-    project: Option<String>,
-    root: Option<PathBuf>,
     scope: Scope,
     overrides: Vec<Entry>,
     /// Built-in test conventions, then built-in build conventions.
@@ -517,7 +472,7 @@ impl Policy {
             .map(|convention| {
                 Ok(Entry {
                     id: format!("{BUILTIN}{}", convention.id),
-                    matcher: Matcher::Glob(glob_set(convention.patterns.iter().copied())?),
+                    matcher: glob_set(convention.patterns.iter().copied())?,
                     kinds: None,
                     purpose: convention.purpose,
                     category: convention.category.into(),
@@ -576,8 +531,6 @@ impl Policy {
         snapshot["builtin_conventions"] = convention_snapshot;
         let fallback = config.classification.fallback;
         Ok(Self {
-            project: None,
-            root: None,
             scope: Scope::new(config.scope.clone())?,
             overrides: entries(&config.overrides)?,
             conventions,
@@ -588,71 +541,18 @@ impl Policy {
         })
     }
 
-    /// Provisional JSON/regex profile, retained until profiles are migrated.
-    pub fn from_legacy_json(input: &str) -> Result<Self> {
-        let data: LegacyProfile = serde_json::from_str(input).context("Invalid JSON profile")?;
-        check_ids(data.rules.iter().map(|rule| rule.id.as_str()))?;
-        let rules = data
-            .rules
-            .iter()
-            .map(|rule| {
-                Ok(Entry {
-                    id: rule.id.clone(),
-                    matcher: Matcher::Regex(
-                        Regex::new(&rule.pattern)
-                            .with_context(|| format!("Invalid regex in rule {}", rule.id))?,
-                    ),
-                    kinds: None,
-                    purpose: rule.purpose,
-                    category: rule
-                        .category
-                        .clone()
-                        .unwrap_or_else(|| rule.purpose.to_string()),
-                })
-            })
-            .collect::<Result<Vec<_>>>()?;
-        // Profiles always excluded Git metadata and accept only literal
-        // directory prefixes, which translate exactly to `<prefix>/**`.
-        let mut exclude = vec!["**/.git/**".to_owned()];
-        for prefix in &data.exclude_prefixes {
-            let prefix = prefix.trim_end_matches('/');
-            ensure!(
-                !prefix.is_empty()
-                    && !prefix.contains(['?', '*', '[', ']', '\\', '!', '{', '}', ':'])
-                    && prefix
-                        .split('/')
-                        .all(|part| !matches!(part, "" | "." | "..")),
-                "Exclusion must be a literal root-relative directory prefix: {prefix}"
-            );
-            exclude.push(format!("{prefix}/**"));
-        }
-        let scope = Scope::new(ScopeSettings {
-            default_excludes: false,
-            exclude,
-            ..ScopeSettings::default()
-        })?;
-        Ok(Self {
-            project: Some(data.project.clone()),
-            root: Some(data.root.clone()),
-            scope,
-            overrides: Vec::new(),
-            conventions: Vec::new(),
-            rules,
-            fallback: (Purpose::Unclassified, "unmapped".into()),
-            languages: Vec::new(),
-            snapshot: serde_json::to_value(&data)?,
-        })
-    }
-
-    /// Loads an explicit configuration file; `.json` selects a legacy profile.
+    /// Loads an explicit or discovered TOML configuration file.
     pub fn load(path: &Path) -> Result<Self> {
+        // JSON/regex profiles were retired after strict TOML translations
+        // reproduced every reviewed classification (PLAN.md section 4).
+        ensure!(
+            path.extension().is_none_or(|extension| extension != "json"),
+            "{} looks like a retired JSON/regex profile; translate it to TOML (PRODUCT.md)",
+            path.display()
+        );
         let input = std::fs::read_to_string(path)
             .with_context(|| format!("Cannot read configuration {}", path.display()))?;
-        match path.extension().and_then(|extension| extension.to_str()) {
-            Some("json") => Self::from_legacy_json(&input),
-            _ => Self::from_toml(&input),
-        }
-        .with_context(|| format!("Invalid configuration {}", path.display()))
+        Self::from_toml(&input).with_context(|| format!("Invalid configuration {}", path.display()))
     }
 
     pub fn override_scope(&mut self, overrides: &ScopeOverrides) -> Result<()> {
@@ -698,16 +598,6 @@ impl Policy {
 
     pub fn scope(&self) -> &Scope {
         &self.scope
-    }
-
-    /// Project name of a legacy profile.
-    pub fn project(&self) -> Option<&str> {
-        self.project.as_deref()
-    }
-
-    /// Scan root of a legacy profile.
-    pub fn root(&self) -> Option<&Path> {
-        self.root.as_deref()
     }
 
     pub fn snapshot(&self) -> &Value {
