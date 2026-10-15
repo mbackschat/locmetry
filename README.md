@@ -178,9 +178,11 @@ So `OrderServiceTest.kt` and `cart.test.ts` are tests even though the `applicati
 
 Plain `locmetry` on a terminal prints the table shown [above](#what-you-see):
 
-- language rows sorted by code;
+- language rows, largest first;
 - top-level folders, whose rows add up to the total;
 - one line each for content that is not source, source awaiting classification, and files that could not be counted.
+
+`--sort name` lists rows alphabetically instead, in the table and in Markdown.
 
 ### JSON headline for agents and scripts
 
@@ -275,12 +277,12 @@ $ jq -c '.review[]' report.json
 
 | Category | Files | Code | Comments | Blanks | Lines |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| production:build-tooling | 2 | 9 | 0 | 1 | 10 |
 | production:implementation | 5 | 73 | 3 | 15 | 91 |
-| production:tooling | 1 | 12 | 1 | 6 | 19 |
 | test:test | 2 | 26 | 0 | 6 | 32 |
-| unclassified:third-party-wrapper | 1 | 1 | 2 | 0 | 3 |
+| production:tooling | 1 | 12 | 1 | 6 | 19 |
+| production:build-tooling | 2 | 9 | 0 | 1 | 10 |
 | unclassified:unclassified | 1 | 8 | 1 | 2 | 11 |
+| unclassified:third-party-wrapper | 1 | 1 | 2 | 0 | 3 |
 
 ## Folder breakdown
 

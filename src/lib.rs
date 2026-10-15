@@ -11,7 +11,9 @@ pub use backend::{
 pub use config::{
     user_defaults_file, Classification, Policy, Purpose, Scope, ScopeOverrides, CONFIG_FILE,
 };
-pub use output::{render_markdown, render_table, report_text, validate_output, write_report};
+pub use output::{
+    render_markdown, render_table, report_text, validate_output, write_report, RowOrder,
+};
 pub use report::{
     breakdown, build_report, review, BreakdownRow, Counts, FileRecord, Kind, ReportSummary,
     ReviewEntry,

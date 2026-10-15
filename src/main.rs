@@ -2,8 +2,8 @@ use anyhow::{Context, Result};
 use clap::{Parser, ValueEnum};
 use locmetry::{
     breakdown, build_report, render_markdown, render_table, report_text, review, scan,
-    scope_policy, user_defaults_file, validate_output, write_report, Policy, ScopeOverrides,
-    BACKEND, CONFIG_FILE, DATA_LANGUAGES, DOCUMENTATION_LANGUAGES,
+    scope_policy, user_defaults_file, validate_output, write_report, Policy, RowOrder,
+    ScopeOverrides, BACKEND, CONFIG_FILE, DATA_LANGUAGES, DOCUMENTATION_LANGUAGES,
 };
 use serde_json::{json, Value};
 use std::{
@@ -21,6 +21,14 @@ enum Format {
     Json,
     /// A full human report to save or paste into reviews.
     Markdown,
+}
+
+#[derive(Clone, Copy, ValueEnum)]
+enum Sort {
+    /// Largest code first; ties alphabetical.
+    Code,
+    /// Alphabetical.
+    Name,
 }
 
 /// The stdout format when `--format` is absent.
@@ -68,6 +76,10 @@ struct Args {
     /// Stdout format [default: table on a terminal, json otherwise].
     #[arg(long, value_enum)]
     format: Option<Format>,
+    /// Row order of table and Markdown output; the Markdown folder table keeps
+    /// its path hierarchy, and the review list stays largest first.
+    #[arg(long, value_enum, default_value = "code")]
+    sort: Sort,
     /// Deepest folder level listed in the Markdown folder table; JSON lists all.
     #[arg(long, default_value_t = 2, value_name = "N")]
     depth: usize,
@@ -133,9 +145,13 @@ fn run(args: Args) -> Result<Outcome> {
     let (inaccurate, coverage) = (scan.inaccurate, &scan.coverage);
     let rows = scan.records(&policy)?;
     let summary = build_report(&rows);
+    let order = match args.sort {
+        Sort::Code => RowOrder::Code,
+        Sort::Name => RowOrder::Name,
+    };
     let mut human = match format {
-        Format::Table => render_table(&project, &summary, &rows, coverage),
-        Format::Markdown => render_markdown(&project, &summary, &rows, coverage, args.depth),
+        Format::Table => render_table(&project, &summary, &rows, coverage, order),
+        Format::Markdown => render_markdown(&project, &summary, &rows, coverage, args.depth, order),
         Format::Json => String::new(),
     };
     if inaccurate && format != Format::Json {

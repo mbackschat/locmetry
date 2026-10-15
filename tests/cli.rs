@@ -248,6 +248,53 @@ fn table_format_splits_source_code_by_language_and_purpose() {
     assert_eq!(String::from_utf8(output.stdout).unwrap(), expected);
 }
 
+/// Row positions of `labels` in `text`, to compare orders without pinning layout.
+fn positions(text: &str, labels: &[&str]) -> Vec<usize> {
+    labels
+        .iter()
+        .map(|label| text.find(label).unwrap())
+        .collect()
+}
+
+fn is_ascending(positions: &[usize]) -> bool {
+    positions.windows(2).all(|pair| pair[0] < pair[1])
+}
+
+/// Rows sort by code, largest first, unless `--sort name` asks for the stable
+/// alphabetical order; both human formats follow the same option.
+#[test]
+fn human_tables_sort_by_code_or_by_name() {
+    // Code order (Rust, then z) disagrees with name order (Python, then a).
+    let temp = project(&[
+        ("z/big.rs", "fn a() {}\nfn b() {}\nfn c() {}\n"),
+        ("a/small.py", "a = 1\n"),
+    ]);
+    let root = temp.path().join("project");
+    let stdout = |args: &[&str]| String::from_utf8(run(&root, args).stdout).unwrap();
+    let table = stdout(&["--format", "table"]);
+    assert!(is_ascending(&positions(
+        &table,
+        &["\n Rust", "\n Python", "\n z ", "\n a "]
+    )));
+    let table = stdout(&["--format", "table", "--sort", "name"]);
+    assert!(is_ascending(&positions(
+        &table,
+        &["\n Python", "\n Rust", "\n a ", "\n z "]
+    )));
+    let markdown = stdout(&["--format", "markdown"]);
+    let languages = &markdown[markdown.find("## Source languages").unwrap()..];
+    assert!(is_ascending(&positions(
+        languages,
+        &["| Rust |", "| Python |"]
+    )));
+    let markdown = stdout(&["--format", "markdown", "--sort", "name"]);
+    let languages = &markdown[markdown.find("## Source languages").unwrap()..];
+    assert!(is_ascending(&positions(
+        languages,
+        &["| Python |", "| Rust |"]
+    )));
+}
+
 /// `--output -` prints the JSON report, so a human format cannot share stdout.
 #[test]
 fn table_format_cannot_share_stdout_with_the_json_report() {

@@ -32,10 +32,42 @@ fn count_row(output: &mut String, label: &str, counts: &Counts) {
     .unwrap();
 }
 
-fn table(output: &mut String, title: &str, label: &str, counts: &BTreeMap<String, Counts>) {
+/// Row order of the flat tables in the table and Markdown formats.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RowOrder {
+    /// Largest code first, ties by label, so the order is stable.
+    Code,
+    /// Alphabetical by label.
+    Name,
+}
+
+/// Sorts labelled rows by `order`, where `code` gives a row's code lines.
+fn ordered<T>(
+    mut rows: Vec<(String, T)>,
+    code: impl Fn(&T) -> u64,
+    order: RowOrder,
+) -> Vec<(String, T)> {
+    match order {
+        RowOrder::Code => rows.sort_by(|a, b| code(&b.1).cmp(&code(&a.1)).then(a.0.cmp(&b.0))),
+        RowOrder::Name => rows.sort_by(|a, b| a.0.cmp(&b.0)),
+    }
+    rows
+}
+
+fn table(
+    output: &mut String,
+    title: &str,
+    label: &str,
+    counts: &BTreeMap<String, Counts>,
+    order: RowOrder,
+) {
     writeln!(output, "\n## {title}\n\n| {label} | Files | Code | Comments | Blanks | Lines |\n| --- | ---: | ---: | ---: | ---: | ---: |").unwrap();
-    for (label, counts) in counts {
-        count_row(output, label, counts);
+    let rows = counts
+        .iter()
+        .map(|(label, counts)| (label.clone(), counts))
+        .collect();
+    for (label, counts) in ordered(rows, |counts| counts.code, order) {
+        count_row(output, &label, counts);
     }
 }
 
@@ -45,6 +77,7 @@ pub fn render_markdown(
     rows: &[FileRecord],
     coverage: &Coverage,
     depth: usize,
+    order: RowOrder,
 ) -> String {
     let mut output = format!("# {}: lines of code by purpose\n\nProduction means maintained non-test source, including separately categorized tooling. Data, configuration, and documentation are counted apart from source.\n\n## Source purpose\n\n| Purpose | Files | Code | Comments | Blanks | Lines |\n| --- | ---: | ---: | ---: | ---: | ---: |\n", cell(project));
     for purpose in Purpose::ALL {
@@ -59,6 +92,7 @@ pub fn render_markdown(
         "Source categories",
         "Category",
         &summary.totals.source_categories,
+        order,
     );
     let other = summary
         .totals
@@ -67,12 +101,19 @@ pub fn render_markdown(
         .filter(|(key, _)| !key.starts_with("source:"))
         .map(|(key, value)| (key.clone(), *value))
         .collect();
-    table(&mut output, "Other counted content", "Kind:purpose", &other);
+    table(
+        &mut output,
+        "Other counted content",
+        "Kind:purpose",
+        &other,
+        order,
+    );
     table(
         &mut output,
         "Source languages",
         "Language",
         &summary.totals.source_languages,
+        order,
     );
     write!(output, "\n## Folder breakdown\n\nRecursive source code totals to depth {depth}. Parent rows include their children; do not sum all displayed rows. The report file's additive `breakdown` rows cover every depth. Multi-language files count once physically but contribute to each contained language.\n\n| Folder | Production | Test | Unclassified | Total source code |\n| --- | ---: | ---: | ---: | ---: |\n").unwrap();
     for (folder, values) in &summary.folders {
@@ -164,6 +205,7 @@ pub fn render_table(
     summary: &ReportSummary,
     rows: &[FileRecord],
     coverage: &Coverage,
+    order: RowOrder,
 ) -> String {
     let mut languages = BTreeMap::<String, (Counts, BTreeMap<Purpose, u64>)>::new();
     for row in breakdown(rows)
@@ -174,8 +216,11 @@ pub fn render_table(
         counts.add(&row.counts);
         *purposes.entry(row.purpose).or_default() += row.counts.code;
     }
-    let mut languages: Vec<_> = languages.into_iter().collect();
-    languages.sort_by(|a, b| b.1 .0.code.cmp(&a.1 .0.code).then(a.0.cmp(&b.0)));
+    let languages = ordered(
+        languages.into_iter().collect(),
+        |(counts, _)| counts.code,
+        order,
+    );
     let purpose_cells = |code: &dyn Fn(Purpose) -> u64| {
         Purpose::ALL
             .into_iter()
@@ -215,13 +260,12 @@ pub fn render_table(
         Some(total),
     );
 
-    let mut folders: Vec<_> = summary.top_folders().into_iter().collect();
     let folder_code = |purposes: &BTreeMap<Purpose, u64>| purposes.values().sum::<u64>();
-    folders.sort_by(|a, b| {
-        folder_code(&b.1)
-            .cmp(&folder_code(&a.1))
-            .then(a.0.cmp(&b.0))
-    });
+    let folders = ordered(
+        summary.top_folders().into_iter().collect(),
+        folder_code,
+        order,
+    );
     if !folders.is_empty() {
         let body: Vec<Vec<String>> = folders
             .iter()
