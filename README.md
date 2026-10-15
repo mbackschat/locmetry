@@ -63,6 +63,7 @@ What the table already handles for you:
 - **Guard quality in CI:** fail a build when unclaimed code grows or the test share drops, with one `jq` expression ([example](#continuous-integration)).
 - **Compare parts of a monorepo:** the folder rows and the additive breakdown table compare packages, services, or layers by purpose.
 - **Watch a codebase change:** measure two releases or branches and compare production and test growth instead of raw line deltas, for example to see what an agent-written change really added.
+- **Let an agent configure a project:** a coding agent working in a repository writes its `.locmetryrc` itself. `locmetry --help` leads it to `--schema config`, which explains the configuration and its semantics, and the measurement shows which folders still need a decision ([how](#configure-with-an-agent)).
 - **Give coding agents a reliable answer:** a compact JSON headline fits an agent's context, and follow-up questions are one `jq` query over the report file instead of improvised `find | xargs wc -l` pipelines.
 - **Report to people:** paste the Markdown report into a pull request, an architecture review, or a wiki page.
 
