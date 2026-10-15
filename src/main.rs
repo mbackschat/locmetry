@@ -157,7 +157,7 @@ fn emphasis(stdout_is_terminal: bool, no_color: Option<String>, term: Option<Str
 /// Result of a run that produced a report.
 enum Outcome {
     Complete,
-    /// Counts are missing for unreadable files; the message names them.
+    /// Counts are unavailable; the message names read and parsing failures.
     Partial(String),
 }
 
@@ -487,6 +487,7 @@ fn run_workspace(args: &WorkspaceArgs) -> Result<Outcome> {
                 "mapped_files": measurement.coverage.mapped_files,
                 "unrecognized_files": measurement.coverage.unrecognized_files,
                 "unread_files": measurement.coverage.unread.len(),
+                "parse_failed_files": measurement.coverage.parse_failures.len(),
             },
             "config": measurement.policy.snapshot(),
         }));
@@ -496,6 +497,7 @@ fn run_workspace(args: &WorkspaceArgs) -> Result<Outcome> {
             unclaimed_files: unclaimed.clone().count() as u64,
             unclaimed_code: unclaimed.map(|row| row.counts.code).sum(),
             unread_files: measurement.coverage.unread.len(),
+            parse_failed_files: measurement.coverage.parse_failures.len(),
         });
         results
             .rows
@@ -540,6 +542,10 @@ fn run_workspace(args: &WorkspaceArgs) -> Result<Outcome> {
     // against plain path order (`a-b/` sorts before `a/`), so sort once more.
     results.rows.sort_by(|a, b| a.path.cmp(&b.path));
     results.coverage.unread.sort();
+    results
+        .coverage
+        .parse_failures
+        .sort_by(|a, b| a.path.cmp(&b.path));
     results.coverage.unrecognized.sort();
     let mut metadata = json!({"user_config_path": user_path, "members": records});
     if let Some(path) = workspace_path {
@@ -680,16 +686,25 @@ fn report(
         Format::Table | Format::Markdown => write!(stdout, "{human}")?,
     }
     if inaccurate {
-        let mut unread = coverage.unread.iter().take(10).cloned().collect::<Vec<_>>();
-        if coverage.unread.len() > unread.len() {
-            unread.push(format!("and {} more", coverage.unread.len() - unread.len()));
+        let mut failures: Vec<_> = coverage
+            .unread
+            .iter()
+            .map(|path| format!("{path}: unreadable"))
+            .chain(coverage.parse_failures.iter().map(|failure| {
+                format!("{}: {} — {}", failure.path, failure.reason, failure.message)
+            }))
+            .take(10)
+            .collect();
+        let count = coverage.unread.len() + coverage.parse_failures.len();
+        if count > failures.len() {
+            failures.push(format!("and {} more", count - failures.len()));
         }
-        if unread.is_empty() {
-            unread.push("none identified".into());
+        if failures.is_empty() {
+            failures.push("backend did not identify affected paths".into());
         }
         return Ok(Outcome::Partial(format!(
-            "Backend reported incomplete counts; output contains partial results. Unreadable files: {}",
-            unread.join(", ")
+            "Backend reported incomplete counts; output contains partial results. Unavailable files: {}",
+            failures.join(", ")
         )));
     }
     Ok(Outcome::Complete)

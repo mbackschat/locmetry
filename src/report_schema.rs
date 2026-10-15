@@ -64,7 +64,7 @@ pub fn report_schema() -> Value {
             "measured_at_unix_seconds": {"type": "integer"},
             "locmetry_version": {"type": "string"},
             "backend": {"type": "string", "description": "The embedded counter and its version."},
-            "backend_inaccurate": {"type": "boolean", "description": "Whether some files could not be read, so counts are partial; the exit code is then 2."},
+            "backend_inaccurate": {"type": "boolean", "description": "Whether some files could not be read or counted, so counts are partial; the exit code is then 2. Historical reports without parse_failures did not observe notebook decoding failures."},
             "backend_configuration": {"type": "string"},
             "scope": {"$ref": "#/$defs/Scope", "description": "Effective file selection; absent in workspace mode, where each member has its own."},
             "kinds": strict(
@@ -85,6 +85,15 @@ pub fn report_schema() -> Value {
                     "unrecognized_extensions": {"type": "object", "additionalProperties": {"type": "integer"}, "description": "Unrecognized files per extension; `(none)` without one."},
                     "unrecognized": strings("Full report only: paths of unrecognized files; a `[[languages.mappings]]` entry can count them."),
                     "unread": strings("Recognized files that could not be read."),
+                    "parse_failures": {
+                        "type": "array",
+                        "description": "Selected readable files without counts due to invalid or unsupported notebook content. Always emitted by current measurements, including an empty array, in headlines and full reports. Optional only for historical version-1 reports: absence means not recorded, never known zero failures. These files are neither counted nor unread/unrecognized; any failure sets backend_inaccurate and exit 2.",
+                        "items": strict(json!({
+                            "path": {"type":"string", "description":"Root-relative path, prefixed by member in a workspace."},
+                            "reason": {"type":"string", "enum":["invalid_notebook","unsupported_notebook_version","unsupported_notebook_language","unsupported_notebook_cell"], "description":"Stable reason code; unsupported content is not necessarily invalid nbformat."},
+                            "message": {"type":"string", "description":"Human-readable detail; branch on reason rather than parsing this text."},
+                        }), &["path","reason","message"], "One file with unavailable counts."),
+                    },
                 }),
                 &["selected_files", "counted_files", "mapped_files", "unrecognized_files", "unrecognized_extensions", "unread"],
                 "Which selected files were counted.",
@@ -125,6 +134,7 @@ pub fn report_schema() -> Value {
                                 "mapped_files": {"type": "integer"},
                                 "unrecognized_files": {"type": "integer"},
                                 "unread_files": {"type": "integer"},
+                                "parse_failed_files": {"type":"integer", "minimum":0, "description":"Member files listed in the workspace parse_failures array. Always emitted now, including zero; historical absence means not recorded."},
                             }),
                             &["selected_files", "counted_files", "mapped_files", "unrecognized_files", "unread_files"],
                             "Which of the member's selected files were counted; `metadata.coverage` lists the paths for the whole workspace.",

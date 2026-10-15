@@ -1,6 +1,6 @@
 # Measurement Quality and Net Change Work Plan
 
-Status: sequence accepted by the owner on 2026-10-15; implementation not started. The accepted order is notebook correctness, documentation corrections, shared report/schema contracts, net change, then selection explanations. This file makes those recommendations executable and retains their rationale. Detailed public-interface choices remain recommendations until resolved at the relevant stage; accepting the sequence does not implement or publish a feature.
+Status: sequence accepted by the owner on 2026-10-15; S1 implemented, later stages pending. The accepted order is notebook correctness, documentation corrections, shared report/schema contracts, net change, then selection explanations. This file makes those recommendations executable and retains their rationale. Detailed public-interface choices remain recommendations until resolved at the relevant stage; accepting the sequence does not implement or publish a feature.
 
 [Development plan](../PLAN.md) indexes this work. [PRODUCT.md](../PRODUCT.md) remains the supported contract. The [net-change proposal](../proposals/net-change.md) owns the proposed comparison design; this plan owns sequencing, tasks, review checkpoints and completion evidence. The [capability comparison](../research/tool-capability-comparison.md), [configuration/documentation audit](../research/configuration-and-documentation.md), and [lessons and gaps](../research/tool-lessons-and-gaps.md) preserve the research evidence.
 
@@ -16,8 +16,8 @@ Resolve ordinary implementation details within the accepted scope. Record materi
 
 | Stage | Work | Technical prerequisite | Status and completion evidence |
 | --- | --- | --- | --- |
-| S1a | Correct notebook normalization | Shared S1 decoder design below | Not started. Fresh-build reproduction exists; no fix. |
-| S1b | Expose structured-document parse failure | The shared S1 decoder and its failure result | Not started. Reporting recommendations below need final field-shape resolution. |
+| S1a | Correct notebook normalization | Shared S1 decoder design below | Done 2026-10-15. Nine end-to-end notebook tests, public suite and private replay pass; checkpoint subject: `fix(counting): decode notebooks once and report unavailable counts`. |
+| S1b | Expose structured-document parse failure | The shared S1 decoder and its failure result | Done with S1a. Always-emitted `parse_failures`, member counts, partial exit 2, human output and historical schema absence verified. |
 | S2 | Correct documentation and executable examples | None for existing documentation drift; S1 behavior for its final wording | Not started. Audit identifies affected sections. |
 | S3 | Unify typed report and schema contracts | S1b representation | Not started. Inventory version-1 shapes across release tags. |
 | S4 | Implement aggregate and topology net change | S3 | Not started. Detailed design remains in the proposal. |
@@ -43,12 +43,12 @@ Row order is the accepted work order; the technical-prerequisite column is not a
 
 **Provenance.** [Fresh-build reproduction](../research/tool-lessons-and-gaps.md#notebooks-break-two-existing-measurement-guarantees), [Locmetry backend](../../src/backend.rs), and [Tokei notebook aggregation](https://github.com/XAMPPRocky/tokei/blob/v15.0.0/src/language/language_type.rs#L279).
 
-- [ ] Add public synthetic tests that fail on the one-line and two-line fixtures before changing code.
-- [ ] Define supported notebook shapes and language resolution using the shared S1 boundary. Add real-file fixtures for missing `kernelspec`, missing `language_info`, string/array source, raw cells beside code, and valid minimal empty notebooks. Valid-but-unsupported language cases must not be called malformed input.
-- [ ] Establish independent expected contributions for multiple cells, Markdown-only and fenced-Markdown notebooks; include comments, blanks and total lines. Keep outputs and container serialization outside extracted cell counts.
-- [ ] Decode once at the backend boundary and construct disjoint cell contributions, preserving physical-file identity, zero-code host participation, language contributions, host kind/purpose and additive breakdown semantics.
-- [ ] Verify recognized and explicitly mapped notebook paths use the same normalization where mapping is supported.
-- [ ] Guard ordinary source and other embedded-language cases against regressions; retain independent count oracles as well as aggregate equations.
+- [x] Add public synthetic tests that fail on the one-line and two-line fixtures before changing code.
+- [x] Define supported notebook shapes and language resolution using the shared S1 boundary. Add real-file fixtures for missing `kernelspec`, missing `language_info`, string/array source, raw cells beside code, and valid minimal empty notebooks. Valid-but-unsupported language cases must not be called malformed input.
+- [x] Establish independent expected contributions for multiple cells, Markdown-only and fenced-Markdown notebooks; include comments, blanks and total lines. Keep outputs and container serialization outside extracted cell counts.
+- [x] Decode once at the backend boundary and construct disjoint cell contributions, preserving physical-file identity, zero-code host participation, language contributions, host kind/purpose and additive breakdown semantics.
+- [x] Verify recognized and explicitly mapped notebook paths use the same normalization where mapping is supported.
+- [x] Guard ordinary source and other embedded-language cases against regressions; retain independent count oracles as well as aggregate equations.
 
 **Completion check.** Real-file end-to-end checks cover the following independent oracles, as well as file/language/folder/workspace accounting. A Markdown fixture containing `first\n\nlast\n` must report zero code, two comments, one blank and three lines. A four-line fenced fixture (heading, opening Python fence, `print(1)`, closing fence) must report zero code, four comments, zero blanks and four lines, with no extra Python source contribution. One/two Python lines remain exactly one/two code lines; a raw text line beside one Python line yields one comment plus one code line. Equivalent string/array sources agree. The valid minimal empty notebook is a successfully decoded zero. Relevant tests fail before the change and pass after it; required checks and the private regression pass, or an unavailable private environment is recorded as outstanding evidence. The private replay alone cannot satisfy this stage.
 
@@ -62,13 +62,13 @@ Row order is the accepted work order; the technical-prerequisite column is not a
 
 **Provenance.** [Reproduced coverage failure](../research/tool-lessons-and-gaps.md#notebooks-break-two-existing-measurement-guarantees), [Tokei fallback](https://github.com/XAMPPRocky/tokei/blob/v15.0.0/src/language/language_type.rs#L67), and pygount's [explicit processing states](https://github.com/roskakori/pygount/blob/v3.2.0/pygount/analysis.py#L74).
 
-- [ ] Add failing tests for malformed JSON, wrong-shaped JSON and zero-byte input, alongside the schema-valid minimal empty notebook and valid shapes covered by S1a.
-- [ ] Resolve the public failure field name/record shape before serialization changes. Recommendation: always emit a distinct failure collection in new full reports and headlines, including an empty collection when no failures occurred. Make the field optional in the version-1 schema for historical inputs; absence means not recorded, not none. Preserve availability per workspace member as well as merged coverage.
-- [ ] Set `backend_inaccurate = true` and exit 2 for observed decode/counting failures; distinguish malformed input from valid-but-unsupported content and avoid mislabeling either as an I/O read failure. Update the current unread-only diagnostic branch and member aggregation accordingly.
-- [ ] Make failure observable through the shared S1 decoder and propagate it through single-root/workspace coverage and all output formats. Keep failure paths in the headline, matching the visibility of unread paths for CI consumers.
-- [ ] Keep unavailable measurement separate from classification and heuristic findings: a generated file can still be counted production source.
-- [ ] Update the current handwritten report schema in S1b; S3 is later. Keep absence distinguishable from an empty collection through future typed deserialization. Document that old strict schemas may reject the new field even when newer readers accept old reports; decide compatibility explicitly before landing.
-- [ ] Amend comparison coverage rules: eligible historical reports lacking failure evidence remain consumable with a coverage finding; absence alone is not an observed failure or proof of completeness. Observed failures or recorded inaccuracy produce exit 2. Avoid a generic processing-state framework beyond the required contract.
+- [x] Add failing tests for malformed JSON, wrong-shaped JSON and zero-byte input, alongside the schema-valid minimal empty notebook and valid shapes covered by S1a.
+- [x] Resolve the public failure field name/record shape before serialization changes. Recommendation: always emit a distinct failure collection in new full reports and headlines, including an empty collection when no failures occurred. Make the field optional in the version-1 schema for historical inputs; absence means not recorded, not none. Preserve availability per workspace member as well as merged coverage.
+- [x] Set `backend_inaccurate = true` and exit 2 for observed decode/counting failures; distinguish malformed input from valid-but-unsupported content and avoid mislabeling either as an I/O read failure. Update the current unread-only diagnostic branch and member aggregation accordingly.
+- [x] Make failure observable through the shared S1 decoder and propagate it through single-root/workspace coverage and all output formats. Keep failure paths in the headline, matching the visibility of unread paths for CI consumers.
+- [x] Keep unavailable measurement separate from classification and heuristic findings: a generated file can still be counted production source.
+- [x] Update the current handwritten report schema in S1b; S3 is later. Keep absence distinguishable from an empty collection through future typed deserialization. Document that old strict schemas may reject the new field even when newer readers accept old reports; decide compatibility explicitly before landing.
+- [x] Amend comparison coverage rules: eligible historical reports lacking failure evidence remain consumable with a coverage finding; absence alone is not an observed failure or proof of completeness. Observed failures or recorded inaccuracy produce exit 2. Avoid a generic processing-state framework beyond the required contract.
 
 **Completion check.** Invalid/zero-byte fixtures are not certified as measured zero, supported valid shapes succeed, and valid empty input remains known zero. Test three report states distinctly: historical missing failure evidence, a new empty failure collection, and observed failures. JSON, terminal and Markdown communicate the same limitation, workspace aggregation retains availability and failures, diagnostics preserve machine-readable stdout, and `backend_inaccurate`/exit 2 are tested. Required checks and private regression follow the same evidence rule as S1a.
 
@@ -207,3 +207,5 @@ The owner supplied an external review of `4ca626a`, concluding S1 is ready with 
 | F11: order versus dependency | Accepted. | Keep accepted order and label technical prerequisites separately. |
 
 The headline-size concern remains an S4 design decision with the bounded-summary recommendation recorded above. The private regression cannot establish the notebook fix because it bypasses scanning. The Lingua Franca observation is reviewer-reported and outside this change; no universal physical-line equality guarantee is inferred. Historical research documents remain unchanged; this disposition supplies the qualification and next actions.
+
+Decision and completion record, 2026-10-15 (S1): implemented the shared decoder for v4.0–v4.5; name precedence is `language_info.name`, `kernelspec.language`, then `language_info.file_extension`, with Python only for absent declarations. Markdown/raw text is host comments, and empty cells need no language inference. New reports always record `parse_failures: [{path, reason, message}]`; members record `parse_failed_files`. Invalid/unsupported content is unavailable with exit 2, while historical absence remains unknown in the schema. The initial seven new tests failed before implementation (including the original 2-versus-1 count); all nine final notebook tests, the public suite, formatting, Clippy and private replay pass. The private log remains ignored; it is regression evidence, not the notebook oracle. No dependencies, release or push were added.

@@ -515,6 +515,7 @@ fn workspace_summaries_break_totals_down_by_member() {
                 "mapped_files": coverage["mapped_files"],
                 "unrecognized_files": coverage["unrecognized_files"],
                 "unread_files": coverage["unread"].as_array().unwrap().len(),
+                "parse_failed_files": coverage["parse_failures"].as_array().unwrap().len(),
             })
         );
     }

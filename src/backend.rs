@@ -13,6 +13,34 @@ use tokei::LanguageType;
 use LanguageType::*;
 
 mod handlebars;
+mod notebook;
+
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ParseFailureReason {
+    InvalidNotebook,
+    UnsupportedNotebookVersion,
+    UnsupportedNotebookLanguage,
+    UnsupportedNotebookCell,
+}
+
+impl std::fmt::Display for ParseFailureReason {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(match self {
+            Self::InvalidNotebook => "invalid_notebook",
+            Self::UnsupportedNotebookVersion => "unsupported_notebook_version",
+            Self::UnsupportedNotebookLanguage => "unsupported_notebook_language",
+            Self::UnsupportedNotebookCell => "unsupported_notebook_cell",
+        })
+    }
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct ParseFailure {
+    pub path: String,
+    pub reason: ParseFailureReason,
+    pub message: String,
+}
 
 /// Languages counted as data or configuration rather than source.
 ///
@@ -125,6 +153,8 @@ pub struct Coverage {
     pub unrecognized: Vec<String>,
     /// Recognized files that could not be read; their counts are missing.
     pub unread: Vec<String>,
+    /// Always recorded, including when empty; older reports lack this evidence.
+    pub parse_failures: Vec<ParseFailure>,
 }
 
 impl Coverage {
@@ -145,6 +175,11 @@ impl Coverage {
             .extend(other.unrecognized.iter().map(|name| path(name)));
         self.unread
             .extend(other.unread.iter().map(|name| path(name)));
+        self.parse_failures
+            .extend(other.parse_failures.iter().map(|failure| ParseFailure {
+                path: path(&failure.path),
+                ..failure.clone()
+            }));
     }
 }
 
@@ -156,7 +191,7 @@ pub struct Scan {
     /// Mapping ID for each mapped file.
     pub mappings: BTreeMap<String, String>,
     pub coverage: Coverage,
-    /// Some counts are missing because files could not be read.
+    /// Some counts are missing because files could not be read or parsed.
     pub inaccurate: bool,
     /// Modules that the selected build descriptors declare.
     pub modules: Vec<Module>,
@@ -227,21 +262,41 @@ pub fn scan(root: &Path, policy: &Policy) -> Result<Scan> {
         no_ignore: Some(true),
         ..Default::default()
     };
-    let (templates, other_paths): (Vec<_>, Vec<_>) = paths
-        .iter()
-        .partition(|path| LanguageType::from_path(path, &config) == Some(Handlebars));
+    let mut coverage = Coverage {
+        selected_files: paths.len(),
+        ..Default::default()
+    };
+    let (custom_paths, other_paths): (Vec<_>, Vec<_>) = paths.iter().partition(|path| {
+        matches!(
+            LanguageType::from_path(path, &config),
+            Some(Handlebars | Jupyter)
+        )
+    });
     if !other_paths.is_empty() {
         languages.get_statistics(&other_paths, &[], &config);
     }
-    if !templates.is_empty() {
-        let language = languages.entry(Handlebars).or_default();
-        for path in templates {
-            match handlebars::parse(path) {
-                Ok(report) => language.add_report(report),
-                Err(_) => language.mark_inaccurate(),
+    for path in custom_paths {
+        let kind = LanguageType::from_path(path, &config)
+            .expect("custom paths have a recognized language");
+        let language = languages.entry(kind).or_default();
+        match parse_file(kind, path, &config) {
+            Ok(report) => language.add_report(report),
+            Err(error) => {
+                if let notebook::Error::Content(reason, message) = error {
+                    coverage.parse_failures.push(ParseFailure {
+                        path: relative_path(path.strip_prefix(&root)?)?,
+                        reason,
+                        message,
+                    });
+                }
+                language.mark_inaccurate();
             }
         }
-        language.total();
+    }
+    for kind in [Handlebars, Jupyter] {
+        if let Some(language) = languages.get_mut(&kind) {
+            language.total();
+        }
     }
     let mut inaccurate = languages.values().any(|language| language.inaccurate);
     let mut payload = serde_json::to_value(languages)?;
@@ -251,15 +306,16 @@ pub fn scan(root: &Path, policy: &Policy) -> Result<Scan> {
         .map(|path| relative_path(path.strip_prefix(&root)?))
         .collect::<Result<Vec<_>>>()?;
     let modules = modules::detect(&names.iter().map(String::as_str).collect::<Vec<_>>());
-    let mut coverage = Coverage {
-        selected_files: paths.len(),
-        ..Default::default()
-    };
+    let failed: BTreeSet<_> = coverage
+        .parse_failures
+        .iter()
+        .map(|failure| failure.path.clone())
+        .collect();
     let mut mapped = BTreeMap::<LanguageType, tokei::Language>::new();
     let mut mappings = BTreeMap::new();
     for path in &paths {
         let name = relative_path(path.strip_prefix(&root)?)?;
-        if counted.contains(&name) {
+        if counted.contains(&name) || failed.contains(&name) {
             continue;
         }
         if LanguageType::from_path(path, &config).is_some() {
@@ -269,19 +325,23 @@ pub fn scan(root: &Path, policy: &Policy) -> Result<Scan> {
         match policy.mapped_language(&name) {
             None => coverage.unrecognized.push(name),
             Some((id, language)) => {
-                let report = match language {
-                    Handlebars => handlebars::parse(path),
-                    _ => language
-                        .parse(path.clone(), &config)
-                        .map_err(|(error, _)| error),
-                };
+                let report = parse_file(language, path, &config);
                 match report {
                     Ok(report) => {
                         mapped.entry(language).or_default().add_report(report);
                         mappings.insert(name, id.to_owned());
                     }
-                    Err(_) => {
-                        coverage.unread.push(name);
+                    Err(error) => {
+                        match error {
+                            notebook::Error::Read => coverage.unread.push(name),
+                            notebook::Error::Content(reason, message) => {
+                                coverage.parse_failures.push(ParseFailure {
+                                    path: name,
+                                    reason,
+                                    message,
+                                })
+                            }
+                        }
                         inaccurate = true;
                     }
                 }
@@ -293,6 +353,7 @@ pub fn scan(root: &Path, policy: &Policy) -> Result<Scan> {
     coverage.mapped_files = mappings.len();
     coverage.counted_files = counted.len() + mappings.len();
     coverage.unread.sort();
+    coverage.parse_failures.sort_by(|a, b| a.path.cmp(&b.path));
     coverage.unrecognized.sort();
     coverage.unrecognized_files = coverage.unrecognized.len();
     for path in &coverage.unrecognized {
@@ -315,6 +376,20 @@ pub fn scan(root: &Path, policy: &Policy) -> Result<Scan> {
         modules,
         unused_exclusions,
     })
+}
+
+fn parse_file(
+    language: LanguageType,
+    path: &Path,
+    config: &tokei::Config,
+) -> std::result::Result<tokei::Report, notebook::Error> {
+    match language {
+        Handlebars => handlebars::parse(path).map_err(|_| notebook::Error::Read),
+        Jupyter => notebook::parse(path, config),
+        _ => language
+            .parse(path.to_owned(), config)
+            .map_err(|_| notebook::Error::Read),
+    }
 }
 
 /// Rewrites report paths to the public root-relative form and returns them.

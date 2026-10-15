@@ -64,6 +64,7 @@ pub struct MemberView {
     pub unclaimed_files: u64,
     pub unclaimed_code: u64,
     pub unread_files: usize,
+    pub parse_failed_files: usize,
 }
 
 /// Test code lines per production code line, `-` without production code.
@@ -187,7 +188,7 @@ fn repository_grid(
     }
 }
 
-/// Names members with unclaimed source or unreadable files, which a person
+/// Names members with unclaimed source or unavailable counts, which a person
 /// can act on. Unrecognized files are left to the "Not counted" note: on real
 /// repositories they are mostly images, so listing them named every member
 /// (docs/research/real-project-trials.md#workspace-run).
@@ -205,6 +206,12 @@ fn repositories_note(members: &[MemberView]) -> Option<String> {
             }
             if member.unread_files > 0 {
                 findings.push(counted(member.unread_files as u64, "unreadable file"));
+            }
+            if member.parse_failed_files > 0 {
+                findings.push(counted(
+                    member.parse_failed_files as u64,
+                    "file with a parsing failure",
+                ));
             }
             (!findings.is_empty()).then(|| format!("{}: {}", member.name, findings.join(", ")))
         })
@@ -840,6 +847,18 @@ pub fn render_table(
     if !coverage.unread.is_empty() {
         gaps.push(counted(coverage.unread.len() as u64, "unreadable file"));
     }
+    if !coverage.parse_failures.is_empty() {
+        gaps.push(counted(
+            coverage.parse_failures.len() as u64,
+            "file with a parsing failure",
+        ));
+        for failure in coverage.parse_failures.iter().take(25) {
+            notes.push(format!(
+                "{}: {} — {}",
+                failure.path, failure.reason, failure.message
+            ));
+        }
+    }
     if !gaps.is_empty() {
         notes.push(format!(
             "Not counted: {}; missing lines are not zero.",
@@ -876,6 +895,21 @@ fn render_coverage(output: &mut String, findings: &Findings) {
         output.push_str("\n| Unreadable file |\n| --- |\n");
         for path in coverage.unread.iter().take(25) {
             writeln!(output, "| {} |", cell(path)).unwrap();
+        }
+    }
+    if !coverage.parse_failures.is_empty() {
+        output.push_str(
+            "\n| File with unavailable counts | Reason | Detail |\n| --- | --- | --- |\n",
+        );
+        for failure in coverage.parse_failures.iter().take(25) {
+            writeln!(
+                output,
+                "| {} | {} | {} |",
+                cell(&failure.path),
+                cell(&failure.reason.to_string()),
+                cell(&failure.message)
+            )
+            .unwrap();
         }
     }
     for note in submodules_note(findings.submodules)

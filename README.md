@@ -80,7 +80,7 @@ What the table already handles for you:
 
 ### Counting for more than 300 languages
 
-Code, comment, and blank lines per file, including code embedded in other languages, such as snippets in Markdown. The embedded [Tokei](https://github.com/XAMPPRocky/tokei) library does the counting, so nothing is reimplemented.
+Code, comment, and blank lines per file, including code embedded in other languages, such as snippets in Markdown. Locmetry embeds [Tokei](https://github.com/XAMPPRocky/tokei), with a local Handlebars correction and a notebook decoder that counts each extracted cell once. [Counting semantics](docs/measurement.md#counting) describes these boundaries.
 
 ### Purpose, category, and provenance per file
 
@@ -158,11 +158,13 @@ language = "BASH"
 
 ### Honest coverage
 
-Files that could not be recognized or read are listed, never reported as zero lines:
+Files that could not be recognized, read or parsed are listed, never reported as zero lines:
 
 ```text
  Not counted: 1 unrecognized file (png: 1); missing lines are not zero.
 ```
+
+Invalid or unsupported notebook content appears in `metadata.coverage.parse_failures` as `{path, reason, message}` and produces partial output with exit code 2, as unreadable files do. New reports always include this array, including when empty; its absence in older reports means failures were not recorded. Workspace member coverage adds `parse_failed_files`. [Notebook limits and compatibility](docs/measurement.md#notebooks) explains supported versions, language selection and older schemas.
 
 ### Reproducible and deterministic
 
