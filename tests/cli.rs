@@ -209,7 +209,8 @@ fn markdown_format_writes_a_readable_report_to_stdout() {
 }
 
 #[cfg(unix)]
-/// Locks the terminal layout: languages and top-level folders sorted by code,
+/// Locks the terminal layout: totals in the familiar Code, Comments, Blanks
+/// order, then the code split by purpose under its caption; rows sorted by code,
 /// then one line each for non-source content, review, and coverage gaps.
 #[test]
 fn table_format_splits_source_code_by_language_and_purpose() {
@@ -228,18 +229,20 @@ fn table_format_splits_source_code_by_language_and_purpose() {
     let expected = "
  project: source code lines by purpose
 
- Language  Files  Production  Test  Unclassified  Code  Comments  Blanks
+                                          Code by purpose
+ Language  Files  Code  Comments  Blanks  Production  Test  Unclassified
  ───────────────────────────────────────────────────────────────────────
- Rust          3           2     2             0     4         1       0
- Python        1           0     0             1     1         0       0
+ Rust          3     4         1       0           2     2             0
+ Python        1     1         0       0           0     0             1
  ───────────────────────────────────────────────────────────────────────
- Total         4           2     2             1     5         1       0
+ Total         4     5         1       0           2     2             1
 
- Folder  Production  Test  Unclassified  Code
+               Code by purpose
+ Folder  Code  Production  Test  Unclassified
  ────────────────────────────────────────────
- src              2     0             0     2
- tests            0     2             0     2
- proto            0     0             1     1
+ src        2           2     0             0
+ tests      2           0     2             0
+ proto      1           0     0             1
 
  Not source code: 1 data file (1 line), 1 documentation file (1 line).
  Review: 1 unclassified source file (1 code line); details with --format markdown.

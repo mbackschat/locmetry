@@ -161,8 +161,14 @@ fn counted(count: u64, noun: &str) -> String {
 }
 
 /// Aligned plain-text table: the first column left-aligned, the others right.
-/// Rule lines separate the header, and the body from an optional total row.
-fn text_table(header: &[&str], body: &[Vec<String>], total: Option<Vec<String>>) -> String {
+/// A caption line labels the columns from index `group.0` on; rule lines
+/// separate the header, and the body from an optional total row.
+fn text_table(
+    header: &[&str],
+    body: &[Vec<String>],
+    total: Option<Vec<String>>,
+    group: (usize, &str),
+) -> String {
     let header: Vec<String> = header.iter().map(|title| title.to_string()).collect();
     let all = std::iter::once(&header).chain(body).chain(total.as_ref());
     let mut widths = vec![0; header.len()];
@@ -187,7 +193,9 @@ fn text_table(header: &[&str], body: &[Vec<String>], total: Option<Vec<String>>)
         " {}\n",
         "─".repeat(widths.iter().sum::<usize>() + 2 * (widths.len() - 1))
     );
-    let mut output = line(&header) + &rule;
+    let (first, caption) = group;
+    let indent = 1 + widths[..first].iter().sum::<usize>() + 2 * first;
+    let mut output = format!("{:indent$}{caption}\n", "") + &line(&header) + &rule;
     for row in body {
         output += &line(row);
     }
@@ -230,34 +238,38 @@ pub fn render_table(
     let body: Vec<Vec<String>> = languages
         .iter()
         .map(|(language, (counts, purposes))| {
-            let mut row = vec![language.clone(), counts.files.to_string()];
+            let mut row = vec![language.clone()];
+            row.extend(
+                [counts.files, counts.code, counts.comments, counts.blanks].map(|n| n.to_string()),
+            );
             row.extend(purpose_cells(&|purpose| {
                 purposes.get(&purpose).copied().unwrap_or(0)
             }));
-            row.extend([counts.code, counts.comments, counts.blanks].map(|n| n.to_string()));
             row
         })
         .collect();
     let source = &summary.totals.source;
-    let mut total = vec!["Total".to_string(), source.files.to_string()];
+    let mut total = vec!["Total".to_string()];
+    total
+        .extend([source.files, source.code, source.comments, source.blanks].map(|n| n.to_string()));
     total.extend(purpose_cells(&|purpose| {
         summary.totals.purpose(purpose).code
     }));
-    total.extend([source.code, source.comments, source.blanks].map(|n| n.to_string()));
     let mut output = format!("\n {project}: source code lines by purpose\n\n");
     output += &text_table(
         &[
             "Language",
             "Files",
-            "Production",
-            "Test",
-            "Unclassified",
             "Code",
             "Comments",
             "Blanks",
+            "Production",
+            "Test",
+            "Unclassified",
         ],
         &body,
         Some(total),
+        (5, "Code by purpose"),
     );
 
     let folder_code = |purposes: &BTreeMap<Purpose, u64>| purposes.values().sum::<u64>();
@@ -275,19 +287,19 @@ pub fn render_table(
                     "." => "(root files)".to_string(),
                     _ => folder.clone(),
                 };
-                let mut row = vec![label];
+                let mut row = vec![label, folder_code(purposes).to_string()];
                 row.extend(purpose_cells(&|purpose| {
                     purposes.get(&purpose).copied().unwrap_or(0)
                 }));
-                row.push(folder_code(purposes).to_string());
                 row
             })
             .collect();
         output += "\n";
         output += &text_table(
-            &["Folder", "Production", "Test", "Unclassified", "Code"],
+            &["Folder", "Code", "Production", "Test", "Unclassified"],
             &body,
             None,
+            (2, "Code by purpose"),
         );
     }
 

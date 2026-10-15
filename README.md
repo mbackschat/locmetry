@@ -19,23 +19,25 @@ $ locmetry
 
  acme-orders: source code lines by purpose
 
- Language    Files  Production  Test  Unclassified  Code  Comments  Blanks
+                                            Code by purpose
+ Language    Files  Code  Comments  Blanks  Production  Test  Unclassified
  ─────────────────────────────────────────────────────────────────────────
- Kotlin          6          51    16             0    67         2      16
- TypeScript      2          11    10             0    21         1       4
- Python          2          12     0             8    20         2       8
- TSX             1          20     0             0    20         0       2
- Shell           1           0     0             1     1         2       0
+ Kotlin          6    67         2      16          51    16             0
+ TypeScript      2    21         1       4          11    10             0
+ Python          2    20         2       8          12     0             8
+ TSX             1    20         0       2          20     0             0
+ Shell           1     1         2       0           0     0             1
  ─────────────────────────────────────────────────────────────────────────
- Total          12          94    26             9   129         7      30
+ Total          12   129         7      30          94    26             9
 
- Folder        Production  Test  Unclassified  Code
+                     Code by purpose
+ Folder        Code  Production  Test  Unclassified
  ──────────────────────────────────────────────────
- backend               49    16             0    65
- web                   31    10             0    41
- scripts               12     0             0    12
- prototypes             0     0             8     8
- (root files)           2     0             1     3
+ backend         65          49    16             0
+ web             41          31    10             0
+ scripts         12          12     0             0
+ prototypes       8           0     0             8
+ (root files)     3           2     0             1
 
  Not source code: 3 data files (19 lines), 1 documentation file (9 lines).
  Review: 2 unclassified source files (9 code lines); details with --format markdown.
