@@ -1,10 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
   <title id="title">locmetry</title>
-  <desc id="desc">Bold cyan LOC lettering on a dark rounded square.</desc>
-  <rect width="128" height="128" rx="28" fill="#1e293b"/>
-  <g transform="translate(0 10)" fill="none" stroke="#38bdf8" stroke-width="9" stroke-linecap="square" stroke-linejoin="round">
-    <path d="M22 36V72H39"/>
-    <rect x="51" y="36" width="22" height="36" rx="9"/>
-    <path d="M106 39A11 11 0 0 0 86 45V63A11 11 0 0 0 106 69"/>
-  </g>
+  <rect width="64" height="64" rx="14" fill="#1e293b"/>
+  <!-- Indented code lines in two colours: production and test purposes. -->
+  <rect x="13" y="13" width="30" height="6" rx="3" fill="#38bdf8"/>
+  <rect x="20" y="23" width="25" height="6" rx="3" fill="#38bdf8"/>
+  <rect x="20" y="33" width="16" height="6" rx="3" fill="#fbbf24"/>
+  <!-- A ruler: the measurement. -->
+  <path d="M13 51H51M13 51V45M22.5 51V47M32 51V45M41.5 51V47M51 51V45" fill="none" stroke="#e2e8f0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
