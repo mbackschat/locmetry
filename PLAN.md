@@ -30,6 +30,17 @@ Decided 2026-10-15: a `workspace` subcommand with repeatable `--root` or a works
 
 **Completion evidence:** tests cover flag rejection, member validation, a merge that equals the per-member reports summed with prefixed paths, determinism, and the report schema; a workspace over real sibling repositories, recorded in `docs/research/local/`, matches the sum of their individual runs.
 
+## Per-Repository Breakdown — Next
+
+Decided 2026-10-15: workspace reports break metrics down by member, as the [proposal](PRODUCT.md#per-repository-breakdown-proposal) defines.
+
+- [ ] Report `summary.members` and per-member coverage counts, and extend `--schema report`.
+- [ ] Show repository rows with test ratio and share in the table, and repository grids in Markdown.
+- [ ] Note members with unclaimed, unrecognized, or unreadable files.
+- [ ] Turn the proposal into contract text and update the README.
+
+**Completion evidence:** tests show each member's totals equal its regular run, and the table, grids, and notes on a synthetic workspace; a workspace over real sibling repositories, recorded in `docs/research/local/`, shows the same per-member figures as their individual runs.
+
 ## Ideas — Not Scheduled
 
 - [ ] A configuration skill for coding agents: decided 2026-10-15 to record, not build yet. Blind test drives showed agents already reach 99%+ agreement with human-reviewed configurations from `--help` and `--schema` alone, so the skill would add procedure rather than knowledge: keep the repository read-only until a human approves, require evidence and a `reason` for every entry, declare `[categories]`, resolve `summary.submodules` and `summary.unused_entries`, and end with the judgment calls a human must make. Acceptance: the same blind trials scored with and without the skill show a gain, not only more ceremony.

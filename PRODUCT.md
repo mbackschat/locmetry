@@ -195,6 +195,18 @@ A workspace measures several repositories as one virtual monorepo: each member i
 
 Excluded: discovering a workspace file, explicit member names, overlapping members, and configuration shared or inherited across members.
 
+### Per-Repository Breakdown (Proposal)
+
+Proposed 2026-10-15, not implemented; [PLAN.md](PLAN.md#per-repository-breakdown--next) tracks it. A workspace adds the member as a dimension of the merged report, so repositories can be compared beyond code per purpose.
+
+- `summary.members`, keyed by member name, holds each member's totals in the shape of the summary's own: `all_counted`, `source`, `by_kind_purpose`, `source_purpose`, `source_categories`, and `source_languages`. They equal what a regular run of that member reports.
+- `metadata.members` adds each member's `coverage` counts: `selected_files`, `counted_files`, `mapped_files`, `unrecognized_files`, and `unread_files`.
+- The terminal table replaces the folder rows with repository rows: code, production, test, unclassified, test lines per production line, and the share of the workspace's source code, with a total row.
+- The Markdown report adds a Repositories section with the same table, followed by source categories and source languages by repository, as grids with one column per member and a total column.
+- A note in both human formats names each member with unclaimed source, unrecognized files, or unreadable files, with their counts; members without any are not listed.
+
+Excluded: detecting copies across members and comparing measurements over time.
+
 ## Reporting and Coverage
 
 Reports serve aggregation: totals by purpose, category, kind, language, and folder. Count original file reports and embedded statistics once. `breakdown` rows are additive, and so are top-level folder totals, which cover each subtree and, with the root files, every file once. The Markdown folder table lists nested levels, in which a parent includes its subfolders, so its rows are not all additive.
