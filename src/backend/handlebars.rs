@@ -1,17 +1,9 @@
-use encoding_rs_io::DecodeReaderBytesBuilder;
-use std::{
-    fs::File,
-    io::{self, Read},
-    path::Path,
-};
+use super::{decoded_text, ParseError, ParseFailureReason};
+use std::path::Path;
 use tokei::{CodeStats, Report};
 
-pub(super) fn parse(path: &Path) -> io::Result<Report> {
-    // Match Tokei 15's BOM-aware decoding (src/language/language_type.rs).
-    let mut text = String::new();
-    DecodeReaderBytesBuilder::new()
-        .build(File::open(path)?)
-        .read_to_string(&mut text)?;
+pub(super) fn parse(path: &Path) -> Result<Report, ParseError> {
+    let text = decoded_text(path, ParseFailureReason::InvalidEncoding, "Handlebars")?;
     let mut report = Report::new(path.to_owned());
     report.stats = count(&text);
     Ok(report)

@@ -60,7 +60,7 @@ With `--workspace`, the target starts with the member's folder name; roots in th
 | `not_selected`, `hidden_policy` | A probe that enables only hidden paths selects the file. Check the effective `scope.hidden` setting. |
 | `not_selected`, `reason_not_recorded` | Available evidence cannot establish a cause. Multiple filters may mask each other; this is not a claim that no rule applies. Inspect the recorded scope and vary one setting at a time. |
 | `unrecognized` | The file was selected, but no parser or mapping recognized it. Add a mapping only when an existing language counter fits its syntax. There is no known-zero count. |
-| `parse_failed` or `unread` | Counts are unavailable. Inspect the stable failure reason and human detail, or file access. Notebook support and limitations are in [measurement semantics](measurement.md#notebooks). |
+| `parse_failed` or `unread` | Counts are unavailable. Inspect the stable failure reason and human detail, or file access. Handlebars encoding and notebook support are described in [measurement semantics](measurement.md#counting). |
 | `symlink` | The path or an ancestor is a symlink, which measurement does not follow. `at` identifies the link; the command does not inspect its target or claim which other filters apply. |
 
 [Command outcomes](PRODUCT.md#command-outcomes) defines the statuses: successful explanations include symlinks, filtered and unrecognized paths; unavailable target counts are partial, and invalid input or traversal aborts the command. A symlink ancestor ends inspection immediately, even if the remainder of the path would not exist at its destination.

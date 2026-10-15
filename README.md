@@ -82,7 +82,7 @@ What the table already handles for you:
 
 ### Counting for more than 300 languages
 
-Code, comment, and blank lines per file, including code embedded in other languages, such as snippets in Markdown. Locmetry embeds [Tokei](https://github.com/XAMPPRocky/tokei), with a local Handlebars correction and a notebook decoder that counts each extracted cell once. [Counting semantics](docs/measurement.md#counting) describes these boundaries.
+Code, comment, and blank lines per file, including code embedded in other languages, such as snippets in Markdown. Locmetry embeds [Tokei](https://github.com/XAMPPRocky/tokei), with a local Handlebars correction and a notebook decoder that counts each extracted cell once. Readable templates with invalid encoding are reported as parse failures rather than unreadable files. [Counting semantics](docs/measurement.md#counting) describes these boundaries.
 
 ### Purpose, category, and provenance per file
 

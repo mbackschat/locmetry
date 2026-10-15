@@ -14,10 +14,13 @@ use LanguageType::*;
 
 mod handlebars;
 mod notebook;
+mod submodules;
 
 #[derive(Clone, Debug, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ParseFailureReason {
+    /// Readable Handlebars bytes cannot be decoded as UTF-8 or BOM-directed text.
+    InvalidEncoding,
     /// Invalid encoding, JSON or counting structure; includes zero-byte input.
     InvalidNotebook,
     /// Notebook version outside the supported v4.0–v4.5 range; not necessarily invalid nbformat.
@@ -31,6 +34,7 @@ pub enum ParseFailureReason {
 impl std::fmt::Display for ParseFailureReason {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         formatter.write_str(match self {
+            Self::InvalidEncoding => "invalid_encoding",
             Self::InvalidNotebook => "invalid_notebook",
             Self::UnsupportedNotebookVersion => "unsupported_notebook_version",
             Self::UnsupportedNotebookLanguage => "unsupported_notebook_language",
@@ -109,21 +113,12 @@ pub fn language_kind(name: &str) -> Kind {
     }
 }
 
-/// Submodule paths declared in the scan root's `.gitmodules`.
-///
-/// Locmetry never invokes Git (CLAUDE.md), so it reads the file's `path = …`
-/// lines (git-config syntax, `gitmodules(5)`). The paths only feed a scope
-/// hint, so an unreadable or missing file yields none rather than an error.
+/// Submodule scope hints from the root's `.gitmodules`, without invoking Git.
+/// Missing or unreadable files yield no hints; this never changes scan selection.
 pub fn git_submodules(root: &Path) -> Vec<String> {
-    let Ok(text) = std::fs::read_to_string(root.join(".gitmodules")) else {
-        return Vec::new();
-    };
-    text.lines()
-        .filter_map(|line| line.trim().strip_prefix("path"))
-        .filter_map(|rest| rest.trim_start().strip_prefix('='))
-        .map(|path| path.trim().trim_end_matches('/').to_string())
-        .filter(|path| !path.is_empty())
-        .collect()
+    std::fs::read_to_string(root.join(".gitmodules"))
+        .map(|text| submodules::paths(&text))
+        .unwrap_or_default()
 }
 
 /// Effective selection policy applied by [`scan`], recorded with every report.
@@ -353,7 +348,7 @@ pub(crate) fn scan_selection(
         match parse_file(kind, path, &config) {
             Ok(report) => language.add_report(report),
             Err(error) => {
-                if let notebook::Error::Content(reason, message) = error {
+                if let ParseError::Content(reason, message) = error {
                     coverage.parse_failures.push(ParseFailure {
                         path: relative_path(path.strip_prefix(&root)?)?,
                         reason,
@@ -399,8 +394,8 @@ pub(crate) fn scan_selection(
                     }
                     Err(error) => {
                         match error {
-                            notebook::Error::Read => coverage.unread.push(name),
-                            notebook::Error::Content(reason, message) => {
+                            ParseError::Read => coverage.unread.push(name),
+                            ParseError::Content(reason, message) => {
                                 coverage.parse_failures.push(ParseFailure {
                                     path: name,
                                     reason,
@@ -447,17 +442,41 @@ pub(crate) fn scan_selection(
     ))
 }
 
+pub(super) enum ParseError {
+    Read,
+    Content(ParseFailureReason, String),
+}
+
+fn decoded_text(
+    path: &Path,
+    reason: ParseFailureReason,
+    label: &str,
+) -> std::result::Result<String, ParseError> {
+    use std::io::Read;
+    // Preserve Tokei 15's BOM-aware decoding, but keep access and content
+    // failures distinct as required by PRODUCT's coverage contract.
+    let bytes = std::fs::read(path).map_err(|_| ParseError::Read)?;
+    let mut text = String::new();
+    encoding_rs_io::DecodeReaderBytesBuilder::new()
+        .build(bytes.as_slice())
+        .read_to_string(&mut text)
+        .map_err(|error| {
+            ParseError::Content(reason, format!("Cannot decode {label} encoding: {error}"))
+        })?;
+    Ok(text)
+}
+
 fn parse_file(
     language: LanguageType,
     path: &Path,
     config: &tokei::Config,
-) -> std::result::Result<tokei::Report, notebook::Error> {
+) -> std::result::Result<tokei::Report, ParseError> {
     match language {
-        Handlebars => handlebars::parse(path).map_err(|_| notebook::Error::Read),
+        Handlebars => handlebars::parse(path),
         Jupyter => notebook::parse(path, config),
         _ => language
             .parse(path.to_owned(), config)
-            .map_err(|_| notebook::Error::Read),
+            .map_err(|_| ParseError::Read),
     }
 }
 

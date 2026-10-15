@@ -24,6 +24,12 @@ The S1–S5 changes and review corrections identify as `0.2.0-dev.1`, distinct f
 
 - [ ] When a release is requested, choose the final version, rerun release checks, publish the new binaries and update the tap and README stable installation together. Include the notebook counting/coverage changes, saved-report compatibility, net change and explanation commands in release notes.
 
+## Correctness Follow-ups — Complete
+
+Implemented 2026-10-16: distinguish Handlebars access failures (`unread`) from readable but undecodable content (`parse_failures`, reason `invalid_encoding`). Handlebars and notebooks share the BOM-aware decoding boundary and failure type, preserving notebook reason codes. Submodule hints now parse named sections, quoted/escaped values, inline comments and continuations, instead of collecting every literal `path =` line. [Measurement semantics](measurement.md#counting) and [submodule hint semantics](measurement.md#git-submodule-hints) own the supported boundaries; includes are not followed and malformed entries remain best-effort omissions.
+
+Verification: encoding and submodule fixtures failed before the corrections. Detected/mapped templates, BOM preservation, unreadable files, explanation schema/results, quoted submodule report attribution and malformed/unrelated entries now pass. Git's own parser independently confirmed the valid synthetic submodule fixture. Full public tests, Clippy, formatting, README workflows and the private frozen-count replay pass; the private replay guards existing records, while new scanning fixtures establish the fixes. These follow-ups do not activate the [conditional follow-ups](plans/measurement-quality-and-net-change.md#conditional-follow-ups-and-preserved-rationales).
+
 ## Release for macOS and Linux — Initial Distribution Complete
 
 Decided 2026-10-15: licence MIT (dual MIT OR Apache-2.0 up to v0.1.1), repository `github.com/mbackschat/locmetry`, an own tap `mbackschat/homebrew-tap` before any homebrew-core submission, and targets macOS arm64 plus Linux x86_64 and aarch64. [Tokei integration and distribution](tokei-integration.md#distribution) describes the release path.

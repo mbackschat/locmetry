@@ -507,3 +507,30 @@ fn folder_totals_reconcile_at_every_level() {
         "intermediate folder without direct files"
     );
 }
+
+#[test]
+fn handlebars_decode_failures_are_content_failures_for_detected_and_mapped_files() {
+    for name in ["notice.hbs", "notice.handlebars", "notice.template"] {
+        let temp = tempfile::tempdir().unwrap();
+        fs::write(temp.path().join(name), b"caf\xe9\n").unwrap();
+        let config = policy(
+            r#"
+[[languages.mappings]]
+id = "templates"
+match = ["*.template"]
+language = "Handlebars"
+"#,
+        );
+        let result = scan(temp.path(), &config).unwrap();
+        assert!(result.inaccurate);
+        assert!(result.coverage.unread.is_empty(), "{name}");
+        assert_eq!(result.coverage.parse_failures.len(), 1, "{name}");
+        let failure = &result.coverage.parse_failures[0];
+        assert_eq!(failure.path, name);
+        assert_eq!(failure.reason.to_string(), "invalid_encoding");
+        assert!(failure
+            .message
+            .contains("Cannot decode Handlebars encoding"));
+        assert!(result.records(&config).unwrap().is_empty());
+    }
+}

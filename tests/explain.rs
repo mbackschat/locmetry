@@ -133,12 +133,16 @@ fn explains_unrecognized_and_parse_failed_targets_without_counting_unrelated_fil
     let root = temp.path();
     write(root, "unknown.zzzz", "unknown\n");
     write(root, "broken.ipynb", "{}");
+    fs::write(root.join("notice.hbs"), b"caf\xe9\n").unwrap();
     write(root, "main.py", "print(1)\n");
     let unknown = document(run(root, "unknown.zzzz", &[]), 0);
     assert_eq!(unknown["result"]["state"], "unrecognized");
     let failed = document(run(root, "broken.ipynb", &[]), 2);
     assert_eq!(failed["result"]["state"], "parse_failed");
     assert_eq!(failed["result"]["failure"]["reason"], "invalid_notebook");
+    let failed = document(run(root, "notice.hbs", &[]), 2);
+    assert_eq!(failed["result"]["state"], "parse_failed");
+    assert_eq!(failed["result"]["failure"]["reason"], "invalid_encoding");
     let counted = document(run(root, "main.py", &[]), 0);
     assert_eq!(counted["result"]["state"], "counted");
     assert_eq!(counted["result"]["decision"]["stage"], "fallback");

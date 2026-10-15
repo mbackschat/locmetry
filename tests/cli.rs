@@ -436,7 +436,14 @@ fn git_submodules_are_reported_until_excluded() {
     let temp = project(&[
         (
             ".gitmodules",
-            "[submodule \"lib\"]\n\tpath = vendor/lib\n\turl = https://example.com/lib.git\n[submodule \"gone\"]\n\tpath = not-checked-out\n",
+            r#"[submodule "lib"]
+path = "vendor/lib" ; inline comment
+url = https://example.com/lib.git
+[submodule "gone"]
+path = not-checked-out
+[include]
+path = src
+"#,
         ),
         ("vendor/lib/a.py", "a = 1\nb = 2\n"),
         ("src/main.py", "x = 1\n"),
