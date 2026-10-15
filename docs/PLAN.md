@@ -75,6 +75,10 @@ Done 2026-10-15: reproduced Tokei 15.0.0's global-quote bug with independent syn
 
 **Completion evidence:** regression tests failed before the fix and pass afterward, covering both recognized extensions, language mappings, quote and comment boundaries, raw blocks, BOM decoding, and unreadable-file coverage. The public suite, private regression guard, formatting, and Clippy pass. No release is part of this change.
 
+## Proposals — Under Discussion
+
+- [Subtree measurement with project context](proposals/subtree-measurement.md): proposed `--subfolder DIR` for single-root measurements, retaining project policy and module context while restricting counts and coverage. Design requested 2026-10-16; implementation remains unapproved. Ancestor discovery and workspace subtree selection are excluded from this proposal.
+
 ## Completed Design Decisions
 
 - [Net change between measurement reports — historical decision record](proposals/net-change.md): aggregate/topology comparison implemented as `0.2.0-dev.1`; retained for S4 acceptance evidence and design rationale. [PRODUCT](PRODUCT.md#net-change) owns supported behavior. The [conditional per-file follow-up](plans/measurement-quality-and-net-change.md#per-file-comparison) owns the deferred design and consumer-demand trigger.
