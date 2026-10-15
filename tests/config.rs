@@ -484,3 +484,94 @@ fn invalid_language_mappings_fail_before_scanning() {
         );
     }
 }
+
+#[test]
+fn builtin_build_conventions_separate_build_scripts_and_wrappers() {
+    let policy = Policy::defaults();
+    for (path, rule, purpose, category) in [
+        (
+            "packages/core/build.gradle.kts",
+            "builtin:build-script",
+            "production",
+            "build-tooling",
+        ),
+        (
+            "settings.gradle",
+            "builtin:build-script",
+            "production",
+            "build-tooling",
+        ),
+        (
+            "native/CMakeLists.txt",
+            "builtin:build-script",
+            "production",
+            "build-tooling",
+        ),
+        (
+            "Makefile",
+            "builtin:build-script",
+            "production",
+            "build-tooling",
+        ),
+        (
+            "service/pom.xml",
+            "builtin:build-script",
+            "production",
+            "build-tooling",
+        ),
+        (
+            "gradlew",
+            "builtin:build-wrapper",
+            "unclassified",
+            "third-party-wrapper",
+        ),
+        (
+            "gradle/wrapper/gradle-wrapper.properties",
+            "builtin:build-wrapper",
+            "unclassified",
+            "third-party-wrapper",
+        ),
+        (
+            "service/mvnw.cmd",
+            "builtin:build-wrapper",
+            "unclassified",
+            "third-party-wrapper",
+        ),
+        (
+            "src/test/resources/app/build.gradle",
+            "builtin:test-directory",
+            "test",
+            "test",
+        ),
+        (
+            "gradle/libs.versions.toml",
+            "fallback",
+            "unclassified",
+            "unclassified",
+        ),
+    ] {
+        let result = policy.classify(path, Kind::Source);
+        assert_eq!(
+            (
+                result.rule.as_str(),
+                result.purpose.to_string().as_str(),
+                result.category.as_str()
+            ),
+            (rule, purpose, category),
+            "{path}"
+        );
+    }
+}
+
+#[test]
+fn ownership_overrides_and_disabling_take_precedence_over_build_conventions() {
+    let owned = policy(
+        "version = 1\n[[overrides]]\nid = \"consumer-tests\"\nmatch = [\"consumer-tests/**\"]\npurpose = \"test\"\n",
+    );
+    assert_eq!(
+        rule(&owned, "consumer-tests/jvm/build.gradle.kts", Kind::Source),
+        "consumer-tests"
+    );
+    let disabled = policy("version = 1\n[classification]\nbuiltin_build = false");
+    assert_eq!(rule(&disabled, "build.gradle", Kind::Source), "fallback");
+}
