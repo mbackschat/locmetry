@@ -2,11 +2,15 @@
 
 # locmetry
 
-**Lines of code that mean something.** A line counter tells you a repository has 120,000 lines. It cannot tell you how much of that is product code, how much is tests, and how much is build glue, a vendored SDK, or a prototype nobody maintains. `locmetry` counts every file and classifies it by purpose, using built-in conventions plus a few reviewable project rules. The numbers then answer the questions people actually ask.
+**Lines of code, split by purpose: production, tests, tooling, and what nobody claims.** A line counter tells you a repository has 120,000 lines. It cannot tell you how much of that is product code, how much is tests, and how much is build glue, a vendored SDK, or a prototype nobody maintains. `locmetry` counts every file, gives it a purpose and a category, and records the rule that decided it.
 
-- **For people:** a terminal table of source code by language, folder, and purpose.
-- **For agents and scripts:** compact JSON, plus a full report whose rows add up under any grouping.
-- **For reviews and wikis:** a Markdown report.
+- **Useful without configuration:** test conventions and build files (npm, Gradle, Maven, Cargo, Go, Python, Lake, Swift) classify most code out of the box.
+- **Flexible, reviewable configuration:** a short `.locmetryrc` states only what conventions cannot know: what is out of scope, which folders are tooling or examples, which archived code must not count as tests, your own categories, and languages for unknown file types. The precedence is fixed and documented, so the same files and configuration always give the same numbers.
+- **Built for coding agents:** `locmetry --schema config` explains the configuration and its semantics from the binary alone. In blind trials, agents without access to these docs wrote configurations that agreed with human-reviewed ones on 99% or more of code lines.
+- **JSON for agents and scripts:** a headline small enough for an agent's context, with totals by purpose, category, content kind, and language, per top-level folder and build system, plus the folders that still need a decision. `--output` adds a full report with additive breakdown rows and per-file records, and `--schema report` describes every key, so nothing has to be guessed or scraped, and every follow-up question is a `jq` query.
+- **Ready-made metrics:** the tables show test lines per production line for every folder, and a workspace adds each repository's ratio and share. The JSON keeps exact counts, so any other ratio, such as a test-share guard in CI, is one `jq` expression.
+- **Several repositories as one:** `locmetry workspace` measures sibling repositories, each with its own configuration, as one virtual monorepo with a row per repository.
+- **Three outputs from one measurement:** a terminal table for people, JSON for agents and scripts, and Markdown for reviews and wikis.
 
 It is one static binary for macOS arm64 and Linux x86_64 and aarch64, with no runtime dependencies.
 
@@ -72,23 +76,120 @@ What the table already handles for you:
 
 ## Features
 
-- **Accurate counting for more than 300 languages:** code, comment, and blank lines, including code embedded in other languages, such as snippets in Markdown.
-- **Purpose and category per file:** `production`, `test`, or `unclassified`, with an optional category such as `implementation`, `tooling`, `build-tooling`, or `example`. Every file records the rule that decided it.
-- **Built-in conventions:** these are recognized out of the box:
-  - test directories, Gradle and Kotlin test source sets, Swift test targets, Lean test libraries, `*.test.ts`, `*Test.kt`, `*_test.go`, `test_*.py`, and snapshot folders;
-  - Gradle, Maven, CMake, Make, and Lake build scripts;
-  - build-tool wrappers such as `gradlew`.
+### Counting for more than 300 languages
 
-  A release may add conventions, which can reclassify files, but changing or removing one requires a new configuration `version`; every report records the conventions it applied.
-- **Production from the build:** a folder with an npm, Gradle, Maven, Cargo, Go, Python, Lake, or Swift build file is a [build module](#build-modules), and that build system's source layout inside it counts as production. Nothing is assumed where no build declares anything.
-- **Content kinds:** source, data, documentation, and other are counted separately, so a large JSON fixture or a README never inflates code totals.
-- **Language mappings:** files with an unknown extension can be counted as a known language. `.gradle` (as Groovy), `.jsonc`, `.jsonl`, and `.properties` are built in, and you can add your own.
-- **Explicit scope:** root-relative globs, ignore files, hidden-file control, default exclusions for `.git`, `node_modules`, and the `.build` and `.lake` build folders, and optional personal exclusions shared by all projects.
-- **Honest coverage:** files that could not be recognized or read are listed, never reported as zero lines.
-- **Reproducible:** only the project's configuration, command-line options, and optional personal exclusions affect results, and every report records the effective scope and policy.
-- **Self-describing configuration:** `locmetry --schema config` prints a JSON Schema that explains every setting, the classification order, and the built-in conventions, so an agent can write the configuration without reading these docs.
-- **Workspaces:** several repositories measured in parallel with their own configurations and merged into one deterministic report.
-- **Three outputs, one measurement:** the terminal table, JSON, and Markdown are rendered from the same per-file records.
+Code, comment, and blank lines per file, including code embedded in other languages, such as snippets in Markdown. The embedded [Tokei](https://github.com/XAMPPRocky/tokei) library does the counting, so nothing is reimplemented.
+
+### Purpose, category, and provenance per file
+
+Every file gets a purpose, `production`, `test`, or `unclassified`, an optional category such as `implementation`, `tooling`, `build-tooling`, or `example`, and the rule that decided it. For the [sample project](#a-tour-of-a-sample-project), `locmetry --files --output - | jq …` lists:
+
+```text
+path                                                     purpose       category             rule
+backend/build.gradle.kts                                 production    build-tooling        builtin:build-script
+backend/src/main/kotlin/acme/orders/Order.kt             production    implementation       builtin:gradle-module
+backend/src/main/kotlin/acme/orders/OrderRepository.kt   production    implementation       builtin:gradle-module
+backend/src/main/kotlin/acme/orders/OrderService.kt      production    implementation       builtin:gradle-module
+backend/src/test/kotlin/acme/orders/OrderServiceTest.kt  test          test                 builtin:test-directory
+gradlew                                                  unclassified  third-party-wrapper  builtin:build-wrapper
+prototypes/pricing_experiment.py                         unclassified  unclassified         fallback
+scripts/seed_db.py                                       production    tooling              tooling
+settings.gradle.kts                                      production    build-tooling        builtin:build-script
+web/src/Checkout.tsx                                     production    implementation       builtin:npm-module
+web/src/cart.test.ts                                     test          test                 builtin:js-test-file
+web/src/cart.ts                                          production    implementation       builtin:npm-module
+```
+
+Only `tooling` comes from the project's configuration; conventions and build files decide everything else, and the prototype nobody claimed stays `unclassified` for review.
+
+### Built-in conventions
+
+Recognized out of the box, as the listing above shows:
+
+- test directories, Gradle and Kotlin test source sets, Swift test targets, Lean test libraries, `*.test.ts`, `*Test.kt`, `*_test.go`, `test_*.py`, and snapshot folders;
+- Gradle, Maven, CMake, Make, and Lake build scripts, as `build-tooling`;
+- build-tool wrappers such as `gradlew`, as `third-party-wrapper`.
+
+A release may add conventions, which can reclassify files, but changing or removing one requires a new configuration `version`; every report records the conventions it applied.
+
+### Production from the build
+
+A folder with an npm, Gradle, Maven, Cargo, Go, Python, Lake, or Swift build file is a [build module](#build-modules), and that build system's source layout inside it counts as production. Nothing is assumed where no build declares anything, and the table says which build systems decided:
+
+```text
+ Production from build modules: gradle 42 code lines in 1 module, npm 31 code lines in 1 module.
+```
+
+### Content kinds
+
+Source, data, documentation, and other content are counted separately, so a large JSON fixture or a README never inflates code totals:
+
+```text
+ Not source code: 3 data files (19 lines), 1 documentation file (9 lines).
+```
+
+### Explicit scope
+
+Root-relative globs, ignore files, hidden-file control, and default exclusions for `.git`, `node_modules`, and the `.build` and `.lake` build folders decide what is measured. Vendored or generated code is one line of configuration away:
+
+```toml
+version = 1
+
+[scope]
+exclude = ["third_party/**", "**/*.generated.ts"]
+```
+
+Optional [personal defaults](PRODUCT.md#user-defaults) add exclusions for every project, and an exclusion that excludes nothing is reported, so a misspelled path does not go unnoticed.
+
+### Language mappings
+
+Files with an extension the counter does not know can be counted as a known language. `.gradle` (as Groovy), `.jsonc`, `.jsonl`, and `.properties` are built in, and you can add your own:
+
+```toml
+version = 1
+
+[[languages.mappings]]
+id = "runbooks"
+match = ["**/*.runbook"]
+language = "BASH"
+```
+
+### Honest coverage
+
+Files that could not be recognized or read are listed, never reported as zero lines:
+
+```text
+ Not counted: 1 unrecognized file (png: 1); missing lines are not zero.
+```
+
+### Reproducible and deterministic
+
+Only the project's configuration, command-line options, and optional personal exclusions affect results, and every report records the effective scope and policy. The same files and configuration always give the same report, independent of the order in which files are found; [PRODUCT.md](PRODUCT.md#matching-and-precedence) defines the precedence.
+
+### Self-describing configuration
+
+`locmetry --schema config` prints a JSON Schema that explains every setting, the classification order, and the built-in conventions, so an agent can write the configuration without reading these docs ([how](#configure-with-an-agent)). `--schema report`, `--schema user-config`, and `--schema workspace` describe the other files.
+
+### Workspaces
+
+`locmetry workspace --root web --root api` measures several repositories, each with its own configuration, in parallel, and merges them into one report with a row per repository:
+
+```text
+
+                   Code by purpose
+ Repository  Code  Production  Test  Unclassified  Test/prod   Share
+ ───────────────────────────────────────────────────────────────────
+ api           14           6     8             0       1.33   51.9%
+ web           13           7     5             1       0.71   48.1%
+ ───────────────────────────────────────────────────────────────────
+ Total         27          13    13             1       1.00  100.0%
+```
+
+[Measure several repositories together](#measure-several-repositories-together) describes the mode.
+
+### Three outputs, one measurement
+
+The [terminal table](#terminal-table), [JSON](#json-headline-for-agents-and-scripts), and [Markdown](#markdown-report) are rendered from the same per-file records.
 
 ## Install
 
