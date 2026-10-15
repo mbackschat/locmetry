@@ -181,6 +181,7 @@ fn run(args: Args) -> Result<Outcome> {
         modules: &modules,
         submodules: &submodules,
         unused_entries: &unused,
+        unused_exclusions: &scan.unused_exclusions,
     };
     let order = match args.sort {
         Sort::Code => RowOrder::Code,
@@ -206,6 +207,9 @@ fn run(args: Args) -> Result<Outcome> {
     }
     if !unused.is_empty() {
         summary_json["unused_entries"] = serde_json::to_value(&unused)?;
+    }
+    if !scan.unused_exclusions.is_empty() {
+        summary_json["unused_exclusions"] = serde_json::to_value(&scan.unused_exclusions)?;
     }
     // Always present, even empty: it is the documented next step for configuration.
     summary_json["unclassified_folders"] = serde_json::to_value(unclassified_folders(&rows))?;

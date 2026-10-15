@@ -162,6 +162,11 @@ pub fn report_schema() -> Value {
                 "items": {"type": "string"},
                 "description": "Present when configuration entries decided no file: their globs match nothing, or an earlier stage, such as a test convention, always decides first. Check their `match` or move them to `overrides`.",
             },
+            "unused_exclusions": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Present when configured exclusions, from the project, user defaults, or `--exclude`, left out no file or folder: a folder written without `/**`, a misspelled path, or one that ignore files or `hidden = false` already hide. Default exclusions and the configuration file's own path are never listed.",
+            },
             "unclassified_folders": {
                 "type": "array",
                 "items": strict(

@@ -330,7 +330,7 @@ struct LanguageMapping {
 ///
 /// Globs are root-relative, `/`-separated, and case-sensitive: `*` stays within a path segment, `**` spans directories, `?` matches one character, `[...]` a character class, `{a,b}` alternatives, and a backslash escapes. `*` also matches names that start with a dot. Negation, absolute paths, and basename-only matching are not supported, so `*.rs` matches only at the root; use `**/*.rs`. Globs match files, not folders: `docs/**` covers a folder, while `docs` matches only a file of that name.
 ///
-/// To set up a project, run `locmetry`; decide the scope of any `summary.submodules`, which are often other teams' code; read `summary.unclassified_folders` and add entries for those folders. Then review the source that build modules made production, because nothing reports it as unclaimed: folder or file names that suggest tests, test support, fixtures, or examples need an entry. Measure again with `--config <file>` until `summary.unused_entries` is absent; `--files --output -` shows each file's `purpose`, `category`, and `rule`. An entry looks like this:
+/// To set up a project, run `locmetry`; decide the scope of any `summary.submodules`, which are often other teams' code; read `summary.unclassified_folders` and add entries for those folders. Then review the source that build modules made production, because nothing reports it as unclaimed: folder or file names that suggest tests, test support, fixtures, or examples need an entry. Measure again with `--config <file>` until `summary.unused_entries` and `summary.unused_exclusions` are absent; `--files --output -` shows each file's `purpose`, `category`, and `rule`. An entry looks like this:
 ///
 /// ```toml
 /// version = 1
@@ -508,6 +508,8 @@ pub struct Scope {
     excludes: GlobSet,
     /// Directories whose every descendant is excluded, from `<dir>/**` patterns.
     pruned_directories: GlobSet,
+    /// Index into [`Scope::exclusions`] of each `pruned_directories` pattern.
+    pruning_patterns: Vec<usize>,
 }
 
 impl Scope {
@@ -515,15 +517,16 @@ impl Scope {
         let patterns = Self::patterns(&settings);
         let excludes =
             glob_set(patterns.iter().map(String::as_str)).context("Invalid scope exclusion")?;
-        let pruned_directories = glob_set(
-            patterns
-                .iter()
-                .filter_map(|pattern| pattern.strip_suffix("/**")),
-        )?;
+        let (pruning_patterns, directories): (Vec<usize>, Vec<&str>) = patterns
+            .iter()
+            .enumerate()
+            .filter_map(|(index, pattern)| Some((index, pattern.strip_suffix("/**")?)))
+            .unzip();
         Ok(Self {
             settings,
             excludes,
-            pruned_directories,
+            pruned_directories: glob_set(directories)?,
+            pruning_patterns,
         })
     }
 
@@ -552,8 +555,27 @@ impl Scope {
         self.excludes.is_match(path)
     }
 
-    pub fn prunes_directory(&self, path: &str) -> bool {
-        self.pruned_directories.is_match(path)
+    /// Indices into [`Scope::exclusions`] of the patterns that leave out the
+    /// file or directory at `path`; only `<dir>/**` patterns prune a directory,
+    /// so a bare folder name excludes nothing.
+    pub fn excluded_by(&self, path: &str, directory: bool) -> Vec<usize> {
+        match directory {
+            true => self
+                .pruned_directories
+                .matches(path)
+                .into_iter()
+                .map(|index| self.pruning_patterns[index])
+                .collect(),
+            false => self.excludes.matches(path),
+        }
+    }
+
+    /// How many of [`Scope::exclusions`] are default exclusions, which come first.
+    fn default_count(&self) -> usize {
+        match self.settings.default_excludes {
+            true => DEFAULT_EXCLUDES.len(),
+            false => 0,
+        }
     }
 }
 
@@ -672,6 +694,8 @@ pub struct Policy {
     /// before the fallback.
     module_entries: Vec<(Module, Entry)>,
     fallback: (Purpose, String),
+    /// The literal exclusion of the loaded configuration file, if it lies in the scan root.
+    configuration_exclusion: Option<String>,
     /// Project mappings first, then built-in ones.
     languages: Vec<LanguageMapping>,
     snapshot: Value,
@@ -795,6 +819,7 @@ impl Policy {
             modules: Vec::new(),
             module_entries: Vec::new(),
             fallback: (fallback, fallback.to_string()),
+            configuration_exclusion: None,
             languages,
             snapshot,
         })
@@ -861,10 +886,36 @@ impl Policy {
         let Ok(relative) = config.strip_prefix(root) else {
             return Ok(());
         };
+        let pattern = literal_glob(&relative_path(relative)?);
+        self.configuration_exclusion = Some(pattern.clone());
         self.override_scope(&ScopeOverrides {
-            exclude: vec![literal_glob(&relative_path(relative)?)],
+            exclude: vec![pattern],
             ..Default::default()
         })
+    }
+
+    /// Configured exclusions that left out no file or folder, given the
+    /// indices into the effective exclusions that a scan applied.
+    ///
+    /// Default exclusions and the configuration's own path are omitted: they
+    /// routinely match nothing, as with a hidden `.locmetryrc` and
+    /// `hidden = false`. A pattern repeated across layers counts once.
+    pub fn unused_exclusions(&self, applied: &BTreeSet<usize>) -> Vec<String> {
+        let patterns = self.scope.exclusions();
+        let used: BTreeSet<&str> = applied
+            .iter()
+            .map(|&index| patterns[index].as_str())
+            .collect();
+        let mut unused: Vec<String> = Vec::new();
+        for pattern in &patterns[self.scope.default_count()..] {
+            if !used.contains(pattern.as_str())
+                && self.configuration_exclusion.as_ref() != Some(pattern)
+                && !unused.contains(pattern)
+            {
+                unused.push(pattern.clone());
+            }
+        }
+        unused
     }
 
     /// Adopts the modules a scan detected, unless `builtin_modules = false`.

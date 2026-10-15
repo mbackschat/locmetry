@@ -6,6 +6,7 @@ use serde_json::{json, Value};
 use std::{
     collections::{BTreeMap, BTreeSet},
     path::{Component, Path},
+    sync::{Arc, Mutex},
 };
 use tokei::LanguageType;
 
@@ -136,6 +137,8 @@ pub struct Scan {
     pub inaccurate: bool,
     /// Modules that the selected build descriptors declare.
     pub modules: Vec<Module>,
+    /// Configured exclusions that left out nothing, see [`Policy::unused_exclusions`].
+    pub unused_exclusions: Vec<String>,
 }
 
 impl Scan {
@@ -166,6 +169,8 @@ pub fn scan(root: &Path, policy: &Policy) -> Result<Scan> {
         walker.add_custom_ignore_filename(TOOL_IGNORE_FILE);
     }
     let walk_root = root.clone();
+    let applied = Arc::new(Mutex::new(BTreeSet::new()));
+    let recorder = Arc::clone(&applied);
     walker.filter_entry(move |entry| {
         let Ok(path) = entry
             .path()
@@ -175,10 +180,14 @@ pub fn scan(root: &Path, policy: &Policy) -> Result<Scan> {
         else {
             return true; // The root itself; non-UTF-8 names fail later with context.
         };
-        match entry.file_type() {
-            Some(kind) if kind.is_dir() => !scope.prunes_directory(&path),
-            _ => !scope.is_excluded(&path),
-        }
+        let directory = entry.file_type().is_some_and(|kind| kind.is_dir());
+        let excluded_by = scope.excluded_by(&path, directory);
+        let selected = excluded_by.is_empty();
+        recorder
+            .lock()
+            .expect("the walk records exclusions on one thread")
+            .extend(excluded_by);
+        selected
     });
     let mut paths = Vec::new();
     for entry in walker.build() {
@@ -187,6 +196,8 @@ pub fn scan(root: &Path, policy: &Policy) -> Result<Scan> {
             paths.push(entry.into_path());
         }
     }
+    let applied = std::mem::take(&mut *applied.lock().expect("the walk has finished"));
+    let unused_exclusions = policy.unused_exclusions(&applied);
     let mut languages = tokei::Languages::new();
     let config = tokei::Config {
         hidden: Some(true),
@@ -258,6 +269,7 @@ pub fn scan(root: &Path, policy: &Policy) -> Result<Scan> {
         coverage,
         inaccurate,
         modules,
+        unused_exclusions,
     })
 }
 

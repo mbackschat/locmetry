@@ -468,6 +468,47 @@ fn entries_that_decide_no_file_are_reported() {
     );
 }
 
+/// An exclusion that excludes nothing is usually a folder written without
+/// `/**` or a misspelled path; reports name it without failing. Default
+/// exclusions and the configuration's own path are left out, because they
+/// routinely match nothing, here the hidden `.locmetryrc` with `hidden = false`.
+#[test]
+fn exclusions_that_exclude_nothing_are_reported() {
+    let config = "version = 1\n[scope]\nhidden = false\nexclude = [\"vendor/**\", \"third_party\", \"**/*.gen.ts\", \"vendor/**\", \"build/**\"]\n";
+    let temp = project(&[
+        (".locmetryrc", config),
+        (".ignore", "build/\n"),
+        ("src/a.ts", "export const a = 1;\n"),
+        ("vendor/lib.js", "var b = 1;\n"),
+        ("third_party/c.ts", "let c = 1;\n"),
+        ("build/out.js", "var d = 1;\n"),
+        ("dist/e.ts", "let e = 1;\n"),
+    ]);
+    let root = temp.path().join("project");
+    let (success, document, stderr) =
+        headline(&root, &["--exclude", "dist/**", "--exclude", "missing/**"]);
+    assert!(success, "{stderr}");
+    assert_eq!(
+        document["summary"]["unused_exclusions"],
+        json!(["third_party", "**/*.gen.ts", "build/**", "missing/**"])
+    );
+    let table = String::from_utf8(run(&root, &["--format", "table"]).stdout).unwrap();
+    assert!(
+        table.contains(" Exclusions that excluded nothing: third_party, **/*.gen.ts, build/**; exclude a folder as <folder>/**, and an ignore file may already hide the path.\n"),
+        "{table}"
+    );
+    let markdown = String::from_utf8(run(&root, &["--format", "markdown"]).stdout).unwrap();
+    assert!(
+        markdown.contains("Exclusions that excluded nothing: third_party"),
+        "{markdown}"
+    );
+    let (_, document, _) = headline(&root, &["--no-user-config"]);
+    assert_eq!(
+        document["summary"]["unused_exclusions"],
+        json!(["third_party", "**/*.gen.ts", "build/**"])
+    );
+}
+
 /// Categories split each purpose; the terminal table shows them on request,
 /// one row per `purpose:category`, so it stays one screen by default.
 #[test]

@@ -51,6 +51,7 @@ pub struct Findings<'a> {
     pub modules: &'a [ModuleShare],
     pub submodules: &'a [SubmoduleShare],
     pub unused_entries: &'a [String],
+    pub unused_exclusions: &'a [String],
 }
 
 /// Sorts labelled rows by `order`, where `code` gives a row's code lines.
@@ -510,6 +511,7 @@ pub fn render_table(
         notes.push(unclaimed_note(&folders));
     }
     notes.extend(unused_entries_note(findings.unused_entries));
+    notes.extend(unused_exclusions_note(findings.unused_exclusions));
     let mut gaps = Vec::new();
     if coverage.unrecognized_files > 0 {
         let mut extensions: Vec<_> = coverage.unrecognized_extensions.iter().collect();
@@ -566,6 +568,7 @@ fn render_coverage(output: &mut String, findings: &Findings) {
     for note in submodules_note(findings.submodules)
         .into_iter()
         .chain(unused_entries_note(findings.unused_entries))
+        .chain(unused_exclusions_note(findings.unused_exclusions))
     {
         writeln!(output, "\n{note}").unwrap();
     }
@@ -591,6 +594,17 @@ fn submodules_note(submodules: &[SubmoduleShare]) -> Option<String> {
 /// glob that matches nothing or an entry an earlier stage preempts.
 fn unused_entries_note(entries: &[String]) -> Option<String> {
     (!entries.is_empty()).then(|| format!("Entries that decided no file: {}.", entries.join(", ")))
+}
+
+/// Names exclusions that left out nothing, which usually means a folder
+/// written without `/**`, a misspelled path, or one an ignore file already hides.
+fn unused_exclusions_note(patterns: &[String]) -> Option<String> {
+    (!patterns.is_empty()).then(|| {
+        format!(
+            "Exclusions that excluded nothing: {}; exclude a folder as <folder>/**, and an ignore file may already hide the path.",
+            patterns.join(", ")
+        )
+    })
 }
 
 fn resolve_destination(path: &Path) -> Result<PathBuf> {
