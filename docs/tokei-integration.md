@@ -23,7 +23,7 @@ A Tokei upgrade requires rebuilding and releasing Locmetry and rerunning countin
 
 ## Distribution
 
-Releases target macOS arm64 and Linux x86_64 and aarch64, licensed MIT OR Apache-2.0. The installed executable depends only on operating-system libraries; Cargo dependencies are compiled code, not separate runtime packages.
+Releases target macOS arm64 and Linux x86_64 and aarch64, licensed MIT. The installed executable depends only on operating-system libraries; Cargo dependencies are compiled code, not separate runtime packages.
 
 Pushing a `v<version>` tag runs the [release workflow](../.github/workflows/release.yml). It requires the tag to match the crate version, tests, builds `aarch64-apple-darwin` and static `x86_64-unknown-linux-musl` and `aarch64-unknown-linux-musl` executables, measures with an empty environment, checks static linkage on Linux, and attaches the archives with `SHA256SUMS` to a GitHub Release. musl avoids a glibc version floor, and every target-side dependency is pure Rust, so no C cross toolchain is needed.
 

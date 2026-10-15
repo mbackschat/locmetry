@@ -353,4 +353,4 @@ Known limits: classification is per file, so a file mixing production code and i
 
 ## License
 
-Licensed under either the [Apache License, Version 2.0](LICENSE-APACHE) or the [MIT License](LICENSE-MIT), at your option. Line counting uses the embedded [Tokei](https://github.com/XAMPPRocky/tokei) library.
+Licensed under the [MIT License](LICENSE). Line counting uses the embedded [Tokei](https://github.com/XAMPPRocky/tokei) library.

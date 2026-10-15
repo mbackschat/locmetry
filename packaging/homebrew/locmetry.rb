@@ -2,7 +2,7 @@ class Locmetry < Formula
   desc "Measure code with embedded Tokei and reviewed classification rules"
   homepage "https://github.com/mbackschat/locmetry"
   version "{{version}}"
-  license any_of: ["MIT", "Apache-2.0"]
+  license "MIT"
 
   head do
     url "https://github.com/mbackschat/locmetry.git", branch: "main"

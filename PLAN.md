@@ -4,7 +4,7 @@
 
 ## Release for macOS and Linux — Next
 
-Decided 2026-10-15: licence MIT OR Apache-2.0, repository `github.com/mbackschat/locmetry`, an own tap `mbackschat/homebrew-tap` before any homebrew-core submission, and targets macOS arm64 plus Linux x86_64 and aarch64. [Tokei integration and distribution](docs/tokei-integration.md#distribution) describes the release path.
+Decided 2026-10-15: licence MIT (dual MIT OR Apache-2.0 up to v0.1.1), repository `github.com/mbackschat/locmetry`, an own tap `mbackschat/homebrew-tap` before any homebrew-core submission, and targets macOS arm64 plus Linux x86_64 and aarch64. [Tokei integration and distribution](docs/tokei-integration.md#distribution) describes the release path.
 
 - [x] Add licence files and Cargo metadata.
 - [x] Format, lint, and test on all three targets in [CI](.github/workflows/ci.yml).
