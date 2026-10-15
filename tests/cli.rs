@@ -199,6 +199,19 @@ fn markdown_format_writes_a_readable_report_to_stdout() {
 }
 
 #[cfg(unix)]
+/// Labelled counts read correctly for any number, including one.
+#[test]
+fn markdown_coverage_reads_correctly_for_single_files() {
+    let temp = project(&[("diagram.png", "not an image\n")]);
+    let output = run(&temp.path().join("project"), &["--format", "markdown"]);
+    assert!(output.status.success());
+    let markdown = String::from_utf8(output.stdout).unwrap();
+    assert!(
+        markdown.contains("Files selected: 1; counted: 0, including 0 through language mappings; not recognized: 1; recognized but unreadable: 0. Their lines are missing, not zero."),
+        "{markdown}"
+    );
+}
+
 #[test]
 fn unreadable_files_produce_partial_output_naming_them_and_fail() {
     use std::os::unix::fs::PermissionsExt;

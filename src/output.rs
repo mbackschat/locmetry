@@ -112,7 +112,7 @@ pub fn render_markdown(
 }
 
 fn render_coverage(output: &mut String, coverage: &Coverage) {
-    writeln!(output, "\n## Coverage\n\n{} files selected, {} counted, {} of them through language mappings. {} were not recognized and {} recognized files could not be read; their lines are missing, not zero.", coverage.selected_files, coverage.counted_files, coverage.mapped_files, coverage.unrecognized_files, coverage.unread.len()).unwrap();
+    writeln!(output, "\n## Coverage\n\nFiles selected: {}; counted: {}, including {} through language mappings; not recognized: {}; recognized but unreadable: {}. Their lines are missing, not zero.", coverage.selected_files, coverage.counted_files, coverage.mapped_files, coverage.unrecognized_files, coverage.unread.len()).unwrap();
     let mut extensions: Vec<_> = coverage.unrecognized_extensions.iter().collect();
     extensions.sort_by(|a, b| b.1.cmp(a.1).then(a.0.cmp(b.0)));
     if !extensions.is_empty() {

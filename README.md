@@ -142,7 +142,7 @@ Everything else follows from built-in conventions. `OrderServiceTest.kt` and `ca
 
 ## Coverage
 
-18 files selected, 16 counted, 2 of them through language mappings. 2 were not recognized and 0 recognized files could not be read; their lines are missing, not zero.
+Files selected: 17; counted: 16, including 2 through language mappings; not recognized: 1; recognized but unreadable: 0. Their lines are missing, not zero.
 ```
 
 The vendored SDK is absent, `package.json` and `tsconfig.jsonc` count as data rather than code, `application.properties` and `tsconfig.jsonc` were counted through built-in language mappings, and the diagram is listed as unrecognized instead of silently dropped.
