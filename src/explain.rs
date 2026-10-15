@@ -11,7 +11,7 @@ pub enum DocumentType {
     Explanation,
 }
 
-/// One path's selection, parser and classification evidence. Exit 2 means the target's counts are unavailable; exit 0 includes excluded, unrecognized and filtered paths. This is not a saved measurement input for compare.
+/// One path's selection, parser and classification evidence. Exit 2 means the target's counts are unavailable; exit 0 includes counted, excluded, unrecognized, filtered and symlink paths. This is not a saved measurement input for compare.
 #[derive(Serialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 #[schemars(example = example())]

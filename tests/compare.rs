@@ -551,6 +551,12 @@ fn rendering_escapes_markdown_but_preserves_plain_text_labels() {
 
 #[test]
 fn development_counter_is_distinct_from_the_last_release() {
+    let readme = include_str!("../README.md");
+    assert!(readme.contains(&format!("**{} (unreleased)**", env!("CARGO_PKG_VERSION"))));
+    assert!(readme.contains(&format!(
+        "\"locmetry_version\": \"{}\"",
+        env!("CARGO_PKG_VERSION")
+    )));
     let temp = tempfile::tempdir().unwrap();
     write(temp.path(), "main.py", "print(1)\n");
     let current = measure(temp.path());
@@ -618,4 +624,21 @@ fn folder_presence_points_to_the_evidence_that_establishes_it() {
         .find(|f| f["entity"]["kind"] == "folder" && f["entity"]["path"] == "module-only")
         .unwrap();
     assert_eq!(finding["paths"], json!(["/metadata/modules"]));
+}
+
+#[test]
+fn backend_inaccuracy_is_partial_even_without_identified_failure_paths() {
+    let temp = tempfile::tempdir().unwrap();
+    write(temp.path(), "main.py", "print(1)\n");
+    let mut input = measure(temp.path());
+    input["metadata"]["backend_inaccurate"] = json!(true);
+    assert_eq!(input["metadata"]["coverage"]["unread"], json!([]));
+    assert_eq!(input["metadata"]["coverage"]["parse_failures"], json!([]));
+    let saved = save(temp.path(), "input.json", &input);
+    let result = document(compare(&saved, &saved, &[]), 2);
+    assert!(result["findings"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|f| f["code"] == "coverage_gap"));
 }

@@ -166,7 +166,7 @@ Files that could not be recognized, read or parsed are listed, never reported as
  Not counted: 1 unrecognized file (png: 1); missing lines are not zero.
 ```
 
-Invalid or unsupported notebook content appears in `metadata.coverage.parse_failures` as `{path, reason, message}` and produces partial output with exit code 2, as unreadable files do. New reports always include this array, including when empty; its absence in older reports means failures were not recorded. Workspace member coverage adds `parse_failed_files`. [Notebook limits and compatibility](docs/measurement.md#notebooks) explains supported versions, language selection and older schemas.
+Invalid or unsupported notebook content appears in `metadata.coverage.parse_failures` as `{path, reason, message}` and marks the measurement partial (see [command outcomes](docs/PRODUCT.md#command-outcomes)). New reports always include this array, including when empty; its absence in older reports means failures were not recorded. Workspace member coverage adds `parse_failed_files`. [Notebook limits and compatibility](docs/measurement.md#notebooks) explains supported versions, language selection and older schemas.
 
 ### Reproducible and deterministic
 
@@ -296,21 +296,21 @@ locmetry workspace --file repos.toml
 - **Each repository keeps its policy:** `--config`, `--exclude`, `--hidden`, and `--respect-ignore-files` are rejected, because each repository's own configuration decides them, and options must follow `workspace`.
 - **Paths name the repository:** every path is prefixed with its repository's folder name, such as `web/src/index.ts`. Two repositories with the same folder name, a root given twice, or one root inside another fail before measuring.
 - **Repositories as a dimension:** `summary.members` holds each repository's totals by purpose, category, kind, and language, equal to a regular run of that repository. The table shows one row per repository with its test lines per production line and its share of the workspace, and the Markdown report adds grids of source categories and languages by repository.
-- **Findings stay with their repository:** `metadata.members` lists each repository's root, configuration path, scope, coverage counts, unused entries, and unused exclusions; table notes name the repository, as in `ghost (web)`, and list repositories with unclaimed source or unreadable files.
+- **Findings stay with their repository:** `metadata.members` lists each repository's root, configuration path, scope, coverage counts, unused entries, and unused exclusions; table notes name the repository, as in `ghost (web)`, and list repositories with unclaimed source, unreadable files or notebook parse failures.
 - **All or nothing, always the same:** if one repository fails, for example with an invalid configuration, the run fails and names it; the order of the roots never changes the report.
 
 ## Explain one file
 
 ```sh
 locmetry explain src/main.rs
-locmetry explain src/main.rs --root /path/to/project --format markdown
+locmetry explain src/main.rs --root ./service --format markdown
 locmetry explain api/src/main.rs --workspace repos.toml
 locmetry --schema explanation
 ```
 
 The explanation uses the same policy as measurement and reports either the counted file's parser, winning rule, matching patterns and module evidence, or why it has no counts. It counts only the target, while selected names still determine module layouts. Targets are root-relative; workspace targets start with the member name. Single-root configuration and scope flags are available, plus `--no-user-config` in either mode.
 
-Ignore and hidden filtering are checked with single-setting selection probes; the walker does not expose a winning ignore-file line. Unknown causes remain explicit. Exit 2 means the target's counts are unavailable; excluded or unrecognized targets are successful explanations with exit 0. [Troubleshooting guide](docs/troubleshooting.md) gives a runnable example, state meanings and policy/path details.
+Ignore and hidden filtering are checked with single-setting selection probes; the walker does not expose a winning ignore-file line. Unknown causes remain explicit. The [command outcomes](docs/PRODUCT.md#command-outcomes) distinguish successful explanations—including filtered, unrecognized and symlink targets—from unavailable counts. [Troubleshooting guide](docs/troubleshooting.md) gives a runnable example, state meanings and policy/path details.
 
 ## Compare saved measurements
 
@@ -339,7 +339,19 @@ locmetry compare before-workspace.json after-workspace.json --format markdown
 
 Workspace totals separate changes inside retained roots from counts entering and leaving the measurement. Names match members; renamed members appear as a departure and arrival. A folder or package disappearing from a report does not prove source deletion. Removing only a build descriptor can change purpose and package presence while source LOC stays unchanged.
 
-Inspect `findings` before interpreting growth: versions, policy, module detection and coverage can differ. Unreadable files or parsing failures make the comparison partial (exit 2); missing historical failure evidence produces a finding without exit 2 by itself. Recorded counts exclude unavailable lines, whose size remains unknown. [The contract](docs/PRODUCT.md#net-change) defines the output and limits; [report compatibility](docs/report-compatibility.md) lists eligible older exports.
+Inspect `findings` before interpreting growth: versions, policy, module detection and coverage can differ. Observed input inaccuracy/read/parse failures make the comparison partial; missing historical failure evidence alone does not. See [command outcomes](docs/PRODUCT.md#command-outcomes). Recorded counts exclude unavailable lines, whose size remains unknown. [The contract](docs/PRODUCT.md#net-change) defines the output and limits; [report compatibility](docs/report-compatibility.md) lists eligible older exports.
+
+To inspect coverage findings while preserving a partial comparison's status:
+
+```sh
+status=0
+locmetry compare before.json after.json --output net-change.json > /dev/null || status=$?
+case "$status" in
+  0|2) jq '.findings[] | select(.code == "coverage_gap")' net-change.json ;;
+  *) exit "$status" ;;
+esac
+exit "$status"
+```
 
 ## Configure with an agent
 
@@ -615,15 +627,9 @@ printf '%s\n' "$report" | jq -r '
   end'
 ```
 
-[CI executes this block](scripts/check-doc-examples.sh) against empty, healthy, partial, invalid-configuration and policy-failing projects. The Cargo tests separately guard its JSON and exit-code assumptions without requiring `jq`.
+[CI executes this block and the comparison/explanation workflows](scripts/check-doc-examples.sh) against synthetic projects. The policy scenarios check stdout and stderr as well as status, so invalid configuration cannot masquerade as an unclaimed-code rejection. The Cargo tests separately guard its JSON and exit-code assumptions without requiring `jq`.
 
-Exit codes:
-
-| Code | Meaning |
-| --- | --- |
-| 0 | Complete report. |
-| 2 | Partial report: unreadable files, invalid/unsupported notebook content, or backend inaccuracy. |
-| 1 | Failure, such as invalid configuration or usage. |
+[Command outcomes](docs/PRODUCT.md#command-outcomes) defines exit statuses for measurement, comparison and explanation, including backend inaccuracy without identified failure paths.
 
 ## Output formats
 
@@ -638,7 +644,7 @@ The table and Markdown group thousands with commas, such as `12,345`, while JSON
 
 ## Compared with line counters
 
-[cloc](https://github.com/AlDanial/cloc) provides source comparison and detailed filtering diagnostics; [scc](https://github.com/boyter/scc) provides additional analytics, configuration and integrations. Locmetry focuses on a combined contract: reviewable scope, whole-file purpose/category with provenance, source/data/documentation separation, explicit coverage, and independently configured workspace members. The pinned [capability comparison](docs/research/tool-capability-comparison.md) records the evidence and differences; it is not an accuracy or performance ranking.
+[cloc](https://github.com/AlDanial/cloc) provides source comparison and detailed filtering diagnostics; [scc](https://github.com/boyter/scc) provides additional analytics, configuration and integrations. Locmetry focuses on a combined contract: reviewable scope, whole-file purpose/category with provenance, source/data/documentation separation, explicit coverage, and independently configured workspace members. The dated [capability comparison](docs/research/tool-capability-comparison.md) records baseline evidence and differences; [the work plan](docs/plans/measurement-quality-and-net-change.md) records subsequent fixes and features; it is not an accuracy or performance ranking.
 
 Known limits: classification is per file, so a file mixing production code and inline tests counts as one purpose. Git is not invoked, so a measurement describes the working copy rather than a commit. [Measurement semantics and limits](docs/measurement.md) lists the details.
 

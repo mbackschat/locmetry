@@ -26,7 +26,7 @@ Update the owner of a changed guarantee and its user-facing entry points in the 
 
 | Document | Owns | Check when behavior changes |
 | --- | --- | --- |
-| [README](README.md) | Tasks, CLI examples and navigation | Run affected examples; `bash scripts/check-doc-examples.sh` executes the README CI block with `jq`. |
+| [README](README.md) | Tasks, CLI examples and navigation | Run affected examples; `bash scripts/check-doc-examples.sh` executes README policy, comparison and explanation workflows with `jq`, checking distinct failure outcomes. |
 | [PRODUCT](docs/PRODUCT.md) | Supported public contract | Reconcile flags, report fields and compatibility with executable schemas and tests. |
 | [Measurement semantics](docs/measurement.md) | Counting, selection boundaries and limitations | Add independent regression oracles for changed measurement behavior. |
 | [Troubleshooting](docs/troubleshooting.md) | Focused path explanations and evidence limits | `cargo test --locked --test explain` checks documented result, shared measurement parity and schema examples. |

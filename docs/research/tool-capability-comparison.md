@@ -1,5 +1,7 @@
 # Compare Counters by What They Measure
 
+Historical snapshot: statements and open findings below describe the pinned research baseline, not current development behavior. S1–S5 subsequently corrected notebook counting/coverage, unified contracts and added `compare` and `explain`; see the [implementation and review record](../plans/measurement-quality-and-net-change.md) for resolutions and the [product contract](../PRODUCT.md) for current guarantees. The original evidence is preserved below.
+
 Research date: 2026-10-15. **Locmetry's useful distinction is its combined classification, policy, workspace, and reporting contract—not basic counting, configuration, multiple inputs, or JSON.** The reviewed counters already provide substantial capabilities in those areas. scc adds unusually broad analytics and presentation; cloc offers extensive selection and diagnostic controls; Tokei supplies embedded-language counting and a Rust API; pygount makes processing states explicit. The comparison also exposed two reproducible Locmetry notebook defects, so a stronger contract must not be mistaken for proven correctness. This report covers the major documented feature families; [configuration and documentation](configuration-and-documentation.md) examines their contracts, and [lessons and open gaps](tool-lessons-and-gaps.md) records the findings for discussion.
 
 ## Pin versions before comparing feature families

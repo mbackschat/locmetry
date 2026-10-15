@@ -69,7 +69,7 @@ pub struct Metadata {
     pub locmetry_version: String,
     /// Embedded counter name and version; Locmetry version also matters for local corrections.
     pub backend: String,
-    /// True means partial counts. Historical false does not certify notebook correctness.
+    /// True means partial counts and measurement exit 2, even without identified failure paths. Historical false does not certify notebook correctness.
     pub backend_inaccurate: bool,
     pub backend_configuration: String,
     /// Loaded personal-default path or null; historical absence means not recorded. Location is provenance, not identity.

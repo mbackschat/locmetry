@@ -283,6 +283,7 @@ pub struct Input {
 /// Full output has folders, packages, breakdown and all findings; headlines omit those arrays/maps
 /// and individual presence findings, retaining presence_summary and member rows.
 /// Exit 2 means an input has observed failures/inaccuracy; historical missing evidence alone does not.
+/// Input dynamic-map duplicate keys retain the last value; this contract does not detect overwritten keys.
 /// No recorded settings differences is not proof of source-only growth: reports lack source/ignore/build fingerprints.
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
