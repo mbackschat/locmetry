@@ -197,8 +197,15 @@ fn markdown_format_writes_a_readable_report_to_stdout() {
         String::from_utf8_lossy(&output.stderr)
     );
     let stdout = String::from_utf8(output.stdout).unwrap();
-    assert!(stdout.starts_with("# source measured classification"));
+    assert!(stdout.starts_with(
+        "# source: lines of code by purpose\n\nProduction means maintained non-test source, including separately categorized tooling. Data, configuration, and documentation are counted apart from source.\n\n## Source purpose"
+    ));
     assert!(stdout.contains("| production | 1 | 1 | 0 | 0 | 1 |"));
+    // Measurement caveats belong with coverage, not in the opening.
+    let coverage = &stdout[stdout.find("## Coverage").unwrap()..];
+    assert!(coverage
+        .contains("Counts describe the working copy, including untracked files, not a commit."));
+    assert!(!stdout.contains("Tokei"));
 }
 
 #[cfg(unix)]

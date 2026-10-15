@@ -303,7 +303,7 @@ $ jq -c '.review[]' report.json
 
 ## Coverage
 
-Files selected: 17; counted: 16, including 2 through language mappings; not recognized: 1; recognized but unreadable: 0. Their lines are missing, not zero.
+Files selected: 17; counted: 16, including 2 through language mappings; not recognized: 1; recognized but unreadable: 0. Their lines are missing, not zero. Counts describe the working copy, including untracked files, not a commit.
 ```
 
 ## Continuous integration
