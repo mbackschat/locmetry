@@ -141,7 +141,7 @@ version = 1
 exclude = ["third_party/**", "**/*.generated.ts"]
 ```
 
-Optional [personal defaults](PRODUCT.md#user-defaults) add exclusions for every project, and an exclusion that excludes nothing is reported, so a misspelled path does not go unnoticed.
+Optional [personal defaults](docs/PRODUCT.md#user-defaults) add exclusions for every project, and an exclusion that excludes nothing is reported, so a misspelled path does not go unnoticed.
 
 ### Language mappings
 
@@ -166,7 +166,7 @@ Files that could not be recognized or read are listed, never reported as zero li
 
 ### Reproducible and deterministic
 
-Only the project's configuration, command-line options, and optional personal exclusions affect results, and every report records the effective scope and policy. The same files and configuration always give the same report, independent of the order in which files are found; [PRODUCT.md](PRODUCT.md#matching-and-precedence) defines the precedence.
+Only the project's configuration, command-line options, and optional personal exclusions affect results, and every report records the effective scope and policy. The same files and configuration always give the same report, independent of the order in which files are found; [PRODUCT.md](docs/PRODUCT.md#matching-and-precedence) defines the precedence.
 
 ### Self-describing configuration
 
@@ -234,7 +234,7 @@ Without configuration, built-in exclusions, conventions, and language mappings a
 locmetry --exclude 'generated/**' --hidden false
 ```
 
-Personal defaults for every project, such as extra exclusions or language mappings, go in `~/.config/locmetry/config.toml` (or under `$XDG_CONFIG_HOME`). They never change classification, reports name the file, and `--no-user-config` ignores it, for example in CI. [PRODUCT.md](PRODUCT.md#user-defaults) lists what they may set.
+Personal defaults for every project, such as extra exclusions or language mappings, go in `~/.config/locmetry/config.toml` (or under `$XDG_CONFIG_HOME`). They never change classification, reports name the file, and `--no-user-config` ignores it, for example in CI. [PRODUCT.md](docs/PRODUCT.md#user-defaults) lists what they may set.
 
 ## Command-line options
 
@@ -348,9 +348,9 @@ Each file gets the first match of five stages:
 4. [build modules](#build-modules): the source layout that a build file declares, here in `backend` and `web`;
 5. the fallback, `unclassified` by default.
 
-Only this stage order and the order of entries within each list matter, not where the tables appear in the file. User defaults and command-line flags may add exclusions or switch scope settings but never classify, and the same files and configuration always give the same report; [PRODUCT.md](PRODUCT.md#matching-and-precedence) defines the layers and tie-breaks.
+Only this stage order and the order of entries within each list matter, not where the tables appear in the file. User defaults and command-line flags may add exclusions or switch scope settings but never classify, and the same files and configuration always give the same report; [PRODUCT.md](docs/PRODUCT.md#matching-and-precedence) defines the layers and tie-breaks.
 
-So `OrderServiceTest.kt` and `cart.test.ts` are tests even though they sit inside the build modules' source trees. The Gradle scripts are `build-tooling`, and `gradlew` is a `third-party-wrapper`. The prototype falls through to `unclassified`, where the review list surfaces it as unclaimed. A rule that gives it `purpose = "unclassified"` with a `category` such as `prototype` parks it on purpose: it still counts as unclassified but leaves the review list, as `gradlew` does. An optional `[categories]` table declares the category names entries may use, each with its meaning, so a typo fails instead of becoming a new category. [PRODUCT.md](PRODUCT.md#project-configuration) documents every key, glob semantics, and `[[languages.mappings]]`.
+So `OrderServiceTest.kt` and `cart.test.ts` are tests even though they sit inside the build modules' source trees. The Gradle scripts are `build-tooling`, and `gradlew` is a `third-party-wrapper`. The prototype falls through to `unclassified`, where the review list surfaces it as unclaimed. A rule that gives it `purpose = "unclassified"` with a `category` such as `prototype` parks it on purpose: it still counts as unclassified but leaves the review list, as `gradlew` does. An optional `[categories]` table declares the category names entries may use, each with its meaning, so a typo fails instead of becoming a new category. [PRODUCT.md](docs/PRODUCT.md#project-configuration) documents every key, glob semantics, and `[[languages.mappings]]`.
 
 ### Build modules
 
@@ -443,7 +443,7 @@ When stdout is not a terminal, `locmetry` prints a compact JSON headline, under 
 }
 ```
 
-Summaries omit zero counts, so a missing entry means zero. The full schema is in [PRODUCT.md](PRODUCT.md#reporting-and-coverage).
+Summaries omit zero counts, so a missing entry means zero. The full schema is in [PRODUCT.md](docs/PRODUCT.md#reporting-and-coverage).
 
 ### Report file for any question
 
@@ -568,11 +568,11 @@ Known limits: classification is per file, so a file mixing production code and i
 
 ## Documentation
 
-- [Product vision and requirements](PRODUCT.md): configuration contract, report schema, and guarantees.
+- [Product vision and requirements](docs/PRODUCT.md): configuration contract, report schema, and guarantees.
 - [Measurement semantics and limits](docs/measurement.md): selection and counting details and known limits.
 - [Architecture and distribution](docs/tokei-integration.md): embedded counting engine, release binaries, and the Homebrew formula.
 - [Research](docs/research/README.md): counter capabilities and classification findings.
-- [Development plan](PLAN.md): remaining work and completion evidence.
+- [Development plan](docs/PLAN.md): remaining work and completion evidence.
 - [Repository guidelines](CLAUDE.md): contributor conventions and checks; `AGENTS.md` links to this file.
 
 ## License

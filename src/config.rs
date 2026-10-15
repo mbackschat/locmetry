@@ -1,6 +1,6 @@
 //! Measurement policy: which files are selected and how each one is classified.
 //!
-//! The input is the version-1 TOML contract in PRODUCT.md.
+//! The input is the version-1 TOML contract in docs/PRODUCT.md.
 use crate::{backend::relative_path, modules::Module, Kind};
 use anyhow::{ensure, Context, Result};
 use globset::{Glob, GlobBuilder, GlobSet, GlobSetBuilder};
@@ -40,7 +40,7 @@ const DEFAULT_EXCLUDES: &[&str] = &[
 ];
 
 /// A built-in classification entry. The configuration `version` selects each
-/// set, and releases may only add entries to it (PRODUCT.md, `version`).
+/// set, and releases may only add entries to it (docs/PRODUCT.md, `version`).
 struct Convention {
     id: &'static str,
     patterns: &'static [&'static str],
@@ -61,7 +61,7 @@ const fn test_convention(id: &'static str, patterns: &'static [&'static str]) ->
 ///
 /// Ambiguous names are deliberately absent: reference projects disagree on
 /// whether `fixtures` hold tests, and one keeps specification tooling in a
-/// `spec` folder (PRODUCT.md; docs/research/loc-counting-tools.md).
+/// `spec` folder (docs/PRODUCT.md; docs/research/loc-counting-tools.md).
 const BUILTIN_TESTS_V1: &[Convention] = &[
     test_convention("test-directory", &["**/{test,tests,__test__,__tests__}/**"]),
     test_convention(
@@ -480,7 +480,7 @@ pub fn workspace_roots(path: &Path) -> Result<Vec<PathBuf>> {
 }
 
 /// The user defaults file: `$XDG_CONFIG_HOME/locmetry/config.toml`, else
-/// `~/.config/locmetry/config.toml`, on every platform (PRODUCT.md). A relative
+/// `~/.config/locmetry/config.toml`, on every platform (docs/PRODUCT.md). A relative
 /// `XDG_CONFIG_HOME` is ignored, as the XDG Base Directory specification requires.
 pub fn user_defaults_file() -> Option<PathBuf> {
     let base = std::env::var_os("XDG_CONFIG_HOME")
@@ -506,7 +506,7 @@ pub(crate) fn literal_glob(path: &str) -> String {
     })
 }
 
-/// Compiles a root-relative glob with the separator semantics of PRODUCT.md.
+/// Compiles a root-relative glob with the separator semantics of docs/PRODUCT.md.
 ///
 /// globset lets `*` cross `/` and makes `\` platform-dependent by default
 /// (globset 0.4 `GlobBuilder` docs), so both options are set explicitly.
@@ -873,10 +873,10 @@ impl Policy {
         let mut config: ConfigFile = match project {
             Some(path) => {
                 // JSON/regex profiles were retired after strict TOML translations
-                // reproduced every reviewed classification (PLAN.md section 4).
+                // reproduced every reviewed classification (docs/PLAN.md section 4).
                 ensure!(
                     path.extension().is_none_or(|extension| extension != "json"),
-                    "{} looks like a retired JSON/regex profile; translate it to TOML (PRODUCT.md)",
+                    "{} looks like a retired JSON/regex profile; translate it to TOML (docs/PRODUCT.md)",
                     path.display()
                 );
                 let input = std::fs::read_to_string(path)
@@ -959,7 +959,7 @@ impl Policy {
     ///
     /// Their production source is classified after the project's rules, so
     /// project knowledge wins and only files that would otherwise reach the
-    /// fallback change (PRODUCT.md, Matching and Precedence).
+    /// fallback change (docs/PRODUCT.md, Matching and Precedence).
     pub fn adopt_modules(&mut self, modules: &[Module]) -> Result<()> {
         if !self.detect_modules {
             return Ok(());

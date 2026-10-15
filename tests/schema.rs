@@ -52,7 +52,7 @@ fn documented_examples_satisfy_their_schemas() {
         schema["$schema"],
         "https://json-schema.org/draft/2020-12/schema"
     );
-    let (workspaces, blocks): (Vec<String>, Vec<String>) = ["README.md", "PRODUCT.md"]
+    let (workspaces, blocks): (Vec<String>, Vec<String>) = ["README.md", "docs/PRODUCT.md"]
         .iter()
         .flat_map(|path| toml_blocks(path))
         .partition(|block| block.lines().any(|line| line.starts_with("roots")));
@@ -157,7 +157,7 @@ fn config_schema_states_order_layers_and_a_valid_example() {
 
 /// Agents test-driving the schema parked maintained tooling and examples as
 /// `unclassified` because the purposes read as "shipped" versus "not
-/// shipped"; the descriptions must carry PRODUCT.md's definition instead.
+/// shipped"; the descriptions must carry docs/PRODUCT.md's definition instead.
 #[test]
 fn config_schema_defines_production_as_maintained_non_test_source() {
     let schema = schema("config");
@@ -201,8 +201,8 @@ fn config_schema_lists_language_names() {
 #[test]
 fn user_config_schema_allows_only_scope_and_language_defaults() {
     let schema = schema("user-config");
-    let [block] = &toml_blocks("PRODUCT.md")[1..] else {
-        panic!("PRODUCT.md should hold the project and user-defaults examples");
+    let [block] = &toml_blocks("docs/PRODUCT.md")[1..] else {
+        panic!("docs/PRODUCT.md should hold the project and user-defaults examples");
     };
     assert!(is_valid(&schema, block));
     for project_only in [

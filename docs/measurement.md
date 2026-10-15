@@ -1,6 +1,6 @@
 # Measurement Semantics and Limits
 
-[PRODUCT.md](../PRODUCT.md) owns the configuration, measurement model, and report schema, and the [README](../README.md) shows CLI usage. This page records selection and counting details, known limits, and this repository's private regression.
+[PRODUCT.md](PRODUCT.md) owns the configuration, measurement model, and report schema, and the [README](../README.md) shows CLI usage. This page records selection and counting details, known limits, and this repository's private regression.
 
 ## Selection and Paths
 

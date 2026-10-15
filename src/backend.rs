@@ -180,7 +180,7 @@ pub fn scan(root: &Path, policy: &Policy) -> Result<Scan> {
     ensure!(root.is_dir(), "Scan root must be a directory");
     std::fs::read_dir(&root).context("Cannot read scan root")?;
     // Tokei v15 src/utils/fs.rs anchors overrides to CWD and uses gitignore
-    // syntax; select scope here so root-relative globs keep PRODUCT.md semantics.
+    // syntax; select scope here so root-relative globs keep docs/PRODUCT.md semantics.
     let scope = policy.scope().clone();
     let mut walker = WalkBuilder::new(&root);
     walker

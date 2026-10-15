@@ -222,7 +222,7 @@ pub fn detect(files: &[&str]) -> Vec<Module> {
         .collect();
     // Path, then detector ID: build systems sharing a folder are checked in
     // detector-ID order, the documented tie-break for overlapping layouts
-    // (PRODUCT.md, Module Detection), independent of the `DETECTORS` order.
+    // (docs/PRODUCT.md, Module Detection), independent of the `DETECTORS` order.
     modules.sort_by(|a, b| (&a.path, a.detector).cmp(&(&b.path, b.detector)));
     modules
 }

@@ -1,5 +1,5 @@
 //! `locmetry workspace` measures several roots as one virtual monorepo; the
-//! oracle throughout is a regular run of each member (PRODUCT.md, Workspace
+//! oracle throughout is a regular run of each member (docs/PRODUCT.md, Workspace
 //! Mode).
 use serde_json::{json, Map, Value};
 use std::{fs, path::Path, process::Command};

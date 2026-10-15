@@ -169,7 +169,7 @@ reason = "Owned application source."
     assert_eq!(rule(&disabled, "src/a.test.ts", Kind::Source), "app");
 }
 
-/// Locks the placement contract (PRODUCT.md, Matching and Precedence): the
+/// Locks the placement contract (docs/PRODUCT.md, Matching and Precedence): the
 /// stage order is fixed, so where `[[overrides]]` and `[[rules]]` appear in
 /// the file is irrelevant, while order within each list decides overlaps.
 #[test]
@@ -318,7 +318,8 @@ fn cli_scope_overrides_take_precedence_over_project_settings() {
 
 #[test]
 fn product_example_configuration_is_valid() {
-    let product = fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/PRODUCT.md")).unwrap();
+    let product =
+        fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/PRODUCT.md")).unwrap();
     let example = product
         .split("```toml\n")
         .nth(1)

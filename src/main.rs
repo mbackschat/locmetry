@@ -84,7 +84,7 @@ enum Command {
 }
 
 /// Settings of a single scan root, which a workspace leaves to each member's
-/// own configuration (PRODUCT.md, Workspace Mode).
+/// own configuration (docs/PRODUCT.md, Workspace Mode).
 #[derive(clap::Args)]
 struct RootArgs {
     /// Scan root [default: the current directory].

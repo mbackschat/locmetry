@@ -1006,7 +1006,7 @@ fn the_innermost_module_decides_nested_layouts() {
     );
 }
 
-/// Locks the same-folder tie-break (PRODUCT.md, Module Detection): when
+/// Locks the same-folder tie-break (docs/PRODUCT.md, Module Detection): when
 /// layouts of build systems in one folder overlap, the detector whose ID sorts
 /// first decides, so provenance never depends on file or detector order.
 #[test]
