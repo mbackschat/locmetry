@@ -123,6 +123,22 @@ locmetry --exclude 'generated/**' --hidden false
 
 Personal defaults for every project, such as extra exclusions or language mappings, go in `~/.config/locmetry/config.toml` (or under `$XDG_CONFIG_HOME`). They never change classification, reports name the file, and `--no-user-config` ignores it, for example in CI. [PRODUCT.md](PRODUCT.md#user-defaults) lists what they may set.
 
+## Command-line options
+
+| Option | Effect |
+| --- | --- |
+| `--root DIR` | Directory to measure; default: the current directory. |
+| `--config FILE` | TOML configuration; default: `.locmetryrc` in the scan root, else built-in settings. The scan root stays unchanged. |
+| `--exclude GLOB` | Add a root-relative exclusion; repeatable. |
+| `--hidden true\|false` | Whether hidden files and directories are measured. |
+| `--respect-ignore-files true\|false` | Whether `.gitignore`, `.ignore`, and `.tokeignore` limit the selection. |
+| `--no-user-config` | Ignore personal defaults in `~/.config/locmetry/config.toml`. |
+| `--format table\|json\|markdown` | Stdout format; default: `table` on a terminal, `json` otherwise. |
+| `--sort code\|name` | Row order of the table and Markdown output; default: `code`, largest first. |
+| `--depth N` | Folder levels in the Markdown folder table; default: 2. |
+| `--output FILE` | Also write the full JSON report to `FILE`, outside the scan root; `-` prints it instead of the headline. |
+| `--files` | Add per-file records to the report. |
+
 ## A tour of a sample project
 
 The synthetic project behind every output on this page has a Kotlin backend, a TypeScript web client, Python tooling, an abandoned prototype, a vendored SDK, and a binary diagram:
@@ -373,4 +389,4 @@ Known limits: classification is per file, so a file mixing production code and i
 
 ## License
 
-Licensed under the [MIT License](LICENSE). Line counting uses the embedded [Tokei](https://github.com/XAMPPRocky/tokei) library.
+Licensed under the [MIT License](LICENSE). Release archives and the Homebrew installation include `THIRD-PARTY-NOTICES.md` with the licences of the bundled libraries. Line counting uses the embedded [Tokei](https://github.com/XAMPPRocky/tokei) library.
