@@ -585,7 +585,7 @@ fn workspace_table_compares_repositories() {
     );
     assert!(!table.contains(" Folder "), "{table}");
     assert!(
-        table.contains(" Repositories to review: api: 1 unclaimed file (1 code line), 1 unrecognized file; web: 2 unclaimed files (2 code lines).\n"),
+        table.contains(" Repositories to review: api: 1 unclaimed file (1 code line); web: 2 unclaimed files (2 code lines).\n"),
         "{table}"
     );
 }
@@ -619,7 +619,7 @@ fn workspace_markdown_breaks_categories_and_languages_down_by_repository() {
         "| Language | api | web | Total |\n",
         "| TypeScript | 0 | 6 | 6 |\n",
         "| Rust | 4 | 0 | 4 |\n",
-        "Repositories to review: api: 1 unclaimed file (1 code line), 1 unrecognized file; web: 2 unclaimed files (2 code lines).",
+        "Repositories to review: api: 1 unclaimed file (1 code line); web: 2 unclaimed files (2 code lines).",
     ] {
         assert!(markdown.contains(expected), "{expected:?} missing in:\n{markdown}");
     }

@@ -63,7 +63,6 @@ pub struct MemberView {
     pub name: String,
     pub unclaimed_files: u64,
     pub unclaimed_code: u64,
-    pub unrecognized_files: usize,
     pub unread_files: usize,
 }
 
@@ -171,8 +170,10 @@ fn repository_grid(
     }
 }
 
-/// Names members with unclaimed source, unrecognized files, or unreadable
-/// files, so a workspace shows which repository needs attention.
+/// Names members with unclaimed source or unreadable files, which a person
+/// can act on. Unrecognized files are left to the "Not counted" note: on real
+/// repositories they are mostly images, so listing them named every member
+/// (four repositories, docs/research/local, 2026-10-15).
 fn repositories_note(members: &[MemberView]) -> Option<String> {
     let parts: Vec<String> = members
         .iter()
@@ -183,12 +184,6 @@ fn repositories_note(members: &[MemberView]) -> Option<String> {
                     "{} ({})",
                     counted(member.unclaimed_files, "unclaimed file"),
                     counted(member.unclaimed_code, "code line")
-                ));
-            }
-            if member.unrecognized_files > 0 {
-                findings.push(counted(
-                    member.unrecognized_files as u64,
-                    "unrecognized file",
                 ));
             }
             if member.unread_files > 0 {

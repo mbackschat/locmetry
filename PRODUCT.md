@@ -203,7 +203,7 @@ A workspace adds the member as a dimension of the merged report, so repositories
 - `metadata.members` also holds each member's `coverage` counts: `selected_files`, `counted_files`, `mapped_files`, `unrecognized_files`, and `unread_files`.
 - The terminal table shows repository rows in place of folder rows: code, production, test, unclassified, test lines per production line, and the share of the workspace's source code, with a total row.
 - The Markdown report adds a Repositories section with the same table, followed by source categories and source languages by repository, as grids with one column per member and a total column; rows follow `--sort`.
-- A note in both human formats names each member with unclaimed source, unrecognized files, or unreadable files, with their counts; members without any are not listed.
+- A note in both human formats names each member with unclaimed source or unreadable files, with their counts; members without any are not listed. Unrecognized files stay in the coverage counts and the "Not counted" note, because they are mostly images and similar non-source files that need no action.
 
 Excluded: detecting copies across members and comparing measurements over time.
 

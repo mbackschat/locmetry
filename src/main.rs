@@ -486,7 +486,6 @@ fn run_workspace(args: &WorkspaceArgs) -> Result<Outcome> {
             name: name.clone(),
             unclaimed_files: unclaimed.clone().count() as u64,
             unclaimed_code: unclaimed.map(|row| row.counts.code).sum(),
-            unrecognized_files: measurement.coverage.unrecognized_files,
             unread_files: measurement.coverage.unread.len(),
         });
         results
