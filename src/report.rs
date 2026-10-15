@@ -42,6 +42,10 @@ pub enum Kind {
     Other,
 }
 
+impl Kind {
+    pub const ALL: [Self; 4] = [Self::Source, Self::Data, Self::Documentation, Self::Other];
+}
+
 impl fmt::Display for Kind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(match self {

@@ -617,3 +617,16 @@ fn retired_json_profiles_fail_with_a_migration_hint() {
         "{error:#}"
     );
 }
+
+/// Purposes and kinds are named twice, for display and for serialization;
+/// both spellings reach users (table and Markdown versus JSON), so they must
+/// agree for every variant.
+#[test]
+fn display_names_match_serialized_names() {
+    for purpose in locmetry::Purpose::ALL {
+        assert_eq!(serde_json::json!(purpose), purpose.to_string());
+    }
+    for kind in Kind::ALL {
+        assert_eq!(serde_json::json!(kind), kind.to_string());
+    }
+}
