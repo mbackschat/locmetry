@@ -238,11 +238,13 @@ fn table_format_splits_source_code_by_language_and_purpose() {
  Total         4     5         1       0           2     2             1
 
                Code by purpose
- Folder  Code  Production  Test  Unclassified
- ────────────────────────────────────────────
- src        2           2     0             0
- tests      2           0     2             0
- proto      1           0     0             1
+ Folder  Code  Production  Test  Unclassified  Test/prod
+ ───────────────────────────────────────────────────────
+ src        2           2     0             0       0.00
+ tests      2           0     2             0          -
+ proto      1           0     0             1          -
+ ───────────────────────────────────────────────────────
+ Total      5           2     2             1       1.00
 
  Not source code: 1 data file (1 line), 1 documentation file (1 line).
  Unclaimed source: 1 code line in 1 file, here:
@@ -251,6 +253,17 @@ fn table_format_splits_source_code_by_language_and_purpose() {
  Not counted: 1 unrecognized file (png: 1); missing lines are not zero.
 ";
     assert_eq!(String::from_utf8(output.stdout).unwrap(), expected);
+    let markdown =
+        String::from_utf8(run(&temp.path().join("project"), &["--format", "markdown"]).stdout)
+            .unwrap();
+    for row in [
+        "| Folder | Production | Test | Unclassified | Total source code | Test/prod |\n",
+        "| . | 2 | 2 | 1 | 5 | 1.00 |\n",
+        "| src | 2 | 0 | 0 | 2 | 0.00 |\n",
+        "| tests | 0 | 2 | 0 | 2 | - |\n",
+    ] {
+        assert!(markdown.contains(row), "{row:?} missing in:\n{markdown}");
+    }
 }
 
 /// Row positions of `labels` in `text`, to compare orders without pinning layout.

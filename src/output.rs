@@ -66,6 +66,14 @@ pub struct MemberView {
     pub unread_files: usize,
 }
 
+/// Test code lines per production code line, `-` without production code.
+fn test_ratio(production: u64, test: u64) -> String {
+    match production {
+        0 => "-".to_string(),
+        _ => format!("{:.2}", test as f64 / production as f64),
+    }
+}
+
 /// Repository rows and the total row: source code, code per purpose, test
 /// lines per production line, and share of the workspace's source code.
 fn repository_rows(
@@ -77,10 +85,7 @@ fn repository_rows(
     let cells = |label: &str, totals: &Summary| {
         let code = |purpose| totals.purpose(purpose).code;
         let (production, test) = (code(Purpose::Production), code(Purpose::Test));
-        let ratio = match production {
-            0 => "-".to_string(),
-            _ => format!("{:.2}", test as f64 / production as f64),
-        };
+        let ratio = test_ratio(production, test);
         let share = match workspace_code {
             0 => "-".to_string(),
             _ => format!(
@@ -301,7 +306,7 @@ pub fn render_markdown(
         &summary.totals.source_languages,
         order,
     );
-    write!(output, "\n## Folder breakdown\n\nRecursive source code totals to depth {depth}. Parent rows include their children; do not sum all displayed rows. The report file's additive `breakdown` rows cover every depth. Multi-language files count once physically but contribute to each contained language.\n\n| Folder | Production | Test | Unclassified | Total source code |\n| --- | ---: | ---: | ---: | ---: |\n").unwrap();
+    write!(output, "\n## Folder breakdown\n\nRecursive source code totals to depth {depth}. Parent rows include their children; do not sum all displayed rows. The report file's additive `breakdown` rows cover every depth. Multi-language files count once physically but contribute to each contained language.\n\n| Folder | Production | Test | Unclassified | Total source code | Test/prod |\n| --- | ---: | ---: | ---: | ---: | ---: |\n").unwrap();
     // Compare by path components: as plain strings, `web-admin` would sort
     // between `web` and `web/src`, because `-` sorts before `/`.
     let mut folders: Vec<_> = summary.folders.iter().collect();
@@ -311,14 +316,17 @@ pub fn render_markdown(
         if folder.split('/').count() > depth || totals.source.files == 0 {
             continue;
         }
-        writeln!(
-            output,
-            "| {} | {} | {} | {} | {} |",
-            cell(folder),
+        let (production, test) = (
             totals.purpose(Purpose::Production).code,
             totals.purpose(Purpose::Test).code,
+        );
+        writeln!(
+            output,
+            "| {} | {production} | {test} | {} | {} | {} |",
+            cell(folder),
             totals.purpose(Purpose::Unclassified).code,
-            totals.source.code
+            totals.source.code,
+            test_ratio(production, test)
         )
         .unwrap();
     }
@@ -631,18 +639,29 @@ pub fn render_table(
                     "." => "(root files)".to_string(),
                     _ => folder.clone(),
                 };
+                let code = |purpose| purposes.get(&purpose).copied().unwrap_or(0);
                 let mut row = vec![label, folder_code(purposes).to_string()];
-                row.extend(purpose_cells(&|purpose| {
-                    purposes.get(&purpose).copied().unwrap_or(0)
-                }));
+                row.extend(purpose_cells(&code));
+                row.push(test_ratio(code(Purpose::Production), code(Purpose::Test)));
                 row
             })
             .collect();
+        let code = |purpose| summary.totals.purpose(purpose).code;
+        let mut total = vec!["Total".to_string(), summary.totals.source.code.to_string()];
+        total.extend(purpose_cells(&code));
+        total.push(test_ratio(code(Purpose::Production), code(Purpose::Test)));
         output += "\n";
         output += &text_table(
-            &["Folder", "Code", "Production", "Test", "Unclassified"],
+            &[
+                "Folder",
+                "Code",
+                "Production",
+                "Test",
+                "Unclassified",
+                "Test/prod",
+            ],
             &body,
-            None,
+            Some(total),
             (2, "Code by purpose"),
         );
     }

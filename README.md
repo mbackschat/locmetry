@@ -31,13 +31,15 @@ $ locmetry
  Total          12   129         7      30          94    26             9
 
                      Code by purpose
- Folder        Code  Production  Test  Unclassified
- ──────────────────────────────────────────────────
- backend         65          49    16             0
- web             41          31    10             0
- scripts         12          12     0             0
- prototypes       8           0     0             8
- (root files)     3           2     0             1
+ Folder        Code  Production  Test  Unclassified  Test/prod
+ ─────────────────────────────────────────────────────────────
+ backend         65          49    16             0       0.33
+ web             41          31    10             0       0.32
+ scripts         12          12     0             0       0.00
+ prototypes       8           0     0             8          -
+ (root files)     3           2     0             1       0.00
+ ─────────────────────────────────────────────────────────────
+ Total          129          94    26             9       0.28
 
  Not source code: 3 data files (19 lines), 1 documentation file (9 lines).
  Production from build modules: gradle 42 code lines in 1 module, npm 31 code lines in 1 module.
@@ -274,7 +276,7 @@ In the sample, `backend` and `web` are build modules, so `backend/src/main/**` a
 Plain `locmetry` on a terminal prints the table shown [above](#what-you-see):
 
 - language rows, largest first;
-- top-level folders, whose rows add up to the total;
+- top-level folders, whose rows add up to the total, each with `Test/prod`, its test code lines per production code line;
 - notes on content that is not source, the build modules that decided production, Git submodules, which are often other teams' code, the folders that hold unclaimed source, configuration entries that decided no file, and files that could not be counted.
 
 `--sort name` lists rows alphabetically instead, in the table and in Markdown. `--categories` adds a table of source code per `purpose:category`, such as `production:tooling`, to see what production consists of.
@@ -387,15 +389,15 @@ $ jq -c '.review[]' report.json
 
 ## Folder breakdown
 
-| Folder | Production | Test | Unclassified | Total source code |
-| --- | ---: | ---: | ---: | ---: |
-| . | 94 | 26 | 9 | 129 |
-| backend | 49 | 16 | 0 | 65 |
-| backend/src | 42 | 16 | 0 | 58 |
-| prototypes | 0 | 0 | 8 | 8 |
-| scripts | 12 | 0 | 0 | 12 |
-| web | 31 | 10 | 0 | 41 |
-| web/src | 31 | 10 | 0 | 41 |
+| Folder | Production | Test | Unclassified | Total source code | Test/prod |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| . | 94 | 26 | 9 | 129 | 0.28 |
+| backend | 49 | 16 | 0 | 65 | 0.33 |
+| backend/src | 42 | 16 | 0 | 58 | 0.38 |
+| prototypes | 0 | 0 | 8 | 8 | - |
+| scripts | 12 | 0 | 0 | 12 | 0.00 |
+| web | 31 | 10 | 0 | 41 | 0.32 |
+| web/src | 31 | 10 | 0 | 41 | 0.32 |
 
 ## Build modules
 
