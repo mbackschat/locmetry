@@ -1,16 +1,40 @@
 class Locmetry < Formula
   desc "Measure code with embedded Tokei and reviewed classification rules"
   homepage "https://github.com/mbackschat/locmetry"
-  url "https://github.com/mbackschat/locmetry/archive/refs/tags/v{{version}}.tar.gz"
-  sha256 "{{sha256}}"
+  version "{{version}}"
   license any_of: ["MIT", "Apache-2.0"]
-  head "https://github.com/mbackschat/locmetry.git", branch: "main"
 
-  # Tokei is compiled in, so the installed executable has no runtime formula dependencies.
-  depends_on "rust" => :build
+  head do
+    url "https://github.com/mbackschat/locmetry.git", branch: "main"
+    depends_on "rust" => :build
+  end
+
+  # Prebuilt release archives spare users a Rust toolchain; releases exist for
+  # macOS arm64 and Linux x86_64 and aarch64 only.
+  on_macos do
+    on_arm do
+      url "https://github.com/mbackschat/locmetry/releases/download/v{{version}}/locmetry-v{{version}}-aarch64-apple-darwin.tar.gz"
+      sha256 "{{sha256_aarch64_apple_darwin}}"
+    end
+  end
+
+  on_linux do
+    on_intel do
+      url "https://github.com/mbackschat/locmetry/releases/download/v{{version}}/locmetry-v{{version}}-x86_64-unknown-linux-musl.tar.gz"
+      sha256 "{{sha256_x86_64_unknown_linux_musl}}"
+    end
+    on_arm do
+      url "https://github.com/mbackschat/locmetry/releases/download/v{{version}}/locmetry-v{{version}}-aarch64-unknown-linux-musl.tar.gz"
+      sha256 "{{sha256_aarch64_unknown_linux_musl}}"
+    end
+  end
 
   def install
-    system "cargo", "install", *std_cargo_args
+    if build.head?
+      system "cargo", "install", *std_cargo_args
+    else
+      bin.install "locmetry"
+    end
   end
 
   test do

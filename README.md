@@ -34,7 +34,13 @@ For the [sample project](#a-walk-through-a-sample-project) below, `locmetry --fo
 
 ## Install
 
-Prebuilt binaries for macOS arm64 and Linux x86_64 and aarch64 are on the [releases page](https://github.com/mbackschat/locmetry/releases):
+With Homebrew on macOS arm64 or Linux x86_64 and aarch64, which installs the prebuilt binary:
+
+```sh
+brew install mbackschat/tap/locmetry
+```
+
+The same binaries are on the [releases page](https://github.com/mbackschat/locmetry/releases):
 
 ```sh
 # Linux targets: x86_64-unknown-linux-musl or aarch64-unknown-linux-musl

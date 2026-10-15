@@ -16,7 +16,7 @@ The product rests on three pillars:
 - Optional: additional counting adapters, custom content-kind overrides, and configuration self-checks that assert expected classifications for named paths without requiring those files to exist.
 - Excluded initially: a new counting engine, a generic plugin framework, and semantic splitting of production/tests within individual files.
 
-Locmetry is a Rust executable with the Tokei library embedded. The installed executable must not require Python, Git, a separate Tokei executable, or a separately installed Rust runtime; Rust is a build-only Homebrew dependency, and the formula has no runtime formula dependencies. [Tokei integration and distribution](docs/tokei-integration.md) records the backend boundary and packaging.
+Locmetry is a Rust executable with the Tokei library embedded. The installed executable must not require Python, Git, a separate Tokei executable, or a separately installed Rust runtime; the Homebrew formula installs the prebuilt release executable without runtime formula dependencies, needing Rust only to build `--HEAD`. [Tokei integration and distribution](docs/tokei-integration.md) records the backend boundary and packaging.
 
 ## Measurement Model
 
