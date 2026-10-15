@@ -1,5 +1,5 @@
 use serde_json::{json, Value};
-use std::{fs, process::Command};
+use std::{fs, path::Path, process::Command};
 
 fn fixture() -> tempfile::TempDir {
     let temp = tempfile::tempdir().unwrap();
@@ -21,6 +21,56 @@ fn config_args(temp: &tempfile::TempDir) -> [std::path::PathBuf; 4] {
         temp.path().join("rules.toml"),
     ]
 }
+
+fn run(cwd: &Path, args: &[&str]) -> std::process::Output {
+    Command::new(env!("CARGO_BIN_EXE_locmetry"))
+        .current_dir(cwd)
+        .args(args)
+        .output()
+        .unwrap()
+}
+
+fn project(files: &[(&str, &str)]) -> tempfile::TempDir {
+    let temp = tempfile::tempdir().unwrap();
+    fs::create_dir_all(temp.path().join("project")).unwrap();
+    for (path, content) in files {
+        let path = temp.path().join("project").join(path);
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        fs::write(path, content).unwrap();
+    }
+    temp
+}
+
+/// Stdout headline of a run.
+fn headline(cwd: &Path, args: &[&str]) -> (bool, Value, String) {
+    let output = run(cwd, args);
+    let stderr = String::from_utf8_lossy(&output.stderr).into_owned();
+    let document = serde_json::from_slice(&output.stdout).unwrap_or(Value::Null);
+    (output.status.success(), document, stderr)
+}
+
+/// Full report with per-file records, written to stdout through `--output -`.
+fn report(cwd: &Path, args: &[&str]) -> (bool, Value, String) {
+    let args = [args, &["--output", "-", "--files"]].concat();
+    headline(cwd, &args)
+}
+
+fn rules_by_path(document: &Value) -> Vec<(String, String)> {
+    document["files"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|file| {
+            (
+                file["path"].as_str().unwrap().into(),
+                file["rule"].as_str().unwrap().into(),
+            )
+        })
+        .collect()
+}
+
+const APP_RULE: &str =
+    "version = 1\n[[rules]]\nid = \"app\"\nmatch = [\"src/**\"]\npurpose = \"production\"\n";
 
 #[test]
 fn binary_measures_without_any_executables_on_path() {
@@ -45,13 +95,13 @@ fn binary_measures_without_any_executables_on_path() {
 }
 
 #[test]
-fn report_files_are_generated_outside_the_scan_root() {
+fn report_file_is_written_verbatim_outside_the_scan_root() {
     let temp = fixture();
-    let prefix = temp.path().join("output/report");
+    let path = temp.path().join("out/run.v1");
     let output = Command::new(env!("CARGO_BIN_EXE_locmetry"))
         .args(config_args(&temp))
         .arg("--output")
-        .arg(&prefix)
+        .arg(&path)
         .output()
         .unwrap();
     assert!(
@@ -59,12 +109,13 @@ fn report_files_are_generated_outside_the_scan_root() {
         "{}",
         String::from_utf8_lossy(&output.stderr)
     );
-    let report: Value =
-        serde_json::from_slice(&fs::read(prefix.with_extension("json")).unwrap()).unwrap();
+    let report: Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
     assert_eq!(report["summary"]["source"]["code"], 1);
-    let markdown = fs::read_to_string(prefix.with_extension("md")).unwrap();
-    assert!(markdown.contains("| production | 1 | 1 | 0 | 0 | 1 |"));
-    assert!(prefix.with_extension("tokei.json").exists());
+    let written: Vec<_> = fs::read_dir(temp.path().join("out"))
+        .unwrap()
+        .map(|entry| entry.unwrap().file_name())
+        .collect();
+    assert_eq!(written, ["run.v1"], "a run writes exactly one file");
 }
 
 #[test]
@@ -73,12 +124,29 @@ fn output_in_scan_root_is_rejected_before_writing() {
     let output = Command::new(env!("CARGO_BIN_EXE_locmetry"))
         .args(config_args(&temp))
         .arg("--output")
-        .arg(temp.path().join("source/reports/report"))
+        .arg(temp.path().join("source/reports/report.json"))
         .output()
         .unwrap();
     assert!(!output.status.success());
     assert!(output.stdout.is_empty());
     assert!(!temp.path().join("source/reports").exists());
+}
+
+#[test]
+fn output_that_would_overwrite_the_configuration_is_rejected() {
+    let temp = fixture();
+    let output = Command::new(env!("CARGO_BIN_EXE_locmetry"))
+        .args(config_args(&temp))
+        .arg("--output")
+        .arg(temp.path().join("rules.toml"))
+        .output()
+        .unwrap();
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("configuration"));
+    assert_eq!(
+        fs::read_to_string(temp.path().join("rules.toml")).unwrap(),
+        APP_RS_RULE
+    );
 }
 
 #[test]
@@ -88,64 +156,10 @@ fn missing_root_and_invalid_config_fail_without_success_json() {
         vec!["--config", "absent.toml"],
         vec!["--config", "rules.toml", "--root", "absent"],
     ] {
-        let result = Command::new(env!("CARGO_BIN_EXE_locmetry"))
-            .current_dir(temp.path())
-            .args(args)
-            .output()
-            .unwrap();
+        let result = run(temp.path(), &args);
         assert_eq!(result.status.code(), Some(1));
         assert!(result.stdout.is_empty());
     }
-}
-
-fn run_with_output(temp: &tempfile::TempDir, prefix: &std::path::Path) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_locmetry"))
-        .args(config_args(temp))
-        .arg("--output")
-        .arg(prefix)
-        .output()
-        .unwrap()
-}
-
-#[test]
-fn dotted_output_prefixes_keep_distinct_report_files() {
-    let temp = fixture();
-    for version in ["run.v1", "run.v2"] {
-        let output = run_with_output(&temp, &temp.path().join("output").join(version));
-        assert!(
-            output.status.success(),
-            "{}",
-            String::from_utf8_lossy(&output.stderr)
-        );
-    }
-    for name in ["run.v1", "run.v2"] {
-        for suffix in ["json", "md", "tokei.json"] {
-            let path = temp.path().join(format!("output/{name}.{suffix}"));
-            assert!(path.exists(), "missing {}", path.display());
-        }
-    }
-    assert!(!temp.path().join("output/run.json").exists());
-}
-
-#[test]
-fn output_prefix_that_would_overwrite_the_configuration_is_rejected() {
-    let temp = fixture();
-    // Any file name can hold a TOML configuration, including a report suffix.
-    let config = temp.path().join("rules.md");
-    fs::write(&config, APP_RS_RULE).unwrap();
-    let output = Command::new(env!("CARGO_BIN_EXE_locmetry"))
-        .arg("--root")
-        .arg(temp.path().join("source"))
-        .arg("--config")
-        .arg(&config)
-        .arg("--output")
-        .arg(temp.path().join("rules"))
-        .output()
-        .unwrap();
-    assert!(!output.status.success());
-    assert!(String::from_utf8_lossy(&output.stderr).contains("configuration"));
-    assert_eq!(fs::read_to_string(&config).unwrap(), APP_RS_RULE);
-    assert!(!temp.path().join("rules.json").exists());
 }
 
 #[test]
@@ -193,48 +207,10 @@ fn unreadable_files_produce_partial_output_naming_them_and_fail() {
     assert_eq!(document["metadata"]["coverage"]["unread"][0], "locked.py");
 }
 
-fn project(files: &[(&str, &str)]) -> tempfile::TempDir {
-    let temp = tempfile::tempdir().unwrap();
-    for (path, content) in files {
-        let path = temp.path().join("project").join(path);
-        fs::create_dir_all(path.parent().unwrap()).unwrap();
-        fs::write(path, content).unwrap();
-    }
-    temp
-}
-
-fn measure(cwd: &std::path::Path, args: &[&str]) -> (bool, Value, String) {
-    let output = Command::new(env!("CARGO_BIN_EXE_locmetry"))
-        .current_dir(cwd)
-        .args(args)
-        .output()
-        .unwrap();
-    let stderr = String::from_utf8_lossy(&output.stderr).into_owned();
-    let document = serde_json::from_slice(&output.stdout).unwrap_or(Value::Null);
-    (output.status.success(), document, stderr)
-}
-
-fn rules_by_path(document: &Value) -> Vec<(String, String)> {
-    document["files"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(|file| {
-            (
-                file["path"].as_str().unwrap().into(),
-                file["rule"].as_str().unwrap().into(),
-            )
-        })
-        .collect()
-}
-
-const APP_RULE: &str =
-    "version = 1\n[[rules]]\nid = \"app\"\nmatch = [\"src/**\"]\npurpose = \"production\"\n";
-
 #[test]
 fn configuration_is_discovered_in_the_scan_root_from_another_directory() {
     let temp = project(&[(".locmetryrc", APP_RULE), ("src/a.ts", "let a = 1;\n")]);
-    let (success, document, stderr) = measure(temp.path(), &["--root", "project"]);
+    let (success, document, stderr) = report(temp.path(), &["--root", "project"]);
     assert!(success, "{stderr}");
     assert_eq!(
         rules_by_path(&document),
@@ -252,7 +228,7 @@ fn explicit_configuration_does_not_change_the_scan_root() {
     let temp = project(&[("src/a.ts", "let a = 1;\n")]);
     fs::write(temp.path().join("shared.toml"), APP_RULE).unwrap();
     fs::write(temp.path().join("outside.ts"), "let b = 1;\n").unwrap();
-    let (success, document, stderr) = measure(
+    let (success, document, stderr) = report(
         &temp.path().join("project"),
         &["--config", "../shared.toml"],
     );
@@ -270,7 +246,7 @@ fn without_configuration_built_in_defaults_apply() {
         ("src/a.test.ts", "let b = 1;\n"),
         ("node_modules/x/index.js", "let c = 1;\n"),
     ]);
-    let (success, document, stderr) = measure(&temp.path().join("project"), &[]);
+    let (success, document, stderr) = report(&temp.path().join("project"), &[]);
     assert!(success, "{stderr}");
     assert_eq!(
         rules_by_path(&document),
@@ -292,7 +268,7 @@ fn cli_scope_settings_override_the_project_configuration() {
         ("vendor/a.ts", "let c = 1;\n"),
         (".tool/a.ts", "let d = 1;\n"),
     ]);
-    let (success, document, stderr) = measure(
+    let (success, document, stderr) = report(
         &temp.path().join("project"),
         &["--hidden", "false", "--exclude", "vendor/**"],
     );
@@ -319,7 +295,7 @@ fn invalid_discovered_configuration_fails_before_scanning() {
         (".locmetryrc", "version = 2\n"),
         ("src/a.ts", "let a = 1;\n"),
     ]);
-    let (success, document, stderr) = measure(&temp.path().join("project"), &[]);
+    let (success, document, stderr) = headline(&temp.path().join("project"), &[]);
     assert!(!success);
     assert_eq!(document, Value::Null);
     assert!(
@@ -329,34 +305,105 @@ fn invalid_discovered_configuration_fails_before_scanning() {
 }
 
 #[test]
-fn stdout_with_report_files_is_the_report_without_records_plus_their_paths() {
-    let temp = fixture();
-    let prefix = temp.path().join("out/report");
-    let output = run_with_output(&temp, &prefix);
-    assert!(
-        output.status.success(),
-        "{}",
-        String::from_utf8_lossy(&output.stderr)
-    );
-    let headline: Value = serde_json::from_slice(&output.stdout).unwrap();
-    let full: Value =
-        serde_json::from_slice(&fs::read(temp.path().join("out/report.json")).unwrap()).unwrap();
+fn stdout_is_a_small_headline_that_names_the_report_file() {
+    let temp = project(&[
+        ("src/a.rs", "fn a() {}\n"),
+        ("tools/gen.sh", "echo hi\n"),
+        ("assets/logo.xyz", "x\n"),
+        ("assets/icon.xyz", "x\n"),
+    ]);
+    let root = temp.path().join("project");
+    let path = temp.path().join("report.json");
+    let (success, headline, stderr) = headline(&root, &["--output", path.to_str().unwrap()]);
+    assert!(success, "{stderr}");
     assert_eq!(headline["schema_version"], "1");
-    assert_eq!(headline["metadata"], full["metadata"]);
-    assert_eq!(headline["summary"]["source"], full["summary"]["source"]);
-    assert!(headline.get("files").is_none());
-    assert!(headline["summary"].get("folders").is_none());
-    for (key, suffix) in [
-        ("json", "json"),
-        ("markdown", "md"),
-        ("tokei", "tokei.json"),
-    ] {
-        let path = headline["reports"][key].as_str().unwrap();
+    assert_eq!(headline["report"], path.to_str().unwrap());
+    for absent in ["breakdown", "review", "files"] {
+        assert!(headline.get(absent).is_none(), "{absent}");
+    }
+    assert!(headline["metadata"].get("config").is_none());
+    let coverage = &headline["metadata"]["coverage"];
+    assert!(coverage.get("unrecognized").is_none());
+    assert_eq!(coverage["unrecognized_files"], 2);
+    assert_eq!(coverage["unrecognized_extensions"], json!({"xyz": 2}));
+    let top = &headline["summary"]["top_folders"];
+    assert_eq!(top["src"]["unclassified"], 1);
+    assert_eq!(top["tools"]["unclassified"], 1);
+    assert!(headline["metadata"].get("kinds").is_none());
+    let full: Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+    assert_eq!(full["summary"], headline["summary"]);
+    assert_eq!(
+        full["metadata"]["coverage"]["unrecognized"],
+        json!(["assets/icon.xyz", "assets/logo.xyz"])
+    );
+}
+
+#[test]
+fn report_lists_one_breakdown_row_per_line_and_records_only_on_request() {
+    let temp = project(&[
+        ("src/a.rs", "fn a() {}\n"),
+        (
+            "web/index.html",
+            "<p>x</p>\n<script>\nlet x = 1;\n</script>\n",
+        ),
+    ]);
+    let root = temp.path().join("project");
+    let output = run(&root, &["--output", "-"]);
+    let text = String::from_utf8(output.stdout).unwrap();
+    let report: Value = serde_json::from_str(&text).unwrap();
+    assert!(report.get("files").is_none(), "records only with --files");
+    let breakdown = report["breakdown"].as_array().unwrap();
+    for row in breakdown {
+        let line = serde_json::to_string(row).unwrap();
         assert!(
-            path.ends_with(&format!("report.{suffix}")) && std::path::Path::new(path).exists(),
-            "{path}"
+            text.lines()
+                .any(|text_line| text_line.trim_end_matches(',') == line),
+            "row not on its own line: {line}"
         );
     }
+    let row = |language: &str| {
+        breakdown
+            .iter()
+            .find(|row| row["folder"] == "web" && row["language"] == language)
+            .unwrap()
+    };
+    assert_eq!(row("HTML")["files"], 1);
+    assert_eq!(
+        (
+            row("JavaScript")["files"].clone(),
+            row("JavaScript")["code"].clone()
+        ),
+        (json!(0), json!(1)),
+        "embedded languages add lines, not files"
+    );
+    assert_eq!(
+        report["review"],
+        json!([
+            {"path":"web/index.html","language":"HTML","category":"unclassified","rule":"fallback","code":4,"lines":4},
+            {"path":"src/a.rs","language":"Rust","category":"unclassified","rule":"fallback","code":1,"lines":1}
+        ])
+    );
+    let (_, detailed, _) = report_with_files(&root);
+    let record = |path: &str| {
+        detailed["files"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|file| file["path"] == path)
+            .unwrap()
+            .clone()
+    };
+    let rust = record("src/a.rs");
+    assert!(rust.get("languages").is_none());
+    assert!(rust["counts"].get("files").is_none());
+    assert_eq!(
+        record("web/index.html")["languages"]["JavaScript"]["code"],
+        1
+    );
+}
+
+fn report_with_files(root: &Path) -> (bool, Value, String) {
+    report(root, &[])
 }
 
 #[test]
@@ -364,28 +411,23 @@ fn markdown_folder_depth_is_configurable_while_json_keeps_every_folder() {
     let temp = project(&[("a/b/c/deep.rs", "fn deep() {}\n")]);
     let root = temp.path().join("project");
     let markdown = |extra: &[&str]| {
-        let output = Command::new(env!("CARGO_BIN_EXE_locmetry"))
-            .current_dir(&root)
-            .args(["--format", "markdown"])
-            .args(extra)
-            .output()
-            .unwrap();
-        String::from_utf8(output.stdout).unwrap()
+        let args = [&["--format", "markdown"], extra].concat();
+        String::from_utf8(run(&root, &args).stdout).unwrap()
     };
     assert!(!markdown(&[]).contains("| a/b/c |"));
     assert!(markdown(&["--depth", "3"]).contains("| a/b/c |"));
-    let (_, document, _) = measure(&root, &[]);
-    assert!(document["summary"]["folders"].get("a/b/c").is_some());
+    let (_, document, _) = report(&root, &[]);
+    assert_eq!(document["breakdown"][0]["folder"], "a/b/c");
 }
 
 #[test]
 fn empty_roots_report_zero_counts_successfully() {
     let temp = project(&[]);
-    fs::create_dir_all(temp.path().join("project")).unwrap();
-    let (success, document, stderr) = measure(&temp.path().join("project"), &[]);
+    let (success, document, stderr) = report(&temp.path().join("project"), &[]);
     assert!(success, "{stderr}");
     assert_eq!(document["metadata"]["coverage"]["selected_files"], 0);
     assert_eq!(document["summary"]["all_counted"]["files"], 0);
+    assert_eq!(document["breakdown"], json!([]));
     assert_eq!(document["files"], json!([]));
 }
 
@@ -397,13 +439,8 @@ fn markdown_and_json_report_the_same_totals() {
         ("gradlew", "#!/bin/sh\necho hi\n"),
     ]);
     let root = temp.path().join("project");
-    let (_, document, _) = measure(&root, &[]);
-    let output = Command::new(env!("CARGO_BIN_EXE_locmetry"))
-        .current_dir(&root)
-        .args(["--format", "markdown"])
-        .output()
-        .unwrap();
-    let markdown = String::from_utf8(output.stdout).unwrap();
+    let (_, document, _) = headline(&root, &[]);
+    let markdown = String::from_utf8(run(&root, &["--format", "markdown"]).stdout).unwrap();
     for purpose in ["production", "test", "unclassified"] {
         // Absent purposes are zero in JSON; Markdown lists every purpose.
         let counts = &document["summary"]["source_purpose"][purpose];
@@ -421,9 +458,49 @@ fn markdown_and_json_report_the_same_totals() {
 }
 
 #[test]
-fn metadata_records_the_effective_policy() {
+fn breakdown_rows_add_up_to_the_summary() {
+    let temp = project(&[
+        ("src/a.ts", "let a = 1;\n// note\n\nlet b = 2;\n"),
+        ("src/deep/b.test.ts", "let c = 1;\n"),
+        ("web/index.html", "<script>\nlet x = 1;\n</script>\n"),
+        ("README.md", "# Title\n"),
+        ("data/x.json", "{}\n"),
+    ]);
+    let (_, document, _) = report(&temp.path().join("project"), &[]);
+    let rows = document["breakdown"].as_array().unwrap();
+    for metric in ["files", "code", "comments", "blanks", "lines"] {
+        let total: u64 = rows.iter().map(|row| row[metric].as_u64().unwrap()).sum();
+        assert_eq!(
+            total, document["summary"]["all_counted"][metric],
+            "{metric}"
+        );
+        let source: u64 = rows
+            .iter()
+            .filter(|row| row["kind"] == "source")
+            .map(|row| row[metric].as_u64().unwrap())
+            .sum();
+        assert_eq!(source, document["summary"]["source"][metric], "{metric}");
+    }
+    let src: u64 = rows
+        .iter()
+        .filter(|row| {
+            let folder = row["folder"].as_str().unwrap();
+            folder == "src" || folder.starts_with("src/")
+        })
+        .map(|row| row["code"].as_u64().unwrap())
+        .sum();
+    let top = &document["summary"]["top_folders"]["src"];
+    let top_code: u64 = ["production", "test", "unclassified"]
+        .iter()
+        .map(|purpose| top[purpose].as_u64().unwrap_or(0))
+        .sum();
+    assert_eq!(src, top_code, "recursive folder totals are prefix sums");
+}
+
+#[test]
+fn report_metadata_records_the_effective_policy() {
     let temp = project(&[(".locmetryrc", APP_RULE), ("src/a.ts", "let a = 1;\n")]);
-    let (_, document, _) = measure(&temp.path().join("project"), &["--hidden", "false"]);
+    let (_, document, _) = report(&temp.path().join("project"), &["--hidden", "false"]);
     let metadata = &document["metadata"];
     assert_eq!(metadata["scope"]["hidden"], false);
     assert_eq!(metadata["config"]["rules"][0]["id"], "app");
@@ -438,59 +515,4 @@ fn metadata_records_the_effective_policy() {
         .unwrap()
         .is_empty());
     assert_eq!(metadata["backend"], "tokei 15.0.0 (embedded)");
-}
-
-#[test]
-fn reports_are_compact_and_omit_redundant_or_zero_counts() {
-    let temp = project(&[
-        ("src/a.rs", "fn a() {}\n"),
-        (
-            "web/index.html",
-            "<p>x</p>\n<script>\nlet x = 1;\n</script>\n",
-        ),
-    ]);
-    let root = temp.path().join("project");
-    let prefix = temp.path().join("out/report");
-    let output = Command::new(env!("CARGO_BIN_EXE_locmetry"))
-        .current_dir(&root)
-        .arg("--output")
-        .arg(&prefix)
-        .output()
-        .unwrap();
-    assert!(
-        output.status.success(),
-        "{}",
-        String::from_utf8_lossy(&output.stderr)
-    );
-    let text = fs::read_to_string(temp.path().join("out/report.json")).unwrap();
-    assert_eq!(text.lines().count(), 1, "report JSON is not pretty-printed");
-    assert_eq!(String::from_utf8(output.stdout).unwrap().lines().count(), 1);
-    let report: Value = serde_json::from_str(&text).unwrap();
-    let record = |path: &str| {
-        report["files"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .find(|file| file["path"] == path)
-            .unwrap()
-            .clone()
-    };
-    let rust = record("src/a.rs");
-    assert!(
-        rust.get("languages").is_none(),
-        "single-language records repeat no counts"
-    );
-    assert!(rust["counts"].get("files").is_none());
-    assert_eq!(rust["counts"]["code"], 1);
-    let html = record("web/index.html");
-    assert_eq!(html["languages"]["JavaScript"]["code"], 1);
-    assert!(html["languages"]["JavaScript"].get("files").is_none());
-    let folder = &report["summary"]["folders"]["src"]["direct"];
-    assert!(
-        folder["source_purpose"].get("test").is_none(),
-        "zero entries are omitted"
-    );
-    assert_eq!(folder["source_purpose"]["unclassified"]["code"], 1);
-    let web = &report["summary"]["folders"]["web"]["direct"];
-    assert_eq!(web["source_languages"]["JavaScript"]["code"], 1);
 }

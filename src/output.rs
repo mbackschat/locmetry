@@ -112,18 +112,9 @@ pub fn render_markdown(
 }
 
 fn render_coverage(output: &mut String, coverage: &Coverage) {
-    writeln!(output, "\n## Coverage\n\n{} files selected, {} counted, {} of them through language mappings. {} were not recognized and {} recognized files could not be read; their lines are missing, not zero.", coverage.selected_files, coverage.counted_files, coverage.mapped_files, coverage.unrecognized.len(), coverage.unread.len()).unwrap();
-    let mut extensions = BTreeMap::<&str, usize>::new();
-    for path in &coverage.unrecognized {
-        let name = path.rsplit('/').next().unwrap_or(path);
-        let extension = match name.rsplit_once('.') {
-            Some((stem, extension)) if !stem.is_empty() => extension,
-            _ => "(none)",
-        };
-        *extensions.entry(extension).or_default() += 1;
-    }
-    let mut extensions: Vec<_> = extensions.into_iter().collect();
-    extensions.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(b.0)));
+    writeln!(output, "\n## Coverage\n\n{} files selected, {} counted, {} of them through language mappings. {} were not recognized and {} recognized files could not be read; their lines are missing, not zero.", coverage.selected_files, coverage.counted_files, coverage.mapped_files, coverage.unrecognized_files, coverage.unread.len()).unwrap();
+    let mut extensions: Vec<_> = coverage.unrecognized_extensions.iter().collect();
+    extensions.sort_by(|a, b| b.1.cmp(a.1).then(a.0.cmp(b.0)));
     if !extensions.is_empty() {
         output.push_str("\n| Unrecognized extension | Files |\n| --- | ---: |\n");
         for (extension, files) in extensions.into_iter().take(15) {
@@ -150,56 +141,58 @@ fn resolve_destination(path: &Path) -> Result<PathBuf> {
     Ok(resolve_destination(parent)?.join(name))
 }
 
-/// Report files written for an output prefix.
-///
-/// Suffixes are appended to the whole file name rather than replacing its
-/// extension, so `run.v1` and `run.v2` stay distinct.
-fn destinations(output: &Path) -> Result<[PathBuf; 3]> {
-    let name = output.file_name().context("Invalid output path")?;
-    let with_suffix = |suffix: &str| {
-        let mut name = name.to_owned();
-        name.push(suffix);
-        output.with_file_name(name)
-    };
-    Ok([
-        with_suffix(".json"),
-        with_suffix(".md"),
-        with_suffix(".tokei.json"),
-    ])
-}
-
-pub fn validate_output(output: &Path, root: &Path, config: Option<&Path>) -> Result<PathBuf> {
+pub fn validate_output(output: &Path, root: &Path, config: Option<&Path>) -> Result<()> {
     let output = resolve_destination(output)?;
-    let root = root.canonicalize()?;
+    ensure!(
+        !output.starts_with(root.canonicalize()?),
+        "Output must be outside the read-only scan root"
+    );
     let config = config.map(Path::canonicalize).transpose()?;
-    for destination in destinations(&output)? {
-        let destination = resolve_destination(&destination)?;
-        ensure!(
-            !destination.starts_with(&root),
-            "Output must be outside the read-only scan root"
-        );
-        ensure!(
-            config.as_ref() != Some(&destination),
-            "Output would overwrite the configuration: {}",
-            destination.display()
-        );
-    }
-    Ok(output)
+    ensure!(
+        config.as_ref() != Some(&output),
+        "Output would overwrite the configuration: {}",
+        output.display()
+    );
+    Ok(())
 }
 
-pub fn write_reports(
-    output: &Path,
-    root: &Path,
-    config: Option<&Path>,
-    document: &Value,
-    raw: &Value,
-    markdown: &str,
-) -> Result<[PathBuf; 3]> {
-    let output = validate_output(output, root, config)?;
-    fs::create_dir_all(output.parent().context("Missing output parent")?)?;
-    let [json, md, tokei] = destinations(&output)?;
-    fs::write(&json, format!("{}\n", serde_json::to_string(document)?))?;
-    fs::write(&tokei, format!("{}\n", serde_json::to_string(raw)?))?;
-    fs::write(&md, markdown)?;
-    Ok([json, md, tokei])
+/// Report keys in output order; absent keys are skipped.
+const REPORT_KEYS: [&str; 7] = [
+    "schema_version",
+    "project",
+    "metadata",
+    "summary",
+    "review",
+    "breakdown",
+    "files",
+];
+
+/// Serializes a report with one top-level key per line and one table row per
+/// line: still one JSON document, but `grep`, `wc -l`, and `diff` work on rows.
+pub fn report_text(document: &Value) -> Result<String> {
+    let mut entries = Vec::new();
+    for key in REPORT_KEYS {
+        let Some(value) = document.get(key) else {
+            continue;
+        };
+        let value = match value {
+            Value::Array(rows) if !rows.is_empty() => {
+                let rows = rows
+                    .iter()
+                    .map(serde_json::to_string)
+                    .collect::<Result<Vec<_>, _>>()?;
+                format!("[\n{}\n]", rows.join(",\n"))
+            }
+            _ => serde_json::to_string(value)?,
+        };
+        entries.push(format!("{}:{value}", serde_json::to_string(key)?));
+    }
+    Ok(format!("{{\n{}\n}}\n", entries.join(",\n")))
+}
+
+pub fn write_report(output: &Path, text: &str) -> Result<()> {
+    if let Some(parent) = output.parent().filter(|p| !p.as_os_str().is_empty()) {
+        fs::create_dir_all(parent)?;
+    }
+    fs::write(output, text).with_context(|| format!("Cannot write report {}", output.display()))
 }

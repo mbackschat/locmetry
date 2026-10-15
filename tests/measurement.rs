@@ -2,6 +2,14 @@ use locmetry::{build_report, file_records, scan, Kind, Policy};
 use serde_json::{json, Value};
 use std::fs;
 
+/// Totals with per-folder summaries, the shape saved measurements used.
+fn summary_json(rows: &[locmetry::FileRecord]) -> Value {
+    let report = build_report(rows);
+    let mut value = serde_json::to_value(&report.totals).unwrap();
+    value["folders"] = serde_json::to_value(&report.folders).unwrap();
+    value
+}
+
 fn policy(toml: &str) -> Policy {
     Policy::from_toml(&format!("version = 1\n{toml}")).unwrap()
 }
@@ -54,7 +62,7 @@ fn embedded_languages_count_once_and_docs_stay_out_of_source() {
         "Total":{"reports":[report("duplicate",999)]}
     });
     let rows = file_records(payload, &policy("")).unwrap();
-    let summary = serde_json::to_value(build_report(&rows)).unwrap();
+    let summary = summary_json(&rows);
     assert_eq!(rows.len(), 2);
     assert_eq!(summary["source"]["code"], 10);
     assert_eq!(summary["all_counted"]["code"], 15);
@@ -74,7 +82,7 @@ fn fixtures_remain_data_and_shell_and_rust_are_source() {
         &config,
     )
     .unwrap();
-    let summary = serde_json::to_value(build_report(&rows)).unwrap();
+    let summary = summary_json(&rows);
     assert_eq!(summary["source"]["code"], 11);
     assert_eq!(summary["by_kind_purpose"]["data:test"]["code"], 100);
 }
@@ -88,7 +96,7 @@ fn direct_and_recursive_folder_totals_reconcile() {
         &policy(""),
     )
     .unwrap();
-    let summary = serde_json::to_value(build_report(&rows)).unwrap();
+    let summary = summary_json(&rows);
     assert_eq!(summary["folders"]["."]["recursive"]["source"]["code"], 10);
     assert_eq!(summary["folders"]["."]["direct"]["source"]["code"], 2);
     assert_eq!(
@@ -99,7 +107,7 @@ fn direct_and_recursive_folder_totals_reconcile() {
         summary["folders"]["packages/a"]["recursive"]["source"]["code"],
         8
     );
-    let empty = serde_json::to_value(build_report(&[])).unwrap();
+    let empty = summary_json(&[]);
     // An empty root keeps its zero `all_counted`; absent `source` means zero.
     assert_eq!(
         empty["folders"]["."]["recursive"]["all_counted"]["files"],
@@ -299,7 +307,7 @@ fn script_embedded_in_html_remains_source_code() {
         "web/index.html",
         "<p>x</p>\n<script>\nlet x = 1;\nlet y = 2;\n</script>\n",
     )]);
-    let summary = serde_json::to_value(build_report(&rows)).unwrap();
+    let summary = summary_json(&rows);
     assert_eq!(summary["source_languages"]["JavaScript"]["code"], 2);
     assert_eq!(summary["source"]["lines"], 5);
 }
@@ -313,7 +321,7 @@ fn folder_totals_reconcile_at_every_level() {
         ("packages/b/deep/er/x.py", "x = 1\n\n# c\n"),
         ("docs/guide.md", "# Guide\n"),
     ]);
-    let report = serde_json::to_value(build_report(&rows)).unwrap();
+    let report = summary_json(&rows);
     let folders = report["folders"].as_object().unwrap();
     let field = |value: &Value, metric: &str| value["all_counted"][metric].as_u64().unwrap();
     for metric in ["files", "code", "comments", "blanks", "lines"] {

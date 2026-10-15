@@ -22,9 +22,10 @@ Use a Rust toolchain and a platform C build toolchain for development.
 locmetry --root path/to/project                 # uses path/to/project/.locmetryrc if present
 locmetry --root . --config shared.toml          # explicit configuration; the root stays `.`
 locmetry --exclude 'generated/**' --hidden false --format markdown
+locmetry --output /tmp/measurement.json         # headline on stdout, full report in one file
 ```
 
-The scan root defaults to the current directory. Configuration is the TOML `.locmetryrc` contract in [PRODUCT.md](PRODUCT.md); without one, built-in defaults apply, including default exclusions and built-in test conventions. `--exclude`, `--hidden`, and `--respect-ignore-files` override project settings. JSON is the default stdout format; `--format markdown` produces human-readable output, with `--depth N` folder levels. `--output PREFIX` saves JSON, Markdown, and backend statistics outside the scan root. Exit code 2 marks a partial report with unreadable files. [PRODUCT.md](PRODUCT.md#reporting-and-coverage) documents the JSON schema. [Reports, limits, and private regression](poc/README.md) describes what a measurement contains.
+The scan root defaults to the current directory. Configuration is the TOML `.locmetryrc` contract in [PRODUCT.md](PRODUCT.md); without one, built-in defaults apply, including default exclusions and built-in test conventions. `--exclude`, `--hidden`, and `--respect-ignore-files` override project settings. JSON is the default stdout format; `--format markdown` produces human-readable output, with `--depth N` folder levels. Stdout JSON is a small headline; `--output FILE` writes the full report (summary, review list, and an aggregated breakdown table) to one file outside the scan root, `--output -` prints it instead, and `--files` adds per-file records. Exit code 2 marks a partial report with unreadable files. [PRODUCT.md](PRODUCT.md#reporting-and-coverage) documents the JSON schema. [Reports, limits, and private regression](poc/README.md) describes what a measurement contains.
 
 ## Documentation
 

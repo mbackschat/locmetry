@@ -9,7 +9,10 @@ pub use backend::{
     DOCUMENTATION_LANGUAGES,
 };
 pub use config::{Classification, Policy, Purpose, Scope, ScopeOverrides, CONFIG_FILE};
-pub use output::{render_markdown, validate_output, write_reports};
-pub use report::{build_report, Counts, FileRecord, Kind, ReportSummary};
+pub use output::{render_markdown, report_text, validate_output, write_report};
+pub use report::{
+    breakdown, build_report, review, BreakdownRow, Counts, FileRecord, Kind, ReportSummary,
+    ReviewEntry,
+};
 
 pub const BACKEND: &str = "tokei 15.0.0 (embedded)";

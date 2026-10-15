@@ -1,10 +1,11 @@
 use anyhow::{Context, Result};
 use clap::{Parser, ValueEnum};
 use locmetry::{
-    build_report, render_markdown, scan, scope_policy, validate_output, write_reports, Policy,
-    ScopeOverrides, BACKEND, CONFIG_FILE, DATA_LANGUAGES, DOCUMENTATION_LANGUAGES,
+    breakdown, build_report, render_markdown, report_text, review, scan, scope_policy,
+    validate_output, write_report, Policy, ScopeOverrides, BACKEND, CONFIG_FILE, DATA_LANGUAGES,
+    DOCUMENTATION_LANGUAGES,
 };
-use serde_json::json;
+use serde_json::{json, Value};
 use std::{
     io::{self, Write},
     path::{Path, PathBuf},
@@ -39,11 +40,14 @@ struct Args {
     /// Override whether ignore files limit the selection.
     #[arg(long, value_name = "BOOL")]
     respect_ignore_files: Option<bool>,
-    /// Write .json, .md, and .tokei.json reports at this prefix, outside the scan root.
-    #[arg(long)]
+    /// Write the full JSON report to this file, outside the scan root; `-`
+    /// writes it to stdout instead of the headline.
+    #[arg(long, value_name = "FILE")]
     output: Option<PathBuf>,
-    /// Stdout format; with --output, JSON stdout omits file records and folders
-    /// and names the written report files.
+    /// Include per-file records in the report.
+    #[arg(long)]
+    files: bool,
+    /// Stdout format: a JSON headline (totals, top folders, coverage) or Markdown.
     #[arg(long, value_enum, default_value = "json")]
     format: Format,
     /// Deepest folder level listed in the Markdown folder table; JSON lists all.
@@ -90,9 +94,17 @@ fn run(args: Args) -> Result<Outcome> {
         || root_text.to_owned(),
         |name| name.to_string_lossy().into(),
     );
-    if let Some(output) = &args.output {
-        validate_output(output, &root, config_path.as_deref())?;
+    let report_path = args
+        .output
+        .as_deref()
+        .filter(|path| *path != Path::new("-"));
+    if let Some(path) = report_path {
+        validate_output(path, &root, config_path.as_deref())?;
     }
+    anyhow::ensure!(
+        report_path.is_some() || args.output.is_none() || matches!(args.format, Format::Json),
+        "--output - writes JSON to stdout and cannot be combined with --format markdown"
+    );
     let measured_at = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
     let scan = scan(&root, &policy)?;
     let (inaccurate, coverage) = (scan.inaccurate, &scan.coverage);
@@ -102,7 +114,9 @@ fn run(args: Args) -> Result<Outcome> {
     if inaccurate {
         markdown.push_str("\nBackend reported incomplete counts; inspect the JSON metadata.\n");
     }
-    let document = json!({
+    let mut summary_json = serde_json::to_value(&summary.totals)?;
+    summary_json["top_folders"] = serde_json::to_value(summary.top_folders())?;
+    let mut document = json!({
         "schema_version":"1", "project":project,
         "metadata":{
             "root":root_text, "measured_at_unix_seconds":measured_at,
@@ -117,45 +131,24 @@ fn run(args: Args) -> Result<Outcome> {
             },
             "coverage":coverage, "config_path":config_path, "config":policy.snapshot()
         },
-        "summary":summary, "files":rows
+        "summary":summary_json, "review":review(&rows), "breakdown":breakdown(&rows)
     });
-    let written = match &args.output {
-        Some(output) => Some(write_reports(
-            output,
-            &root,
-            config_path.as_deref(),
-            &document,
-            &scan.payload,
-            &markdown,
-        )?),
-        None => None,
-    };
+    if args.files {
+        document["files"] = serde_json::to_value(&rows)?;
+    }
+    if let Some(path) = report_path {
+        write_report(path, &report_text(&document)?)?;
+    }
     let mut stdout = io::stdout().lock();
-    match args.format {
-        Format::Json => {
-            let value = match written {
-                // The full report can be megabytes; agents reading stdout get
-                // the same document without records, plus where to find them.
-                Some([json, markdown, tokei]) => {
-                    let mut headline = document;
-                    headline
-                        .as_object_mut()
-                        .context("Invalid report")?
-                        .remove("files");
-                    headline["summary"]
-                        .as_object_mut()
-                        .context("Invalid summary")?
-                        .remove("folders");
-                    headline["reports"] =
-                        json!({"json": json, "markdown": markdown, "tokei": tokei});
-                    headline
-                }
-                None => document,
-            };
-            serde_json::to_writer(&mut stdout, &value)?;
+    match (args.format, &args.output) {
+        (Format::Json, Some(_)) if report_path.is_none() => {
+            write!(stdout, "{}", report_text(&document)?)?
+        }
+        (Format::Json, _) => {
+            serde_json::to_writer(&mut stdout, &headline(document, report_path)?)?;
             writeln!(stdout)?;
         }
-        Format::Markdown => write!(stdout, "{markdown}")?,
+        (Format::Markdown, _) => write!(stdout, "{markdown}")?,
     }
     if inaccurate {
         let mut unread = coverage.unread.iter().take(10).cloned().collect::<Vec<_>>();
@@ -171,6 +164,29 @@ fn run(args: Args) -> Result<Outcome> {
         )));
     }
     Ok(Outcome::Complete)
+}
+
+/// The report without its tables, policy echo, or path lists: what an agent
+/// reads into its context, so it is compact. The full report stays in the
+/// report file or `--output -`.
+fn headline(mut document: Value, report: Option<&Path>) -> Result<Value> {
+    let object = document.as_object_mut().context("Invalid report")?;
+    for table in ["review", "breakdown", "files"] {
+        object.remove(table);
+    }
+    let metadata = document["metadata"]
+        .as_object_mut()
+        .context("Invalid metadata")?;
+    metadata.remove("config");
+    metadata.remove("kinds");
+    metadata["coverage"]
+        .as_object_mut()
+        .context("Invalid coverage")?
+        .remove("unrecognized");
+    if let Some(path) = report {
+        document["report"] = json!(path);
+    }
+    Ok(document)
 }
 
 fn main() -> ExitCode {

@@ -8,10 +8,10 @@ Keep real-project configurations and outputs exclusively in Git-ignored `docs/re
 
 ```sh
 cargo build --release --locked
-./target/release/locmetry --root /path/to/project --config docs/research/local/project.locmetry.toml --output docs/research/local/measurement
+./target/release/locmetry --root /path/to/project --config docs/research/local/project.locmetryrc --output docs/research/local/measurement.json
 ```
 
-The configuration path above is a placeholder, not a bundled project. Each run replaces `.md`, `.json`, and `.tokei.json` files at the output prefix, appending each suffix to the full prefix name so `run.v1` and `run.v2` stay distinct: readable breakdowns, classified records/folder totals, and the raw backend response. Locmetry does not modify the measured project or run its builds or tests.
+The configuration path above is a placeholder, not a bundled project. Each run writes exactly one report file at the given path, replacing it; `--files` adds per-file records, and `--format markdown` prints the human report to stdout. Locmetry does not modify the measured project or run its builds or tests.
 
 ## Measurement Contract
 
@@ -24,11 +24,11 @@ The configuration path above is a placeholder, not a bundled project. Each run r
 
 ## Evidence and Limits
 
-Output uses JSON schema `1` (field reference in [PRODUCT.md](../PRODUCT.md#reporting-and-coverage)) with engine identity, Unix timestamp, effective scope, kind lists, coverage, configuration path and snapshot, and backend inaccuracy flags. `metadata.coverage` counts selected, counted, and language-mapped files and lists selected files that neither the backend nor a mapping recognizes, separately from recognized files that could not be read; the Markdown report summarizes both. Missing files are not proven zero LOC. Records of files counted through a language mapping carry `language_mapping`; the raw `.tokei.json` contains only the backend's own statistics. Compared with the earlier `poc-2` schema, `metadata.source_languages` is replaced by `metadata.kinds`, and the `data/config` kind is spelled `data`.
+Output uses JSON schema `1` (field reference in [PRODUCT.md](../PRODUCT.md#reporting-and-coverage)) with engine identity, Unix timestamp, effective scope, kind lists, coverage, configuration path and snapshot, and backend inaccuracy flags. `metadata.coverage` counts selected, counted, and language-mapped files and lists selected files that neither the backend nor a mapping recognizes, separately from recognized files that could not be read; the Markdown report summarizes both. Missing files are not proven zero LOC. Per-file records (`--files`) of files counted through a language mapping carry `language_mapping`. Raw backend statistics are no longer written; the private regression replays previously saved ones. Compared with the earlier `poc-2` schema, `metadata.source_languages` is replaced by `metadata.kinds`, and the `data/config` kind is spelled `data`.
 
 Ambient Tokei configuration is not loaded. Git is not invoked, so reports do not claim a commit revision or unchanged working tree. Configuration and traversal errors fail before output with exit code 1; unreadable files produce partial output and exit code 2 with a message naming them. Classification is per file, so mixed production/test files are not split, and Locmetry does not establish whether a source file is handwritten.
 
-JSON is compact and omits redundant or zero counts, as specified in [PRODUCT.md](../PRODUCT.md#reporting-and-coverage). Without `--output`, stdout contains the full JSON report. With `--output`, JSON stdout omits file records and folders and names the written report files. Use `--format markdown` for readable stdout and `--depth N` to deepen its folder table. An output prefix whose reports would overwrite the configuration is rejected before scanning.
+Stdout is a compact JSON headline, and the full report goes to `--output FILE` (or stdout with `--output -`), as specified in [PRODUCT.md](../PRODUCT.md#reporting-and-coverage). Use `--format markdown` for readable stdout and `--depth N` to deepen its folder table. An output path inside the scan root or equal to the configuration is rejected before scanning.
 
 ## Privacy
 

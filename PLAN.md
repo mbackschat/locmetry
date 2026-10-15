@@ -61,6 +61,7 @@ Implemented 2026-10-15: JSON schema `1`, stdout shapes, exit codes, and Markdown
 - [x] Test effective-policy metadata, classification provenance, incomplete results, empty scans, and agreement between human and JSON output.
 - [x] Translate reviewed private profiles to TOML/globs. Keep every real profile and comparison Git-ignored.
 - [x] Compare equivalent file inventories and rule decisions; explain intentional changes caused by new defaults before retiring the provisional interface. Every file counted by both formats keeps its purpose, category, and counts; built-in language mappings add Gradle scripts, JSONC, JSON Lines, and properties files, all landing in the intended rules. Evidence is in the Git-ignored local migration note.
+- [x] Shape reports for aggregation (2026-10-15): stdout is a compact headline; `--output FILE` writes one report with a breakdown table and review list; per-file records only with `--files`.
 - [x] Retire the JSON/regex profiles: `.json` configurations fail with a migration hint, and the private regression replays saved statistics through the TOML translations (2026-10-15).
 - [x] Update usage examples and contributor guidance to the implemented product interface.
 

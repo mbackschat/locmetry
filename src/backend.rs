@@ -98,6 +98,9 @@ pub struct Coverage {
     pub counted_files: usize,
     /// Counted files whose language came from a language mapping.
     pub mapped_files: usize,
+    pub unrecognized_files: usize,
+    /// Unrecognized files per extension (`(none)` without one).
+    pub unrecognized_extensions: BTreeMap<String, usize>,
     /// Selected files whose language neither the backend nor a mapping recognizes.
     pub unrecognized: Vec<String>,
     /// Recognized files that could not be read; their counts are missing.
@@ -212,6 +215,18 @@ pub fn scan(root: &Path, policy: &Policy) -> Result<Scan> {
     coverage.counted_files = counted.len() + mappings.len();
     coverage.unread.sort();
     coverage.unrecognized.sort();
+    coverage.unrecognized_files = coverage.unrecognized.len();
+    for path in &coverage.unrecognized {
+        let name = path.rsplit('/').next().unwrap_or(path);
+        let extension = match name.rsplit_once('.') {
+            Some((stem, extension)) if !stem.is_empty() => extension,
+            _ => "(none)",
+        };
+        *coverage
+            .unrecognized_extensions
+            .entry(extension.to_owned())
+            .or_default() += 1;
+    }
     Ok(Scan {
         payload,
         mapped,

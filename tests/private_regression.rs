@@ -2,6 +2,14 @@ use locmetry::{build_report, file_records, language_kind, Kind, Policy};
 use serde_json::Value;
 use std::{collections::BTreeMap, env, fs, path::Path};
 
+/// Totals with per-folder summaries, the shape saved measurements used.
+fn summary_json(rows: &[locmetry::FileRecord]) -> Value {
+    let report = build_report(rows);
+    let mut value = serde_json::to_value(&report.totals).unwrap();
+    value["folders"] = serde_json::to_value(&report.folders).unwrap();
+    value
+}
+
 fn read_json(path: &Path) -> Value {
     serde_json::from_slice(&fs::read(path).unwrap()).unwrap()
 }
@@ -152,8 +160,7 @@ fn reviewed_configurations_reproduce_saved_measurements() {
             );
         }
         assert!(
-            serde_json::to_value(build_report(&rows)).unwrap()
-                == current_serialization(baseline["summary"].clone()),
+            summary_json(&rows) == current_serialization(baseline["summary"].clone()),
             "Totals differ from saved measurement"
         );
         checked += 1;

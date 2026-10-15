@@ -26,7 +26,7 @@ impl Counts {
 }
 
 /// Content kind of a counted file, derived from its backend language.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Kind {
     Source,
@@ -165,11 +165,116 @@ pub struct Folder {
     pub recursive: Summary,
 }
 
-#[derive(Debug, Serialize)]
+/// Totals and per-folder summaries; JSON reports derive `summary` and
+/// `breakdown` from it, and Markdown renders its folder table.
+#[derive(Debug)]
 pub struct ReportSummary {
-    #[serde(flatten)]
     pub totals: Summary,
     pub folders: BTreeMap<String, Folder>,
+}
+
+impl ReportSummary {
+    /// Source code lines per purpose for each top-level folder, recursively;
+    /// `.` holds files directly in the root. Full counts are in the breakdown.
+    pub fn top_folders(&self) -> BTreeMap<String, BTreeMap<Purpose, u64>> {
+        self.folders
+            .iter()
+            .filter_map(|(path, folder)| match path.as_str() {
+                "." => Some((path, &folder.direct)),
+                _ if !path.contains('/') => Some((path, &folder.recursive)),
+                _ => None,
+            })
+            .filter(|(_, summary)| !summary.source_purpose.is_empty())
+            .map(|(path, summary)| {
+                let code = summary
+                    .source_purpose
+                    .iter()
+                    .map(|(purpose, counts)| (*purpose, counts.code));
+                (path.clone(), code.collect())
+            })
+            .collect()
+    }
+}
+
+/// Counts of one combination of folder, kind, purpose, category, and language.
+///
+/// `folder` is each file's parent, so a folder's recursive totals are the sum
+/// over rows whose folder equals it or starts with it plus `/`. Embedded
+/// languages add lines but not files, keeping `files` additive.
+#[derive(Debug, Serialize)]
+pub struct BreakdownRow {
+    pub folder: String,
+    pub kind: Kind,
+    pub purpose: Purpose,
+    pub category: String,
+    pub language: String,
+    #[serde(flatten)]
+    pub counts: Counts,
+}
+
+pub fn breakdown(rows: &[FileRecord]) -> Vec<BreakdownRow> {
+    let mut cells = BTreeMap::<(String, Kind, Purpose, String, String), Counts>::new();
+    for row in rows {
+        let folder = row.path.rsplit_once('/').map_or(".", |(parent, _)| parent);
+        for (language, counts) in &row.languages {
+            let mut counts = *counts;
+            if *language != row.language {
+                counts.files = 0;
+            }
+            let key = (
+                folder.to_owned(),
+                row.kind,
+                row.classification.purpose,
+                row.classification.category.clone(),
+                language.clone(),
+            );
+            cells.entry(key).or_default().add(&counts);
+        }
+    }
+    cells
+        .into_iter()
+        .map(
+            |((folder, kind, purpose, category, language), counts)| BreakdownRow {
+                folder,
+                kind,
+                purpose,
+                category,
+                language,
+                counts,
+            },
+        )
+        .collect()
+}
+
+/// An unclassified source file, listed so configurations can be tuned.
+#[derive(Debug, Serialize)]
+pub struct ReviewEntry {
+    pub path: String,
+    pub language: String,
+    pub category: String,
+    pub rule: String,
+    pub code: u64,
+    pub lines: u64,
+}
+
+/// Unclassified source files, largest first.
+pub fn review(rows: &[FileRecord]) -> Vec<ReviewEntry> {
+    let mut entries: Vec<_> = rows
+        .iter()
+        .filter(|row| {
+            row.kind == Kind::Source && row.classification.purpose == Purpose::Unclassified
+        })
+        .map(|row| ReviewEntry {
+            path: row.path.clone(),
+            language: row.language.clone(),
+            category: row.classification.category.clone(),
+            rule: row.classification.rule.clone(),
+            code: row.counts.code,
+            lines: row.counts.lines,
+        })
+        .collect();
+    entries.sort_by(|a, b| b.code.cmp(&a.code).then_with(|| a.path.cmp(&b.path)));
+    entries
 }
 
 pub fn build_report(rows: &[FileRecord]) -> ReportSummary {
