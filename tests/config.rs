@@ -294,3 +294,193 @@ fn excluded_trees_are_not_traversed_and_single_level_patterns_do_not_prune() {
     let paths: Vec<_> = rows.iter().map(|row| row.path.as_str()).collect();
     assert_eq!(paths, ["gen/sub/b.ts", "src/a.ts"]);
 }
+
+fn write(root: &std::path::Path, files: &[(&str, &str)]) {
+    for (path, content) in files {
+        let path = root.join(path);
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        fs::write(path, content).unwrap();
+    }
+}
+
+fn mapped_tree() -> tempfile::TempDir {
+    let temp = tempfile::tempdir().unwrap();
+    write(
+        temp.path(),
+        &[
+            (
+                "build.gradle",
+                "// Build.\napply plugin: 'java'\n\ndependencies {}\n",
+            ),
+            (".vscode/settings.jsonc", "{\n  // comment\n  \"a\": 1\n}\n"),
+            ("data/events.jsonl", "{\"a\":1}\n{\"a\":2}\n"),
+            (
+                "gradle.properties",
+                "# comment\norg.gradle.jvmargs=-Xmx2g\n",
+            ),
+            ("assets/logo.xyz", "binary\n"),
+        ],
+    );
+    temp
+}
+
+fn mapping_of(rows: &[locmetry::FileRecord], path: &str) -> (String, Kind, Option<String>) {
+    let row = rows
+        .iter()
+        .find(|row| row.path == path)
+        .unwrap_or_else(|| panic!("missing {path}"));
+    (row.language.clone(), row.kind, row.language_mapping.clone())
+}
+
+#[test]
+fn builtin_language_mappings_count_files_the_backend_does_not_recognize() {
+    let temp = mapped_tree();
+    let policy = Policy::defaults();
+    let scan = scan(temp.path(), &policy).unwrap();
+    let rows = scan.records(&policy).unwrap();
+    assert_eq!(
+        mapping_of(&rows, "build.gradle"),
+        (
+            "Groovy".into(),
+            Kind::Source,
+            Some("builtin:gradle-script".into())
+        )
+    );
+    let gradle = rows.iter().find(|row| row.path == "build.gradle").unwrap();
+    assert_eq!(
+        (
+            gradle.counts.code,
+            gradle.counts.comments,
+            gradle.counts.blanks
+        ),
+        (2, 1, 1)
+    );
+    assert_eq!(
+        mapping_of(&rows, ".vscode/settings.jsonc"),
+        ("JSON".into(), Kind::Data, Some("builtin:jsonc".into()))
+    );
+    assert_eq!(
+        mapping_of(&rows, "data/events.jsonl").2,
+        Some("builtin:json-lines".into())
+    );
+    assert_eq!(
+        mapping_of(&rows, "gradle.properties"),
+        (
+            "INI".into(),
+            Kind::Data,
+            Some("builtin:java-properties".into())
+        )
+    );
+    assert_eq!(scan.coverage.unrecognized, ["assets/logo.xyz"]);
+    assert_eq!(scan.coverage.mapped_files, 4);
+    assert_eq!(scan.coverage.counted_files, 4);
+    assert!(!scan.inaccurate);
+}
+
+#[test]
+fn project_mappings_precede_builtin_mappings_and_feed_classification() {
+    let temp = mapped_tree();
+    let policy = policy(
+        r#"version = 1
+[[languages.mappings]]
+id = "xyz-as-python"
+match = ["**/*.xyz"]
+language = "Python"
+[[languages.mappings]]
+id = "gradle-as-kotlin"
+match = ["*.gradle"]
+language = "Kotlin"
+[[rules]]
+id = "build-tooling"
+match = ["*.gradle"]
+kind = ["source"]
+purpose = "production"
+category = "build-tooling"
+"#,
+    );
+    let rows = scan(temp.path(), &policy)
+        .unwrap()
+        .records(&policy)
+        .unwrap();
+    assert_eq!(
+        mapping_of(&rows, "assets/logo.xyz").2,
+        Some("xyz-as-python".into())
+    );
+    assert_eq!(
+        mapping_of(&rows, "build.gradle"),
+        (
+            "Kotlin".into(),
+            Kind::Source,
+            Some("gradle-as-kotlin".into())
+        )
+    );
+    let gradle = rows.iter().find(|row| row.path == "build.gradle").unwrap();
+    assert_eq!(gradle.classification.category, "build-tooling");
+}
+
+#[test]
+fn disabled_builtin_mappings_and_legacy_profiles_leave_unrecognized_files_visible() {
+    let temp = mapped_tree();
+    let disabled = policy("version = 1\n[languages]\nbuiltin = false");
+    let legacy = Policy::from_legacy_json(r#"{"project":"p","root":".","rules":[]}"#).unwrap();
+    for policy in [disabled, legacy] {
+        let scan = scan(temp.path(), &policy).unwrap();
+        assert_eq!(scan.coverage.mapped_files, 0);
+        assert_eq!(scan.coverage.unrecognized.len(), 5);
+        assert!(scan.records(&policy).unwrap().is_empty());
+    }
+}
+
+#[cfg(unix)]
+#[test]
+fn unreadable_mapped_files_are_reported_as_unread_and_inaccurate() {
+    use std::os::unix::fs::PermissionsExt;
+    let temp = tempfile::tempdir().unwrap();
+    write(temp.path(), &[("build.gradle", "apply plugin: 'java'\n")]);
+    let file = temp.path().join("build.gradle");
+    fs::set_permissions(&file, fs::Permissions::from_mode(0o000)).unwrap();
+    if fs::read(&file).is_ok() {
+        return; // Permission bits do not restrict this user (for example root).
+    }
+    let result = scan(temp.path(), &Policy::defaults());
+    fs::set_permissions(&file, fs::Permissions::from_mode(0o644)).unwrap();
+    let scan = result.unwrap();
+    assert_eq!(scan.coverage.unread, ["build.gradle"]);
+    assert!(scan.inaccurate);
+}
+
+#[test]
+fn invalid_language_mappings_fail_before_scanning() {
+    let mapping = |body: &str| format!("version = 1\n[[languages.mappings]]\n{body}");
+    for (toml, message) in [
+        (
+            mapping("id = \"a\"\nmatch = [\"**/*.x\"]\nlanguage = \"Groovyy\""),
+            "Unknown language",
+        ),
+        (
+            mapping("id = \"a\"\nmatch = []\nlanguage = \"Groovy\""),
+            "nonempty",
+        ),
+        (
+            mapping("id = \"builtin:a\"\nmatch = [\"**\"]\nlanguage = \"Groovy\""),
+            "reserved",
+        ),
+        (
+            mapping("id = \"a\"\nmatch = [\"**\"]\nlanguage = \"Groovy\"\nkind = \"source\""),
+            "unknown field",
+        ),
+        (
+            format!(
+                "{}\n[[languages.mappings]]\nid = \"a\"\nmatch = [\"**\"]\nlanguage = \"JSON\"",
+                mapping("id = \"a\"\nmatch = [\"**\"]\nlanguage = \"Groovy\"")
+            ),
+            "unique",
+        ),
+    ] {
+        let error = Policy::from_toml(&toml).unwrap_err();
+        assert!(
+            format!("{error:#}").contains(message),
+            "{toml:?}: {error:#}"
+        );
+    }
+}

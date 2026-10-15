@@ -94,16 +94,39 @@ pub fn scope_policy(policy: &Policy) -> Value {
 #[derive(Debug, Default, Serialize)]
 pub struct Coverage {
     pub selected_files: usize,
+    /// Files with counts, including those counted through language mappings.
     pub counted_files: usize,
-    /// Selected files whose language the backend does not recognize.
+    /// Counted files whose language came from a language mapping.
+    pub mapped_files: usize,
+    /// Selected files whose language neither the backend nor a mapping recognizes.
     pub unrecognized: Vec<String>,
-    /// Recognized files the backend could not read; their counts are missing.
+    /// Recognized files that could not be read; their counts are missing.
     pub unread: Vec<String>,
 }
 
 pub struct Scan {
+    /// Statistics as returned by Tokei, with root-relative paths.
     pub payload: Value,
+    /// Statistics for files counted through language mappings, in the same shape.
+    pub mapped: Value,
+    /// Mapping ID for each mapped file.
+    pub mappings: BTreeMap<String, String>,
     pub coverage: Coverage,
+    /// Some counts are missing because files could not be read.
+    pub inaccurate: bool,
+}
+
+impl Scan {
+    /// File records from backend and mapped statistics, sorted by path.
+    pub fn records(&self, policy: &Policy) -> Result<Vec<FileRecord>> {
+        let mut rows = file_records(self.payload.clone(), policy)?;
+        for mut row in file_records(self.mapped.clone(), policy)? {
+            row.language_mapping = self.mappings.get(&row.path).cloned();
+            rows.push(row);
+        }
+        rows.sort_by(|a, b| a.path.cmp(&b.path));
+        Ok(rows)
+    }
 }
 
 pub fn scan(root: &Path, policy: &Policy) -> Result<Scan> {
@@ -151,10 +174,62 @@ pub fn scan(root: &Path, policy: &Policy) -> Result<Scan> {
     if !paths.is_empty() {
         languages.get_statistics(&paths, &[], &config);
     }
+    let mut inaccurate = languages.values().any(|language| language.inaccurate);
     let mut payload = serde_json::to_value(languages)?;
+    let counted = normalize_reports(&mut payload, &root, policy)?;
+    let mut coverage = Coverage {
+        selected_files: paths.len(),
+        ..Default::default()
+    };
+    let mut mapped = BTreeMap::<LanguageType, tokei::Language>::new();
+    let mut mappings = BTreeMap::new();
+    for path in &paths {
+        let name = relative_path(path.strip_prefix(&root)?)?;
+        if counted.contains(&name) {
+            continue;
+        }
+        if LanguageType::from_path(path, &config).is_some() {
+            coverage.unread.push(name);
+            continue;
+        }
+        match policy.mapped_language(&name) {
+            None => coverage.unrecognized.push(name),
+            Some((id, language)) => match language.parse(path.clone(), &config) {
+                Ok(report) => {
+                    mapped.entry(language).or_default().add_report(report);
+                    mappings.insert(name, id.to_owned());
+                }
+                Err(_) => {
+                    coverage.unread.push(name);
+                    inaccurate = true;
+                }
+            },
+        }
+    }
+    let mut mapped = serde_json::to_value(mapped)?;
+    normalize_reports(&mut mapped, &root, policy)?;
+    coverage.mapped_files = mappings.len();
+    coverage.counted_files = counted.len() + mappings.len();
+    coverage.unread.sort();
+    coverage.unrecognized.sort();
+    Ok(Scan {
+        payload,
+        mapped,
+        mappings,
+        coverage,
+        inaccurate,
+    })
+}
+
+/// Rewrites report paths to the public root-relative form and returns them.
+///
+/// `children` repeats embedded reports with their own absolute paths.
+fn normalize_reports(
+    payload: &mut Value,
+    root: &Path,
+    policy: &Policy,
+) -> Result<BTreeSet<String>> {
     let mut counted = BTreeSet::new();
-    // Preserve backend statistics, but normalize paths to the public report contract.
-    // `children` repeats embedded reports with their own absolute paths.
     for group in payload
         .as_object_mut()
         .context("Invalid backend language map")?
@@ -180,7 +255,7 @@ pub fn scan(root: &Path, policy: &Policy) -> Result<Scan> {
                     .context("Invalid backend report path")?;
                 let name = relative_path(
                     Path::new(name)
-                        .strip_prefix(&root)
+                        .strip_prefix(root)
                         .context("Backend path escaped scan root")?,
                 )?;
                 ensure!(
@@ -192,24 +267,7 @@ pub fn scan(root: &Path, policy: &Policy) -> Result<Scan> {
             }
         }
     }
-    let mut coverage = Coverage {
-        selected_files: paths.len(),
-        counted_files: counted.len(),
-        ..Default::default()
-    };
-    for path in &paths {
-        let name = relative_path(path.strip_prefix(&root)?)?;
-        if counted.contains(&name) {
-            continue;
-        }
-        match LanguageType::from_path(path, &config) {
-            Some(_) => coverage.unread.push(name),
-            None => coverage.unrecognized.push(name),
-        }
-    }
-    coverage.unread.sort();
-    coverage.unrecognized.sort();
-    Ok(Scan { payload, coverage })
+    Ok(counted)
 }
 
 /// Joins the plain components of a root-relative path with `/`.
@@ -330,6 +388,7 @@ pub fn file_records(payload: Value, policy: &Policy) -> Result<Vec<FileRecord>> 
                 path,
                 language: language.clone(),
                 kind,
+                language_mapping: None,
                 counts,
                 languages,
             });

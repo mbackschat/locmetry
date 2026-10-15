@@ -4,10 +4,16 @@
 
 Measure a project's own codebase with understandable scope, test/production distinctions, and useful folder totals. Locmetry is a policy-and-reporting layer over an established counter. Agents consume predictable JSON; developers get readable summaries and reviewable project configuration.
 
+The product rests on three pillars:
+
+- **Expressive configuration:** reviewable project policy covers real repositories' scope, ownership, and classification needs, including build tooling, examples, generated code, and evidence.
+- **Reuse with gap filling:** the embedded counter does the counting; Locmetry layers on top of its library and fills gaps it leaves, such as unrecognized file types, instead of reimplementing it.
+- **Rich output:** reports summarize the measurement, while JSON keeps every file record, provenance, and the effective policy so agents and scripts can answer further questions, including their own summations.
+
 ## Scope and Status
 
-- Required: embedded Tokei integration in a Rust executable, test/production classification, project configuration and CLI options, configurable exclusions, folder breakdowns and sums, JSON, and human output.
-- Optional: additional counting adapters, custom content-kind overrides, supported language/extension mappings, and configuration self-checks that assert expected classifications for named paths without requiring those files to exist.
+- Required: embedded Tokei integration in a Rust executable, test/production classification, project configuration and CLI options, configurable exclusions, language mappings for files the backend does not recognize, folder breakdowns and sums, JSON, and human output.
+- Optional: additional counting adapters, custom content-kind overrides, and configuration self-checks that assert expected classifications for named paths without requiring those files to exist.
 - Excluded initially: a new counting engine, a generic plugin framework, and semantic splitting of production/tests within individual files.
 
 The configuration below is implemented. Provisional [JSON/regex profiles](poc/README.md) remain accepted until existing profiles are migrated. Locmetry is implemented in Rust with the Tokei library embedded. The installed executable must not require Python, Git, a separate Tokei executable, or a separately installed Rust runtime. Homebrew Rust dependencies are build-only; release bottles should require no runtime formula dependencies. [Tokei integration and Homebrew distribution](docs/tokei-integration.md) records the implemented boundary and planned packaging.
@@ -21,7 +27,7 @@ The configuration below is implemented. Provisional [JSON/regex profiles](poc/RE
 | Purpose | `production`, `test`, or `unclassified`. Production means maintained non-test source, not necessarily shipped runtime code. |
 | Category | Optional project-defined label such as implementation, tooling, test-support, example, benchmark, or evidence. It does not change counting. |
 
-Report code, comments, blanks, and total lines separately. Preserve each file's language and classification provenance. Embedded snippets inherit the host file's scope and purpose; documentation snippets do not inflate source totals. Documentation embedded in a non-documentation file, such as Rust `///` doc comments that the backend parses as Markdown, contributes its lines, including doctest code, as comments of the host language. Derive human summaries and versioned JSON from the same records.
+Report code, comments, blanks, and total lines separately. Preserve each file's language and classification provenance; a language supplied by a mapping records the mapping ID. Embedded snippets inherit the host file's scope and purpose; documentation snippets do not inflate source totals. Documentation embedded in a non-documentation file, such as Rust `///` doc comments that the backend parses as Markdown, contributes its lines, including doctest code, as comments of the host language. Derive human summaries and versioned JSON from the same records.
 
 ## Project Configuration
 
@@ -41,6 +47,14 @@ exclude = ["reference-material/**"]
 [classification]
 builtin_tests = true
 fallback = "unclassified"
+
+[languages]
+builtin = true
+
+[[languages.mappings]]
+id = "task-scripts"
+match = ["scripts/*.task"]
+language = "BASH"
 
 [[overrides]]
 id = "archived-evidence"
@@ -96,6 +110,8 @@ An entry matches when any of its patterns matches the path and, if `kind` is pre
 | `scope.default_excludes` | Boolean, default `true`; applies `**/.git/**`, `**/node_modules/**`, and `**/.build/**`. `false` is the only way to drop them. `build` directories are not excluded by default because they can hold maintained source; ignore files normally exclude build output. |
 | `classification.builtin_tests` | Boolean, default `true`; enables documented test conventions. The configuration `version` pins the convention set, so upgrading Locmetry does not silently reclassify files. Conventions cover common test directories, test filename suffixes, and framework source sets such as Gradle/Kotlin `src/*Test/**` and `testFixtures`. Ownership-ambiguous names such as `fixtures` are left to project entries. The version-1 set is defined by `BUILTIN_TESTS_V1` in [src/config.rs](src/config.rs) and recorded in every report as `metadata.config.builtin_test_conventions`. |
 | `classification.fallback` | Purpose enum, default `unclassified`; projects can explicitly choose another purpose. |
+| `languages.builtin` | Boolean, default `true`; enables documented language mappings for common file types the backend does not recognize, such as `.gradle` scripts as Groovy and `.jsonc` as JSON. The configuration `version` pins the set, defined by `BUILTIN_LANGUAGES_V1` in [src/config.rs](src/config.rs) and recorded in every report as `metadata.config.builtin_language_mappings`. |
+| `languages.mappings` | Ordered array of `{id, match, language}` entries, applied before built-in mappings. `language` must be a backend language name. Mappings apply only to selected files the backend does not recognize; backend detection is never overridden. The first matching mapping counts the file with the backend's parser for that language. |
 | `overrides`, `rules` | Ordered arrays of entries; omitted arrays are empty. Each entry requires a unique string `id` (not `fallback`, which names the fallback provenance), a nonempty string-array `match`, and a valid `purpose`. `category` defaults to the purpose. `kind` is an optional nonempty array of kinds. `reason` is an optional string recorded in the effective-policy snapshot. |
 
 Match normalized root-relative paths with case-sensitive globs: `*` stays within a segment, `**` spans zero or more directories, `?` matches one non-separator character, `[...]` matches one character from a class, and `{a,b}` matches any listed alternative. Backslash escapes the next character on every platform. Any pattern in `match` selects its entry. Patterns do not use implicit basename matching, negation, or absolute paths. Reject invalid patterns, unknown keys, duplicate IDs, and invalid types/enums.
@@ -108,7 +124,7 @@ Expose direct folder totals and recursive totals. A recursive parent contains it
 
 Keep output format and folder depth as CLI options initially. Exact flags, JSON fields, and incomplete-result exit behavior remain open. Recommend clear backend/version, scope, effective-policy, and classification-provenance fields, with diagnostics separated from JSON stdout.
 
-Surface known counting-coverage limitations: report how many files were selected and counted, list selected files the backend did not recognize, and separately list recognized files it could not read. Path rules cannot recover source files omitted by the backend. Language/extension overrides remain optional pending backend support; absent records must not be represented as proven zero LOC. Inline tests in mixed files remain a whole-file classification limitation.
+Surface known counting-coverage limitations: report how many files were selected and counted, list selected files the backend did not recognize, and separately list recognized files it could not read. Path rules cannot recover source files omitted by the backend. Language mappings recover unrecognized files; absent records must not be represented as proven zero LOC. Inline tests in mixed files remain a whole-file classification limitation.
 
 ## Sensitive Analysis
 

@@ -45,6 +45,7 @@ Implemented 2026-10-15. Provenance needs no separate stage field: entry IDs are 
 - [x] Implement scope → first override → built-in tests → first ordinary rule → configured fallback.
 - [x] Match entries by path and optional `kind`; record optional `reason` in the effective-policy snapshot.
 - [x] Define and document versioned test conventions, covering common test directories, filename conventions, and framework source sets with synthetic examples. Keep ambiguous ownership configurable.
+- [x] Count files the backend does not recognize through version-pinned built-in and project language mappings, recording the mapping ID per file. Evidence: mapping tests in [configuration tests](tests/config.rs).
 - [x] Report the matching stage and rule/convention identity, including fallback provenance; settle omitted-category behavior.
 - [x] Review the language-to-kind mapping for the supported release scope. Keep unsupported or unmapped content visible and document coverage limits. Evidence: kind and coverage tests in [measurement tests](tests/measurement.rs).
 
@@ -84,12 +85,11 @@ Record accepted decisions in [PRODUCT.md](PRODUCT.md) before implementing depend
 | --- | --- |
 | Legacy JSON profiles | Prefer a reviewed one-time migration over permanent dual-format support. Preserve historical inputs privately so equivalence remains checkable. |
 | JSON stdout with report files | Keep the same full JSON schema with and without `--output`; a stable shape is easier for agents to consume. |
-| Language/extension mappings | Add a small built-in mapping for unrecognized extensions that are common in the reference projects, such as `.gradle` build scripts and `.jsonc` configuration, before offering user-configurable mappings. Coverage now lists these files, so absence is visible either way; a mapping makes them countable. |
 | Partial counts | Retain explicitly marked partial output with a nonzero exit; agents must not mistake incomplete results for a complete measurement. |
 
 ## Optional and Excluded Scope
 
-Optional after the required contract: additional counter adapters, custom content-kind overrides, and language/extension mappings where supported by the backend. None is a prerequisite for the initial Tokei-backed release.
+Optional after the required contract: additional counter adapters and custom content-kind overrides. None is a prerequisite for the initial Tokei-backed release.
 
 Excluded initially: a new counting engine, generic plugin infrastructure, semantic splitting of tests and production within one file, and LLM-dependent normal measurement runs.
 

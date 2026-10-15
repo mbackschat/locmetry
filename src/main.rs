@@ -1,9 +1,8 @@
 use anyhow::{Context, Result};
 use clap::{Parser, ValueEnum};
 use locmetry::{
-    build_report, file_records, render_markdown, scan, scope_policy, validate_output,
-    write_reports, Policy, Scan, ScopeOverrides, BACKEND, CONFIG_FILE, DATA_LANGUAGES,
-    DOCUMENTATION_LANGUAGES,
+    build_report, render_markdown, scan, scope_policy, validate_output, write_reports, Policy,
+    ScopeOverrides, BACKEND, CONFIG_FILE, DATA_LANGUAGES, DOCUMENTATION_LANGUAGES,
 };
 use serde_json::json;
 use std::{
@@ -89,15 +88,11 @@ fn run(args: Args) -> Result<()> {
         validate_output(output, &root, config_path.as_deref())?;
     }
     let measured_at = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
-    let Scan { payload, coverage } = scan(&root, &policy)?;
-    let inaccurate = payload
-        .as_object()
-        .context("Invalid backend payload")?
-        .values()
-        .any(|group| group["inaccurate"].as_bool().unwrap_or(false));
-    let rows = file_records(payload.clone(), &policy)?;
+    let scan = scan(&root, &policy)?;
+    let (inaccurate, coverage) = (scan.inaccurate, &scan.coverage);
+    let rows = scan.records(&policy)?;
     let summary = build_report(&rows);
-    let mut markdown = render_markdown(&project, &summary, &rows, &coverage);
+    let mut markdown = render_markdown(&project, &summary, &rows, coverage);
     if inaccurate {
         markdown.push_str("\nBackend reported incomplete counts; inspect the JSON metadata.\n");
     }
@@ -124,7 +119,7 @@ fn run(args: Args) -> Result<()> {
             &root,
             config_path.as_deref(),
             &document,
-            &payload,
+            &scan.payload,
             &markdown,
         )?;
     }

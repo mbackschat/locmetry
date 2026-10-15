@@ -13,6 +13,7 @@ use std::{
     fmt,
     path::{Path, PathBuf},
 };
+use tokei::LanguageType;
 
 /// Configuration file discovered in the scan root.
 pub const CONFIG_FILE: &str = ".locmetryrc";
@@ -52,6 +53,17 @@ const BUILTIN_TESTS_V1: &[(&str, &[&str])] = &[
         "python-test-file",
         &["**/test_*.py", "**/*_test.py", "**/conftest.py"],
     ),
+];
+
+/// Version-1 language mappings for files Tokei 15.0.0 does not recognize.
+///
+/// Each was selected but uncounted in the reference projects' coverage reports
+/// (docs/research/local, 2026-10-15); the mapped language's syntax matches.
+const BUILTIN_LANGUAGES_V1: &[(&str, &[&str], LanguageType)] = &[
+    ("gradle-script", &["**/*.gradle"], LanguageType::Groovy),
+    ("jsonc", &["**/*.jsonc"], LanguageType::Json),
+    ("json-lines", &["**/*.jsonl"], LanguageType::Json),
+    ("java-properties", &["**/*.properties"], LanguageType::Ini),
 ];
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord)]
@@ -152,6 +164,38 @@ struct EntryConfig {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+#[serde(default, deny_unknown_fields)]
+struct LanguageSettings {
+    builtin: bool,
+    mappings: Vec<MappingConfig>,
+}
+
+impl Default for LanguageSettings {
+    fn default() -> Self {
+        Self {
+            builtin: true,
+            mappings: Vec::new(),
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+struct MappingConfig {
+    id: String,
+    #[serde(rename = "match")]
+    patterns: Vec<String>,
+    language: String,
+}
+
+#[derive(Debug)]
+struct LanguageMapping {
+    id: String,
+    matcher: GlobSet,
+    language: LanguageType,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 struct ConfigFile {
     version: u32,
@@ -161,6 +205,8 @@ struct ConfigFile {
     scope: ScopeSettings,
     #[serde(default)]
     classification: ClassificationSettings,
+    #[serde(default)]
+    languages: LanguageSettings,
     #[serde(default)]
     overrides: Vec<EntryConfig>,
     #[serde(default)]
@@ -368,6 +414,8 @@ pub struct Policy {
     builtin_tests: Vec<Entry>,
     rules: Vec<Entry>,
     fallback: (Purpose, String),
+    /// Project mappings first, then built-in ones.
+    languages: Vec<LanguageMapping>,
     snapshot: Value,
 }
 
@@ -411,7 +459,55 @@ impl Policy {
                 .collect::<Result<Vec<_>>>()?,
             false => Vec::new(),
         };
+        check_ids(
+            config
+                .languages
+                .mappings
+                .iter()
+                .map(|mapping| mapping.id.as_str()),
+        )?;
+        let mut languages = config
+            .languages
+            .mappings
+            .iter()
+            .map(|mapping| {
+                ensure!(
+                    !mapping.patterns.is_empty(),
+                    "Language mapping {} needs a nonempty match array",
+                    mapping.id
+                );
+                Ok(LanguageMapping {
+                    id: mapping.id.clone(),
+                    matcher: glob_set(mapping.patterns.iter().map(String::as_str)).with_context(
+                        || format!("Invalid match in language mapping {}", mapping.id),
+                    )?,
+                    language: LanguageType::from_name(&mapping.language).with_context(|| {
+                        format!(
+                            "Unknown language {:?} in language mapping {}",
+                            mapping.language, mapping.id
+                        )
+                    })?,
+                })
+            })
+            .collect::<Result<Vec<_>>>()?;
+        let builtin_languages = BUILTIN_LANGUAGES_V1
+            .iter()
+            .filter(|_| config.languages.builtin)
+            .collect::<Vec<_>>();
+        for (id, patterns, language) in &builtin_languages {
+            languages.push(LanguageMapping {
+                id: format!("{BUILTIN}{id}"),
+                matcher: glob_set(patterns.iter().copied())?,
+                language: *language,
+            });
+        }
         let mut snapshot = serde_json::to_value(&config)?;
+        snapshot["builtin_language_mappings"] = json!(builtin_languages
+            .iter()
+            .map(|(id, patterns, language)| {
+                json!({"id": format!("{BUILTIN}{id}"), "match": patterns, "language": language.name()})
+            })
+            .collect::<Vec<_>>());
         snapshot["builtin_test_conventions"] = json!(builtin_tests
             .iter()
             .zip(BUILTIN_TESTS_V1)
@@ -426,6 +522,7 @@ impl Policy {
             builtin_tests,
             rules: entries(&config.rules)?,
             fallback: (fallback, fallback.to_string()),
+            languages,
             snapshot,
         })
     }
@@ -481,6 +578,7 @@ impl Policy {
             builtin_tests: Vec::new(),
             rules,
             fallback: (Purpose::Unclassified, "unmapped".into()),
+            languages: Vec::new(),
             snapshot: serde_json::to_value(&data)?,
         })
     }
@@ -527,6 +625,14 @@ impl Policy {
 
     pub fn is_excluded(&self, path: &str) -> bool {
         self.scope.is_excluded(path)
+    }
+
+    /// Language and mapping ID for a file the backend does not recognize.
+    pub fn mapped_language(&self, path: &str) -> Option<(&str, LanguageType)> {
+        self.languages
+            .iter()
+            .find(|mapping| mapping.matcher.is_match(path))
+            .map(|mapping| (mapping.id.as_str(), mapping.language))
     }
 
     pub fn scope(&self) -> &Scope {

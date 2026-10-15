@@ -111,7 +111,7 @@ pub fn render_markdown(
 }
 
 fn render_coverage(output: &mut String, coverage: &Coverage) {
-    writeln!(output, "\n## Coverage\n\n{} files selected, {} counted. {} were not recognized by the backend and {} recognized files could not be read; their lines are missing, not zero.", coverage.selected_files, coverage.counted_files, coverage.unrecognized.len(), coverage.unread.len()).unwrap();
+    writeln!(output, "\n## Coverage\n\n{} files selected, {} counted, {} of them through language mappings. {} were not recognized and {} recognized files could not be read; their lines are missing, not zero.", coverage.selected_files, coverage.counted_files, coverage.mapped_files, coverage.unrecognized.len(), coverage.unread.len()).unwrap();
     let mut extensions = BTreeMap::<&str, usize>::new();
     for path in &coverage.unrecognized {
         let name = path.rsplit('/').next().unwrap_or(path);

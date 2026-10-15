@@ -47,6 +47,10 @@ pub struct FileRecord {
     pub path: String,
     pub language: String,
     pub kind: Kind,
+    /// Language mapping that supplied `language` for a file the backend does
+    /// not recognize; absent when the backend detected the language.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub language_mapping: Option<String>,
     #[serde(flatten)]
     pub classification: Classification,
     pub counts: Counts,
