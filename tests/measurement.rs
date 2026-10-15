@@ -226,6 +226,24 @@ fn scan_rows(files: &[(&str, &str)]) -> Vec<locmetry::FileRecord> {
     file_records(scan(temp.path(), &config).unwrap().payload, &config).unwrap()
 }
 
+/// Locks Tokei's default, which docs/measurement.md documents: docstrings
+/// count as code, not comments, because locmetry never sets
+/// `treat_doc_strings_as_comments`. Changing it would change Python totals,
+/// so it must be a deliberate, versioned decision.
+#[test]
+fn python_docstrings_count_as_code() {
+    let rows = scan_rows(&[(
+        "lib.py",
+        "def f():\n    \"\"\"Return one.\n\n    More text.\n    \"\"\"\n    # comment\n    return 1\n",
+    )]);
+    let counts = rows[0].counts;
+    assert_eq!(
+        (counts.code, counts.comments, counts.blanks),
+        (6, 1, 0),
+        "all four docstring lines, even the blank one, count as code with def and return"
+    );
+}
+
 #[test]
 fn programming_languages_without_a_kind_list_entry_count_as_source() {
     let rows = scan_rows(&[

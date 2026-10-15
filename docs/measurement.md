@@ -12,6 +12,7 @@
 ## Counting
 
 - Content kind comes from the Tokei language through reviewed data and documentation lists, recorded in the report file as `metadata.kinds`; every other recognized language is source. A code snippet in Markdown remains documentation. Language names unknown to the embedded Tokei stay `other`.
+- Docstrings count as code, as in Tokei's default: locmetry does not set Tokei's `treat_doc_strings_as_comments`, so every line inside a Python docstring, blank ones included, is a code line. This affects the languages with doc strings in Tokei 15.0.0: Python, Cython, Mojo, Raku, Bazel, Snakemake, Pony, and Roc. Doc comments such as Rust `///`, Javadoc, or TSDoc are comments as usual. Counting docstrings as comments would change totals and therefore requires a new configuration `version`.
 - Counters are reconstructed once from original reports and nested blobs; aggregate `Total` or `children` views are not added again. A reported path counts once, even when it contributes multiple languages.
 - `breakdown` rows in the report file are additive. So are the top-level folders of `summary.top_folders` and the terminal table: each covers its whole subtree, and together with the root files they cover every file once. The Markdown folder table lists nested levels, where a parent includes its subfolders, so its rows cannot all be summed together.
 
