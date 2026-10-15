@@ -74,7 +74,7 @@ pub fn render_markdown(
         "Language",
         &summary.totals.source_languages,
     );
-    write!(output, "\n## Folder breakdown\n\nRecursive source code totals to depth {depth}. Parent rows include their children; do not sum all displayed rows. JSON includes direct and recursive totals at every depth. Multi-language files count once physically but contribute to each contained language.\n\n| Folder | Production | Test | Unclassified | Total source code |\n| --- | ---: | ---: | ---: | ---: |\n").unwrap();
+    write!(output, "\n## Folder breakdown\n\nRecursive source code totals to depth {depth}. Parent rows include their children; do not sum all displayed rows. The report file's additive `breakdown` rows cover every depth. Multi-language files count once physically but contribute to each contained language.\n\n| Folder | Production | Test | Unclassified | Total source code |\n| --- | ---: | ---: | ---: | ---: |\n").unwrap();
     for (folder, values) in &summary.folders {
         let totals = &values.recursive;
         if folder.split('/').count() > depth || totals.source.files == 0 {
@@ -96,7 +96,7 @@ pub fn render_markdown(
         .filter(|r| r.kind == Kind::Source && r.classification.purpose == Purpose::Unclassified)
         .collect();
     unknown.sort_by(|a, b| b.counts.code.cmp(&a.counts.code).then(a.path.cmp(&b.path)));
-    writeln!(output, "\n## Source requiring review\n\n{} files. Largest 25 below; all file records and rule provenance are in JSON.\n\n| Path | Code | Category |\n| --- | ---: | --- |", unknown.len()).unwrap();
+    writeln!(output, "\n## Source requiring review\n\n{} files. Largest 25 below; the report file's `review` list names all of them with their rule.\n\n| Path | Code | Category |\n| --- | ---: | --- |", unknown.len()).unwrap();
     for row in unknown.into_iter().take(25) {
         writeln!(
             output,

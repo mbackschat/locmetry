@@ -16,7 +16,7 @@ The product rests on three pillars:
 - Optional: additional counting adapters, custom content-kind overrides, and configuration self-checks that assert expected classifications for named paths without requiring those files to exist.
 - Excluded initially: a new counting engine, a generic plugin framework, and semantic splitting of production/tests within individual files.
 
-The configuration below is implemented; it replaced provisional JSON/regex profiles after strict translations reproduced every reviewed classification. Locmetry is implemented in Rust with the Tokei library embedded. The installed executable must not require Python, Git, a separate Tokei executable, or a separately installed Rust runtime. Homebrew Rust dependencies are build-only; release bottles should require no runtime formula dependencies. [Tokei integration and Homebrew distribution](docs/tokei-integration.md) records the implemented boundary and planned packaging.
+Locmetry is a Rust executable with the Tokei library embedded. The installed executable must not require Python, Git, a separate Tokei executable, or a separately installed Rust runtime; Rust is a build-only Homebrew dependency, and the formula has no runtime formula dependencies. [Tokei integration and distribution](docs/tokei-integration.md) records the backend boundary and packaging.
 
 ## Measurement Model
 
@@ -31,7 +31,7 @@ Report code, comments, blanks, and total lines separately. Preserve each file's 
 
 ## Project Configuration
 
-Use `.locmetryrc` in TOML. Discover it in the selected scan root, which defaults to the current directory; an explicit `--config` path may select a different file without changing that root. Without a discovered or explicit configuration, built-in settings apply; an explicit configuration that cannot be read fails. All patterns remain relative to the scan root. Project configuration overrides built-in settings; explicit CLI settings override project settings: `--hidden BOOL`, `--respect-ignore-files BOOL`, and repeatable `--exclude GLOB`, which adds to the configured exclusions.
+Use `.locmetryrc` in TOML. Discover it in the selected scan root, which defaults to the current directory; an explicit `--config` path may select a different file without changing that root. Without a discovered or explicit configuration, built-in settings apply; an explicit configuration that cannot be read fails. All patterns remain relative to the scan root. Project configuration overrides built-in settings; explicit CLI settings override project settings: `--hidden BOOL`, `--respect-ignore-files BOOL`, and repeatable `--exclude GLOB`, which adds to the configured exclusions. A configuration file ending in `.json`, the retired JSON/regex profile format, is rejected with a hint to translate it to TOML.
 
 This example is synthetic:
 
@@ -121,15 +121,16 @@ Explicit exclusions still apply when ignore files are disabled. Removing a built
 
 ## Reporting and Coverage
 
-Reports serve aggregation: totals by purpose, category, kind, language, and folder. Count original file reports and embedded statistics once. A folder's recursive totals contain its direct files plus its subfolders' recursive totals, so displayed recursive rows are not all additive.
+Reports serve aggregation: totals by purpose, category, kind, language, and folder. Count original file reports and embedded statistics once. `breakdown` rows are additive; the Markdown folder table and `summary.top_folders` show recursive totals, in which a parent includes its subfolders, so their rows are not all additive.
 
-`--format json` (default) prints a compact JSON headline to stdout: the report without `review`, `breakdown`, `files`, `metadata.config`, `metadata.kinds`, and `metadata.coverage.unrecognized`. `--format markdown` prints a human report instead; `--depth N` (default 2) limits its folder table. `--output FILE` writes the full report to one file outside the scan root, and the headline names it as `report`; `--output -` prints the full report to stdout instead of the headline. `--files` adds per-file records to the report for rule debugging. Diagnostics go to stderr. Exit code 0 means a complete report, 2 a partial report whose missing counts come from unreadable files, and 1 a failure without a report.
+`--format json` (default) prints a compact JSON headline to stdout: the report without `review`, `breakdown`, `files`, `metadata.config`, `metadata.kinds`, and `metadata.coverage.unrecognized`. `--format markdown` prints a human report instead; `--depth N` (default 2) limits its folder table. `--output FILE` writes the full report to one file outside the scan root, and the headline names it as `report`; `--output -` prints the full report to stdout instead of the headline and cannot be combined with `--format markdown`. `--files` adds per-file records to the report for rule debugging. Diagnostics go to stderr. Exit code 0 means a complete report, 2 a partial report whose missing counts come from unreadable files, and 1 a failure without a report, including invalid command-line usage.
 
 JSON schema version `1`:
 
 | Field | Contents |
 | --- | --- |
 | `schema_version`, `project` | `"1"` and the scan root's directory name. |
+| `report` | Headline only, with `--output FILE`: the report file's path. |
 | `metadata` | `root`, `measured_at_unix_seconds`, `locmetry_version`, `backend`, `backend_inaccurate`, `backend_configuration`; `scope` (effective hidden, ignore-file, symlink, and `exclude` settings); `kinds` (language lists per content kind); `coverage` (`selected_files`, `counted_files`, `mapped_files`, `unrecognized_files`, `unrecognized_extensions`, the `unrecognized` paths, and the `unread` paths); `config_path`; and `config`, the effective configuration including `builtin_conventions` and `builtin_language_mappings`. |
 | `summary` | Totals: `all_counted` (every kind) and `source`; `by_kind_purpose` keyed `kind:purpose`; `source_purpose`, `source_categories` keyed `purpose:category`, and `source_languages`, all restricted to `kind = source`; and `top_folders`, source code lines per purpose for each top-level folder (`.` holds files directly in the root). |
 | `review` | Unclassified source files, largest first: `path`, `language`, `category`, `rule`, `code`, `lines`. These are the files a configuration may still need to classify. |
@@ -142,4 +143,4 @@ Surface known counting-coverage limitations: report how many files were selected
 
 ## Sensitive Analysis
 
-Keep measured-project identities, paths, configurations, counts, raw responses, and analyses exclusively in Git-ignored `docs/research/local/`. Public documentation and fixtures must be generic or synthetic. The local measurement restriction is a development-data policy, not a requirement that users of a released CLI write reports into this repository.
+Public documentation and fixtures are synthetic; [CLAUDE.md](CLAUDE.md#sensitive-analysis) governs this repository's real measurements. That is a development-data policy: users of the released CLI may write reports anywhere outside the scan root.

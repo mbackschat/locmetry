@@ -1,20 +1,19 @@
+<img src="docs/assets/locmetry.webp" alt="locmetry logo" width="96">
+
 # locmetry
 
-`locmetry` measures codebases using Tokei, adding configurable test/production classification, exclusions, folder totals, agent-friendly JSON, and readable Markdown reports.
+`locmetry` measures codebases with embedded Tokei, adding configurable test/production classification, exclusions, language mappings for unrecognized files, folder breakdowns, agent-friendly JSON, and readable Markdown.
 
-It is written in Rust and embeds Tokei 15.0.0 as a library. The installed executable needs neither Python, Git, a separate Tokei installation, nor a Rust runtime installation. Homebrew needs Rust only when building from source; bottles contain the compiled executable.
+It is a single Rust executable with Tokei 15.0.0 compiled in, so it needs no Python, Git, separate Tokei installation, or Rust runtime. Releases target macOS arm64 and Linux x86_64 and aarch64.
 
 ## Build and run
 
 ```sh
-cargo build --release --locked
-./target/release/locmetry --help
-cargo test --locked
-cargo fmt --all --check
-cargo clippy --locked --all-targets -- -D warnings
+cargo install --locked --path .   # or: cargo build --release --locked
+locmetry --help
 ```
 
-Use a Rust toolchain and a platform C build toolchain for development.
+Development needs a Rust toolchain; [CLAUDE.md](CLAUDE.md) lists the test, format, and lint commands.
 
 ## Usage
 
@@ -25,17 +24,17 @@ locmetry --exclude 'generated/**' --hidden false --format markdown
 locmetry --output /tmp/measurement.json         # headline on stdout, full report in one file
 ```
 
-The scan root defaults to the current directory. Configuration is the TOML `.locmetryrc` contract in [PRODUCT.md](PRODUCT.md); without one, built-in defaults apply, including default exclusions and built-in test conventions. `--exclude`, `--hidden`, and `--respect-ignore-files` override project settings. JSON is the default stdout format; `--format markdown` produces human-readable output, with `--depth N` folder levels. Stdout JSON is a small headline; `--output FILE` writes the full report (summary, review list, and an aggregated breakdown table) to one file outside the scan root, `--output -` prints it instead, and `--files` adds per-file records. Exit code 2 marks a partial report with unreadable files. [PRODUCT.md](PRODUCT.md#reporting-and-coverage) documents the JSON schema. [Reports, limits, and private regression](poc/README.md) describes what a measurement contains.
+Without a `.locmetryrc`, built-in exclusions, test and build conventions, and language mappings apply. Stdout is a compact JSON headline; `--output FILE` writes the full report with a review list and an additive breakdown table, and `--files` adds per-file records. Exit code 0 means a complete report, 2 a partial one with unreadable files, and 1 a failure. [PRODUCT.md](PRODUCT.md) specifies the configuration, options, and JSON schema.
 
 ## Documentation
 
-- [Product vision and requirements](PRODUCT.md): scope, configuration contract, and guarantees.
-- [Tokei integration and Homebrew distribution](docs/tokei-integration.md): embedded backend, dependencies, and packaging.
+- [Product vision and requirements](PRODUCT.md): scope, configuration contract, report schema, and guarantees.
+- [Measurement semantics and limits](docs/measurement.md): selection and counting details, known limits, and the private regression.
+- [Tokei integration and distribution](docs/tokei-integration.md): embedded backend, release binaries, and the Homebrew formula.
 - [Research](docs/research/README.md): counter capabilities and classification findings.
-- [Reports, limits, and private regression](poc/README.md): report contents, known limits, and the private regression.
-- [Development plan](PLAN.md): remaining work and acceptance evidence.
+- [Development plan](PLAN.md): remaining work and completion evidence.
 - [Repository guidelines](CLAUDE.md): contributor conventions; `AGENTS.md` links to this file.
 
-## Sensitive measurements
+## License
 
-Keep measured-project identities, paths, rules, counts, raw statistics, and reports exclusively in Git-ignored `docs/research/local/`. Public documentation and tests use synthetic examples. The CLI accepts general output paths, so contributors must select this private directory explicitly; never force-add it.
+Licensed under either the [Apache License, Version 2.0](LICENSE-APACHE) or the [MIT License](LICENSE-MIT), at your option.

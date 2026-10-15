@@ -227,7 +227,7 @@ fn scan_rows(files: &[(&str, &str)]) -> Vec<locmetry::FileRecord> {
 }
 
 #[test]
-fn programming_languages_beyond_the_poc_set_count_as_source() {
+fn programming_languages_without_a_kind_list_entry_count_as_source() {
     let rows = scan_rows(&[
         ("main.go", "package main\n"),
         ("lib.c", "int x;\n"),

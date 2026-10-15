@@ -15,7 +15,7 @@ pub const CONFIG_FILE: &str = ".locmetryrc";
 /// Provenance of files that no entry matched.
 const FALLBACK: &str = "fallback";
 
-/// Provenance prefix of built-in test conventions.
+/// Provenance prefix of built-in test and build conventions.
 const BUILTIN: &str = "builtin:";
 
 const DEFAULT_EXCLUDES: &[&str] = &["**/.git/**", "**/node_modules/**", "**/.build/**"];
@@ -135,7 +135,7 @@ pub struct Classification {
     pub rule: String,
 }
 
-/// Selection settings shared by both configuration formats.
+/// Selection settings of the `[scope]` table.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct ScopeSettings {

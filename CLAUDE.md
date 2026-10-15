@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 
-`locmetry` is a Rust CLI embedding Tokei. [src](src) contains configuration, backend integration, aggregation, output, and the CLI entry point. [tests](tests) contains synthetic integration tests and an opt-in private regression guard. [PRODUCT.md](PRODUCT.md) defines the product contract; [PLAN.md](PLAN.md) tracks remaining tasks, gaps, and acceptance criteria. Consult the plan before implementation and update it with verified progress. [README](README.md) describes CLI usage; [reports and private regression](poc/README.md) documents report contents, limits, and the private regression. [Research](docs/research/README.md) and [integration and packaging](docs/tokei-integration.md) explain design decisions. Edit this canonical file; preserve `AGENTS.md` as its relative symlink.
+`locmetry` is a Rust CLI embedding Tokei. [src](src) contains configuration, backend integration, aggregation, output, and the CLI entry point. [tests](tests) contains synthetic integration tests and an opt-in private regression guard. [PRODUCT.md](PRODUCT.md) defines the product contract; [PLAN.md](PLAN.md) tracks remaining tasks, gaps, and acceptance criteria. Consult the plan before implementation and update it with verified progress. [README](README.md) describes CLI usage; [measurement semantics](docs/measurement.md) documents selection details, limits, and the private regression. [Research](docs/research/README.md) and [integration and distribution](docs/tokei-integration.md) explain design decisions. [.github/workflows](.github/workflows) holds CI and the release build; [packaging/homebrew](packaging/homebrew) holds the formula template. Edit this canonical file; preserve `AGENTS.md` as its relative symlink.
 
 ## Build, Test, and Development Commands
 
@@ -12,7 +12,7 @@
 - `cargo clippy --locked --all-targets -- -D warnings`: lint every target.
 - `cargo run --locked -- --help`: inspect CLI usage.
 
-Keep [Cargo.lock](Cargo.lock) with the application. Tokei is embedded with its default CLI feature disabled; do not add Python, Git, or Tokei executable requirements. Homebrew Rust dependencies are build-only. Use `git status --short` and `git diff --check` before submission.
+Keep [Cargo.lock](Cargo.lock) with the application. Tokei is embedded with its default CLI feature disabled; do not add Python, Git, or Tokei executable requirements. Homebrew Rust dependencies are build-only, and Linux release binaries are static musl builds. Use `git status --short` and `git diff --check` before submission.
 
 ## Coding Style & Naming Conventions
 
@@ -20,7 +20,7 @@ Use rustfmt, four-space indentation, `snake_case` functions/modules, and `Pascal
 
 ## Testing Guidelines
 
-Use red/green TDD. Name tests after observable behavior and guard precedence, scope boundaries, embedded-language deduplication, and folder reconciliation. No coverage threshold is set. Public tests must run without external executables. Private regression instructions are in [reports and private regression](poc/README.md). Keep reference projects read-only; do not run their builds or tests merely to count files.
+Use red/green TDD. Name tests after observable behavior and guard precedence, scope boundaries, embedded-language deduplication, and folder reconciliation. No coverage threshold is set. Public tests must run without external executables. Private regression instructions are in [measurement semantics](docs/measurement.md#private-regression). Keep reference projects read-only; do not run their builds or tests merely to count files.
 
 ## Sensitive Analysis
 
