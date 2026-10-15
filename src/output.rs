@@ -512,24 +512,22 @@ fn counted(count: u64, noun: &str) -> String {
 /// Column groups of a terminal table and the column that carries Code.
 ///
 /// The purpose columns split Code, while Comments and Blanks sit beside it, so
-/// separators and a bold Code column show which numbers belong together.
+/// separators and an accented Code column show which numbers belong together.
 struct Layout {
     /// Columns preceded by a `│` separator.
     breaks: &'static [usize],
-    /// Column shown in bold when emphasis is on.
+    /// Column carrying the primary metric.
     strong: Option<usize>,
+    secondary: &'static [usize],
 }
 
 /// Aligned plain-text table: the first column left-aligned, the others right.
-/// A caption line labels the columns from index `group.0` on; rule lines
-/// separate the header, and the body from an optional total row. With
-/// a theme, headings and the strong column are emphasized; padding is applied first, so the
-/// escape codes never shift alignment.
+/// Padding precedes styling so escape codes never shift alignment. Column names
+/// and legends carry the grouping semantics without a redundant caption row.
 fn text_table(
     header: &[&str],
     body: &[Vec<String>],
     total: Option<Vec<String>>,
-    group: (usize, &str),
     layout: &Layout,
     theme: Theme,
 ) -> String {
@@ -546,7 +544,7 @@ fn text_table(
         true => " │ ",
         false => "  ",
     };
-    let line = |row: &[String], heading: bool| {
+    let line = |row: &[String], row_role: Option<Role>| {
         let mut text = String::from(" ");
         for (column, (value, width)) in row.iter().zip(&widths).enumerate() {
             if column > 0 {
@@ -556,10 +554,17 @@ fn text_table(
                 0 => format!("{value:<width$}"),
                 _ => format!("{value:>width$}"),
             };
-            text += &match (heading || layout.strong == Some(column), value.as_str()) {
-                (true, _) => theme.paint(Role::Heading, &cell),
-                (false, "-") => theme.paint(Role::Muted, &cell),
-                _ => cell,
+            let role = match (row_role, column, value.as_str()) {
+                (Some(role), _, _) => Some(role),
+                (None, 0, _) => Some(Role::Information),
+                (None, _, "-" | "0" | "0.00" | "0.0%") => Some(Role::Muted),
+                _ if layout.strong == Some(column) => Some(Role::Primary),
+                _ if layout.secondary.contains(&column) => Some(Role::Secondary),
+                _ => None,
+            };
+            text += &match role {
+                Some(role) => theme.paint(role, &cell),
+                None => cell,
             };
         }
         text + "\n"
@@ -575,22 +580,14 @@ fn text_table(
         rule += &"─".repeat(*width);
     }
     rule += "\n";
-    let (first, caption) = group;
-    let indent = 1
-        + widths[..first].iter().sum::<usize>()
-        + (1..=first)
-            .map(|column| gap(column).chars().count())
-            .sum::<usize>();
     let rule = theme.paint(Role::Muted, &rule);
-    let mut output = format!("{:indent$}{}\n", "", theme.paint(Role::Heading, caption))
-        + &line(&header, true)
-        + &rule;
+    let mut output = line(&header, Some(Role::Heading)) + &rule;
     for row in body {
-        output += &line(row, false);
+        output += &line(row, None);
     }
     if let Some(total) = total {
         output += &rule;
-        output += &line(&total, true);
+        output += &line(&total, Some(Role::Primary));
     }
     output
 }
@@ -731,11 +728,8 @@ pub fn render_table_with_theme(
         summary.totals.purpose(purpose).code
     }));
     let mut output = format!(
-        "\n {}\n\n",
-        theme.paint(
-            Role::Heading,
-            &format!("{project}: source code lines by purpose")
-        )
+        " {}\n",
+        theme.paint(Role::Primary, &format!("{project} · Source code"))
     );
     output += &text_table(
         &[
@@ -750,10 +744,10 @@ pub fn render_table_with_theme(
         ],
         &body,
         Some(total),
-        (5, "Code by purpose"),
         &Layout {
             breaks: &[3, 5],
             strong: Some(2),
+            secondary: &[1, 3, 4],
         },
         theme,
     );
@@ -769,10 +763,10 @@ pub fn render_table_with_theme(
             &REPOSITORY_HEADER,
             &body,
             Some(total),
-            (2, "Code by purpose"),
             &Layout {
                 breaks: &[2, 5],
                 strong: Some(1),
+                secondary: &[5, 6],
             },
             theme,
         );
@@ -815,10 +809,10 @@ pub fn render_table_with_theme(
             ],
             &body,
             Some(total),
-            (2, "Code by purpose"),
             &Layout {
                 breaks: &[2, 5],
                 strong: Some(1),
+                secondary: &[5],
             },
             theme,
         );
@@ -841,10 +835,10 @@ pub fn render_table_with_theme(
                 &["Category", "Files", "Code"],
                 &body,
                 None,
-                (1, "Source code"),
                 &Layout {
                     breaks: &[],
                     strong: Some(2),
+                    secondary: &[1],
                 },
                 theme,
             );
@@ -1110,6 +1104,11 @@ mod tests {
                 RowOrder::Name,
                 false,
             );
+            assert!(
+                plain.starts_with(" example · Source code\n Language"),
+                "{plain}"
+            );
+            assert!(!plain.contains("Code by purpose"));
             assert!(styled.contains(&format!("\x1b[90m{LANGUAGE_LEGEND}\x1b[0m")));
             if !members.is_empty() {
                 assert!(styled.contains(&format!("\x1b[90m{REPOSITORY_LEGEND}\x1b[0m")));
@@ -1118,6 +1117,9 @@ mod tests {
                 styled
                     .replace("\x1b[1m", "")
                     .replace("\x1b[90m", "")
+                    .replace("\x1b[1;36m", "")
+                    .replace("\x1b[36m", "")
+                    .replace("\x1b[2m", "")
                     .replace("\x1b[0m", ""),
                 plain
             );
@@ -1139,6 +1141,32 @@ mod tests {
         }
     }
 
+    #[test]
+    fn table_shades_secondary_counts_and_zeros_without_judging_purpose() {
+        let table = text_table(
+            &["Name", "Code", "Comments", "Blanks", "Unclassified"],
+            &[vec![
+                "api".into(),
+                "12".into(),
+                "3".into(),
+                "0".into(),
+                "4".into(),
+            ]],
+            None,
+            &Layout {
+                breaks: &[2, 4],
+                strong: Some(1),
+                secondary: &[2, 3],
+            },
+            Theme::TERMINAL,
+        );
+        assert!(table.contains("\x1b[36mapi \x1b[0m"), "{table}");
+        assert!(table.contains("\x1b[2m       3\x1b[0m"), "{table}");
+        assert!(table.contains("\x1b[90m     0\x1b[0m"), "{table}");
+        assert!(table.contains("           4\n"), "{table}");
+        assert!(!table.contains("\x1b[33m"));
+    }
+
     /// Bold must not shift alignment: without its escape codes, an
     /// emphasized table equals the plain one.
     #[test]
@@ -1146,6 +1174,7 @@ mod tests {
         let layout = Layout {
             breaks: &[2],
             strong: Some(1),
+            secondary: &[],
         };
         let body = [vec!["a".to_string(), "12".into(), "3".into()]];
         let total = Some(vec!["Total".to_string(), "12".into(), "3".into()]);
@@ -1153,7 +1182,6 @@ mod tests {
             &["Name", "Code", "Test"],
             &body,
             total.clone(),
-            (2, "Split"),
             &layout,
             Theme::PLAIN,
         );
@@ -1161,7 +1189,6 @@ mod tests {
             &["Name", "Code", "Test"],
             &body,
             total,
-            (2, "Split"),
             &layout,
             Theme::TERMINAL,
         );
@@ -1170,10 +1197,13 @@ mod tests {
             "separators should recede: {bold}"
         );
         assert!(bold.contains("\x1b[1mCode\x1b[0m"), "{bold}");
-        assert!(bold.contains("\x1b[1m  12\x1b[0m"), "{bold}");
+        assert!(bold.contains("\x1b[1;36m  12\x1b[0m"), "{bold}");
         assert_eq!(
             bold.replace("\x1b[1m", "")
                 .replace("\x1b[90m", "")
+                .replace("\x1b[1;36m", "")
+                .replace("\x1b[36m", "")
+                .replace("\x1b[2m", "")
                 .replace("\x1b[0m", ""),
             plain
         );

@@ -226,10 +226,7 @@ fn table_format_splits_source_code_by_language_and_purpose() {
     ]);
     let output = run(&temp.path().join("project"), &["--format", "table"]);
     assert!(output.status.success());
-    let expected = "
- project: source code lines by purpose
-
-                                            Code by purpose
+    let expected = " project · Source code
  Language  Files  Code │ Comments  Blanks │ Production  Test  Unclassified
  ──────────────────────┼──────────────────┼───────────────────────────────
  Rust          3     4 │        1       0 │          2     2             0
@@ -238,7 +235,6 @@ fn table_format_splits_source_code_by_language_and_purpose() {
  Total         4     5 │        1       0 │          2     2             1
  Code + Comments + Blanks = all lines; Production + Test + Unclassified = Code.
 
-                Code by purpose
  Folder  Code │ Production  Test  Unclassified │ Test/prod
  ─────────────┼────────────────────────────────┼──────────
  src        2 │          2     0             0 │      0.00

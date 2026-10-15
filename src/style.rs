@@ -3,6 +3,8 @@
 #[derive(Clone, Copy)]
 pub enum Role {
     Heading,
+    Primary,
+    Secondary,
     Muted,
     Increase,
     Decrease,
@@ -19,6 +21,8 @@ struct Style(&'static str, &'static str);
 #[derive(Clone, Copy)]
 pub struct Theme {
     heading: Style,
+    primary: Style,
+    secondary: Style,
     muted: Style,
     increase: Style,
     decrease: Style,
@@ -33,6 +37,8 @@ const BOLD: Style = Style("**", "**");
 impl Theme {
     pub const PLAIN: Self = Self {
         heading: PLAIN,
+        primary: PLAIN,
+        secondary: PLAIN,
         muted: PLAIN,
         increase: PLAIN,
         decrease: PLAIN,
@@ -42,6 +48,8 @@ impl Theme {
     };
     pub const TERMINAL: Self = Self {
         heading: Style("\x1b[1m", "\x1b[0m"),
+        primary: Style("\x1b[1;36m", "\x1b[0m"),
+        secondary: Style("\x1b[2m", "\x1b[0m"),
         muted: Style("\x1b[90m", "\x1b[0m"),
         increase: Style("\x1b[36m", "\x1b[0m"),
         decrease: Style("\x1b[35m", "\x1b[0m"),
@@ -51,6 +59,7 @@ impl Theme {
     };
     pub const MARKDOWN: Self = Self {
         heading: BOLD,
+        primary: BOLD,
         muted: Style("*", "*"),
         information: BOLD,
         warning: BOLD,
@@ -69,6 +78,8 @@ impl Theme {
     pub fn paint(self, role: Role, text: &str) -> String {
         let Style(start, end) = match role {
             Role::Heading => self.heading,
+            Role::Primary => self.primary,
+            Role::Secondary => self.secondary,
             Role::Muted => self.muted,
             Role::Increase => self.increase,
             Role::Decrease => self.decrease,

@@ -22,10 +22,7 @@ Run `locmetry` in a project. For the [sample project](#a-tour-of-a-sample-projec
 
 ```text
 $ locmetry
-
- acme-orders: source code lines by purpose
-
-                                              Code by purpose
+ acme-orders · Source code
  Language    Files  Code │ Comments  Blanks │ Production  Test  Unclassified
  ────────────────────────┼──────────────────┼───────────────────────────────
  Kotlin          6    67 │        2      16 │         51    16             0
@@ -37,7 +34,6 @@ $ locmetry
  Total          12   129 │        7      30 │         94    26             9
  Code + Comments + Blanks = all lines; Production + Test + Unclassified = Code.
 
-                      Code by purpose
  Folder        Code │ Production  Test  Unclassified │ Test/prod
  ───────────────────┼────────────────────────────────┼──────────
  backend         65 │         49    16             0 │      0.33
@@ -182,7 +178,6 @@ With the same selected file content, effective policy and Locmetry version, coun
 
 ```text
 
-                    Code by purpose
  Repository  Code │ Production  Test  Unclassified │ Test/prod   Share
  ─────────────────┼────────────────────────────────┼──────────────────
  api           14 │          6     8             0 │      1.33   51.9%
@@ -660,7 +655,7 @@ printf '%s\n' "$report" | jq -r '
 
 The table and Markdown group thousands with commas, such as `12,345`, while JSON keeps plain integers for scripts.
 
-Terminal output uses gray legends, bold structure, cyan/magenta net changes and yellow/red warning/error labels. Use `NO_COLOR=1` to disable terminal styling; redirected output stays plain. Markdown uses italic legends and bold emphasis. See [human presentation](docs/PRODUCT.md#human-presentation) for the stream policy and theme boundary.
+Terminal tables use compact titles, cyan row labels, bold cyan Code figures and totals, dim secondary figures, and gray zeros, separators and legends. Net changes use cyan/magenta; warning/error labels use yellow/red. Use `NO_COLOR=1` to disable terminal styling; redirected output stays plain. Markdown uses italic legends and bold emphasis. See [human presentation](docs/PRODUCT.md#human-presentation) for the stream policy and theme boundary.
 
 ## Compared with line counters
 

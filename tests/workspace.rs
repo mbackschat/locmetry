@@ -234,10 +234,7 @@ fn workspace_notes_name_the_member_of_each_finding() {
     let args = ["workspace", "--root", "web", "--root", "api", "--format"];
     let table =
         String::from_utf8(locmetry(temp.path(), &[&args[..], &["table"]].concat()).stdout).unwrap();
-    assert!(
-        table.contains(" api + web: source code lines by purpose"),
-        "{table}"
-    );
+    assert!(table.contains(" api + web · Source code"), "{table}");
     assert!(
         table.contains("Entries that decided no file: ghost (web)."),
         "{table}"
