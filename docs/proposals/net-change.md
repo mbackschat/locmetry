@@ -1,6 +1,6 @@
 # Net Change Between Measurement Reports
 
-Status: proposal for discussion, not implemented. The owner has confirmed the term **net change** and requires additions and removals of packages, folders, and workspace roots to be supported. Other choices below are recommendations. [PRODUCT.md](../PRODUCT.md) remains the supported contract; its exclusion of comparisons over time would change only when this proposal is accepted and implemented. [PLAN.md](../PLAN.md) indexes this proposal.
+Status: planned in the owner's accepted [work sequence](../plans/measurement-quality-and-net-change.md), not implemented. The owner has confirmed the term **net change** and requires additions and removals of packages, folders, and workspace roots to be supported. Other choices below remain recommendations to resolve at the relevant work-plan stage. [PRODUCT.md](../PRODUCT.md) remains the supported contract; its exclusion of comparisons over time changes when the corresponding design is accepted and implemented. [PLAN.md](../PLAN.md) indexes this proposal.
 
 ## Purpose and Scope
 

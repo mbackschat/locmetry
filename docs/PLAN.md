@@ -2,6 +2,12 @@
 
 [PRODUCT.md](PRODUCT.md) owns requirements, including optional and excluded scope; this file tracks remaining work and its completion evidence. Implemented work is recorded in Git history. Unchecked items are planned work, not supported features.
 
+## Measurement Quality and Net Change — Next
+
+Sequence accepted 2026-10-15. The [actionable work plan](plans/measurement-quality-and-net-change.md) owns detailed tasks, retained rationale, source provenance, acceptance checks, review checkpoints and live stage status. Implement in this order: notebook correctness, documentation corrections, shared report/schema contracts, net change, then selection explanations. Implementation has not started; optional follow-ups remain conditional in that plan.
+
+Consult the detailed plan before starting a stage and record verified completion there. Update affected documentation with each implementation checkpoint; S2 is the wider documentation audit, not a reason to delay documentation for S1. [PRODUCT.md](PRODUCT.md) continues to describe supported behavior; the [net-change proposal](proposals/net-change.md) remains the detailed design reference.
+
 ## Release for macOS and Linux — Next
 
 Decided 2026-10-15: licence MIT (dual MIT OR Apache-2.0 up to v0.1.1), repository `github.com/mbackschat/locmetry`, an own tap `mbackschat/homebrew-tap` before any homebrew-core submission, and targets macOS arm64 plus Linux x86_64 and aarch64. [Tokei integration and distribution](tokei-integration.md#distribution) describes the release path.
@@ -49,7 +55,7 @@ Done 2026-10-15: reproduced Tokei 15.0.0's global-quote bug with independent syn
 
 ## Proposals — Under Discussion
 
-- [Net change between measurement reports](proposals/net-change.md): compare saved single-root or workspace reports, expose the comparison schema through the shared contract mechanism, and show packages, folders, and roots entering or leaving the measurement. The owner confirmed the term “net change” and topology-change support; the remaining design is proposed, not implemented.
+- [Net change between measurement reports](proposals/net-change.md): compare saved single-root or workspace reports, expose the comparison schema through the shared contract mechanism, and show packages, folders, and roots entering or leaving the measurement. The owner confirmed the term, topology support and [work sequence](plans/measurement-quality-and-net-change.md); detailed interface choices remain proposed until resolved at their stage, and the feature is not implemented.
 
 ## Ideas — Not Scheduled
 

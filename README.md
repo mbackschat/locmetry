@@ -573,6 +573,7 @@ Known limits: classification is per file, so a file mixing production code and i
 - [Architecture and distribution](docs/tokei-integration.md): embedded counting engine, release binaries, and the Homebrew formula.
 - [Research](docs/research/README.md): counter capabilities and classification findings.
 - [Development plan](docs/PLAN.md): remaining work and completion evidence.
+- [Measurement quality and net change work plan](docs/plans/measurement-quality-and-net-change.md): accepted sequence, rationale, implementation checks and review checkpoints; features remain planned until delivered.
 - [Repository guidelines](CLAUDE.md): contributor conventions and checks; `AGENTS.md` links to this file.
 
 ## License

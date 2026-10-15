@@ -18,6 +18,8 @@ Keep [Cargo.lock](Cargo.lock) with the application. Tokei is embedded with its d
 
 Use rustfmt, four-space indentation, `snake_case` functions/modules, and `PascalCase` types. Prefer enums and `match` for finite alternatives. Keep changes focused and avoid speculative adapter frameworks. Write Markdown with one paragraph per physical line and regular links to other documents.
 
+Keep documentation current in every implementation checkpoint: update README workflows, the supported PRODUCT contract, measurement semantics, executable schema descriptions and relevant guides when behavior changes. Add a focused document when the material no longer fits, and link it from the appropriate index. Update [PLAN.md](docs/PLAN.md) and its active work plan with verified progress, remaining gaps and material rationale; preserve source provenance. Keep proposed behavior distinct from shipped guarantees. The [measurement quality and net change plan](docs/plans/measurement-quality-and-net-change.md) owns the current accepted sequence and stage review criteria.
+
 ## Testing Guidelines
 
 Use red/green TDD. Name tests after observable behavior and guard precedence, scope boundaries, embedded-language deduplication, and folder reconciliation. No coverage threshold is set. Public tests must run without external executables. Private regression instructions are in [measurement semantics](docs/measurement.md#private-regression). Keep reference projects read-only; do not run their builds or tests merely to count files.
