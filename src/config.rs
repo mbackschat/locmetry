@@ -515,8 +515,9 @@ pub struct Policy {
     detect_modules: bool,
     /// Modules adopted from the scan; empty when detection is disabled.
     modules: Vec<Module>,
-    /// One production entry per detector, after rules and before the fallback.
-    module_entries: Vec<Entry>,
+    /// One production entry per adopted module, with the module's directory;
+    /// applied after rules and before the fallback.
+    module_entries: Vec<(String, Entry)>,
     fallback: (Purpose, String),
     /// Project mappings first, then built-in ones.
     languages: Vec<LanguageMapping>,
@@ -721,23 +722,17 @@ impl Policy {
         if !self.detect_modules {
             return Ok(());
         }
-        let mut sources = std::collections::BTreeMap::<&str, Vec<&str>>::new();
-        for module in modules {
-            sources
-                .entry(module.detector)
-                .or_default()
-                .extend(module.sources.iter().map(String::as_str));
-        }
-        self.module_entries = sources
-            .into_iter()
-            .map(|(detector, globs)| {
-                Ok(Entry {
-                    id: format!("{BUILTIN}{detector}-module"),
-                    matcher: glob_set(globs)?,
+        self.module_entries = modules
+            .iter()
+            .map(|module| {
+                let entry = Entry {
+                    id: format!("{BUILTIN}{}-module", module.detector),
+                    matcher: glob_set(module.sources.iter().map(String::as_str))?,
                     kinds: None,
                     purpose: Purpose::Production,
                     category: "implementation".into(),
-                })
+                };
+                Ok((module.path.clone(), entry))
             })
             .collect::<Result<_>>()?;
         self.modules = modules.to_vec();
@@ -750,24 +745,46 @@ impl Policy {
     }
 
     pub fn classify(&self, path: &str, kind: Kind) -> Classification {
-        let stages = [
-            &self.overrides,
-            &self.conventions,
-            &self.rules,
-            &self.module_entries,
-        ];
-        match stages
+        [&self.overrides, &self.conventions, &self.rules]
             .into_iter()
             .flatten()
             .find(|entry| entry.matches(path, kind))
-        {
-            Some(entry) => entry.classification(),
-            None => Classification {
+            .map(Entry::classification)
+            .or_else(|| self.module_classification(path, kind))
+            .unwrap_or_else(|| Classification {
                 purpose: self.fallback.0,
                 category: self.fallback.1.clone(),
                 rule: FALLBACK.into(),
-            },
-        }
+            })
+    }
+
+    /// Classification by the innermost module containing `path`, as build
+    /// tools treat nested projects: an outer module's layout never claims a
+    /// nested module's files, while build systems sharing the innermost
+    /// directory combine their layouts.
+    fn module_classification(&self, path: &str, kind: Kind) -> Option<Classification> {
+        let depth = |directory: &str| match directory {
+            "." => 0,
+            _ => directory.split('/').count(),
+        };
+        let contains = |directory: &str| {
+            directory == "."
+                || path
+                    .strip_prefix(directory)
+                    .is_some_and(|rest| rest.starts_with('/'))
+        };
+        let innermost = self
+            .module_entries
+            .iter()
+            .map(|(directory, _)| directory.as_str())
+            .filter(|directory| contains(directory))
+            .max_by_key(|directory| depth(directory))?;
+        self.module_entries
+            .iter()
+            .filter(|(directory, _)| directory == innermost)
+            .map(|(_, entry)| entry)
+            .find(|entry| entry.matches(path, kind))
+            .map(Entry::classification)
     }
 
     pub fn is_excluded(&self, path: &str) -> bool {

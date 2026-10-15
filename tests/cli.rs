@@ -683,6 +683,52 @@ fn declared_modules_make_their_source_production() {
     );
 }
 
+/// The innermost module decides: an outer module's layout never claims files
+/// of a module nested inside it, while build systems sharing one folder
+/// combine their layouts.
+#[test]
+fn the_innermost_module_decides_nested_layouts() {
+    let temp = project(&[
+        ("package.json", "{}\n"),
+        ("src/index.ts", "let a = 1;\n"),
+        ("src/plugins/fancy/package.json", "{}\n"),
+        ("src/plugins/fancy/src/fancy.ts", "let b = 1;\n"),
+        ("src/plugins/fancy/scripts/build.ts", "let c = 1;\n"),
+        ("app/build.gradle.kts", "plugins {}\n"),
+        ("app/package.json", "{}\n"),
+        ("app/src/main/kotlin/App.kt", "fun main() {}\n"),
+        ("app/src/web/ui.ts", "let d = 1;\n"),
+    ]);
+    let (success, document, stderr) = report(&temp.path().join("project"), &[]);
+    assert!(success, "{stderr}");
+    let source: Vec<_> = classifications(&document)
+        .into_iter()
+        .filter(|(path, _, _)| path.ends_with(".ts") || path.ends_with(".kt"))
+        .collect();
+    assert_eq!(
+        source,
+        [
+            triple(
+                "app/src/main/kotlin/App.kt",
+                "production",
+                "builtin:gradle-module"
+            ),
+            triple("app/src/web/ui.ts", "production", "builtin:npm-module"),
+            triple("src/index.ts", "production", "builtin:npm-module"),
+            triple(
+                "src/plugins/fancy/scripts/build.ts",
+                "unclassified",
+                "fallback"
+            ),
+            triple(
+                "src/plugins/fancy/src/fancy.ts",
+                "production",
+                "builtin:npm-module"
+            ),
+        ]
+    );
+}
+
 /// Python modules follow setuptools' discovery: the `src` layout, or flat
 /// top-level packages with `__init__.py`, never names such as `scripts`.
 #[test]
