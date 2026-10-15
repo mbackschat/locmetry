@@ -1,4 +1,7 @@
-use crate::{breakdown, Counts, Coverage, FileRecord, Kind, Purpose, ReportSummary};
+use crate::{
+    breakdown, unclassified_folders, Counts, Coverage, FileRecord, FolderShare, Kind, Purpose,
+    ReportSummary,
+};
 use anyhow::{ensure, Context, Result};
 use serde_json::Value;
 use std::{
@@ -137,7 +140,27 @@ pub fn render_markdown(
         .filter(|r| r.kind == Kind::Source && r.classification.purpose == Purpose::Unclassified)
         .collect();
     unknown.sort_by(|a, b| b.counts.code.cmp(&a.counts.code).then(a.path.cmp(&b.path)));
-    writeln!(output, "\n## Source requiring review\n\n{} files. Largest 25 below; the report file's `review` list names all of them with their rule.\n\n| Path | Code | Category |\n| --- | ---: | --- |", unknown.len()).unwrap();
+    writeln!(
+        output,
+        "\n## Source requiring review\n\n{} files.",
+        unknown.len()
+    )
+    .unwrap();
+    let folders = unclassified_folders(rows);
+    if !folders.is_empty() {
+        output.push_str("\n| Folder | Files | Code |\n| --- | ---: | ---: |\n");
+        for share in &folders {
+            writeln!(
+                output,
+                "| {} | {} | {} |",
+                cell(folder_label(&share.folder)),
+                share.files,
+                share.code
+            )
+            .unwrap();
+        }
+    }
+    writeln!(output, "\nLargest 25 files; the report file's `review` list names all of them with their rule.\n\n| Path | Code | Category |\n| --- | ---: | --- |").unwrap();
     for row in unknown.into_iter().take(25) {
         writeln!(
             output,
@@ -205,6 +228,70 @@ fn text_table(
     }
     output
 }
+
+/// Label of a folder share; `.` holds the files directly in the scan root.
+fn folder_label(folder: &str) -> &str {
+    match folder {
+        "." => "(root files)",
+        _ => folder,
+    }
+}
+
+/// Where the unclassified source lives, as an aligned folder list, so a
+/// reader can inspect it instead of only learning its size.
+fn unclassified_note(total: &Counts, folders: &[FolderShare]) -> String {
+    let plural = |count: u64, noun: &str| match count {
+        1 => noun.to_string(),
+        _ => format!("{noun}s"),
+    };
+    let shown = &folders[..folders.len().min(FOLDER_LINES)];
+    let rows: Vec<[String; 5]> = shown
+        .iter()
+        .map(|share| {
+            [
+                folder_label(&share.folder).to_string(),
+                share.code.to_string(),
+                plural(share.code, "code line"),
+                share.files.to_string(),
+                plural(share.files, "file"),
+            ]
+        })
+        .collect();
+    let width = |column: usize| {
+        rows.iter()
+            .map(|row| row[column].chars().count())
+            .max()
+            .unwrap_or(0)
+    };
+    let (label, code, unit, files) = (width(0), width(1), width(2), width(3));
+    let mut note = format!(
+        "Unclassified source: {} in {}, here:",
+        counted(total.code, "code line"),
+        counted(total.files, "file")
+    );
+    for [folder, lines, lines_unit, count, count_unit] in &rows {
+        write!(
+            note,
+            "\n   {folder:<label$}  {lines:>code$} {lines_unit:<unit$}  {count:>files$} {count_unit}"
+        )
+        .unwrap();
+    }
+    if folders.len() > shown.len() {
+        let rest = &folders[shown.len()..];
+        write!(
+            note,
+            "\n   and {} more {} ({})",
+            rest.len(),
+            plural(rest.len() as u64, "folder"),
+            counted(rest.iter().map(|share| share.code).sum(), "code line")
+        )
+        .unwrap();
+    }
+    note + "\n Classify these folders with [[rules]] in .locmetryrc; --format markdown lists every file."
+}
+
+/// Folders listed in the terminal note; the JSON headline lists all of them.
+const FOLDER_LINES: usize = 8;
 
 /// Terminal report for people: source code per language and top-level folder
 /// split by purpose, then one line each for what the tables leave out.
@@ -323,10 +410,9 @@ pub fn render_table(
     }
     let unclassified = summary.totals.purpose(Purpose::Unclassified);
     if unclassified.files > 0 {
-        notes.push(format!(
-            "Review: {} ({}); details with --format markdown.",
-            counted(unclassified.files, "unclassified source file"),
-            counted(unclassified.code, "code line")
+        notes.push(unclassified_note(
+            &unclassified,
+            &unclassified_folders(rows),
         ));
     }
     let mut gaps = Vec::new();
@@ -336,7 +422,10 @@ pub fn render_table(
         let extensions: Vec<String> = extensions
             .into_iter()
             .take(5)
-            .map(|(extension, files)| format!("{extension}: {files}"))
+            .map(|(extension, files)| match extension.as_str() {
+                "(none)" => format!("no extension: {files}"),
+                _ => format!("{extension}: {files}"),
+            })
             .collect();
         gaps.push(format!(
             "{} ({})",

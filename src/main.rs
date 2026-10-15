@@ -2,8 +2,8 @@ use anyhow::{Context, Result};
 use clap::{Parser, ValueEnum};
 use locmetry::{
     breakdown, build_report, render_markdown, render_table, report_text, review, scan,
-    scope_policy, user_defaults_file, validate_output, write_report, Policy, RowOrder,
-    ScopeOverrides, BACKEND, CONFIG_FILE, DATA_LANGUAGES, DOCUMENTATION_LANGUAGES,
+    scope_policy, unclassified_folders, user_defaults_file, validate_output, write_report, Policy,
+    RowOrder, ScopeOverrides, BACKEND, CONFIG_FILE, DATA_LANGUAGES, DOCUMENTATION_LANGUAGES,
 };
 use serde_json::{json, Value};
 use std::{
@@ -160,6 +160,10 @@ fn run(args: Args) -> Result<Outcome> {
     }
     let mut summary_json = serde_json::to_value(&summary.totals)?;
     summary_json["top_folders"] = serde_json::to_value(summary.top_folders())?;
+    let unclassified = unclassified_folders(&rows);
+    if !unclassified.is_empty() {
+        summary_json["unclassified_folders"] = serde_json::to_value(&unclassified)?;
+    }
     let mut document = json!({
         "schema_version":"1", "project":project,
         "metadata":{

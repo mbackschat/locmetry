@@ -40,7 +40,10 @@ $ locmetry
  (root files)     3           2     0             1
 
  Not source code: 3 data files (19 lines), 1 documentation file (9 lines).
- Review: 2 unclassified source files (9 code lines); details with --format markdown.
+ Unclassified source: 9 code lines in 2 files, here:
+   prototypes    8 code lines  1 file
+   (root files)  1 code line   1 file
+ Classify these folders with [[rules]] in .locmetryrc; --format markdown lists every file.
  Not counted: 1 unrecognized file (png: 1); missing lines are not zero.
 ```
 
@@ -184,7 +187,7 @@ Plain `locmetry` on a terminal prints the table shown [above](#what-you-see):
 
 - language rows, largest first;
 - top-level folders, whose rows add up to the total;
-- one line each for content that is not source, source awaiting classification, and files that could not be counted.
+- notes on content that is not source, the folders that hold unclassified source, and files that could not be counted.
 
 `--sort name` lists rows alphabetically instead, in the table and in Markdown.
 
@@ -233,7 +236,11 @@ When stdout is not a terminal, `locmetry` prints a compact JSON headline, under 
       "prototypes": { "unclassified": 8 },
       "scripts": { "production": 12 },
       "web": { "production": 31, "test": 10 }
-    }
+    },
+    "unclassified_folders": [
+      { "folder": "prototypes", "files": 1, "code": 8 },
+      { "folder": ".", "files": 1, "code": 1 }
+    ]
   }
 }
 ```
@@ -301,6 +308,13 @@ $ jq -c '.review[]' report.json
 | web/src | 31 | 10 | 0 | 41 |
 
 ## Source requiring review
+
+2 files.
+
+| Folder | Files | Code |
+| --- | ---: | ---: |
+| prototypes | 1 | 8 |
+| (root files) | 1 | 1 |
 
 | Path | Code | Category |
 | --- | ---: | --- |

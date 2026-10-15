@@ -245,7 +245,9 @@ fn table_format_splits_source_code_by_language_and_purpose() {
  proto      1           0     0             1
 
  Not source code: 1 data file (1 line), 1 documentation file (1 line).
- Review: 1 unclassified source file (1 code line); details with --format markdown.
+ Unclassified source: 1 code line in 1 file, here:
+   proto  1 code line  1 file
+ Classify these folders with [[rules]] in .locmetryrc; --format markdown lists every file.
  Not counted: 1 unrecognized file (png: 1); missing lines are not zero.
 ";
     assert_eq!(String::from_utf8(output.stdout).unwrap(), expected);
@@ -296,6 +298,70 @@ fn human_tables_sort_by_code_or_by_name() {
         languages,
         &["| Python |", "| Rust |"]
     )));
+}
+
+/// Unclassified source is located, not just counted: folders partition it,
+/// single-child chains collapse to the deepest folder, and the largest
+/// folder splits while the list stays short.
+#[test]
+fn unclassified_source_is_located_by_folder() {
+    let temp = project(&[
+        (
+            "docs/planning/m1/evidence/a.js",
+            "let a = 1;\nlet b = 2;\nlet c = 3;\n",
+        ),
+        ("docs/planning/m1/evidence/b.js", "let d = 1;\nlet e = 2;\n"),
+        ("docs/guides/ex/c.js", "let f = 1;\n"),
+        ("tools/x.py", "x = 1\n"),
+        ("root.py", "y = 1\n"),
+    ]);
+    let (success, document, stderr) = headline(&temp.path().join("project"), &[]);
+    assert!(success, "{stderr}");
+    assert_eq!(
+        document["summary"]["unclassified_folders"],
+        json!([
+            {"folder": "docs/planning/m1/evidence", "files": 2, "code": 5},
+            {"folder": ".", "files": 1, "code": 1},
+            {"folder": "docs/guides/ex", "files": 1, "code": 1},
+            {"folder": "tools", "files": 1, "code": 1}
+        ])
+    );
+    let output = run(&temp.path().join("project"), &["--format", "markdown"]);
+    let markdown = String::from_utf8(output.stdout).unwrap();
+    assert!(
+        markdown.contains("| docs/planning/m1/evidence | 2 | 5 |"),
+        "{markdown}"
+    );
+}
+
+/// A folder holding most of the unclassified code splits even when many
+/// top-level folders already fill the list, so the bulk is located precisely.
+#[test]
+fn dominant_unclassified_folders_split_beyond_the_row_limit() {
+    let mut files: Vec<(String, String)> = (0..9)
+        .map(|n| (format!("f{n}/x.js"), "let a = 1;\n".to_string()))
+        .collect();
+    files.push(("big/one/a.js".into(), "let a = 1;\n".repeat(20)));
+    files.push(("big/two/b.js".into(), "let b = 1;\n".repeat(10)));
+    let borrowed: Vec<(&str, &str)> = files
+        .iter()
+        .map(|(p, c)| (p.as_str(), c.as_str()))
+        .collect();
+    let temp = project(&borrowed);
+    let (success, document, stderr) = headline(&temp.path().join("project"), &[]);
+    assert!(success, "{stderr}");
+    let folders = document["summary"]["unclassified_folders"]
+        .as_array()
+        .unwrap();
+    assert_eq!(
+        folders[0],
+        json!({"folder": "big/one", "files": 1, "code": 20})
+    );
+    assert_eq!(
+        folders[1],
+        json!({"folder": "big/two", "files": 1, "code": 10})
+    );
+    assert_eq!(folders.len(), 11);
 }
 
 /// `--output -` prints the JSON report, so a human format cannot share stdout.
@@ -918,12 +984,16 @@ fn report_with_files(root: &Path) -> (bool, Value, String) {
 fn markdown_folder_depth_is_configurable_while_json_keeps_every_folder() {
     let temp = project(&[("a/b/c/deep.rs", "fn deep() {}\n")]);
     let root = temp.path().join("project");
-    let markdown = |extra: &[&str]| {
+    // Only the folder breakdown has a depth; the review lists folders at any depth.
+    let folder_table = |extra: &[&str]| {
         let args = [&["--format", "markdown"], extra].concat();
-        String::from_utf8(run(&root, &args).stdout).unwrap()
+        let markdown = String::from_utf8(run(&root, &args).stdout).unwrap();
+        let start = markdown.find("## Folder breakdown").unwrap();
+        let end = markdown.find("## Source requiring review").unwrap();
+        markdown[start..end].to_string()
     };
-    assert!(!markdown(&[]).contains("| a/b/c |"));
-    assert!(markdown(&["--depth", "3"]).contains("| a/b/c |"));
+    assert!(!folder_table(&[]).contains("| a/b/c |"));
+    assert!(folder_table(&["--depth", "3"]).contains("| a/b/c |"));
     let (_, document, _) = report(&root, &[]);
     assert_eq!(document["breakdown"][0]["folder"], "a/b/c");
 }

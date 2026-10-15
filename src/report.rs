@@ -277,6 +277,112 @@ pub fn review(rows: &[FileRecord]) -> Vec<ReviewEntry> {
     entries
 }
 
+/// Unclassified source code below one folder; `.` holds the files directly in
+/// the scan root.
+#[derive(Debug, Serialize)]
+pub struct FolderShare {
+    pub folder: String,
+    pub files: u64,
+    pub code: u64,
+}
+
+/// Rows a folder list may grow to before the largest folder stops splitting;
+/// enough to locate the bulk while fitting one terminal screen.
+const FOLDER_ROWS: usize = 8;
+
+/// `path` relative to `folder`, if it lies below it; `""` is the scan root.
+fn below<'p>(path: &'p str, folder: &str) -> Option<&'p str> {
+    match folder {
+        "" => Some(path),
+        _ => path.strip_prefix(folder)?.strip_prefix('/'),
+    }
+}
+
+/// Folders that together hold all unclassified source, largest first, so a
+/// reader can inspect where it lives rather than only how much there is.
+///
+/// Starting from the top-level folders, a chain of single subfolders
+/// collapses to its deepest folder, and the largest folder without files of
+/// its own splits into its subfolders while the list stays within
+/// [`FOLDER_ROWS`] rows, or regardless of rows while it holds most of the
+/// code, so a dominant folder is always located precisely. The folders never
+/// overlap, so their counts add up.
+pub fn unclassified_folders(rows: &[FileRecord]) -> Vec<FolderShare> {
+    let files: Vec<(&str, u64)> = rows
+        .iter()
+        .filter(|row| {
+            row.kind == Kind::Source && row.classification.purpose == Purpose::Unclassified
+        })
+        .map(|row| (row.path.as_str(), row.counts.code))
+        .collect();
+    // Subfolders that hold files below `folder`, and whether files lie directly in it.
+    let children = |folder: &str| {
+        let mut subfolders = std::collections::BTreeSet::new();
+        let mut direct = false;
+        for (path, _) in &files {
+            match below(path, folder).map(|rest| rest.split_once('/')) {
+                Some(Some((child, _))) => {
+                    subfolders.insert(match folder {
+                        "" => child.to_string(),
+                        _ => format!("{folder}/{child}"),
+                    });
+                }
+                Some(None) => direct = true,
+                None => {}
+            }
+        }
+        (subfolders, direct)
+    };
+    let collapse = |mut folder: String| loop {
+        match children(&folder) {
+            (subfolders, false) if subfolders.len() == 1 => {
+                folder = subfolders.into_iter().next().expect("one subfolder");
+            }
+            _ => return folder,
+        }
+    };
+    let share = |folder: &str| {
+        let inside: Vec<u64> = files
+            .iter()
+            .filter(|(path, _)| match folder {
+                "." => !path.contains('/'),
+                _ => below(path, folder).is_some(),
+            })
+            .map(|(_, code)| *code)
+            .collect();
+        FolderShare {
+            folder: folder.into(),
+            files: inside.len() as u64,
+            code: inside.iter().sum(),
+        }
+    };
+    let total: u64 = files.iter().map(|(_, code)| code).sum();
+    let (top, root_files) = children("");
+    let mut folders: Vec<String> = top.into_iter().map(collapse).collect();
+    if root_files {
+        folders.push(".".into());
+    }
+    loop {
+        let largest = folders
+            .iter()
+            .filter(|folder| *folder != ".")
+            .map(|folder| (share(folder).code, folder.clone()))
+            .filter(|(_, folder)| matches!(children(folder), (subfolders, false) if subfolders.len() > 1))
+            .max_by(|a, b| a.0.cmp(&b.0).then_with(|| b.1.cmp(&a.1)));
+        let Some((code, folder)) = largest else { break };
+        let (subfolders, _) = children(&folder);
+        let dominant = code * 2 > total;
+        if !dominant && folders.len() - 1 + subfolders.len() > FOLDER_ROWS {
+            break;
+        }
+        folders.retain(|candidate| *candidate != folder);
+        folders.extend(subfolders.into_iter().map(collapse));
+    }
+    let mut shares: Vec<FolderShare> = folders.iter().map(|folder| share(folder)).collect();
+    shares.sort_by(|a, b| b.code.cmp(&a.code).then_with(|| a.folder.cmp(&b.folder)));
+    shares
+}
+
 pub fn build_report(rows: &[FileRecord]) -> ReportSummary {
     let mut totals = Summary::default();
     let mut folders: BTreeMap<String, Folder> = BTreeMap::from([(".".into(), Folder::default())]);
