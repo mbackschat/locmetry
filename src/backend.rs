@@ -12,6 +12,8 @@ use tokei::LanguageType;
 
 use LanguageType::*;
 
+mod handlebars;
+
 /// Languages counted as data or configuration rather than source.
 ///
 /// Tokei recognizes mostly programming languages, so source is the default
@@ -225,8 +227,21 @@ pub fn scan(root: &Path, policy: &Policy) -> Result<Scan> {
         no_ignore: Some(true),
         ..Default::default()
     };
-    if !paths.is_empty() {
-        languages.get_statistics(&paths, &[], &config);
+    let (templates, other_paths): (Vec<_>, Vec<_>) = paths
+        .iter()
+        .partition(|path| LanguageType::from_path(path, &config) == Some(Handlebars));
+    if !other_paths.is_empty() {
+        languages.get_statistics(&other_paths, &[], &config);
+    }
+    if !templates.is_empty() {
+        let language = languages.entry(Handlebars).or_default();
+        for path in templates {
+            match handlebars::parse(path) {
+                Ok(report) => language.add_report(report),
+                Err(_) => language.mark_inaccurate(),
+            }
+        }
+        language.total();
     }
     let mut inaccurate = languages.values().any(|language| language.inaccurate);
     let mut payload = serde_json::to_value(languages)?;
@@ -253,16 +268,24 @@ pub fn scan(root: &Path, policy: &Policy) -> Result<Scan> {
         }
         match policy.mapped_language(&name) {
             None => coverage.unrecognized.push(name),
-            Some((id, language)) => match language.parse(path.clone(), &config) {
-                Ok(report) => {
-                    mapped.entry(language).or_default().add_report(report);
-                    mappings.insert(name, id.to_owned());
+            Some((id, language)) => {
+                let report = match language {
+                    Handlebars => handlebars::parse(path),
+                    _ => language
+                        .parse(path.clone(), &config)
+                        .map_err(|(error, _)| error),
+                };
+                match report {
+                    Ok(report) => {
+                        mapped.entry(language).or_default().add_report(report);
+                        mappings.insert(name, id.to_owned());
+                    }
+                    Err(_) => {
+                        coverage.unread.push(name);
+                        inaccurate = true;
+                    }
                 }
-                Err(_) => {
-                    coverage.unread.push(name);
-                    inaccurate = true;
-                }
-            },
+            }
         }
     }
     let mut mapped = serde_json::to_value(mapped)?;

@@ -226,6 +226,147 @@ fn scan_rows(files: &[(&str, &str)]) -> Vec<locmetry::FileRecord> {
     file_records(scan(temp.path(), &config).unwrap().payload, &config).unwrap()
 }
 
+#[test]
+fn handlebars_distinguishes_template_text_from_quoted_syntax() {
+    let cases = [
+        ("Owner's notice\n\n{{name}}\n", (2, 0, 1)),
+        ("Don't hide comments\n{{! explanation }}\n\n", (1, 1, 1)),
+        ("An opening \" in prose\n\n{{name}}\n", (2, 0, 1)),
+        ("It's prose\n\nThat's all\n", (2, 0, 1)),
+        ("{{helper 'first\n\nlast'}}\n\n", (3, 0, 1)),
+        ("{{helper \"first\n\nlast\"}}\n\n", (3, 0, 1)),
+        (
+            "{{{helper 'first\n\nlast'}}}\n\n{{! comment }}\n",
+            (3, 1, 1),
+        ),
+        ("{{~helper 'first'~}}\n\n{{! comment }}\n", (1, 1, 1)),
+        (
+            "{{helper '}} {{! literal }} <!--'}}\n{{! comment }}\n",
+            (1, 1, 0),
+        ),
+        (
+            r#"{{helper "escaped \" }} {{! literal }}"}}
+{{! comment }}
+"#,
+            (1, 1, 0),
+        ),
+        ("{{lookup [owner's}}key]}}\n\n{{! comment }}\n", (1, 1, 1)),
+        ("{{!-- comment with {{name}}\nmore --}}\n\n", (0, 2, 1)),
+        ("{{~!-- comment with {{name}}\nmore --~}}\n", (0, 2, 0)),
+        ("{{~! comment ~}}\ntext {{! comment }}\n", (1, 1, 0)),
+        ("<!-- owner's comment\n\nend -->\n{{name}}\n", (1, 3, 0)),
+        (
+            "{{{{raw}}}}\nOwner's {{! literal }}\n\n{{{{/raw}}}}\n{{! comment }}\n",
+            (3, 1, 1),
+        ),
+        ("\\{{helper 'literal}}\n\n{{! comment }}\n", (1, 1, 1)),
+        ("\\\\{{helper 'first\n\nlast'}}\n", (3, 0, 0)),
+        (
+            "<a title=\"<!-- literal -->\">Owner's</a>\n\n<!-- comment -->\n",
+            (1, 1, 1),
+        ),
+        ("Owner's notice\r\n\r\n{{name}}", (2, 0, 1)),
+        ("Ümlaut's notice\n\n{{name}}\n", (2, 0, 1)),
+        ("", (0, 0, 0)),
+        ("{{~{helper 'value'}~}}\nOwner's prose\n\n", (2, 0, 1)),
+        ("{{lookup [key\\]'s]}}\n\n{{! comment }}\n", (1, 1, 1)),
+        ("{{{{raw}}}}\n{{{{nested}}}}\n{{{{/nested}}}}\n{{! literal }}\n{{{{/raw}}}}\n{{! comment }}\n", (5, 1, 0)),
+        ("{{{{raw\n'value'}}}}\n{{! literal }}\n{{{{/raw}}}}\n{{! comment }}\n", (4, 1, 0)),
+    ];
+    for (text, expected) in cases {
+        for extension in ["hbs", "handlebars"] {
+            let rows = scan_rows(&[(&format!("template.{extension}"), text)]);
+            let row = &rows[0];
+            assert_eq!(row.language, "Handlebars");
+            assert_eq!(row.kind, Kind::Source);
+            assert_eq!(
+                (row.counts.code, row.counts.comments, row.counts.blanks),
+                expected,
+                "{extension}: {text:?}"
+            );
+            assert_eq!(row.counts.lines, text.lines().count() as u64);
+        }
+    }
+}
+
+#[test]
+fn handlebars_preserves_bom_decoding() {
+    let text = "Owner's notice\n\n{{! comment }}\n";
+    let mut utf8 = vec![0xef, 0xbb, 0xbf];
+    utf8.extend(text.as_bytes());
+    let mut utf16le = vec![0xff, 0xfe];
+    utf16le.extend(text.encode_utf16().flat_map(u16::to_le_bytes));
+    let mut utf16be = vec![0xfe, 0xff];
+    utf16be.extend(text.encode_utf16().flat_map(u16::to_be_bytes));
+    for bytes in [utf8, utf16le, utf16be] {
+        let temp = tempfile::tempdir().unwrap();
+        fs::write(temp.path().join("notice.hbs"), bytes).unwrap();
+        let config = policy("");
+        let result = scan(temp.path(), &config).unwrap();
+        let rows = result.records(&config).unwrap();
+        assert!(!result.inaccurate);
+        assert_eq!(result.coverage.counted_files, 1);
+        assert_eq!(
+            (
+                rows[0].counts.code,
+                rows[0].counts.comments,
+                rows[0].counts.blanks
+            ),
+            (1, 1, 1)
+        );
+    }
+}
+
+#[cfg(unix)]
+#[test]
+fn unreadable_handlebars_is_reported_as_missing_and_inaccurate() {
+    use std::os::unix::fs::PermissionsExt;
+    let temp = tempfile::tempdir().unwrap();
+    let file = temp.path().join("notice.hbs");
+    fs::write(&file, "Owner's notice\n").unwrap();
+    fs::set_permissions(&file, fs::Permissions::from_mode(0o000)).unwrap();
+    if fs::read(&file).is_ok() {
+        return;
+    }
+    let result = scan(temp.path(), &policy(""));
+    fs::set_permissions(&file, fs::Permissions::from_mode(0o644)).unwrap();
+    let result = result.unwrap();
+    assert!(result.inaccurate);
+    assert_eq!(result.coverage.unread, ["notice.hbs"]);
+    assert_eq!(result.coverage.counted_files, 0);
+}
+
+#[test]
+fn mapped_handlebars_uses_the_same_counter_and_keeps_provenance() {
+    let temp = tempfile::tempdir().unwrap();
+    write_tree(
+        temp.path(),
+        &[("notice.template", "Owner's notice\n\n{{! comment }}\n")],
+    );
+    let config = policy(
+        r#"
+[[languages.mappings]]
+id = "notice-template"
+match = ["*.template"]
+language = "Handlebars"
+"#,
+    );
+    let result = scan(temp.path(), &config).unwrap();
+    let rows = result.records(&config).unwrap();
+    assert_eq!(result.coverage.counted_files, 1);
+    assert_eq!(result.coverage.mapped_files, 1);
+    assert!(!result.inaccurate);
+    assert_eq!(rows[0].language_mapping.as_deref(), Some("notice-template"));
+    assert_eq!(
+        (
+            rows[0].counts.code,
+            rows[0].counts.comments,
+            rows[0].counts.blanks
+        ),
+        (1, 1, 1)
+    );
+}
+
 /// Locks Tokei's default, which docs/measurement.md documents: docstrings
 /// count as code, not comments, because locmetry never sets
 /// `treat_doc_strings_as_comments`. Changing it would change Python totals,

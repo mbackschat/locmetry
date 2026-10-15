@@ -41,6 +41,12 @@ Decided 2026-10-15: workspace reports break metrics down by member, as [PRODUCT.
 
 **Completion evidence:** tests show each member's totals equal its regular run, and the table, grids, and notes on a synthetic workspace; a workspace over real sibling repositories, recorded in `docs/research/local/`, shows the same per-member figures as their individual runs.
 
+## Handlebars Counting Correction — Done
+
+Done 2026-10-15: reproduced Tokei 15.0.0's global-quote bug with independent synthetic templates. A local lexical counter now keeps prose apostrophes from swallowing later blank lines and comments, while preserving actual expression strings, HTML attributes, comments, and raw blocks. Recognized and mapped Handlebars files share the correction; language, kind, and purpose stay unchanged. See [measurement semantics](measurement.md#counting).
+
+**Completion evidence:** regression tests failed before the fix and pass afterward, covering both recognized extensions, language mappings, quote and comment boundaries, raw blocks, BOM decoding, and unreadable-file coverage. The public suite, private regression guard, formatting, and Clippy pass. No release is part of this change.
+
 ## Ideas — Not Scheduled
 
 - [ ] A configuration skill for coding agents: decided 2026-10-15 to record, not build yet. Blind test drives showed agents already reach 99%+ agreement with human-reviewed configurations from `--help` and `--schema` alone, so the skill would add procedure rather than knowledge: keep the repository read-only until a human approves, require evidence and a `reason` for every entry, declare `[categories]`, resolve `summary.submodules` and `summary.unused_entries`, and end with the judgment calls a human must make. Acceptance: the same blind trials scored with and without the skill show a gain, not only more ceremony.
