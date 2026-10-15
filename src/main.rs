@@ -540,7 +540,16 @@ fn run_root(args: &RootArgs, shared: &SharedArgs, subfolder: Option<&Path>) -> R
                 .and_then(|p| p.canonicalize().ok())
                 != inactive.canonicalize().ok()
         {
-            eprintln!("Warning: {} is inactive; project configuration: {}. --subfolder retains project policy.", inactive.display(), prepared.config_path.as_ref().map(|p| p.display().to_string()).unwrap_or_else(|| "none (built-in settings)".into()));
+            let project_config = prepared
+                .config_path
+                .as_ref()
+                .map(std::fs::canonicalize)
+                .transpose()?;
+            stderr_message(Role::Warning, format_args!(
+                "{} is inactive; project configuration: {}. --subfolder retains project policy.",
+                inactive.display(),
+                project_config.as_ref().map(|p| p.display().to_string()).unwrap_or_else(|| "none (built-in settings)".into())
+            ));
         }
     }
     let measurement = measure(prepared, subfolder.as_deref())?;
@@ -1022,6 +1031,13 @@ fn parse_cli() -> clap::error::Result<Cli> {
     Cli::from_arg_matches(&matches)
 }
 
+fn stderr_message(role: Role, message: impl std::fmt::Display) {
+    eprintln!(
+        "{} {message}",
+        terminal_theme(io::stderr().is_terminal()).paint(role, "locmetry:")
+    );
+}
+
 fn main() -> ExitCode {
     // clap exits usage errors with 2, which is reserved for partial reports.
     let cli = match parse_cli() {
@@ -1038,17 +1054,11 @@ fn main() -> ExitCode {
     match run(cli) {
         Ok(Outcome::Complete) => ExitCode::SUCCESS,
         Ok(Outcome::Partial(message)) => {
-            eprintln!(
-                "{} {message}",
-                terminal_theme(io::stderr().is_terminal()).paint(Role::Warning, "locmetry:")
-            );
+            stderr_message(Role::Warning, message);
             ExitCode::from(2)
         }
         Err(error) => {
-            eprintln!(
-                "{} {error:#}",
-                terminal_theme(io::stderr().is_terminal()).paint(Role::Error, "locmetry:")
-            );
+            stderr_message(Role::Error, format_args!("{error:#}"));
             ExitCode::FAILURE
         }
     }

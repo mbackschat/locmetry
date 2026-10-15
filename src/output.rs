@@ -1018,14 +1018,22 @@ fn unused_entries_note(entries: &[String], subfolder: Option<&str>) -> Option<St
     })
 }
 
-/// Names exclusions that left out nothing, which usually means a folder
-/// written without `/**`, a misspelled path, or one an ignore file already hides.
+/// Scoped non-use cannot establish whether project exclusions need repair.
 fn unused_exclusions_note(patterns: &[String], subfolder: Option<&str>) -> Option<String> {
     (!patterns.is_empty()).then(|| {
         format!(
-            "Exclusions that excluded nothing{}: {}; exclude a folder as <folder>/**, and an ignore file may already hide the path.",
-            if subfolder.is_some() { " in this subtree" } else { "" },
-            patterns.join(", ")
+            "Exclusions that excluded nothing{}: {}; {}.",
+            if subfolder.is_some() {
+                " in this subtree"
+            } else {
+                ""
+            },
+            patterns.join(", "),
+            match subfolder {
+                Some(_) => "check policy use with an unrestricted measurement",
+                None =>
+                    "exclude a folder as <folder>/**, and an ignore file may already hide the path",
+            }
         )
     })
 }

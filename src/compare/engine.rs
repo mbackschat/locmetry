@@ -257,9 +257,9 @@ pub fn compare(
     };
     ensure!(
         restriction(&before) == restriction(&after),
-        "Cannot compare different subfolder restrictions: before {:?}, after {:?}",
-        restriction(&before),
-        restriction(&after)
+        "Cannot compare different subfolder restrictions: before: {}, after: {}",
+        restriction(&before).as_deref().unwrap_or("unrestricted"),
+        restriction(&after).as_deref().unwrap_or("unrestricted")
     );
     normalize_metadata(&mut before.metadata);
     normalize_metadata(&mut after.metadata);

@@ -161,6 +161,16 @@ fn subfolder_failure_coverage_and_unused_policy_are_local() {
     assert_eq!(part["metadata"]["coverage"]["parse_failures"], json!([]));
     assert_eq!(part["summary"]["unused_entries"], json!(["outside"]));
     assert_eq!(part["summary"]["unused_exclusions"], json!(["backend/**"]));
+    for format in ["table", "markdown"] {
+        let out = run(root, &["--subfolder", "web/src", "--format", format]);
+        assert!(out.status.success());
+        let text = String::from_utf8(out.stdout).unwrap();
+        assert!(
+            text.contains("check policy use with an unrestricted measurement"),
+            "{text}"
+        );
+        assert!(!text.contains("exclude a folder as"), "{text}");
+    }
     write(root, "web/src/broken.ipynb", "{}");
     let part = report(root, &["--subfolder", "web/src"], 2);
     assert_eq!(
@@ -168,6 +178,35 @@ fn subfolder_failure_coverage_and_unused_policy_are_local() {
         "web/src/broken.ipynb"
     );
 }
+#[test]
+fn inactive_config_warning_uses_diagnostic_prefix_and_absolute_paths() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().canonicalize().unwrap();
+    fixture(&root);
+    write(&root, ".locmetryrc", "version=1\n");
+    write(&root, "web/src/.locmetryrc", "invalid toml");
+    for args in [
+        vec!["--subfolder", "web/src"],
+        vec!["--subfolder", "web/src", "--config", ".locmetryrc"],
+    ] {
+        let out = Command::new(env!("CARGO_BIN_EXE_locmetry"))
+            .current_dir(&root)
+            .args(["--no-user-config", "--root", "."])
+            .args(args)
+            .output()
+            .unwrap();
+        assert!(
+            out.status.success(),
+            "{}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+        assert_eq!(String::from_utf8(out.stderr).unwrap(), format!(
+            "locmetry: {} is inactive; project configuration: {}. --subfolder retains project policy.\n",
+            root.join("web/src/.locmetryrc").display(), root.join(".locmetryrc").display()
+        ));
+    }
+}
+
 #[test]
 fn subfolder_paths_and_subcommands_reject_invalid_restrictions() {
     let dir = tempfile::tempdir().unwrap();
@@ -199,6 +238,11 @@ fn subfolder_paths_and_subcommands_reject_invalid_restrictions() {
             .output()
             .unwrap();
         assert!(!out.status.success());
+        let stderr = String::from_utf8_lossy(&out.stderr);
+        assert!(
+            stderr.contains("unexpected argument '--subfolder'"),
+            "{stderr}"
+        );
     }
     assert_eq!(
         run(root, &["--subfolder", "web", "--subfolder", "web/src"])
@@ -243,7 +287,7 @@ fn subfolder_compare_requires_matching_scope_and_preserves_descriptor_removal_or
             .err()
             .unwrap()
             .to_string()
-            .contains("subfolder")
+            .contains("before: unrestricted, after: web/src")
     );
     let change =
         locmetry::compare::compare(before, after, "before".into(), "after".into()).unwrap();
@@ -365,6 +409,7 @@ fn subfolder_comparison_refusal_protects_output_and_same_scope_preserves_receipt
     let out = compare("json");
     assert_eq!(out.status.code(), Some(1));
     assert!(out.stdout.is_empty());
+    assert!(String::from_utf8_lossy(&out.stderr).contains("before: web/src, after: backend/src"));
     assert_eq!(fs::read_to_string(&dest).unwrap(), "keep me");
     fs::write(&after, serde_json::to_vec(&a).unwrap()).unwrap();
     for format in ["json", "table", "markdown"] {
