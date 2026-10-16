@@ -257,7 +257,7 @@ Personal defaults for every project, such as extra exclusions or language mappin
 | Option | Effect |
 | --- | --- |
 | `DIR` or `--root DIR` | Directory to measure; mutually exclusive. Default: the current directory. |
-| `--folder-rows N` | Development checkout: expand the largest Folder rows within a positive row budget; single-root table output only. No default; omit to keep top-level rows. |
+| `--folder-rows N` | Development checkout: expand rows within the existing Folder table, using a positive row budget; single-root table output only. No default; omit to keep top-level rows. |
 | `--subfolder DIR` | Measure one root-relative folder and descendants, retaining project policy and module context; single-root mode only. |
 | `--config FILE` | TOML configuration; default: `.locmetryrc` in the scan root, else built-in settings. The scan root stays unchanged. |
 | `--exclude GLOB` | Add a root-relative exclusion; repeatable. |
@@ -558,9 +558,9 @@ If the Folder table concentrates most code in a container such as `web` or `pack
 locmetry acme-orders --folder-rows 12
 ```
 
-On a terminal, this expands large folders into non-overlapping child rows, including direct files and scoped “other child folders” rows where needed. Every row still contributes once to the total. The budget limits additional detail; existing top-level contributions are never merged away, so an initially wider table can exceed it. Single-child chains collapse without using extra rows. Paths stay relative to the project root, including when combined with `--subfolder`.
+This changes the existing second table, **Folder**; it does not add a third table. The first **Language** table stays as it is. Large folders expand into non-overlapping child rows, including direct files and scoped “other child folders” rows where needed. Every row still contributes once to the total. The budget counts Folder data rows, excluding its header, total and legends. It limits additional detail; existing top-level contributions are never merged away, so an initially wider table can exceed it. Single-child chains collapse without using extra rows. Paths stay relative to the project root, including when combined with `--subfolder`.
 
-Pipes normally select JSON, so explicitly request table output when saving or paging this view:
+`--format table` is an existing option that selects human-readable text. It is optional in a terminal, where table output is the default. Pipes and redirects normally select JSON, so explicitly request table output when saving or paging this view:
 
 ```sh
 locmetry acme-orders --folder-rows 12 --format table > folders.txt
