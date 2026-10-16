@@ -2,10 +2,6 @@
 
 [PRODUCT](PRODUCT.md) owns supported requirements. This file indexes open work and decision gates; it is not a checkpoint log. Read the relevant linked design only when working on that item. Deferred items do not authorize implementation.
 
-## v0.4.0 — Publication in Progress
-
-The v0.4.0 release candidate implements [output routing](PRODUCT.md#output-routing), [embedded guides](PRODUCT.md#embedded-task-guides) and [comparison readability](PRODUCT.md#net-change). The owner authorized publication on 2026-10-16. Apply the [release verification policy](../CLAUDE.md#testing-guidelines) and [distribution procedure](tokei-integration.md#distribution); prior local checks do not replace verification of the release candidate.
-
 ## CI Maintenance — Follow-up
 
 - [ ] Update the action versions behind the Node.js runtime-deprecation warnings observed in the v0.3.0 CI/release runs. Treat this as a separate tested maintenance change; the [published-release record](plans/archive/development-plan-2026-10-16.md#minor-release-v030--published) preserves the original evidence.
