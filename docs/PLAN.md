@@ -103,6 +103,10 @@ Verification: initial command and saved-receipt guards failed before implementat
 
 - [Net change between measurement reports — historical decision record](proposals/net-change.md): aggregate/topology comparison implemented as `0.2.0-dev.1`; retained for S4 acceptance evidence and design rationale. [PRODUCT](PRODUCT.md#net-change) owns supported behavior. The [conditional per-file follow-up](plans/measurement-quality-and-net-change.md#per-file-comparison) owns the deferred design and consumer-demand trigger.
 
+## Proposals — Under Discussion
+
+- [Adaptive folder detail in terminal reports](proposals/adaptive-folder-detail.md): proposed 2026-10-16, awaiting external review and owner approval. Opt-in expansion of large folder rows into deeper, additive rows with a soft row budget; preserve measurement scope and JSON. The proposal records wide-folder handling, determinism, tradeoffs and acceptance criteria. No implementation is active.
+
 ## Ideas — Not Scheduled
 
 - [ ] [Test to production ratio presentation](plans/measurement-quality-and-net-change.md#test-to-production-ratio-presentation--awaiting-further-direction): review incorporated 2026-10-16; implementation remains on hold. Retain folder/workspace ratios and add neutral language ratios with a total row and cross-language caveat. Keep gray undefined/zero values; use no magnitude-dependent color bands or highlighting. Published ranges are descriptive (Khorikov: `1–3` for heavily tested enterprise projects); the reviewed evidence establishes no validated threshold. The detailed plan preserves corrected source context, retrieval limitations, the rationale for neutral presentation and pending acceptance checks.
