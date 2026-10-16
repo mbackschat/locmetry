@@ -123,4 +123,16 @@ for block in 1 2 3 4 5 6 7 8; do
         8) grep -Fxq $'data\t1\tweb/package.json' "$temporary/issue-out"; grep -Fxq $'documentation\t1\tdocs/architecture.md' "$temporary/issue-out" ;;
     esac
 done
-echo 'README examples pass: policy outcomes, compare, workspace compare, explain, partial coverage, and troubleshooting queries.'
+# The adaptive example saves a table even though stdout is redirected by this guard.
+awk '
+    /^### Look inside large folders$/ { section = 1; next }
+    section && /^### / { exit }
+    section && /^```sh$/ { block = 1; number++; next }
+    block && /^```$/ { block = 0; next }
+    block && number == 2 { print }
+' "$repository/README.md" > "$temporary/adaptive.sh"
+[[ -s "$temporary/adaptive.sh" ]]
+(cd "$temporary/issues" && bash "$temporary/adaptive.sh")
+grep -Fq 'Adaptive folder detail; rows cover measured source once.' "$temporary/issues/folders.txt"
+grep -Eq '^ web/src +2 .*1 +1 +0 .*1\.00' "$temporary/issues/folders.txt"
+echo 'README examples pass: policy outcomes, compare, workspace compare, explain, partial coverage, troubleshooting queries, and adaptive folder detail.'

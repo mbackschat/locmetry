@@ -2,7 +2,7 @@
 
 # locmetry
 
-This checkout documents **0.2.0**. See the [release notes](docs/releases/0.2.0.md) for net-change comparisons, path explanations, subfolder measurement and counting corrections since v0.1.6.
+The latest stable release is **0.2.0**. This development checkout additionally supports the unreleased `--folder-rows` option. See the [release notes](docs/releases/0.2.0.md) for net-change comparisons, path explanations, subfolder measurement and counting corrections since v0.1.6.
 
 **Lines of code, split by purpose: production, tests, tooling, and what nobody claims.** `locmetry` measures selected files that its counters can recognize and read, gives each counted file a purpose and category, and records the rule that decided it. Coverage names files whose counts are unavailable.
 
@@ -257,6 +257,7 @@ Personal defaults for every project, such as extra exclusions or language mappin
 | Option | Effect |
 | --- | --- |
 | `DIR` or `--root DIR` | Directory to measure; mutually exclusive. Default: the current directory. |
+| `--folder-rows N` | Development checkout: expand the largest Folder rows within a positive row budget; single-root table output only. No default; omit to keep top-level rows. |
 | `--subfolder DIR` | Measure one root-relative folder and descendants, retaining project policy and module context; single-root mode only. |
 | `--config FILE` | TOML configuration; default: `.locmetryrc` in the scan root, else built-in settings. The scan root stays unchanged. |
 | `--exclude GLOB` | Add a root-relative exclusion; repeatable. |
@@ -548,6 +549,24 @@ Plain `locmetry` on a terminal prints the table shown [above](#what-you-see):
 - notes on content that is not source, the build modules that decided production, Git submodules, which are often other teams' code, the folders that hold unclaimed source, configuration entries that decided no file, and files that could not be counted.
 
 `--sort name` lists rows alphabetically instead, in the table and in Markdown. `--categories` adds a table of source code per `purpose:category`, such as `production:tooling`, to see what production consists of.
+
+### Look inside large folders
+
+If the Folder table concentrates most code in a container such as `web` or `packages`, request deeper detail without changing the scan root or classification context (development checkout; not in v0.2.0):
+
+```sh
+locmetry acme-orders --folder-rows 12
+```
+
+On a terminal, this expands large folders into non-overlapping child rows, including direct files and scoped “other child folders” rows where needed. Every row still contributes once to the total. The budget limits additional detail; existing top-level contributions are never merged away, so an initially wider table can exceed it. Single-child chains collapse without using extra rows. Paths stay relative to the project root, including when combined with `--subfolder`.
+
+Pipes normally select JSON, so explicitly request table output when saving or paging this view:
+
+```sh
+locmetry acme-orders --folder-rows 12 --format table > folders.txt
+```
+
+The option does not change saved JSON, coverage or the Unclaimed source note. That note uses its existing partition of unclassified code and can therefore show different folder boundaries. Markdown retains its recursive `--depth` view; workspace mode rejects `--folder-rows`. [Adaptive folder semantics](docs/PRODUCT.md#adaptive-folder-detail) defines selection, budgets and limits.
 
 ### JSON headline for agents and scripts
 

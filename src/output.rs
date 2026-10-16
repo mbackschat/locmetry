@@ -1,3 +1,5 @@
+mod folders;
+
 use crate::report::Summary;
 use crate::style::{Role, Theme};
 use crate::{
@@ -682,6 +684,14 @@ pub fn render_table(
     )
 }
 
+/// Presentation choices for terminal measurement tables; they do not change saved evidence.
+pub struct TableOptions {
+    pub categories: bool,
+    pub order: RowOrder,
+    pub theme: Theme,
+    pub folder_rows: Option<usize>,
+}
+
 /// Render a measurement table using semantic presentation roles.
 pub fn render_table_with_theme(
     project: &str,
@@ -692,6 +702,34 @@ pub fn render_table_with_theme(
     order: RowOrder,
     theme: Theme,
 ) -> String {
+    render_table_with_options(
+        project,
+        summary,
+        rows,
+        findings,
+        TableOptions {
+            categories,
+            order,
+            theme,
+            folder_rows: None,
+        },
+    )
+}
+
+/// Render terminal tables, optionally partitioning folders within a row budget.
+pub fn render_table_with_options(
+    project: &str,
+    summary: &ReportSummary,
+    rows: &[FileRecord],
+    findings: &Findings,
+    options: TableOptions,
+) -> String {
+    let TableOptions {
+        categories,
+        order,
+        theme,
+        folder_rows,
+    } = options;
     let mut languages = BTreeMap::<String, (Counts, BTreeMap<Purpose, u64>)>::new();
     for row in breakdown(rows)
         .iter()
@@ -775,11 +813,21 @@ pub fn render_table_with_theme(
         );
         output += &format!(" {}\n", theme.paint(Role::Muted, REPOSITORY_LEGEND));
     }
-    let folders = ordered(
-        human_top_folders(summary, findings.subfolder),
-        folder_code,
-        order,
-    );
+    let adaptive = folder_rows
+        .filter(|_| findings.members.is_empty())
+        .map(|budget| folders::adaptive(summary, findings.subfolder, budget, order));
+    let folders = match &adaptive {
+        Some(view) => view
+            .rows
+            .iter()
+            .map(|row| (plain(&row.label()), row.purposes.clone()))
+            .collect(),
+        None => ordered(
+            human_top_folders(summary, findings.subfolder),
+            folder_code,
+            order,
+        ),
+    };
     if !folders.is_empty() && findings.members.is_empty() {
         let body: Vec<Vec<String>> = folders
             .iter()
@@ -820,6 +868,18 @@ pub fn render_table_with_theme(
             theme,
         );
         output += &format!(" {}\n", theme.paint(Role::Muted, FOLDER_LEGEND));
+        if let Some(view) = &adaptive {
+            output += &format!(
+                " {}\n",
+                theme.paint(
+                    Role::Muted,
+                    "Adaptive folder detail; rows cover measured source once."
+                )
+            );
+            if view.initial_budget_exhausted {
+                output += &format!(" {}\n", theme.paint(Role::Muted, "Initial folder rows exhaust the budget; increase --folder-rows for more detail."));
+            }
+        }
     }
     if categories {
         let rows = summary

@@ -4,10 +4,11 @@ use locmetry::contract::{self, MeasurementReport};
 use locmetry::style::{Role, Theme};
 use locmetry::{
     breakdown, build_report, build_systems, git_submodules, module_shares, render_markdown,
-    render_table_with_theme, report_text, review, scan, scope_policy, submodule_shares,
+    render_table_with_options, report_text, review, scan, scope_policy, submodule_shares,
     unclassified_folders, unused_entries, user_defaults_file, validate_output, write_report,
     Coverage, FileRecord, Findings, MemberView, Module, ModuleShare, Policy, RowOrder,
-    ScopeOverrides, SubmoduleShare, BACKEND, CONFIG_FILE, DATA_LANGUAGES, DOCUMENTATION_LANGUAGES,
+    ScopeOverrides, SubmoduleShare, TableOptions, BACKEND, CONFIG_FILE, DATA_LANGUAGES,
+    DOCUMENTATION_LANGUAGES,
 };
 use std::collections::BTreeMap;
 use std::{
@@ -77,6 +78,14 @@ struct Cli {
     /// Measure this root-relative folder and descendants, retaining project configuration and module context.
     #[arg(long, value_name = "DIR")]
     subfolder: Option<PathBuf>,
+    /// Split the largest folders within an N-row budget; no top-level folder's code is merged away. Table format only.
+    #[arg(
+        long,
+        value_name = "N",
+        allow_negative_numbers = true,
+        conflicts_with = "schema"
+    )]
+    folder_rows: Option<std::num::NonZeroUsize>,
     #[command(flatten)]
     root: RootArgs,
     #[command(flatten)]
@@ -333,6 +342,7 @@ struct Destination<'a> {
     report_path: Option<&'a Path>,
     report_to_stdout: bool,
     format: Format,
+    folder_rows: Option<usize>,
 }
 
 fn destination(shared: &SharedArgs) -> Result<Destination<'_>> {
@@ -352,6 +362,7 @@ fn output_destination(output: &Option<PathBuf>, format: Option<Format>) -> Resul
         report_path,
         report_to_stdout,
         format,
+        folder_rows: None,
     })
 }
 
@@ -379,7 +390,12 @@ fn run(cli: Cli) -> Result<Outcome> {
         None => {
             let mut root = cli.root;
             root.root = root.root.or(cli.directory);
-            run_root(&root, &cli.shared, cli.subfolder.as_deref())
+            run_root(
+                &root,
+                &cli.shared,
+                cli.subfolder.as_deref(),
+                cli.folder_rows.map(|n| n.get()),
+            )
         }
     }
 }
@@ -507,9 +523,21 @@ fn run_compare(args: &CompareArgs) -> Result<Outcome> {
     })
 }
 
-fn run_root(args: &RootArgs, shared: &SharedArgs, subfolder: Option<&Path>) -> Result<Outcome> {
+fn run_root(
+    args: &RootArgs,
+    shared: &SharedArgs,
+    subfolder: Option<&Path>,
+    folder_rows: Option<usize>,
+) -> Result<Outcome> {
     let root = args.root.as_deref().unwrap_or(Path::new("."));
-    let destination = destination(shared)?;
+    let mut destination = destination(shared)?;
+    if folder_rows.is_some() {
+        anyhow::ensure!(
+            destination.format == Format::Table && !destination.report_to_stdout,
+            "--folder-rows requires table output; add --format table and omit --output -"
+        );
+    }
+    destination.folder_rows = folder_rows;
     let user_path = user_defaults(shared.no_user_config);
     let overrides = ScopeOverrides {
         hidden: args.hidden,
@@ -846,14 +874,17 @@ fn report(
         Sort::Name => RowOrder::Name,
     };
     let mut human = match format {
-        Format::Table => render_table_with_theme(
+        Format::Table => render_table_with_options(
             &project,
             &summary,
             &rows,
             &findings,
-            shared.categories,
-            order,
-            terminal_theme(io::stdout().is_terminal()),
+            TableOptions {
+                categories: shared.categories,
+                order,
+                theme: terminal_theme(io::stdout().is_terminal()),
+                folder_rows: destination.folder_rows,
+            },
         ),
         Format::Markdown => {
             render_markdown(&project, &summary, &rows, &findings, shared.depth, order)
@@ -1021,6 +1052,12 @@ fn parse_cli() -> clap::error::Result<Cli> {
     // root flags, allowing a reserved name to become DIR. Validate after parsing
     // instead so command precedence is independent of preceding root options.
     if let Some(name) = matches.subcommand_name() {
+        if matches.contains_id("folder_rows") {
+            return Err(command.error(
+                clap::error::ErrorKind::ArgumentConflict,
+                "--folder-rows is only available for single-root measurement, not subcommands",
+            ));
+        }
         if matches.args_present() {
             return Err(command.error(
                 clap::error::ErrorKind::ArgumentConflict,

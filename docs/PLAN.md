@@ -93,23 +93,27 @@ Approved and implemented 2026-10-16: `--subfolder DIR` restricts a single-root m
 
 Verification: initial command and saved-receipt guards failed before implementation. Sixteen focused tests now cover record/breakdown parity, independent counts, context/coverage separation, filtered and empty directories, path identity, zero-code modules, scoped findings, restricted comparisons, output protection, descriptor removal, schema validation and human views. The full public suite, formatting, Clippy, private replay and executable README troubleshooting workflows pass. Private replay guards existing measurement behavior; synthetic scanning cases establish the feature. Verification was local on macOS, not Linux CI. [Detailed evidence](plans/measurement-quality-and-net-change.md#subfolder-implementation--2026-10-16) records limits and documentation ownership. The external implementation review of `799b65f` confirmed the counting, selection and comparison design. Its diagnostic and documentation corrections are recorded in the [review follow-up](plans/measurement-quality-and-net-change.md#subfolder-review-follow-up--2026-10-16); the following refactor checkpoint shares module ownership between summary generation and saved-report validation.
 
+## Adaptive Folder Detail — Complete, Unreleased
+
+Implemented after owner approval on 2026-10-16: `--folder-rows N` gives the single-root terminal Folder table deeper additive detail, with a required positive budget and no default. It preserves initial sibling contributions, collapses single-child chains, splits the largest fitting folder and uses direct-files/remainder rows without overlap. [PRODUCT](PRODUCT.md#adaptive-folder-detail) owns the supported contract; the [checkpoint](plans/measurement-quality-and-net-change.md#adaptive-folder-detail--2026-10-16) records red/green evidence and validation. Stable v0.2.0 does not include the option.
+
+The full public suite, formatting, Clippy, executable README workflows and private regression pass locally on macOS. Default output, JSON and the unclassified-folder partition remain unchanged. No push or release was performed; Linux execution and large-tree rendering cost remain unverified. The neutral language-ratio extension stays on hold.
+
 ## Known Display Follow-up
 
-- Terminal note escaping: the unclaimed-source folder notes can print control characters embedded in path names. The new subfolder title uses the shared plain-label sanitizer, but older note formatting needs its own focused correction and regression guard. JSON path identities must remain unchanged.
+- Terminal label/note escaping: the default Folder table and unclaimed-source folder notes can print control characters embedded in path names. The default-table gap was reproduced while testing adaptive detail on 2026-10-16; adaptive rows use the shared sanitizer. The new subfolder title uses the shared plain-label sanitizer, but older note formatting needs its own focused correction and regression guard. JSON path identities must remain unchanged.
 
-- Folder-partition convergence — deferred decision: the [adaptive-folder proposal](proposals/adaptive-folder-detail.md#existing-partition-and-feasibility) differs intentionally from `unclassified_folders`, whose results appear in JSON and agent workflows. Keep that behavior unchanged in the proposed feature; share only narrow containment/chain-collapse semantics where practical. Consider policy convergence separately if using both views demonstrates confusing divergence, with explicit compatibility review rather than an incidental renderer refactor.
+- Folder-partition convergence — deferred decision: the [adaptive-folder decision record](proposals/adaptive-folder-detail.md#existing-partition-and-feasibility) differs intentionally from `unclassified_folders`, whose results appear in JSON and agent workflows. The adaptive feature preserves that behavior; share only narrow containment/chain-collapse semantics where practical. Consider policy convergence separately if using both views demonstrates confusing divergence, with explicit compatibility review rather than an incidental renderer refactor.
 
-- Presentation-option consistency — separate cleanup decision: `--categories` is silently ignored outside table output and `--depth` outside Markdown today. Recommend clear errors for explicitly supplied options that cannot affect the selected format, but assess CLI compatibility separately. Because `--depth` defaults to 2, any future check must distinguish explicit arguments from defaults (for example, through clap’s `ValueSource`) rather than rejecting a value merely because it is present. The proposed `--folder-rows` starts strict, including inferred formats and workspace rejection; this does not authorize changing existing flags.
+- Presentation-option consistency — separate cleanup decision: `--categories` is silently ignored outside table output and `--depth` outside Markdown today. Recommend clear errors for explicitly supplied options that cannot affect the selected format, but assess CLI compatibility separately. Because `--depth` defaults to 2, any future check must distinguish explicit arguments from defaults (for example, through clap’s `ValueSource`) rather than rejecting a value merely because it is present. The new `--folder-rows` is strict, including inferred formats and workspace rejection; this does not authorize changing existing flags.
 
 ## Completed Design Decisions
+
+- [Adaptive folder detail — historical decision record](proposals/adaptive-folder-detail.md): implemented in the development checkout; retained rationale and acceptance criteria. [PRODUCT](PRODUCT.md#adaptive-folder-detail) owns behavior.
 
 - [Subtree measurement — historical decision record](proposals/subtree-measurement.md): retained design rationale and acceptance criteria; [PRODUCT](PRODUCT.md#subfolder-measurement) owns the implemented contract.
 
 - [Net change between measurement reports — historical decision record](proposals/net-change.md): aggregate/topology comparison implemented as `0.2.0-dev.1`; retained for S4 acceptance evidence and design rationale. [PRODUCT](PRODUCT.md#net-change) owns supported behavior. The [conditional per-file follow-up](plans/measurement-quality-and-net-change.md#per-file-comparison) owns the deferred design and consumer-demand trigger.
-
-## Proposals — Under Discussion
-
-- [Adaptive folder detail in terminal reports](proposals/adaptive-folder-detail.md): external review complete 2026-10-16, recommending implementation approval; awaiting owner approval. Recommend a single opt-in `--folder-rows N` option with a required value to expand large folder rows into deeper, additive rows under a soft budget. Preserve measurement scope, JSON and the existing unclassified-folder partition. The proposal records wide-folder handling, determinism, tradeoffs and acceptance criteria. No implementation is active.
 
 ## Ideas — Not Scheduled
 

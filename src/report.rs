@@ -290,11 +290,21 @@ pub struct FolderShare {
 const FOLDER_ROWS: usize = 8;
 
 /// `path` relative to `folder`, if it lies below it; `""` is the scan root.
-fn below<'p>(path: &'p str, folder: &str) -> Option<&'p str> {
+pub(crate) fn below<'p>(path: &'p str, folder: &str) -> Option<&'p str> {
     match folder {
         "" => Some(path),
         _ => path.strip_prefix(folder)?.strip_prefix('/'),
     }
+}
+
+pub(crate) fn collapse_folder(
+    mut folder: String,
+    mut only_child: impl FnMut(&str) -> Option<String>,
+) -> String {
+    while let Some(child) = only_child(&folder) {
+        folder = child;
+    }
+    folder
 }
 
 /// Folders that together hold all unclaimed source, largest first, so a
@@ -330,13 +340,11 @@ pub fn unclassified_folders(rows: &[FileRecord]) -> Vec<FolderShare> {
         }
         (subfolders, direct)
     };
-    let collapse = |mut folder: String| loop {
-        match children(&folder) {
-            (subfolders, false) if subfolders.len() == 1 => {
-                folder = subfolders.into_iter().next().expect("one subfolder");
-            }
-            _ => return folder,
-        }
+    let collapse = |folder: String| {
+        collapse_folder(folder, |folder| match children(folder) {
+            (subfolders, false) if subfolders.len() == 1 => subfolders.into_iter().next(),
+            _ => None,
+        })
     };
     let share = |folder: &str| {
         let inside: Vec<u64> = files

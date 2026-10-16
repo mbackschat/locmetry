@@ -1,6 +1,6 @@
 # Adaptive Folder Detail in Terminal Reports
 
-Status: proposed 2026-10-16; external review complete with approval recommendation at `0bd0eac`; awaiting owner approval. This document recommends a display-only feature; no implementation is authorized. [PRODUCT](../PRODUCT.md#reporting-and-coverage) remains the supported contract, and [PLAN](../PLAN.md#proposals--under-discussion) indexes this proposal.
+Status: historical decision record. The owner approved implementation on 2026-10-16; `--folder-rows N` is implemented in the development checkout, unreleased after v0.2.0. [PRODUCT](../PRODUCT.md#adaptive-folder-detail) owns the supported contract; the [work plan](../plans/measurement-quality-and-net-change.md#adaptive-folder-detail--2026-10-16) records verification. The sections below preserve the reviewed design and acceptance criteria, not an active proposal. Do not update this record to track behavior.
 
 ## Problem and Recommendation
 
@@ -120,4 +120,4 @@ Keep the new display partition separate and preserve `unclassified_folders` outp
 
 [CLI rendering](../../src/main.rs) currently uses `--categories` only for table output and `--depth` only for Markdown, silently ignoring them elsewhere. Rejecting unsupported `--folder-rows` combinations is deliberately stricter. The same [plan section](../PLAN.md#known-display-follow-up) records existing-flag consistency as a separate cleanup decision, rather than broadening this change.
 
-No prototype, performance test or executable acceptance check has been run for this proposal. The external review of `0bd0eac` confirms all seven findings are addressed and recommends approval for implementation. Its final wording corrections are incorporated; owner approval remains pending.
+At design review, no prototype, performance test or executable acceptance check had been run. The external review of `0bd0eac` confirmed all seven findings were addressed; final wording corrections landed in `a07fa3b`. The owner subsequently approved implementation. Its verification and remaining limits are recorded in the linked work plan.
