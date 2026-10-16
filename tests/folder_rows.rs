@@ -406,3 +406,54 @@ fn adaptive_styling_preserves_plain_alignment_and_mutes_the_legend() {
     }
     assert_eq!(plain, unstyled);
 }
+
+#[test]
+fn adaptive_path_order_keeps_descendants_before_prefix_siblings() {
+    let temp = fixture();
+    for path in [
+        "src/p.rs",
+        "src/only/deep/chain/p.rs",
+        "src/only/deep/chain/alpha/p.rs",
+        "src/only/deep/chain/beta/p.rs",
+        "src-old/p.rs",
+    ] {
+        source(temp.path(), path, 1);
+    }
+    let expected = vec![
+        "src (direct files)",
+        "src/only/deep/chain (direct files)",
+        "src/only/deep/chain/alpha",
+        "src/only/deep/chain/beta",
+        "src-old",
+        "Total",
+    ];
+    for order in ["name", "code"] {
+        let rows = folder_rows(&table(temp.path(), 10, &["--sort", order]));
+        assert_eq!(
+            rows.iter()
+                .map(|(name, _)| name.as_str())
+                .collect::<Vec<_>>(),
+            expected
+        );
+    }
+}
+
+#[test]
+fn equal_code_expansion_prefers_component_order_after_chain_collapse() {
+    let temp = fixture();
+    for path in [
+        "a/nested/x/p.rs",
+        "a/nested/y/p.rs",
+        "a-old/x/p.rs",
+        "a-old/y/p.rs",
+    ] {
+        source(temp.path(), path, 1);
+    }
+    let rows = folder_rows(&table(temp.path(), 3, &["--sort", "name"]));
+    assert_eq!(
+        rows.iter()
+            .map(|(name, _)| name.as_str())
+            .collect::<Vec<_>>(),
+        vec!["a/nested/x", "a/nested/y", "a-old", "Total"]
+    );
+}

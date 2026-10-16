@@ -372,3 +372,7 @@ Documentation: README identifies the new option as development-only, PRODUCT own
 The standalone release build passes and `target/release/locmetry` reproduces the proposal’s independent synthetic example: seven non-overlapping rows totaling 1,000 source lines, including the direct-files row. This is a local build, not a published release.
 
 Documentation clarification after `041aa75`: README, PRODUCT and measurement semantics now explicitly state that adaptive detail changes the existing second (Folder) table and adds no third table; the Language table is unchanged. README distinguishes the new row-budget option from the existing `--format table` option and explains terminal versus redirected defaults. Executable README workflows and diff checks pass.
+
+### Adaptive Folder Implementation Review
+
+The external review confirmed the approved partition, scope and CLI behavior but found plain-string path comparison interleaving descendants with prefix siblings. Two independent regression cases fail before correction: displayed `src` descendants fall after `src-old`, and equal-code candidate selection expands `a-old` before `a/nested`. One component-wise comparator now governs final row ordering, candidate ties and child ties; PRODUCT and README describe that meaning. All eleven adaptive-folder tests, formatting, Clippy with warnings denied and executable README workflows pass. The proposed wider budget hint remains a separate recommendation in PLAN; it is not activated by this fix.

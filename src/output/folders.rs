@@ -31,6 +31,10 @@ impl Row {
         }
     }
 
+    fn path_order(&self, other: &Self) -> std::cmp::Ordering {
+        self.path.split('/').cmp(other.path.split('/'))
+    }
+
     fn code(&self) -> u64 {
         self.purposes.values().sum()
     }
@@ -91,7 +95,7 @@ impl Tree<'_> {
                 )
             })
             .collect();
-        children.sort_by(|a, b| b.code().cmp(&a.code()).then_with(|| a.path.cmp(&b.path)));
+        children.sort_by(|a, b| b.code().cmp(&a.code()).then_with(|| a.path_order(b)));
         if direct.len() + children.len() > slots {
             let named = slots.checked_sub(direct.len() + 1)?;
             if named < 2 {
@@ -164,8 +168,7 @@ pub(super) fn adaptive(
             .enumerate()
             .filter(|(_, r)| r.kind == RowKind::Folder)
             .collect();
-        candidates
-            .sort_by(|(_, a), (_, b)| b.code().cmp(&a.code()).then_with(|| a.path.cmp(&b.path)));
+        candidates.sort_by(|(_, a), (_, b)| b.code().cmp(&a.code()).then_with(|| a.path_order(b)));
         let next = candidates.into_iter().find_map(|(index, row)| {
             tree.split(row, limit - rows.len() + 1)
                 .map(|children| (index, children))
@@ -179,7 +182,7 @@ pub(super) fn adaptive(
         }
     }
     rows.sort_by(|a, b| {
-        let name = a.path.cmp(&b.path).then_with(|| a.kind.cmp(&b.kind));
+        let name = a.path_order(b).then_with(|| a.kind.cmp(&b.kind));
         match order {
             RowOrder::Code => b.code().cmp(&a.code()).then(name),
             RowOrder::Name => name,

@@ -101,6 +101,8 @@ The full public suite, formatting, Clippy, executable README workflows and priva
 
 ## Known Display Follow-up
 
+- Adaptive detail hint — recommendation awaiting approval: show a budget hint whenever a positive-code folder with children remains, including when its minimum split cannot fit after other expansions. This would improve discoverability beyond the current initial-budget-only hint; it is a separate contract change, not part of the name-order correction.
+
 - Terminal label/note escaping: the default Folder table and unclaimed-source folder notes can print control characters embedded in path names. The default-table gap was reproduced while testing adaptive detail on 2026-10-16; adaptive rows use the shared sanitizer. The new subfolder title uses the shared plain-label sanitizer, but older note formatting needs its own focused correction and regression guard. JSON path identities must remain unchanged.
 
 - Folder-partition convergence — deferred decision: the [adaptive-folder decision record](proposals/adaptive-folder-detail.md#existing-partition-and-feasibility) differs intentionally from `unclassified_folders`, whose results appear in JSON and agent workflows. The adaptive feature preserves that behavior; share only narrow containment/chain-collapse semantics where practical. Consider policy convergence separately if using both views demonstrates confusing divergence, with explicit compatibility review rather than an incidental renderer refactor.
