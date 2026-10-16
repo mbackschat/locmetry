@@ -15,12 +15,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-pub(crate) fn plain(value: &str) -> String {
-    value
-        .chars()
-        .map(|c| if c.is_control() { ' ' } else { c })
-        .collect()
-}
+pub(crate) use crate::style::plain;
 
 pub(crate) fn cell(value: &str) -> String {
     plain(value)
@@ -928,24 +923,26 @@ pub fn render_table_with_options(
                 )
             })
             .collect();
-        notes.push(format!("Not source code: {}.", kinds.join(", ")));
+        notes.push(TerminalNote::Text(format!(
+            "Not source code: {}.",
+            kinds.join(", ")
+        )));
     }
     let coverage = findings.coverage;
-    notes.extend(build_modules_note(findings.modules, order));
-    notes.extend(submodules_note(findings.submodules));
+    notes.extend(build_modules_note(findings.modules, order).map(TerminalNote::Text));
+    notes.extend(submodules_note(findings.submodules).map(TerminalNote::Text));
     let folders = unclassified_folders(rows);
     if !folders.is_empty() {
-        notes.push(unclaimed_note(&folders, theme));
+        notes.push(TerminalNote::Unclaimed(folders));
     }
-    notes.extend(unused_entries_note(
-        findings.unused_entries,
-        findings.subfolder,
-    ));
-    notes.extend(unused_exclusions_note(
-        findings.unused_exclusions,
-        findings.subfolder,
-    ));
-    notes.extend(repositories_note(findings.members));
+    notes.extend(
+        unused_entries_note(findings.unused_entries, findings.subfolder).map(TerminalNote::Text),
+    );
+    notes.extend(
+        unused_exclusions_note(findings.unused_exclusions, findings.subfolder)
+            .map(TerminalNote::Text),
+    );
+    notes.extend(repositories_note(findings.members).map(TerminalNote::Text));
     let mut gaps = Vec::new();
     if coverage.unrecognized_files > 0 {
         let mut extensions: Vec<_> = coverage.unrecognized_extensions.iter().collect();
@@ -973,26 +970,46 @@ pub fn render_table_with_options(
             "file with a parsing failure",
         ));
         for failure in coverage.parse_failures.iter().take(25) {
-            notes.push(format!(
+            notes.push(TerminalNote::Text(format!(
                 "{}: {} — {}",
                 failure.path, failure.reason, failure.message
-            ));
+            )));
         }
     }
     if !gaps.is_empty() {
-        notes.push(format!(
-            "{} {}; missing lines are not zero.",
-            theme.paint(Role::Warning, "Not counted:"),
+        notes.push(TerminalNote::CoverageGap(format!(
+            "{}; missing lines are not zero.",
             gaps.join(", ")
-        ));
+        )));
     }
     if !notes.is_empty() {
         output += "\n";
         for note in notes {
-            writeln!(output, " {note}").unwrap();
+            writeln!(output, " {}", note.render(theme)).unwrap();
         }
     }
     output
+}
+
+enum TerminalNote {
+    Text(String),
+    Unclaimed(Vec<FolderShare>),
+    CoverageGap(String),
+}
+
+impl TerminalNote {
+    fn render(self, theme: Theme) -> String {
+        match self {
+            Self::Text(text) => plain(&text),
+            // This list owns its line breaks and sanitizes labels before padding.
+            Self::Unclaimed(folders) => unclaimed_note(&folders, theme),
+            Self::CoverageGap(text) => format!(
+                "{} {}",
+                theme.paint(Role::Warning, "Not counted:"),
+                plain(&text)
+            ),
+        }
+    }
 }
 
 fn render_coverage(output: &mut String, findings: &Findings) {
@@ -1219,6 +1236,23 @@ fn human_top_folders(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn terminal_notes_sanitize_before_applying_their_own_style() {
+        for theme in [Theme::PLAIN, Theme::TERMINAL] {
+            assert_eq!(
+                TerminalNote::Text("path\x1b[31m\nvalue\t".into()).render(theme),
+                "path [31m value "
+            );
+            assert_eq!(
+                TerminalNote::CoverageGap("ext\x1b[31m\rvalue".into()).render(theme),
+                format!(
+                    "{} ext [31m value",
+                    theme.paint(Role::Warning, "Not counted:")
+                )
+            );
+        }
+    }
 
     #[test]
     fn table_sanitizes_every_cell_before_padding_and_styling() {

@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use clap::{CommandFactory, FromArgMatches, Parser, Subcommand, ValueEnum};
 use locmetry::contract::{self, MeasurementReport};
-use locmetry::style::{Role, Theme};
+use locmetry::style::{plain, Role, Theme};
 use locmetry::{
     breakdown, build_report, build_systems, git_submodules, module_shares, render_markdown,
     render_table_with_options, report_text, review, scan, scope_policy, submodule_shares,
@@ -1070,8 +1070,9 @@ fn parse_cli() -> clap::error::Result<Cli> {
 
 fn stderr_message(role: Role, message: impl std::fmt::Display) {
     eprintln!(
-        "{} {message}",
-        terminal_theme(io::stderr().is_terminal()).paint(role, "locmetry:")
+        "{} {}",
+        terminal_theme(io::stderr().is_terminal()).paint(role, "locmetry:"),
+        plain(&message.to_string())
     );
 }
 

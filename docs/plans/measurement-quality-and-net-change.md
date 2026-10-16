@@ -384,3 +384,9 @@ The separate terminal-escaping correction addresses the common rendering boundar
 ### Adaptive Folder Internal Cleanup
 
 The separate review cleanup renames the split accumulator to reflect all replacement rows and reuses ranked child rows during chain collapse. Only the path changes along a chain with no direct source and one source-bearing child; its purpose totals remain intact. Existing public table-rendering wrappers remain for compatibility. All eleven adaptive-folder tests, formatting and Clippy with warnings denied pass after the refactor; the preceding corrections also passed the full public suite and executable README workflows.
+
+### Terminal Note and Diagnostic Safety
+
+The follow-up review reopened terminal safety beyond table cells and unclaimed labels: parse-failure notes, Git submodule notes and partial-results stderr still carried raw path controls. The new scanning guard failed on the diagnostic before correction; the previous local release binary also reproduced both note failures independently. Table notes now share a rendering boundary that flattens untrusted text before applying owned styling, while the aligned unclaimed list retains its intentional layout. All application stderr messages use the same sanitizer before the themed prefix is added. The sanitizer lives with shared presentation utilities; JSON retains original paths and failure evidence.
+
+Verification: real notebook/submodule names containing ESC, newline and tab now render safely, preserve partial-result exit 2, and round-trip unchanged in JSON. Note tests cover plain and styled rendering. The full public suite, formatting, Clippy with warnings denied and executable README workflows pass. This presentation-only change does not repeat private frozen-count replay or claim Linux verification.

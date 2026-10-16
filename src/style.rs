@@ -1,5 +1,13 @@
 //! Semantic presentation roles shared by human renderers; never used for JSON.
 
+/// Flatten control characters before adding terminal layout or styling.
+pub fn plain(value: &str) -> String {
+    value
+        .chars()
+        .map(|c| if c.is_control() { ' ' } else { c })
+        .collect()
+}
+
 #[derive(Clone, Copy)]
 pub enum Role {
     Heading,

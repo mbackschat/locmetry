@@ -103,7 +103,7 @@ The full public suite, formatting, Clippy, executable README workflows and priva
 
 - Adaptive detail hint — recommendation awaiting approval: show a budget hint whenever a positive-code folder with children remains, including when its minimum split cannot fit after other expansions. This would improve discoverability beyond the current initial-budget-only hint; it is a separate contract change, not part of the name-order correction.
 
-- Terminal table and unclaimed-label safety — resolved 2026-10-16: shared table cells and unclaimed folder labels sanitize controls before padding and styling; JSON paths remain unchanged. [Verification](plans/measurement-quality-and-net-change.md#terminal-cell-and-unclaimed-label-safety) records real-path and renderer regression guards.
+- Terminal output safety — reopened by follow-up review for parse-failure notes, submodule notes and partial-results stderr; corrected 2026-10-16 at the shared note and diagnostic rendering boundaries. Table cells and unclaimed labels retain their earlier guards; JSON evidence remains unchanged. [Verification](plans/measurement-quality-and-net-change.md#terminal-note-and-diagnostic-safety) records the expanded coverage.
 
 - Folder-partition convergence — deferred decision: the [adaptive-folder decision record](proposals/adaptive-folder-detail.md#existing-partition-and-feasibility) differs intentionally from `unclassified_folders`, whose results appear in JSON and agent workflows. The adaptive feature preserves that behavior; share only narrow containment/chain-collapse semantics where practical. Consider policy convergence separately if using both views demonstrates confusing divergence, with explicit compatibility review rather than an incidental renderer refactor.
 
