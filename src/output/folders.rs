@@ -60,15 +60,21 @@ impl Tree<'_> {
     }
 
     fn folder(&self, path: &str) -> Row {
-        let path = collapse_folder(path.into(), |path| match self.children(path) {
+        self.collapse(Row::new(
+            path,
+            RowKind::Folder,
+            &self.summary.folders[path].recursive,
+        ))
+    }
+
+    fn collapse(&self, mut row: Row) -> Row {
+        // With no direct source and one source-bearing child, the purposes stay
+        // unchanged along the chain (docs/PRODUCT.md#adaptive-folder-detail).
+        row.path = collapse_folder(row.path, |path| match self.children(path) {
             [child] if self.summary.folders[path].direct.source.files == 0 => Some((*child).into()),
             _ => None,
         });
-        Row::new(
-            &path,
-            RowKind::Folder,
-            &self.summary.folders[&path].recursive,
-        )
+        row
     }
 
     fn direct(&self, path: &str) -> Option<Row> {
@@ -84,7 +90,7 @@ impl Tree<'_> {
         if children.is_empty() {
             return None;
         }
-        let mut direct: Vec<_> = self.direct(&row.path).into_iter().collect();
+        let mut rows: Vec<_> = self.direct(&row.path).into_iter().collect();
         let mut children: Vec<_> = children
             .iter()
             .map(|path| {
@@ -96,8 +102,8 @@ impl Tree<'_> {
             })
             .collect();
         children.sort_by(|a, b| b.code().cmp(&a.code()).then_with(|| a.path_order(b)));
-        if direct.len() + children.len() > slots {
-            let named = slots.checked_sub(direct.len() + 1)?;
+        if rows.len() + children.len() > slots {
+            let named = slots.checked_sub(rows.len() + 1)?;
             if named < 2 {
                 return None;
             }
@@ -112,12 +118,12 @@ impl Tree<'_> {
                     *remainder.purposes.entry(purpose).or_default() += code;
                 }
             }
-            direct.push(remainder);
+            rows.push(remainder);
         }
         // The remainder describes immediate children; collapse only the named
         // rows after allocation so its scope stays stable (docs/PRODUCT.md#adaptive-folder-detail).
-        direct.extend(children.into_iter().map(|child| self.folder(&child.path)));
-        Some(direct)
+        rows.extend(children.into_iter().map(|child| self.collapse(child)));
+        Some(rows)
     }
 }
 
