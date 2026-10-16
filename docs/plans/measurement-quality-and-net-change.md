@@ -474,3 +474,11 @@ The owner identified that the promised explicit configuration starting instructi
 The [proposal](../proposals/embedded-guides.md) now states these obligations and corresponding acceptance checks. This closes the identified design gaps without adding topics, index/search, a skill or a new protocol. It does not claim that the unimplemented interface or future guide prose has passed those checks. Implementation and the separate schema-validation prerequisite remain unapproved.
 
 Verification: checked the new requirements against their acceptance items, confirmed the explicit starting sentence and approval boundary, and validated all 451 local public-documentation links/fragments. `git diff --check` passes. Changes are limited to proposal/plan text; no runtime tests were rerun and no implementation, push or release was performed.
+
+## Embedded Guidance Implementation — 2026-10-16
+
+The owner approved completing the standalone schema-query correction and all four embedded guides, with LOW/MEDIUM sub-agents for checks. The earlier approval-pending entries above are historical. Implement as two reviewable checkpoints; publication remains outside scope.
+
+Schema-query checkpoint: a new argument-order regression failed because `--schema config missing` exited 0. The parser now checks concrete explicitly supplied arguments, excluding implicit defaults and flattened groups, before runtime work. All root measurement/presentation arguments conflict, including explicit default values and config/user-config flags. Ordinary measurement warnings and help/version early exits remain unchanged. PRODUCT, README and v0.4.0 behavior notes record the stricter interface. Verification is recorded after checks finish.
+
+Schema checkpoint verification: full public tests, formatting, Clippy with warnings denied and executable README recipes pass. A LOW-tier checker independently probed malformed project/personal configs, explicit default values, argument orders, separator paths and valid subcommands; no defect was found. One old notebook schema test implicitly injected `--no-user-config`; it now calls the standalone schema correctly. The ordinary measurement warning assertions remain intact. No counting behavior changed, and private counting replay was not rerun.

@@ -274,7 +274,7 @@ Personal defaults for every project, such as extra exclusions or language mappin
 | `--output FILE` | Write only to `FILE`, outside the scan root; `-` selects stdout. Defaults to full JSON; explicit `--format` wins. Extensions do not select a format. |
 | `--files` | Add per-file records; requires full JSON (`--format json` or `--output FILE`). |
 | `--categories` | Add purpose/category rows to table output; warns in other formats. |
-| `--schema config\|user-config\|report\|comparison\|explanation\|workspace` | Print the JSON Schema of `.locmetryrc`, of personal defaults, of the JSON headline and report, of a net-change comparison, of a path explanation, or of a workspace file, and exit. Conflicts with `--output`, `--format` and `--files`; redirect stdout to save a schema. |
+| `--schema config\|user-config\|report\|comparison\|explanation\|workspace` | Print the JSON Schema of `.locmetryrc`, of personal defaults, of the JSON headline and report, of a net-change comparison, of a path explanation, or of a workspace file, and exit. Standalone query: rejects explicit roots, measurement/presentation options and subcommands; redirect stdout to save a schema. |
 
 `locmetry workspace` takes `--root DIR`, repeatable, or `--file FILE` instead, plus `--no-user-config` and the output options from `--format` to `--categories`; see [Measure several repositories together](#measure-several-repositories-together).
 

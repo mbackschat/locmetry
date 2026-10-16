@@ -1,6 +1,6 @@
 # On-demand Guides in the Locmetry Binary
 
-Status: revised for external review, 2026-10-16, following review of `2b28641` and a discovery/contract self-audit after `c9df62d`. Implementation, including the schema-query prerequisite, is not approved. [PRODUCT](../PRODUCT.md) owns current behavior; [PLAN](../PLAN.md#proposals--under-discussion) tracks this proposal. All `--guide` commands below are proposed.
+Status: approved for implementation on 2026-10-16, including the standalone schema-query prerequisite. [PRODUCT](../PRODUCT.md) owns supported behavior; the [work plan](../plans/measurement-quality-and-net-change.md#embedded-guidance-implementation--2026-10-16) records progress. The requirements below remain the approved design until implementation is verified.
 
 ## Owner Input and Intended Outcome
 
@@ -47,7 +47,7 @@ Successful guide queries exit 0 with empty stderr and print a header identifying
 
 Both `--guide` and `--schema` reject each other, explicit positional roots, measurement/presentation options and subcommands, before scanning or writing. Only explicit unrelated arguments conflict: `--root .`, `--config FILE` and `--no-user-config` are included, as are explicitly supplied default values such as `--sort code` and `--depth 2`. Defaulted values do not conflict; normal `--help`/`--version` early exits remain. Save either query by shell redirection; `--output` remains a result-export option.
 
-Recommend tightening existing `--schema` validation as a separate preceding change, then using that same argument-validation boundary for guides. Today schema queries silently ignore roots, subfolders, exclusions and sort options, while explicit categories/depth only warn. Under this proposal those combinations exit 1, including `--schema config --depth 3`. This changes existing behavior; it is justified by avoiding silently ignored requests and two query policies, not by assuming that a pre-1.0 change cannot affect callers. Ordinary measurement's ineffective-option warnings remain unchanged. The work plan records this prerequisite separately; no CLI change is authorized by this document.
+Recommend tightening existing `--schema` validation as a separate preceding change, then using that same argument-validation boundary for guides. Today schema queries silently ignore roots, subfolders, exclusions and sort options, while explicit categories/depth only warn. Under this proposal those combinations exit 1, including `--schema config --depth 3`. This changes existing behavior; it is justified by avoiding silently ignored requests and two query policies, not by assuming that a pre-1.0 change cannot affect callers. Ordinary measurement's ineffective-option warnings remain unchanged. The work plan records this prerequisite separately; the owner has approved both checkpoints.
 
 ## Topics and Configuration Outcomes
 

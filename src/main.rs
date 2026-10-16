@@ -92,12 +92,7 @@ struct Cli {
     #[arg(long, value_name = "DIR")]
     subfolder: Option<PathBuf>,
     /// Split the largest folders within an N-row budget; no top-level folder's code is merged away. Table format only.
-    #[arg(
-        long,
-        value_name = "N",
-        allow_negative_numbers = true,
-        conflicts_with = "schema"
-    )]
+    #[arg(long, value_name = "N", allow_negative_numbers = true)]
     folder_rows: Option<std::num::NonZeroUsize>,
     #[command(flatten)]
     root: RootArgs,
@@ -106,7 +101,8 @@ struct Cli {
     /// Print a JSON Schema and exit: of a configuration file, which explains
     /// every setting and the classification order, of the JSON report, or of
     /// a workspace file, a net-change comparison, or a path explanation.
-    #[arg(long, value_enum, conflicts_with_all = ["output", "format", "files"])]
+    /// This is a standalone query; do not combine it with measurement options.
+    #[arg(long, value_enum)]
     schema: Option<Schema>,
 }
 
@@ -415,7 +411,6 @@ fn user_defaults(no_user_config: bool) -> Option<PathBuf> {
 
 fn run(cli: Cli) -> Result<Outcome> {
     if let Some(schema) = cli.schema {
-        warn_ineffective_options(&cli.shared, None);
         let schema = match schema {
             Schema::Config => locmetry::config_schema(),
             Schema::UserConfig => locmetry::user_config_schema(),
@@ -1063,9 +1058,45 @@ fn report(
     Ok(Outcome::Complete)
 }
 
+fn validate_query(
+    command: &mut clap::Command,
+    matches: &clap::ArgMatches,
+    query: &str,
+) -> clap::error::Result<()> {
+    if let Some(name) = matches.subcommand_name() {
+        return Err(command.error(
+            clap::error::ErrorKind::ArgumentConflict,
+            format!("--{query} is a standalone query and cannot be combined with '{name}'"),
+        ));
+    }
+    // Only concrete, explicit arguments matter: flattened groups inherit sources,
+    // and default sort/depth values must not invalidate standalone queries.
+    let conflict = command
+        .get_arguments()
+        .find(|arg| {
+            arg.get_id().as_str() != query
+                && matches.value_source(arg.get_id().as_str())
+                    == Some(clap::parser::ValueSource::CommandLine)
+        })
+        .map(|arg| match arg.get_long() {
+            Some(long) => format!("--{long}"),
+            None => "DIR".to_owned(),
+        });
+    if let Some(argument) = conflict {
+        return Err(command.error(
+            clap::error::ErrorKind::ArgumentConflict,
+            format!("--{query} is a standalone query and cannot be combined with {argument}"),
+        ));
+    }
+    Ok(())
+}
+
 fn parse_cli() -> clap::error::Result<Cli> {
     let mut command = Cli::command();
     let matches = command.try_get_matches_from_mut(std::env::args_os())?;
+    if matches.value_source("schema") == Some(clap::parser::ValueSource::CommandLine) {
+        validate_query(&mut command, &matches, "schema")?;
+    }
     // Clap's args_conflicts_with_subcommands disables command recognition after
     // root flags, allowing a reserved name to become DIR. Validate after parsing
     // instead so command precedence is independent of preceding root options.

@@ -283,14 +283,6 @@ fn ineffective_presentation_options_warn_only_when_explicit_in_both_modes() {
             assert!(out.stderr.is_empty());
         }
     }
-    let out = run(
-        dir.path(),
-        &["--schema", "report", "--depth", "2", "--categories"],
-    );
-    success(&out);
-    assert!(json(&out.stdout).get("$schema").is_some());
-    let err = String::from_utf8_lossy(&out.stderr);
-    assert!(err.contains("--depth") && err.contains("--categories"));
 }
 
 #[test]

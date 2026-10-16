@@ -245,7 +245,7 @@ Diagnostics go to stderr. File exports do not echo the result or its information
 
 `--categories` takes effect only for table output. `--depth N` (default 2) limits Markdown folder depth. Explicitly supplying either option where it cannot take effect produces a stderr warning without changing the result or exit status; defaulted depth stays silent. `--sort code` (default) orders human rows by descending code and `--sort name` alphabetically; the Markdown folder table retains its hierarchy and review rows stay largest first.
 
-`--schema` always emits its JSON schema on stdout and conflicts with `--output`, `--format` and `--files`; redirect stdout to save it. Existing `--folder-rows`/schema conflicts remain. Explicit ineffective `--categories`/`--depth` warn on schema queries too; other harmless measurement flags do not add conflicts. `explain` retains `table|markdown|json`, no `headline` and no `--output`; its pipe default is the complete JSON explanation.
+`--schema` is a standalone query: it emits its JSON schema on stdout without loading configuration or measuring. It rejects explicit roots, measurement/presentation options and subcommands with exit 1 before scanning or writing. Explicit default-valued flags such as `--depth 2` also conflict; implicit defaults do not. Help/version retain their normal early exits. Redirect stdout to save a schema. `explain` retains `table|markdown|json`, no `headline` and no `--output`; its pipe default is the complete JSON explanation.
 
 ### Report Content
 

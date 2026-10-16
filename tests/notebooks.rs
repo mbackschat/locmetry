@@ -296,8 +296,12 @@ fn report_schema_distinguishes_historical_absence_from_recorded_parse_failures()
     let root = tempfile::tempdir().unwrap();
     write(root.path(), &notebook(vec![]));
     let mut report = full(root.path());
-    let schema: Value =
-        serde_json::from_slice(&run(root.path(), &["--schema", "report"]).stdout).unwrap();
+    let output = Command::new(env!("CARGO_BIN_EXE_locmetry"))
+        .args(["--schema", "report"])
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    let schema: Value = serde_json::from_slice(&output.stdout).unwrap();
     let validator = jsonschema::validator_for(&schema).unwrap();
     assert_eq!(report["metadata"]["coverage"]["parse_failures"], json!([]));
     assert!(validator.is_valid(&report));
