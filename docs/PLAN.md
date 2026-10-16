@@ -159,6 +159,8 @@ Contributor commands and conventions are in [CLAUDE.md](../CLAUDE.md). Run the [
 
 Implemented as two checkpoints: coverage/producer summaries from typed evidence, and source-code detail rows selected by the displayed measure or recorded member/folder presence. Both checkpoints pass red/green regression guards, the full public suite, formatting, Clippy and executable README/guide examples. The [active checkpoint](plans/measurement-quality-and-net-change.md#comparison-readability--2026-10-16) owns verification evidence; [PRODUCT](PRODUCT.md#net-change) owns shipped behavior. JSON findings/messages, schemas, arithmetic and exit statuses remain unchanged.
 
+A follow-up compacts the table’s Totals columns to their headers and values, with right-aligned numbers and two-space gaps. The compact-layout test failed before implementation; the full public suite, formatting, Clippy and documentation examples pass afterward. The same [checkpoint](plans/measurement-quality-and-net-change.md#comparison-readability--2026-10-16) records evidence and limits.
+
 ## Comparison Presence Findings — Follow-up
 
 - [ ] Evaluate a separate human summary for large folder/member/package restructures. Keep this outside the completed coverage and row-selection changes; preserve complete JSON evidence.

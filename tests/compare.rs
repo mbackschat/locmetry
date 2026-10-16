@@ -538,12 +538,64 @@ fn rendering_escapes_markdown_but_preserves_plain_text_labels() {
         .lines()
         .find(|line| line.starts_with("Measure "))
         .unwrap();
-    assert_eq!(
-        header,
-        format!(
-            "{:<40} {:>12} {:>12} {:>12}",
-            "Measure", "Before", "After", "Net change"
-        )
+    assert_eq!(header, "Measure               Before  After  Net change");
+}
+
+#[test]
+fn comparison_totals_fit_their_contents_and_keep_large_signed_values_aligned() {
+    use locmetry::{compare::render_table, Counts};
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("project");
+    write(&root, "main.py", "print(1)\n");
+    let saved = save(temp.path(), "input.json", &measure(&root));
+    let full = document(compare(&saved, &saved, &["--format", "json"]), 0);
+    let mut report: locmetry::compare::Comparison = serde_json::from_value(full).unwrap();
+    let table = render_table(&report);
+    let totals = table
+        .split("Totals\n")
+        .nth(1)
+        .unwrap()
+        .split("\n\n")
+        .next()
+        .unwrap();
+    assert!(totals.lines().all(|line| line.len() == 47), "{totals}");
+    assert!(
+        totals.contains("All counted files          1      1          +0"),
+        "{totals}"
+    );
+
+    let change = &mut report.summary.dimensions.all_counted;
+    change.before = Counts {
+        files: 1,
+        code: 1_u64 << 63,
+        lines: 1_u64 << 63,
+        ..Counts::default()
+    };
+    change.after = Counts::default();
+    change.delta = locmetry::compare::SignedCounts {
+        files: -1,
+        code: i64::MIN,
+        lines: i64::MIN,
+        ..Default::default()
+    };
+    report.summary.dimensions.source = report.summary.dimensions.all_counted;
+    let table = render_table(&report);
+    let totals = table
+        .split("Totals\n")
+        .nth(1)
+        .unwrap()
+        .split("\n\n")
+        .next()
+        .unwrap();
+    assert!(totals.lines().all(|line| line.len() == 70), "{totals}");
+    for line in totals.lines() {
+        assert_eq!(&line[20..22], "  ");
+        assert_eq!(&line[41..43], "  ");
+        assert_eq!(&line[48..50], "  ");
+    }
+    assert!(
+        totals.contains("All counted code      9223372036854775808      0  -9223372036854775808"),
+        "{totals}"
     );
 }
 
@@ -1000,9 +1052,9 @@ fn comparison_theme_preserves_plain_text_and_distinguishes_signed_changes() {
     let plain = locmetry::compare::render_table(&report);
     let colored = locmetry::compare::render_table_with_theme(&report, Theme::TERMINAL);
     for expected in [
-        "\x1b[36m          +1",
-        "\x1b[35m          -1",
-        "\x1b[90m          +0",
+        "\x1b[36m        +1",
+        "\x1b[35m        -1",
+        "\x1b[90m        +0",
     ] {
         assert!(colored.contains(expected), "{colored}");
     }

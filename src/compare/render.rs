@@ -88,28 +88,13 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
         .unwrap();
     }
     writeln!(out,"\n{}", theme.paint(Role::Muted, "After minus before, over recorded counts. Unavailable lines are not estimated; presence does not prove physical creation or deletion.")).unwrap();
-    if markdown {
-        out.push_str("\n## Totals\n\n| Measure | Before | After | Net change |\n| --- | ---: | ---: | ---: |\n");
-    } else {
-        writeln!(
-            out,
-            "\n{}\n{}",
-            theme.paint(Role::Heading, "Totals"),
-            theme.paint(
-                Role::Heading,
-                &format!(
-                    "{:<40} {:>12} {:>12} {:>12}",
-                    "Measure", "Before", "After", "Net change"
-                )
-            )
-        )
-        .unwrap();
-    }
-    for (label, change) in [
+    let totals: Vec<_> = [
         ("All counted", c.summary.dimensions.all_counted),
         ("Source", c.summary.dimensions.source),
-    ] {
-        for (metric, b, a, d) in [
+    ]
+    .into_iter()
+    .flat_map(|(label, change)| {
+        [
             (
                 "files",
                 change.before.files,
@@ -140,26 +125,58 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
                 change.after.lines,
                 change.delta.lines,
             ),
-        ] {
-            if markdown {
-                writeln!(
-                    out,
-                    "| {label} {metric} | {b} | {a} | {} |",
-                    theme.delta(d, 0)
-                )
-                .unwrap();
-            } else {
-                writeln!(
-                    out,
-                    "{} {b:>12} {a:>12} {}",
-                    theme.paint(
-                        Role::Heading,
-                        &format!("{:<40}", format!("{label} {metric}"))
-                    ),
-                    theme.delta(d, 12)
-                )
-                .unwrap();
+        ]
+        .map(|(metric, before, after, delta)| (format!("{label} {metric}"), before, after, delta))
+    })
+    .collect();
+    let headers = ["Measure", "Before", "After", "Net change"];
+    let [measure_width, before_width, after_width, delta_width] = totals.iter().fold(
+        headers.map(str::len),
+        |mut widths, (name, before, after, delta)| {
+            for (width, required) in widths.iter_mut().zip([
+                name.len(),
+                before.to_string().len(),
+                after.to_string().len(),
+                format!("{delta:+}").len(),
+            ]) {
+                *width = (*width).max(required);
             }
+            widths
+        },
+    );
+    if markdown {
+        out.push_str("\n## Totals\n\n| Measure | Before | After | Net change |\n| --- | ---: | ---: | ---: |\n");
+    } else {
+        writeln!(
+            out,
+            "\n{}\n{}",
+            theme.paint(Role::Heading, "Totals"),
+            theme.paint(
+                Role::Heading,
+                &format!(
+                    "{:<measure_width$}  {:>before_width$}  {:>after_width$}  {:>delta_width$}",
+                    headers[0], headers[1], headers[2], headers[3]
+                )
+            )
+        )
+        .unwrap();
+    }
+    for (name, before, after, delta) in totals {
+        if markdown {
+            writeln!(
+                out,
+                "| {name} | {before} | {after} | {} |",
+                theme.delta(delta, 0)
+            )
+            .unwrap();
+        } else {
+            writeln!(
+                out,
+                "{}  {before:>before_width$}  {after:>after_width$}  {}",
+                theme.paint(Role::Heading, &format!("{name:<measure_width$}")),
+                theme.delta(delta, delta_width)
+            )
+            .unwrap();
         }
     }
     grid(
