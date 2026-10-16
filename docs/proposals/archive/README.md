@@ -1,6 +1,6 @@
 # Historical Proposal Decisions
 
-These records preserve the reviewed designs and their outcomes. Dates record the outcome, not archival placement or publication. `implemented` means the accepted scope was verified; consult the [release index](../../releases/README.md) for publication status. Historical bodies are frozen under the [retirement procedure](../README.md#retirement-procedure).
+These records preserve the reviewed designs and their outcomes. Dates record the outcome, not archival placement or publication. `implemented` means the accepted scope was verified; the [archived development record](../../plans/archive/development-plan-2026-10-16.md) preserves publication decisions and verification. Historical bodies are frozen under the [retirement procedure](../README.md#retirement-procedure).
 
 <!-- doc-index:start -->
 

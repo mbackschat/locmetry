@@ -4,7 +4,7 @@
 
 ## Next Release — Awaiting Authorization
 
-The [v0.4.0 development notes](releases/0.4.0.md) cover implemented output routing, embedded guides and comparison readability changes. Publication has not been authorized. When requested, apply the [release verification policy](../CLAUDE.md#testing-guidelines) and [distribution procedure](tokei-integration.md#distribution); prior local checks do not replace verification of the release candidate.
+The development checkout implements [output routing](PRODUCT.md#output-routing), [embedded guides](PRODUCT.md#embedded-task-guides) and [comparison readability](PRODUCT.md#net-change). Publication has not been authorized. When requested, apply the [release verification policy](../CLAUDE.md#testing-guidelines) and [distribution procedure](tokei-integration.md#distribution); prior local checks do not replace verification of the release candidate.
 
 ## CI Maintenance — Follow-up
 

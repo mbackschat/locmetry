@@ -6,11 +6,11 @@ Every shared documentation directory has a README listing its direct Markdown do
 
 The checker discovers tracked and new, non-ignored Markdown files under `docs/`, including intermediate directories. Each direct document and child index needs exactly one whole-document link in its parent README. Additional links to specific sections are allowed. README files do not index themselves. Asset-only directories need no README. Private `docs/research/local/` is always excluded, even if accidentally tracked; never copy its names or evidence into shared indexes.
 
-Ordinary indexes use handwritten task-oriented bullets with concise descriptions. Proposals, plans and releases use generated tables with one row per direct document: Document, Status, Date and Summary. Their introductions and child-directory links remain handwritten. Tables are bounded by `<!-- doc-index:start -->` and `<!-- doc-index:end -->`; do not edit their contents manually. Empty status directories retain both markers and show an explicit empty state.
+Ordinary indexes use handwritten task-oriented bullets with concise descriptions. Proposals and plans use generated tables with one row per direct document: Document, Status, Date and Summary. Their introductions and child-directory links remain handwritten. Tables are bounded by `<!-- doc-index:start -->` and `<!-- doc-index:end -->`; do not edit their contents manually. Empty status directories retain both markers and show an explicit empty state.
 
 ## Status and Date Metadata
 
-Each non-README document under `docs/proposals/`, `docs/plans/` or `docs/releases/` has exactly one `doc-status` JSON comment, immediately after its title. This metadata is the authoritative source for the index. The document's first level-one heading supplies its link label. Rendered READMEs expose the status and date to humans; the comment keeps the same fields easy for agents and the script to read.
+Each non-README document under `docs/proposals/` or `docs/plans/` has exactly one `doc-status` JSON comment, immediately after its title. This metadata is the authoritative source for the index. The document's first level-one heading supplies its link label. Rendered READMEs expose the status and date to humans; the comment keeps the same fields easy for agents and the script to read.
 
 ```markdown
 # Example Proposal
@@ -31,11 +31,10 @@ All four fields are required strings. Use a nonempty, single-line summary and si
 | --- | --- |
 | Proposal | `draft`: under discussion; `accepted`: owner-approved scope, implementation not yet verified; `implemented`: accepted scope verified; `rejected`: declined by the owner; `superseded`: replaced by a linked decision. |
 | Plan | `planned`: agreed future work; `active`: execution underway; `deferred`: on hold or conditional; `completed`: the plan's entire accepted scope verified; `historical`: retired snapshot whose body can include unresolved historical items. |
-| Release | `unreleased`: development release record; `published`: publication and artifact verification recorded. |
 
-Dates use `YYYY-MM-DD` and record when the current status took effect. For `historical`, this is the snapshot retirement date; for `unreleased`, it is when that development release was established; for `published`, it is the verified publication date. An implementation date remains an implementation date even if publication happens later. Do not derive dates from filesystem timestamps or refresh them on wording changes. Backfill from dated records; if no reliable date exists, resolve and record that evidence gap before assigning one.
+Dates use `YYYY-MM-DD` and record when the current status took effect. For `historical`, this is the snapshot retirement date. An implementation date remains an implementation date even if publication happens later. Do not derive dates from filesystem timestamps or refresh them on wording changes. Backfill from dated records; if no reliable date exists, resolve and record that evidence gap before assigning one.
 
-`accepted`, `implemented`, `rejected`, `superseded`, `completed`, `historical` and `published` require at least one decision or verification evidence link. Keep dates and claims consistent with that evidence. For historical snapshots, link the retirement/current-scope record. For superseded work, link its replacement and the decision. Other states should link their scope decision when available. A valid link does not prove approval, completion or publication: reviewers must assess its content. Existing historical notices remain contextual evidence; preserve their text, even when they describe an earlier state inside the archived body.
+`accepted`, `implemented`, `rejected`, `superseded`, `completed` and `historical` require at least one decision or verification evidence link. Keep dates and claims consistent with that evidence. For historical snapshots, link the retirement/current-scope record. For superseded work, link its replacement and the decision. Other states should link their scope decision when available. A valid link does not prove approval, completion or publication: reviewers must assess its content. Existing historical notices remain contextual evidence; preserve their text, even when they describe an earlier state inside the archived body.
 
 ## Updating and Checking
 

@@ -12,4 +12,3 @@ Start with the workflow or contract relevant to your task. Status tables in the 
 - [Plans](plans/README.md): status of detailed plans and deferred designs.
 - [Proposals](proposals/README.md): designs under review and historical decisions.
 - [Research](research/README.md): dated evidence and design implications.
-- [Releases](releases/README.md): published and unreleased changes.

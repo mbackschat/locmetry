@@ -17,9 +17,8 @@ METADATA = re.compile(r"<!-- doc-status\s*\n(.*?)\n-->", re.S)
 STATUSES = {
     "proposals": {"draft", "accepted", "implemented", "rejected", "superseded"},
     "plans": {"planned", "active", "deferred", "completed", "historical"},
-    "releases": {"unreleased", "published"},
 }
-EVIDENCE_REQUIRED = {"accepted", "implemented", "rejected", "superseded", "completed", "historical", "published"}
+EVIDENCE_REQUIRED = {"accepted", "implemented", "rejected", "superseded", "completed", "historical"}
 LINK = re.compile(r"!?\[([^\]\n]*)\]\((<[^>\n]+>|[^\s()]+)(?:\s+\"[^\"\n]*\")?\)")
 
 

@@ -2,9 +2,9 @@
 
 # locmetry
 
-The latest stable release is **0.3.0**. See the [release notes](docs/releases/0.3.0.md) for adaptive Folder detail with `--folder-rows` and terminal-output safety fixes. [Version 0.2.0](docs/releases/0.2.0.md) introduced net-change comparisons, path explanations, subfolder measurement and counting corrections.
+The latest stable release is **0.3.0**.
 
-**Development checkout:** the usage below describes `0.4.0-dev.1`. Stable v0.3.0 uses the previous output routing; see the [v0.4.0 behavior changes](docs/releases/0.4.0.md) before upgrading.
+**Development checkout:** the usage below describes `0.4.0-dev.1`. Stable v0.3.0 uses the previous output routing; the [current output contract](docs/PRODUCT.md#output-routing) defines this checkout’s behavior.
 
 **Lines of code, split by purpose: production, tests, tooling, and what nobody claims.** `locmetry` measures selected files that its counters can recognize and read, gives each counted file a purpose and category, and records the rule that decided it. Coverage names files whose counts are unavailable.
 

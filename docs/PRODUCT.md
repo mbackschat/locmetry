@@ -237,7 +237,7 @@ Configuration guidance distinguishes evidence-based classification, intentional 
 
 ### Output Routing
 
-Development contract for `0.4.0-dev.1`, targeting v0.4.0; [behavior changes](releases/0.4.0.md) describe differences from stable v0.3.0. Measurement, workspace and comparison produce one result at one destination. An explicit `--format table|markdown|json|headline` always wins. Without it, any `--output` selects full JSON; otherwise stdout selects a table on a terminal and a compact JSON headline in pipes. File extensions never infer the format.
+Development contract for `0.4.0-dev.1`, targeting v0.4.0. Measurement, workspace and comparison produce one result at one destination. An explicit `--format table|markdown|json|headline` always wins. Without it, any `--output` selects full JSON; otherwise stdout selects a table on a terminal and a compact JSON headline in pipes. File extensions never infer the format.
 
 | Destination | Behavior |
 | --- | --- |

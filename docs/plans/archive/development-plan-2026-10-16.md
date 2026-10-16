@@ -37,7 +37,7 @@ Verification: positional-root equivalence and command-precedence regression test
 
 ## Minor Release v0.3.0 — Published
 
-Authorized 2026-10-16 after final external review of the adaptive-folder fixes: publish this verified batch as v0.3.0. [Release notes](../../releases/0.3.0.md) cover adaptive Folder detail and terminal safety. Neutral language ratios and presentation-option warnings were excluded from this release; the ratio extension remains on hold.
+Authorized 2026-10-16 after final external review of the adaptive-folder fixes: publish this verified batch as v0.3.0. [Release notes](https://github.com/mbackschat/locmetry/blob/b5e749b322476d1956bf0a007f7d10a7739fda7a/docs/releases/0.3.0.md) cover adaptive Folder detail and terminal safety. Neutral language ratios and presentation-option warnings were excluded from this release; the ratio extension remains on hold.
 
 - [x] Set crate/lockfile identity to 0.3.0 and replace unreleased usage wording in README and PRODUCT.
 - [x] Verify local public tests, formatting, Clippy, executable README workflows and the release build.
@@ -49,7 +49,7 @@ Published 2026-10-16: [v0.3.0](https://github.com/mbackschat/locmetry/releases/t
 
 ## Minor Release v0.2.0 — Published
 
-Authorized by the owner on 2026-10-16: push the reviewed implementation, update GitHub description/topics, and publish the next minor release. Version `0.2.0` replaces the development identity `0.2.0-dev.1`; the v0.1.6 tag stays unchanged. [Release notes](../../releases/0.2.0.md) describe new commands, subfolder scope, counting/coverage corrections and compatibility boundaries.
+Authorized by the owner on 2026-10-16: push the reviewed implementation, update GitHub description/topics, and publish the next minor release. Version `0.2.0` replaces the development identity `0.2.0-dev.1`; the v0.1.6 tag stays unchanged. [Release notes](https://github.com/mbackschat/locmetry/blob/b5e749b322476d1956bf0a007f7d10a7739fda7a/docs/releases/0.2.0.md) describe new commands, subfolder scope, counting/coverage corrections and compatibility boundaries.
 
 - [x] Prepare the final version, stable installation examples and release notes.
 - [x] Verify the full local public suite, formatting, Clippy and executable README workflows; keep producer-version and stable-install examples aligned.
@@ -128,7 +128,7 @@ The v0.3.0 CI/release runs report Node.js 20 deprecation warnings for `actions/c
 
 ## Known Display Follow-up
 
-- Output routing — implemented and verified as `0.4.0-dev.1`: one destination, explicit formats applied to files, full `json`, compact `headline`, silent exports and ineffective-option warnings. [PRODUCT](../../PRODUCT.md#output-routing) owns the contract, [v0.4.0 notes](../../releases/0.4.0.md) describe changed commands, and the [checkpoint](measurement-quality-and-net-change.md#output-routing-redesign) tracks verification. Implementation is authorized; publication is not.
+- Output routing — implemented and verified as `0.4.0-dev.1`: one destination, explicit formats applied to files, full `json`, compact `headline`, silent exports and ineffective-option warnings. [PRODUCT](../../PRODUCT.md#output-routing) owns the contract, [v0.4.0 notes](https://github.com/mbackschat/locmetry/blob/b5e749b322476d1956bf0a007f7d10a7739fda7a/docs/releases/0.4.0.md) describe changed commands, and the [checkpoint](measurement-quality-and-net-change.md#output-routing-redesign) tracks verification. Implementation is authorized; publication is not.
 
 - Help wrapping — corrected in development after v0.3.0: enable Clap's terminal-aware help layout so command and option descriptions retain continuation indentation. [Verification](measurement-quality-and-net-change.md#help-wrapping) records root/subcommand checks; [PRODUCT](../../PRODUCT.md#human-presentation) owns the behavior.
 
