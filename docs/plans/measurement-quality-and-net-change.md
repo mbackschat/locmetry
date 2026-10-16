@@ -2,7 +2,7 @@
 
 Status: sequence accepted by the owner on 2026-10-15; S1 through S5 implemented. The accepted order is notebook correctness, documentation corrections, shared report/schema contracts, net change, then selection explanations. This file makes those recommendations executable and retains their rationale. The completed stages below retain their original tasks and acceptance checks; conditional follow-ups remain unimplemented and require their recorded trigger and scope decision.
 
-[Development plan](../PLAN.md) indexes this work. [PRODUCT.md](../PRODUCT.md) remains the supported contract. The [historical net-change decision record](../proposals/net-change.md) preserves S4 rationale and acceptance criteria; this plan owns tasks, review checkpoints, completion evidence and conditional follow-ups. The [capability comparison](../research/tool-capability-comparison.md), [configuration/documentation audit](../research/configuration-and-documentation.md), and [lessons and gaps](../research/tool-lessons-and-gaps.md) preserve the research evidence.
+[Development plan](../PLAN.md) indexes this work. [PRODUCT.md](../PRODUCT.md) remains the supported contract. The [historical net-change decision record](../proposals/archive/net-change.md) preserves S4 rationale and acceptance criteria; this plan owns tasks, review checkpoints, completion evidence and conditional follow-ups. The [capability comparison](../research/tool-capability-comparison.md), [configuration/documentation audit](../research/configuration-and-documentation.md), and [lessons and gaps](../research/tool-lessons-and-gaps.md) preserve the research evidence.
 
 ## Evidence and Decision Discipline
 
@@ -74,7 +74,7 @@ Row order is the accepted work order; the technical-prerequisite column is not a
 
 **Completion check.** Invalid/zero-byte fixtures are not certified as measured zero, supported valid shapes succeed, and valid empty input remains known zero. Test three report states distinctly: historical missing failure evidence, a new empty failure collection, and observed failures. JSON, terminal and Markdown communicate the same limitation, workspace aggregation retains availability and failures, diagnostics preserve machine-readable stdout, and `backend_inaccurate`/exit 2 are tested. Required checks and private regression follow the same evidence rule as S1a.
 
-**Documentation in this stage.** Update [coverage guarantees](../PRODUCT.md#reporting-and-coverage), [measurement limits](../measurement.md#limits), README coverage/exit guidance and executable report-schema descriptions using the [historical missing-evidence rationale](../proposals/net-change.md#comparability-and-missing-evidence) as provenance.
+**Documentation in this stage.** Update [coverage guarantees](../PRODUCT.md#reporting-and-coverage), [measurement limits](../measurement.md#limits), README coverage/exit guidance and executable report-schema descriptions using the [historical missing-evidence rationale](../proposals/archive/net-change.md#comparability-and-missing-evidence) as provenance.
 
 **Review checkpoint.** Can an agent distinguish a known zero from failed parsing using documented fields alone? Record any remaining structured-container failure modes that the chosen solution cannot observe.
 
@@ -104,7 +104,7 @@ Row order is the accepted work order; the technical-prerequisite column is not a
 
 **Rationale.** At the research baseline, configuration schemas derived from typed models while measurement JSON and its handwritten schema had separate owners. A comparison schema must not introduce another independently maintained solution. The baseline report schema permitted negative counts and left some effective-policy structure unconstrained. A focused public-contract refactor makes saved reports a reliable input boundary while preserving valid existing output.
 
-**Provenance.** [Configuration schema code](../../src/config/schema.rs), [report schema](../../src/report_schema.rs), [schema audit](../research/configuration-and-documentation.md#machine-interfaces-must-preserve-policy-and-uncertainty), and the proposal's [one contract mechanism](../proposals/net-change.md#one-contract-mechanism). Pygount's [independent JSON format version](https://github.com/roskakori/pygount/blob/v3.2.0/docs/json.md) is useful compatibility precedent.
+**Provenance.** [Configuration schema code](../../src/config/schema.rs), [report schema](../../src/report_schema.rs), [schema audit](../research/configuration-and-documentation.md#machine-interfaces-must-preserve-policy-and-uncertainty), and the proposal's [one contract mechanism](../proposals/archive/net-change.md#one-contract-mechanism). Pygount's [independent JSON format version](https://github.com/roskakori/pygount/blob/v3.2.0/docs/json.md) is useful compatibility precedent.
 
 - [x] Inventory version-1 shapes and field introductions across every existing release tag (`v0.1.0` through `v0.1.6`) plus the S1b shape, including root/workspace, headline/full, optional/null fields, omitted zeros, file detail and effective policy. Source inspection shows `metadata.modules` first appears in v0.1.2; older exports lack required comparison evidence and are deliberately ineligible, rather than corrupt reports.
 - [x] Add synthetic compatibility fixtures for each tag's supported variants before replacing manual construction; document their schema-validity and comparison-eligibility expectations separately. Add rejection tests for negative counts, invalid variants, duplicate identities in array rows and conflicting totals.
@@ -117,7 +117,7 @@ Row order is the accepted work order; the technical-prerequisite column is not a
 
 **Completion check.** Current valid measurement output retains its documented shape; per-release fixtures establish historical compatibility and intentional comparison exclusions. Actual root/workspace outputs validate against generated schemas; internal validation tests assert specific structural/semantic errors. Missing historical failure evidence survives decoding distinctly from recorded empty evidence. Config parsing, report serialization and schema generation agree without copies of field contracts. Tests, formatting and lint pass; run the private regression if measurement behavior changes.
 
-**Documentation in this stage.** Update executable schema descriptions, [report contract](../PRODUCT.md#reporting-and-coverage) and README automation examples using the [historical compatibility requirements](../proposals/net-change.md#accepted-inputs-and-identity) as provenance. Document narrower validation and supported versions where report consumers look for them.
+**Documentation in this stage.** Update executable schema descriptions, [report contract](../PRODUCT.md#reporting-and-coverage) and README automation examples using the [historical compatibility requirements](../proposals/archive/net-change.md#accepted-inputs-and-identity) as provenance. Document narrower validation and supported versions where report consumers look for them.
 
 **Review checkpoint.** Can an agent learn structure and semantics from the executable schemas alone? Check that the refactor has not silently broadened supported inputs or changed counts.
 
@@ -125,7 +125,7 @@ Row order is the accepted work order; the technical-prerequisite column is not a
 
 **Rationale.** Comparing saved measurements directly serves the owner's workflow and works without source checkouts. A useful result preserves before/after counts and explains workspace composition, package detection and coverage changes. Removing a root from configuration must not look like proven source deletion. Removing a counted descriptor can reduce all-counted totals and reclassify retained source while source LOC stays unchanged. Zero aggregate change can conceal significant arrivals, departures or reclassification.
 
-**Provenance.** [Net-change proposal](../proposals/net-change.md), [comparison research](../research/net-change-tools.md), cloc's [source comparison](https://github.com/AlDanial/cloc/blob/v2.10/cloc#L3190), and scc's [history analysis](https://github.com/boyter/scc/blob/v4.1.0/processor/history.go). The peers demonstrate adjacent capabilities, with different semantics.
+**Provenance.** [Net-change proposal](../proposals/archive/net-change.md), [comparison research](../research/net-change-tools.md), cloc's [source comparison](https://github.com/AlDanial/cloc/blob/v2.10/cloc#L3190), and scc's [history analysis](https://github.com/boyter/scc/blob/v4.1.0/processor/history.go). The peers demonstrate adjacent capabilities, with different semantics.
 
 - [x] Review the proposal against S1/S3 outcomes and record decisions on remaining public-interface recommendations. Recommended initial scope: aggregate/topology comparison; optional per-file comparison deferred to its own decision. Resolve headline size before coding the projection: prefer fixed-size presence summaries by entity kind and direction with complete rows/findings in the full output, so a restructure cannot flood the compact headline. Preserve visible zero-net changes; define the summary shape and schema together.
 - [x] Add failing tests for full-report eligibility, direction, version/mode incompatibility, arithmetic overflow and destination aliases before implementing the relevant behavior.
@@ -139,7 +139,7 @@ Row order is the accepted work order; the technical-prerequisite column is not a
 
 **Descriptor-removal oracle.** Use a three-line `package.json` (`{`, a `"name": "example"` property, `}`) and two nonblank JavaScript statements in `src/index.js`, without classification overrides. Removing only the descriptor changes `all_counted` code/lines from 5 to 2 and files from 2 to 1; source code/lines stay 2 and source files stay 1. Production source code changes 2 to 0, unclassified source code 0 to 2, the npm module departs, and the root/source folder remains. Package departure is not an additional LOC subtraction. This synthetic result was reproduced on the unchanged research-baseline source during review follow-up.
 
-**Completion check.** Satisfy the historical S4 [acceptance criteria](../proposals/net-change.md#acceptance-criteria-and-decisions), including compatibility with eligible old full exports and no conversion of unavailable counts into known zero. All required formats agree. Tests, formatting and lint pass; run private regression if shared measurement behavior changes. No Git execution, rename detection, empty-directory inventory, percentage metrics or history store is required.
+**Completion check.** Satisfy the historical S4 [acceptance criteria](../proposals/archive/net-change.md#acceptance-criteria-and-decisions), including compatibility with eligible old full exports and no conversion of unavailable counts into known zero. All required formats agree. Tests, formatting and lint pass; run private regression if shared measurement behavior changes. No Git execution, rename detection, empty-directory inventory, percentage metrics or history store is required.
 
 **Documentation in this stage.** Move shipped behavior into [PRODUCT.md](../PRODUCT.md); add README recipes for single-root/workspace comparisons, arrivals/departures and partial coverage; update schema descriptions and [measurement limits](../measurement.md). Retain the implemented design as a historical decision record and move deferred scope into conditional follow-ups. Resolve stale product exclusions in the same change.
 
@@ -167,7 +167,7 @@ Row order is the accepted work order; the technical-prerequisite column is not a
 
 These are recorded for later assessment, not added to the accepted implementation sequence. Promote an item only with its trigger, scope, acceptance criteria and documentation impact recorded here or in a linked plan.
 
-Subfolder measurement was approved and implemented on 2026-10-16 after separate design review; [completion evidence](#subfolder-implementation--2026-10-16) records the additional checkpoint. [PRODUCT](../PRODUCT.md#subfolder-measurement) owns supported behavior and the [historical proposal](../proposals/subtree-measurement.md) preserves rationale. Ancestor discovery and the other candidates below remain outside accepted scope.
+Subfolder measurement was approved and implemented on 2026-10-16 after separate design review; [completion evidence](#subfolder-implementation--2026-10-16) records the additional checkpoint. [PRODUCT](../PRODUCT.md#subfolder-measurement) owns supported behavior and the [historical proposal](../proposals/archive/subtree-measurement.md) preserves rationale. Ancestor discovery and the other candidates below remain outside accepted scope.
 
 | Item | Recommendation and rationale | Trigger, evidence and next assessment |
 | --- | --- | --- |
@@ -197,7 +197,7 @@ Reviewed with the owner on 2026-10-16; these recommendations guide scope decisio
 
 ### Per-file Comparison
 
-**Trigger:** a consumer needs per-file deltas that aggregate/topology comparison cannot answer. This is deferred, not accepted implementation scope. The [historical S4 decision record](../proposals/net-change.md#optional-file-detail) records why aggregate comparison shipped first; this section now owns the retained extension design.
+**Trigger:** a consumer needs per-file deltas that aggregate/topology comparison cannot answer. This is deferred, not accepted implementation scope. The [historical S4 decision record](../proposals/archive/net-change.md#optional-file-detail) records why aggregate comparison shipped first; this section now owns the retained extension design.
 
 Retained design for assessment, not supported behavior: keep file detail optional so the required comparison works with ordinary full exports. If included, `compare --files` requires both inputs to contain file records and fails clearly if either lacks them. Match by member name where applicable and root-relative path over the union of paths, including relevant unreadable/unrecognized coverage paths. Each side distinguishes counted, not present in the report, unreadable, and unrecognized; unavailable counts are `null`, not fabricated zero source measurements.
 
@@ -292,7 +292,7 @@ Compact presentation follow-up, 2026-10-16: removed leading/intervening title wh
 
 Correctness follow-ups, 2026-10-16: resolved the Handlebars read/decode conflation recorded in the implementation review and the `.gitmodules` parser weakness recorded in research. [Development-plan evidence](../PLAN.md#correctness-follow-ups--complete) records red/green checks, Git's independent syntax oracle and combined validation. Existing historical evidence stays intact. [Conditional follow-ups](#conditional-follow-ups-and-preserved-rationales) remain outside accepted implementation scope.
 
-Subfolder design review, 2026-10-16: [proposal disposition](../proposals/subtree-measurement.md#external-review-disposition--2026-10-16) records accepted corrections and expanded acceptance criteria. No runtime implementation is claimed. The language/help discovery row above owns the corrected recommendation; it is not repeated in the candidate table.
+Subfolder design review, 2026-10-16: [proposal disposition](../proposals/archive/subtree-measurement.md#external-review-disposition--2026-10-16) records accepted corrections and expanded acceptance criteria. No runtime implementation is claimed. The language/help discovery row above owns the corrected recommendation; it is not repeated in the candidate table.
 
 ## Subfolder Implementation — 2026-10-16
 
@@ -361,7 +361,7 @@ The owner authorized pushing and publishing a minor release after the subfolder 
 
 ## Adaptive Folder Detail — 2026-10-16
 
-The owner approved the [reviewed proposal](../proposals/adaptive-folder-detail.md) for implementation. The single-root table gains `--folder-rows N`; default output, other formats and unclassified-folder evidence remain unchanged. Partition convergence and existing presentation-option consistency remain separate decisions. The neutral language-ratio idea is still on hold.
+The owner approved the [reviewed proposal](../proposals/archive/adaptive-folder-detail.md) for implementation. The single-root table gains `--folder-rows N`; default output, other formats and unclassified-folder evidence remain unchanged. Partition convergence and existing presentation-option consistency remain separate decisions. The neutral language-ratio idea is still on hold.
 
 Implemented: adaptive detail derives a separate display partition from existing folder summaries. It shares component-aware containment and a narrow chain-collapse helper with the unchanged unclassified-folder partition. Existing rendering entry points retain default behavior; the CLI passes presentation options without changing saved reports. Schema inspection combined with the new measurement-only option is explicitly rejected, avoiding an early-return path that would silently ignore it.
 
@@ -426,3 +426,11 @@ Accepted review refinements: schema queries reject `--output`, `--format` and `-
 Initial red/green evidence: nine new integration guards failed against the preceding behavior; the pre-existing destination-protection case passed. Tests cover root/workspace/comparison routing, explicit formats, historical field retention, partial exports, schema conflicts, requested file detail, warnings, adaptive table exports and preserved destination protection. The full public suite, formatting, Clippy with warnings denied and executable README checks pass locally on macOS. Twelve focused output-contract tests cover the new behavior; existing schema, historical fixture, comparison and subtree guards also pass. One release-only documentation guard was corrected to distinguish the development producer identity from the unchanged stable installation links.
 
 Pseudo-terminal verification covers silent file exports and file/pipe content parity for all four formats across measurement, workspace and comparison; only terminal destinations are styled, and `NO_COLOR`/`TERM=dumb` still suppress styling. Partial table files contain no ANSI and retain stderr evidence and exit 2. The rebuilt release executable identifies as `0.4.0-dev.1` and passes an independent baseline/export/+1-code comparison scenario with an empty PATH. Private frozen-count replay and Linux CI were not repeated for this routing change. No push, installation update or release publication was performed.
+
+## Embedded Guidance Proposal and Proposal Retirement — 2026-10-16
+
+The owner requested a reviewable [embedded-guides proposal](../proposals/embedded-guides.md): agents should be able to create or evaluate initial project configuration using discoverable commands, schemas, semantics, workflows and gotchas from the binary, without an extra skill. The proposal records alternatives, recommendations, rationale and the bounded read-only discovery exercise. Implementation is not approved. It supersedes the deferred skill idea in PLAN without claiming improved configuration accuracy.
+
+Established the [retirement procedure](../proposals/README.md#retirement-procedure) and, at the owner’s request, moved all three existing historical proposals into `docs/proposals/archive/`. These were already retired; the audit corrects stale release metadata and standardizes status notices. Tag sources confirm net change and subfolder support in v0.2.0 and adaptive detail in v0.3.0. Existing per-file and partition-convergence follow-ups stay with their plan owners. Reviewed bodies, acceptance criteria and heading anchors are preserved apart from relative-link relocation; repository references now point to the archive. This archive move supersedes the earlier decision to retain the original paths.
+
+Verification: compared each archived body from its first section onward with the pre-move Git version, allowing only relative-link relocation; all three bodies and their headings are preserved. Checked all 448 local Markdown links and fragments in tracked public documentation plus the new proposal/index/archive files, with no missing targets, and `git diff --check` passes. No executable behavior changed; runtime tests were not rerun. No push or release is part of this documentation checkpoint.

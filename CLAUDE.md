@@ -22,6 +22,8 @@ Keep documentation current in every implementation checkpoint: update README wor
 
 Human presentation roles and palettes live in [src/style.rs](src/style.rs). Renderers select semantic roles and pad terminal cells before styling; keep escape sequences out of individual renderers and JSON. Configuration for custom themes remains outside the supported interface.
 
+Follow the [proposal retirement procedure](docs/proposals/README.md#retirement-procedure) when an accepted design is verified, rejected or superseded. Move retired records to the archive, transfer live follow-ups to the plan, and preserve their evidence and links.
+
 ### Documentation ownership and checks
 
 Update the owner of a changed guarantee and its user-facing entry points in the same commit. Link to the owner instead of copying detailed rules into another guide.

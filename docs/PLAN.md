@@ -6,7 +6,7 @@
 
 Sequence accepted 2026-10-15. The [actionable work plan](plans/measurement-quality-and-net-change.md) owns detailed tasks, retained rationale, source provenance, acceptance checks, review checkpoints and live stage status. Implement in this order: notebook correctness, documentation corrections, shared report/schema contracts, net change, then selection explanations. S1 notebook correctness/failure reporting, S2 documentation corrections, S3 typed report/schema contracts, S4 net change and S5 selection explanations are complete. The public suite, formatting, Clippy, executable README recipe, schema/documented examples and private replay pass; release publication is tracked below. Optional follow-ups remain conditional in that plan.
 
-The detailed plan records stage decisions and verified completion. Update affected documentation with each implementation checkpoint; S2 is the wider documentation audit, not a reason to delay documentation for S1. [PRODUCT.md](PRODUCT.md) continues to describe supported behavior; the [historical net-change decision record](proposals/net-change.md) preserves S4 rationale and acceptance criteria. Conditional design work belongs in the detailed plan.
+The detailed plan records stage decisions and verified completion. Update affected documentation with each implementation checkpoint; S2 is the wider documentation audit, not a reason to delay documentation for S1. [PRODUCT.md](PRODUCT.md) continues to describe supported behavior; the [historical net-change decision record](proposals/archive/net-change.md) preserves S4 rationale and acceptance criteria. Conditional design work belongs in the detailed plan.
 
 External review of `4ca626a` is [recorded with dispositions](plans/measurement-quality-and-net-change.md#external-review-disposition--2026-10-15). The review established a shared notebook decoder with end-to-end fixtures; Tokei retains cell-content counting. The plan now distinguishes technical prerequisites from work order and records historical-report compatibility, missing failure evidence and review boundaries. S1 subsequently implemented those corrections; its tests and compatibility evidence are recorded in the detailed plan.
 
@@ -125,23 +125,29 @@ The v0.3.0 CI/release runs report Node.js 20 deprecation warnings for `actions/c
 
 - Terminal output safety — reopened by follow-up review for parse-failure notes, submodule notes and partial-results stderr; corrected 2026-10-16 at the shared note and diagnostic rendering boundaries. Table cells and unclaimed labels retain their earlier guards; JSON evidence remains unchanged. [Verification](plans/measurement-quality-and-net-change.md#terminal-note-and-diagnostic-safety) records the expanded coverage.
 
-- Folder-partition convergence — deferred decision: the [adaptive-folder decision record](proposals/adaptive-folder-detail.md#existing-partition-and-feasibility) differs intentionally from `unclassified_folders`, whose results appear in JSON and agent workflows. The adaptive feature preserves that behavior; share only narrow containment/chain-collapse semantics where practical. Consider policy convergence separately if using both views demonstrates confusing divergence, with explicit compatibility review rather than an incidental renderer refactor.
+- Folder-partition convergence — deferred decision: the [adaptive-folder decision record](proposals/archive/adaptive-folder-detail.md#existing-partition-and-feasibility) differs intentionally from `unclassified_folders`, whose results appear in JSON and agent workflows. The adaptive feature preserves that behavior; share only narrow containment/chain-collapse semantics where practical. Consider policy convergence separately if using both views demonstrates confusing divergence, with explicit compatibility review rather than an incidental renderer refactor.
 
 - Presentation-option consistency — included in the [output routing checkpoint](plans/measurement-quality-and-net-change.md#output-routing-redesign). Warn for explicit ineffective `--categories`/`--depth`, preserve success and output, and use clap’s `ValueSource` to keep defaulted depth silent. `--files` requests data and therefore requires full JSON; `--folder-rows` remains strict. This replaces the earlier error recommendation for harmless presentation flags.
 
+## Proposals — Under Discussion
+
+- [On-demand guides in the binary](proposals/embedded-guides.md) — proposed for external review on 2026-10-16. Recommend embedded task-oriented Markdown through `--guide TOPIC`, alongside help and schemas; preserve offline semantics and avoid a separate skill. Implementation is not approved.
+
+The [proposal index and retirement procedure](proposals/README.md) distinguish active designs from archived decision records.
+
 ## Completed Design Decisions
 
-- [Adaptive folder detail — historical decision record](proposals/adaptive-folder-detail.md): implemented for v0.3.0; retained rationale and acceptance criteria. [PRODUCT](PRODUCT.md#adaptive-folder-detail) owns behavior.
+- [Adaptive folder detail — historical decision record](proposals/archive/adaptive-folder-detail.md): implemented for v0.3.0; retained rationale and acceptance criteria. [PRODUCT](PRODUCT.md#adaptive-folder-detail) owns behavior.
 
-- [Subtree measurement — historical decision record](proposals/subtree-measurement.md): retained design rationale and acceptance criteria; [PRODUCT](PRODUCT.md#subfolder-measurement) owns the implemented contract.
+- [Subtree measurement — historical decision record](proposals/archive/subtree-measurement.md): retained design rationale and acceptance criteria; [PRODUCT](PRODUCT.md#subfolder-measurement) owns the implemented contract.
 
-- [Net change between measurement reports — historical decision record](proposals/net-change.md): aggregate/topology comparison implemented as `0.2.0-dev.1`; retained for S4 acceptance evidence and design rationale. [PRODUCT](PRODUCT.md#net-change) owns supported behavior. The [conditional per-file follow-up](plans/measurement-quality-and-net-change.md#per-file-comparison) owns the deferred design and consumer-demand trigger.
+- [Net change between measurement reports — historical decision record](proposals/archive/net-change.md): aggregate/topology comparison implemented as `0.2.0-dev.1`; retained for S4 acceptance evidence and design rationale. [PRODUCT](PRODUCT.md#net-change) owns supported behavior. The [conditional per-file follow-up](plans/measurement-quality-and-net-change.md#per-file-comparison) owns the deferred design and consumer-demand trigger.
 
 ## Ideas — Not Scheduled
 
 - [ ] [Test to production ratio presentation](plans/measurement-quality-and-net-change.md#test-to-production-ratio-presentation--awaiting-further-direction): review incorporated 2026-10-16; implementation remains on hold. Retain folder/workspace ratios and add neutral language ratios with a total row and cross-language caveat. Keep gray undefined/zero values; use no magnitude-dependent color bands or highlighting. Published ranges are descriptive (Khorikov: `1–3` for heavily tested enterprise projects); the reviewed evidence establishes no validated threshold. The detailed plan preserves corrected source context, retrieval limitations, the rationale for neutral presentation and pending acceptance checks.
 
-- [ ] A configuration skill for coding agents: decided 2026-10-15 to record, not build yet. Blind test drives showed agents already reach 99%+ agreement with human-reviewed configurations from `--help` and `--schema` alone, so the skill would add procedure rather than knowledge: keep the repository read-only until a human approves, require evidence and a `reason` for every entry, declare `[categories]`, resolve `summary.submodules` and `summary.unused_entries`, and end with the judgment calls a human must make. Acceptance: the same blind trials scored with and without the skill show a gain, not only more ceremony.
+The previously deferred configuration-skill idea is superseded by the owner’s 2026-10-16 preference for guidance inside the binary, without an additional skill. The [embedded-guides proposal](proposals/embedded-guides.md) preserves the procedural needs and proposes evaluating their benefit; historical classification trials do not establish that the new guides improve decisions.
 
 ## Working Rules
 
