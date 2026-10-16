@@ -24,14 +24,17 @@ Implemented 2026-10-16: `locmetry DIR` selects the same root as `--root DIR`, in
 
 Verification: positional-root equivalence and command-precedence regression tests failed before their fixes and pass afterward. Coverage includes relative/absolute paths, spaces, configuration discovery, explicit command-name paths and conflicting roots. The full public suite, formatting, Clippy and executable README workflows pass. No counting behavior changed; private replay was not rerun.
 
-## Minor Release v0.3.0 — Publication in Progress
+## Minor Release v0.3.0 — Published
 
 Authorized 2026-10-16 after final external review of the adaptive-folder fixes: publish this verified batch as v0.3.0. [Release notes](releases/0.3.0.md) cover adaptive Folder detail and terminal safety. Neutral language ratios remain on hold and are excluded from this release; presentation-option warnings also remain unimplemented.
 
 - [x] Set crate/lockfile identity to 0.3.0 and replace unreleased usage wording in README and PRODUCT.
 - [x] Verify local public tests, formatting, Clippy, executable README workflows and the release build.
-- [ ] Push the reviewed changes and confirm CI on every supported platform.
-- [ ] Publish archives and checksums, verify downloaded artifacts, and update/test the Homebrew tap.
+- [x] Push the reviewed changes and confirm CI on every supported platform.
+- [x] Publish archives and checksums and verify downloaded artifacts.
+- [x] Update and test the Homebrew tap.
+
+Published 2026-10-16: [v0.3.0](https://github.com/mbackschat/locmetry/releases/tag/v0.3.0) points to `a3cefb4`. [CI](https://github.com/mbackschat/locmetry/actions/runs/38908613526) and the [release workflow](https://github.com/mbackschat/locmetry/actions/runs/38909015689) pass on all three supported targets. All downloaded archives match `SHA256SUMS` and carry licenses/notices; the downloaded macOS binary passes independent source/purpose counts, both adaptive-hint outcomes and terminal-safety probes with an empty environment. The Linux release jobs verify static linkage and empty-environment execution. [Tap commit 39fb4c3](https://github.com/mbackschat/homebrew-tap/commit/39fb4c3) updates all three platform URLs/checksums; Homebrew style, the macOS upgrade to 0.3.0 and the formula test pass. A Linux Homebrew installation was not repeated.
 
 ## Minor Release v0.2.0 — Published
 
@@ -107,6 +110,10 @@ Verification: initial command and saved-receipt guards failed before implementat
 Implemented after owner approval on 2026-10-16: `--folder-rows N` gives the single-root terminal Folder table deeper additive detail, with a required positive budget and no default. It preserves initial sibling contributions, collapses single-child chains, splits the largest fitting folder and uses direct-files/remainder rows without overlap. [PRODUCT](PRODUCT.md#adaptive-folder-detail) owns the supported contract; the [checkpoint](plans/measurement-quality-and-net-change.md#adaptive-folder-detail--2026-10-16) records red/green evidence and validation. The option is introduced in v0.3.0.
 
 The full public suite, formatting, Clippy, executable README workflows and private regression pass locally on macOS. Default output, JSON and the unclassified-folder partition remain unchanged. These implementation checks preceded publication; the v0.3.0 release checkpoint records cross-platform CI and distribution verification. Large-tree rendering cost remains unverified. The neutral language-ratio extension stays on hold.
+
+## CI Maintenance — Follow-up
+
+The v0.3.0 CI/release runs report Node.js 20 deprecation warnings for `actions/checkout@v4`, `actions/upload-artifact@v4` and `actions/download-artifact@v4`, which GitHub ran under Node.js 24. All jobs passed. Update these action versions as a separate tested maintenance change; no workflow changes were bundled into this release.
 
 ## Known Display Follow-up
 
