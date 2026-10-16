@@ -548,7 +548,7 @@ Plain `locmetry` on a terminal prints the table shown [above](#what-you-see):
 - under each table, a legend stating how its columns add up, such as Production + Test + Unclassified = Code;
 - notes on content that is not source, the build modules that decided production, Git submodules, which are often other teams' code, the folders that hold unclaimed source, configuration entries that decided no file, and files that could not be counted.
 
-`--sort name` lists rows alphabetically instead, in the table and in Markdown. `--categories` adds a table of source code per `purpose:category`, such as `production:tooling`, to see what production consists of.
+Terminal table cells and unclaimed folder labels flatten control characters to spaces; JSON retains original paths. `--sort name` lists rows alphabetically instead, in the table and in Markdown. `--categories` adds a table of source code per `purpose:category`, such as `production:tooling`, to see what production consists of.
 
 ### Look inside large folders
 

@@ -535,8 +535,11 @@ fn text_table(
     layout: &Layout,
     theme: Theme,
 ) -> String {
-    let header: Vec<String> = header.iter().map(|title| title.to_string()).collect();
-    let all = std::iter::once(&header).chain(body).chain(total.as_ref());
+    let clean_row = |row: &[String]| row.iter().map(|value| plain(value)).collect::<Vec<_>>();
+    let header: Vec<String> = header.iter().map(|title| plain(title)).collect();
+    let body: Vec<_> = body.iter().map(|row| clean_row(row)).collect();
+    let total = total.map(|row| clean_row(&row));
+    let all = std::iter::once(&header).chain(&body).chain(total.as_ref());
     let mut widths = vec![0; header.len()];
     for row in all {
         for (width, value) in widths.iter_mut().zip(row) {
@@ -586,7 +589,7 @@ fn text_table(
     rule += "\n";
     let rule = theme.paint(Role::Muted, &rule);
     let mut output = line(&header, Some(Role::Heading)) + &rule;
-    for row in body {
+    for row in &body {
         output += &line(row, None);
     }
     if let Some(total) = total {
@@ -616,7 +619,7 @@ fn unclaimed_note(folders: &[FolderShare], theme: Theme) -> String {
         .iter()
         .map(|share| {
             [
-                folder_label(&share.folder).to_string(),
+                plain(folder_label(&share.folder)),
                 grouped(share.code),
                 plural(share.code, "code line"),
                 grouped(share.files),
@@ -820,7 +823,7 @@ pub fn render_table_with_options(
         Some(view) => view
             .rows
             .iter()
-            .map(|row| (plain(&row.label()), row.purposes.clone()))
+            .map(|row| (row.label(), row.purposes.clone()))
             .collect(),
         None => ordered(
             human_top_folders(summary, findings.subfolder),
@@ -1216,6 +1219,33 @@ fn human_top_folders(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn table_sanitizes_every_cell_before_padding_and_styling() {
+        let layout = Layout {
+            breaks: &[],
+            strong: None,
+            secondary: &[],
+        };
+        for theme in [Theme::PLAIN, Theme::terminal(true)] {
+            let actual = text_table(
+                &["Na\tme", "Co\nde"],
+                &[vec!["a\x1b[31mred".into(), "1\r2".into()]],
+                Some(vec!["To\ttal".into(), "3\x07".into()]),
+                &layout,
+                theme,
+            );
+            let expected = text_table(
+                &["Na me", "Co de"],
+                &[vec!["a [31mred".into(), "1 2".into()]],
+                Some(vec!["To tal".into(), "3 ".into()]),
+                &layout,
+                theme,
+            );
+            assert_eq!(actual, expected);
+            assert_eq!(actual.lines().count(), 5);
+        }
+    }
 
     #[test]
     fn legends_are_muted_in_root_and_workspace_tables_without_changing_plain_output() {
