@@ -105,6 +105,8 @@ Verification: initial command and saved-receipt guards failed before implementat
 
 ## Ideas — Not Scheduled
 
+- [ ] [Test to production ratio presentation](plans/measurement-quality-and-net-change.md#test-to-production-ratio-presentation--awaiting-further-direction): research recorded 2026-10-16; await the owner's next idea before implementation. Extend useful ratio columns discreetly, but do not turn the initial `2.0` guess into a warning threshold: the reviewed sources establish neither universal healthy ranges nor an upper limit. The detailed plan retains source provenance, proposed scope and pending acceptance checks.
+
 - [ ] A configuration skill for coding agents: decided 2026-10-15 to record, not build yet. Blind test drives showed agents already reach 99%+ agreement with human-reviewed configurations from `--help` and `--schema` alone, so the skill would add procedure rather than knowledge: keep the repository read-only until a human approves, require evidence and a `reason` for every entry, declare `[categories]`, resolve `summary.submodules` and `summary.unused_entries`, and end with the judgment calls a human must make. Acceptance: the same blind trials scored with and without the skill show a gain, not only more ceremony.
 
 ## Working Rules
