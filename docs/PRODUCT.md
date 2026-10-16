@@ -229,7 +229,7 @@ Reports serve aggregation: totals by purpose, category, kind, language, and fold
 
 ### Embedded Task Guides
 
-Development feature in `0.4.0-dev.1`: `--guide configure|selection|reports|compare` prints one task-oriented Markdown guide with a source-path and producer-version header. The rest of stdout equals the repository Markdown source; successful output has no stderr, styling, paging, project/configuration reads or network dependency. Relative links remain unchanged and supplementary; essential instructions are self-contained, and cross-guide navigation names executable commands. The four [guide sources](guides/configure.md) cover configuration, selection, report interpretation and comparison.
+Available since v0.4.0: `--guide configure|selection|reports|compare` prints one task-oriented Markdown guide with a source-path and producer-version header. The rest of stdout equals the repository Markdown source; successful output has no stderr, styling, paging, project/configuration reads or network dependency. Relative links remain unchanged and supplementary; essential instructions are self-contained, and cross-guide navigation names executable commands. The four [guide sources](guides/configure.md) cover configuration, selection, report interpretation and comparison.
 
 Root long/short/help-command output explicitly says “Start project configuration with locmetry --guide configure.” Long help describes all topics; explain, compare and workspace help point to the appropriate root-level guide queries. Topics are required, case-sensitive enum values. Missing/unknown topics fail with exit 1, accepted names and a help remedy. `--guide` follows the same standalone-query rule as `--schema`, and the two conflict. Save guide text by shell redirection.
 
@@ -237,7 +237,7 @@ Configuration guidance distinguishes evidence-based classification, intentional 
 
 ### Output Routing
 
-Development contract for `0.4.0-dev.1`, targeting v0.4.0. Measurement, workspace and comparison produce one result at one destination. An explicit `--format table|markdown|json|headline` always wins. Without it, any `--output` selects full JSON; otherwise stdout selects a table on a terminal and a compact JSON headline in pipes. File extensions never infer the format.
+Output contract since v0.4.0. Measurement, workspace and comparison produce one result at one destination. An explicit `--format table|markdown|json|headline` always wins. Without it, any `--output` selects full JSON; otherwise stdout selects a table on a terminal and a compact JSON headline in pipes. File extensions never infer the format.
 
 | Destination | Behavior |
 | --- | --- |

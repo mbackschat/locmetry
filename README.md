@@ -2,16 +2,14 @@
 
 # locmetry
 
-The latest stable release is **0.3.0**.
-
-**Development checkout:** the usage below describes `0.4.0-dev.1`. Stable v0.3.0 uses the previous output routing; the [current output contract](docs/PRODUCT.md#output-routing) defines this checkout’s behavior.
+The latest stable release is **0.4.0**. The examples below describe this version; [output routing](docs/PRODUCT.md#output-routing) defines destination and format behavior.
 
 **Lines of code, split by purpose: production, tests, tooling, and what nobody claims.** `locmetry` measures selected files that its counters can recognize and read, gives each counted file a purpose and category, and records the rule that decided it. Coverage names files whose counts are unavailable.
 
 - **Useful without configuration:** test conventions and build files (npm, Gradle, Maven, Cargo, Go, Python, Lake, Swift) recognize common source and test layouts out of the box.
 - **Flexible, reviewable configuration:** a short `.locmetryrc` states only what conventions cannot know: what is out of scope, which folders are tooling or examples, which archived code must not count as tests, your own categories, and languages for unknown file types. The precedence is fixed and documented, so classification decisions can be traced to effective policy.
 - **Built for coding agents:** `locmetry --guide configure` teaches evidence-based setup and review; `locmetry --schema config` explains the configuration and its semantics from the binary alone. In selected later blind trials, agents without these docs reached 99% or greater agreement with human-reviewed purpose classifications by code line ([population and rounds](docs/research/real-project-trials.md#agent-configuration-trials)). This measures classification agreement, not parser accuracy or performance on arbitrary repositories.
-- **JSON for agents and scripts:** a headline small enough for an agent's context, with totals by purpose, category, content kind, and language, per top-level folder and build system, plus the folders that still need a decision. `--output` writes a full report with additive breakdown rows; add `--files` for per-file records. `--schema report` describes the structure and semantics for further queries.
+- **JSON for agents and scripts:** a headline small enough for an agent's context, with totals by purpose, category, content kind, and language, per top-level folder and build system, plus the folders that still need a decision. `--output` defaults to a full JSON report with additive breakdown rows; add `--files` for per-file records. `--schema report` describes the structure and semantics for further queries.
 - **Ready-made metrics:** the tables show test lines per production line for every folder, and a workspace adds each repository's ratio and share. The JSON keeps exact counts, so any other ratio, such as a test-share guard in CI, is one `jq` expression.
 - **Several repositories as one:** `locmetry workspace` measures sibling repositories, each with its own configuration, as one virtual monorepo with a row per repository.
 - **Three outputs from one measurement:** a terminal table for people, JSON for agents and scripts, and Markdown for reviews and wikis.
@@ -174,6 +172,10 @@ With the same selected file content, effective policy and Locmetry version, coun
 
 `locmetry --schema config` prints a JSON Schema that explains every setting, the classification order, and the built-in conventions, so an agent can write the configuration without reading these docs ([how](#configure-with-an-agent)). `--schema report`, `--schema comparison`, `--schema explanation`, `--schema user-config`, and `--schema workspace` describe the other documents.
 
+### On-demand guidance for coding agents
+
+An agent can discover configuration workflows, diagnostics and reporting recipes from the installed binary: `locmetry --help` points to `--guide configure`, `--guide selection`, `--guide reports` and `--guide compare`. Each guide carries the executable version and its source path, with examples and limits. Guides need no separate skill, repository checkout or network access; JSON schemas supply the exact fields and semantics. Start with [Configure with an agent](#configure-with-an-agent).
+
 ### Workspaces
 
 `locmetry workspace --root web --root api` measures several repositories, each with its own configuration, in parallel, and merges them into one report with a row per repository:
@@ -197,7 +199,7 @@ The [terminal table](#terminal-table), [JSON](#json-headline-for-agents-and-scri
 
 ## Install
 
-### Stable release (v0.3.0)
+### Stable release (v0.4.0)
 
 With Homebrew on macOS arm64 or Linux x86_64 and aarch64, which installs the prebuilt binary:
 
@@ -212,14 +214,14 @@ The same binaries are on the [releases page](https://github.com/mbackschat/locme
 ```sh
 # Linux targets: x86_64-unknown-linux-musl or aarch64-unknown-linux-musl
 target=aarch64-apple-darwin
-curl -fsSL "https://github.com/mbackschat/locmetry/releases/download/v0.3.0/locmetry-v0.3.0-$target.tar.gz" | tar -xz
-install "locmetry-v0.3.0-$target/locmetry" ~/.local/bin/
+curl -fsSL "https://github.com/mbackschat/locmetry/releases/download/v0.4.0/locmetry-v0.4.0-$target.tar.gz" | tar -xz
+install "locmetry-v0.4.0-$target/locmetry" ~/.local/bin/
 ```
 
 Or build from source with a Rust toolchain:
 
 ```sh
-cargo install --locked --git https://github.com/mbackschat/locmetry --tag v0.3.0
+cargo install --locked --git https://github.com/mbackschat/locmetry --tag v0.4.0
 ```
 
 ### Local checkout
@@ -232,7 +234,7 @@ cargo install --locked --path .
 locmetry --version
 ```
 
-This development checkout identifies as `0.4.0-dev.1`. It implements the upcoming output contract; the stable installation commands above still install v0.3.0. Producer version differences are recorded by comparisons. Installing a checkout does not publish a release.
+This checkout identifies as `0.4.0`. Producer version differences are recorded by comparisons. Installing a checkout does not publish a release.
 
 ## Quick start
 
@@ -343,7 +345,7 @@ locmetry --root ./service --output ./after.json
 locmetry compare before.json after.json
 ```
 
-Human comparisons summarize coverage and producer differences under Measurement notes; full JSON retains per-folder findings. Run `locmetry --guide compare` for saved Markdown, workspace changes, partial-input handling and interpretation. The same [comparison guide](docs/guides/compare.md) is available here; aggregate comparison needs no `--files`.
+Human comparisons summarize coverage and producer differences under Measurement notes; full JSON retains per-folder findings. Source-code detail rows appear when code changes or a member/folder exists on only one side. Comment, blank, data and file-count changes remain in Totals and full JSON, without adding misleading `+0` source-code rows. The terminal Totals table sizes its columns to their contents. Run `locmetry --guide compare` for saved Markdown, workspace changes, partial-input handling and interpretation. The same [comparison guide](docs/guides/compare.md) is available here; aggregate comparison needs no `--files`.
 
 ## Common issues and useful queries
 
@@ -487,7 +489,7 @@ Without `--output`, when stdout is not a terminal, `locmetry` prints a compact J
   "project": "acme-orders",
   "metadata": {
     "root": "/work/acme-orders",
-    "locmetry_version": "0.4.0-dev.1",
+    "locmetry_version": "0.4.0",
     "scope": {
       "exclude": ["**/.git/**", "**/node_modules/**", "**/.build/**", "**/.lake/**", "third_party/**", ".locmetryrc"]
     },
@@ -665,6 +667,8 @@ Prefer `--output FILE` for protected exports. Shell redirection and `tee` bypass
 Known limits: classification is per file, so a file mixing production code and inline tests counts as one purpose. Git is not invoked, so a measurement describes the working copy rather than a commit. [Measurement semantics and limits](docs/measurement.md) lists the details.
 
 ## Documentation
+
+For humans and agents working on Locmetry, every shared documentation folder has a README index. Proposal and plan tables show each document’s status, date and summary, generated from its authoritative metadata. CI checks index completeness, status/date validity, synchronization and local links, so agents can find current decisions without treating archived instructions as active work. See the [maintenance rules](docs/documentation-maintenance.md).
 
 - [Documentation index](docs/README.md): folder navigation, dated status tables and documentation maintenance.
 - [Product vision and requirements](docs/PRODUCT.md): configuration contract, report schema, and guarantees.
