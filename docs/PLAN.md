@@ -4,7 +4,7 @@
 
 ## v0.4.0 — Publication in Progress
 
-The development checkout implements [output routing](PRODUCT.md#output-routing), [embedded guides](PRODUCT.md#embedded-task-guides) and [comparison readability](PRODUCT.md#net-change). The owner authorized publication on 2026-10-16. Apply the [release verification policy](../CLAUDE.md#testing-guidelines) and [distribution procedure](tokei-integration.md#distribution); prior local checks do not replace verification of the release candidate.
+The v0.4.0 release candidate implements [output routing](PRODUCT.md#output-routing), [embedded guides](PRODUCT.md#embedded-task-guides) and [comparison readability](PRODUCT.md#net-change). The owner authorized publication on 2026-10-16. Apply the [release verification policy](../CLAUDE.md#testing-guidelines) and [distribution procedure](tokei-integration.md#distribution); prior local checks do not replace verification of the release candidate.
 
 ## CI Maintenance — Follow-up
 
