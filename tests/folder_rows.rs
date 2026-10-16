@@ -457,3 +457,105 @@ fn equal_code_expansion_prefers_component_order_after_chain_collapse() {
         vec!["a/nested/x", "a/nested/y", "a-old", "Total"]
     );
 }
+
+#[test]
+fn budget_hint_names_the_largest_unsplit_folder_after_other_expansions() {
+    let temp = fixture();
+    let root = temp.path();
+    for (child, lines) in [
+        ("a", 300),
+        ("b", 200),
+        ("c", 100),
+        ("d", 80),
+        ("e", 50),
+        ("f", 30),
+        ("g", 10),
+    ] {
+        source(root, &format!("packages/{child}/p.rs"), lines);
+    }
+    source(root, "packages/p.rs", 3);
+    source(root, "src/p.rs", 1);
+    source(root, "src/only/deep/p.rs", 30);
+    source(root, "examples/p.rs", 60);
+    source(root, "scripts/p.rs", 30);
+    source(root, "p.rs", 5);
+    for order in ["code", "name"] {
+        let text = table(root, 6, &["--sort", order]);
+        let rows = counts(&text);
+        assert_eq!(rows["packages"][0], "773");
+        assert!(rows.contains_key("src/only/deep"));
+        assert_eq!(rows["Total"][0], "899");
+        assert!(
+            text.contains("packages has more folder detail; increase --folder-rows."),
+            "{text}"
+        );
+    }
+}
+
+#[test]
+fn budget_hint_names_the_parent_of_the_largest_remainder() {
+    let temp = fixture();
+    let root = temp.path();
+    for (child, lines) in [
+        ("a", 20),
+        ("b", 15),
+        ("c", 10),
+        ("d", 10),
+        ("e", 10),
+        ("f", 10),
+        ("g", 10),
+    ] {
+        source(root, &format!("packages/{child}/p.rs"), lines);
+    }
+    let text = table(root, 3, &[]);
+    assert_eq!(counts(&text)["packages (other 5 child folders)"][0], "50");
+    assert!(
+        text.contains("More child folders of packages can be shown; increase --folder-rows."),
+        "{text}"
+    );
+}
+
+#[test]
+fn budget_hint_in_wide_tables_depends_on_the_largest_row_only() {
+    let temp = fixture();
+    let root = temp.path();
+    source(root, "large/x/p.rs", 5);
+    source(root, "large/y/p.rs", 5);
+    source(root, "small/p.rs", 1);
+    let text = table(root, 1, &[]);
+    assert!(
+        text.contains("large has more folder detail; increase --folder-rows."),
+        "{text}"
+    );
+    source(root, "flat/p.rs", 20);
+    let text = table(root, 1, &[]);
+    assert!(!text.contains("increase --folder-rows"), "{text}");
+    source(root, "p.rs", 30);
+    assert!(!table(root, 1, &[]).contains("increase --folder-rows"));
+}
+
+#[test]
+fn zero_code_folders_do_not_promise_more_detail_with_a_larger_budget() {
+    let temp = fixture();
+    let root = temp.path();
+    write(root, "empty/a/p.rs", "// comment\n");
+    write(root, "empty/b/p.rs", "// comment\n");
+    assert!(!table(root, 1, &[]).contains("increase --folder-rows"));
+}
+
+#[test]
+fn budget_hint_uses_code_order_ties_and_sanitizes_its_path() {
+    let temp = fixture();
+    let root = temp.path();
+    source(root, "z\x1b[31m\n/x/p.rs", 5);
+    source(root, "z\x1b[31m\n/y/p.rs", 5);
+    let text = table(root, 1, &[]);
+    assert!(
+        text.contains("z [31m  has more folder detail; increase --folder-rows."),
+        "{text}"
+    );
+    source(root, "a/p.rs", 10);
+    for order in ["code", "name"] {
+        assert!(!table(root, 1, &["--sort", order]).contains("increase --folder-rows"));
+    }
+}

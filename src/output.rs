@@ -874,8 +874,8 @@ pub fn render_table_with_options(
                     "Adaptive folder detail; rows cover measured source once."
                 )
             );
-            if view.initial_budget_exhausted {
-                output += &format!(" {}\n", theme.paint(Role::Muted, "Initial folder rows exhaust the budget; increase --folder-rows for more detail."));
+            if let Some(hint) = &view.budget_hint {
+                output += &format!(" {}\n", theme.paint(Role::Muted, &plain(hint)));
             }
         }
     }

@@ -101,7 +101,7 @@ The full public suite, formatting, Clippy, executable README workflows and priva
 
 ## Known Display Follow-up
 
-- Adaptive detail hint — recommendation awaiting approval: show a budget hint whenever a positive-code folder with children remains, including when its minimum split cannot fit after other expansions. This would improve discoverability beyond the current initial-budget-only hint; it is a separate contract change, not part of the name-order correction.
+- Adaptive detail hint — approved and implemented 2026-10-16 with the narrower largest-row trigger: name the largest positive-code row when it is an expandable folder or a remainder. Smaller expandable rows alone do not trigger it, avoiding a routine hint on nearly every nested project. No suggested budget or code-share threshold is added. [PRODUCT](PRODUCT.md#adaptive-folder-detail) owns the contract; [verification](plans/measurement-quality-and-net-change.md#largest-row-budget-hint) records the acceptance checks.
 
 - Terminal output safety — reopened by follow-up review for parse-failure notes, submodule notes and partial-results stderr; corrected 2026-10-16 at the shared note and diagnostic rendering boundaries. Table cells and unclaimed labels retain their earlier guards; JSON evidence remains unchanged. [Verification](plans/measurement-quality-and-net-change.md#terminal-note-and-diagnostic-safety) records the expanded coverage.
 

@@ -566,6 +566,8 @@ This changes the existing second table, **Folder**; it does not add a third tabl
 locmetry acme-orders --folder-rows 12 --format table > folders.txt
 ```
 
+When the largest displayed row still has folder detail, a gray hint names the folder and suggests increasing `--folder-rows`. This also covers a largest “other child folders” remainder. Smaller expandable folders alone do not trigger it.
+
 The option does not change saved JSON, coverage or the Unclaimed source note. That note uses its existing partition of unclassified code and can therefore show different folder boundaries. Markdown retains its recursive `--depth` view; workspace mode rejects `--folder-rows`. [Adaptive folder semantics](docs/PRODUCT.md#adaptive-folder-detail) defines selection, budgets and limits.
 
 ### JSON headline for agents and scripts

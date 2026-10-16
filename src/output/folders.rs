@@ -35,6 +35,14 @@ impl Row {
         self.path.split('/').cmp(other.path.split('/'))
     }
 
+    fn code_order(&self, other: &Self) -> std::cmp::Ordering {
+        other
+            .code()
+            .cmp(&self.code())
+            .then_with(|| self.path_order(other))
+            .then_with(|| self.kind.cmp(&other.kind))
+    }
+
     fn code(&self) -> u64 {
         self.purposes.values().sum()
     }
@@ -101,7 +109,7 @@ impl Tree<'_> {
                 )
             })
             .collect();
-        children.sort_by(|a, b| b.code().cmp(&a.code()).then_with(|| a.path_order(b)));
+        children.sort_by(|a, b| a.code_order(b));
         if rows.len() + children.len() > slots {
             let named = slots.checked_sub(rows.len() + 1)?;
             if named < 2 {
@@ -129,7 +137,7 @@ impl Tree<'_> {
 
 pub(super) struct View {
     pub rows: Vec<Row>,
-    pub initial_budget_exhausted: bool,
+    pub budget_hint: Option<String>,
 }
 
 pub(super) fn adaptive(
@@ -164,17 +172,13 @@ pub(super) fn adaptive(
     }
     let initial = rows.len();
     let limit = budget.max(initial);
-    let initial_budget_exhausted = initial >= budget
-        && rows.iter().any(|row| {
-            row.kind == RowKind::Folder && row.code() > 0 && !tree.children(&row.path).is_empty()
-        });
     loop {
         let mut candidates: Vec<_> = rows
             .iter()
             .enumerate()
             .filter(|(_, r)| r.kind == RowKind::Folder)
             .collect();
-        candidates.sort_by(|(_, a), (_, b)| b.code().cmp(&a.code()).then_with(|| a.path_order(b)));
+        candidates.sort_by(|(_, a), (_, b)| a.code_order(b));
         let next = candidates.into_iter().find_map(|(index, row)| {
             tree.split(row, limit - rows.len() + 1)
                 .map(|children| (index, children))
@@ -187,15 +191,27 @@ pub(super) fn adaptive(
             None => break,
         }
     }
+    let budget_hint = rows
+        .iter()
+        .min_by(|a, b| a.code_order(b))
+        .filter(|row| row.code() > 0)
+        .and_then(|row| match row.kind {
+            RowKind::Folder if !tree.children(&row.path).is_empty() => Some(format!(
+                "{} has more folder detail; increase --folder-rows.",
+                row.path
+            )),
+            RowKind::Other(_) => Some(format!(
+                "More child folders of {} can be shown; increase --folder-rows.",
+                row.path
+            )),
+            RowKind::Folder | RowKind::Direct => None,
+        });
     rows.sort_by(|a, b| {
         let name = a.path_order(b).then_with(|| a.kind.cmp(&b.kind));
         match order {
-            RowOrder::Code => b.code().cmp(&a.code()).then(name),
+            RowOrder::Code => a.code_order(b),
             RowOrder::Name => name,
         }
     });
-    View {
-        rows,
-        initial_budget_exhausted,
-    }
+    View { rows, budget_hint }
 }
