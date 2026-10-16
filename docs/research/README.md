@@ -2,7 +2,7 @@
 
 Research conducted on 2026-10-15. Repository-facing findings describe tool capabilities and general design implications without identifying measured projects.
 
-The [measurement quality and net change work plan](../plans/measurement-quality-and-net-change.md) turns the recommendations into the accepted sequence with tasks and review checks. Follow that plan for current implementation status; these reports retain the dated research evidence.
+The [archived implementation record](../plans/archive/measurement-quality-and-net-change.md) preserves how the recommendations were implemented and verified. [PLAN](../PLAN.md) indexes remaining work and deferred designs; these reports retain the dated research evidence.
 
 - [Counting tools and classification](loc-counting-tools.md): Tokei reuse, alternatives, configuration requirements, and the evidence behind the built-in conventions.
 - [Compare complete counter capabilities](tool-capability-comparison.md): major feature families across Locmetry, scc, cloc, Tokei, gocloc and pygount, with pinned source evidence and measurement differences.

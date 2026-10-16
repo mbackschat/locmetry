@@ -1,6 +1,6 @@
 # Net Change Between Measurement Reports
 
-Status: historical decision record — implemented. Aggregate and topology net change was implemented on 2026-10-15 as `0.2.0-dev.1` and released in v0.2.0. Archived on 2026-10-16 under the [retirement procedure](../README.md#retirement-procedure). [PRODUCT](../../PRODUCT.md#net-change) owns the supported contract; the [work plan](../../plans/measurement-quality-and-net-change.md#completion-evidence-and-ongoing-review) records verification.
+Status: historical decision record — implemented. Aggregate and topology net change was implemented on 2026-10-15 as `0.2.0-dev.1` and released in v0.2.0. Archived on 2026-10-16 under the [retirement procedure](../README.md#retirement-procedure). [PRODUCT](../../PRODUCT.md#net-change) owns the supported contract; the [work plan](../../plans/archive/measurement-quality-and-net-change.md#completion-evidence-and-ongoing-review) records verification.
 
 The sections below preserve the reviewed design and acceptance criteria. Their imperative wording, examples and stated limitations are historical evidence, not current guarantees. Do not update this body to track behavior. The deferred per-file design belongs to the [conditional follow-up](../../plans/measurement-quality-and-net-change.md#per-file-comparison); this record carries no live scope.
 

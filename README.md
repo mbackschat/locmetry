@@ -660,7 +660,7 @@ Prefer `--output FILE` for protected exports. Shell redirection and `tee` bypass
 
 ## Compared with line counters
 
-[cloc](https://github.com/AlDanial/cloc) provides source comparison and detailed filtering diagnostics; [scc](https://github.com/boyter/scc) provides additional analytics, configuration and integrations. Locmetry focuses on a combined contract: reviewable scope, whole-file purpose/category with provenance, source/data/documentation separation, explicit coverage, and independently configured workspace members. The dated [capability comparison](docs/research/tool-capability-comparison.md) records baseline evidence and differences; [the work plan](docs/plans/measurement-quality-and-net-change.md) records subsequent fixes and features; it is not an accuracy or performance ranking.
+[cloc](https://github.com/AlDanial/cloc) provides source comparison and detailed filtering diagnostics; [scc](https://github.com/boyter/scc) provides additional analytics, configuration and integrations. Locmetry focuses on a combined contract: reviewable scope, whole-file purpose/category with provenance, source/data/documentation separation, explicit coverage, and independently configured workspace members. The dated [capability comparison](docs/research/tool-capability-comparison.md) records baseline evidence and differences; [the implementation history](docs/plans/archive/measurement-quality-and-net-change.md) records subsequent fixes and features; it is not an accuracy or performance ranking.
 
 Known limits: classification is per file, so a file mixing production code and inline tests counts as one purpose. Git is not invoked, so a measurement describes the working copy rather than a commit. [Measurement semantics and limits](docs/measurement.md) lists the details.
 
@@ -675,9 +675,9 @@ Known limits: classification is per file, so a file mixing production code and i
 - [Saved report compatibility](docs/report-compatibility.md): version-1 field history, validation and evidence required for comparison.
 - [Architecture and distribution](docs/tokei-integration.md): embedded counting engine, release binaries, and the Homebrew formula.
 - [Research](docs/research/README.md): counter capabilities and classification findings.
-- [Development plan](docs/PLAN.md): remaining work and completion evidence.
+- [Development plan](docs/PLAN.md): open work, decision gates and links to historical evidence.
 - [Proposals and historical decisions](docs/proposals/README.md): active designs for review, archived rationale and the retirement procedure.
-- [Measurement quality and net change work plan](docs/plans/measurement-quality-and-net-change.md): accepted sequence, rationale, implementation checks and review checkpoints; features remain planned until delivered.
+- [Implementation history](docs/plans/archive/measurement-quality-and-net-change.md): completed measurement-quality stages, rationale and verification; deferred work is indexed separately in PLAN.
 - [Repository guidelines](CLAUDE.md): contributor conventions and checks; `AGENTS.md` links to this file.
 
 ## License
