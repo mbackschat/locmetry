@@ -131,7 +131,7 @@ The v0.3.0 CI/release runs report Node.js 20 deprecation warnings for `actions/c
 
 ## Proposals — Under Discussion
 
-- [On-demand guides in the binary](proposals/embedded-guides.md) — proposed for external review on 2026-10-16. Recommend embedded task-oriented Markdown through `--guide TOPIC`, alongside help and schemas; preserve offline semantics and avoid a separate skill. Implementation is not approved.
+- [On-demand guides in the binary](proposals/embedded-guides.md) — proposed for external review on 2026-10-16. Revised after external review: four embedded task guides through `--guide TOPIC`, no index or skill, explicit configuration-review outcomes and reuse of troubleshooting. A shared standalone-query rule requires a separate preceding schema-validation change. [Review disposition](plans/measurement-quality-and-net-change.md#embedded-guidance-review--2026-10-16) records recommendations and evidence; neither change is approved for implementation.
 
 The [proposal index and retirement procedure](proposals/README.md) distinguish active designs from archived decision records.
 
