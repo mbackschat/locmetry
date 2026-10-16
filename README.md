@@ -10,7 +10,7 @@ The latest stable release is **0.3.0**. See the [release notes](docs/releases/0.
 
 - **Useful without configuration:** test conventions and build files (npm, Gradle, Maven, Cargo, Go, Python, Lake, Swift) recognize common source and test layouts out of the box.
 - **Flexible, reviewable configuration:** a short `.locmetryrc` states only what conventions cannot know: what is out of scope, which folders are tooling or examples, which archived code must not count as tests, your own categories, and languages for unknown file types. The precedence is fixed and documented, so classification decisions can be traced to effective policy.
-- **Built for coding agents:** `locmetry --schema config` explains the configuration and its semantics from the binary alone. In selected later blind trials, agents without these docs reached 99% or greater agreement with human-reviewed purpose classifications by code line ([population and rounds](docs/research/real-project-trials.md#agent-configuration-trials)). This measures classification agreement, not parser accuracy or performance on arbitrary repositories.
+- **Built for coding agents:** `locmetry --guide configure` teaches evidence-based setup and review; `locmetry --schema config` explains the configuration and its semantics from the binary alone. In selected later blind trials, agents without these docs reached 99% or greater agreement with human-reviewed purpose classifications by code line ([population and rounds](docs/research/real-project-trials.md#agent-configuration-trials)). This measures classification agreement, not parser accuracy or performance on arbitrary repositories.
 - **JSON for agents and scripts:** a headline small enough for an agent's context, with totals by purpose, category, content kind, and language, per top-level folder and build system, plus the folders that still need a decision. `--output` writes a full report with additive breakdown rows; add `--files` for per-file records. `--schema report` describes the structure and semantics for further queries.
 - **Ready-made metrics:** the tables show test lines per production line for every folder, and a workspace adds each repository's ratio and share. The JSON keeps exact counts, so any other ratio, such as a test-share guard in CI, is one `jq` expression.
 - **Several repositories as one:** `locmetry workspace` measures sibling repositories, each with its own configuration, as one virtual monorepo with a row per repository.
@@ -72,7 +72,7 @@ What the table already handles for you:
 - **Compare parts of a monorepo:** the folder rows and the additive breakdown table compare packages, services, or layers by purpose.
 - **Measure several repositories as one:** `locmetry workspace` merges sibling repositories, each measured with its own configuration, into one virtual monorepo whose folder rows compare the repositories ([how](#measure-several-repositories-together)).
 - **Watch a codebase change:** save full JSON reports and use `locmetry compare before.json after.json` to see net change by purpose, language, folder and workspace member, including package/root arrivals and departures ([how](#compare-saved-measurements)). Reports do not establish Git revisions.
-- **Let an agent configure a project:** a coding agent working in a repository writes its `.locmetryrc` itself. `locmetry --help` leads it to `--schema config`, which explains the configuration and its semantics, and the measurement shows which folders still need a decision ([how](#configure-with-an-agent)).
+- **Let an agent configure a project:** a coding agent working in a repository writes its `.locmetryrc` itself. `locmetry --help` leads it to `--guide configure` and `--schema config`, which explains the configuration and its semantics, and the measurement shows which folders still need a decision ([how](#configure-with-an-agent)).
 - **Give coding agents a reliable answer:** a compact JSON headline fits an agent's context, and follow-up questions are one `jq` query over the report file instead of improvised `find | xargs wc -l` pipelines.
 - **Report to people:** paste the Markdown report into a pull request, an architecture review, or a wiki page.
 
@@ -246,7 +246,7 @@ locmetry | jq .summary        # piped: JSON headline
 
 The optional directory argument is equivalent to `--root DIR`; use one or the other. Bare `compare`, `workspace`, `explain` and `help` select commands; use `locmetry ./compare` or `locmetry --root compare` to measure a directory with a command's name. In scripts, prefer `locmetry --root "$directory"` so directory names cannot select commands. Command options go after the command name.
 
-Use `locmetry --help` or `locmetry COMMAND --help` for options. Help wraps to the detected terminal width and keeps continuation lines indented; see [help presentation](docs/PRODUCT.md#human-presentation).
+Start project configuration with `locmetry --guide configure`. Use `locmetry --help` or `locmetry COMMAND --help` for options; `--guide selection|reports|compare` provides focused workflows and caveats. Guides print the installed version’s Markdown without a network connection. Help wraps to the detected terminal width and keeps continuation lines indented; see [help presentation](docs/PRODUCT.md#human-presentation).
 
 Without configuration, built-in exclusions, conventions, and language mappings apply. Add a `.locmetryrc` to the project root when the conventions cannot know something, such as which folders are vendored, generated, tooling, or experimental. Command-line options override it:
 
@@ -274,6 +274,7 @@ Personal defaults for every project, such as extra exclusions or language mappin
 | `--output FILE` | Write only to `FILE`, outside the scan root; `-` selects stdout. Defaults to full JSON; explicit `--format` wins. Extensions do not select a format. |
 | `--files` | Add per-file records; requires full JSON (`--format json` or `--output FILE`). |
 | `--categories` | Add purpose/category rows to table output; warns in other formats. |
+| `--guide configure\|selection\|reports\|compare` | Print one embedded task guide with its source path and executable version. Standalone query; no root, configuration, format or output options. |
 | `--schema config\|user-config\|report\|comparison\|explanation\|workspace` | Print the JSON Schema of `.locmetryrc`, of personal defaults, of the JSON headline and report, of a net-change comparison, of a path explanation, or of a workspace file, and exit. Standalone query: rejects explicit roots, measurement/presentation options and subcommands; redirect stdout to save a schema. |
 
 `locmetry workspace` takes `--root DIR`, repeatable, or `--file FILE` instead, plus `--no-user-config` and the output options from `--format` to `--categories`; see [Measure several repositories together](#measure-several-repositories-together).
@@ -329,133 +330,35 @@ locmetry --schema explanation
 
 The explanation uses the same policy as measurement and reports either the counted file's parser, winning rule, matching patterns and module evidence, or why it has no counts. It counts only the target, while selected names still determine module layouts. Targets are root-relative; workspace targets start with the member name. Single-root configuration and scope flags are available, plus `--no-user-config` in either mode.
 
-Ignore and hidden filtering are checked with single-setting selection probes; the walker does not expose a winning ignore-file line. Unknown causes remain explicit. The [command outcomes](docs/PRODUCT.md#command-outcomes) distinguish successful explanations—including filtered, unrecognized and symlink targets—from unavailable counts. [Troubleshooting guide](docs/troubleshooting.md) gives a runnable example, state meanings and policy/path details.
+Ignore and hidden filtering are checked with single-setting selection probes; the walker does not expose a winning ignore-file line. Unknown causes remain explicit. The [command outcomes](docs/PRODUCT.md#command-outcomes) distinguish successful explanations—including filtered, unrecognized and symlink targets—from unavailable counts. [Troubleshooting guide](docs/guides/selection.md) gives a runnable example, state meanings and policy/path details.
 
 ## Compare saved measurements
 
-Save full reports with `--output`; saving produces no stdout, while warnings and errors remain on stderr. The default piped JSON headline lacks the detail needed for comparison. The command reads only those reports, so the source checkouts need not exist:
+Save full baselines outside the measured root; exports are silent on stdout. Net change is after minus before:
 
 ```sh
 locmetry --root ./service --output ./before.json
 # After changing the source or its measurement policy:
 locmetry --root ./service --output ./after.json
 locmetry compare before.json after.json
-locmetry compare before.json after.json --format markdown --output net-change.md
-locmetry compare before.json after.json --output net-change.json
-locmetry --schema comparison
 ```
 
-Net change is **after minus before**, in argument order. Without an explicit format or output destination, a terminal gets a table and redirected stdout gets a JSON headline. `--format json` and `--output -` select full JSON; `--format headline` selects compact JSON. The headline includes presence counts; full output includes every folder, package and breakdown row. `--output FILE` must not overwrite an input, including symlink/hard-link aliases. Aggregate comparison does not require `--files`; per-file comparison is not implemented.
-
-The same command compares workspace exports, even when their root lists differ:
-
-```sh
-locmetry workspace --file repos.toml --output before-workspace.json
-# After changing code or the workspace root list:
-locmetry workspace --file repos.toml --output after-workspace.json
-locmetry compare before-workspace.json after-workspace.json --format markdown
-```
-
-Workspace totals separate changes inside retained roots from counts entering and leaving the measurement. Names match members; renamed members appear as a departure and arrival. A folder or package disappearing from a report does not prove source deletion. Removing only a build descriptor can change purpose and package presence while source LOC stays unchanged.
-
-Inspect `findings` before interpreting growth: versions, policy, module detection and coverage can differ. Observed input inaccuracy/read/parse failures make the comparison partial; missing historical failure evidence alone does not. See [command outcomes](docs/PRODUCT.md#command-outcomes). Recorded counts exclude unavailable lines, whose size remains unknown. [The contract](docs/PRODUCT.md#net-change) defines the output and limits; [report compatibility](docs/report-compatibility.md) lists eligible older exports.
-
-To inspect coverage findings while preserving a partial comparison's status:
-
-```sh
-status=0
-locmetry compare before.json after.json --output net-change.json || status=$?
-case "$status" in
-  0|2) jq '.findings[] | select(.code == "coverage_gap")' net-change.json ;;
-  *) exit "$status" ;;
-esac
-exit "$status"
-```
+Run `locmetry --guide compare` for saved Markdown, workspace changes, partial-input handling and interpretation. The same [comparison guide](docs/guides/compare.md) is available here; aggregate comparison needs no `--files`.
 
 ## Common issues and useful queries
 
-These examples use the [sample project](#a-tour-of-a-sample-project). Run them from the directory containing `acme-orders`; queries require `jq`. Paths in reports stay relative to the project root. `--output -` supplies the full report rather than the compact JSON headline. Pipelines below are interactive inspection examples; use the [CI recipe](#continuous-integration) when preserving a partial measurement's exit status matters.
-
-### “Unclaimed source”: which files make up that folder total?
-
-The files were counted, but no rule, convention or module claimed their purpose. The full report's `review` list already contains every unclaimed source file, largest first; no `--files` is needed. List code lines, language and path for `prototypes/`, including descendants:
-
-```sh
-locmetry acme-orders --output - | jq -r '.review[] | select(.path | startswith("prototypes/")) | [.code, .language, .path] | @tsv'
-```
-
-Check the same folder's file count and code-line total, including the empty case:
-
-```sh
-locmetry acme-orders --output - | jq '[.review[] | select(.path | startswith("prototypes/"))] | {files: length, code: (map(.code) | add // 0)}'
-```
-
-For all counted source in `web/src/`, including production and tests, request file detail instead:
-
-```sh
-locmetry acme-orders --files --output - | jq -r '.files[] | select(.kind == "source" and (.path | startswith("web/src/"))) | [.counts.code, .purpose, .rule, .path] | @tsv'
-```
-
-### A subdirectory scan unexpectedly reports production files as unclaimed
-
-`locmetry acme-orders/web/src` treats `src` as an independent root. It does not discover the repository's `.locmetryrc` or the parent `web/package.json`. Supplying `--config` alone does not restore the project's path base or ancestor module evidence. Keep the project root and restrict the measurement explicitly:
-
-```sh
-locmetry acme-orders --subfolder web/src --format table
-```
-
-This retains project-relative rules and module context while counting only the selected folder. Human folder rows show its children. A target excluded, ignored or hidden by policy fails clearly instead of reporting an empty measurement. [Subfolder semantics](docs/PRODUCT.md#subfolder-measurement) explains context traversal, coverage, diagnostics and comparison compatibility. Ancestor configuration discovery is not automatic.
-
-### A counted file has an unexpected purpose
-
-An earlier classification stage may win over your rule. Explain the file using the same project root and policy as the measurement; inspect `result.file.rule` and `result.decision` before editing configuration:
-
-```sh
-locmetry explain web/src/cart.test.ts --root acme-orders --format json
-```
-
-The sample's test convention wins before module inference. When measuring a subfolder, use the same project-relative target and omit `--subfolder` from `explain`: the file already restricts counting. Entries listed as unused in a subtree may still decide files elsewhere. Only an unrestricted measurement supports the configuration-cleanup checks for `unused_entries` and `unused_exclusions`.
-
-### A file is absent from the counts
-
-Absence can mean exclusion, ignore/hidden filtering, an unrecognized format, or unavailable counts. Explain the path instead of assuming zero lines:
-
-```sh
-locmetry explain docs/order-flow.png --root acme-orders --format json
-```
-
-The sample image is unrecognized. The [explanation guide](docs/troubleshooting.md#interpret-the-evidence) covers other states and what their evidence supports. To inspect all unavailable-file evidence:
-
-```sh
-locmetry acme-orders --output - | jq '.metadata.coverage'
-```
-
-### “Not source code”: which files are data or documentation?
-
-Content kind is separate from purpose: these files contribute to `all_counted`, but not source totals. List their kinds, physical line counts and paths:
-
-```sh
-locmetry acme-orders --files --output - | jq -r '.files[] | select(.kind != "source") | [.kind, .counts.lines, .path] | @tsv'
-```
-
-For additional fields and their semantics, inspect `locmetry --schema report`. Summaries omit zero counts where documented; missing file detail or coverage evidence is not a measured zero.
+| Question | On-demand guide and repository copy |
+| --- | --- |
+| Which files make up an unclaimed folder or a non-source total? | `locmetry --guide reports` — [queries](docs/guides/reports.md#common-issues-and-useful-queries) |
+| Why does a subdirectory scan lose classification context? | `locmetry --guide selection` — [diagnostic recipes](docs/guides/selection.md#common-issues-and-useful-queries) |
+| Why is a file missing or classified unexpectedly? | `locmetry --guide selection` — [interpret evidence](docs/guides/selection.md#interpret-the-evidence) |
+| How do I interpret unavailable counts or a saved comparison? | `locmetry --guide reports` and `locmetry --guide compare` — [coverage](docs/guides/reports.md), [net change](docs/guides/compare.md) |
 
 ## Configure with an agent
 
-`locmetry --schema config` prints the JSON Schema of `.locmetryrc`. Besides keys, types, and defaults, its descriptions carry the semantics an agent needs to write a configuration: the classification order, when to use `[[overrides]]` instead of `[[rules]]`, what turning off built-in conventions or [build modules](#build-modules) changes, and the exact conventions, build-module layouts, and language names of the installed version. `--schema user-config` describes personal defaults, and `--schema report` the JSON headline and report, including per-file records.
+> Create or evaluate a locmetry configuration for this repository.
 
-```sh
-locmetry --schema config | jq -r .description          # classification order, globs, workflow
-locmetry --schema config | jq '."$defs".Classification' # built-in stages and their switches
-```
-
-A one-line task is enough, because `--help` leads to the schema and the schema states the workflow:
-
-> Create a locmetry configuration for this repository.
-
-The agent measures, reads `summary.unclassified_folders`, inspects the project for evidence, writes entries with a `reason`, and measures again until no folder is left undecided.
-
-The schema checks keys, types, and enums. Locmetry itself also rejects invalid globs and duplicate IDs when it loads the file, so a final `locmetry` run validates the result.
+Start with `locmetry --guide configure`; the [same guide](docs/guides/configure.md) provides the workflow and checked example. `locmetry --schema config` supplies exact fields, defaults and classification semantics. The agent can classify with evidence, deliberately leave code unclassified with a reason, or report an unresolved unclaimed question. A clean review list alone does not establish correct classification.
 
 ## A tour of a sample project
 
@@ -765,7 +668,10 @@ Known limits: classification is per file, so a file mixing production code and i
 
 - [Product vision and requirements](docs/PRODUCT.md): configuration contract, report schema, and guarantees.
 - [Measurement semantics and limits](docs/measurement.md): selection and counting details and known limits.
-- [Explain a file](docs/troubleshooting.md): selection, parser and classification diagnostics.
+- [Configure a project](docs/guides/configure.md): evidence-based setup and evaluation, including open questions.
+- [Selection and explanations](docs/guides/selection.md): path, parser and classification diagnostics.
+- [Read reports](docs/guides/reports.md): coverage, counts and useful queries.
+- [Compare measurements](docs/guides/compare.md): baseline capture and net-change interpretation.
 - [Saved report compatibility](docs/report-compatibility.md): version-1 field history, validation and evidence required for comparison.
 - [Architecture and distribution](docs/tokei-integration.md): embedded counting engine, release binaries, and the Homebrew formula.
 - [Research](docs/research/README.md): counter capabilities and classification findings.

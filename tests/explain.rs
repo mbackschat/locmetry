@@ -385,7 +385,7 @@ fn schema_examples_are_valid_and_workspace_only_loads_the_queried_policy() {
 
 #[test]
 fn troubleshooting_example_matches_the_executable() {
-    let guide = include_str!("../docs/troubleshooting.md");
+    let guide = include_str!("../docs/guides/selection.md");
     let example = guide
         .split_once("<!-- explanation-result -->")
         .unwrap()

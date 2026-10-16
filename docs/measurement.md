@@ -9,7 +9,7 @@
 - Rules match root-relative `/`-separated paths. Components come from the platform's path parser, so Unix file names may contain `:` or `\`.
 - An output path inside the scan root or equal to the configuration is rejected before scanning, so a report never measures itself or replaces its policy; in workspace mode the same holds for every member and the workspace file.
 
-`locmetry explain PATH` uses this same selection and the same per-file counters/classifier, while counting only the target. It traverses selected names to preserve module inference. Ignore/hidden probes establish only whether a single setting changes selection; they do not identify an ignore-file line or recover a historical report's scope. See the [troubleshooting guide](troubleshooting.md) for path bases, states and limitations.
+`locmetry explain PATH` uses this same selection and the same per-file counters/classifier, while counting only the target. It traverses selected names to preserve module inference. Ignore/hidden probes establish only whether a single setting changes selection; they do not identify an ignore-file line or recover a historical report's scope. See the [troubleshooting guide](guides/selection.md) for path bases, states and limitations.
 
 ## Subfolder Context and Coverage
 

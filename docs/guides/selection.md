@@ -1,8 +1,12 @@
 # Explain a File's Measurement
 
-Use `locmetry explain PATH` when one file has an unexpected purpose, parser, or absence from a measurement. It applies the same configuration discovery, selection, counting and classification as an ordinary run. It traverses selected names for module inference but counts only the requested file. The [product contract](PRODUCT.md#path-explanations) defines the machine states; [measurement semantics](measurement.md) records counting limits.
+Use `locmetry explain PATH` when one file has an unexpected purpose, parser, or absence from a measurement. It applies the same configuration discovery, selection, counting and classification as an ordinary run. It traverses selected names for module inference but counts only the requested file. The [product contract](../PRODUCT.md#path-explanations) defines the machine states; [measurement semantics](../measurement.md) records counting limits.
+
+Run `locmetry explain --help` for accepted arguments and `locmetry --schema explanation` for exact result structure. For project-wide policy work, use `locmetry --guide configure`; for count/coverage interpretation, use `locmetry --guide reports`.
 
 ## Start with One File
+
+In a fresh temporary working directory:
 
 ```sh
 mkdir demo
@@ -32,7 +36,7 @@ The JSON includes the canonical root, effective scope, loaded configuration path
 }
 ```
 
-Use `--format table` for a compact labeled explanation or `--format markdown` for a shareable evidence table. A terminal defaults to table; redirected stdout defaults to JSON. Every format describes the same target. Unlike measurement and comparison, explanation has no headline or `--output` option: redirect stdout to save its complete JSON. See [Output Routing](PRODUCT.md#output-routing). `locmetry --schema explanation` exposes the generated structure, state meanings and a complete example for agents.
+Use `--format table` for a compact labeled explanation or `--format markdown` for a shareable evidence table. A terminal defaults to table; redirected stdout defaults to JSON. Every format describes the same target. Unlike measurement and comparison, explanation has no headline or `--output` option: redirect stdout to save its complete JSON. See [Output Routing](../PRODUCT.md#output-routing). `locmetry --schema explanation` exposes the generated structure, state meanings and a complete example for agents.
 
 ## Choose the Correct Policy
 
@@ -48,7 +52,7 @@ The target must use the exact directory-entry spelling, including case and Unico
 
 With `--workspace`, the target starts with the member's folder name; roots in the workspace file are relative to that file. Only the queried member's policy is loaded, while normal membership checks still reject duplicate names or nested roots. `--root`, `--config`, `--exclude`, `--hidden` and `--respect-ignore-files` cannot be combined with `--workspace`. Paths in the result are member-prefixed, but matching globs remain relative to that member's own root.
 
-For a report made with `--subfolder`, keep the project root and use the file's project-relative path in `explain`; no subfolder option is accepted or needed. A successful explanation does not establish inclusion in an earlier restricted report. Subfolder selection errors may suggest changing ignore/hidden settings, but those overrides also change module context across the project. See [subfolder measurement](PRODUCT.md#subfolder-measurement) and the README's [common issues and queries](../README.md#common-issues-and-useful-queries).
+For a report made with `--subfolder`, keep the project root and use the file's project-relative path in `explain`; no subfolder option is accepted or needed. A successful explanation does not establish inclusion in an earlier restricted report. Subfolder selection errors may suggest changing ignore/hidden settings, but those overrides also change module context across the project. See [subfolder measurement](../PRODUCT.md#subfolder-measurement) and the README's [common issues and queries](../../README.md#common-issues-and-useful-queries).
 
 ## Interpret the Evidence
 
@@ -62,9 +66,43 @@ For a report made with `--subfolder`, keep the project root and use the file's p
 | `not_selected`, `hidden_policy` | A probe that enables only hidden paths selects the file. Check the effective `scope.hidden` setting. |
 | `not_selected`, `reason_not_recorded` | Available evidence cannot establish a cause. Multiple filters may mask each other; this is not a claim that no rule applies. Inspect the recorded scope and vary one setting at a time. |
 | `unrecognized` | The file was selected, but no parser or mapping recognized it. Add a mapping only when an existing language counter fits its syntax. There is no known-zero count. |
-| `parse_failed` or `unread` | Counts are unavailable. Inspect the stable failure reason and human detail, or file access. Handlebars encoding and notebook support are described in [measurement semantics](measurement.md#counting). |
+| `parse_failed` or `unread` | Counts are unavailable. Inspect the stable failure reason and human detail, or file access. Handlebars encoding and notebook support are described in [measurement semantics](../measurement.md#counting). |
 | `symlink` | The path or an ancestor is a symlink, which measurement does not follow. `at` identifies the link; the command does not inspect its target or claim which other filters apply. |
 
-[Command outcomes](PRODUCT.md#command-outcomes) defines the statuses: successful explanations include symlinks, filtered and unrecognized paths; unavailable target counts are partial, and invalid input or traversal aborts the command. A symlink ancestor ends inspection immediately, even if the remainder of the path would not exist at its destination.
+[Command outcomes](../PRODUCT.md#command-outcomes) defines the statuses: successful explanations include symlinks, filtered and unrecognized paths; unavailable target counts are partial, and invalid input or traversal aborts the command. A symlink ancestor ends inspection immediately, even if the remainder of the path would not exist at its destination.
 
 This command is a current-filesystem diagnostic, not a historical explanation of a saved report. Ignore context and file contents can change between runs, including during the selection probes. An unrelated malformed notebook does not make this target partial, but traversal errors abort the explanation with exit 1. The command does not inventory every ignored file or expose a new configuration self-test language.
+
+## Common issues and useful queries
+
+These diagnostic examples use the [README sample project](../../README.md#a-tour-of-a-sample-project), from its parent directory. Personal defaults are disabled to isolate the sample policy.
+
+### A subdirectory scan unexpectedly reports production files as unclaimed
+
+`locmetry acme-orders/web/src` treats `src` as an independent root. It does not discover the repository's `.locmetryrc` or the parent `web/package.json`. Supplying `--config` alone does not restore the project's path base or ancestor module evidence. Keep the project root and restrict the measurement explicitly:
+
+```sh
+locmetry acme-orders --no-user-config --subfolder web/src --format table
+```
+
+This retains project-relative rules and module context while counting only the selected folder. Human folder rows show its children. A target excluded, ignored or hidden by policy fails clearly instead of reporting an empty measurement. [Subfolder semantics](../PRODUCT.md#subfolder-measurement) explains context traversal, coverage, diagnostics and comparison compatibility. Ancestor configuration discovery is not automatic.
+
+### A counted file has an unexpected purpose
+
+An earlier classification stage may win over your rule. Explain the file using the same project root and policy as the measurement; inspect `result.file.rule` and `result.decision` before editing configuration:
+
+```sh
+locmetry explain web/src/cart.test.ts --root acme-orders --no-user-config --format json
+```
+
+The sample's test convention wins before module inference. When measuring a subfolder, use the same project-relative target and omit `--subfolder` from `explain`: the file already restricts counting. Entries listed as unused in a subtree may still decide files elsewhere. Only an unrestricted measurement supports the configuration-cleanup checks for `unused_entries` and `unused_exclusions`.
+
+### A file is absent from the counts
+
+Absence can mean exclusion, ignore/hidden filtering, an unrecognized format, or unavailable counts. Explain the path instead of assuming zero lines:
+
+```sh
+locmetry explain docs/order-flow.png --root acme-orders --no-user-config --format json
+```
+
+The sample image is unrecognized. The [evidence table](#interpret-the-evidence) covers other states and what their evidence supports.

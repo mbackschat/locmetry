@@ -1,5 +1,8 @@
+mod guides;
+
 use anyhow::{Context, Result};
 use clap::{CommandFactory, FromArgMatches, Parser, Subcommand, ValueEnum};
+use guides::Guide;
 use locmetry::contract::{self, MeasurementReport};
 use locmetry::style::{plain, Role, Theme};
 use locmetry::{
@@ -80,7 +83,7 @@ fn default_format(stdout_is_terminal: bool, output_given: bool) -> Format {
 #[command(
     version,
     about = "Measure source code by language, folder, and purpose: production, test, or unclassified. Defaults to a table on a terminal, a JSON headline in pipes. --output FILE saves only to that file, defaulting to full JSON; --format overrides the format.",
-    after_help = "Command names are reserved. To measure a directory named compare, use ./compare or --root compare."
+    after_help = "Start project configuration with locmetry --guide configure.\n\nCommand names are reserved. To measure a directory named compare, use ./compare or --root compare."
 )]
 struct Cli {
     #[command(subcommand)]
@@ -104,6 +107,10 @@ struct Cli {
     /// This is a standalone query; do not combine it with measurement options.
     #[arg(long, value_enum)]
     schema: Option<Schema>,
+    /// Read a task guide. Use --help for syntax, --guide for workflows and
+    /// caveats, and --schema for machine-readable contracts. Standalone query.
+    #[arg(long, value_enum)]
+    guide: Option<Guide>,
 }
 
 #[derive(Subcommand)]
@@ -112,13 +119,20 @@ enum Command {
     /// own .locmetryrc, merged with paths prefixed by the root's folder name.
     /// Defaults to a table on a terminal, a JSON headline in pipes.
     /// --output FILE saves only to that file, defaulting to full JSON; --format overrides the format.
+    #[command(
+        after_help = "For setup, use locmetry --guide configure; for results, use locmetry --guide reports."
+    )]
     Workspace(WorkspaceArgs),
     /// Compare two saved full reports: net change is after minus before.
     /// Defaults to a table on a terminal, a JSON headline in pipes.
     /// --output FILE saves only to that file, defaulting to full JSON; --format overrides the format.
+    #[command(after_help = "For baselines and interpretation, use locmetry --guide compare.")]
     Compare(CompareArgs),
     /// Explain selection and classification of one existing root-relative file.
     /// JSON prints the complete explanation; there is no separate headline.
+    #[command(
+        after_help = "For selection and classification diagnosis, use locmetry --guide selection."
+    )]
     Explain(ExplainArgs),
 }
 
@@ -410,6 +424,17 @@ fn user_defaults(no_user_config: bool) -> Option<PathBuf> {
 }
 
 fn run(cli: Cli) -> Result<Outcome> {
+    if let Some(guide) = cli.guide {
+        let (path, text) = guide.document();
+        let mut stdout = io::stdout().lock();
+        writeln!(
+            stdout,
+            "Source: {path}; locmetry {}\n",
+            env!("CARGO_PKG_VERSION")
+        )?;
+        stdout.write_all(text.as_bytes())?;
+        return Ok(Outcome::Complete);
+    }
     if let Some(schema) = cli.schema {
         let schema = match schema {
             Schema::Config => locmetry::config_schema(),
@@ -1094,8 +1119,10 @@ fn validate_query(
 fn parse_cli() -> clap::error::Result<Cli> {
     let mut command = Cli::command();
     let matches = command.try_get_matches_from_mut(std::env::args_os())?;
-    if matches.value_source("schema") == Some(clap::parser::ValueSource::CommandLine) {
-        validate_query(&mut command, &matches, "schema")?;
+    for query in ["schema", "guide"] {
+        if matches.value_source(query) == Some(clap::parser::ValueSource::CommandLine) {
+            validate_query(&mut command, &matches, query)?;
+        }
     }
     // Clap's args_conflicts_with_subcommands disables command recognition after
     // root flags, allowing a reserved name to become DIR. Validate after parsing

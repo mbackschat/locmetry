@@ -11,9 +11,10 @@ ln -s "$binary" "$temporary/bin/locmetry"
 export PATH="$temporary/bin:$PATH"
 export XDG_CONFIG_HOME="$temporary/no-user-config"
 
-# Execute the README itself, so edited flags or policy logic cannot evade the guard.
+# Execute the documentation sources themselves, so edited flags or policy logic cannot evade the guard.
 extract_blocks() {
     local heading=$1 destination=$2 wanted=${3:-0} change_source=${4:-0}
+    local source=${5:-"$repository/README.md"}
     printf 'set -eu\n' > "$destination"
     awk -v heading="$heading" -v wanted="$wanted" -v change_source="$change_source" '
         $0 == "## " heading { section = 1; next }
@@ -31,7 +32,7 @@ extract_blocks() {
                 print "printf '\''fn added() {}\\n'\'' >> service/src/main.rs"
             }
         }
-    ' "$repository/README.md" >> "$destination"
+    ' "$source" >> "$destination"
     [[ $(wc -l < "$destination") -gt 1 ]]
 }
 extract_blocks 'Continuous integration' "$temporary/recipe.sh" 1
@@ -86,12 +87,18 @@ extract_blocks 'Explain one file' "$temporary/explain-schema.sh" 4
 (cd "$temporary/workflows" && bash "$temporary/explain-schema.sh") > "$temporary/explanation-schema.json"
 jq -e '."$schema"' "$temporary/explanation-schema.json" > /dev/null
 
-# Supply the edit explicitly requested by each README comment between snapshots.
-extract_blocks 'Compare saved measurements' "$temporary/compare.sh" 1 1
+# Retain the short README entry point as well as the fuller guide recipes.
+extract_blocks 'Compare saved measurements' "$temporary/readme-compare.sh" 1 1
+(cd "$temporary/workflows" && bash "$temporary/readme-compare.sh") > "$temporary/readme-comparison.json"
+jq -e '.summary.source.delta.code == 1' "$temporary/readme-comparison.json" > /dev/null
+printf 'fn main() {}\n' > "$temporary/workflows/service/src/main.rs"
+
+# Supply the edit explicitly requested by each documentation comment between snapshots.
+extract_blocks 'Compare saved measurements' "$temporary/compare.sh" 1 1 "$repository/docs/guides/compare.md"
 (cd "$temporary/workflows" && bash "$temporary/compare.sh") > "$temporary/workflow-output"
 jq -e '.document_type == "comparison" and .summary.source.delta.code == 1' "$temporary/workflows/net-change.json" > /dev/null
 grep -Fxq '| Source code | 1 | 2 | +1 |' "$temporary/workflows/net-change.md"
-extract_blocks 'Compare saved measurements' "$temporary/workspace-compare.sh" 2 1
+extract_blocks 'Compare saved measurements' "$temporary/workspace-compare.sh" 2 1 "$repository/docs/guides/compare.md"
 (cd "$temporary/workflows" && bash "$temporary/workspace-compare.sh") > "$temporary/workspace-change.md"
 grep -Fxq '| Source code | 3 | 4 | +1 |' "$temporary/workspace-change.md"
 grep -Fxq '| service (both) | 2 | 3 | +1 |' "$temporary/workspace-change.md"
@@ -102,7 +109,7 @@ status=0
 (cd "$temporary/workflows" && locmetry --root service --output after.json) > "$temporary/out" 2> "$temporary/err" || status=$?
 [[ $status == 2 ]]
 [[ ! -s "$temporary/out" ]]
-extract_blocks 'Compare saved measurements' "$temporary/partial-compare.sh" 3
+extract_blocks 'Compare saved measurements' "$temporary/partial-compare.sh" 3 0 "$repository/docs/guides/compare.md"
 status=0
 (cd "$temporary/workflows" && bash "$temporary/partial-compare.sh") > "$temporary/out" 2> "$temporary/err" || status=$?
 [[ $status == 2 ]]
@@ -117,7 +124,12 @@ printf 'print(1)\n' > "$temporary/issues/acme-orders/prototypes/pricing_experime
 printf '# Architecture\n' > "$temporary/issues/acme-orders/docs/architecture.md"
 printf 'synthetic image bytes' > "$temporary/issues/acme-orders/docs/order-flow.png"
 for block in 1 2 3 4 5 6 7 8; do
-    extract_blocks 'Common issues and useful queries' "$temporary/issue-query.sh" "$block"
+    case "$block" in
+        1|2|3) source="$repository/docs/guides/reports.md"; source_block=$block ;;
+        4|5|6) source="$repository/docs/guides/selection.md"; source_block=$((block - 3)) ;;
+        7|8) source="$repository/docs/guides/reports.md"; source_block=$((block - 3)) ;;
+    esac
+    extract_blocks 'Common issues and useful queries' "$temporary/issue-query.sh" "$source_block" 0 "$source"
     (cd "$temporary/issues" && bash "$temporary/issue-query.sh") > "$temporary/issue-out"
     case "$block" in
         1) grep -Fxq $'1\tPython\tprototypes/pricing_experiment.py' "$temporary/issue-out" ;;
@@ -143,4 +155,4 @@ awk '
 [[ ! -s "$temporary/adaptive.stdout" ]]
 grep -Fq 'Adaptive folder detail; rows cover measured source once.' "$temporary/issues/folders.txt"
 grep -Eq '^ web/src +2 .*1 +1 +0 .*1\.00' "$temporary/issues/folders.txt"
-echo 'README examples pass: silent file exports, Markdown content, policy outcomes, compare, workspace compare, explain, partial coverage, troubleshooting queries, and adaptive folder detail.'
+echo 'README and guide examples pass: silent file exports, Markdown content, policy outcomes, compare, workspace compare, explain, partial coverage, troubleshooting queries, and adaptive folder detail.'

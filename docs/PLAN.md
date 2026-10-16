@@ -131,11 +131,13 @@ The v0.3.0 CI/release runs report Node.js 20 deprecation warnings for `actions/c
 
 ## Proposals — Under Discussion
 
-- [On-demand guides in the binary](proposals/embedded-guides.md) — proposed for external review on 2026-10-16. Revised after external review: four embedded task guides through `--guide TOPIC`, no index or skill, explicit configuration-review outcomes and reuse of troubleshooting. Root help must name the starting command; the [self-audit](plans/measurement-quality-and-net-change.md#embedded-guidance-self-audit--2026-10-16) maps discovery and workflow promises to checks. A shared standalone-query rule requires a separate preceding schema-validation change. [Review disposition](plans/measurement-quality-and-net-change.md#embedded-guidance-review--2026-10-16) records recommendations and evidence; both checkpoints were approved on 2026-10-16 and are tracked in the [implementation record](plans/measurement-quality-and-net-change.md#embedded-guidance-implementation--2026-10-16).
+None. The embedded-guides design is implemented and archived below.
 
 The [proposal index and retirement procedure](proposals/README.md) distinguish active designs from archived decision records.
 
 ## Completed Design Decisions
+
+- [Embedded task guides — historical decision record](proposals/archive/embedded-guides.md): implemented and verified on 2026-10-16 in the unreleased `0.4.0-dev.1` checkout. Four `--guide` topics, explicit help discovery, shared standalone-query validation and evidence-based configuration guidance are supported. [PRODUCT](PRODUCT.md#embedded-task-guides) owns behavior; the [implementation record](plans/measurement-quality-and-net-change.md#embedded-guidance-implementation--2026-10-16) records checks and the bounded fresh-agent trial.
 
 - [Adaptive folder detail — historical decision record](proposals/archive/adaptive-folder-detail.md): implemented for v0.3.0; retained rationale and acceptance criteria. [PRODUCT](PRODUCT.md#adaptive-folder-detail) owns behavior.
 
@@ -147,7 +149,7 @@ The [proposal index and retirement procedure](proposals/README.md) distinguish a
 
 - [ ] [Test to production ratio presentation](plans/measurement-quality-and-net-change.md#test-to-production-ratio-presentation--awaiting-further-direction): review incorporated 2026-10-16; implementation remains on hold. Retain folder/workspace ratios and add neutral language ratios with a total row and cross-language caveat. Keep gray undefined/zero values; use no magnitude-dependent color bands or highlighting. Published ranges are descriptive (Khorikov: `1–3` for heavily tested enterprise projects); the reviewed evidence establishes no validated threshold. The detailed plan preserves corrected source context, retrieval limitations, the rationale for neutral presentation and pending acceptance checks.
 
-The previously deferred configuration-skill idea is superseded by the owner’s 2026-10-16 preference for guidance inside the binary, without an additional skill. The [embedded-guides proposal](proposals/embedded-guides.md) preserves the procedural needs and proposes evaluating their benefit; historical classification trials do not establish that the new guides improve decisions.
+The previously deferred configuration-skill idea is superseded by the owner’s 2026-10-16 preference for guidance inside the binary, without an additional skill. The [embedded-guides decision record](proposals/archive/embedded-guides.md) preserves the procedural needs and evaluation rationale; historical classification trials do not establish that the new guides improve decisions.
 
 ## Working Rules
 

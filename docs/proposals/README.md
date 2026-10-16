@@ -4,9 +4,11 @@ Active designs live directly in this directory. Retired records live in `archive
 
 ## Active Proposals
 
-- [On-demand guides in the binary](embedded-guides.md) — proposed for external review; no implementation approval.
+None.
 
 ## Archive
+
+- [On-demand guides in the binary](archive/embedded-guides.md) — implemented in the unreleased `0.4.0-dev.1` checkout; [PRODUCT](../PRODUCT.md#embedded-task-guides) owns behavior.
 
 - [Net change](archive/net-change.md) — aggregate/topology comparison implemented; [PRODUCT](../PRODUCT.md#net-change) owns behavior. Per-file comparison remains in the [conditional follow-up](../plans/measurement-quality-and-net-change.md#per-file-comparison).
 - [Subtree measurement](archive/subtree-measurement.md) — `--subfolder` implemented; [PRODUCT](../PRODUCT.md#subfolder-measurement) owns behavior.

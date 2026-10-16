@@ -30,13 +30,15 @@ Update the owner of a changed guarantee and its user-facing entry points in the 
 
 | Document | Owns | Check when behavior changes |
 | --- | --- | --- |
-| [README](README.md) | Tasks, CLI examples and navigation | Run affected examples; `bash scripts/check-doc-examples.sh` checks distinct policy failures, counted explanations, a real source delta, silent file exports, saved Markdown, workspace Markdown values, sample-project troubleshooting queries and adaptive folder detail. |
+| [README](README.md) | Task entry points, CLI examples and navigation | Run affected README and guide examples; `bash scripts/check-doc-examples.sh` checks distinct policy failures, counted explanations, a real source delta, silent file exports, saved Markdown, workspace Markdown values, sample-project troubleshooting queries and adaptive folder detail. |
 | [PRODUCT](docs/PRODUCT.md) | Supported public contract | Reconcile flags, report fields and compatibility with executable schemas and tests. |
 | [Measurement semantics](docs/measurement.md) | Counting, selection boundaries and limitations | Add independent regression oracles for changed measurement behavior. |
-| [Troubleshooting](docs/troubleshooting.md) | Focused path explanations and evidence limits | `cargo test --locked --test explain` checks documented result, shared measurement parity and schema examples. |
+| [Configure](docs/guides/configure.md), [selection](docs/guides/selection.md), [reports](docs/guides/reports.md), [compare](docs/guides/compare.md) | Task workflows, examples and evidence interpretation | `cargo test --locked --test guides --test explain --test queries` checks discovery, verbatim output, standalone queries and marked results; the documentation script executes moved shell/`jq` recipes. |
 | Executable schemas | Machine-readable structure and semantics | `cargo test --locked --test schema` checks emitted reports and documented TOML examples. |
 | [Active work plan](docs/plans/measurement-quality-and-net-change.md) | Stage status, decisions and verification | Record only verified completion; distinguish planned from supported behavior. |
 | [Research](docs/research/README.md) | Dated findings and provenance | Preserve the historical evidence; link its resolution from the active plan. |
+
+Edit the regular Markdown files in `docs/guides/` directly. [src/guides.rs](src/guides.rs) embeds them verbatim with `include_str!`; rebuilding updates `--guide` output, with no generated documentation copy to maintain.
 
 CI checks executable examples and schema agreement; it cannot establish that every prose claim is current. Review affected prose at each checkpoint. The example script is a development check, not a dependency of the executable or public Cargo tests.
 

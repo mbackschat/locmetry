@@ -1,6 +1,6 @@
 # On-demand Guides in the Locmetry Binary
 
-Status: approved for implementation on 2026-10-16, including the standalone schema-query prerequisite. [PRODUCT](../PRODUCT.md) owns supported behavior; the [work plan](../plans/measurement-quality-and-net-change.md#embedded-guidance-implementation--2026-10-16) records progress. The requirements below remain the approved design until implementation is verified.
+Status: historical decision record — implemented and verified on 2026-10-16 in the unreleased `0.4.0-dev.1` checkout. [PRODUCT](../../PRODUCT.md#embedded-task-guides) owns the supported contract; the [work plan](../../plans/measurement-quality-and-net-change.md#embedded-guidance-implementation--2026-10-16) records acceptance evidence. Imperative wording, examples and limitations below describe the reviewed design, not current guarantees. Preserve this rationale and acceptance record; do not update it to track behavior.
 
 ## Owner Input and Intended Outcome
 
@@ -70,7 +70,7 @@ In the guide implementation checkpoint, replace the config schema's blanket inst
 
 ## Sources, Ownership and Length
 
-Use one Markdown source per topic in `docs/guides/`, embedded verbatim. Move [troubleshooting.md](../troubleshooting.md) to `docs/guides/selection.md` and extend it; do not author another overlapping selection guide. Update its inbound links, relative links, the embedding test and contributor ownership entry while preserving existing heading anchors where practical. Retarget [the executable documentation checks](../../scripts/check-doc-examples.sh) to recipes at their new source locations, preserving their existing outcome assertions; moving a recipe is not a reason to stop executing it. Keep shell/`jq` recipe execution in that development/CI check and public Cargo tests free of external executable dependencies.
+Use one Markdown source per topic in `docs/guides/`, embedded verbatim. Move [troubleshooting.md](../../guides/selection.md) to `docs/guides/selection.md` and extend it; do not author another overlapping selection guide. Update its inbound links, relative links, the embedding test and contributor ownership entry while preserving existing heading anchors where practical. Retarget [the executable documentation checks](../../../scripts/check-doc-examples.sh) to recipes at their new source locations, preserving their existing outcome assertions; moving a recipe is not a reason to stop executing it. Keep shell/`jq` recipe execution in that development/CI check and public Cargo tests free of external executable dependencies.
 
 | Existing entry point | Required treatment |
 | --- | --- |
@@ -79,7 +79,7 @@ Use one Markdown source per topic in `docs/guides/`, embedded verbatim. Move [tr
 | README “Compare saved measurements” | Retain a minimal before/after/compare example and a guide pointer; move detailed variants, caveats and partial-result recipes to `compare`. |
 | Config schema descriptions | Keep field semantics, exact conventions and a concise accurate setup summary with the three outcomes. Avoid a second full tutorial. |
 
-[PRODUCT](../PRODUCT.md) continues to own supported guarantees; [CLI definitions](../../src/main.rs) own syntax; schemas own structural and field contracts. Guides own workflows and examples. README and [contributor guidance](../../CLAUDE.md#documentation-ownership-and-checks) must point to those owners when implemented.
+[PRODUCT](../../PRODUCT.md) continues to own supported guarantees; [CLI definitions](../../../src/main.rs) own syntax; schemas own structural and field contracts. Guides own workflows and examples. README and [contributor guidance](../../../CLAUDE.md#documentation-ownership-and-checks) must point to those owners when implemented.
 
 Write normal relative Markdown links for supplementary repository references and print them unchanged. The source-path/version header supplies their context; it does not make relative links automatically clickable in a terminal or identify an exact development commit. Essential instructions stay self-contained. Cross-guide navigation uses `locmetry --guide TOPIC` commands. No link rewriting, generated GitHub URL or release-number maintenance is needed; this replaces the initial proposal's pinned-link recommendation.
 
@@ -98,9 +98,9 @@ Target roughly 4–8 KB of UTF-8 Markdown per topic, using the existing 7,078-by
 
 ## Evidence and Comparable Tools
 
-At `4065e81`, config/report schemas measured 27,882/57,095 bytes. A fresh LOW-tier agent (`gpt-6-luna`, medium effort) used five shell calls to inspect help and schemas, without repository docs or real-project scans. It recovered precedence, setup, coverage and export semantics, but reported buried workflow prose and noisy enumerations. It never configured a project: this is retrieval evidence, not a benchmark or demonstrated guide benefit. Earlier [classification trials](../research/real-project-trials.md#agent-configuration-trials) do not measure this proposal either.
+At `4065e81`, config/report schemas measured 27,882/57,095 bytes. A fresh LOW-tier agent (`gpt-6-luna`, medium effort) used five shell calls to inspect help and schemas, without repository docs or real-project scans. It recovered precedence, setup, coverage and export semantics, but reported buried workflow prose and noisy enumerations. It never configured a project: this is retrieval evidence, not a benchmark or demonstrated guide benefit. Earlier [classification trials](../../research/real-project-trials.md#agent-configuration-trials) do not measure this proposal either.
 
-The external review of `2b28641` and local checks confirmed the existing marked-result example in [explanation tests](../../tests/explain.rs), ignored schema arguments, schema success beside invalid configuration, and the packaging feasibility of embedding repository Markdown. A local unknown-schema probe lists names without descriptions, so the interface above does not promise descriptions in errors.
+The external review of `2b28641` and local checks confirmed the existing marked-result example in [explanation tests](../../../tests/explain.rs), ignored schema arguments, schema success beside invalid configuration, and the packaging feasibility of embedding repository Markdown. A local unknown-schema probe lists names without descriptions, so the interface above does not promise descriptions in errors.
 
 Official documentation inspected online on 2026-10-16 provides these bounded precedents; peer binaries were not tested:
 
@@ -121,4 +121,4 @@ These examples do not justify adding a skill, protocol, search engine or broader
 - Use the existing marked-result-block pattern: tests construct synthetic fixtures and compare actual JSON results or stable projections with marked expected blocks in the guide. Preserve the selection example and cover the three configuration outcomes, mistaken production classification, nested-root/subfolder differences, unavailable evidence and a known net change with scope-mismatch rejection. Assert statuses and destination behavior as well as counts.
 - Update schema/README guidance, documentation ownership, moved links and executable example references in the same checkpoint. Preserve existing recipe assertions when their source moves, and verify synthetic examples are independent of personal defaults. Review the handback instructions, self-contained task coverage, absence of duplicate tutorials and size target; a schema assertion alone cannot establish their quality.
 
-No counting, selection, schema structure or measurement output-routing change is proposed. Guide prose and standalone-query validation are the scope; the [work plan](../plans/measurement-quality-and-net-change.md#embedded-guidance-review--2026-10-16) owns sequencing, review disposition and any later usability experiments.
+No counting, selection, schema structure or measurement output-routing change is proposed. Guide prose and standalone-query validation are the scope; the [work plan](../../plans/measurement-quality-and-net-change.md#embedded-guidance-review--2026-10-16) owns sequencing, review disposition and any later usability experiments.

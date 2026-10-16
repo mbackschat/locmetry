@@ -15,6 +15,15 @@ fn run(root: &Path, args: &[&str]) -> Output {
 
 #[test]
 fn schema_queries_reject_explicit_unrelated_inputs_in_either_order() {
+    rejects_unrelated_inputs("--schema", "config");
+}
+
+#[test]
+fn guide_queries_reject_explicit_unrelated_inputs_in_either_order() {
+    rejects_unrelated_inputs("--guide", "configure");
+}
+
+fn rejects_unrelated_inputs(flag: &str, topic: &str) {
     let root = tempfile::tempdir().unwrap();
     fs::write(root.path().join(".locmetryrc"), "invalid configuration").unwrap();
     for extra in [
@@ -35,7 +44,7 @@ fn schema_queries_reject_explicit_unrelated_inputs_in_either_order() {
         vec!["--output", "saved.json"],
     ] {
         for first in [true, false] {
-            let query = ["--schema", "config"];
+            let query = [flag, topic];
             let args: Vec<_> = if first {
                 query.iter().chain(&extra)
             } else {
@@ -47,7 +56,7 @@ fn schema_queries_reject_explicit_unrelated_inputs_in_either_order() {
             assert_eq!(out.status.code(), Some(1), "{args:?}");
             assert!(out.stdout.is_empty(), "{args:?}");
             let error = String::from_utf8_lossy(&out.stderr);
-            assert!(error.contains("--schema"), "{args:?}: {error}");
+            assert!(error.contains(flag), "{args:?}: {error}");
             assert!(
                 error.contains(if extra[0] == "missing" {
                     "DIR"
@@ -64,7 +73,7 @@ fn schema_queries_reject_explicit_unrelated_inputs_in_either_order() {
         vec!["compare", "before.json", "after.json"],
         vec!["explain", "missing"],
     ] {
-        let mut args = vec!["--schema", "config"];
+        let mut args = vec![flag, topic];
         args.extend(command);
         let out = run(root.path(), &args);
         assert_eq!(out.status.code(), Some(1));
