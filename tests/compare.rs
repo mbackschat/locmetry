@@ -876,6 +876,117 @@ fn human_producer_notes_show_each_changed_field_without_asserting_counting_behav
 }
 
 #[test]
+fn source_code_grids_omit_comment_blank_data_and_file_count_only_changes() {
+    for variant in ["comment", "blank", "data", "empty file"] {
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path().join("project");
+        write(&root, "src/main.py", "print(1)\n");
+        write(&root, "src/settings.json", "{}\n");
+        let before = save(temp.path(), "before.json", &measure(&root));
+        let mut source_delta = json!({"files":0,"code":0,"comments":0,"blanks":0,"lines":0});
+        match variant {
+            "comment" => {
+                write(&root, "src/main.py", "print(1)\n# comment\n");
+                source_delta["comments"] = json!(1);
+                source_delta["lines"] = json!(1);
+            }
+            "blank" => {
+                write(&root, "src/main.py", "print(1)\n\n");
+                source_delta["blanks"] = json!(1);
+                source_delta["lines"] = json!(1);
+            }
+            "data" => write(&root, "src/settings.json", "{\n  \"a\": 1\n}\n"),
+            "empty file" => {
+                write(&root, "src/empty.py", "");
+                source_delta["files"] = json!(1);
+            }
+            _ => unreachable!(),
+        }
+        let after = save(temp.path(), "after.json", &measure(&root));
+        let full = document(compare(&before, &after, &["--format", "json"]), 0);
+        assert_eq!(
+            full["folders"]["src"]["recursive"]["source"]["delta"], source_delta,
+            "{variant}"
+        );
+        assert_eq!(
+            full["summary"]["source"]["delta"], source_delta,
+            "{variant}"
+        );
+        if variant == "data" {
+            assert_eq!(
+                full["folders"]["src"]["recursive"]["all_counted"]["delta"]["code"],
+                2
+            );
+        }
+        for text in human_comparisons(&before, &after, 0) {
+            for heading in ["Purpose", "Languages", "Folders (recursive"] {
+                assert!(!text.contains(heading), "{variant}: {text}");
+            }
+        }
+    }
+}
+
+#[test]
+fn source_code_grids_preserve_zero_code_folder_and_member_presence() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("project");
+    write(&root, "src/main.py", "print(1)\n");
+    let before = save(temp.path(), "before.json", &measure(&root));
+    write(&root, "assets/icon.zzz", "unknown\n");
+    let after = save(temp.path(), "after.json", &measure(&root));
+    for text in human_comparisons(&before, &after, 0) {
+        assert!(text.contains("assets (after only)"), "{text}");
+        assert!(!text.contains(". (both)"), "{text}");
+    }
+    for text in human_comparisons(&after, &before, 0) {
+        assert!(text.contains("assets (before only)"), "{text}");
+    }
+    write(&root, "src/settings.json", "{}\n");
+    let workspace_before = save(temp.path(), "workspace-before.json", &workspace(&[&root]));
+    write(&root, "src/main.py", "print(1)\n# comment\n");
+    write(&root, "src/settings.json", "{\n  \"a\": 1\n}\n");
+    let workspace_after = save(temp.path(), "workspace-after.json", &workspace(&[&root]));
+    let full = document(
+        compare(&workspace_before, &workspace_after, &["--format", "json"]),
+        0,
+    );
+    assert_eq!(full["members"]["project"]["source"]["delta"]["comments"], 1);
+    assert_eq!(
+        full["members"]["project"]["all_counted"]["delta"]["code"],
+        2
+    );
+    for text in human_comparisons(&workspace_before, &workspace_after, 0) {
+        assert!(!text.contains("Workspace members"), "{text}");
+        assert!(!text.contains("Folders (recursive"), "{text}");
+    }
+    let empty = temp.path().join("empty");
+    fs::create_dir(&empty).unwrap();
+    let arrived = save(temp.path(), "arrived.json", &workspace(&[&root, &empty]));
+    for text in human_comparisons(&workspace_after, &arrived, 0) {
+        assert!(text.contains("empty (after only)"), "{text}");
+        assert!(!text.contains("project (both)"), "{text}");
+    }
+    for text in human_comparisons(&arrived, &workspace_after, 0) {
+        assert!(text.contains("empty (before only)"), "{text}");
+    }
+    write(&root, "src/main.py", "print(1)\nprint(2)\n");
+    let source_after = save(temp.path(), "source-after.json", &measure(&root));
+    for text in human_comparisons(&after, &source_after, 0) {
+        for heading in ["Purpose", "Languages", "Folders (recursive"] {
+            assert!(text.contains(heading), "{text}");
+        }
+    }
+    let workspace_source_after = save(
+        temp.path(),
+        "workspace-source-after.json",
+        &workspace(&[&root]),
+    );
+    for text in human_comparisons(&workspace_after, &workspace_source_after, 0) {
+        assert!(text.contains("project (both)"), "{text}");
+    }
+}
+
+#[test]
 fn comparison_theme_preserves_plain_text_and_distinguishes_signed_changes() {
     use locmetry::style::Theme;
     let temp = tempfile::tempdir().unwrap();

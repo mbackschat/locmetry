@@ -155,8 +155,10 @@ The previously deferred configuration-skill idea is superseded by the owner’s 
 
 Contributor commands and conventions are in [CLAUDE.md](../CLAUDE.md). Run the [private regression](measurement.md#private-regression) when measurement behavior changes, and keep this plan current as work lands.
 
-## Comparison Readability — In Progress
+## Comparison Readability — Complete
 
-The coverage/producer-summary checkpoint is implemented and verified by the full public suite, formatting, Clippy and executable README/guide examples. The remaining checkpoint selects source-code detail rows by the displayed measure or entity presence. The [active checkpoint](plans/measurement-quality-and-net-change.md#comparison-readability--2026-10-16) owns evidence and remaining work; [PRODUCT](PRODUCT.md#net-change) owns shipped behavior. JSON findings/messages, schemas, arithmetic and exit statuses remain unchanged.
+Implemented as two checkpoints: coverage/producer summaries from typed evidence, and source-code detail rows selected by the displayed measure or recorded member/folder presence. Both checkpoints pass red/green regression guards, the full public suite, formatting, Clippy and executable README/guide examples. The [active checkpoint](plans/measurement-quality-and-net-change.md#comparison-readability--2026-10-16) owns verification evidence; [PRODUCT](PRODUCT.md#net-change) owns shipped behavior. JSON findings/messages, schemas, arithmetic and exit statuses remain unchanged.
 
-- [ ] Presence-finding volume: evaluate a separate human summary for large folder/member/package restructures. Keep this outside the coverage and row-selection changes; preserve complete JSON evidence.
+## Comparison Presence Findings — Follow-up
+
+- [ ] Evaluate a separate human summary for large folder/member/package restructures. Keep this outside the completed coverage and row-selection changes; preserve complete JSON evidence.

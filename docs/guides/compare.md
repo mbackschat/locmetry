@@ -63,7 +63,7 @@ Workspace totals separate changes inside retained roots from counts entering and
 
 Inspect Measurement notes and Findings in human output, or `findings` in JSON, before interpreting growth: versions, policy, module detection and coverage can differ. Observed input inaccuracy/read/parse failures make the comparison partial; missing historical failure evidence alone does not. See [command outcomes](../PRODUCT.md#command-outcomes). Recorded counts exclude unavailable lines, whose size remains unknown. [The contract](../PRODUCT.md#net-change) defines the output and limits; [report compatibility](../report-compatibility.md) lists eligible older exports.
 
-Table and Markdown summarize coverage and show specific producer/backend differences. “Same” describes recorded paths (and reasons for parse failures), not unchanged unavailable content. Full JSON retains individual findings, including per-folder coverage in `findings[].folder`; the following recipe retrieves them while preserving a partial comparison's status:
+Table and Markdown detail grids show source-code changes, plus member/folder arrivals and departures even at zero code. Other count changes remain in Totals and full JSON. Both human formats summarize coverage and show specific producer/backend differences. “Same” describes recorded paths (and reasons for parse failures), not unchanged unavailable content. Full JSON retains individual findings, including per-folder coverage in `findings[].folder`; the following recipe retrieves them while preserving a partial comparison's status:
 
 ```sh
 status=0

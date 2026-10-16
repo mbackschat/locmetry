@@ -63,9 +63,6 @@ impl CountChange {
             },
         })
     }
-    fn changed(&self) -> bool {
-        self.before != self.after
-    }
 }
 
 /// Counts over the complete union of dimension keys; an absent aggregate bucket contributes zero.

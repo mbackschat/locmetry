@@ -169,7 +169,7 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
             .dimensions
             .source_purpose
             .iter()
-            .filter(|(_, v)| v.changed())
+            .filter(|(_, v)| v.delta.code != 0)
             .map(|(k, v)| (k.to_string(), *v))
             .collect(),
         markdown,
@@ -182,7 +182,7 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
             .dimensions
             .source_languages
             .iter()
-            .filter(|(_, v)| v.changed())
+            .filter(|(_, v)| v.delta.code != 0)
             .map(|(k, v)| (k.clone(), *v))
             .collect(),
         markdown,
@@ -195,9 +195,7 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
             members
                 .iter()
                 .filter(|(_, v)| {
-                    v.presence != Presence::Both
-                        || v.dimensions.source.changed()
-                        || v.dimensions.all_counted.changed()
+                    v.presence != Presence::Both || v.dimensions.source.delta.code != 0
                 })
                 .map(|(k, v)| {
                     (
@@ -241,9 +239,7 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
                 .filter(|(path, v)| {
                     (markdown
                         || (c.members.is_none() && (path.as_str() == "." || !path.contains('/'))))
-                        && (v.presence != Presence::Both
-                            || v.recursive.source.changed()
-                            || v.recursive.all_counted.changed())
+                        && (v.presence != Presence::Both || v.recursive.source.delta.code != 0)
                 })
                 .map(|(k, v)| {
                     (
