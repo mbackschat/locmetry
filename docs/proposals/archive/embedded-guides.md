@@ -1,5 +1,14 @@
 # On-demand Guides in the Locmetry Binary
 
+<!-- doc-status
+{
+  "status": "implemented",
+  "date": "2026-10-16",
+  "summary": "Embedded task guides; implementation does not imply publication.",
+  "evidence": "[Acceptance evidence](../../plans/archive/measurement-quality-and-net-change.md#embedded-guidance-implementation--2026-10-16)"
+}
+-->
+
 Status: historical decision record — implemented and verified on 2026-10-16 in the unreleased `0.4.0-dev.1` checkout. [PRODUCT](../../PRODUCT.md#embedded-task-guides) owns the supported contract; the [work plan](../../plans/archive/measurement-quality-and-net-change.md#embedded-guidance-implementation--2026-10-16) records acceptance evidence. Imperative wording, examples and limitations below describe the reviewed design, not current guarantees. Preserve this rationale and acceptance record; do not update it to track behavior.
 
 ## Owner Input and Intended Outcome

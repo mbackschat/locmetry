@@ -36,6 +36,8 @@ Follow the [proposal retirement procedure](docs/proposals/README.md#retirement-p
 
 ### Documentation ownership and checks
 
+Follow the [documentation maintenance rules](docs/documentation-maintenance.md) for folder READMEs and authoritative status/date metadata. Update managed tables with `python3 scripts/doc-indexes.py update`; run `python3 scripts/doc-indexes.py check` after documentation changes. Keep status transitions, evidenced dates and regenerated indexes in the same commit. The checker and its regression suite run in CI; archived bodies remain frozen.
+
 Keep changed guarantees and affected user-facing entry points consistent in the same commit. Link to the owner instead of copying detailed rules into another guide.
 
 | Document | Owns | Check when behavior changes |

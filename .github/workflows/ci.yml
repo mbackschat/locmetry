@@ -22,6 +22,11 @@ jobs:
       - run: cargo fmt --all --check
       - run: cargo clippy --locked --all-targets -- -D warnings
       - run: cargo test --locked
+      - name: Check documentation indexes and maintenance tooling
+        if: matrix.os == 'ubuntu-24.04'
+        run: |
+          python3 scripts/test_doc_indexes.py
+          python3 scripts/doc-indexes.py check
       - name: Execute README CI recipes
         if: matrix.os == 'ubuntu-24.04'
         run: |

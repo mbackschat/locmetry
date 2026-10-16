@@ -1,5 +1,14 @@
 # Subtree Measurement with Project Context
 
+<!-- doc-status
+{
+  "status": "implemented",
+  "date": "2026-10-16",
+  "summary": "Project-aware subfolder measurement.",
+  "evidence": "[Implementation checkpoint](../../plans/archive/measurement-quality-and-net-change.md#subfolder-implementation--2026-10-16)"
+}
+-->
+
 Status: historical decision record — implemented. Single-root `--subfolder` measurement was approved and implemented on 2026-10-16 and released in v0.2.0. Archived on 2026-10-16 under the [retirement procedure](../README.md#retirement-procedure). [PRODUCT](../../PRODUCT.md#subfolder-measurement) owns the supported contract; the [work plan](../../plans/archive/measurement-quality-and-net-change.md#subfolder-implementation--2026-10-16) records verification.
 
 The sections below preserve the reviewed design and acceptance criteria. Their imperative wording, examples and stated limitations are historical evidence, not current guarantees. Do not update this body to track behavior. Ancestor discovery and workspace restrictions remain outside accepted scope; [conditional follow-ups](../../plans/measurement-quality-and-net-change.md#conditional-follow-ups-and-preserved-rationales) own further assessment.

@@ -1,5 +1,14 @@
 # Conditional Measurement and Comparison Follow-ups
 
+<!-- doc-status
+{
+  "status": "deferred",
+  "date": "2026-10-16",
+  "summary": "Conditional capabilities; each needs its recorded trigger and scope decision.",
+  "evidence": "[Deferred scope](../PLAN.md#ideas--not-scheduled)"
+}
+-->
+
 Status: deferred candidates, not an accepted implementation sequence. [PLAN](../PLAN.md) indexes current work. Read only the relevant section when its trigger applies; implementation requires its recorded scope decision.
 
 The [archived implementation record](archive/measurement-quality-and-net-change.md) preserves completed stages, reviews and source provenance. The [ratio presentation design](test-production-ratios.md) remains separately on hold. The retained sections below preserve the conditional designs and activation conditions; resolved entries are identified explicitly.

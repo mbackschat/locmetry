@@ -1,5 +1,14 @@
 # Measurement Quality and Net Change Work Plan
 
+<!-- doc-status
+{
+  "status": "historical",
+  "date": "2026-10-16",
+  "summary": "Retired implementation and review record; remaining designs have separate owners.",
+  "evidence": "[Current scope and historical provenance](../../PLAN.md#historical-evidence)"
+}
+-->
+
 Historical implementation record archived 2026-10-16. S1–S5 and the later implementation checkpoints are complete; the original sequence, review text and acceptance evidence below are preserved. Imperative wording and pending decisions describe their recorded date, not active work instructions. [Current PLAN](../../PLAN.md), [conditional follow-ups](../measurement-quality-and-net-change.md) and the [ratio design on hold](../test-production-ratios.md) own live scope. Do not append routine checkpoints here.
 
 Status: sequence accepted by the owner on 2026-10-15; S1 through S5 implemented. The accepted order is notebook correctness, documentation corrections, shared report/schema contracts, net change, then selection explanations. This file makes those recommendations executable and retains their rationale. The completed stages below retain their original tasks and acceptance checks; conditional follow-ups remain unimplemented and require their recorded trigger and scope decision.

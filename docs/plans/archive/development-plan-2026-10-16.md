@@ -1,5 +1,14 @@
 # Development Plan
 
+<!-- doc-status
+{
+  "status": "historical",
+  "date": "2026-10-16",
+  "summary": "Retired development snapshot; live work is in PLAN.",
+  "evidence": "[Current scope and historical provenance](../../PLAN.md#historical-evidence)"
+}
+-->
+
 Historical snapshot archived 2026-10-16. The body preserves the development index, release evidence and decisions at retirement; its instructions and open-item wording are historical. [Current PLAN](../../PLAN.md) owns remaining work. Do not update this snapshot to track new progress.
 
 [PRODUCT.md](../../PRODUCT.md) owns requirements, including optional and excluded scope; this file tracks remaining work and its completion evidence. Implemented work is recorded in Git history. Unchecked items are planned work, not supported features.

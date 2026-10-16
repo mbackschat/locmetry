@@ -1,5 +1,14 @@
 # Adaptive Folder Detail in Terminal Reports
 
+<!-- doc-status
+{
+  "status": "implemented",
+  "date": "2026-10-16",
+  "summary": "Adaptive terminal folder detail; partition convergence remains deferred.",
+  "evidence": "[Implementation checkpoint](../../plans/archive/measurement-quality-and-net-change.md#adaptive-folder-implementation-review)"
+}
+-->
+
 Status: historical decision record — implemented. Adaptive `--folder-rows N` detail was approved and implemented on 2026-10-16 and released in v0.3.0. Archived on 2026-10-16 under the [retirement procedure](../README.md#retirement-procedure). [PRODUCT](../../PRODUCT.md#adaptive-folder-detail) owns the supported contract; the [work plan](../../plans/archive/measurement-quality-and-net-change.md#adaptive-folder-detail--2026-10-16) records verification.
 
 The sections below preserve the reviewed design and acceptance criteria. Their imperative wording, examples and stated limitations are historical evidence, not current guarantees. Do not update this body to track behavior. The separate partition-convergence decision belongs to [PLAN](../../PLAN.md#known-display-follow-up); this record carries no live scope.

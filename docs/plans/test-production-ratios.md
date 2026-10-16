@@ -1,5 +1,14 @@
 # Deferred Test-to-Production Ratio Presentation
 
+<!-- doc-status
+{
+  "status": "deferred",
+  "date": "2026-10-16",
+  "summary": "Reviewed ratio design; implementation remains on hold.",
+  "evidence": "[Review disposition](#test-to-production-ratio-presentation--awaiting-further-direction)"
+}
+-->
+
 This document owns the unimplemented ratio design, its research provenance and pending acceptance checks. Implementation remains on hold. [PLAN](../PLAN.md) indexes the decision; the [historical implementation record](archive/measurement-quality-and-net-change.md#test-to-production-ratio-presentation--awaiting-further-direction) preserves its original context.
 
 ## Test to Production Ratio Presentation — Awaiting Further Direction

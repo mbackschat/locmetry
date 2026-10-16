@@ -1,0 +1,14 @@
+# Plans
+
+These documents own detailed scope and decision gates. [PLAN](../PLAN.md) owns the open-work overview. A deferred design requires its recorded trigger and authorization before implementation. Dates record when the listed status took effect; see the [maintenance rules](../documentation-maintenance.md).
+
+<!-- doc-index:start -->
+
+| Document | Status | Date | Summary |
+| --- | --- | --- | --- |
+| [Conditional Measurement and Comparison Follow-ups](measurement-quality-and-net-change.md) | deferred | 2026-10-16 | Conditional capabilities; each needs its recorded trigger and scope decision. |
+| [Deferred Test-to-Production Ratio Presentation](test-production-ratios.md) | deferred | 2026-10-16 | Reviewed ratio design; implementation remains on hold. |
+
+<!-- doc-index:end -->
+
+- [Archived plans](archive/README.md): preserved implementation evidence and historical snapshots.

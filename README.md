@@ -666,6 +666,7 @@ Known limits: classification is per file, so a file mixing production code and i
 
 ## Documentation
 
+- [Documentation index](docs/README.md): folder navigation, dated status tables and documentation maintenance.
 - [Product vision and requirements](docs/PRODUCT.md): configuration contract, report schema, and guarantees.
 - [Measurement semantics and limits](docs/measurement.md): selection and counting details and known limits.
 - [Configure a project](docs/guides/configure.md): evidence-based setup and evaluation, including open questions.
