@@ -61,9 +61,9 @@ locmetry compare before-workspace.json after-workspace.json --format markdown
 
 Workspace totals separate changes inside retained roots from counts entering and leaving the measurement. Names match members; renamed members appear as a departure and arrival. A folder or package disappearing from a report does not prove source deletion. Removing only a build descriptor can change purpose and package presence while source LOC stays unchanged.
 
-Inspect `findings` before interpreting growth: versions, policy, module detection and coverage can differ. Observed input inaccuracy/read/parse failures make the comparison partial; missing historical failure evidence alone does not. See [command outcomes](../PRODUCT.md#command-outcomes). Recorded counts exclude unavailable lines, whose size remains unknown. [The contract](../PRODUCT.md#net-change) defines the output and limits; [report compatibility](../report-compatibility.md) lists eligible older exports.
+Inspect Measurement notes and Findings in human output, or `findings` in JSON, before interpreting growth: versions, policy, module detection and coverage can differ. Observed input inaccuracy/read/parse failures make the comparison partial; missing historical failure evidence alone does not. See [command outcomes](../PRODUCT.md#command-outcomes). Recorded counts exclude unavailable lines, whose size remains unknown. [The contract](../PRODUCT.md#net-change) defines the output and limits; [report compatibility](../report-compatibility.md) lists eligible older exports.
 
-To inspect coverage findings while preserving a partial comparison's status:
+Table and Markdown summarize coverage and show specific producer/backend differences. “Same” describes recorded paths (and reasons for parse failures), not unchanged unavailable content. Full JSON retains individual findings, including per-folder coverage in `findings[].folder`; the following recipe retrieves them while preserving a partial comparison's status:
 
 ```sh
 status=0

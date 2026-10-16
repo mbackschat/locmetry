@@ -343,7 +343,7 @@ locmetry --root ./service --output ./after.json
 locmetry compare before.json after.json
 ```
 
-Run `locmetry --guide compare` for saved Markdown, workspace changes, partial-input handling and interpretation. The same [comparison guide](docs/guides/compare.md) is available here; aggregate comparison needs no `--files`.
+Human comparisons summarize coverage and producer differences under Measurement notes; full JSON retains per-folder findings. Run `locmetry --guide compare` for saved Markdown, workspace changes, partial-input handling and interpretation. The same [comparison guide](docs/guides/compare.md) is available here; aggregate comparison needs no `--files`.
 
 ## Common issues and useful queries
 

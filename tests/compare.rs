@@ -659,6 +659,222 @@ fn backend_inaccuracy_is_partial_even_without_identified_failure_paths() {
         .any(|f| f["code"] == "coverage_gap"));
 }
 
+fn human_comparisons(before: &Path, after: &Path, status: i32) -> Vec<String> {
+    ["table", "markdown"]
+        .into_iter()
+        .map(|format| {
+            let output = compare(before, after, &["--format", format]);
+            assert_eq!(
+                output.status.code(),
+                Some(status),
+                "{}",
+                String::from_utf8_lossy(&output.stderr)
+            );
+            String::from_utf8(output.stdout).unwrap()
+        })
+        .collect()
+}
+
+#[test]
+fn human_coverage_notes_summarize_paths_without_changing_json_findings() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("project");
+    write(&root, "a.zzz", "unknown\n");
+    let before = save(temp.path(), "before.json", &measure(&root));
+    let full = document(compare(&before, &before, &["--format", "json"]), 0);
+    assert_eq!(full["findings"].as_array().unwrap().len(), 4);
+    assert!(full["findings"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .all(|f| f["code"] == "coverage_gap"));
+    for text in human_comparisons(&before, &before, 0) {
+        assert_eq!(text.matches("Unrecognized files:").count(), 1, "{text}");
+        assert!(
+            text.contains("same 1 path in both reports; not counted on either side."),
+            "{text}"
+        );
+        assert!(!text.contains("coverage_gap"), "{text}");
+        assert!(!text.contains("Folder . contains"), "{text}");
+        assert!(
+            text.contains("No recorded differences in measurement settings."),
+            "{text}"
+        );
+    }
+    let report: locmetry::compare::Comparison = serde_json::from_value(full).unwrap();
+    let styled =
+        locmetry::compare::render_table_with_theme(&report, locmetry::style::Theme::TERMINAL);
+    assert!(styled.contains("\x1b[90mUnrecognized files:"), "{styled}");
+    assert!(!styled.contains("\x1b[33m"), "{styled}");
+    fs::rename(root.join("a.zzz"), root.join("b.zzz")).unwrap();
+    let after = save(temp.path(), "after.json", &measure(&root));
+    for text in human_comparisons(&before, &after, 0) {
+        assert!(
+            text.contains("Unrecognized files: 1 → 1 (0 in both, 1 only before, 1 only after)"),
+            "{text}"
+        );
+        assert!(!text.contains("same 1 path"), "{text}");
+    }
+}
+
+#[test]
+fn human_coverage_notes_keep_missing_evidence_distinct_from_recorded_failures() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("project");
+    write(&root, "bad.ipynb", "invalid\n");
+    let mut report = measure(&root);
+    let before = save(temp.path(), "before.json", &report);
+    report["metadata"]["coverage"]["parse_failures"][0]["message"] = json!("different detail");
+    let after = save(temp.path(), "after.json", &report);
+    for text in human_comparisons(&before, &after, 2) {
+        assert!(
+            text.contains("Parse failures: same 1 path/reason pair in both reports"),
+            "{text}"
+        );
+    }
+    report["metadata"]["coverage"]["parse_failures"][0]["reason"] =
+        json!("unsupported_notebook_version");
+    let changed = save(temp.path(), "changed.json", &report);
+    for text in human_comparisons(&before, &changed, 2) {
+        assert!(
+            text.contains("Parse failures: 1 → 1 (0 in both, 1 only before, 1 only after)"),
+            "{text}"
+        );
+    }
+    fs::remove_file(root.join("bad.ipynb")).unwrap();
+    let mut legacy = measure(&root);
+    legacy["metadata"]["coverage"]
+        .as_object_mut()
+        .unwrap()
+        .remove("parse_failures");
+    let historical = save(temp.path(), "historical.json", &legacy);
+    for text in human_comparisons(&historical, &historical, 0) {
+        assert!(
+            text.contains("Failure evidence: not recorded (before); not recorded (after)."),
+            "{text}"
+        );
+        assert!(!text.contains("same"), "{text}");
+    }
+    for text in human_comparisons(&historical, &before, 2) {
+        assert!(text.contains("Parse failures: not recorded → 1"), "{text}");
+        assert!(!text.contains("only after"), "{text}");
+    }
+}
+
+#[test]
+fn human_coverage_notes_keep_partial_inputs_visible_and_warn() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("project");
+    write(&root, "main.py", "print(1)\n");
+    let mut report = measure(&root);
+    report["metadata"]["backend_inaccurate"] = json!(true);
+    let inaccurate = save(temp.path(), "inaccurate.json", &report);
+    for text in human_comparisons(&inaccurate, &inaccurate, 2) {
+        assert!(text.contains("Inaccurate input: before, after"), "{text}");
+    }
+    report["metadata"]["coverage"]["unread"] = json!(["unread.py"]);
+    report["metadata"]["coverage"]["selected_files"] = json!(2);
+    let unread = save(temp.path(), "unread.json", &report);
+    for text in human_comparisons(&unread, &unread, 2) {
+        assert!(
+            text.contains("Unreadable files: same 1 path in both reports"),
+            "{text}"
+        );
+    }
+    let full = document(compare(&unread, &unread, &["--format", "json"]), 2);
+    let comparison: locmetry::compare::Comparison = serde_json::from_value(full).unwrap();
+    let styled =
+        locmetry::compare::render_table_with_theme(&comparison, locmetry::style::Theme::TERMINAL);
+    assert!(styled.contains("\x1b[33mUnreadable files:"), "{styled}");
+    assert!(styled.contains("\x1b[33mInaccurate input:"), "{styled}");
+}
+
+#[test]
+fn human_coverage_notes_name_actionable_members_and_count_missing_member_evidence() {
+    let temp = tempfile::tempdir().unwrap();
+    let api = temp.path().join("api");
+    let web = temp.path().join("web");
+    write(&api, "main.py", "print(1)\n");
+    write(&web, "main.py", "print(2)\n");
+    let mut report = workspace(&[&api, &web]);
+    let mut legacy = report.clone();
+    legacy["metadata"]["coverage"]
+        .as_object_mut()
+        .unwrap()
+        .remove("parse_failures");
+    for member in legacy["metadata"]["members"].as_array_mut().unwrap() {
+        member["coverage"]
+            .as_object_mut()
+            .unwrap()
+            .remove("parse_failed_files");
+    }
+    let historical = save(temp.path(), "historical-workspace.json", &legacy);
+    report["metadata"]["backend_inaccurate"] = json!(true);
+    report["metadata"]["coverage"]["selected_files"] = json!(3);
+    report["metadata"]["coverage"]["parse_failures"] = json!([{
+        "path": "api/bad.ipynb", "reason": "invalid_notebook", "message": "invalid"
+    }]);
+    report["metadata"]["members"][0]["coverage"]["selected_files"] = json!(2);
+    report["metadata"]["members"][0]["coverage"]["parse_failed_files"] = json!(1);
+    report["metadata"]["members"][1]["coverage"]
+        .as_object_mut()
+        .unwrap()
+        .remove("parse_failed_files");
+    let saved = save(temp.path(), "workspace.json", &report);
+    for text in human_comparisons(&saved, &saved, 2) {
+        let failures = text
+            .lines()
+            .find(|l| l.contains("Parse failures:"))
+            .unwrap();
+        assert!(
+            failures.contains("Members before: api; after: api"),
+            "{text}"
+        );
+        assert!(
+            text.contains("not recorded for 1 of 2 members (before)"),
+            "{text}"
+        );
+        assert!(
+            text.contains("not recorded for 1 of 2 members (after)"),
+            "{text}"
+        );
+        assert!(!text.contains("coverage_gap"), "{text}");
+    }
+    for text in human_comparisons(&historical, &saved, 2) {
+        assert!(
+            text.contains("Members before: not recorded; after: api."),
+            "{text}"
+        );
+    }
+}
+
+#[test]
+fn human_producer_notes_show_each_changed_field_without_asserting_counting_behavior() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("project");
+    write(&root, "main.py", "print(1)\n");
+    let mut report = measure(&root);
+    report["metadata"]["locmetry_version"] = json!("old");
+    let before = save(temp.path(), "before.json", &report);
+    report["metadata"]["locmetry_version"] = json!("new");
+    let version = save(temp.path(), "version.json", &report);
+    for text in human_comparisons(&before, &version, 0) {
+        assert!(text.contains("Locmetry version: old → new."), "{text}");
+        assert!(text.contains("Counting corrections can differ between versions; the reports cannot show whether they did."), "{text}");
+        assert!(!text.contains("counter_changed"), "{text}");
+        assert!(!text.contains("No recorded differences"), "{text}");
+    }
+    report["metadata"]["backend"] = json!("other backend");
+    report["metadata"]["backend_configuration"] = json!("other configuration");
+    let after = save(temp.path(), "after.json", &report);
+    for text in human_comparisons(&before, &after, 0) {
+        assert!(text.contains("Backend:"), "{text}");
+        assert!(text.contains("→ other backend."), "{text}");
+        assert!(text.contains("Backend configuration:"), "{text}");
+        assert!(text.contains("→ other configuration."), "{text}");
+    }
+}
+
 #[test]
 fn comparison_theme_preserves_plain_text_and_distinguishes_signed_changes() {
     use locmetry::style::Theme;

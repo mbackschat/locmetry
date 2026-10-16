@@ -2,6 +2,8 @@ use super::*;
 use crate::style::{Role, Theme};
 use std::fmt::Write;
 
+mod notes;
+
 fn label(value: &str, markdown: bool) -> String {
     match markdown {
         true => crate::output::cell(value),
@@ -265,9 +267,30 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
         c.presence_summary.packages.after_only
     )
     .unwrap();
-    if !c.findings.is_empty() {
+    let notes = notes::measurement_notes(c);
+    if !notes.is_empty() {
+        match markdown {
+            true => writeln!(out, "\n## Measurement notes\n"),
+            false => writeln!(out, "\n{}", theme.paint(Role::Heading, "Measurement notes")),
+        }
+        .unwrap();
+        for (role, note) in notes {
+            writeln!(out, "- {}", theme.paint(role, &label(&note, markdown))).unwrap();
+        }
+    }
+    let findings: Vec<_> = c
+        .findings
+        .iter()
+        .filter(|f| {
+            !matches!(
+                f,
+                Finding::CoverageGap { .. } | Finding::CounterChanged { .. }
+            )
+        })
+        .collect();
+    if !findings.is_empty() {
         writeln!(out, "\n{}Findings", if markdown { "## " } else { "" }).unwrap();
-        for f in &c.findings {
+        for f in findings {
             let context = f.context();
             let entity = match f {
                 Finding::PresenceChanged { entity, .. } => match entity {
@@ -280,13 +303,7 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
             writeln!(
                 out,
                 "\n- {} ({:?}{}): {}{}",
-                theme.paint(
-                    match f {
-                        Finding::CoverageGap { .. } => Role::Warning,
-                        _ => Role::Information,
-                    },
-                    f.code()
-                ),
+                theme.paint(Role::Information, f.code()),
                 context.side,
                 context
                     .member
@@ -297,7 +314,16 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
             )
             .unwrap();
         }
-    } else {
+    }
+    if !c.findings.iter().any(|f| {
+        matches!(
+            f,
+            Finding::CounterChanged { .. }
+                | Finding::PolicyChanged { .. }
+                | Finding::ModulesChanged { .. }
+                | Finding::IdentityChanged { .. }
+        )
+    }) {
         writeln!(out, "\n{}", theme.paint(Role::Muted, "No recorded differences in measurement settings. Reports do not fingerprint source, ignore files or executable builds; this does not prove source-only growth.")).unwrap();
     }
     out
