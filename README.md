@@ -2,7 +2,7 @@
 
 # locmetry
 
-The latest stable release is **0.4.0**. The examples below describe this version; [output routing](docs/PRODUCT.md#output-routing) defines destination and format behavior.
+The latest stable release is **0.4.0**. The examples below describe the current checkout, including report presentation improvements after that release; [output routing](docs/PRODUCT.md#output-routing) defines destination and format behavior.
 
 **Lines of code, split by purpose: production, tests, tooling, and what nobody claims.** `locmetry` measures selected files that its counters can recognize and read, gives each counted file a purpose and category, and records the rule that decided it. Coverage names files whose counts are unavailable.
 
@@ -18,31 +18,31 @@ It is a self-contained executable for macOS arm64 and Linux x86_64 and aarch64, 
 
 ## What you see
 
-Run `locmetry` in a project. For the [sample project](#a-tour-of-a-sample-project) used throughout this page:
+Run `locmetry` in a project. The example uses an illustrative measurement date. For the [sample project](#a-tour-of-a-sample-project) used throughout this page:
 
 ```text
 $ locmetry
  acme-orders · Source code
- Language    Files  Code │ Comments  Blanks │ Production  Test  Unclassified
- ────────────────────────┼──────────────────┼───────────────────────────────
- Kotlin          6    67 │        2      16 │         51    16             0
- TypeScript      2    21 │        1       4 │         11    10             0
- Python          2    20 │        2       8 │         12     0             8
- TSX             1    20 │        0       2 │         20     0             0
- Shell           1     1 │        2       0 │          0     0             1
- ────────────────────────┼──────────────────┼───────────────────────────────
- Total          12   129 │        7      30 │         94    26             9
- Code + Comments + Blanks = all lines; Production + Test + Unclassified = Code.
+ Language    Files  Lines  Code │ Comments  Blanks │ Production  Test  Unclassified
+ ───────────────────────────────┼──────────────────┼───────────────────────────────
+ Kotlin          6     85    67 │        2      16 │         51    16             0
+ TypeScript      2     26    21 │        1       4 │         11    10             0
+ Python          2     30    20 │        2       8 │         12     0             8
+ TSX             1     22    20 │        0       2 │         20     0             0
+ Shell           1      3     1 │        2       0 │          0     0             1
+ ───────────────────────────────┼──────────────────┼───────────────────────────────
+ Total          12    166   129 │        7      30 │         94    26             9
+ Lines = Code + Comments + Blanks; Production + Test + Unclassified = Code.
 
- Folder        Code │ Production  Test  Unclassified │ Test/prod
- ───────────────────┼────────────────────────────────┼──────────
- backend         65 │         49    16             0 │      0.33
- web             41 │         31    10             0 │      0.32
- scripts         12 │         12     0             0 │      0.00
- prototypes       8 │          0     0             8 │         -
- (root files)     3 │          2     0             1 │      0.00
- ───────────────────┼────────────────────────────────┼──────────
- Total          129 │         94    26             9 │      0.28
+ Folder        Lines  Code │ Production  Test  Unclassified │ Test/prod
+ ──────────────────────────┼────────────────────────────────┼──────────
+ backend          83    65 │         49    16             0 │      0.33
+ web              48    41 │         31    10             0 │      0.32
+ scripts          19    12 │         12     0             0 │      0.00
+ prototypes       11     8 │          0     0             8 │         -
+ (root files)      5     3 │          2     0             1 │      0.00
+ ──────────────────────────┼────────────────────────────────┼──────────
+ Total           166   129 │         94    26             9 │      0.28
  Production + Test + Unclassified = Code; Test/prod = Test / Production.
 
  Not source code: 3 data files (19 lines), 1 documentation file (9 lines).
@@ -51,6 +51,8 @@ $ locmetry
    prototypes  8 code lines  1 file
  Classify them in the configuration; locmetry --schema config explains how, --files --output - shows each file's rule.
  Not counted: 1 unrecognized file (png: 1); missing lines are not zero.
+
+Measured at: 2026-10-17 12:00:00 UTC
 ```
 
 What the table already handles for you:
@@ -345,7 +347,7 @@ locmetry --root ./service --output ./after.json
 locmetry compare before.json after.json
 ```
 
-Human comparisons summarize coverage and producer differences under Measurement notes; full JSON retains per-folder findings. Source-code detail rows appear when code changes or a member/folder exists on only one side. Comment, blank, data and file-count changes remain in Totals and full JSON, without adding misleading `+0` source-code rows. The terminal Totals table sizes its columns to their contents. Run `locmetry --guide compare` for saved Markdown, workspace changes, partial-input handling and interpretation. The same [comparison guide](docs/guides/compare.md) is available here; aggregate comparison needs no `--files`.
+Human comparisons summarize coverage and producer differences under Measurement notes; full JSON retains per-folder findings. Detail rows show Lines and Code before, after and net change when either changes, or when a member/folder exists on only one side. Comment-only and blank-only growth therefore appears as a line change; data-only and file-count-only changes remain in Totals and full JSON. The terminal Totals table sizes its columns to their contents. Run `locmetry --guide compare` for saved Markdown, workspace changes, partial-input handling and interpretation. The same [comparison guide](docs/guides/compare.md) is available here; aggregate comparison needs no `--files`.
 
 ## Common issues and useful queries
 
@@ -452,10 +454,12 @@ In the sample, `backend` and `web` are build modules, so `backend/src/main/**` a
 
 Plain `locmetry` on a terminal prints the table shown [above](#what-you-see):
 
-- language rows, largest first;
-- top-level folders, whose rows add up to the total, each with `Test/prod`, its test code lines per production code line;
+- language rows with Files, Lines, Code, Comments and Blanks, followed by the code split by purpose, largest code first;
+- top-level folders with Lines and Code, whose rows add up to the total, each with `Test/prod`, its test code lines per production code line;
 - under each table, a legend stating how its columns add up, such as Production + Test + Unclassified = Code;
 - notes on content that is not source, the build modules that decided production, Git submodules, which are often other teams' code, the folders that hold unclaimed source, configuration entries that decided no file, and files that could not be counted.
+
+Table and Markdown reports end with `Measured at: YYYY-MM-DD HH:MM:SS UTC`, using the measurement-start timestamp already recorded in JSON as `metadata.measured_at_unix_seconds`. Comparison reports end with both input measurement dates. File creation times are not used.
 
 Terminal table cells, notes and application diagnostics flatten control characters to spaces; JSON retains original paths. `--sort name` lists rows alphabetically instead, in the table and in Markdown. `--categories` adds a table of source code per `purpose:category`, such as `production:tooling`, to see what production consists of.
 
@@ -489,6 +493,7 @@ Without `--output`, when stdout is not a terminal, `locmetry` prints a compact J
   "project": "acme-orders",
   "metadata": {
     "root": "/work/acme-orders",
+    "measured_at_unix_seconds": 1792238400,
     "locmetry_version": "0.4.0",
     "scope": {
       "exclude": ["**/.git/**", "**/node_modules/**", "**/.build/**", "**/.lake/**", "third_party/**", ".locmetryrc"]
@@ -577,49 +582,51 @@ $ jq -c '.review[]' report.json
 ```markdown
 ## Source categories
 
-| Category | Files | **Code** | Comments | Blanks | Lines |
+| Category | Files | Lines | **Code** | Comments | Blanks |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| production:implementation | 5 | 73 | 3 | 15 | 91 |
-| test:test | 2 | 26 | 0 | 6 | 32 |
-| production:tooling | 1 | 12 | 1 | 6 | 19 |
-| production:build-tooling | 2 | 9 | 0 | 1 | 10 |
-| unclassified:unclassified | 1 | 8 | 1 | 2 | 11 |
-| unclassified:third-party-wrapper | 1 | 1 | 2 | 0 | 3 |
+| production:implementation | 5 | 91 | 73 | 3 | 15 |
+| test:test | 2 | 32 | 26 | 0 | 6 |
+| production:tooling | 1 | 19 | 12 | 1 | 6 |
+| production:build-tooling | 2 | 10 | 9 | 0 | 1 |
+| unclassified:unclassified | 1 | 11 | 8 | 1 | 2 |
+| unclassified:third-party-wrapper | 1 | 3 | 1 | 2 | 0 |
 
 ## Folder breakdown
 
-| Folder | Production | Test | Unclassified | **Total source code** | Test/prod |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| . | 94 | 26 | 9 | 129 | 0.28 |
-| backend | 49 | 16 | 0 | 65 | 0.33 |
-| backend/src | 42 | 16 | 0 | 58 | 0.38 |
-| prototypes | 0 | 0 | 8 | 8 | - |
-| scripts | 12 | 0 | 0 | 12 | 0.00 |
-| web | 31 | 10 | 0 | 41 | 0.32 |
-| web/src | 31 | 10 | 0 | 41 | 0.32 |
+| Folder | Lines | **Code** | Production | Test | Unclassified | Test/prod |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| . | 166 | 129 | 94 | 26 | 9 | 0.28 |
+| backend | 83 | 65 | 49 | 16 | 0 | 0.33 |
+| backend/src | 75 | 58 | 42 | 16 | 0 | 0.38 |
+| prototypes | 11 | 8 | 0 | 0 | 8 | - |
+| scripts | 19 | 12 | 12 | 0 | 0 | 0.00 |
+| web | 48 | 41 | 31 | 10 | 0 | 0.32 |
+| web/src | 48 | 41 | 31 | 10 | 0 | 0.32 |
 
 ## Build modules
 
-| Build system | Modules | Code |
-| --- | ---: | ---: |
-| gradle | 1 | 42 |
-| npm | 1 | 31 |
+| Build system | Modules | Lines | Code |
+| --- | ---: | ---: | ---: |
+| gradle | 1 | 53 | 42 |
+| npm | 1 | 38 | 31 |
 
 ## Source requiring review
 
 1 file of unclassified source that no rule, convention, or build module claims. Code an entry or convention leaves unclassified on purpose is not listed.
 
-| Folder | Files | Code |
-| --- | ---: | ---: |
-| prototypes | 1 | 8 |
+| Folder | Files | Lines | Code |
+| --- | ---: | ---: | ---: |
+| prototypes | 1 | 11 | 8 |
 
-| Path | Code | Category |
-| --- | ---: | --- |
-| prototypes/pricing_experiment.py | 8 | unclassified |
+| Path | Lines | Code | Category |
+| --- | ---: | ---: | --- |
+| prototypes/pricing_experiment.py | 11 | 8 | unclassified |
 
 ## Coverage
 
 Files selected: 17; counted: 16, including 2 through language mappings; not recognized: 1; recognized but unreadable: 0. Their lines are missing, not zero. Counts describe the working copy, including untracked files, not a commit.
+
+Measured at: 2026-10-17 12:00:00 UTC
 ```
 
 ## Continuous integration

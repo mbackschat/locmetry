@@ -552,6 +552,7 @@ fn workspace_table_compares_repositories() {
         table_row(&table, "Repository", "Repository"),
         [
             "Repository",
+            "Lines",
             "Code",
             "Production",
             "Test",
@@ -562,15 +563,15 @@ fn workspace_table_compares_repositories() {
     );
     assert_eq!(
         table_row(&table, "Repository", "web"),
-        ["web", "6", "3", "1", "2", "0.33", "60.0%"]
+        ["web", "6", "6", "3", "1", "2", "0.33", "60.0%"]
     );
     assert_eq!(
         table_row(&table, "Repository", "api"),
-        ["api", "4", "1", "2", "1", "2.00", "40.0%"]
+        ["api", "4", "4", "1", "2", "1", "2.00", "40.0%"]
     );
     assert_eq!(
         table_row(&table, "Repository", "Total"),
-        ["Total", "10", "4", "3", "3", "0.75", "100.0%"]
+        ["Total", "10", "10", "4", "3", "3", "0.75", "100.0%"]
     );
     let row_index = |label: &str| {
         table
@@ -611,19 +612,19 @@ fn workspace_markdown_breaks_categories_and_languages_down_by_repository() {
     let markdown = String::from_utf8(output.stdout).unwrap();
     for expected in [
         "## Repositories\n",
-        "| Repository | **Code** | Production | Test | Unclassified | Test/prod | Share |\n",
-        "| web | 6 | 3 | 1 | 2 | 0.33 | 60.0% |\n",
-        "| **Total** | **10** | **4** | **3** | **3** | **0.75** | **100.0%** |\n",
+        "| Repository | Lines | **Code** | Production | Test | Unclassified | Test/prod | Share |\n",
+        "| web | 6 | 6 | 3 | 1 | 2 | 0.33 | 60.0% |\n",
+        "| **Total** | **10** | **10** | **4** | **3** | **3** | **0.75** | **100.0%** |\n",
         "Production + Test + Unclassified = Code; Test/prod = Test / Production; Share = Code / workspace Code.",
-        "Total is the sum of the repository columns.",
+        "Each total is the sum of its repository columns.",
         "## Source categories by repository\n",
-        "| Category | api | web | Total |\n",
-        "| test:test | 2 | 1 | 3 |\n",
-        "| production:tooling | 0 | 1 | 1 |\n",
+        "| Category | api Lines | api Code | web Lines | web Code | Total Lines | Total Code |\n",
+        "| test:test | 2 | 2 | 1 | 1 | 3 | 3 |\n",
+        "| production:tooling | 0 | 0 | 1 | 1 | 1 | 1 |\n",
         "## Source languages by repository\n",
-        "| Language | api | web | Total |\n",
-        "| TypeScript | 0 | 6 | 6 |\n",
-        "| Rust | 4 | 0 | 4 |\n",
+        "| Language | api Lines | api Code | web Lines | web Code | Total Lines | Total Code |\n",
+        "| TypeScript | 0 | 0 | 6 | 6 | 6 | 6 |\n",
+        "| Rust | 4 | 4 | 0 | 0 | 4 | 4 |\n",
         "Repositories to review: api: 1 unclaimed file (1 code line); web: 2 unclaimed files (2 code lines).",
     ] {
         assert!(markdown.contains(expected), "{expected:?} missing in:\n{markdown}");

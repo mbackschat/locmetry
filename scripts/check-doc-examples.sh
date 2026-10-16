@@ -101,7 +101,7 @@ grep -Fxq '| Source code | 1 | 2 | +1 |' "$temporary/workflows/net-change.md"
 extract_blocks 'Compare saved measurements' "$temporary/workspace-compare.sh" 2 1 "$repository/docs/guides/compare.md"
 (cd "$temporary/workflows" && bash "$temporary/workspace-compare.sh") > "$temporary/workspace-change.md"
 grep -Fxq '| Source code | 3 | 4 | +1 |' "$temporary/workspace-change.md"
-grep -Fxq '| service (both) | 2 | 3 | +1 |' "$temporary/workspace-change.md"
+grep -Fxq '| service (both) | 2 | 3 | +1 | 2 | 3 | +1 |' "$temporary/workspace-change.md"
 
 # The same documented inspection recipe must retain an actual partial-input status.
 printf '{}\n' > "$temporary/workflows/service/broken.ipynb"

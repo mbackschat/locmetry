@@ -200,7 +200,7 @@ fn markdown_format_writes_a_readable_report_to_stdout() {
     assert!(stdout.starts_with(
         "# source: lines of code by purpose\n\n*Production means maintained non-test source, including separately categorized tooling. Data, configuration, and documentation are counted apart from source. Lines = Code + Comments + Blanks in every table with these columns, and the purpose rows add up to all source.*\n\n## Source purpose"
     ));
-    assert!(stdout.contains("| production | 1 | 1 | 0 | 0 | 1 |"));
+    assert!(stdout.contains("| production | 1 | 1 | 1 | 0 | 0 |"));
     // Measurement caveats belong with coverage, not in the opening.
     let coverage = &stdout[stdout.find("## Coverage").unwrap()..];
     assert!(coverage
@@ -227,21 +227,21 @@ fn table_format_splits_source_code_by_language_and_purpose() {
     let output = run(&temp.path().join("project"), &["--format", "table"]);
     assert!(output.status.success());
     let expected = " project · Source code
- Language  Files  Code │ Comments  Blanks │ Production  Test  Unclassified
- ──────────────────────┼──────────────────┼───────────────────────────────
- Rust          3     4 │        1       0 │          2     2             0
- Python        1     1 │        0       0 │          0     0             1
- ──────────────────────┼──────────────────┼───────────────────────────────
- Total         4     5 │        1       0 │          2     2             1
- Code + Comments + Blanks = all lines; Production + Test + Unclassified = Code.
+ Language  Files  Lines  Code │ Comments  Blanks │ Production  Test  Unclassified
+ ─────────────────────────────┼──────────────────┼───────────────────────────────
+ Rust          3      5     4 │        1       0 │          2     2             0
+ Python        1      1     1 │        0       0 │          0     0             1
+ ─────────────────────────────┼──────────────────┼───────────────────────────────
+ Total         4      6     5 │        1       0 │          2     2             1
+ Lines = Code + Comments + Blanks; Production + Test + Unclassified = Code.
 
- Folder  Code │ Production  Test  Unclassified │ Test/prod
- ─────────────┼────────────────────────────────┼──────────
- src        2 │          2     0             0 │      0.00
- tests      2 │          0     2             0 │         -
- proto      1 │          0     0             1 │         -
- ─────────────┼────────────────────────────────┼──────────
- Total      5 │          2     2             1 │      1.00
+ Folder  Lines  Code │ Production  Test  Unclassified │ Test/prod
+ ────────────────────┼────────────────────────────────┼──────────
+ src         3     2 │          2     0             0 │      0.00
+ tests       2     2 │          0     2             0 │         -
+ proto       1     1 │          0     0             1 │         -
+ ────────────────────┼────────────────────────────────┼──────────
+ Total       6     5 │          2     2             1 │      1.00
  Production + Test + Unclassified = Code; Test/prod = Test / Production.
 
  Not source code: 1 data file (1 line), 1 documentation file (1 line).
@@ -250,18 +250,25 @@ fn table_format_splits_source_code_by_language_and_purpose() {
  Classify them in the configuration; locmetry --schema config explains how, --files --output - shows each file's rule.
  Not counted: 1 unrecognized file (png: 1); missing lines are not zero.
 ";
-    assert_eq!(String::from_utf8(output.stdout).unwrap(), expected);
+    assert_eq!(
+        String::from_utf8(output.stdout)
+            .unwrap()
+            .split("\nMeasured at:")
+            .next()
+            .unwrap(),
+        expected
+    );
     let markdown =
         String::from_utf8(run(&temp.path().join("project"), &["--format", "markdown"]).stdout)
             .unwrap();
     for row in [
         "Lines = Code + Comments + Blanks in every table with these columns",
-        "Production + Test + Unclassified = Total source code; Test/prod = Test / Production.",
-        "| Folder | Production | Test | Unclassified | **Total source code** | Test/prod |\n",
-        "| Purpose | Files | **Code** | Comments | Blanks | Lines |\n",
-        "| . | 2 | 2 | 1 | 5 | 1.00 |\n",
-        "| src | 2 | 0 | 0 | 2 | 0.00 |\n",
-        "| tests | 0 | 2 | 0 | 2 | - |\n",
+        "Production + Test + Unclassified = Code; Test/prod = Test / Production.",
+        "| Folder | Lines | **Code** | Production | Test | Unclassified | Test/prod |\n",
+        "| Purpose | Files | Lines | **Code** | Comments | Blanks |\n",
+        "| . | 6 | 5 | 2 | 2 | 1 | 1.00 |\n",
+        "| src | 3 | 2 | 2 | 0 | 0 | 0.00 |\n",
+        "| tests | 2 | 2 | 0 | 2 | 0 | - |\n",
     ] {
         assert!(markdown.contains(row), "{row:?} missing in:\n{markdown}");
     }
@@ -546,11 +553,11 @@ fn categories_table_is_shown_on_request() {
     let table =
         String::from_utf8(run(&root, &["--format", "table", "--categories"]).stdout).unwrap();
     let expected = "
- Category                   Files  Code
- ──────────────────────────────────────
- unclassified:unclassified      1     2
- production:tooling             1     1
- test:test                      1     1
+ Category                   Files  Lines  Code
+ ─────────────────────────────────────────────
+ unclassified:unclassified      1      2     2
+ production:tooling             1      1     1
+ test:test                      1      1     1
  Rows of one purpose add up to that purpose's Code; all rows add up to the total Code.
 ";
     assert!(table.contains(expected), "{table}");
@@ -1516,10 +1523,10 @@ fn markdown_and_json_report_the_same_totals() {
         let row = format!(
             "| {purpose} | {} | {} | {} | {} | {} |",
             count("files"),
+            count("lines"),
             count("code"),
             count("comments"),
-            count("blanks"),
-            count("lines")
+            count("blanks")
         );
         assert!(markdown.contains(&row), "missing {row}");
     }
@@ -1598,8 +1605,8 @@ fn human_formats_group_thousands_and_json_keeps_plain_integers() {
     let root = temp.path().join("project");
     let table = String::from_utf8(run(&root, &["--format", "table"]).stdout).unwrap();
     for expected in [
-        " TypeScript      2  1,235 │",
-        " src     1,234 │",
+        " TypeScript      2  1,235  1,235 │",
+        " src     1,234  1,234 │",
         "npm 1,234 code lines in 1 module",
     ] {
         assert!(
@@ -1609,7 +1616,7 @@ fn human_formats_group_thousands_and_json_keeps_plain_integers() {
     }
     let markdown = String::from_utf8(run(&root, &["--format", "markdown"]).stdout).unwrap();
     assert!(
-        markdown.contains("| production | 1 | 1,234 | 0 | 0 | 1,234 |"),
+        markdown.contains("| production | 1 | 1,234 | 1,234 | 0 | 0 |"),
         "{markdown}"
     );
     let (_, document, _) = headline(&root, &[]);

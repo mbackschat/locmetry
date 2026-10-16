@@ -1,7 +1,7 @@
 use super::RowOrder;
 use crate::{
     report::{below, collapse_folder, Summary},
-    Purpose, ReportSummary,
+    Counts, Purpose, ReportSummary,
 };
 use std::collections::BTreeMap;
 
@@ -15,6 +15,7 @@ enum RowKind {
 pub(super) struct Row {
     path: String,
     kind: RowKind,
+    pub counts: Counts,
     pub purposes: BTreeMap<Purpose, u64>,
 }
 
@@ -23,6 +24,7 @@ impl Row {
         Self {
             path: path.into(),
             kind,
+            counts: summary.source,
             purposes: summary
                 .source_purpose
                 .iter()
@@ -119,9 +121,11 @@ impl Tree<'_> {
             let mut remainder = Row {
                 path: row.path.clone(),
                 kind: RowKind::Other(omitted.len()),
+                counts: Counts::default(),
                 purposes: BTreeMap::new(),
             };
             for child in omitted {
+                remainder.counts.add(&child.counts);
                 for (purpose, code) in child.purposes {
                     *remainder.purposes.entry(purpose).or_default() += code;
                 }
@@ -133,6 +137,32 @@ impl Tree<'_> {
         rows.extend(children.into_iter().map(|child| self.collapse(child)));
         Some(rows)
     }
+}
+
+pub(super) fn standard(
+    summary: &ReportSummary,
+    subfolder: Option<&str>,
+    order: RowOrder,
+) -> Vec<Row> {
+    let root = subfolder.unwrap_or(".");
+    let base = subfolder.unwrap_or("");
+    let mut rows = Vec::new();
+    for (path, folder) in &summary.folders {
+        if path == root {
+            if folder.direct.source.files > 0 {
+                rows.push(Row::new(path, RowKind::Direct, &folder.direct));
+            }
+        } else if below(path, base).is_some_and(|relative| !relative.contains('/'))
+            && folder.recursive.source.files > 0
+        {
+            rows.push(Row::new(path, RowKind::Folder, &folder.recursive));
+        }
+    }
+    rows.sort_by(|a, b| match order {
+        RowOrder::Code => b.code().cmp(&a.code()).then(a.path.cmp(&b.path)),
+        RowOrder::Name => a.path.cmp(&b.path),
+    });
+    rows
 }
 
 pub(super) struct View {

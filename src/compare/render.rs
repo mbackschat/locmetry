@@ -20,8 +20,53 @@ fn grid(
     if rows.is_empty() {
         return;
     }
+    let headers = [
+        "Source",
+        "Lines before",
+        "Lines after",
+        "Lines change",
+        "Code before",
+        "Code after",
+        "Code change",
+    ];
+    let cells = |name: &str, c: &CountChange| {
+        [
+            label(name, markdown),
+            c.before.lines.to_string(),
+            c.after.lines.to_string(),
+            format!("{:+}", c.delta.lines),
+            c.before.code.to_string(),
+            c.after.code.to_string(),
+            format!("{:+}", c.delta.code),
+        ]
+    };
+    let widths = rows
+        .iter()
+        .fold(headers.map(str::len), |mut widths, (name, c)| {
+            for (width, value) in widths.iter_mut().zip(cells(name, c)) {
+                *width = (*width).max(value.chars().count());
+            }
+            widths
+        });
+    let text_row = |values: &[String; 7]| {
+        values
+            .iter()
+            .zip(widths)
+            .enumerate()
+            .map(|(index, (value, width))| match index {
+                0 => format!("{value:<width$}"),
+                _ => format!("{value:>width$}"),
+            })
+            .collect::<Vec<_>>()
+    };
     if markdown {
-        writeln!(output,"\n## {title}\n\n| Source code | Before | After | Net change |\n| --- | ---: | ---: | ---: |").unwrap();
+        writeln!(
+            output,
+            "\n## {title}\n\n| {} |\n| --- |{}\n",
+            headers.join(" | "),
+            " ---: |".repeat(6)
+        )
+        .unwrap();
     } else {
         writeln!(
             output,
@@ -29,38 +74,28 @@ fn grid(
             theme.paint(Role::Heading, title),
             theme.paint(
                 Role::Heading,
-                &format!(
-                    "{:<40} {:>12} {:>12} {:>12}",
-                    "Source code", "Before", "After", "Net change"
-                )
+                &text_row(&headers.map(String::from)).join("  ")
             )
         )
         .unwrap();
     }
-    for (label, c) in rows {
-        if markdown {
-            writeln!(
-                output,
-                "| {} | {} | {} | {} |",
-                self::label(&label, markdown),
-                c.before.code,
-                c.after.code,
-                theme.delta(c.delta.code, 0)
-            )
-            .unwrap();
-        } else {
-            writeln!(
-                output,
-                "{:<40} {:>12} {:>12} {}",
-                self::label(&label, markdown),
-                c.before.code,
-                c.after.code,
-                theme.delta(c.delta.code, 12)
-            )
-            .unwrap();
+    for (name, c) in rows {
+        let values = cells(&name, &c);
+        let mut rendered = match markdown {
+            true => values.to_vec(),
+            false => text_row(&values),
+        };
+        for (index, delta) in [(3, c.delta.lines), (6, c.delta.code)] {
+            rendered[index] = theme.delta(delta, if markdown { 0 } else { widths[index] });
         }
+        match markdown {
+            true => writeln!(output, "| {} |", rendered.join(" | ")),
+            false => writeln!(output, "{}", rendered.join("  ")),
+        }
+        .unwrap();
     }
 }
+
 fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
     let mut out = String::new();
     let title = format!(
@@ -102,6 +137,12 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
                 change.delta.files,
             ),
             (
+                "lines",
+                change.before.lines,
+                change.after.lines,
+                change.delta.lines,
+            ),
+            (
                 "code",
                 change.before.code,
                 change.after.code,
@@ -118,12 +159,6 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
                 change.before.blanks,
                 change.after.blanks,
                 change.delta.blanks,
-            ),
-            (
-                "lines",
-                change.before.lines,
-                change.after.lines,
-                change.delta.lines,
             ),
         ]
         .map(|(metric, before, after, delta)| (format!("{label} {metric}"), before, after, delta))
@@ -186,7 +221,7 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
             .dimensions
             .source_purpose
             .iter()
-            .filter(|(_, v)| v.delta.code != 0)
+            .filter(|(_, v)| v.delta.code != 0 || v.delta.lines != 0)
             .map(|(k, v)| (k.to_string(), *v))
             .collect(),
         markdown,
@@ -199,7 +234,7 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
             .dimensions
             .source_languages
             .iter()
-            .filter(|(_, v)| v.delta.code != 0)
+            .filter(|(_, v)| v.delta.code != 0 || v.delta.lines != 0)
             .map(|(k, v)| (k.clone(), *v))
             .collect(),
         markdown,
@@ -212,7 +247,9 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
             members
                 .iter()
                 .filter(|(_, v)| {
-                    v.presence != Presence::Both || v.dimensions.source.delta.code != 0
+                    v.presence != Presence::Both
+                        || v.dimensions.source.delta.code != 0
+                        || v.dimensions.source.delta.lines != 0
                 })
                 .map(|(k, v)| {
                     (
@@ -226,6 +263,24 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
         );
     }
     if let Some(composition) = &c.summary.composition {
+        writeln!(
+            out,
+            "\nWorkspace source lines: matched {:+}, entering +{}, leaving -{}; total {:+}.",
+            composition.source.matched.lines,
+            composition.source.entering.lines,
+            composition.source.leaving.lines,
+            c.summary.dimensions.source.delta.lines
+        )
+        .unwrap();
+        writeln!(
+            out,
+            "Workspace all-counted lines: matched {:+}, entering +{}, leaving -{}; total {:+}.",
+            composition.all_counted.matched.lines,
+            composition.all_counted.entering.lines,
+            composition.all_counted.leaving.lines,
+            c.summary.dimensions.all_counted.delta.lines
+        )
+        .unwrap();
         writeln!(
             out,
             "\nWorkspace source code: matched {:+}, entering +{}, leaving -{}; total {:+}.",
@@ -256,7 +311,9 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
                 .filter(|(path, v)| {
                     (markdown
                         || (c.members.is_none() && (path.as_str() == "." || !path.contains('/'))))
-                        && (v.presence != Presence::Both || v.recursive.source.delta.code != 0)
+                        && (v.presence != Presence::Both
+                            || v.recursive.source.delta.code != 0
+                            || v.recursive.source.delta.lines != 0)
                 })
                 .map(|(k, v)| {
                     (
@@ -339,6 +396,13 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
     }) {
         writeln!(out, "\n{}", theme.paint(Role::Muted, "No recorded differences in measurement settings. Reports do not fingerprint source, ignore files or executable builds; this does not prove source-only growth.")).unwrap();
     }
+    writeln!(
+        out,
+        "\nBefore measured at: {}\nAfter measured at: {}",
+        crate::measurement_time(c.before.metadata.measured_at_unix_seconds),
+        crate::measurement_time(c.after.metadata.measured_at_unix_seconds)
+    )
+    .unwrap();
     out
 }
 fn presence_name(p: Presence) -> &'static str {

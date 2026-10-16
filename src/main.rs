@@ -951,6 +951,12 @@ fn report(
             theme.paint(Role::Warning, "Backend reported incomplete counts")
         ));
     }
+    if matches!(format, Format::Table | Format::Markdown) {
+        human.push_str(&format!(
+            "\nMeasured at: {}\n",
+            locmetry::measurement_time(measured_at)
+        ));
+    }
     let mut member_totals = BTreeMap::new();
     for member in &members {
         member_totals.insert(

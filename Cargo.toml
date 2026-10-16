@@ -9,6 +9,7 @@ publish = false
 
 [dependencies]
 anyhow = "1"
+chrono = { version = "0.4", default-features = false, features = ["std"] }
 clap = { version = "4", features = ["derive", "wrap_help"] }
 encoding_rs_io = "0.1"
 globset = "0.4"

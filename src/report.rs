@@ -412,6 +412,7 @@ pub struct ModuleShare {
     pub path: String,
     pub detector: &'static str,
     pub files: u64,
+    pub lines: u64,
     pub code: u64,
 }
 
@@ -425,6 +426,7 @@ pub fn module_shares(modules: &[Module], rows: &[FileRecord]) -> Vec<ModuleShare
             path: module.path.clone(),
             detector: module.detector,
             files: 0,
+            lines: 0,
             code: 0,
         })
         .collect();
@@ -435,6 +437,7 @@ pub fn module_shares(modules: &[Module], rows: &[FileRecord]) -> Vec<ModuleShare
             &row.classification.rule,
         ) {
             shares[index].files += 1;
+            shares[index].lines += row.counts.lines;
             shares[index].code += row.counts.code;
         }
     }

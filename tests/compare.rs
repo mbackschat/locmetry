@@ -928,7 +928,7 @@ fn human_producer_notes_show_each_changed_field_without_asserting_counting_behav
 }
 
 #[test]
-fn source_code_grids_omit_comment_blank_data_and_file_count_only_changes() {
+fn source_grids_include_line_changes_but_omit_data_and_file_count_only_changes() {
     for variant in ["comment", "blank", "data", "empty file"] {
         let temp = tempfile::tempdir().unwrap();
         let root = temp.path().join("project");
@@ -972,7 +972,11 @@ fn source_code_grids_omit_comment_blank_data_and_file_count_only_changes() {
         }
         for text in human_comparisons(&before, &after, 0) {
             for heading in ["Purpose", "Languages", "Folders (recursive"] {
-                assert!(!text.contains(heading), "{variant}: {text}");
+                assert_eq!(
+                    text.contains(heading),
+                    matches!(variant, "comment" | "blank"),
+                    "{variant}: {text}"
+                );
             }
         }
     }
@@ -1008,8 +1012,12 @@ fn source_code_grids_preserve_zero_code_folder_and_member_presence() {
         2
     );
     for text in human_comparisons(&workspace_before, &workspace_after, 0) {
-        assert!(!text.contains("Workspace members"), "{text}");
-        assert!(!text.contains("Folders (recursive"), "{text}");
+        assert!(text.contains("Workspace members"), "{text}");
+        assert_eq!(
+            text.contains("Folders (recursive"),
+            text.starts_with("# "),
+            "{text}"
+        );
     }
     let empty = temp.path().join("empty");
     fs::create_dir(&empty).unwrap();
@@ -1071,4 +1079,29 @@ fn comparison_theme_preserves_plain_text_and_distinguishes_signed_changes() {
     assert!(markdown.contains("*After minus before"));
     assert!(!markdown.contains('\x1b'));
     assert!(markdown.contains("| Source code | 1 | 2 | +1 |"));
+}
+
+#[test]
+fn human_comparisons_show_line_changes_and_original_measurement_dates() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("project");
+    write(&root, "src/main.py", "print(1)\n");
+    let mut before = measure(&root);
+    before["metadata"]["measured_at_unix_seconds"] = json!(0);
+    write(&root, "src/main.py", "print(1)\n# comment\n\n");
+    let mut after = measure(&root);
+    after["metadata"]["measured_at_unix_seconds"] = json!(951827696);
+    let before = save(temp.path(), "before.json", &before);
+    let after = save(temp.path(), "after.json", &after);
+    for text in human_comparisons(&before, &after, 0) {
+        assert!(text.contains("Lines before"), "{text}");
+        let language = text.lines().find(|line| line.contains("Python")).unwrap();
+        let cells: Vec<_> = language
+            .split_whitespace()
+            .filter(|c| *c != "|")
+            .map(|c| c.trim_matches('*'))
+            .collect();
+        assert_eq!(cells, ["Python", "1", "3", "+2", "1", "1", "+0"]);
+        assert!(text.ends_with("Before measured at: 1970-01-01 00:00:00 UTC\nAfter measured at: 2000-02-29 12:34:56 UTC\n"), "{text}");
+    }
 }

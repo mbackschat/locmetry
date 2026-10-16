@@ -17,7 +17,7 @@ Without explicit options, a terminal gets a table and a pipe gets a headline. An
 
 Protected export destinations must be outside the scan root (every member in workspace mode), and cannot overwrite configuration or workspace files. Shell redirection and `tee` bypass those checks. `explain` is different: JSON is always complete, with no headline or `--output`; use `locmetry explain --help`. Guides and schemas are standalone queries saved by shell redirection, without measurement flags.
 
-The Folder table's `--folder-rows N` increases additive detail for a single root and requires table format. `--depth N` controls Markdown depth; `--categories` adds a table view. Explicit ineffective depth/categories warn during measurement. These presentation options do not change counts. Use `locmetry --guide selection` before changing the measurement root to explore a large folder.
+The Folder table's `--folder-rows N` increases additive detail for a single root and requires table format. `--depth N` controls Markdown depth; `--categories` adds a table view. Explicit ineffective depth/categories warn during measurement. These presentation options do not change counts. Human count tables expose total Lines before Code; Lines = Code + Comments + Blanks, while purpose columns split Code. Table and Markdown end with the measurement time in UTC, from JSON `metadata.measured_at_unix_seconds`; exported files retain this date independently of filesystem timestamps. Use `locmetry --guide selection` before changing the measurement root to explore a large folder.
 
 ## Interpret the Numbers
 

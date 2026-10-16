@@ -57,17 +57,17 @@ fn folder_rows(text: &str) -> Vec<(String, Vec<String>)> {
         }
         let plain = line.replace('│', " ").replace(',', "");
         let cells: Vec<_> = plain.split_whitespace().collect();
-        if cells.len() < 6 {
+        if cells.len() < 7 {
             continue;
         }
-        let (label, values) = cells.split_at(cells.len() - 5);
+        let (label, values) = cells.split_at(cells.len() - 6);
         if values[0].parse::<u64>().is_err() {
             continue;
         }
         let label = label.join(" ");
         result.push((
             label.clone(),
-            values.iter().map(|s| s.to_string()).collect(),
+            values[1..].iter().map(|s| s.to_string()).collect(),
         ));
         if label == "Total" {
             break;
@@ -262,7 +262,13 @@ fn adaptive_view_preserves_unclaimed_notes_in_saved_tables() {
         );
         assert!(out.stdout.is_empty());
         let text = fs::read_to_string(&path).unwrap();
-        notes.push(text[text.find("Unclaimed source:").unwrap()..].to_string());
+        notes.push(
+            text[text.find("Unclaimed source:").unwrap()..]
+                .split("\nMeasured at:")
+                .next()
+                .unwrap()
+                .to_string(),
+        );
     }
     assert_eq!(notes[0], notes[1]);
 }

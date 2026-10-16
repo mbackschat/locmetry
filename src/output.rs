@@ -17,6 +17,17 @@ use std::{
 
 pub(crate) use crate::style::plain;
 
+/// UTC measurement time from recorded Unix seconds; extreme historical values retain their numeric evidence.
+pub fn measurement_time(seconds: u64) -> String {
+    i64::try_from(seconds)
+        .ok()
+        .and_then(|seconds| chrono::DateTime::from_timestamp(seconds, 0))
+        .map_or_else(
+            || format!("{seconds} Unix seconds (outside the supported UTC calendar range)"),
+            |date| date.format("%Y-%m-%d %H:%M:%S UTC").to_string(),
+        )
+}
+
 pub(crate) fn cell(value: &str) -> String {
     plain(value)
         .replace('&', "&amp;")
@@ -32,10 +43,10 @@ fn count_row(output: &mut String, label: &str, counts: &Counts) {
         "| {} | {} | {} | {} | {} | {} |",
         cell(label),
         grouped(counts.files),
+        grouped(counts.lines),
         grouped(counts.code),
         grouped(counts.comments),
-        grouped(counts.blanks),
-        grouped(counts.lines)
+        grouped(counts.blanks)
     )
     .unwrap();
 }
@@ -80,7 +91,7 @@ fn test_ratio(production: u64, test: u64) -> String {
     }
 }
 
-/// Repository rows and the total row: source code, code per purpose, test
+/// Repository rows and the total row: source lines, code per purpose, test
 /// lines per production line, and share of the workspace's source code.
 fn repository_rows(
     summary: &ReportSummary,
@@ -99,7 +110,11 @@ fn repository_rows(
                 totals.source.code as f64 * 100.0 / workspace_code as f64
             ),
         };
-        let mut row = vec![label.to_string(), grouped(totals.source.code)];
+        let mut row = vec![
+            label.to_string(),
+            grouped(totals.source.lines),
+            grouped(totals.source.code),
+        ];
         row.extend(Purpose::ALL.map(|purpose| grouped(code(purpose))));
         row.extend([ratio, share]);
         row
@@ -125,15 +140,16 @@ fn repository_rows(
 /// Legends that state how a table's columns add up; readers otherwise
 /// misread Code as a sum of Comments and Blanks.
 const LANGUAGE_LEGEND: &str =
-    "Code + Comments + Blanks = all lines; Production + Test + Unclassified = Code.";
+    "Lines = Code + Comments + Blanks; Production + Test + Unclassified = Code.";
 const FOLDER_LEGEND: &str =
     "Production + Test + Unclassified = Code; Test/prod = Test / Production.";
 const REPOSITORY_LEGEND: &str = "Production + Test + Unclassified = Code; Test/prod = Test / Production; Share = Code / workspace Code.";
 const CATEGORY_LEGEND: &str =
     "Rows of one purpose add up to that purpose's Code; all rows add up to the total Code.";
 
-const REPOSITORY_HEADER: [&str; 7] = [
+const REPOSITORY_HEADER: [&str; 8] = [
     "Repository",
+    "Lines",
     "Code",
     "Production",
     "Test",
@@ -142,7 +158,7 @@ const REPOSITORY_HEADER: [&str; 7] = [
     "Share",
 ];
 
-/// A Markdown grid of source code per `key` and member, with a total column;
+/// A Markdown grid of source lines and code per `key` and member, with totals;
 /// `of` selects the map, such as categories or languages, from a summary.
 fn repository_grid(
     output: &mut String,
@@ -154,43 +170,42 @@ fn repository_grid(
     order: RowOrder,
 ) {
     let names: Vec<&str> = members.iter().map(|member| member.name.as_str()).collect();
+    let mut headers = vec![label.to_owned()];
+    for name in &names {
+        headers.extend([
+            format!("{} Lines", cell(name)),
+            format!("{} Code", cell(name)),
+        ]);
+    }
+    headers.extend(["Total Lines".into(), "Total Code".into()]);
     writeln!(
         output,
-        "\n## {title}\n\n{}\n\n| {label} | {} | Total |\n| --- |{} ---: |",
-        Theme::MARKDOWN.paint(Role::Muted, "Total is the sum of the repository columns."),
-        names
-            .iter()
-            .map(|name| cell(name))
-            .collect::<Vec<_>>()
-            .join(" | "),
-        " ---: |".repeat(names.len())
+        "\n## {title}\n\n{}\n\n| {} |\n| --- |{}",
+        Theme::MARKDOWN.paint(
+            Role::Muted,
+            "Each total is the sum of its repository columns."
+        ),
+        headers.join(" | "),
+        " ---: |".repeat(headers.len() - 1)
     )
     .unwrap();
     let rows = of(&summary.totals)
         .iter()
-        .map(|(key, counts)| (key.clone(), counts.code))
+        .map(|(key, counts)| (key.clone(), *counts))
         .collect();
-    for (key, total) in ordered(rows, |code| *code, order) {
-        let cells: Vec<String> = names
-            .iter()
-            .map(|name| {
-                grouped(
-                    summary
-                        .folders
-                        .get(*name)
-                        .and_then(|folder| of(&folder.recursive).get(&key))
-                        .map_or(0, |counts| counts.code),
-                )
-            })
-            .collect();
-        writeln!(
-            output,
-            "| {} | {} | {} |",
-            cell(&key),
-            cells.join(" | "),
-            grouped(total)
-        )
-        .unwrap();
+    for (key, total) in ordered(rows, |counts| counts.code, order) {
+        let mut cells = vec![cell(&key)];
+        for name in &names {
+            let counts = summary
+                .folders
+                .get(*name)
+                .and_then(|folder| of(&folder.recursive).get(&key))
+                .copied()
+                .unwrap_or_default();
+            cells.extend([grouped(counts.lines), grouped(counts.code)]);
+        }
+        cells.extend([grouped(total.lines), grouped(total.code)]);
+        writeln!(output, "| {} |", cells.join(" | ")).unwrap();
     }
 }
 
@@ -245,7 +260,7 @@ fn table(
     counts: &BTreeMap<String, Counts>,
     order: RowOrder,
 ) {
-    writeln!(output, "\n## {title}\n\n| {label} | Files | **Code** | Comments | Blanks | Lines |\n| --- | ---: | ---: | ---: | ---: | ---: |").unwrap();
+    writeln!(output, "\n## {title}\n\n| {label} | Files | Lines | **Code** | Comments | Blanks |\n| --- | ---: | ---: | ---: | ---: | ---: |").unwrap();
     let rows = counts
         .iter()
         .map(|(label, counts)| (label.clone(), counts))
@@ -264,7 +279,7 @@ pub fn render_markdown(
     order: RowOrder,
 ) -> String {
     let project = display_project(project, findings.subfolder);
-    let mut output = format!("# {}: lines of code by purpose\n\n{}\n\n## Source purpose\n\n| Purpose | Files | **Code** | Comments | Blanks | Lines |\n| --- | ---: | ---: | ---: | ---: | ---: |\n", cell(&project), Theme::MARKDOWN.paint(Role::Muted, "Production means maintained non-test source, including separately categorized tooling. Data, configuration, and documentation are counted apart from source. Lines = Code + Comments + Blanks in every table with these columns, and the purpose rows add up to all source."));
+    let mut output = format!("# {}: lines of code by purpose\n\n{}\n\n## Source purpose\n\n| Purpose | Files | Lines | **Code** | Comments | Blanks |\n| --- | ---: | ---: | ---: | ---: | ---: |\n", cell(&project), Theme::MARKDOWN.paint(Role::Muted, "Production means maintained non-test source, including separately categorized tooling. Data, configuration, and documentation are counted apart from source. Lines = Code + Comments + Blanks in every table with these columns, and the purpose rows add up to all source."));
     for purpose in Purpose::ALL {
         count_row(
             &mut output,
@@ -357,7 +372,7 @@ pub fn render_markdown(
         &summary.totals.source_languages,
         order,
     );
-    write!(output, "\n## Folder breakdown\n\n{}\n\n| Folder | Production | Test | Unclassified | **Total source code** | Test/prod |\n| --- | ---: | ---: | ---: | ---: | ---: |\n", Theme::MARKDOWN.paint(Role::Muted, &format!("Recursive source code totals to depth {depth}. Parent rows include their children; do not sum all displayed rows. The report file's additive `breakdown` rows cover every depth. Multi-language files count once physically but contribute to each contained language. Production + Test + Unclassified = Total source code; Test/prod = Test / Production."))).unwrap();
+    write!(output, "\n## Folder breakdown\n\n{}\n\n| Folder | Lines | **Code** | Production | Test | Unclassified | Test/prod |\n| --- | ---: | ---: | ---: | ---: | ---: | ---: |\n", Theme::MARKDOWN.paint(Role::Muted, &format!("Recursive source code totals to depth {depth}. Parent rows include their children; do not sum all displayed rows. The report file's additive `breakdown` rows cover every depth. Multi-language files count once physically but contribute to each contained language. Production + Test + Unclassified = Code; Test/prod = Test / Production."))).unwrap();
     // Compare by path components: as plain strings, `web-admin` would sort
     // between `web` and `web/src`, because `-` sorts before `/`.
     let mut folders = human_folders(summary, findings.subfolder, depth);
@@ -373,12 +388,13 @@ pub fn render_markdown(
         );
         writeln!(
             output,
-            "| {} | {} | {} | {} | {} | {} |",
+            "| {} | {} | {} | {} | {} | {} | {} |",
             cell(&folder),
+            grouped(totals.source.lines),
+            grouped(totals.source.code),
             grouped(production),
             grouped(test),
             grouped(totals.purpose(Purpose::Unclassified).code),
-            grouped(totals.source.code),
             test_ratio(production, test)
         )
         .unwrap();
@@ -394,24 +410,35 @@ pub fn render_markdown(
     .unwrap();
     let folders = unclassified_folders(rows);
     if !folders.is_empty() {
-        output.push_str("\n| Folder | Files | Code |\n| --- | ---: | ---: |\n");
+        output.push_str("\n| Folder | Files | Lines | Code |\n| --- | ---: | ---: | ---: |\n");
         for share in &folders {
             writeln!(
                 output,
-                "| {} | {} | {} |",
+                "| {} | {} | {} | {} |",
                 cell(folder_label(&share.folder)),
                 grouped(share.files),
+                grouped(
+                    unknown
+                        .iter()
+                        .filter(|row| match share.folder.as_str() {
+                            "." => !row.path.contains('/'),
+                            folder => crate::report::below(&row.path, folder).is_some(),
+                        })
+                        .map(|row| row.counts.lines)
+                        .sum()
+                ),
                 grouped(share.code)
             )
             .unwrap();
         }
     }
-    writeln!(output, "\nLargest 25 files; the report file's `review` list names all of them with their rule.\n\n| Path | Code | Category |\n| --- | ---: | --- |").unwrap();
+    writeln!(output, "\nLargest 25 files; the report file's `review` list names all of them with their rule.\n\n| Path | Lines | Code | Category |\n| --- | ---: | ---: | --- |").unwrap();
     for row in unknown.into_iter().take(25) {
         writeln!(
             output,
-            "| {} | {} | {} |",
+            "| {} | {} | {} | {} |",
             cell(&row.path),
+            grouped(row.counts.lines),
             grouped(row.counts.code),
             cell(&row.classification.category)
         )
@@ -428,7 +455,7 @@ fn render_build_modules(output: &mut String, modules: &[ModuleShare], order: Row
     if modules.is_empty() {
         return;
     }
-    output.push_str("\n## Build modules\n\nFolders whose build file declares a source layout; that layout counts as production where no override, convention, or rule decided first. Code is the source each module classified; 0 means other stages claimed its files or its layout matched none.\n\n| Build system | Modules | Code |\n| --- | ---: | ---: |\n");
+    output.push_str("\n## Build modules\n\nFolders whose build file declares a source layout; that layout counts as production where no override, convention, or rule decided first. Code is the source each module classified; 0 means other stages claimed its files or its layout matched none.\n\n| Build system | Modules | Lines | Code |\n| --- | ---: | ---: | ---: |\n");
     let systems = build_systems(modules)
         .into_iter()
         .map(|(id, system)| (id.to_string(), system))
@@ -436,13 +463,20 @@ fn render_build_modules(output: &mut String, modules: &[ModuleShare], order: Row
     for (id, system) in ordered(systems, |system| system.code, order) {
         writeln!(
             output,
-            "| {id} | {} | {} |",
+            "| {id} | {} | {} | {} |",
             grouped(system.modules),
+            grouped(
+                modules
+                    .iter()
+                    .filter(|module| module.detector == id)
+                    .map(|module| module.lines)
+                    .sum()
+            ),
             grouped(system.code)
         )
         .unwrap();
     }
-    output.push_str("\n| Module | Build system | Code |\n| --- | --- | ---: |\n");
+    output.push_str("\n| Module | Build system | Lines | Code |\n| --- | --- | ---: | ---: |\n");
     for module in modules {
         let path = match module.path.as_str() {
             "." => "(scan root)",
@@ -450,9 +484,10 @@ fn render_build_modules(output: &mut String, modules: &[ModuleShare], order: Row
         };
         writeln!(
             output,
-            "| {} | {} | {} |",
+            "| {} | {} | {} | {} |",
             cell(path),
             module.detector,
+            grouped(module.lines),
             grouped(module.code)
         )
         .unwrap();
@@ -752,7 +787,16 @@ pub fn render_table_with_options(
         .iter()
         .map(|(language, (counts, purposes))| {
             let mut row = vec![language.clone()];
-            row.extend([counts.files, counts.code, counts.comments, counts.blanks].map(grouped));
+            row.extend(
+                [
+                    counts.files,
+                    counts.lines,
+                    counts.code,
+                    counts.comments,
+                    counts.blanks,
+                ]
+                .map(grouped),
+            );
             row.extend(purpose_cells(&|purpose| {
                 purposes.get(&purpose).copied().unwrap_or(0)
             }));
@@ -761,7 +805,16 @@ pub fn render_table_with_options(
         .collect();
     let source = &summary.totals.source;
     let mut total = vec!["Total".to_string()];
-    total.extend([source.files, source.code, source.comments, source.blanks].map(grouped));
+    total.extend(
+        [
+            source.files,
+            source.lines,
+            source.code,
+            source.comments,
+            source.blanks,
+        ]
+        .map(grouped),
+    );
     total.extend(purpose_cells(&|purpose| {
         summary.totals.purpose(purpose).code
     }));
@@ -774,6 +827,7 @@ pub fn render_table_with_options(
         &[
             "Language",
             "Files",
+            "Lines",
             "Code",
             "Comments",
             "Blanks",
@@ -784,15 +838,14 @@ pub fn render_table_with_options(
         &body,
         Some(total),
         &Layout {
-            breaks: &[3, 5],
-            strong: Some(2),
-            secondary: &[1, 3, 4],
+            breaks: &[4, 6],
+            strong: Some(3),
+            secondary: &[1, 4, 5],
         },
         theme,
     );
     output += &format!(" {}\n", theme.paint(Role::Muted, LANGUAGE_LEGEND));
 
-    let folder_code = |purposes: &BTreeMap<Purpose, u64>| purposes.values().sum::<u64>();
     // A workspace's top-level folders are its members, so repository rows,
     // which add the test ratio and share, take the folder rows' place.
     if !findings.members.is_empty() {
@@ -803,9 +856,9 @@ pub fn render_table_with_options(
             &body,
             Some(total),
             &Layout {
-                breaks: &[2, 5],
-                strong: Some(1),
-                secondary: &[5, 6],
+                breaks: &[3, 6],
+                strong: Some(2),
+                secondary: &[6, 7],
             },
             theme,
         );
@@ -814,42 +867,36 @@ pub fn render_table_with_options(
     let adaptive = folder_rows
         .filter(|_| findings.members.is_empty())
         .map(|budget| folders::adaptive(summary, findings.subfolder, budget, order));
-    let folders = match &adaptive {
-        Some(view) => view
-            .rows
-            .iter()
-            .map(|row| (row.label(), row.purposes.clone()))
-            .collect(),
-        None => ordered(
-            human_top_folders(summary, findings.subfolder),
-            folder_code,
-            order,
-        ),
-    };
+    let standard = folders::standard(summary, findings.subfolder, order);
+    let folders = adaptive.as_ref().map_or(&standard, |view| &view.rows);
     if !folders.is_empty() && findings.members.is_empty() {
         let body: Vec<Vec<String>> = folders
             .iter()
-            .map(|(folder, purposes)| {
-                // `.` in top_folders holds only the files directly in the root.
-                let label = match folder.as_str() {
-                    "." => "(root files)".to_string(),
-                    _ => folder.clone(),
-                };
-                let code = |purpose| purposes.get(&purpose).copied().unwrap_or(0);
-                let mut row = vec![label, grouped(folder_code(purposes))];
+            .map(|folder| {
+                let code = |purpose| folder.purposes.get(&purpose).copied().unwrap_or(0);
+                let mut row = vec![
+                    folder.label(),
+                    grouped(folder.counts.lines),
+                    grouped(folder.counts.code),
+                ];
                 row.extend(purpose_cells(&code));
                 row.push(test_ratio(code(Purpose::Production), code(Purpose::Test)));
                 row
             })
             .collect();
         let code = |purpose| summary.totals.purpose(purpose).code;
-        let mut total = vec!["Total".to_string(), grouped(summary.totals.source.code)];
+        let mut total = vec![
+            "Total".to_string(),
+            grouped(summary.totals.source.lines),
+            grouped(summary.totals.source.code),
+        ];
         total.extend(purpose_cells(&code));
         total.push(test_ratio(code(Purpose::Production), code(Purpose::Test)));
         output += "\n";
         output += &text_table(
             &[
                 "Folder",
+                "Lines",
                 "Code",
                 "Production",
                 "Test",
@@ -859,9 +906,9 @@ pub fn render_table_with_options(
             &body,
             Some(total),
             &Layout {
-                breaks: &[2, 5],
-                strong: Some(1),
-                secondary: &[5],
+                breaks: &[3, 6],
+                strong: Some(2),
+                secondary: &[6],
             },
             theme,
         );
@@ -888,17 +935,24 @@ pub fn render_table_with_options(
             .collect();
         let body: Vec<Vec<String>> = ordered(rows, |counts| counts.code, order)
             .into_iter()
-            .map(|(category, counts)| vec![category, grouped(counts.files), grouped(counts.code)])
+            .map(|(category, counts)| {
+                vec![
+                    category,
+                    grouped(counts.files),
+                    grouped(counts.lines),
+                    grouped(counts.code),
+                ]
+            })
             .collect();
         if !body.is_empty() {
             output += "\n";
             output += &text_table(
-                &["Category", "Files", "Code"],
+                &["Category", "Files", "Lines", "Code"],
                 &body,
                 None,
                 &Layout {
                     breaks: &[],
-                    strong: Some(2),
+                    strong: Some(3),
                     secondary: &[1],
                 },
                 theme,
@@ -1208,29 +1262,6 @@ fn human_folders<'a>(
         }
     }
     folders
-}
-
-fn human_top_folders(
-    summary: &ReportSummary,
-    subfolder: Option<&str>,
-) -> Vec<(String, BTreeMap<Purpose, u64>)> {
-    match subfolder {
-        None => summary.top_folders().into_iter().collect(),
-        Some(_) => human_folders(summary, subfolder, 1)
-            .into_iter()
-            .filter(|(_, totals)| totals.source.files > 0)
-            .map(|(path, totals)| {
-                (
-                    path,
-                    totals
-                        .source_purpose
-                        .iter()
-                        .map(|(purpose, counts)| (*purpose, counts.code))
-                        .collect(),
-                )
-            })
-            .collect(),
-    }
 }
 
 #[cfg(test)]
