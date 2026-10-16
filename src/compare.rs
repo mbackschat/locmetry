@@ -280,6 +280,7 @@ pub struct Input {
 }
 
 /// Net change is after - before over recorded measurements, without rescanning or Git.
+/// --format json selects full output; --format headline selects compact JSON.
 /// Full output has folders, packages, breakdown and all findings; headlines omit those arrays/maps
 /// and individual presence findings, retaining presence_summary and member rows.
 /// Exit 2 means an input has observed failures/inaccuracy; historical missing evidence alone does not.
@@ -308,6 +309,8 @@ pub struct Comparison {
     pub presence_summary: PresenceSummary,
     pub findings: Vec<Finding>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    /// Historical headline field through v0.3.0: destination of a separately saved comparison.
+    /// Retained when reading historical documents; new CLI output omits it.
     pub report: Option<String>,
 }
 impl Comparison {

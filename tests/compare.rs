@@ -497,11 +497,9 @@ fn full_comparison_output_is_written_and_human_folders_keep_their_hierarchy() {
     write(&root, "src-other/a.py", "print(1)\n");
     let after = save(temp.path(), "after.json", &measure(&root));
     let out = temp.path().join("full.json");
-    let headline = document(
-        compare(&before, &after, &["--output", out.to_str().unwrap()]),
-        0,
-    );
-    assert_eq!(headline["report"], out.to_str().unwrap());
+    let output = compare(&before, &after, &["--output", out.to_str().unwrap()]);
+    assert!(output.status.success());
+    assert!(output.stdout.is_empty());
     let saved: Value = serde_json::from_slice(&fs::read(&out).unwrap()).unwrap();
     assert!(saved.get("before").is_some());
     assert!(saved.get("folders").is_some());
@@ -513,7 +511,7 @@ fn full_comparison_output_is_written_and_human_folders_keep_their_hierarchy() {
         compare(&before, &after, &["--output", "-", "--format", "table"])
             .status
             .code(),
-        Some(1)
+        Some(0)
     );
 }
 
@@ -550,14 +548,27 @@ fn rendering_escapes_markdown_but_preserves_plain_text_labels() {
 }
 
 #[test]
-fn released_counter_and_installation_docs_identify_the_current_version() {
+fn producer_identity_and_docs_distinguish_the_checkout_from_stable_installs() {
     let readme = include_str!("../README.md");
-    assert!(readme.contains(&format!("**{}**", env!("CARGO_PKG_VERSION"))));
-    assert!(readme.contains(&format!(
-        "### Stable release (v{})",
-        env!("CARGO_PKG_VERSION")
-    )));
-    assert!(readme.contains(&format!("--tag v{}", env!("CARGO_PKG_VERSION"))));
+    let stable = readme
+        .split_once("latest stable release is **")
+        .unwrap()
+        .1
+        .split_once("**")
+        .unwrap()
+        .0;
+    assert!(readme.contains(&format!("### Stable release (v{stable})")));
+    assert!(readme.contains(&format!("--tag v{stable}")));
+    match env!("CARGO_PKG_VERSION_PRE") {
+        "" => assert_eq!(stable, env!("CARGO_PKG_VERSION")),
+        _ => {
+            assert!(readme.contains(&format!(
+                "This development checkout identifies as `{}`",
+                env!("CARGO_PKG_VERSION")
+            )));
+            assert!(!readme.contains(&format!("--tag v{}", env!("CARGO_PKG_VERSION"))));
+        }
+    }
     assert!(readme.contains(&format!(
         "\"locmetry_version\": \"{}\"",
         env!("CARGO_PKG_VERSION")

@@ -707,7 +707,7 @@ impl MeasurementReport {
         }
         if !missing.is_empty() {
             bail!(
-                "Full measurement report required; missing {}",
+                "Full measurement report required; missing {}. Capture a full measurement with --output FILE or --format json. A headline cannot reconstruct the missing baseline; rerunning measures the current tree",
                 missing.join(", ")
             );
         }

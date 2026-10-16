@@ -1,4 +1,3 @@
-use serde_json::Value;
 use std::{
     collections::BTreeMap,
     fs,
@@ -238,15 +237,14 @@ fn subfolder_detail_keeps_scope_zero_code_and_coverage() {
 }
 
 #[test]
-fn adaptive_view_preserves_saved_reports_and_unclaimed_notes() {
+fn adaptive_view_preserves_unclaimed_notes_in_saved_tables() {
     let temp = fixture();
     let root = temp.path();
     source(root, "packages/a/unknown.rs", 5);
     source(root, "packages/b/unknown.rs", 2);
     source(root, "packages/unknown.rs", 1);
     let dest = tempfile::tempdir().unwrap();
-    let path = dest.path().join("report.json");
-    let mut reports = Vec::new();
+    let path = dest.path().join("table.txt");
     let mut notes = Vec::new();
     for args in [vec![], vec!["--folder-rows", "10"]] {
         let out = run(
@@ -262,16 +260,10 @@ fn adaptive_view_preserves_saved_reports_and_unclaimed_notes() {
             "{}",
             String::from_utf8_lossy(&out.stderr)
         );
-        let text = String::from_utf8(out.stdout).unwrap();
+        assert!(out.stdout.is_empty());
+        let text = fs::read_to_string(&path).unwrap();
         notes.push(text[text.find("Unclaimed source:").unwrap()..].to_string());
-        let mut value: Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
-        value["metadata"]
-            .as_object_mut()
-            .unwrap()
-            .remove("measured_at_unix_seconds");
-        reports.push(value);
     }
-    assert_eq!(reports[0], reports[1]);
     assert_eq!(notes[0], notes[1]);
 }
 

@@ -419,14 +419,16 @@ fn subfolder_comparison_refusal_protects_output_and_same_scope_preserves_receipt
             "{}",
             String::from_utf8_lossy(&out.stderr)
         );
+        assert!(out.stdout.is_empty());
+        let saved = fs::read(&dest).unwrap();
         if format == "json" {
-            let v: Value = serde_json::from_slice(&out.stdout).unwrap();
+            let v: Value = serde_json::from_slice(&saved).unwrap();
             assert_eq!(v["before"]["metadata"]["scope"]["subfolder"], "web/src");
             assert!(jsonschema::validator_for(&locmetry::compare::schema())
                 .unwrap()
                 .is_valid(&v));
         } else {
-            assert!(String::from_utf8_lossy(&out.stdout).contains("web/src"));
+            assert!(String::from_utf8_lossy(&saved).contains("web/src"));
         }
     }
     assert_eq!(

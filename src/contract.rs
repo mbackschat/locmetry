@@ -13,7 +13,8 @@ pub enum Version {
     V1,
 }
 
-/// Locmetry measurement headline or full report. Full reports add review, breakdown,
+/// Locmetry measurement: --format json emits the full report; --format headline emits compact JSON.
+/// Full reports add review, breakdown,
 /// kinds, modules, unrecognized paths and effective policy; --files adds file detail.
 /// Missing optional detail is not measured zero. Aggregate summary omissions alone mean zero.
 /// Duplicate raw keys in dynamic JSON maps retain the last value; overwritten keys cannot be validated.
@@ -24,7 +25,8 @@ pub struct MeasurementReport {
     pub schema_version: Version,
     /// Scan-root name, or workspace member names joined for display; not verified identity.
     pub project: String,
-    /// Headline only: destination of the full report.
+    /// Historical headline field through v0.3.0: destination of a separately saved full report.
+    /// Retained when reading historical documents; new CLI output omits it.
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",

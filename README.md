@@ -4,6 +4,8 @@
 
 The latest stable release is **0.3.0**. See the [release notes](docs/releases/0.3.0.md) for adaptive Folder detail with `--folder-rows` and terminal-output safety fixes. [Version 0.2.0](docs/releases/0.2.0.md) introduced net-change comparisons, path explanations, subfolder measurement and counting corrections.
 
+**Development checkout:** the usage below describes `0.4.0-dev.1`. Stable v0.3.0 uses the previous output routing; see the [v0.4.0 behavior changes](docs/releases/0.4.0.md) before upgrading.
+
 **Lines of code, split by purpose: production, tests, tooling, and what nobody claims.** `locmetry` measures selected files that its counters can recognize and read, gives each counted file a purpose and category, and records the rule that decided it. Coverage names files whose counts are unavailable.
 
 - **Useful without configuration:** test conventions and build files (npm, Gradle, Maven, Cargo, Go, Python, Lake, Swift) recognize common source and test layouts out of the box.
@@ -230,7 +232,7 @@ cargo install --locked --path .
 locmetry --version
 ```
 
-This release checkout identifies as `0.3.0`. Development changes to counting must use a distinct producer version so comparisons can identify counter changes. Installing a checkout does not publish a release.
+This development checkout identifies as `0.4.0-dev.1`. It implements the upcoming output contract; the stable installation commands above still install v0.3.0. Producer version differences are recorded by comparisons. Installing a checkout does not publish a release.
 
 ## Quick start
 
@@ -244,7 +246,7 @@ locmetry | jq .summary        # piped: JSON headline
 
 The optional directory argument is equivalent to `--root DIR`; use one or the other. Bare `compare`, `workspace`, `explain` and `help` select commands; use `locmetry ./compare` or `locmetry --root compare` to measure a directory with a command's name. In scripts, prefer `locmetry --root "$directory"` so directory names cannot select commands. Command options go after the command name.
 
-Use `locmetry --help` or `locmetry COMMAND --help` for options. In development builds after v0.3.0, help wraps to the detected terminal width and keeps continuation lines indented; see [help presentation](docs/PRODUCT.md#human-presentation).
+Use `locmetry --help` or `locmetry COMMAND --help` for options. Help wraps to the detected terminal width and keeps continuation lines indented; see [help presentation](docs/PRODUCT.md#human-presentation).
 
 Without configuration, built-in exclusions, conventions, and language mappings apply. Add a `.locmetryrc` to the project root when the conventions cannot know something, such as which folders are vendored, generated, tooling, or experimental. Command-line options override it:
 
@@ -266,13 +268,13 @@ Personal defaults for every project, such as extra exclusions or language mappin
 | `--hidden true\|false` | Whether hidden files and directories are measured. |
 | `--respect-ignore-files true\|false` | Whether `.gitignore`, `.ignore`, and `.tokeignore` limit the selection. |
 | `--no-user-config` | Ignore personal defaults in `~/.config/locmetry/config.toml`. |
-| `--format table\|json\|markdown` | Stdout format; default: `table` on a terminal, `json` otherwise. |
+| `--format table\|markdown\|json\|headline` | Result format, including files. `json` is complete; `headline` is compact JSON. Defaults: `json` with `--output`, otherwise `table` on a terminal and `headline` in pipes. |
 | `--sort code\|name` | Row order of the table and Markdown output; default: `code`, largest first. |
-| `--depth N` | Folder levels in the Markdown folder table; default: 2. |
-| `--output FILE` | Also write the full JSON report to `FILE`, outside the scan root; `-` prints it instead of the headline. |
-| `--files` | Add per-file records to the report. |
-| `--categories` | Add a table of source code per purpose and category to the terminal table. |
-| `--schema config\|user-config\|report\|comparison\|explanation\|workspace` | Print the JSON Schema of `.locmetryrc`, of personal defaults, of the JSON headline and report, of a net-change comparison, of a path explanation, or of a workspace file, and exit. |
+| `--depth N` | Folder levels in Markdown; default: 2. An explicit value warns if the output is not Markdown. |
+| `--output FILE` | Write only to `FILE`, outside the scan root; `-` selects stdout. Defaults to full JSON; explicit `--format` wins. Extensions do not select a format. |
+| `--files` | Add per-file records; requires full JSON (`--format json` or `--output FILE`). |
+| `--categories` | Add purpose/category rows to table output; warns in other formats. |
+| `--schema config\|user-config\|report\|comparison\|explanation\|workspace` | Print the JSON Schema of `.locmetryrc`, of personal defaults, of the JSON headline and report, of a net-change comparison, of a path explanation, or of a workspace file, and exit. Conflicts with `--output`, `--format` and `--files`; redirect stdout to save a schema. |
 
 `locmetry workspace` takes `--root DIR`, repeatable, or `--file FILE` instead, plus `--no-user-config` and the output options from `--format` to `--categories`; see [Measure several repositories together](#measure-several-repositories-together).
 
@@ -331,26 +333,26 @@ Ignore and hidden filtering are checked with single-setting selection probes; th
 
 ## Compare saved measurements
 
-Save full reports with `--output`; the default JSON headline lacks the detail needed for comparison. The command reads only those reports, so the source checkouts need not exist:
+Save full reports with `--output`; saving produces no stdout, while warnings and errors remain on stderr. The default piped JSON headline lacks the detail needed for comparison. The command reads only those reports, so the source checkouts need not exist:
 
 ```sh
-locmetry --root ./service --output ./before.json > /dev/null
+locmetry --root ./service --output ./before.json
 # After changing the source or its measurement policy:
-locmetry --root ./service --output ./after.json > /dev/null
+locmetry --root ./service --output ./after.json
 locmetry compare before.json after.json
-locmetry compare before.json after.json --format markdown
+locmetry compare before.json after.json --format markdown --output net-change.md
 locmetry compare before.json after.json --output net-change.json
 locmetry --schema comparison
 ```
 
-Net change is **after minus before**, in argument order. A terminal gets a table, redirected stdout gets a JSON headline, and `--output -` prints full JSON. The headline includes presence counts; full output includes every folder, package and breakdown row. `--output FILE` must not overwrite an input, including symlink/hard-link aliases. Aggregate comparison does not require `--files`; per-file comparison is not implemented.
+Net change is **after minus before**, in argument order. Without an explicit format or output destination, a terminal gets a table and redirected stdout gets a JSON headline. `--format json` and `--output -` select full JSON; `--format headline` selects compact JSON. The headline includes presence counts; full output includes every folder, package and breakdown row. `--output FILE` must not overwrite an input, including symlink/hard-link aliases. Aggregate comparison does not require `--files`; per-file comparison is not implemented.
 
 The same command compares workspace exports, even when their root lists differ:
 
 ```sh
-locmetry workspace --file repos.toml --output before-workspace.json > /dev/null
+locmetry workspace --file repos.toml --output before-workspace.json
 # After changing code or the workspace root list:
-locmetry workspace --file repos.toml --output after-workspace.json > /dev/null
+locmetry workspace --file repos.toml --output after-workspace.json
 locmetry compare before-workspace.json after-workspace.json --format markdown
 ```
 
@@ -362,7 +364,7 @@ To inspect coverage findings while preserving a partial comparison's status:
 
 ```sh
 status=0
-locmetry compare before.json after.json --output net-change.json > /dev/null || status=$?
+locmetry compare before.json after.json --output net-change.json || status=$?
 case "$status" in
   0|2) jq '.findings[] | select(.code == "coverage_gap")' net-change.json ;;
   *) exit "$status" ;;
@@ -562,19 +564,19 @@ locmetry acme-orders --folder-rows 12
 
 This changes the existing second table, **Folder**; it does not add a third table. The first **Language** table stays as it is. Large folders expand into non-overlapping child rows, including direct files and scoped “other child folders” rows where needed. Every row still contributes once to the total. The budget counts Folder data rows, excluding its header, total and legends. It limits additional detail; existing top-level contributions are never merged away, so an initially wider table can exceed it. `--sort name` compares path components, keeping descendants before siblings such as `src-old`; the same comparison resolves code ties. Single-child chains collapse without using extra rows. Paths stay relative to the project root, including when combined with `--subfolder`.
 
-`--format table` is an existing option that selects human-readable text. It is optional in a terminal, where table output is the default. Pipes and redirects normally select JSON, so explicitly request table output when saving or paging this view:
+`--format table` is an existing option that selects human-readable text. It is optional in a terminal, where table output is the default. Pipes normally select a JSON headline, and `--output` defaults to full JSON. Explicitly request table output when saving or paging this view:
 
 ```sh
-locmetry acme-orders --folder-rows 12 --format table > folders.txt
+locmetry acme-orders --folder-rows 12 --format table --output folders.txt
 ```
 
 When the largest displayed row still has folder detail, a gray hint names the folder and suggests increasing `--folder-rows`. This also covers a largest “other child folders” remainder. Smaller expandable folders alone do not trigger it.
 
-The option does not change saved JSON, coverage or the Unclaimed source note. That note uses its existing partition of unclassified code and can therefore show different folder boundaries. Markdown retains its recursive `--depth` view; workspace mode rejects `--folder-rows`. [Adaptive folder semantics](docs/PRODUCT.md#adaptive-folder-detail) defines selection, budgets and limits.
+The option changes only the table view, not measurement counts, coverage or the Unclaimed source note. It cannot accompany JSON output; save full JSON separately when needed. That note uses its existing partition of unclassified code and can therefore show different folder boundaries. Markdown retains its recursive `--depth` view; workspace mode rejects `--folder-rows`. [Adaptive folder semantics](docs/PRODUCT.md#adaptive-folder-detail) defines selection, budgets and limits.
 
 ### JSON headline for agents and scripts
 
-When stdout is not a terminal, `locmetry` prints a compact JSON headline, under 3 KB for this project. Abridged:
+Without `--output`, when stdout is not a terminal, `locmetry` prints a compact JSON headline; `--format headline` requests it explicitly. It is under 3 KB for this project. Abridged:
 
 ```json
 {
@@ -582,7 +584,7 @@ When stdout is not a terminal, `locmetry` prints a compact JSON headline, under 
   "project": "acme-orders",
   "metadata": {
     "root": "/work/acme-orders",
-    "locmetry_version": "0.3.0",
+    "locmetry_version": "0.4.0-dev.1",
     "scope": {
       "exclude": ["**/.git/**", "**/node_modules/**", "**/.build/**", "**/.lake/**", "third_party/**", ".locmetryrc"]
     },
@@ -634,7 +636,7 @@ Summary count objects omit zero counts; this does not apply to missing coverage 
 
 ### Report file for any question
 
-`--output FILE` writes the full report next to the headline: the summary, a review list, and an additive `breakdown` table with one row per folder, kind, purpose, category, and language. Each row sits on its own line:
+`--output FILE` writes only the full JSON report, without stdout: the summary, a review list, and an additive `breakdown` table with one row per folder, kind, purpose, category, and language. Each row sits on its own line:
 
 ```json
 {"folder":"backend/src/main/kotlin/acme/orders","kind":"source","purpose":"production","category":"implementation","language":"Kotlin","files":3,"code":42,"comments":2,"blanks":11,"lines":55},
@@ -644,7 +646,7 @@ Summary count objects omit zero counts; this does not apply to missing coverage 
 Because rows are additive, recorded dimensions can be filtered and summed:
 
 ```sh
-$ locmetry --output report.json > /dev/null
+$ locmetry acme-orders --output report.json
 
 # Test code per language
 $ jq -r '.breakdown[] | select(.kind == "source" and .purpose == "test") | "\(.language)\t\(.code)"' report.json
@@ -661,7 +663,7 @@ $ jq -c '.review[]' report.json
 {"path":"prototypes/pricing_experiment.py","language":"Python","category":"unclassified","rule":"fallback","code":8,"lines":11}
 ```
 
-`--files` adds one record per file with its language, kind, purpose, category, deciding rule, and counts, for debugging rules. `--output -` prints the full report to stdout instead.
+`--files` adds one record per file with its language, kind, purpose, category, deciding rule, and counts, for debugging rules. It requires full JSON, selected by `--format json` or by the default with `--output FILE` / `--output -`. A table, Markdown or headline result with `--files` is an error. Full JSON without `--files` still contains the aggregate detail needed for comparison.
 
 ### Markdown report
 
@@ -721,7 +723,7 @@ Capture the measurement before applying a policy check, preserving Locmetry's ex
 
 ```sh
 set -eu
-report=$(locmetry --format json) || exit "$?"
+report=$(locmetry --format headline) || exit "$?"
 printf '%s\n' "$report" | jq -e '([.summary.unclassified_folders[].code] | add // 0) <= 50'
 printf '%s\n' "$report" | jq -r '
   (.summary.source_purpose // {}) as $p |
@@ -740,14 +742,18 @@ printf '%s\n' "$report" | jq -r '
 
 | Format | Selected by | For | Contents |
 | --- | --- | --- | --- |
-| Table | default on a terminal, `--format table` | people | source code by language and top-level folder, split by purpose, plus one-line notes |
-| JSON headline | default when piped, `--format json` | agents, scripts, CI | totals by purpose, category, kind, and language; top-level folders; effective scope; coverage |
-| Report file | `--output FILE`, or `--output -` for stdout | deeper questions | the headline plus review list, additive breakdown table, effective configuration, and with `--files` per-file records |
+| Table | default on a terminal without `--output`, `--format table` | people | source code by language and top-level folder, split by purpose, plus one-line notes |
+| JSON headline | default when piped without `--output`, `--format headline` | agents, scripts, CI | totals by purpose, category, kind, and language; top-level folders; effective scope; coverage |
+| Full JSON | `--format json`, or the default with `--output FILE` / `--output -` | deeper questions | the headline plus review list, additive breakdown table, effective configuration, and with `--files` per-file records |
 | Markdown | `--format markdown` | reviews, wikis | purpose, category, kind, language, and folder tables, review list, and coverage |
 
 The table and Markdown group thousands with commas, such as `12,345`, while JSON keeps plain integers for scripts.
 
 Terminal tables use compact titles, cyan row labels, bold cyan Code figures and totals, dim secondary figures, and gray zeros, separators and legends. Net changes use cyan/magenta; warning/error labels use yellow/red. Use `NO_COLOR=1` to disable terminal styling; redirected output stays plain. Markdown uses italic legends and bold emphasis. See [human presentation](docs/PRODUCT.md#human-presentation) for the stream policy and theme boundary.
+
+Output routing for measurement, workspace and comparison follows the [same contract](docs/PRODUCT.md#output-routing). Explicit formats apply to files too: `--format markdown --output report.md` saves Markdown, and file output is always unstyled. `--output report.md` alone saves JSON because extensions are not interpreted. `explain` has no headline or `--output` option; schema output is saved with `locmetry --schema report > report.schema.json`.
+
+Prefer `--output FILE` for protected exports. Shell redirection and `tee` bypass destination checks and may mask a partial exit status unless the pipeline preserves it. Two separate measurements need not describe the same filesystem state. A saved headline cannot reconstruct a full historical baseline.
 
 ## Compared with line counters
 

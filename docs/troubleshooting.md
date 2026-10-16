@@ -32,7 +32,7 @@ The JSON includes the canonical root, effective scope, loaded configuration path
 }
 ```
 
-Use `--format table` for a compact labeled explanation or `--format markdown` for a shareable evidence table. A terminal defaults to table; redirected stdout defaults to JSON. Every format describes the same target. JSON has no separate headline or output-file mode: redirect stdout to save it. `locmetry --schema explanation` exposes the generated structure, state meanings and a complete example for agents.
+Use `--format table` for a compact labeled explanation or `--format markdown` for a shareable evidence table. A terminal defaults to table; redirected stdout defaults to JSON. Every format describes the same target. Unlike measurement and comparison, explanation has no headline or `--output` option: redirect stdout to save its complete JSON. See [Output Routing](PRODUCT.md#output-routing). `locmetry --schema explanation` exposes the generated structure, state meanings and a complete example for agents.
 
 ## Choose the Correct Policy
 

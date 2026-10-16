@@ -22,9 +22,21 @@ use std::{
 enum Format {
     /// Human-readable tables and evidence.
     Table,
-    /// Structured JSON for agents and scripts; see the command description.
+    /// Complete JSON document; measurement reports can be compared later.
     Json,
+    /// Compact JSON for agents and scripts; not a comparison-ready measurement.
+    Headline,
     /// Markdown tables and evidence to save or paste into reviews.
+    Markdown,
+}
+
+#[derive(Clone, Copy, ValueEnum)]
+enum ExplainFormat {
+    /// Human-readable tables and evidence.
+    Table,
+    /// Complete JSON explanation.
+    Json,
+    /// Markdown tables and evidence.
     Markdown,
 }
 
@@ -52,13 +64,14 @@ enum Schema {
     Workspace,
 }
 
-/// The stdout format when `--format` is absent.
+/// Select the format when no explicit format was supplied.
 ///
-/// People at a terminal get the table, while pipes keep the JSON headline that
-/// agents and scripts parse; `--output -` always prints the JSON report.
-fn default_format(stdout_is_terminal: bool, report_to_stdout: bool) -> Format {
-    match (report_to_stdout, stdout_is_terminal) {
-        (true, _) | (false, false) => Format::Json,
+/// Explicit exports default to complete JSON so saved baselines remain comparable;
+/// ordinary pipes retain compact agent output (docs/PRODUCT.md, Output Routing).
+fn default_format(stdout_is_terminal: bool, output_given: bool) -> Format {
+    match (output_given, stdout_is_terminal) {
+        (true, _) => Format::Json,
+        (false, false) => Format::Headline,
         (false, true) => Format::Table,
     }
 }
@@ -66,7 +79,7 @@ fn default_format(stdout_is_terminal: bool, report_to_stdout: bool) -> Format {
 #[derive(Parser)]
 #[command(
     version,
-    about = "Measure source code by language, folder, and purpose: production, test, or unclassified. JSON defaults to a compact headline; --output - prints the full report.",
+    about = "Measure source code by language, folder, and purpose: production, test, or unclassified. Defaults to a table on a terminal, a JSON headline in pipes. --output FILE saves only to that file, defaulting to full JSON; --format overrides the format.",
     after_help = "Command names are reserved. To measure a directory named compare, use ./compare or --root compare."
 )]
 struct Cli {
@@ -93,7 +106,7 @@ struct Cli {
     /// Print a JSON Schema and exit: of a configuration file, which explains
     /// every setting and the classification order, of the JSON report, or of
     /// a workspace file, a net-change comparison, or a path explanation.
-    #[arg(long, value_enum)]
+    #[arg(long, value_enum, conflicts_with_all = ["output", "format", "files"])]
     schema: Option<Schema>,
 }
 
@@ -101,10 +114,12 @@ struct Cli {
 enum Command {
     /// Measure several repositories as one virtual monorepo: each root with its
     /// own .locmetryrc, merged with paths prefixed by the root's folder name.
-    /// JSON defaults to a compact headline; --output - prints the full report.
+    /// Defaults to a table on a terminal, a JSON headline in pipes.
+    /// --output FILE saves only to that file, defaulting to full JSON; --format overrides the format.
     Workspace(WorkspaceArgs),
-    /// Compare two saved full reports: net change is after minus before. JSON defaults
-    /// to a headline; --output - prints the full comparison.
+    /// Compare two saved full reports: net change is after minus before.
+    /// Defaults to a table on a terminal, a JSON headline in pipes.
+    /// --output FILE saves only to that file, defaulting to full JSON; --format overrides the format.
     Compare(CompareArgs),
     /// Explain selection and classification of one existing root-relative file.
     /// JSON prints the complete explanation; there is no separate headline.
@@ -125,7 +140,7 @@ struct ExplainArgs {
     no_user_config: bool,
     /// Stdout format [default: table on a terminal, json otherwise].
     #[arg(long, value_enum)]
-    format: Option<Format>,
+    format: Option<ExplainFormat>,
 }
 
 #[derive(clap::Args)]
@@ -134,10 +149,10 @@ struct CompareArgs {
     before: PathBuf,
     /// Full JSON measurement after the change.
     after: PathBuf,
-    /// Stdout format [default: table on a terminal, json otherwise].
+    /// Result format [default: json with --output; otherwise table on a terminal, headline in pipes].
     #[arg(long, value_enum)]
     format: Option<Format>,
-    /// Write full comparison to FILE; - prints full JSON to stdout.
+    /// Write only to FILE; - selects stdout. Defaults to full JSON; --format overrides it.
     #[arg(long, value_name = "FILE")]
     output: Option<PathBuf>,
 }
@@ -182,17 +197,17 @@ struct SharedArgs {
     /// Ignore user defaults in ~/.config/locmetry/config.toml.
     #[arg(long)]
     no_user_config: bool,
-    /// Write the full JSON report to this file, outside the scan root; `-`
-    /// writes it to stdout instead of the headline.
+    /// Write only to FILE, outside the scan root; - selects stdout.
+    /// Defaults to full JSON; --format overrides it. File extensions do not select a format.
     #[arg(long, value_name = "FILE")]
     output: Option<PathBuf>,
-    /// Include per-file records in the report.
+    /// Include per-file records; requires full JSON (--format json or --output FILE).
     #[arg(long)]
     files: bool,
     /// Add a table of source code per purpose and category to the terminal table.
     #[arg(long)]
     categories: bool,
-    /// Stdout format [default: table on a terminal, json otherwise].
+    /// Result format [default: json with --output; otherwise table on a terminal, headline in pipes].
     #[arg(long, value_enum)]
     format: Option<Format>,
     /// Row order of table and Markdown output; the Markdown folder table keeps
@@ -202,6 +217,8 @@ struct SharedArgs {
     /// Deepest Markdown folder level, relative to --subfolder when selected; JSON lists all.
     #[arg(long, default_value_t = 2, value_name = "N")]
     depth: usize,
+    #[arg(skip)]
+    depth_explicit: bool,
 }
 
 /// Whether human terminal output may use styling: only for a terminal, unless
@@ -336,34 +353,60 @@ struct Results {
     members: Vec<MemberView>,
 }
 
-/// The output destination and stdout format, checked before measuring so a
+/// The result destination and format, checked before measuring so a
 /// misuse fails fast.
 struct Destination<'a> {
-    report_path: Option<&'a Path>,
-    report_to_stdout: bool,
+    path: Option<&'a Path>,
     format: Format,
     folder_rows: Option<usize>,
 }
 
 fn destination(shared: &SharedArgs) -> Result<Destination<'_>> {
-    output_destination(&shared.output, shared.format)
+    let destination = output_destination(&shared.output, shared.format);
+    anyhow::ensure!(
+        !shared.files || destination.format == Format::Json,
+        "--files adds per-file records only to full JSON; use --format json (or --output FILE without a conflicting --format)"
+    );
+    Ok(destination)
 }
 
-fn output_destination(output: &Option<PathBuf>, format: Option<Format>) -> Result<Destination<'_>> {
-    let report_path = output.as_deref().filter(|path| *path != Path::new("-"));
-    let report_to_stdout = output.is_some() && report_path.is_none();
+fn output_destination(output: &Option<PathBuf>, format: Option<Format>) -> Destination<'_> {
+    let path = output.as_deref().filter(|path| *path != Path::new("-"));
     let format =
-        format.unwrap_or_else(|| default_format(io::stdout().is_terminal(), report_to_stdout));
-    anyhow::ensure!(
-        !report_to_stdout || format == Format::Json,
-        "--output - writes JSON to stdout and cannot be combined with --format table or markdown"
-    );
-    Ok(Destination {
-        report_path,
-        report_to_stdout,
+        format.unwrap_or_else(|| default_format(io::stdout().is_terminal(), output.is_some()));
+    Destination {
+        path,
         format,
         folder_rows: None,
-    })
+    }
+}
+
+impl Destination<'_> {
+    fn theme(&self) -> Theme {
+        terminal_theme(self.path.is_none() && io::stdout().is_terminal())
+    }
+
+    fn write(&self, text: &str) -> Result<()> {
+        match self.path {
+            Some(path) => write_report(path, text),
+            None => Ok(io::stdout().lock().write_all(text.as_bytes())?),
+        }
+    }
+}
+
+fn warn_ineffective_options(shared: &SharedArgs, format: Option<Format>) {
+    if shared.categories && format != Some(Format::Table) {
+        stderr_message(
+            Role::Warning,
+            "--categories has no effect here; it applies only to table output",
+        );
+    }
+    if shared.depth_explicit && format != Some(Format::Markdown) {
+        stderr_message(
+            Role::Warning,
+            "--depth has no effect here; it applies only to Markdown output",
+        );
+    }
 }
 
 fn user_defaults(no_user_config: bool) -> Option<PathBuf> {
@@ -372,6 +415,7 @@ fn user_defaults(no_user_config: bool) -> Option<PathBuf> {
 
 fn run(cli: Cli) -> Result<Outcome> {
     if let Some(schema) = cli.schema {
+        warn_ineffective_options(&cli.shared, None);
         let schema = match schema {
             Schema::Config => locmetry::config_schema(),
             Schema::UserConfig => locmetry::user_config_schema(),
@@ -459,14 +503,16 @@ fn run_explain(args: &ExplainArgs) -> Result<Outcome> {
     }
     match args
         .format
-        .unwrap_or_else(|| default_format(io::stdout().is_terminal(), false))
-    {
-        Format::Json => println!("{}", serde_json::to_string_pretty(&explanation)?),
-        Format::Table => print!(
+        .unwrap_or_else(|| match io::stdout().is_terminal() {
+            true => ExplainFormat::Table,
+            false => ExplainFormat::Json,
+        }) {
+        ExplainFormat::Json => println!("{}", serde_json::to_string_pretty(&explanation)?),
+        ExplainFormat::Table => print!(
             "{}",
             explanation.render_with_theme(false, terminal_theme(io::stdout().is_terminal()))
         ),
-        Format::Markdown => print!("{}", explanation.render(true)),
+        ExplainFormat::Markdown => print!("{}", explanation.render(true)),
     }
     Ok(if explanation.partial() {
         Outcome::Partial(format!("Counts unavailable for {}", explanation.path))
@@ -476,10 +522,10 @@ fn run_explain(args: &ExplainArgs) -> Result<Outcome> {
 }
 
 fn run_compare(args: &CompareArgs) -> Result<Outcome> {
-    let destination = output_destination(&args.output, args.format)?;
+    let destination = output_destination(&args.output, args.format);
     let before = locmetry::compare::read_input(&args.before)?;
     let after = locmetry::compare::read_input(&args.after)?;
-    if let Some(path) = destination.report_path {
+    if let Some(path) = destination.path {
         locmetry::compare::validate_destination(path, [&args.before, &args.after])?;
     }
     let result = locmetry::compare::compare(
@@ -489,31 +535,13 @@ fn run_compare(args: &CompareArgs) -> Result<Outcome> {
         args.after.to_string_lossy().into(),
     )?;
     let partial = result.partial();
-    if let Some(path) = destination.report_path {
-        write_report(path, &report_text(&serde_json::to_value(&result)?)?)?;
-    }
-    let mut stdout = io::stdout().lock();
-    match destination.format {
-        Format::Json if destination.report_to_stdout => {
-            write!(stdout, "{}", report_text(&serde_json::to_value(&result)?)?)?
-        }
-        Format::Json => {
-            serde_json::to_writer(
-                &mut stdout,
-                &result.headline(destination.report_path.map(|p| p.to_string_lossy().into())),
-            )?;
-            writeln!(stdout)?;
-        }
-        Format::Table => write!(
-            stdout,
-            "{}",
-            locmetry::compare::render_table_with_theme(
-                &result,
-                terminal_theme(io::stdout().is_terminal())
-            )
-        )?,
-        Format::Markdown => write!(stdout, "{}", locmetry::compare::render_markdown(&result))?,
-    }
+    let text = match destination.format {
+        Format::Json => report_text(&serde_json::to_value(&result)?)?,
+        Format::Headline => format!("{}\n", serde_json::to_string(&result.headline(None))?),
+        Format::Table => locmetry::compare::render_table_with_theme(&result, destination.theme()),
+        Format::Markdown => locmetry::compare::render_markdown(&result),
+    };
+    destination.write(&text)?;
     Ok(if partial {
         Outcome::Partial(
             "Net change uses partial input measurements; inspect coverage findings.".into(),
@@ -533,11 +561,12 @@ fn run_root(
     let mut destination = destination(shared)?;
     if folder_rows.is_some() {
         anyhow::ensure!(
-            destination.format == Format::Table && !destination.report_to_stdout,
-            "--folder-rows requires table output; add --format table and omit --output -"
+            destination.format == Format::Table,
+            "--folder-rows requires table output; add --format table"
         );
     }
     destination.folder_rows = folder_rows;
+    warn_ineffective_options(shared, Some(destination.format));
     let user_path = user_defaults(shared.no_user_config);
     let overrides = ScopeOverrides {
         hidden: args.hidden,
@@ -552,7 +581,7 @@ fn run_root(
         None,
         &overrides,
     )?;
-    if let Some(path) = destination.report_path {
+    if let Some(path) = destination.path {
         validate_output(path, &prepared.root, prepared.config_path.as_deref())?;
     }
     let subfolder = subfolder
@@ -659,6 +688,7 @@ fn workspace_members(roots: &[PathBuf]) -> Result<Vec<(String, PathBuf)>> {
 fn run_workspace(args: &WorkspaceArgs) -> Result<Outcome> {
     let shared = &args.shared;
     let destination = destination(shared)?;
+    warn_ineffective_options(shared, Some(destination.format));
     let workspace_path = args
         .file
         .as_deref()
@@ -672,7 +702,7 @@ fn run_workspace(args: &WorkspaceArgs) -> Result<Outcome> {
         None => args.roots.clone(),
     };
     let members = workspace_members(&roots)?;
-    if let Some(path) = destination.report_path {
+    if let Some(path) = destination.path {
         for (_, root) in &members {
             validate_output(path, root, workspace_path.as_deref())?;
         }
@@ -882,19 +912,19 @@ fn report(
             TableOptions {
                 categories: shared.categories,
                 order,
-                theme: terminal_theme(io::stdout().is_terminal()),
+                theme: destination.theme(),
                 folder_rows: destination.folder_rows,
             },
         ),
         Format::Markdown => {
             render_markdown(&project, &summary, &rows, &findings, shared.depth, order)
         }
-        Format::Json => String::new(),
+        Format::Json | Format::Headline => String::new(),
     };
-    if inaccurate && format != Format::Json {
+    if inaccurate && matches!(format, Format::Table | Format::Markdown) {
         let theme = match format {
             Format::Markdown => Theme::MARKDOWN,
-            _ => terminal_theme(io::stdout().is_terminal()),
+            _ => destination.theme(),
         };
         human.push_str(&format!(
             "\n{}; inspect the JSON metadata.\n",
@@ -1002,24 +1032,12 @@ fn report(
             .then(|| rows.iter().map(contract::File::from).collect()),
         report: None,
     };
-    let serialized = serde_json::to_value(&document)?;
-    if let Some(path) = destination.report_path {
-        write_report(path, &report_text(&serialized)?)?;
-    }
-    let mut stdout = io::stdout().lock();
-    match format {
-        Format::Json if destination.report_to_stdout => {
-            write!(stdout, "{}", report_text(&serialized)?)?
-        }
-        Format::Json => {
-            serde_json::to_writer(
-                &mut stdout,
-                &document.headline(destination.report_path.map(|p| p.to_string_lossy().into())),
-            )?;
-            writeln!(stdout)?;
-        }
-        Format::Table | Format::Markdown => write!(stdout, "{human}")?,
-    }
+    let text = match format {
+        Format::Json => report_text(&serde_json::to_value(&document)?)?,
+        Format::Headline => format!("{}\n", serde_json::to_string(&document.headline(None))?),
+        Format::Table | Format::Markdown => human,
+    };
+    destination.write(&text)?;
     if inaccurate {
         let mut failures: Vec<_> = coverage
             .unread
@@ -1065,7 +1083,22 @@ fn parse_cli() -> clap::error::Result<Cli> {
             ));
         }
     }
-    Cli::from_arg_matches(&matches)
+    let mut cli = Cli::from_arg_matches(&matches)?;
+    let shared_matches = match &mut cli.command {
+        Some(Command::Workspace(args)) => Some((
+            &mut args.shared,
+            matches
+                .subcommand_matches("workspace")
+                .expect("parsed workspace"),
+        )),
+        None => Some((&mut cli.shared, &matches)),
+        _ => None,
+    };
+    if let Some((shared, matches)) = shared_matches {
+        shared.depth_explicit =
+            matches.value_source("depth") == Some(clap::parser::ValueSource::CommandLine);
+    }
+    Ok(cli)
 }
 
 fn stderr_message(role: Role, message: impl std::fmt::Display) {
@@ -1161,9 +1194,9 @@ mod tests {
     }
 
     #[test]
-    fn terminals_default_to_the_table_and_pipes_to_json() {
+    fn explicit_exports_default_to_full_json_and_ordinary_pipes_to_headlines() {
         assert_eq!(default_format(true, false), Format::Table);
-        assert_eq!(default_format(false, false), Format::Json);
+        assert_eq!(default_format(false, false), Format::Headline);
         assert_eq!(default_format(true, true), Format::Json);
         assert_eq!(default_format(false, true), Format::Json);
     }

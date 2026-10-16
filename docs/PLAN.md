@@ -26,7 +26,7 @@ Verification: positional-root equivalence and command-precedence regression test
 
 ## Minor Release v0.3.0 — Published
 
-Authorized 2026-10-16 after final external review of the adaptive-folder fixes: publish this verified batch as v0.3.0. [Release notes](releases/0.3.0.md) cover adaptive Folder detail and terminal safety. Neutral language ratios remain on hold and are excluded from this release; presentation-option warnings also remain unimplemented.
+Authorized 2026-10-16 after final external review of the adaptive-folder fixes: publish this verified batch as v0.3.0. [Release notes](releases/0.3.0.md) cover adaptive Folder detail and terminal safety. Neutral language ratios and presentation-option warnings were excluded from this release; the ratio extension remains on hold.
 
 - [x] Set crate/lockfile identity to 0.3.0 and replace unreleased usage wording in README and PRODUCT.
 - [x] Verify local public tests, formatting, Clippy, executable README workflows and the release build.
@@ -117,6 +117,8 @@ The v0.3.0 CI/release runs report Node.js 20 deprecation warnings for `actions/c
 
 ## Known Display Follow-up
 
+- Output routing — implemented and verified as `0.4.0-dev.1`: one destination, explicit formats applied to files, full `json`, compact `headline`, silent exports and ineffective-option warnings. [PRODUCT](PRODUCT.md#output-routing) owns the contract, [v0.4.0 notes](releases/0.4.0.md) describe changed commands, and the [checkpoint](plans/measurement-quality-and-net-change.md#output-routing-redesign) tracks verification. Implementation is authorized; publication is not.
+
 - Help wrapping — corrected in development after v0.3.0: enable Clap's terminal-aware help layout so command and option descriptions retain continuation indentation. [Verification](plans/measurement-quality-and-net-change.md#help-wrapping) records root/subcommand checks; [PRODUCT](PRODUCT.md#human-presentation) owns the behavior.
 
 - Adaptive detail hint — approved and implemented 2026-10-16 with the narrower largest-row trigger: name the largest positive-code row when it is an expandable folder or a remainder. Smaller expandable rows alone do not trigger it, avoiding a routine hint on nearly every nested project. No suggested budget or code-share threshold is added. [PRODUCT](PRODUCT.md#adaptive-folder-detail) owns the contract; [verification](plans/measurement-quality-and-net-change.md#largest-row-budget-hint) records the acceptance checks.
@@ -125,7 +127,7 @@ The v0.3.0 CI/release runs report Node.js 20 deprecation warnings for `actions/c
 
 - Folder-partition convergence — deferred decision: the [adaptive-folder decision record](proposals/adaptive-folder-detail.md#existing-partition-and-feasibility) differs intentionally from `unclassified_folders`, whose results appear in JSON and agent workflows. The adaptive feature preserves that behavior; share only narrow containment/chain-collapse semantics where practical. Consider policy convergence separately if using both views demonstrates confusing divergence, with explicit compatibility review rather than an incidental renderer refactor.
 
-- Presentation-option consistency — selected direction, not implemented: warn on stderr when explicitly supplied `--categories` or `--depth` cannot affect the selected format. Preserve successful execution and output because existing scripts and aliases may pass these harmless options routinely. Use clap’s `ValueSource` to distinguish explicit arguments from defaults, especially the default `--depth 2`; defaulted values must not warn. Keep `--folder-rows` strict. This replaces the earlier error recommendation; implementation and acceptance checks remain a separate follow-up after v0.3.0.
+- Presentation-option consistency — included in the [output routing checkpoint](plans/measurement-quality-and-net-change.md#output-routing-redesign). Warn for explicit ineffective `--categories`/`--depth`, preserve success and output, and use clap’s `ValueSource` to keep defaulted depth silent. `--files` requests data and therefore requires full JSON; `--folder-rows` remains strict. This replaces the earlier error recommendation for harmless presentation flags.
 
 ## Completed Design Decisions
 

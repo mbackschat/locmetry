@@ -21,7 +21,12 @@ extract_blocks() {
         section && /^```(sh|bash)$/ { block = 1; number++; next }
         block && /^```$/ { block = 0; next }
         block && (wanted == 0 || wanted == number) {
-            print
+            if ($0 ~ /^locmetry .* --output / && $0 !~ / --output -([ ]|$)/ && $0 !~ /\|\|/) {
+                print $0 " > export.stdout"
+                print "test ! -s export.stdout"
+            } else {
+                print
+            }
             if (change_source && /^# After changing/) {
                 print "printf '\''fn added() {}\\n'\'' >> service/src/main.rs"
             }
@@ -85,6 +90,7 @@ jq -e '."$schema"' "$temporary/explanation-schema.json" > /dev/null
 extract_blocks 'Compare saved measurements' "$temporary/compare.sh" 1 1
 (cd "$temporary/workflows" && bash "$temporary/compare.sh") > "$temporary/workflow-output"
 jq -e '.document_type == "comparison" and .summary.source.delta.code == 1' "$temporary/workflows/net-change.json" > /dev/null
+grep -Fxq '| Source code | 1 | 2 | +1 |' "$temporary/workflows/net-change.md"
 extract_blocks 'Compare saved measurements' "$temporary/workspace-compare.sh" 2 1
 (cd "$temporary/workflows" && bash "$temporary/workspace-compare.sh") > "$temporary/workspace-change.md"
 grep -Fxq '| Source code | 3 | 4 | +1 |' "$temporary/workspace-change.md"
@@ -95,6 +101,7 @@ printf '{}\n' > "$temporary/workflows/service/broken.ipynb"
 status=0
 (cd "$temporary/workflows" && locmetry --root service --output after.json) > "$temporary/out" 2> "$temporary/err" || status=$?
 [[ $status == 2 ]]
+[[ ! -s "$temporary/out" ]]
 extract_blocks 'Compare saved measurements' "$temporary/partial-compare.sh" 3
 status=0
 (cd "$temporary/workflows" && bash "$temporary/partial-compare.sh") > "$temporary/out" 2> "$temporary/err" || status=$?
@@ -132,7 +139,8 @@ awk '
     block && number == 2 { print }
 ' "$repository/README.md" > "$temporary/adaptive.sh"
 [[ -s "$temporary/adaptive.sh" ]]
-(cd "$temporary/issues" && bash "$temporary/adaptive.sh")
+(cd "$temporary/issues" && bash "$temporary/adaptive.sh") > "$temporary/adaptive.stdout"
+[[ ! -s "$temporary/adaptive.stdout" ]]
 grep -Fq 'Adaptive folder detail; rows cover measured source once.' "$temporary/issues/folders.txt"
 grep -Eq '^ web/src +2 .*1 +1 +0 .*1\.00' "$temporary/issues/folders.txt"
-echo 'README examples pass: policy outcomes, compare, workspace compare, explain, partial coverage, troubleshooting queries, and adaptive folder detail.'
+echo 'README examples pass: silent file exports, Markdown content, policy outcomes, compare, workspace compare, explain, partial coverage, troubleshooting queries, and adaptive folder detail.'

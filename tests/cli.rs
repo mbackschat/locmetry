@@ -643,16 +643,15 @@ fn dominant_unclassified_folders_split_beyond_the_row_limit() {
     assert_eq!(folders.len(), 11);
 }
 
-/// `--output -` prints the JSON report, so a human format cannot share stdout.
 #[test]
-fn table_format_cannot_share_stdout_with_the_json_report() {
+fn explicit_table_format_overrides_the_stdout_export_default() {
     let temp = fixture();
     let result = run(
         temp.path(),
         &["--root", "source", "--format", "table", "--output", "-"],
     );
-    assert_eq!(result.status.code(), Some(1));
-    assert!(result.stdout.is_empty());
+    assert_eq!(result.status.code(), Some(0));
+    assert!(String::from_utf8_lossy(&result.stdout).contains("Language"));
 }
 
 /// Labelled counts read correctly for any number, including one.
@@ -1367,7 +1366,7 @@ fn invalid_discovered_configuration_fails_before_scanning() {
 }
 
 #[test]
-fn stdout_is_a_small_headline_that_names_the_report_file() {
+fn stdout_headline_keeps_compact_evidence_without_a_report_pointer() {
     let temp = project(&[
         ("src/a.rs", "fn a() {}\n"),
         ("tools/gen.sh", "echo hi\n"),
@@ -1376,10 +1375,13 @@ fn stdout_is_a_small_headline_that_names_the_report_file() {
     ]);
     let root = temp.path().join("project");
     let path = temp.path().join("report.json");
-    let (success, headline, stderr) = headline(&root, &["--output", path.to_str().unwrap()]);
+    let saved = run(&root, &["--output", path.to_str().unwrap()]);
+    assert!(saved.status.success());
+    assert!(saved.stdout.is_empty());
+    let (success, headline, stderr) = headline(&root, &[]);
     assert!(success, "{stderr}");
     assert_eq!(headline["schema_version"], "1");
-    assert_eq!(headline["report"], path.to_str().unwrap());
+    assert!(headline.get("report").is_none());
     for absent in ["breakdown", "review", "files"] {
         assert!(headline.get(absent).is_none(), "{absent}");
     }
@@ -1621,11 +1623,11 @@ fn measurement_help_explains_json_headline_and_full_report() {
         assert!(output.status.success());
         let help = String::from_utf8(output.stdout).unwrap();
         let help = help.split_whitespace().collect::<Vec<_>>().join(" ");
+        assert!(help.contains("a JSON headline in pipes"), "{help}");
         assert!(
-            help.contains("JSON defaults to a compact headline"),
+            help.contains("--output FILE saves only to that file, defaulting to full JSON"),
             "{help}"
         );
-        assert!(help.contains("--output - prints the full report"), "{help}");
     }
 }
 

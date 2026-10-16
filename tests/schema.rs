@@ -272,17 +272,26 @@ fn report_schema_describes_the_headline_and_the_full_report() {
     let validator = jsonschema::validator_for(&schema).unwrap();
     let temp = report_fixture();
     let report_file = temp.path().join("report.json");
+    let saved = Command::new(env!("CARGO_BIN_EXE_locmetry"))
+        .env("XDG_CONFIG_HOME", "/nonexistent/locmetry-tests")
+        .current_dir(temp.path())
+        .args([
+            "--root",
+            "project",
+            "--output",
+            report_file.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        saved.status.success(),
+        "{}",
+        String::from_utf8_lossy(&saved.stderr)
+    );
+    assert!(saved.stdout.is_empty());
     let documents = [
+        measure(&temp, &["--format", "headline"]),
         measure(&temp, &["--format", "json"]),
-        measure(
-            &temp,
-            &[
-                "--format",
-                "json",
-                "--output",
-                report_file.to_str().unwrap(),
-            ],
-        ),
         measure(&temp, &["--files", "--output", "-"]),
         serde_json::from_str(&std::fs::read_to_string(&report_file).unwrap()).unwrap(),
     ];
