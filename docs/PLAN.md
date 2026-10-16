@@ -99,7 +99,7 @@ Verification: initial command and saved-receipt guards failed before implementat
 
 - Folder-partition convergence — deferred decision: the [adaptive-folder proposal](proposals/adaptive-folder-detail.md#existing-partition-and-feasibility) differs intentionally from `unclassified_folders`, whose results appear in JSON and agent workflows. Keep that behavior unchanged in the proposed feature; share only narrow containment/chain-collapse semantics where practical. Consider policy convergence separately if using both views demonstrates confusing divergence, with explicit compatibility review rather than an incidental renderer refactor.
 
-- Presentation-option consistency — separate cleanup decision: `--categories` is silently ignored outside table output and `--depth` outside Markdown today. Recommend clear errors for explicitly supplied options that cannot affect the selected format, but assess CLI compatibility separately. The proposed `--folder-rows` starts strict, including inferred formats and workspace rejection; this does not authorize changing existing flags.
+- Presentation-option consistency — separate cleanup decision: `--categories` is silently ignored outside table output and `--depth` outside Markdown today. Recommend clear errors for explicitly supplied options that cannot affect the selected format, but assess CLI compatibility separately. Because `--depth` defaults to 2, any future check must distinguish explicit arguments from defaults (for example, through clap’s `ValueSource`) rather than rejecting a value merely because it is present. The proposed `--folder-rows` starts strict, including inferred formats and workspace rejection; this does not authorize changing existing flags.
 
 ## Completed Design Decisions
 
@@ -109,7 +109,7 @@ Verification: initial command and saved-receipt guards failed before implementat
 
 ## Proposals — Under Discussion
 
-- [Adaptive folder detail in terminal reports](proposals/adaptive-folder-detail.md): external review incorporated 2026-10-16; awaiting owner approval. Recommend a single opt-in `--folder-rows N` option with a required value to expand large folder rows into deeper, additive rows under a soft budget. Preserve measurement scope, JSON and the existing unclassified-folder partition. The proposal records wide-folder handling, determinism, tradeoffs and acceptance criteria. No implementation is active.
+- [Adaptive folder detail in terminal reports](proposals/adaptive-folder-detail.md): external review complete 2026-10-16, recommending implementation approval; awaiting owner approval. Recommend a single opt-in `--folder-rows N` option with a required value to expand large folder rows into deeper, additive rows under a soft budget. Preserve measurement scope, JSON and the existing unclassified-folder partition. The proposal records wide-folder handling, determinism, tradeoffs and acceptance criteria. No implementation is active.
 
 ## Ideas — Not Scheduled
 

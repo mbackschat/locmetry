@@ -1,6 +1,6 @@
 # Adaptive Folder Detail in Terminal Reports
 
-Status: proposed 2026-10-16; external review incorporated, awaiting owner approval. This document recommends a display-only feature; no implementation is authorized. [PRODUCT](../PRODUCT.md#reporting-and-coverage) remains the supported contract, and [PLAN](../PLAN.md#proposals--under-discussion) indexes this proposal.
+Status: proposed 2026-10-16; external review complete with approval recommendation at `0bd0eac`; awaiting owner approval. This document recommends a display-only feature; no implementation is authorized. [PRODUCT](../PRODUCT.md#reporting-and-coverage) remains the supported contract, and [PLAN](../PLAN.md#proposals--under-discussion) indexes this proposal.
 
 ## Problem and Recommendation
 
@@ -21,14 +21,14 @@ The current alternatives remain useful. Markdown already provides a recursive hi
 ## Proposed Interface
 
 ```sh
-locmetry acme-orders --format table --folder-rows 30
-locmetry acme-orders --subfolder packages --format table --folder-rows 12
+locmetry acme-orders --folder-rows 30
+locmetry acme-orders --subfolder packages --folder-rows 12
 locmetry acme-orders --format table --folder-rows 30 | less
 ```
 
 Recommend one opt-in option, `--folder-rows N`, with a required positive-integer value and no default. Passing it enables adaptive detail; omitting it preserves current behavior. The budget counts data rows, excluding headers, separators, legends and the total. Requiring the value avoids an optional-value ambiguity with the positional root; a nonnumeric value is an argument error.
 
-Proposed help text: “Split the largest folders into subfolders within an N-row budget; existing top-level rows are never hidden.” The soft-budget exception is defined below, so the help must not promise an absolute cap.
+Proposed help text: “Split the largest folders into subfolders within an N-row budget; no top-level folder’s code is merged away.” The soft-budget exception is defined below, so the help must not promise an absolute cap.
 
 Reject the option whenever the resulting format is not `table`, whether the format was explicitly selected or inferred from stdout. For example, `locmetry acme-orders --folder-rows 30 | less` infers JSON and must fail with a hint to add `--format table`. Reject `--output -` and use with any subcommand, including `workspace` even though it shares presentation options. `--output FILE` may still save the ordinary full JSON report alongside a valid terminal view. Unsupported combinations fail before writing any report.
 
@@ -120,4 +120,4 @@ Keep the new display partition separate and preserve `unclassified_folders` outp
 
 [CLI rendering](../../src/main.rs) currently uses `--categories` only for table output and `--depth` only for Markdown, silently ignoring them elsewhere. Rejecting unsupported `--folder-rows` combinations is deliberately stricter. The same [plan section](../PLAN.md#known-display-follow-up) records existing-flag consistency as a separate cleanup decision, rather than broadening this change.
 
-No prototype, performance test or executable acceptance check has been run for this proposal. The external review supports the additive direction; this revision addresses its seven findings without authorizing implementation.
+No prototype, performance test or executable acceptance check has been run for this proposal. The external review of `0bd0eac` confirms all seven findings are addressed and recommends approval for implementation. Its final wording corrections are incorporated; owner approval remains pending.
