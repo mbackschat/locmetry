@@ -131,7 +131,7 @@ The v0.3.0 CI/release runs report Node.js 20 deprecation warnings for `actions/c
 
 ## Proposals — Under Discussion
 
-- [On-demand guides in the binary](proposals/embedded-guides.md) — proposed for external review on 2026-10-16. Revised after external review: four embedded task guides through `--guide TOPIC`, no index or skill, explicit configuration-review outcomes and reuse of troubleshooting. A shared standalone-query rule requires a separate preceding schema-validation change. [Review disposition](plans/measurement-quality-and-net-change.md#embedded-guidance-review--2026-10-16) records recommendations and evidence; neither change is approved for implementation.
+- [On-demand guides in the binary](proposals/embedded-guides.md) — proposed for external review on 2026-10-16. Revised after external review: four embedded task guides through `--guide TOPIC`, no index or skill, explicit configuration-review outcomes and reuse of troubleshooting. Root help must name the starting command; the [self-audit](plans/measurement-quality-and-net-change.md#embedded-guidance-self-audit--2026-10-16) maps discovery and workflow promises to checks. A shared standalone-query rule requires a separate preceding schema-validation change. [Review disposition](plans/measurement-quality-and-net-change.md#embedded-guidance-review--2026-10-16) records recommendations and evidence; neither change is approved for implementation.
 
 The [proposal index and retirement procedure](proposals/README.md) distinguish active designs from archived decision records.
 

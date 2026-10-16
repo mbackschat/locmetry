@@ -1,6 +1,6 @@
 # On-demand Guides in the Locmetry Binary
 
-Status: revised for external review, 2026-10-16, following review of `2b28641`. Implementation, including the schema-query prerequisite, is not approved. [PRODUCT](../PRODUCT.md) owns current behavior; [PLAN](../PLAN.md#proposals--under-discussion) tracks this proposal. All `--guide` commands below are proposed.
+Status: revised for external review, 2026-10-16, following review of `2b28641` and a discovery/contract self-audit after `c9df62d`. Implementation, including the schema-query prerequisite, is not approved. [PRODUCT](../PRODUCT.md) owns current behavior; [PLAN](../PLAN.md#proposals--under-discussion) tracks this proposal. All `--guide` commands below are proposed.
 
 ## Owner Input and Intended Outcome
 
@@ -20,22 +20,32 @@ Embed four task-oriented Markdown guides through `--guide TOPIC`. Ordinary help 
 
 ## Public Interface
 
+`--guide` requires one case-sensitive topic from `configure|selection|reports|compare`. Root `--help` lists each with a one-line description generated from the topic enum, and explains help versus guides versus schemas. Root `--help`, `-h` and `locmetry help` must all include this explicit starting instruction:
+
+> Start project configuration with `locmetry --guide configure`.
+
+Short help may omit topic descriptions but must retain that starting command. Missing/unknown topics exit 1 with accepted names, a `--help` remedy and empty stdout; errors need not repeat descriptions. Subcommand help, in both short and long forms, points to executable root queries: `explain` to `locmetry --guide selection`, `compare` to `locmetry --guide compare`, and `workspace` to `locmetry --guide configure` and `locmetry --guide reports`. Guides are not subcommand options.
+
+### Fresh-agent Discovery Path
+
+The configuration guide must supply this usable starting sequence, not merely name the available subjects. Here `.` is the intended project root; the agent first inspects any existing `.locmetryrc` and retains its policy unless evidence justifies a change.
+
 ```sh
 locmetry --help
 locmetry --guide configure
-locmetry --guide selection
-locmetry --guide reports
-locmetry --guide compare
 locmetry --schema config
+locmetry --root . --format headline
 ```
 
-`--guide` requires one case-sensitive topic from `configure|selection|reports|compare`. Root `--help` lists each with a one-line description generated from the topic enum, and explains help versus guides versus schemas. Missing/unknown topics exit 1 with accepted names and empty stdout; unknown-topic errors need not repeat descriptions. Subcommand help points to the relevant root query: `explain` to `selection`, `compare` to `compare`, and `workspace` to `configure` and `reports`.
+The first measurement precedes configuration edits. Every guide supplies exact next commands and explains when to use them: `configure` directs readers to the config schema and initial measurement; `selection` to `explain --help` and `--schema explanation`; `reports` to `--schema report`; and `compare` to `compare --help` and `--schema comparison`. Configuration guidance also names `--schema user-config` and `--schema workspace` when relevant. Cross-topic commands always start with `locmetry`, so no checkout, inferred URL or remembered flag placement is needed.
 
-Successful queries exit 0 and print a header identifying source path and executable version, for example `Source: docs/guides/configure.md; locmetry 0.4.0-dev.1`, followed by the Markdown source unchanged. No styling, paging, configuration loading, scanning or network access occurs. Queries work outside repositories and beside invalid configuration. The header is produced by the executable; source documents contain no maintained release number or separate guide version.
+Start with compact evidence; use a specific file explanation or a narrow full-report query when needed. Do not instruct agents to read every guide, every schema or all file records before acting. Examples using `jq` must identify it as an optional external query tool; Locmetry itself does not require it.
+
+Successful guide queries exit 0 with empty stderr and print a header identifying source path and executable version, for example `Source: docs/guides/configure.md; locmetry 0.4.0-dev.1`, followed by the Markdown source unchanged. No styling, paging, configuration loading, scanning or network access occurs. Queries work outside repositories and beside invalid configuration. The header is produced by the executable; source documents contain no maintained release number or separate guide version.
 
 ### One Standalone-query Rule
 
-Both `--guide` and `--schema` reject each other, explicit positional roots, measurement/presentation options and subcommands, before scanning or writing. Defaulted values do not conflict; normal `--help`/`--version` early exits remain. Save either query by shell redirection; `--output` remains a result-export option.
+Both `--guide` and `--schema` reject each other, explicit positional roots, measurement/presentation options and subcommands, before scanning or writing. Only explicit unrelated arguments conflict: `--root .`, `--config FILE` and `--no-user-config` are included, as are explicitly supplied default values such as `--sort code` and `--depth 2`. Defaulted values do not conflict; normal `--help`/`--version` early exits remain. Save either query by shell redirection; `--output` remains a result-export option.
 
 Recommend tightening existing `--schema` validation as a separate preceding change, then using that same argument-validation boundary for guides. Today schema queries silently ignore roots, subfolders, exclusions and sort options, while explicit categories/depth only warn. Under this proposal those combinations exit 1, including `--schema config --depth 3`. This changes existing behavior; it is justified by avoiding silently ignored requests and two query policies, not by assuming that a pre-1.0 change cannot affect callers. Ordinary measurement's ineffective-option warnings remain unchanged. The work plan records this prerequisite separately; no CLI change is authorized by this document.
 
@@ -54,13 +64,13 @@ For source needing a classification decision, the configuration workflow has thr
 2. Leave it intentionally unclassified through an entry with `purpose = "unclassified"` and a `reason`. This records a decision and removes it from the unclaimed review list.
 3. Leave it unclaimed and report the unresolved question to the owner. Do not invent an entry to remove a finding.
 
-Already-correct built-in or module decisions do not need redundant entries. Zero unclaimed source is not proof of correctness: module-inferred production also needs representative review. Unavailable counts are not zero; subtree-only unused findings do not justify deleting project policy. A successful measurement establishes configuration loading and observed behavior, not agreement with the owner's intent.
+Already-correct built-in or module decisions do not need redundant entries. Zero unclaimed source is not proof of correctness: module-inferred production also needs representative review. Unavailable counts are not zero; subtree-only unused findings do not justify deleting project policy. A successful measurement establishes configuration loading and observed behavior, not agreement with the owner's intent. The configuration guide ends with a handback: resolved decisions and their evidence, intentional unclassified entries and reasons, remaining unclaimed questions, coverage limitations and unused-policy findings. Remaining questions do not prohibit delivering a review; they prohibit claiming that configuration is fully settled. Separate unresolved intent from invalid configuration or partial counts.
 
 In the guide implementation checkpoint, replace the config schema's blanket instruction to add entries for unclassified folders and the README's “until no folder is left undecided” instruction with these outcomes. Correct the schema's name-based implication that tests/fixtures/examples necessarily need an entry: names prompt inspection, not a classification verdict. These are required guidance corrections, not optional reconciliation or new classifier behavior.
 
 ## Sources, Ownership and Length
 
-Use one Markdown source per topic in `docs/guides/`, embedded verbatim. Move [troubleshooting.md](../troubleshooting.md) to `docs/guides/selection.md` and extend it; do not author another overlapping selection guide. Update its inbound links, relative links, the embedding test and contributor ownership entry while preserving existing heading anchors where practical.
+Use one Markdown source per topic in `docs/guides/`, embedded verbatim. Move [troubleshooting.md](../troubleshooting.md) to `docs/guides/selection.md` and extend it; do not author another overlapping selection guide. Update its inbound links, relative links, the embedding test and contributor ownership entry while preserving existing heading anchors where practical. Retarget [the executable documentation checks](../../scripts/check-doc-examples.sh) to recipes at their new source locations, preserving their existing outcome assertions; moving a recipe is not a reason to stop executing it. Keep shell/`jq` recipe execution in that development/CI check and public Cargo tests free of external executable dependencies.
 
 | Existing entry point | Required treatment |
 | --- | --- |
@@ -73,7 +83,7 @@ Use one Markdown source per topic in `docs/guides/`, embedded verbatim. Move [tr
 
 Write normal relative Markdown links for supplementary repository references and print them unchanged. The source-path/version header supplies their context; it does not make relative links automatically clickable in a terminal or identify an exact development commit. Essential instructions stay self-contained. Cross-guide navigation uses `locmetry --guide TOPIC` commands. No link rewriting, generated GitHub URL or release-number maintenance is needed; this replaces the initial proposal's pinned-link recommendation.
 
-Target roughly 4–8 KB of UTF-8 Markdown per topic, using the existing 7,078-byte troubleshooting guide as a reference. This is an editorial review target, not a minimum to fill or a test limit. Explain justified excess; remove duplicated reference material before splitting topics. Each guide needs a short workflow, synthetic examples, expected evidence and relevant caveats.
+Target roughly 4–8 KB of UTF-8 Markdown per topic, using the existing 7,078-byte troubleshooting guide as a reference. This is an editorial review target, not a minimum to fill or a test limit. Explain justified excess; remove duplicated reference material before splitting topics. Each guide needs a short workflow, synthetic examples, expected evidence and relevant caveats. Synthetic examples isolate personal defaults with `--no-user-config` on measurement/explanation commands and use temporary fixtures; real-project guidance inspects effective policy rather than silently disabling it.
 
 ## Alternatives and Rationale
 
@@ -104,9 +114,11 @@ These examples do not justify adding a skill, protocol, search engine or broader
 
 ## Acceptance
 
-- Root help describes every topic; subcommand help provides the specified next commands. Missing/unknown topics and standalone-query conflicts fail with exit 1 and empty stdout before side effects; defaulted options do not conflict.
+- Assert the explicit starting instruction in root `--help`, `-h` and `help` output, allowing normal wrapping. Check all topic descriptions in long help and the specified root-query pointers in short/long subcommand help. Do not settle for checking that the word “guide” appears.
+- Exercise the fresh-agent path on a synthetic project using the documented commands and marked expected results. Verify the next-step commands resolve to existing guide topics, schemas and command help; the chain must not rely on repository or web access. This checks discovery and observable results, not agent reasoning quality.
+- Missing/unknown topics and standalone-query conflicts fail with exit 1 and empty stdout before side effects. Check both queries, both argument orders, explicit default-valued options, and config/user-config flags as well as positional roots. Defaults remain accepted; normal help/version early exits remain. Errors identify the offending argument; bad topics supply the help remedy.
 - Guide stdout equals the source/version header plus the embedded Markdown bytes, without ANSI or paging, even beside invalid configuration. A byte-level assertion is sufficient; public tests need no pseudo-terminal, network or agent runtime.
 - Use the existing marked-result-block pattern: tests construct synthetic fixtures and compare actual JSON results or stable projections with marked expected blocks in the guide. Preserve the selection example and cover the three configuration outcomes, mistaken production classification, nested-root/subfolder differences, unavailable evidence and a known net change with scope-mismatch rejection. Assert statuses and destination behavior as well as counts.
-- Update schema/README guidance, documentation ownership, moved links and executable example references in the same checkpoint. Review self-contained task coverage, absence of duplicate tutorials and the size target.
+- Update schema/README guidance, documentation ownership, moved links and executable example references in the same checkpoint. Preserve existing recipe assertions when their source moves, and verify synthetic examples are independent of personal defaults. Review the handback instructions, self-contained task coverage, absence of duplicate tutorials and size target; a schema assertion alone cannot establish their quality.
 
 No counting, selection, schema structure or measurement output-routing change is proposed. Guide prose and standalone-query validation are the scope; the [work plan](../plans/measurement-quality-and-net-change.md#embedded-guidance-review--2026-10-16) owns sequencing, review disposition and any later usability experiments.
