@@ -247,7 +247,7 @@ Surface known counting-coverage limitations: report how many files were selected
 
 ### Adaptive Folder Detail
 
-Development checkout, unreleased after v0.2.0: single-root measurement accepts `--folder-rows N`, with a required positive integer and no default. It changes rows within the existing second terminal table, Folder; it adds no table and leaves the Language table unchanged. Adaptive detail applies only to that Folder table; omission preserves the current top-level view (or immediate children under `--subfolder`). The option is not a configuration setting, measurement restriction or saved-report field. No rescan or `--files` is needed.
+Since v0.3.0, single-root measurement accepts `--folder-rows N`, with a required positive integer and no default. It changes rows within the existing second terminal table, Folder; it adds no table and leaves the Language table unchanged. Adaptive detail applies only to that Folder table; omission preserves the current top-level view (or immediate children under `--subfolder`). The option is not a configuration setting, measurement restriction or saved-report field. No rescan or `--files` is needed.
 
 The resulting format must be `table`. Reject explicit Markdown/JSON, inferred JSON when stdout is redirected, `--output -`, `--schema`, and every subcommand including `workspace`, before writing a report. When the format is wrong, the diagnostic names `--format table` as the remedy. `--output FILE` may still save the unchanged full JSON report. Existing `--depth` behavior remains Markdown-only.
 

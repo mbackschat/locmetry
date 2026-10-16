@@ -24,6 +24,15 @@ Implemented 2026-10-16: `locmetry DIR` selects the same root as `--root DIR`, in
 
 Verification: positional-root equivalence and command-precedence regression tests failed before their fixes and pass afterward. Coverage includes relative/absolute paths, spaces, configuration discovery, explicit command-name paths and conflicting roots. The full public suite, formatting, Clippy and executable README workflows pass. No counting behavior changed; private replay was not rerun.
 
+## Minor Release v0.3.0 — Publication in Progress
+
+Authorized 2026-10-16 after final external review of the adaptive-folder fixes: publish this verified batch as v0.3.0. [Release notes](releases/0.3.0.md) cover adaptive Folder detail and terminal safety. Neutral language ratios remain on hold and are excluded from this release; presentation-option warnings also remain unimplemented.
+
+- [x] Set crate/lockfile identity to 0.3.0 and replace unreleased usage wording in README and PRODUCT.
+- [x] Verify local public tests, formatting, Clippy, executable README workflows and the release build.
+- [ ] Push the reviewed changes and confirm CI on every supported platform.
+- [ ] Publish archives and checksums, verify downloaded artifacts, and update/test the Homebrew tap.
+
 ## Minor Release v0.2.0 — Published
 
 Authorized by the owner on 2026-10-16: push the reviewed implementation, update GitHub description/topics, and publish the next minor release. Version `0.2.0` replaces the development identity `0.2.0-dev.1`; the v0.1.6 tag stays unchanged. [Release notes](releases/0.2.0.md) describe new commands, subfolder scope, counting/coverage corrections and compatibility boundaries.
@@ -93,11 +102,11 @@ Approved and implemented 2026-10-16: `--subfolder DIR` restricts a single-root m
 
 Verification: initial command and saved-receipt guards failed before implementation. Sixteen focused tests now cover record/breakdown parity, independent counts, context/coverage separation, filtered and empty directories, path identity, zero-code modules, scoped findings, restricted comparisons, output protection, descriptor removal, schema validation and human views. The full public suite, formatting, Clippy, private replay and executable README troubleshooting workflows pass. Private replay guards existing measurement behavior; synthetic scanning cases establish the feature. Verification was local on macOS, not Linux CI. [Detailed evidence](plans/measurement-quality-and-net-change.md#subfolder-implementation--2026-10-16) records limits and documentation ownership. The external implementation review of `799b65f` confirmed the counting, selection and comparison design. Its diagnostic and documentation corrections are recorded in the [review follow-up](plans/measurement-quality-and-net-change.md#subfolder-review-follow-up--2026-10-16); the following refactor checkpoint shares module ownership between summary generation and saved-report validation.
 
-## Adaptive Folder Detail — Complete, Unreleased
+## Adaptive Folder Detail — Complete, v0.3.0
 
-Implemented after owner approval on 2026-10-16: `--folder-rows N` gives the single-root terminal Folder table deeper additive detail, with a required positive budget and no default. It preserves initial sibling contributions, collapses single-child chains, splits the largest fitting folder and uses direct-files/remainder rows without overlap. [PRODUCT](PRODUCT.md#adaptive-folder-detail) owns the supported contract; the [checkpoint](plans/measurement-quality-and-net-change.md#adaptive-folder-detail--2026-10-16) records red/green evidence and validation. Stable v0.2.0 does not include the option.
+Implemented after owner approval on 2026-10-16: `--folder-rows N` gives the single-root terminal Folder table deeper additive detail, with a required positive budget and no default. It preserves initial sibling contributions, collapses single-child chains, splits the largest fitting folder and uses direct-files/remainder rows without overlap. [PRODUCT](PRODUCT.md#adaptive-folder-detail) owns the supported contract; the [checkpoint](plans/measurement-quality-and-net-change.md#adaptive-folder-detail--2026-10-16) records red/green evidence and validation. The option is introduced in v0.3.0.
 
-The full public suite, formatting, Clippy, executable README workflows and private regression pass locally on macOS. Default output, JSON and the unclassified-folder partition remain unchanged. No push or release was performed; Linux execution and large-tree rendering cost remain unverified. The neutral language-ratio extension stays on hold.
+The full public suite, formatting, Clippy, executable README workflows and private regression pass locally on macOS. Default output, JSON and the unclassified-folder partition remain unchanged. These implementation checks preceded publication; the v0.3.0 release checkpoint records cross-platform CI and distribution verification. Large-tree rendering cost remains unverified. The neutral language-ratio extension stays on hold.
 
 ## Known Display Follow-up
 
@@ -107,11 +116,11 @@ The full public suite, formatting, Clippy, executable README workflows and priva
 
 - Folder-partition convergence — deferred decision: the [adaptive-folder decision record](proposals/adaptive-folder-detail.md#existing-partition-and-feasibility) differs intentionally from `unclassified_folders`, whose results appear in JSON and agent workflows. The adaptive feature preserves that behavior; share only narrow containment/chain-collapse semantics where practical. Consider policy convergence separately if using both views demonstrates confusing divergence, with explicit compatibility review rather than an incidental renderer refactor.
 
-- Presentation-option consistency — separate cleanup decision: `--categories` is silently ignored outside table output and `--depth` outside Markdown today. Recommend clear errors for explicitly supplied options that cannot affect the selected format, but assess CLI compatibility separately. Because `--depth` defaults to 2, any future check must distinguish explicit arguments from defaults (for example, through clap’s `ValueSource`) rather than rejecting a value merely because it is present. The new `--folder-rows` is strict, including inferred formats and workspace rejection; this does not authorize changing existing flags.
+- Presentation-option consistency — selected direction, not implemented: warn on stderr when explicitly supplied `--categories` or `--depth` cannot affect the selected format. Preserve successful execution and output because existing scripts and aliases may pass these harmless options routinely. Use clap’s `ValueSource` to distinguish explicit arguments from defaults, especially the default `--depth 2`; defaulted values must not warn. Keep `--folder-rows` strict. This replaces the earlier error recommendation; implementation and acceptance checks remain a separate follow-up after v0.3.0.
 
 ## Completed Design Decisions
 
-- [Adaptive folder detail — historical decision record](proposals/adaptive-folder-detail.md): implemented in the development checkout; retained rationale and acceptance criteria. [PRODUCT](PRODUCT.md#adaptive-folder-detail) owns behavior.
+- [Adaptive folder detail — historical decision record](proposals/adaptive-folder-detail.md): implemented for v0.3.0; retained rationale and acceptance criteria. [PRODUCT](PRODUCT.md#adaptive-folder-detail) owns behavior.
 
 - [Subtree measurement — historical decision record](proposals/subtree-measurement.md): retained design rationale and acceptance criteria; [PRODUCT](PRODUCT.md#subfolder-measurement) owns the implemented contract.
 

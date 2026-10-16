@@ -2,7 +2,7 @@
 
 # locmetry
 
-The latest stable release is **0.2.0**. This development checkout additionally supports the unreleased `--folder-rows` option. See the [release notes](docs/releases/0.2.0.md) for net-change comparisons, path explanations, subfolder measurement and counting corrections since v0.1.6.
+The latest stable release is **0.3.0**. See the [release notes](docs/releases/0.3.0.md) for adaptive Folder detail with `--folder-rows` and terminal-output safety fixes. [Version 0.2.0](docs/releases/0.2.0.md) introduced net-change comparisons, path explanations, subfolder measurement and counting corrections.
 
 **Lines of code, split by purpose: production, tests, tooling, and what nobody claims.** `locmetry` measures selected files that its counters can recognize and read, gives each counted file a purpose and category, and records the rule that decided it. Coverage names files whose counts are unavailable.
 
@@ -195,7 +195,7 @@ The [terminal table](#terminal-table), [JSON](#json-headline-for-agents-and-scri
 
 ## Install
 
-### Stable release (v0.2.0)
+### Stable release (v0.3.0)
 
 With Homebrew on macOS arm64 or Linux x86_64 and aarch64, which installs the prebuilt binary:
 
@@ -210,14 +210,14 @@ The same binaries are on the [releases page](https://github.com/mbackschat/locme
 ```sh
 # Linux targets: x86_64-unknown-linux-musl or aarch64-unknown-linux-musl
 target=aarch64-apple-darwin
-curl -fsSL "https://github.com/mbackschat/locmetry/releases/download/v0.2.0/locmetry-v0.2.0-$target.tar.gz" | tar -xz
-install "locmetry-v0.2.0-$target/locmetry" ~/.local/bin/
+curl -fsSL "https://github.com/mbackschat/locmetry/releases/download/v0.3.0/locmetry-v0.3.0-$target.tar.gz" | tar -xz
+install "locmetry-v0.3.0-$target/locmetry" ~/.local/bin/
 ```
 
 Or build from source with a Rust toolchain:
 
 ```sh
-cargo install --locked --git https://github.com/mbackschat/locmetry --tag v0.2.0
+cargo install --locked --git https://github.com/mbackschat/locmetry --tag v0.3.0
 ```
 
 ### Local checkout
@@ -230,7 +230,7 @@ cargo install --locked --path .
 locmetry --version
 ```
 
-This release checkout identifies as `0.2.0`. Development changes to counting must use a distinct producer version so comparisons can identify counter changes. Installing a checkout does not publish a release.
+This release checkout identifies as `0.3.0`. Development changes to counting must use a distinct producer version so comparisons can identify counter changes. Installing a checkout does not publish a release.
 
 ## Quick start
 
@@ -257,7 +257,7 @@ Personal defaults for every project, such as extra exclusions or language mappin
 | Option | Effect |
 | --- | --- |
 | `DIR` or `--root DIR` | Directory to measure; mutually exclusive. Default: the current directory. |
-| `--folder-rows N` | Development checkout: expand rows within the existing Folder table, using a positive row budget; single-root table output only. No default; omit to keep top-level rows. |
+| `--folder-rows N` | Expand rows within the existing Folder table, using a positive row budget; single-root table output only. No default; omit to keep top-level rows. |
 | `--subfolder DIR` | Measure one root-relative folder and descendants, retaining project policy and module context; single-root mode only. |
 | `--config FILE` | TOML configuration; default: `.locmetryrc` in the scan root, else built-in settings. The scan root stays unchanged. |
 | `--exclude GLOB` | Add a root-relative exclusion; repeatable. |
@@ -552,7 +552,7 @@ Terminal table cells, notes and application diagnostics flatten control characte
 
 ### Look inside large folders
 
-If the Folder table concentrates most code in a container such as `web` or `packages`, request deeper detail without changing the scan root or classification context (development checkout; not in v0.2.0):
+If the Folder table concentrates most code in a container such as `web` or `packages`, request deeper detail without changing the scan root or classification context:
 
 ```sh
 locmetry acme-orders --folder-rows 12
@@ -580,7 +580,7 @@ When stdout is not a terminal, `locmetry` prints a compact JSON headline, under 
   "project": "acme-orders",
   "metadata": {
     "root": "/work/acme-orders",
-    "locmetry_version": "0.2.0",
+    "locmetry_version": "0.3.0",
     "scope": {
       "exclude": ["**/.git/**", "**/node_modules/**", "**/.build/**", "**/.lake/**", "third_party/**", ".locmetryrc"]
     },
