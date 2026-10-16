@@ -1620,6 +1620,7 @@ fn measurement_help_explains_json_headline_and_full_report() {
         let output = locmetry().args(args).output().unwrap();
         assert!(output.status.success());
         let help = String::from_utf8(output.stdout).unwrap();
+        let help = help.split_whitespace().collect::<Vec<_>>().join(" ");
         assert!(
             help.contains("JSON defaults to a compact headline"),
             "{help}"

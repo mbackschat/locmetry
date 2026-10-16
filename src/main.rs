@@ -1106,6 +1106,49 @@ fn main() -> ExitCode {
 mod tests {
     use super::*;
 
+    fn assert_help_layout(args: &[&str]) {
+        for width in [60, 80, 100] {
+            let error = Cli::command()
+                .term_width(width)
+                .color(clap::ColorChoice::Never)
+                .try_get_matches_from(args)
+                .unwrap_err();
+            assert_eq!(error.kind(), clap::error::ErrorKind::DisplayHelp);
+            let help = error.to_string();
+            for line in help.lines() {
+                assert!(
+                    line.chars().count() <= width,
+                    "{args:?}, width {width}: overlong help line {line:?}"
+                );
+            }
+            for section in ["Commands:\n", "Arguments:\n", "Options:\n"] {
+                if let Some((_, content)) = help.split_once(section) {
+                    let content = content.split("\n\n").next().unwrap();
+                    assert!(
+                        content.lines().all(|line| line.starts_with("  ")),
+                        "{args:?}, width {width}: unindented help in {section}{content}"
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn root_help_wraps_and_indents_descriptions() {
+        for flag in ["-h", "--help"] {
+            assert_help_layout(&["locmetry", flag]);
+        }
+    }
+
+    #[test]
+    fn subcommand_help_wraps_and_indents_descriptions() {
+        for command in ["workspace", "compare", "explain"] {
+            for flag in ["-h", "--help"] {
+                assert_help_layout(&["locmetry", command, flag]);
+            }
+        }
+    }
+
     /// Bold is for people at a terminal: redirected output stays plain
     /// text, and `NO_COLOR` (no-color.org) or `TERM=dumb` turns it off.
     #[test]

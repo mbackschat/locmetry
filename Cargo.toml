@@ -9,7 +9,7 @@ publish = false
 
 [dependencies]
 anyhow = "1"
-clap = { version = "4", features = ["derive"] }
+clap = { version = "4", features = ["derive", "wrap_help"] }
 encoding_rs_io = "0.1"
 globset = "0.4"
 ignore = "0.4"

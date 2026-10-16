@@ -244,6 +244,8 @@ locmetry | jq .summary        # piped: JSON headline
 
 The optional directory argument is equivalent to `--root DIR`; use one or the other. Bare `compare`, `workspace`, `explain` and `help` select commands; use `locmetry ./compare` or `locmetry --root compare` to measure a directory with a command's name. In scripts, prefer `locmetry --root "$directory"` so directory names cannot select commands. Command options go after the command name.
 
+Use `locmetry --help` or `locmetry COMMAND --help` for options. In development builds after v0.3.0, help wraps to the detected terminal width and keeps continuation lines indented; see [help presentation](docs/PRODUCT.md#human-presentation).
+
 Without configuration, built-in exclusions, conventions, and language mappings apply. Add a `.locmetryrc` to the project root when the conventions cannot know something, such as which folders are vendored, generated, tooling, or experimental. Command-line options override it:
 
 ```sh

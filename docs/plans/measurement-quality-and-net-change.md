@@ -406,3 +406,11 @@ Neutral ratios on language rows and their total, with the cross-language legend 
 ### v0.3.0 Publication Verification
 
 [v0.3.0](https://github.com/mbackschat/locmetry/releases/tag/v0.3.0) publishes `a3cefb4` after successful three-platform CI and release builds. All downloaded archives match their published checksums and contain the required notices/licenses. The macOS release executable passes independently expected counts, adaptive-hint behavior and escaped failure diagnostics with an empty environment. The [Homebrew tap update](https://github.com/mbackschat/homebrew-tap/commit/39fb4c3) passes style, local upgrade and formula testing; the installed binary reports 0.3.0. Linux static linkage and empty-environment execution are verified by the release workflow; Linux Homebrew installation was not repeated. [PLAN](../PLAN.md#minor-release-v030--published) links the CI/release runs and records the non-blocking GitHub Actions runtime-deprecation follow-up.
+
+### Help Wrapping
+
+The reported command-list wrapping also affects subcommand help and option descriptions: Clap was built without `wrap_help`, leaving the terminal to wrap overlong lines without continuation indentation. Enable the existing Clap feature rather than maintaining a separate formatter. It detects terminal width and uses 100 columns when detection is unavailable; the lockfile adds only `terminal_size`, reusing existing platform dependencies. README and PRODUCT distinguish this development correction from the installed v0.3.0 release.
+
+Two regression guards failed before the feature was enabled and pass afterward. They check root, workspace, compare and explain help, both `-h` and `--help`, at 60, 80 and 100 columns for line bounds and indented descriptions. Measurement, report formats and CLI arguments are unchanged.
+
+Validation: the full public suite, formatting and Clippy with warnings denied pass locally on macOS. Twelve pseudo-terminal probes independently verify automatic width detection for root and all three subcommands at 60, 80 and 100 columns. The existing help-content guard normalizes whitespace so it checks semantics without prescribing line breaks. No release, installation update or Linux verification is part of this correction.

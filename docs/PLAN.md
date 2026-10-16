@@ -117,6 +117,8 @@ The v0.3.0 CI/release runs report Node.js 20 deprecation warnings for `actions/c
 
 ## Known Display Follow-up
 
+- Help wrapping — corrected in development after v0.3.0: enable Clap's terminal-aware help layout so command and option descriptions retain continuation indentation. [Verification](plans/measurement-quality-and-net-change.md#help-wrapping) records root/subcommand checks; [PRODUCT](PRODUCT.md#human-presentation) owns the behavior.
+
 - Adaptive detail hint — approved and implemented 2026-10-16 with the narrower largest-row trigger: name the largest positive-code row when it is an expandable folder or a remainder. Smaller expandable rows alone do not trigger it, avoiding a routine hint on nearly every nested project. No suggested budget or code-share threshold is added. [PRODUCT](PRODUCT.md#adaptive-folder-detail) owns the contract; [verification](plans/measurement-quality-and-net-change.md#largest-row-budget-hint) records the acceptance checks.
 
 - Terminal output safety — reopened by follow-up review for parse-failure notes, submodule notes and partial-results stderr; corrected 2026-10-16 at the shared note and diagnostic rendering boundaries. Table cells and unclaimed labels retain their earlier guards; JSON evidence remains unchanged. [Verification](plans/measurement-quality-and-net-change.md#terminal-note-and-diagnostic-safety) records the expanded coverage.
