@@ -83,7 +83,7 @@ fn default_format(stdout_is_terminal: bool, output_given: bool) -> Format {
 #[command(
     version,
     about = "Measure source code by language, folder, and purpose: production, test, or unclassified. Defaults to a table on a terminal, a JSON headline in pipes. --output FILE saves only to that file, defaulting to full JSON; --format overrides the format.",
-    after_help = "Start project configuration with locmetry --guide configure.\n\nCommand names are reserved. To measure a directory named compare, use ./compare or --root compare."
+    after_help = "Run locmetry for source-count tables. Add --verbose to inspect classification, scope and coverage notes. For optional project configuration, use locmetry --guide configure.\n\nCommand names are reserved. To measure a directory named compare, use ./compare or --root compare."
 )]
 struct Cli {
     #[command(subcommand)]
@@ -120,7 +120,7 @@ enum Command {
     /// Defaults to a table on a terminal, a JSON headline in pipes.
     /// --output FILE saves only to that file, defaulting to full JSON; --format overrides the format.
     #[command(
-        after_help = "For setup, use locmetry --guide configure; for results, use locmetry --guide reports."
+        after_help = "Add --verbose to inspect classification, scope and coverage notes. For optional configuration, use locmetry --guide configure; for results, use locmetry --guide reports."
     )]
     Workspace(WorkspaceArgs),
     /// Compare two saved full reports: net change is after minus before.
@@ -217,6 +217,9 @@ struct SharedArgs {
     /// Add a table of source code per purpose and category to the terminal table.
     #[arg(long)]
     categories: bool,
+    /// Include classification, scope and coverage notes in table output.
+    #[arg(long)]
+    verbose: bool,
     /// Result format [default: json with --output; otherwise table on a terminal, headline in pipes].
     #[arg(long, value_enum)]
     format: Option<Format>,
@@ -405,6 +408,12 @@ impl Destination<'_> {
 }
 
 fn warn_ineffective_options(shared: &SharedArgs, format: Option<Format>) {
+    if shared.verbose && format != Some(Format::Table) {
+        stderr_message(
+            Role::Warning,
+            "--verbose has no effect here; it applies only to table output",
+        );
+    }
     if shared.categories && format != Some(Format::Table) {
         stderr_message(
             Role::Warning,
@@ -931,6 +940,7 @@ fn report(
             &findings,
             TableOptions {
                 categories: shared.categories,
+                verbose: shared.verbose,
                 order,
                 theme: destination.theme(),
                 folder_rows: destination.folder_rows,

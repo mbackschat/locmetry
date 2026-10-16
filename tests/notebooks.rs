@@ -211,8 +211,11 @@ fn malformed_and_unsupported_notebooks_are_unavailable_instead_of_zero() {
             assert!(stderr.contains("example.ipynb"), "{stderr}");
             assert!(!stderr.contains("Unreadable files: none identified"));
         }
-        for format in ["table", "markdown"] {
-            let output = run(root.path(), &["--format", format]);
+        for args in [
+            vec!["--format", "table", "--verbose"],
+            vec!["--format", "markdown"],
+        ] {
+            let output = run(root.path(), &args);
             assert_eq!(output.status.code(), Some(2));
             let human = String::from_utf8_lossy(&output.stdout);
             assert!(human.contains("example.ipynb"), "{human}");
@@ -255,20 +258,21 @@ fn workspace_notebook_failures_retain_member_coverage_and_prefixed_paths() {
         &notebook(vec![cell("code", json!("print(1)\n"))]),
     );
     for format in ["json", "table", "markdown"] {
-        let output = Command::new(env!("CARGO_BIN_EXE_locmetry"))
-            .current_dir(root.path())
-            .args([
-                "workspace",
-                "--no-user-config",
-                "--root",
-                "good",
-                "--root",
-                "bad",
-                "--format",
-                format,
-            ])
-            .output()
-            .unwrap();
+        let mut command = Command::new(env!("CARGO_BIN_EXE_locmetry"));
+        command.current_dir(root.path()).args([
+            "workspace",
+            "--no-user-config",
+            "--root",
+            "good",
+            "--root",
+            "bad",
+            "--format",
+            format,
+        ]);
+        if format == "table" {
+            command.arg("--verbose");
+        }
+        let output = command.output().unwrap();
         assert_eq!(output.status.code(), Some(2));
         if format == "json" {
             let report = checked_report(&output);

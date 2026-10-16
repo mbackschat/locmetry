@@ -209,26 +209,28 @@ fn repository_grid(
     }
 }
 
-/// Names members with unclaimed source or unavailable counts, which a person
-/// can act on. Unrecognized files are left to the "Not counted" note: on real
-/// repositories they are mostly images, so listing them named every member
-/// (docs/research/real-project-trials.md#workspace-run).
-fn repositories_note(members: &[MemberView]) -> Option<String> {
+enum MemberNotes {
+    All,
+    Unclaimed,
+    Unavailable,
+}
+
+fn repositories_note(members: &[MemberView], kind: MemberNotes) -> Option<String> {
     let parts: Vec<String> = members
         .iter()
         .filter_map(|member| {
             let mut findings = Vec::new();
-            if member.unclaimed_files > 0 {
+            if !matches!(kind, MemberNotes::Unavailable) && member.unclaimed_files > 0 {
                 findings.push(format!(
                     "{} ({})",
                     counted(member.unclaimed_files, "unclaimed file"),
                     counted(member.unclaimed_code, "code line")
                 ));
             }
-            if member.unread_files > 0 {
+            if !matches!(kind, MemberNotes::Unclaimed) && member.unread_files > 0 {
                 findings.push(counted(member.unread_files as u64, "unreadable file"));
             }
-            if member.parse_failed_files > 0 {
+            if !matches!(kind, MemberNotes::Unclaimed) && member.parse_failed_files > 0 {
                 findings.push(counted(
                     member.parse_failed_files as u64,
                     "file with a parsing failure",
@@ -237,7 +239,12 @@ fn repositories_note(members: &[MemberView]) -> Option<String> {
             (!findings.is_empty()).then(|| format!("{}: {}", member.name, findings.join(", ")))
         })
         .collect();
-    (!parts.is_empty()).then(|| format!("Repositories to review: {}.", parts.join("; ")))
+    let label = match kind {
+        MemberNotes::All => "Repositories to review",
+        MemberNotes::Unclaimed => "Unclaimed source by repository",
+        MemberNotes::Unavailable => "Unavailable counts",
+    };
+    (!parts.is_empty()).then(|| format!("{label}: {}.", parts.join("; ")))
 }
 
 /// Sorts labelled rows by `order`, where `code` gives a row's code lines.
@@ -666,7 +673,7 @@ fn unclaimed_note(folders: &[FolderShare], theme: Theme) -> String {
     let (label, code, unit, files) = (width(0), width(1), width(2), width(3));
     let mut note = format!(
         "{} {} in {}, here:",
-        theme.paint(Role::Warning, "Unclaimed source:"),
+        theme.paint(Role::Information, "Unclaimed source:"),
         counted(folders.iter().map(|share| share.code).sum(), "code line"),
         counted(folders.iter().map(|share| share.files).sum(), "file")
     );
@@ -688,14 +695,14 @@ fn unclaimed_note(folders: &[FolderShare], theme: Theme) -> String {
         )
         .unwrap();
     }
-    note + "\n Classify them in the configuration; locmetry --schema config explains how, --files --output - shows each file's rule."
+    note + "\n To inspect or refine purpose classification, use locmetry --guide configure; --files --output - shows each file's rule."
 }
 
 /// Folders listed in the terminal note; the JSON headline lists all of them.
 const FOLDER_LINES: usize = 8;
 
 /// Terminal report for people: source code per language and top-level folder
-/// split by purpose, then one line each for what the tables leave out.
+/// split by purpose, with unavailable counts kept visible.
 /// `emphasis` enables the default terminal palette; false keeps plain text.
 pub fn render_table(
     project: &str,
@@ -720,6 +727,7 @@ pub fn render_table(
 /// Presentation choices for terminal measurement tables; they do not change saved evidence.
 pub struct TableOptions {
     pub categories: bool,
+    pub verbose: bool,
     pub order: RowOrder,
     pub theme: Theme,
     pub folder_rows: Option<usize>,
@@ -742,6 +750,7 @@ pub fn render_table_with_theme(
         findings,
         TableOptions {
             categories,
+            verbose: false,
             order,
             theme,
             folder_rows: None,
@@ -759,6 +768,7 @@ pub fn render_table_with_options(
 ) -> String {
     let TableOptions {
         categories,
+        verbose,
         order,
         theme,
         folder_rows,
@@ -962,43 +972,51 @@ pub fn render_table_with_options(
     }
 
     let mut notes = Vec::new();
-    let mut other_kinds = BTreeMap::<Kind, Counts>::new();
-    for row in rows.iter().filter(|row| row.kind != Kind::Source) {
-        other_kinds.entry(row.kind).or_default().add(&row.counts);
+    if verbose {
+        let mut other_kinds = BTreeMap::<Kind, Counts>::new();
+        for row in rows.iter().filter(|row| row.kind != Kind::Source) {
+            other_kinds.entry(row.kind).or_default().add(&row.counts);
+        }
+        if !other_kinds.is_empty() {
+            let kinds: Vec<String> = other_kinds
+                .iter()
+                .map(|(kind, counts)| {
+                    format!(
+                        "{} ({})",
+                        counted(counts.files, &format!("{kind} file")),
+                        counted(counts.lines, "line")
+                    )
+                })
+                .collect();
+            notes.push(TerminalNote::Text(format!(
+                "Not source code: {}.",
+                kinds.join(", ")
+            )));
+        }
+        notes.extend(build_modules_note(findings.modules, order).map(TerminalNote::Text));
+        notes.extend(submodules_note(findings.submodules).map(TerminalNote::Text));
+        let folders = unclassified_folders(rows);
+        if !folders.is_empty() {
+            notes.push(TerminalNote::Unclaimed(folders));
+        }
+        notes.extend(
+            unused_entries_note(findings.unused_entries, findings.subfolder)
+                .map(TerminalNote::Text),
+        );
+        notes.extend(
+            unused_exclusions_note(findings.unused_exclusions, findings.subfolder)
+                .map(TerminalNote::Text),
+        );
+        notes.extend(
+            repositories_note(findings.members, MemberNotes::Unclaimed).map(TerminalNote::Text),
+        );
     }
-    if !other_kinds.is_empty() {
-        let kinds: Vec<String> = other_kinds
-            .iter()
-            .map(|(kind, counts)| {
-                format!(
-                    "{} ({})",
-                    counted(counts.files, &format!("{kind} file")),
-                    counted(counts.lines, "line")
-                )
-            })
-            .collect();
-        notes.push(TerminalNote::Text(format!(
-            "Not source code: {}.",
-            kinds.join(", ")
-        )));
-    }
+    notes.extend(
+        repositories_note(findings.members, MemberNotes::Unavailable).map(TerminalNote::Text),
+    );
     let coverage = findings.coverage;
-    notes.extend(build_modules_note(findings.modules, order).map(TerminalNote::Text));
-    notes.extend(submodules_note(findings.submodules).map(TerminalNote::Text));
-    let folders = unclassified_folders(rows);
-    if !folders.is_empty() {
-        notes.push(TerminalNote::Unclaimed(folders));
-    }
-    notes.extend(
-        unused_entries_note(findings.unused_entries, findings.subfolder).map(TerminalNote::Text),
-    );
-    notes.extend(
-        unused_exclusions_note(findings.unused_exclusions, findings.subfolder)
-            .map(TerminalNote::Text),
-    );
-    notes.extend(repositories_note(findings.members).map(TerminalNote::Text));
     let mut gaps = Vec::new();
-    if coverage.unrecognized_files > 0 {
+    if verbose && coverage.unrecognized_files > 0 {
         let mut extensions: Vec<_> = coverage.unrecognized_extensions.iter().collect();
         extensions.sort_by(|a, b| b.1.cmp(a.1).then(a.0.cmp(b.0)));
         let extensions: Vec<String> = extensions
@@ -1009,11 +1027,11 @@ pub fn render_table_with_options(
                 _ => format!("{extension}: {}", grouped(*files as u64)),
             })
             .collect();
-        gaps.push(format!(
-            "{} ({})",
+        notes.push(TerminalNote::Unrecognized(format!(
+            "{} ({}); missing lines are not zero.",
             counted(coverage.unrecognized_files as u64, "unrecognized file"),
             extensions.join(", ")
-        ));
+        )));
     }
     if !coverage.unread.is_empty() {
         gaps.push(counted(coverage.unread.len() as u64, "unreadable file"));
@@ -1023,11 +1041,13 @@ pub fn render_table_with_options(
             coverage.parse_failures.len() as u64,
             "file with a parsing failure",
         ));
-        for failure in coverage.parse_failures.iter().take(25) {
-            notes.push(TerminalNote::Text(format!(
-                "{}: {} — {}",
-                failure.path, failure.reason, failure.message
-            )));
+        if verbose {
+            for failure in coverage.parse_failures.iter().take(25) {
+                notes.push(TerminalNote::Text(format!(
+                    "{}: {} — {}",
+                    failure.path, failure.reason, failure.message
+                )));
+            }
         }
     }
     if !gaps.is_empty() {
@@ -1049,6 +1069,7 @@ enum TerminalNote {
     Text(String),
     Unclaimed(Vec<FolderShare>),
     CoverageGap(String),
+    Unrecognized(String),
 }
 
 impl TerminalNote {
@@ -1057,6 +1078,10 @@ impl TerminalNote {
             Self::Text(text) => plain(&text),
             // This list owns its line breaks and sanitizes labels before padding.
             Self::Unclaimed(folders) => unclaimed_note(&folders, theme),
+            Self::Unrecognized(text) => theme.paint(
+                Role::Muted,
+                &format!("Unrecognized files: {}", plain(&text)),
+            ),
             Self::CoverageGap(text) => format!(
                 "{} {}",
                 theme.paint(Role::Warning, "Not counted:"),
@@ -1114,7 +1139,7 @@ fn render_coverage(output: &mut String, findings: &Findings) {
             findings.unused_exclusions,
             findings.subfolder,
         ))
-        .chain(repositories_note(findings.members))
+        .chain(repositories_note(findings.members, MemberNotes::All))
     {
         writeln!(output, "\n{note}").unwrap();
     }

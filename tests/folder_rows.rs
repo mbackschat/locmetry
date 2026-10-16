@@ -233,7 +233,25 @@ fn subfolder_detail_keeps_scope_zero_code_and_coverage() {
     assert_eq!(adaptive.status.code(), Some(2));
     assert_eq!(plain.status.code(), Some(2));
     assert_eq!(plain.stderr, adaptive.stderr);
-    assert!(String::from_utf8_lossy(&adaptive.stdout).contains("web/src/bad.ipynb"));
+    assert!(String::from_utf8_lossy(&adaptive.stderr).contains("web/src/bad.ipynb"));
+    assert!(String::from_utf8_lossy(&adaptive.stdout)
+        .contains("Not counted: 1 file with a parsing failure"));
+    assert!(!String::from_utf8_lossy(&adaptive.stdout).contains("web/src/bad.ipynb"));
+    let verbose = run(
+        root,
+        &[
+            "--format",
+            "table",
+            "--subfolder",
+            "web/src",
+            "--folder-rows",
+            "10",
+            "--verbose",
+        ],
+    );
+    assert_eq!(verbose.status.code(), Some(2));
+    assert_eq!(verbose.stderr, adaptive.stderr);
+    assert!(String::from_utf8_lossy(&verbose.stdout).contains("web/src/bad.ipynb"));
 }
 
 #[test]
@@ -250,7 +268,13 @@ fn adaptive_view_preserves_unclaimed_notes_in_saved_tables() {
         let out = run(
             root,
             &[
-                &["--format", "table", "--output", path.to_str().unwrap()][..],
+                &[
+                    "--verbose",
+                    "--format",
+                    "table",
+                    "--output",
+                    path.to_str().unwrap(),
+                ][..],
                 &args,
             ]
             .concat(),
@@ -377,6 +401,7 @@ fn adaptive_styling_preserves_plain_alignment_and_mutes_the_legend() {
             &findings,
             locmetry::TableOptions {
                 categories: false,
+                verbose: false,
                 order: locmetry::RowOrder::Code,
                 theme,
                 folder_rows: Some(3),

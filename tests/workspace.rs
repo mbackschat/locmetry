@@ -232,8 +232,10 @@ fn workspace_reports_do_not_depend_on_root_order() {
 fn workspace_notes_name_the_member_of_each_finding() {
     let temp = workspace();
     let args = ["workspace", "--root", "web", "--root", "api", "--format"];
-    let table =
-        String::from_utf8(locmetry(temp.path(), &[&args[..], &["table"]].concat()).stdout).unwrap();
+    let table = String::from_utf8(
+        locmetry(temp.path(), &[&args[..], &["table", "--verbose"]].concat()).stdout,
+    )
+    .unwrap();
     assert!(table.contains(" api + web · Source code"), "{table}");
     assert!(
         table.contains("Entries that decided no file: ghost (web)."),
@@ -545,6 +547,7 @@ fn workspace_table_compares_repositories() {
             "api",
             "--format",
             "table",
+            "--verbose",
         ],
     );
     let table = String::from_utf8(output.stdout).unwrap();
@@ -589,7 +592,7 @@ fn workspace_table_compares_repositories() {
         "{table}"
     );
     assert!(
-        table.contains(" Repositories to review: api: 1 unclaimed file (1 code line); web: 2 unclaimed files (2 code lines).\n"),
+        table.contains(" Unclaimed source by repository: api: 1 unclaimed file (1 code line); web: 2 unclaimed files (2 code lines).\n"),
         "{table}"
     );
 }

@@ -224,7 +224,10 @@ fn table_format_splits_source_code_by_language_and_purpose() {
         ("README.md", "# Title\n"),
         ("logo.png", "not an image\n"),
     ]);
-    let output = run(&temp.path().join("project"), &["--format", "table"]);
+    let output = run(
+        &temp.path().join("project"),
+        &["--verbose", "--format", "table"],
+    );
     assert!(output.status.success());
     let expected = " project · Source code
  Language  Files  Lines  Code │ Comments  Blanks │ Production  Test  Unclassified
@@ -247,8 +250,8 @@ fn table_format_splits_source_code_by_language_and_purpose() {
  Not source code: 1 data file (1 line), 1 documentation file (1 line).
  Unclaimed source: 1 code line in 1 file, here:
    proto  1 code line  1 file
- Classify them in the configuration; locmetry --schema config explains how, --files --output - shows each file's rule.
- Not counted: 1 unrecognized file (png: 1); missing lines are not zero.
+ To inspect or refine purpose classification, use locmetry --guide configure; --files --output - shows each file's rule.
+ Unrecognized files: 1 unrecognized file (png: 1); missing lines are not zero.
 ";
     assert_eq!(
         String::from_utf8(output.stdout)
@@ -386,7 +389,7 @@ fn review_lists_only_unclaimed_source() {
         .collect();
     assert_eq!(reviewed, ["loose/y.py"]);
 
-    let table = String::from_utf8(run(&root, &["--format", "table"]).stdout).unwrap();
+    let table = String::from_utf8(run(&root, &["--verbose", "--format", "table"]).stdout).unwrap();
     assert!(
         table.contains(
             " Unclaimed source: 1 code line in 1 file, here:\n   loose  1 code line  1 file\n"
@@ -402,7 +405,7 @@ fn review_lists_only_unclaimed_source() {
     );
 
     fs::remove_dir_all(root.join("loose")).unwrap();
-    let table = String::from_utf8(run(&root, &["--format", "table"]).stdout).unwrap();
+    let table = String::from_utf8(run(&root, &["--verbose", "--format", "table"]).stdout).unwrap();
     assert!(!table.contains("Unclaimed source"), "{table}");
     // The documented next step stays readable when it is done: an empty list, not a missing key.
     let (_, document, _) = headline(&root, &[]);
@@ -458,16 +461,27 @@ path = src
         document["summary"]["submodules"],
         json!([{"path": "vendor/lib", "files": 1, "code": 2}])
     );
-    let table = String::from_utf8(run(&root, &["--format", "table"]).stdout).unwrap();
+    let table = String::from_utf8(run(&root, &["--verbose", "--format", "table"]).stdout).unwrap();
     assert!(
         table.contains(" Git submodules: vendor/lib (2 code lines); exclude them with --exclude or scope.exclude if they are not this project's code.\n"),
         "{table}"
     );
     let (_, document, _) = headline(&root, &["--exclude", "vendor/lib/**"]);
     assert!(document["summary"].get("submodules").is_none());
-    let table =
-        String::from_utf8(run(&root, &["--format", "table", "--exclude", "vendor/lib/**"]).stdout)
-            .unwrap();
+    let table = String::from_utf8(
+        run(
+            &root,
+            &[
+                "--verbose",
+                "--format",
+                "table",
+                "--exclude",
+                "vendor/lib/**",
+            ],
+        )
+        .stdout,
+    )
+    .unwrap();
     assert!(!table.contains("Git submodules"), "{table}");
 }
 
@@ -489,7 +503,7 @@ fn entries_that_decide_no_file_are_reported() {
         document["summary"]["unused_entries"],
         json!(["ghost", "shadowed"])
     );
-    let table = String::from_utf8(run(&root, &["--format", "table"]).stdout).unwrap();
+    let table = String::from_utf8(run(&root, &["--verbose", "--format", "table"]).stdout).unwrap();
     assert!(
         table.contains(" Entries that decided no file: ghost, shadowed.\n"),
         "{table}"
@@ -520,7 +534,7 @@ fn exclusions_that_exclude_nothing_are_reported() {
         document["summary"]["unused_exclusions"],
         json!(["third_party", "**/*.gen.ts", "build/**", "missing/**"])
     );
-    let table = String::from_utf8(run(&root, &["--format", "table"]).stdout).unwrap();
+    let table = String::from_utf8(run(&root, &["--verbose", "--format", "table"]).stdout).unwrap();
     assert!(
         table.contains(" Exclusions that excluded nothing: third_party, **/*.gen.ts, build/**; exclude a folder as <folder>/**, and an ignore file may already hide the path.\n"),
         "{table}"
@@ -589,7 +603,7 @@ fn reports_name_the_build_modules_that_decided_production() {
             "npm": {"modules": 2, "code": 1}
         })
     );
-    let table = String::from_utf8(run(&root, &["--format", "table"]).stdout).unwrap();
+    let table = String::from_utf8(run(&root, &["--verbose", "--format", "table"]).stdout).unwrap();
     assert!(
         table.contains(
             " Production from build modules: gradle 2 code lines in 1 module, npm 1 code line in 2 modules.\n"
@@ -614,7 +628,7 @@ fn reports_name_the_build_modules_that_decided_production() {
     .unwrap();
     let (_, document, _) = headline(&root, &[]);
     assert!(document["summary"].get("build_modules").is_none());
-    let table = String::from_utf8(run(&root, &["--format", "table"]).stdout).unwrap();
+    let table = String::from_utf8(run(&root, &["--verbose", "--format", "table"]).stdout).unwrap();
     assert!(!table.contains("Build modules"), "{table}");
     let markdown = String::from_utf8(run(&root, &["--format", "markdown"]).stdout).unwrap();
     assert!(!markdown.contains("## Build modules"), "{markdown}");
@@ -1603,7 +1617,7 @@ fn human_formats_group_thousands_and_json_keeps_plain_integers() {
         ("loose/x.ts", "let x = 1;\n"),
     ]);
     let root = temp.path().join("project");
-    let table = String::from_utf8(run(&root, &["--format", "table"]).stdout).unwrap();
+    let table = String::from_utf8(run(&root, &["--verbose", "--format", "table"]).stdout).unwrap();
     for expected in [
         " TypeScript      2  1,235  1,235 │",
         " src     1,234  1,234 │",

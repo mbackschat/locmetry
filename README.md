@@ -45,23 +45,16 @@ $ locmetry
  Total           166   129 │         94    26             9 │      0.28
  Production + Test + Unclassified = Code; Test/prod = Test / Production.
 
- Not source code: 3 data files (19 lines), 1 documentation file (9 lines).
- Production from build modules: gradle 42 code lines in 1 module, npm 31 code lines in 1 module.
- Unclaimed source: 8 code lines in 1 file, here:
-   prototypes  8 code lines  1 file
- Classify them in the configuration; locmetry --schema config explains how, --files --output - shows each file's rule.
- Not counted: 1 unrecognized file (png: 1); missing lines are not zero.
-
 Measured at: 2026-10-17 12:00:00 UTC
 ```
 
 What the table already handles for you:
 
 - **No language list to maintain:** recognized programming languages count, while JSON, YAML, Markdown, and other data or documentation stay out of the source totals.
-- **Production from the build:** `backend/build.gradle.kts` and `web/package.json` mark their source trees as production, with no rule, and the table names both build systems.
+- **Production from the build:** `backend/build.gradle.kts` and `web/package.json` mark their source trees as production, with no rule, and `--verbose` names both build systems.
 - **Tests found by convention:** test files count as tests even inside the application's source tree.
 - **Scope as policy:** the vendored SDK is excluded by one line of configuration.
-- **Nothing silently promoted:** build scripts and tooling stay apart from implementation, and code no rule claims is reported for review instead of being counted as production.
+- **Nothing silently promoted:** build scripts and tooling stay apart from implementation, and code no rule claims stays counted as Unclassified; `--verbose` locates it for optional review.
 
 ## Use cases
 
@@ -72,7 +65,7 @@ What the table already handles for you:
 - **Compare parts of a monorepo:** the folder rows and the additive breakdown table compare packages, services, or layers by purpose.
 - **Measure several repositories as one:** `locmetry workspace` merges sibling repositories, each measured with its own configuration, into one virtual monorepo whose folder rows compare the repositories ([how](#measure-several-repositories-together)).
 - **Watch a codebase change:** save full JSON reports and use `locmetry compare before.json after.json` to see net change by purpose, language, folder and workspace member, including package/root arrivals and departures ([how](#compare-saved-measurements)). Reports do not establish Git revisions.
-- **Let an agent configure a project:** a coding agent working in a repository writes its `.locmetryrc` itself. `locmetry --help` leads it to `--guide configure` and `--schema config`, which explains the configuration and its semantics, and the measurement shows which folders still need a decision ([how](#configure-with-an-agent)).
+- **Let an agent configure a project:** a coding agent working in a repository writes its `.locmetryrc` itself. `locmetry --help` leads it to `--guide configure` and `--schema config`, which explains the configuration and its semantics, and verbose tables or JSON show the unclaimed folders for optional inspection ([how](#configure-with-an-agent)).
 - **Give coding agents a reliable answer:** a compact JSON headline fits an agent's context, and follow-up questions are one `jq` query over the report file instead of improvised `find | xargs wc -l` pipelines.
 - **Report to people:** paste the Markdown report into a pull request, an architecture review, or a wiki page.
 
@@ -116,7 +109,7 @@ A release may add conventions, which can reclassify files, but changing or remov
 
 ### Production from the build
 
-A selected npm, Gradle, Maven, Cargo, Go, Python, Lake, or Swift descriptor identifies a [build module](#build-modules). Locmetry infers production from that system's conventional layout, without reading manifest targets or scripts. Custom layouts need configuration. The table says which detectors decided:
+A selected npm, Gradle, Maven, Cargo, Go, Python, Lake, or Swift descriptor identifies a [build module](#build-modules). Locmetry infers production from that system's conventional layout, without reading manifest targets or scripts. Custom layouts need configuration. `locmetry --verbose` adds a note showing which detectors decided:
 
 ```text
  Production from build modules: gradle 42 code lines in 1 module, npm 31 code lines in 1 module.
@@ -124,7 +117,7 @@ A selected npm, Gradle, Maven, Cargo, Go, Python, Lake, or Swift descriptor iden
 
 ### Content kinds
 
-Source, data, documentation, and other content are counted separately, so a large JSON fixture or a README never inflates code totals:
+Source, data, documentation, and other content are counted separately, so a large JSON fixture or a README never inflates source totals. The default table shows counted source only and omits non-source totals; `locmetry --verbose` includes them:
 
 ```text
  Not source code: 3 data files (19 lines), 1 documentation file (9 lines).
@@ -141,7 +134,7 @@ version = 1
 exclude = ["third_party/**", "**/*.generated.ts"]
 ```
 
-Optional [personal defaults](docs/PRODUCT.md#user-defaults) add exclusions for every project, and an exclusion that excludes nothing is reported, so a misspelled path does not go unnoticed.
+Optional [personal defaults](docs/PRODUCT.md#user-defaults) add exclusions for every project, and `--verbose`, Markdown and JSON report an exclusion that excludes nothing, so a misspelled path does not go unnoticed.
 
 ### Language mappings
 
@@ -158,10 +151,10 @@ language = "BASH"
 
 ### Honest coverage
 
-Files that could not be recognized, read or parsed are listed, never reported as zero lines:
+Read/parse failures remain visible in default tables under `Not counted:`, along with the backend-incomplete warning and stderr diagnostic; partial results retain exit 2. Unrecognized file types alone are routine findings: default tables omit them, while `locmetry --verbose` includes a separate neutral note. Omitted findings do not mean zero lines:
 
 ```text
- Not counted: 1 unrecognized file (png: 1); missing lines are not zero.
+ Unrecognized files: 1 unrecognized file (png: 1); missing lines are not zero.
 ```
 
 Invalid or unsupported notebook content appears in `metadata.coverage.parse_failures` as `{path, reason, message}` and marks the measurement partial (see [command outcomes](docs/PRODUCT.md#command-outcomes)). New reports always include this array, including when empty; its absence in older reports means failures were not recorded. Workspace member coverage adds `parse_failed_files`. [Notebook limits and compatibility](docs/measurement.md#notebooks) explains supported versions, language selection and older schemas.
@@ -250,7 +243,7 @@ locmetry | jq .summary        # piped: JSON headline
 
 The optional directory argument is equivalent to `--root DIR`; use one or the other. Bare `compare`, `workspace`, `explain` and `help` select commands; use `locmetry ./compare` or `locmetry --root compare` to measure a directory with a command's name. In scripts, prefer `locmetry --root "$directory"` so directory names cannot select commands. Command options go after the command name.
 
-Start project configuration with `locmetry --guide configure`. Use `locmetry --help` or `locmetry COMMAND --help` for options; `--guide selection|reports|compare` provides focused workflows and caveats. Guides print the installed version’s Markdown without a network connection. Help wraps to the detected terminal width and keeps continuation lines indented; see [help presentation](docs/PRODUCT.md#human-presentation).
+Run `locmetry` for source-count tables; add `--verbose` to inspect classification, scope and coverage notes. For optional project configuration, use `locmetry --guide configure`. Use `locmetry --help` or `locmetry COMMAND --help` for options; `--guide selection|reports|compare` provides focused workflows and caveats. Guides print the installed version’s Markdown without a network connection. Help wraps to the detected terminal width and keeps continuation lines indented; see [help presentation](docs/PRODUCT.md#human-presentation).
 
 Without configuration, built-in exclusions, conventions, and language mappings apply. Add a `.locmetryrc` to the project root when the conventions cannot know something, such as which folders are vendored, generated, tooling, or experimental. Command-line options override it:
 
@@ -277,6 +270,7 @@ Personal defaults for every project, such as extra exclusions or language mappin
 | `--depth N` | Folder levels in Markdown; default: 2. An explicit value warns if the output is not Markdown. |
 | `--output FILE` | Write only to `FILE`, outside the scan root; `-` selects stdout. Defaults to full JSON; explicit `--format` wins. Extensions do not select a format. |
 | `--files` | Add per-file records; requires full JSON (`--format json` or `--output FILE`). |
+| `--verbose` | Include classification, scope and coverage notes in root/workspace table output; warns without changing content in other measurement formats. |
 | `--categories` | Add purpose/category rows to table output; warns in other formats. |
 | `--guide configure\|selection\|reports\|compare` | Print one embedded task guide with its source path and executable version. Standalone query; no root, configuration, format or output options. |
 | `--schema config\|user-config\|report\|comparison\|explanation\|workspace` | Print the JSON Schema of `.locmetryrc`, of personal defaults, of the JSON headline and report, of a net-change comparison, of a path explanation, or of a workspace file, and exit. Standalone query: rejects explicit roots, measurement/presentation options and subcommands; redirect stdout to save a schema. |
@@ -305,7 +299,7 @@ locmetry workspace --file repos.toml
 - **Each repository keeps its policy:** `--config`, `--exclude`, `--hidden`, and `--respect-ignore-files` are rejected, because each repository's own configuration decides them, and options must follow `workspace`.
 - **Paths name the repository:** every path is prefixed with its repository's folder name, such as `web/src/index.ts`. Two repositories with the same folder name, a root given twice, or one root inside another fail before measuring.
 - **Repositories as a dimension:** `summary.members` holds each repository's totals by purpose, category, kind, and language, equal to a regular run of that repository. The table shows one row per repository with its test lines per production line and its share of the workspace, and the Markdown report adds grids of source categories and languages by repository.
-- **Findings stay with their repository:** `metadata.members` lists each repository's root, configuration path, scope, coverage counts, unused entries, and unused exclusions; table notes name the repository, as in `ghost (web)`, and list repositories with unclaimed source, unreadable files or notebook parse failures.
+- **Findings stay with their repository:** `metadata.members` lists each repository's root, configuration path, scope, coverage counts, unused entries, and unused exclusions; verbose table notes name the repository, as in `ghost (web)`, and list unclaimed source by repository. Default and verbose tables name members with read/parse failures under `Unavailable counts:`; Markdown retains comprehensive member findings.
 - **All or nothing, always the same:** if one repository fails, for example with an invalid configuration, the run fails and names it; the order of the roots never changes the report.
 
 ## Explain one file
@@ -448,7 +442,7 @@ In the sample, `backend` and `web` are build modules, so `backend/src/main/**` a
 - **Nested modules:** the innermost build module containing a file decides, and build files sharing one folder, such as `build.gradle.kts` and `package.json`, combine their layouts; where those layouts overlap, the build system whose detector name sorts first is recorded.
 - **Only file names are read:** locmetry neither runs the build nor parses the build file, so source directories that a build file reconfigures need a rule.
 - **Rules win:** `[[rules]]` run before build modules, so one rule corrects a folder that detection gets wrong. The flip side: a broad rule also takes module source, so match only the folders a rule is about. `builtin_modules = false` under `[classification]` turns detection off.
-- **Traceable:** the table and the JSON headline (`summary.build_modules`) show each build system's modules and the code they classified, the Markdown report lists every module, and each file record from `--files` names the detector that decided it, such as `builtin:gradle-module`.
+- **Traceable:** the verbose table and the JSON headline (`summary.build_modules`) show each build system's modules and the code they classified, the Markdown report lists every module, and each file record from `--files` names the detector that decided it, such as `builtin:gradle-module`.
 
 ### Terminal table
 
@@ -456,8 +450,9 @@ Plain `locmetry` on a terminal prints the table shown [above](#what-you-see):
 
 - language rows with Files, Lines, Code, Comments and Blanks, followed by the code split by purpose, largest code first;
 - top-level folders with Lines and Code, whose rows add up to the total, each with `Test/prod`, its test code lines per production code line;
-- under each table, a legend stating how its columns add up, such as Production + Test + Unclassified = Code;
-- notes on content that is not source, the build modules that decided production, Git submodules, which are often other teams' code, the folders that hold unclaimed source, configuration entries that decided no file, and files that could not be counted.
+- under each table, a legend stating how its columns add up, such as Production + Test + Unclassified = Code.
+
+Successful default tables contain no routine audit notes or flag reminders. Data/documentation totals and unrecognized-file counts are deliberately omitted. Add `--verbose` for non-source totals, inferred build modules, Git submodule hints, unclaimed folders, unused policy and unrecognized extensions. Real read/parse failures remain visible in both views; verbose tables additionally list up to 25 parse-failure paths. To inspect or refine purpose classification, use `locmetry --guide configure`; `--files --output -` shows each file's rule.
 
 Table and Markdown reports end with `Measured at: YYYY-MM-DD HH:MM:SS UTC`, using the measurement-start timestamp already recorded in JSON as `metadata.measured_at_unix_seconds`. Comparison reports end with both input measurement dates. File creation times are not used.
 
@@ -481,7 +476,7 @@ locmetry acme-orders --folder-rows 12 --format table --output folders.txt
 
 When the largest displayed row still has folder detail, a gray hint names the folder and suggests increasing `--folder-rows`. This also covers a largest “other child folders” remainder. Smaller expandable folders alone do not trigger it.
 
-The option changes only the table view, not measurement counts, coverage or the Unclaimed source note. It cannot accompany JSON output; save full JSON separately when needed. That note uses its existing partition of unclassified code and can therefore show different folder boundaries. Markdown retains its recursive `--depth` view; workspace mode rejects `--folder-rows`. [Adaptive folder semantics](docs/PRODUCT.md#adaptive-folder-detail) defines selection, budgets and limits.
+The option changes only the table view, not measurement counts, coverage or the Unclaimed source note requested with `--verbose`. It cannot accompany JSON output; save full JSON separately when needed. The verbose note uses its existing partition of unclassified code and can therefore show different folder boundaries. Markdown retains its recursive `--depth` view; workspace mode rejects `--folder-rows`. [Adaptive folder semantics](docs/PRODUCT.md#adaptive-folder-detail) defines selection, budgets and limits.
 
 ### JSON headline for agents and scripts
 
@@ -654,7 +649,7 @@ printf '%s\n' "$report" | jq -r '
 
 | Format | Selected by | For | Contents |
 | --- | --- | --- | --- |
-| Table | default on a terminal without `--output`, `--format table` | people | source code by language and top-level folder, split by purpose, plus one-line notes |
+| Table | default on a terminal without `--output`, `--format table` | people | source code by language and top-level folder, split by purpose; routine notes with `--verbose`, failures always visible |
 | JSON headline | default when piped without `--output`, `--format headline` | agents, scripts, CI | totals by purpose, category, kind, and language; top-level folders; effective scope; coverage |
 | Full JSON | `--format json`, or the default with `--output FILE` / `--output -` | deeper questions | the headline plus review list, additive breakdown table, effective configuration, and with `--files` per-file records |
 | Markdown | `--format markdown` | reviews, wikis | purpose, category, kind, language, and folder tables, review list, and coverage |

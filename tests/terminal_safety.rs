@@ -17,6 +17,7 @@ fn table_and_unclaimed_note_flatten_path_controls_without_changing_json() {
                 "--no-user-config",
                 "--format",
                 "table",
+                "--verbose",
             ])
             .args(extra)
             .env("NO_COLOR", "1")
@@ -88,6 +89,9 @@ fn coverage_notes_and_diagnostics_flatten_controls_but_preserve_json_evidence() 
             "--format",
             format,
         ]);
+        if format == "table" {
+            command.arg("--verbose");
+        }
         if format == "json" {
             command.args(["--output", "-"]);
         }

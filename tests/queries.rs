@@ -38,6 +38,7 @@ fn rejects_unrelated_inputs(flag: &str, topic: &str) {
         vec!["--sort", "code"],
         vec!["--depth", "2"],
         vec!["--categories"],
+        vec!["--verbose"],
         vec!["--files"],
         vec!["--format", "json"],
         vec!["--folder-rows", "3"],

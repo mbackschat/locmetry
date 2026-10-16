@@ -138,7 +138,19 @@ fn explicit_formats_control_files_and_stdout_for_all_exporting_commands() {
                     assert_eq!(saved.get("breakdown").is_some(), format == "json");
                 }
                 _ => {
-                    assert_eq!(saved, out.stdout);
+                    if args[0] == "compare" {
+                        assert_eq!(saved, out.stdout);
+                    } else {
+                        let saved_text = String::from_utf8_lossy(&saved);
+                        let printed_text = String::from_utf8_lossy(&out.stdout);
+                        let (saved_body, saved_date) =
+                            saved_text.rsplit_once("\nMeasured at: ").unwrap();
+                        let (printed_body, printed_date) =
+                            printed_text.rsplit_once("\nMeasured at: ").unwrap();
+                        assert!(saved_date.trim_end().ends_with(" UTC"));
+                        assert!(printed_date.trim_end().ends_with(" UTC"));
+                        assert_eq!(saved_body, printed_body);
+                    }
                     if format == "markdown" {
                         assert!(saved.starts_with(b"# "));
                     } else {
@@ -261,7 +273,11 @@ fn ineffective_presentation_options_warn_only_when_explicit_in_both_modes() {
         let original = run(dir.path(), &base);
         success(&original);
         assert!(original.stderr.is_empty());
-        for option in [vec!["--depth", "2"], vec!["--categories"]] {
+        for option in [
+            vec!["--depth", "2"],
+            vec!["--categories"],
+            vec!["--verbose"],
+        ] {
             let mut changed = base.clone();
             changed.extend(&option);
             let out = run(dir.path(), &changed);
@@ -272,7 +288,11 @@ fn ineffective_presentation_options_warn_only_when_explicit_in_both_modes() {
                 without_time(json(&out.stdout))
             );
         }
-        for (format, option) in [("table", "--categories"), ("markdown", "--depth")] {
+        for (format, option) in [
+            ("table", "--categories"),
+            ("table", "--verbose"),
+            ("markdown", "--depth"),
+        ] {
             let mut effective = args.clone();
             effective.extend(["--format", format, option]);
             if option == "--depth" {

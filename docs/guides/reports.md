@@ -6,6 +6,7 @@ Start with `locmetry --root . --format headline` at the intended project root. T
 
 | Task | Command |
 | --- | --- |
+| Source tables with classification, scope and coverage notes | `locmetry --root . --format table --verbose` |
 | Compact JSON | `locmetry --root . --format headline` |
 | Full JSON on stdout | `locmetry --root . --format json` |
 | Full JSON with per-file decisions | `locmetry --root . --files --format json` |
@@ -14,6 +15,10 @@ Start with `locmetry --root . --format headline` at the intended project root. T
 | Page a plain text report | `locmetry --root service --format table \| less` |
 
 Without explicit options, a terminal gets a table and a pipe gets a headline. Any `--output` defaults to full JSON; explicit `--format` wins. `--output FILE` writes only that file, with empty stdout; `--output -` selects stdout. Extensions do not infer formats. Files are unstyled. `--files` requires full JSON. A headline is not comparison-ready, and cannot reconstruct the omitted baseline later. Aggregate comparison needs full reports, but not per-file records.
+
+Default tables show counted source, legends and the measurement date. They deliberately omit non-source totals and unrecognized-file counts, and do not prompt for classification. Use `locmetry --format table --verbose` to inspect notes such as “Unclaimed source” and “Not source code”, build inference, Git submodule hints and unused policy. To inspect or refine purpose classification, use `locmetry --guide configure`; `--files --output -` shows each file's rule. Markdown and JSON retain their existing detail. `--verbose` warns without changing the result in non-table measurement formats.
+
+Real read/parse failures remain visible without `--verbose`: `Not counted:` summarizes only failures, workspace `Unavailable counts:` names affected members, and the backend warning, stderr path diagnostic and exit 2 remain. The report's parse-failure path list requires `--verbose`; unrecognized types use a separate neutral note there. Unclassified source has been counted and does not itself make the report partial.
 
 Protected export destinations must be outside the scan root (every member in workspace mode), and cannot overwrite configuration or workspace files. Shell redirection and `tee` bypass those checks. `explain` is different: JSON is always complete, with no headline or `--output`; use `locmetry explain --help`. Guides and schemas are standalone queries saved by shell redirection, without measurement flags.
 

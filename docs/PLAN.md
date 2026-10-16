@@ -27,6 +27,7 @@ None. The [proposal index](proposals/README.md) distinguishes active designs fro
 
 ## Historical Evidence
 
+- [Default report output decision](proposals/archive/default-report-output-proposal-redacted.md): reviewed design and acceptance evidence.
 - [Development and release snapshot through 2026-10-16](plans/archive/development-plan-2026-10-16.md): completed work, published releases and their verification links.
 - [Measurement quality and subsequent implementation checkpoints](plans/archive/measurement-quality-and-net-change.md): S1–S5, reviews, accepted decisions and completion evidence.
 - [Research index](research/README.md): dated findings and source provenance.

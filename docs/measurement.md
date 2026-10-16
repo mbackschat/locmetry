@@ -47,7 +47,7 @@ New full reports and headlines always emit `parse_failures`, even when empty. Wo
 
 Submodule hints read only the scan root's `.gitmodules`, without invoking Git or changing selection/classification. The reader recognizes `path` keys within named submodule sections, including the legacy dotted section form; section and key names are case-insensitive. Quoted values, escaped quotes/backslashes, `\n`, `\t`, `\b`, inline `#`/`;` comments and backslash line continuations follow [Git configuration syntax](https://git-scm.com/docs/git-config#_syntax). Quoted whitespace and comment characters remain part of the path. Includes and paths in unrelated sections are not followed or reported.
 
-This is a best-effort scope-hint reader, not a Git configuration validator: missing/unreadable files and malformed entries supply no hints; malformed entries do not invalidate otherwise readable entries or fail measurement. It does not verify Git repository state, URLs or checkout identity. The report lists only declared paths containing measured source; excluding that source removes its hint.
+This is a best-effort scope-hint reader, not a Git configuration validator: missing/unreadable files and malformed entries supply no hints; malformed entries do not invalidate otherwise readable entries or fail measurement. It does not verify Git repository state, URLs or checkout identity. The verbose table, Markdown and JSON list only declared paths containing measured source; excluding that source removes its hint. Default tables omit these routine hints; [report content](PRODUCT.md#report-content) owns the visibility rules.
 
 ## Saved Reports
 

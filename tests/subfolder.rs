@@ -162,7 +162,11 @@ fn subfolder_failure_coverage_and_unused_policy_are_local() {
     assert_eq!(part["summary"]["unused_entries"], json!(["outside"]));
     assert_eq!(part["summary"]["unused_exclusions"], json!(["backend/**"]));
     for format in ["table", "markdown"] {
-        let out = run(root, &["--subfolder", "web/src", "--format", format]);
+        let mut args = vec!["--subfolder", "web/src", "--format", format];
+        if format == "table" {
+            args.push("--verbose");
+        }
+        let out = run(root, &args);
         assert!(out.status.success());
         let text = String::from_utf8(out.stdout).unwrap();
         assert!(
