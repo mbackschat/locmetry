@@ -2,7 +2,7 @@
 
 # locmetry
 
-The latest stable release is **0.4.0**. The examples below describe the current checkout; [output routing](docs/PRODUCT.md#output-routing) defines destination and format behavior.
+The latest stable release is **0.4.1**. The examples below describe the current checkout; [output routing](docs/PRODUCT.md#output-routing) defines destination and format behavior.
 
 **Lines of code, split by purpose: production, tests, tooling, and what nobody claims.** `locmetry` measures selected files that its counters can recognize and read, gives each counted file a purpose and category, and records the rule that decided it. Coverage names files whose counts are unavailable.
 
@@ -185,7 +185,7 @@ The [terminal table](#terminal-table), [JSON](#json-headline-for-agents-and-scri
 
 ## Install
 
-### Stable release (v0.4.0)
+### Stable release (v0.4.1)
 
 With Homebrew on macOS arm64 or Linux x86_64 and aarch64, which installs the prebuilt binary:
 
@@ -200,14 +200,14 @@ The same binaries are on the [releases page](https://github.com/mbackschat/locme
 ```sh
 # Linux targets: x86_64-unknown-linux-musl or aarch64-unknown-linux-musl
 target=aarch64-apple-darwin
-curl -fsSL "https://github.com/mbackschat/locmetry/releases/download/v0.4.0/locmetry-v0.4.0-$target.tar.gz" | tar -xz
-install "locmetry-v0.4.0-$target/locmetry" ~/.local/bin/
+curl -fsSL "https://github.com/mbackschat/locmetry/releases/download/v0.4.1/locmetry-v0.4.1-$target.tar.gz" | tar -xz
+install "locmetry-v0.4.1-$target/locmetry" ~/.local/bin/
 ```
 
 Or build from source with a Rust toolchain:
 
 ```sh
-cargo install --locked --git https://github.com/mbackschat/locmetry --tag v0.4.0
+cargo install --locked --git https://github.com/mbackschat/locmetry --tag v0.4.1
 ```
 
 ### Local checkout
@@ -220,7 +220,7 @@ cargo install --locked --path .
 locmetry --version
 ```
 
-This checkout identifies as `0.4.0`. Producer version differences are recorded by comparisons. Installing a checkout does not publish a release.
+This checkout identifies as `0.4.1`. Producer version differences are recorded by comparisons. Installing a checkout does not publish a release.
 
 ## Quick start
 
@@ -482,7 +482,7 @@ Without `--output`, when stdout is not a terminal, `locmetry` prints a compact J
   "metadata": {
     "root": "/work/acme-orders",
     "measured_at_unix_seconds": 1792238400,
-    "locmetry_version": "0.4.0",
+    "locmetry_version": "0.4.1",
     "scope": {
       "exclude": ["**/.git/**", "**/node_modules/**", "**/.build/**", "**/.lake/**", "third_party/**", ".locmetryrc"]
     },
