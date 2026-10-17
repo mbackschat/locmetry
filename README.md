@@ -2,7 +2,7 @@
 
 # locmetry
 
-The latest stable release is **0.4.0**. The examples below describe the current checkout, including report presentation improvements after that release; [output routing](docs/PRODUCT.md#output-routing) defines destination and format behavior.
+The latest stable release is **0.4.0**. The examples below describe the current checkout; [output routing](docs/PRODUCT.md#output-routing) defines destination and format behavior.
 
 **Lines of code, split by purpose: production, tests, tooling, and what nobody claims.** `locmetry` measures selected files that its counters can recognize and read, gives each counted file a purpose and category, and records the rule that decided it. Coverage names files whose counts are unavailable.
 
