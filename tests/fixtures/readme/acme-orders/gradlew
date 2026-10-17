@@ -1,3 +1,0 @@
-#!/bin/sh
-# Synthetic wrapper for the documentation fixture.
-exit 0

@@ -42,7 +42,7 @@ Keep changed guarantees and affected user-facing entry points consistent in the 
 
 | Document | Owns | Check when behavior changes |
 | --- | --- | --- |
-| [README](README.md) | Task entry points, CLI examples and navigation | Check affected examples when their commands, values or behavior change; use `bash scripts/check-doc-examples.sh` for the executable recipes. |
+| [README](README.md) | Task entry points, CLI examples and navigation | Check affected examples when their commands, values or behavior change; use `bash scripts/check-doc-examples.sh` for executable recipes and `cargo test --locked --test readme` for illustrative tables. |
 | [PRODUCT](docs/PRODUCT.md) | Supported public contract | Reconcile flags, report fields and compatibility with executable schemas and tests. |
 | [Measurement semantics](docs/measurement.md) | Counting, selection boundaries and limitations | Add independent regression oracles for changed measurement behavior. |
 | [Configure](docs/guides/configure.md), [selection](docs/guides/selection.md), [reports](docs/guides/reports.md), [compare](docs/guides/compare.md) | Task workflows, examples and evidence interpretation | `cargo test --locked --test guides` checks embedded sources and examples. Add `--test explain` or `--test queries` when those behaviors change, and the documentation script when executable recipes are affected. |
