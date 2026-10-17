@@ -6,7 +6,9 @@ Active designs live directly in this directory. Retired records live in `archive
 
 <!-- doc-index:start -->
 
-No documents in this directory.
+| Document | Status | Date | Summary |
+| --- | --- | --- | --- |
+| [README Structure, Tone and Documentation Boundaries](readme-restructure.md) | draft | 2026-10-17 | Shorten the README around runnable examples, precise classification explanations and linked task guides. |
 
 <!-- doc-index:end -->
 
