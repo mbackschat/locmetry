@@ -10,7 +10,7 @@ The latest stable release is **0.4.0**. The examples below describe the current 
 - **Flexible, reviewable configuration:** a short `.locmetryrc` states only what conventions cannot know: what is out of scope, which folders are tooling or examples, which archived code must not count as tests, your own categories, and languages for unknown file types. The precedence is fixed and documented, so classification decisions can be traced to effective policy.
 - **Built for coding agents:** `locmetry --guide configure` teaches evidence-based setup and review; `locmetry --schema config` explains the configuration and its semantics from the binary alone. In selected later blind trials, agents without these docs reached 99% or greater agreement with human-reviewed purpose classifications by code line ([population and rounds](docs/research/real-project-trials.md#agent-configuration-trials)). This measures classification agreement, not parser accuracy or performance on arbitrary repositories.
 - **JSON for agents and scripts:** a headline small enough for an agent's context, with totals by purpose, category, content kind, and language, per top-level folder and build system, plus the folders that still need a decision. `--output` defaults to a full JSON report with additive breakdown rows; add `--files` for per-file records. `--schema report` describes the structure and semantics for further queries.
-- **Ready-made metrics:** the tables show test lines per production line for every folder, and a workspace adds each repository's ratio and share. The JSON keeps exact counts, so any other ratio, such as a test-share guard in CI, is one `jq` expression.
+- **Ready-made metrics:** `--folders` shows test lines per production line for every folder, and a workspace adds each repository's ratio and share. The JSON keeps exact counts, so any other ratio, such as a test-share guard in CI, is one `jq` expression.
 - **Several repositories as one:** `locmetry workspace` measures sibling repositories, each with its own configuration, as one virtual monorepo with a row per repository.
 - **Three outputs from one measurement:** a terminal table for people, JSON for agents and scripts, and Markdown for reviews and wikis.
 
@@ -34,19 +34,10 @@ $ locmetry
  Total          12    166   129 │        7      30 │         94    26             9
  Lines = Code + Comments + Blanks; Production + Test + Unclassified = Code.
 
- Folder        Lines  Code │ Production  Test  Unclassified │ Test/prod
- ──────────────────────────┼────────────────────────────────┼──────────
- backend          83    65 │         49    16             0 │      0.33
- web              48    41 │         31    10             0 │      0.32
- scripts          19    12 │         12     0             0 │      0.00
- prototypes       11     8 │          0     0             8 │         -
- (root files)      5     3 │          2     0             1 │      0.00
- ──────────────────────────┼────────────────────────────────┼──────────
- Total           166   129 │         94    26             9 │      0.28
- Production + Test + Unclassified = Code; Test/prod = Test / Production.
-
 Measured at: 2026-10-17 12:00:00 UTC
 ```
+
+Add `--folders` for a folder table, or `--folder-rows N` for adaptive folder detail. `--verbose` adds notes independently.
 
 What the table already handles for you:
 
@@ -62,7 +53,7 @@ What the table already handles for you:
 - **Track test investment:** follow the test-to-production ratio per folder and over time, without hand-maintained exclusion lists.
 - **Size a codebase honestly:** estimate a migration, a rewrite, an audit, an acquisition, or an outsourcing quote on maintained code only. Use configuration to exclude or label vendored, generated, and experimental code; these are not automatically identified.
 - **Guard quality in CI:** fail a build when unclaimed code grows or the test share drops, with one `jq` expression ([example](#continuous-integration)).
-- **Compare parts of a monorepo:** the folder rows and the additive breakdown table compare packages, services, or layers by purpose.
+- **Compare parts of a monorepo:** `--folders` and the additive JSON breakdown table compare packages, services, or layers by purpose.
 - **Measure several repositories as one:** `locmetry workspace` merges sibling repositories, each measured with its own configuration, into one virtual monorepo whose folder rows compare the repositories ([how](#measure-several-repositories-together)).
 - **Watch a codebase change:** save full JSON reports and use `locmetry compare before.json after.json` to see net change by purpose, language, folder and workspace member, including package/root arrivals and departures ([how](#compare-saved-measurements)). Reports do not establish Git revisions.
 - **Let an agent configure a project:** a coding agent working in a repository writes its `.locmetryrc` itself. `locmetry --help` leads it to `--guide configure` and `--schema config`, which explains the configuration and its semantics, and verbose tables or JSON show the unclaimed folders for optional inspection ([how](#configure-with-an-agent)).
@@ -243,7 +234,7 @@ locmetry | jq .summary        # piped: JSON headline
 
 The optional directory argument is equivalent to `--root DIR`; use one or the other. Bare `compare`, `workspace`, `explain` and `help` select commands; use `locmetry ./compare` or `locmetry --root compare` to measure a directory with a command's name. In scripts, prefer `locmetry --root "$directory"` so directory names cannot select commands. Command options go after the command name.
 
-Run `locmetry` for source-count tables; add `--verbose` to inspect classification, scope and coverage notes. For optional project configuration, use `locmetry --guide configure`. Use `locmetry --help` or `locmetry COMMAND --help` for options; `--guide selection|reports|compare` provides focused workflows and caveats. Guides print the installed version’s Markdown without a network connection. Help wraps to the detected terminal width and keeps continuation lines indented; see [help presentation](docs/PRODUCT.md#human-presentation).
+Run `locmetry` for source counts by language; add `--folders` for the folder table or `--verbose` to inspect classification, scope and coverage notes. For optional project configuration, use `locmetry --guide configure`. Use `locmetry --help` or `locmetry COMMAND --help` for options; `--guide selection|reports|compare` provides focused workflows and caveats. Guides print the installed version’s Markdown without a network connection. Help wraps to the detected terminal width and keeps continuation lines indented; see [help presentation](docs/PRODUCT.md#human-presentation).
 
 Without configuration, built-in exclusions, conventions, and language mappings apply. Add a `.locmetryrc` to the project root when the conventions cannot know something, such as which folders are vendored, generated, tooling, or experimental. Command-line options override it:
 
@@ -258,7 +249,8 @@ Personal defaults for every project, such as extra exclusions or language mappin
 | Option | Effect |
 | --- | --- |
 | `DIR` or `--root DIR` | Directory to measure; mutually exclusive. Default: the current directory. |
-| `--folder-rows N` | Expand rows within the existing Folder table, using a positive row budget; single-root table output only. No default; omit to keep top-level rows. |
+| `--folders` | Add the folder table to single-root table output, including `--subfolder`; warns without changing content in other measurement formats. |
+| `--folder-rows N` | Show the Folder table with adaptive detail using a positive row budget; implies `--folders`. Single-root table output only. |
 | `--subfolder DIR` | Measure one root-relative folder and descendants, retaining project policy and module context; single-root mode only. |
 | `--config FILE` | TOML configuration; default: `.locmetryrc` in the scan root, else built-in settings. The scan root stays unchanged. |
 | `--exclude GLOB` | Add a root-relative exclusion; repeatable. |
@@ -449,8 +441,9 @@ In the sample, `backend` and `web` are build modules, so `backend/src/main/**` a
 Plain `locmetry` on a terminal prints the table shown [above](#what-you-see):
 
 - language rows with Files, Lines, Code, Comments and Blanks, followed by the code split by purpose, largest code first;
-- top-level folders with Lines and Code, whose rows add up to the total, each with `Test/prod`, its test code lines per production code line;
 - under each table, a legend stating how its columns add up, such as Production + Test + Unclassified = Code.
+
+Add `--folders` for top-level folder rows with Lines, Code, the purpose split and `Test/prod`; the rows add up to the source total. `--folder-rows N` enables adaptive folder rows without also requiring `--folders`. Both apply to single-project and subfolder table output, including saved tables. Workspace repository tables remain visible by default. `--verbose` controls notes independently and does not enable the folder table. Markdown and JSON retain their folder detail; `--folders` warns when used with a non-table measurement format.
 
 Successful default tables contain no routine audit notes or flag reminders. Data/documentation totals and unrecognized-file counts are deliberately omitted. Add `--verbose` for non-source totals, inferred build modules, Git submodule hints, unclaimed folders, unused policy and unrecognized extensions. Real read/parse failures remain visible in both views; verbose tables additionally list up to 25 parse-failure paths. To inspect or refine purpose classification, use `locmetry --guide configure`; `--files --output -` shows each file's rule.
 
@@ -460,13 +453,13 @@ Terminal table cells, notes and application diagnostics flatten control characte
 
 ### Look inside large folders
 
-If the Folder table concentrates most code in a container such as `web` or `packages`, request deeper detail without changing the scan root or classification context:
+If the table requested with `--folders` concentrates most code in a container such as `web` or `packages`, request deeper detail without changing the scan root or classification context:
 
 ```sh
 locmetry acme-orders --folder-rows 12
 ```
 
-This changes the existing second table, **Folder**; it does not add a third table. The first **Language** table stays as it is. Large folders expand into non-overlapping child rows, including direct files and scoped “other child folders” rows where needed. Every row still contributes once to the total. The budget counts Folder data rows, excluding its header, total and legends. It limits additional detail; existing top-level contributions are never merged away, so an initially wider table can exceed it. `--sort name` compares path components, keeping descendants before siblings such as `src-old`; the same comparison resolves code ties. Single-child chains collapse without using extra rows. Paths stay relative to the project root, including when combined with `--subfolder`.
+This enables the **Folder** table with adaptive detail, without requiring `--folders` as well. The first **Language** table stays as it is. Large folders expand into non-overlapping child rows, including direct files and scoped “other child folders” rows where needed. Every row still contributes once to the total. The budget counts Folder data rows, excluding its header, total and legends. It limits additional detail; existing top-level contributions are never merged away, so an initially wider table can exceed it. `--sort name` compares path components, keeping descendants before siblings such as `src-old`; the same comparison resolves code ties. Single-child chains collapse without using extra rows. Paths stay relative to the project root, including when combined with `--subfolder`.
 
 `--format table` is an existing option that selects human-readable text. It is optional in a terminal, where table output is the default. Pipes normally select a JSON headline, and `--output` defaults to full JSON. Explicitly request table output when saving or paging this view:
 
@@ -649,7 +642,7 @@ printf '%s\n' "$report" | jq -r '
 
 | Format | Selected by | For | Contents |
 | --- | --- | --- | --- |
-| Table | default on a terminal without `--output`, `--format table` | people | source code by language and top-level folder, split by purpose; routine notes with `--verbose`, failures always visible |
+| Table | default on a terminal without `--output`, `--format table` | people | source code by language, split by purpose; folders with `--folders`, repository rows in workspace mode; routine notes with `--verbose`, failures always visible |
 | JSON headline | default when piped without `--output`, `--format headline` | agents, scripts, CI | totals by purpose, category, kind, and language; top-level folders; effective scope; coverage |
 | Full JSON | `--format json`, or the default with `--output FILE` / `--output -` | deeper questions | the headline plus review list, additive breakdown table, effective configuration, and with `--files` per-file records |
 | Markdown | `--format markdown` | reviews, wikis | purpose, category, kind, language, and folder tables, review list, and coverage |

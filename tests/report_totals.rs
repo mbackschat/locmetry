@@ -30,7 +30,7 @@ fn human_count_tables_expose_lines_before_code() {
         "[package]\nname = 'example'\n",
     )
     .unwrap();
-    for extra in [vec![], vec!["--folder-rows", "8"]] {
+    for extra in [vec!["--folders"], vec!["--folder-rows", "8"]] {
         let mut args = vec!["--format", "table", "--categories"];
         args.extend(extra);
         let table = run(root.path(), &args);

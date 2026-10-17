@@ -642,7 +642,13 @@ fn regular_runs_have_no_repository_dimension() {
     let web = temp.path().join("web");
     let headline = json_of(&locmetry(&web, &[]));
     assert!(headline["summary"].get("members").is_none());
-    let table = String::from_utf8(locmetry(&web, &["--format", "table"]).stdout).unwrap();
-    assert!(table.contains(" Folder "), "{table}");
-    assert!(!table.contains("Repositor"), "{table}");
+    for folders in [false, true] {
+        let mut args = vec!["--format", "table"];
+        if folders {
+            args.push("--folders");
+        }
+        let table = String::from_utf8(locmetry(&web, &args).stdout).unwrap();
+        assert_eq!(table.contains(" Folder "), folders, "{table}");
+        assert!(!table.contains("Repositor"), "{table}");
+    }
 }

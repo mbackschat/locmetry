@@ -119,7 +119,11 @@ fn adaptive_rows_partition_purposes_direct_files_and_weighted_ratios() {
     let named = table(root, 7, &["--sort", "name"]);
     assert_eq!(counts(&text), counts(&named));
     assert_ne!(folder_rows(&text), folder_rows(&named));
-    assert_eq!(text, table(root, 7, &[]));
+    let repeated = table(root, 7, &[]);
+    assert_eq!(
+        text.rsplit_once("\nMeasured at: ").unwrap().0,
+        repeated.rsplit_once("\nMeasured at: ").unwrap().0
+    );
 }
 
 #[test]
@@ -401,6 +405,7 @@ fn adaptive_styling_preserves_plain_alignment_and_mutes_the_legend() {
             &findings,
             locmetry::TableOptions {
                 categories: false,
+                folders: false,
                 verbose: false,
                 order: locmetry::RowOrder::Code,
                 theme,

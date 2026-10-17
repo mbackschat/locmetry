@@ -261,7 +261,11 @@ fn subfolder_human_views_start_at_children_and_keep_project_paths() {
     let root = dir.path();
     fixture(root);
     for format in ["table", "markdown"] {
-        let out = run(root, &["--subfolder", "web/src", "--format", format]);
+        let mut args = vec!["--subfolder", "web/src", "--format", format];
+        if format == "table" {
+            args.push("--folders");
+        }
+        let out = run(root, &args);
         assert!(out.status.success());
         let text = String::from_utf8(out.stdout).unwrap();
         assert!(text.contains("subfolder web/src"), "{text}");

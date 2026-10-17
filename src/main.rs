@@ -83,7 +83,7 @@ fn default_format(stdout_is_terminal: bool, output_given: bool) -> Format {
 #[command(
     version,
     about = "Measure source code by language, folder, and purpose: production, test, or unclassified. Defaults to a table on a terminal, a JSON headline in pipes. --output FILE saves only to that file, defaulting to full JSON; --format overrides the format.",
-    after_help = "Run locmetry for source-count tables. Add --verbose to inspect classification, scope and coverage notes. For optional project configuration, use locmetry --guide configure.\n\nCommand names are reserved. To measure a directory named compare, use ./compare or --root compare."
+    after_help = "Run locmetry for source counts by language. Add --folders for the folder table, or --verbose to inspect classification, scope and coverage notes. For optional project configuration, use locmetry --guide configure.\n\nCommand names are reserved. To measure a directory named compare, use ./compare or --root compare."
 )]
 struct Cli {
     #[command(subcommand)]
@@ -94,7 +94,10 @@ struct Cli {
     /// Measure this root-relative folder and descendants, retaining project configuration and module context.
     #[arg(long, value_name = "DIR")]
     subfolder: Option<PathBuf>,
-    /// Split the largest folders within an N-row budget; no top-level folder's code is merged away. Table format only.
+    /// Add the folder table to single-root table output.
+    #[arg(long)]
+    folders: bool,
+    /// Show the folder table and split the largest folders within an N-row budget; no top-level folder's code is merged away. Table format only.
     #[arg(long, value_name = "N", allow_negative_numbers = true)]
     folder_rows: Option<std::num::NonZeroUsize>,
     #[command(flatten)]
@@ -371,6 +374,7 @@ struct Results {
 struct Destination<'a> {
     path: Option<&'a Path>,
     format: Format,
+    folders: bool,
     folder_rows: Option<usize>,
 }
 
@@ -390,6 +394,7 @@ fn output_destination(output: &Option<PathBuf>, format: Option<Format>) -> Desti
     Destination {
         path,
         format,
+        folders: false,
         folder_rows: None,
     }
 }
@@ -467,6 +472,7 @@ fn run(cli: Cli) -> Result<Outcome> {
                 &root,
                 &cli.shared,
                 cli.subfolder.as_deref(),
+                cli.folders,
                 cli.folder_rows.map(|n| n.get()),
             )
         }
@@ -584,6 +590,7 @@ fn run_root(
     args: &RootArgs,
     shared: &SharedArgs,
     subfolder: Option<&Path>,
+    folders: bool,
     folder_rows: Option<usize>,
 ) -> Result<Outcome> {
     let root = args.root.as_deref().unwrap_or(Path::new("."));
@@ -594,7 +601,14 @@ fn run_root(
             "--folder-rows requires table output; add --format table"
         );
     }
+    destination.folders = folders;
     destination.folder_rows = folder_rows;
+    if folders && destination.format != Format::Table {
+        stderr_message(
+            Role::Warning,
+            "--folders has no effect here; it applies only to table output",
+        );
+    }
     warn_ineffective_options(shared, Some(destination.format));
     let user_path = user_defaults(shared.no_user_config);
     let overrides = ScopeOverrides {
@@ -940,6 +954,7 @@ fn report(
             &findings,
             TableOptions {
                 categories: shared.categories,
+                folders: destination.folders,
                 verbose: shared.verbose,
                 order,
                 theme: destination.theme(),

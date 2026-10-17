@@ -9,7 +9,7 @@ fn table_and_unclaimed_note_flatten_path_controls_without_changing_json() {
         fs::create_dir(root.path().join(name)).unwrap();
         fs::write(root.path().join(name).join("item.rs"), "fn item() {}\n").unwrap();
     }
-    for extra in [vec![], vec!["--folder-rows", "10"]] {
+    for extra in [vec!["--folders"], vec!["--folder-rows", "10"]] {
         let output = Command::new(env!("CARGO_BIN_EXE_locmetry"))
             .args([
                 "--root",

@@ -701,7 +701,7 @@ fn unclaimed_note(folders: &[FolderShare], theme: Theme) -> String {
 /// Folders listed in the terminal note; the JSON headline lists all of them.
 const FOLDER_LINES: usize = 8;
 
-/// Terminal report for people: source code per language and top-level folder
+/// Terminal report for people: source code per language
 /// split by purpose, with unavailable counts kept visible.
 /// `emphasis` enables the default terminal palette; false keeps plain text.
 pub fn render_table(
@@ -727,6 +727,7 @@ pub fn render_table(
 /// Presentation choices for terminal measurement tables; they do not change saved evidence.
 pub struct TableOptions {
     pub categories: bool,
+    pub folders: bool,
     pub verbose: bool,
     pub order: RowOrder,
     pub theme: Theme,
@@ -750,6 +751,7 @@ pub fn render_table_with_theme(
         findings,
         TableOptions {
             categories,
+            folders: false,
             verbose: false,
             order,
             theme,
@@ -768,6 +770,7 @@ pub fn render_table_with_options(
 ) -> String {
     let TableOptions {
         categories,
+        folders: show_folders,
         verbose,
         order,
         theme,
@@ -874,65 +877,66 @@ pub fn render_table_with_options(
         );
         output += &format!(" {}\n", theme.paint(Role::Muted, REPOSITORY_LEGEND));
     }
-    let adaptive = folder_rows
-        .filter(|_| findings.members.is_empty())
-        .map(|budget| folders::adaptive(summary, findings.subfolder, budget, order));
-    let standard = folders::standard(summary, findings.subfolder, order);
-    let folders = adaptive.as_ref().map_or(&standard, |view| &view.rows);
-    if !folders.is_empty() && findings.members.is_empty() {
-        let body: Vec<Vec<String>> = folders
-            .iter()
-            .map(|folder| {
-                let code = |purpose| folder.purposes.get(&purpose).copied().unwrap_or(0);
-                let mut row = vec![
-                    folder.label(),
-                    grouped(folder.counts.lines),
-                    grouped(folder.counts.code),
-                ];
-                row.extend(purpose_cells(&code));
-                row.push(test_ratio(code(Purpose::Production), code(Purpose::Test)));
-                row
-            })
-            .collect();
-        let code = |purpose| summary.totals.purpose(purpose).code;
-        let mut total = vec![
-            "Total".to_string(),
-            grouped(summary.totals.source.lines),
-            grouped(summary.totals.source.code),
-        ];
-        total.extend(purpose_cells(&code));
-        total.push(test_ratio(code(Purpose::Production), code(Purpose::Test)));
-        output += "\n";
-        output += &text_table(
-            &[
-                "Folder",
-                "Lines",
-                "Code",
-                "Production",
-                "Test",
-                "Unclassified",
-                "Test/prod",
-            ],
-            &body,
-            Some(total),
-            &Layout {
-                breaks: &[3, 6],
-                strong: Some(2),
-                secondary: &[6],
-            },
-            theme,
-        );
-        output += &format!(" {}\n", theme.paint(Role::Muted, FOLDER_LEGEND));
-        if let Some(view) = &adaptive {
-            output += &format!(
-                " {}\n",
-                theme.paint(
-                    Role::Muted,
-                    "Adaptive folder detail; rows cover measured source once."
-                )
+    if findings.members.is_empty() && (show_folders || folder_rows.is_some()) {
+        let adaptive =
+            folder_rows.map(|budget| folders::adaptive(summary, findings.subfolder, budget, order));
+        let standard = folders::standard(summary, findings.subfolder, order);
+        let folders = adaptive.as_ref().map_or(&standard, |view| &view.rows);
+        if !folders.is_empty() {
+            let body: Vec<Vec<String>> = folders
+                .iter()
+                .map(|folder| {
+                    let code = |purpose| folder.purposes.get(&purpose).copied().unwrap_or(0);
+                    let mut row = vec![
+                        folder.label(),
+                        grouped(folder.counts.lines),
+                        grouped(folder.counts.code),
+                    ];
+                    row.extend(purpose_cells(&code));
+                    row.push(test_ratio(code(Purpose::Production), code(Purpose::Test)));
+                    row
+                })
+                .collect();
+            let code = |purpose| summary.totals.purpose(purpose).code;
+            let mut total = vec![
+                "Total".to_string(),
+                grouped(summary.totals.source.lines),
+                grouped(summary.totals.source.code),
+            ];
+            total.extend(purpose_cells(&code));
+            total.push(test_ratio(code(Purpose::Production), code(Purpose::Test)));
+            output += "\n";
+            output += &text_table(
+                &[
+                    "Folder",
+                    "Lines",
+                    "Code",
+                    "Production",
+                    "Test",
+                    "Unclassified",
+                    "Test/prod",
+                ],
+                &body,
+                Some(total),
+                &Layout {
+                    breaks: &[3, 6],
+                    strong: Some(2),
+                    secondary: &[6],
+                },
+                theme,
             );
-            if let Some(hint) = &view.budget_hint {
-                output += &format!(" {}\n", theme.paint(Role::Muted, &plain(hint)));
+            output += &format!(" {}\n", theme.paint(Role::Muted, FOLDER_LEGEND));
+            if let Some(view) = &adaptive {
+                output += &format!(
+                    " {}\n",
+                    theme.paint(
+                        Role::Muted,
+                        "Adaptive folder detail; rows cover measured source once."
+                    )
+                );
+                if let Some(hint) = &view.budget_hint {
+                    output += &format!(" {}\n", theme.paint(Role::Muted, &plain(hint)));
+                }
             }
         }
     }

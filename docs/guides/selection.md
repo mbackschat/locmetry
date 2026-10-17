@@ -82,10 +82,10 @@ These diagnostic examples use the [README sample project](../../README.md#a-tour
 `locmetry acme-orders/web/src` treats `src` as an independent root. It does not discover the repository's `.locmetryrc` or the parent `web/package.json`. Supplying `--config` alone does not restore the project's path base or ancestor module evidence. Keep the project root and restrict the measurement explicitly:
 
 ```sh
-locmetry acme-orders --no-user-config --subfolder web/src --format table
+locmetry acme-orders --no-user-config --subfolder web/src --format table --folders
 ```
 
-This retains project-relative rules and module context while counting only the selected folder. Human folder rows show its children. A target excluded, ignored or hidden by policy fails clearly instead of reporting an empty measurement. [Subfolder semantics](../PRODUCT.md#subfolder-measurement) explains context traversal, coverage, diagnostics and comparison compatibility. Ancestor configuration discovery is not automatic.
+This retains project-relative rules and module context while counting only the selected folder. `--folders` adds rows for its children. A target excluded, ignored or hidden by policy fails clearly instead of reporting an empty measurement. [Subfolder semantics](../PRODUCT.md#subfolder-measurement) explains context traversal, coverage, diagnostics and comparison compatibility. Ancestor configuration discovery is not automatic.
 
 ### A counted file has an unexpected purpose
 

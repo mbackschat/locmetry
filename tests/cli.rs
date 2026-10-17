@@ -226,7 +226,7 @@ fn table_format_splits_source_code_by_language_and_purpose() {
     ]);
     let output = run(
         &temp.path().join("project"),
-        &["--verbose", "--format", "table"],
+        &["--verbose", "--folders", "--format", "table"],
     );
     assert!(output.status.success());
     let expected = " project · Source code
@@ -300,12 +300,12 @@ fn human_tables_sort_by_code_or_by_name() {
     ]);
     let root = temp.path().join("project");
     let stdout = |args: &[&str]| String::from_utf8(run(&root, args).stdout).unwrap();
-    let table = stdout(&["--format", "table"]);
+    let table = stdout(&["--folders", "--format", "table"]);
     assert!(is_ascending(&positions(
         &table,
         &["\n Rust", "\n Python", "\n z ", "\n a "]
     )));
-    let table = stdout(&["--format", "table", "--sort", "name"]);
+    let table = stdout(&["--folders", "--format", "table", "--sort", "name"]);
     assert!(is_ascending(&positions(
         &table,
         &["\n Python", "\n Rust", "\n a ", "\n z "]
@@ -1617,7 +1617,9 @@ fn human_formats_group_thousands_and_json_keeps_plain_integers() {
         ("loose/x.ts", "let x = 1;\n"),
     ]);
     let root = temp.path().join("project");
-    let table = String::from_utf8(run(&root, &["--verbose", "--format", "table"]).stdout).unwrap();
+    let table =
+        String::from_utf8(run(&root, &["--verbose", "--folders", "--format", "table"]).stdout)
+            .unwrap();
     for expected in [
         " TypeScript      2  1,235  1,235 │",
         " src     1,234  1,234 │",

@@ -42,6 +42,7 @@ fn rejects_unrelated_inputs(flag: &str, topic: &str) {
         vec!["--files"],
         vec!["--format", "json"],
         vec!["--folder-rows", "3"],
+        vec!["--folders"],
         vec!["--output", "saved.json"],
     ] {
         for first in [true, false] {
