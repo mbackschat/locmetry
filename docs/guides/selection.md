@@ -38,6 +38,30 @@ The JSON includes the canonical root, effective scope, loaded configuration path
 
 Use `--format table` for a compact labeled explanation or `--format markdown` for a shareable evidence table. A terminal defaults to table; redirected stdout defaults to JSON. Every format describes the same target. Unlike measurement and comparison, explanation has no headline or `--output` option: redirect stdout to save its complete JSON. See [Output Routing](../PRODUCT.md#output-routing). `locmetry --schema explanation` exposes the generated structure, state meanings and a complete example for agents.
 
+## Explain one file
+
+```sh
+locmetry explain src/main.rs
+```
+
+For Markdown from another scan root:
+
+```sh
+locmetry explain src/main.rs --root ./service --format markdown
+```
+
+For a workspace member, prefix the path with its member name:
+
+```sh
+locmetry explain api/src/main.rs --workspace repos.toml
+```
+
+Discover the complete explanation contract:
+
+```sh
+locmetry --schema explanation
+```
+
 ## Choose the Correct Policy
 
 | Task | Command |
@@ -52,7 +76,7 @@ The target must use the exact directory-entry spelling, including case and Unico
 
 With `--workspace`, the target starts with the member's folder name; roots in the workspace file are relative to that file. Only the queried member's policy is loaded, while normal membership checks still reject duplicate names or nested roots. `--root`, `--config`, `--exclude`, `--hidden` and `--respect-ignore-files` cannot be combined with `--workspace`. Paths in the result are member-prefixed, but matching globs remain relative to that member's own root.
 
-For a report made with `--subfolder`, keep the project root and use the file's project-relative path in `explain`; no subfolder option is accepted or needed. A successful explanation does not establish inclusion in an earlier restricted report. Subfolder selection errors may suggest changing ignore/hidden settings, but those overrides also change module context across the project. See [subfolder measurement](../PRODUCT.md#subfolder-measurement) and the README's [common issues and queries](../../README.md#common-issues-and-useful-queries).
+For a report made with `--subfolder`, keep the project root and use the file's project-relative path in `explain`; no subfolder option is accepted or needed. A successful explanation does not establish inclusion in an earlier restricted report. Subfolder selection errors may suggest changing ignore/hidden settings, but those overrides also change module context across the project. See [subfolder measurement](../PRODUCT.md#subfolder-measurement) and the [diagnostic recipes below](#common-issues-and-useful-queries).
 
 ## Interpret the Evidence
 
@@ -75,7 +99,7 @@ This command is a current-filesystem diagnostic, not a historical explanation of
 
 ## Common issues and useful queries
 
-These diagnostic examples use the [README sample project](../../README.md#a-tour-of-a-sample-project), from its parent directory. Personal defaults are disabled to isolate the sample policy.
+These diagnostic examples use the [README sample project](../../README.md#what-you-see), from its parent directory. Personal defaults are disabled to isolate the sample policy.
 
 ### A subdirectory scan unexpectedly reports production files as unclaimed
 

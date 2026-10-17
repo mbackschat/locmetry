@@ -23,9 +23,7 @@
 
 ## Proposals — Under Discussion
 
-- [README structure, tone and documentation boundaries](proposals/readme-restructure.md): draft for external review, covering a shorter entry point, concrete analysis examples, release-independent wording and reuse of task guides. Implementation is not yet approved.
-
-The [proposal index](proposals/README.md) distinguishes active designs from historical decisions.
+None. The [proposal index](proposals/README.md) distinguishes active designs from historical decisions.
 
 ## Historical Evidence
 

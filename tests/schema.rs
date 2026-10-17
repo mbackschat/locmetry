@@ -52,11 +52,15 @@ fn documented_examples_satisfy_their_schemas() {
         schema["$schema"],
         "https://json-schema.org/draft/2020-12/schema"
     );
-    let (workspaces, blocks): (Vec<String>, Vec<String>) =
-        ["README.md", "docs/PRODUCT.md", "docs/guides/configure.md"]
-            .iter()
-            .flat_map(|path| toml_blocks(path))
-            .partition(|block| block.lines().any(|line| line.starts_with("roots")));
+    let (workspaces, blocks): (Vec<String>, Vec<String>) = [
+        "README.md",
+        "docs/PRODUCT.md",
+        "docs/guides/configure.md",
+        "docs/guides/reports.md",
+    ]
+    .iter()
+    .flat_map(|path| toml_blocks(path))
+    .partition(|block| block.lines().any(|line| line.starts_with("roots")));
     assert!(blocks.len() >= 3);
     // TOML has no null, so a schema allowing it would mislead editors and agents.
     assert!(!schema.to_string().contains("\"null\""));
@@ -65,7 +69,10 @@ fn documented_examples_satisfy_their_schemas() {
         locmetry::Policy::from_toml(&block).unwrap();
     }
     let workspace = self::schema("workspace");
-    assert!(!workspaces.is_empty(), "the README shows a workspace file");
+    assert!(
+        !workspaces.is_empty(),
+        "the documentation shows a workspace file"
+    );
     for block in workspaces {
         assert!(is_valid(&workspace, &block), "invalid per schema:\n{block}");
     }

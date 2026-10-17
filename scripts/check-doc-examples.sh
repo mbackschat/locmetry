@@ -17,8 +17,8 @@ extract_blocks() {
     local source=${5:-"$repository/README.md"}
     printf 'set -eu\n' > "$destination"
     awk -v heading="$heading" -v wanted="$wanted" -v change_source="$change_source" '
-        $0 == "## " heading { section = 1; next }
-        section && /^## / { exit }
+        $0 == "## " heading || $0 == "### " heading { section = 1; depth = ($0 ~ /^### / ? 3 : 2); next }
+        section && (/^## / || (depth == 3 && /^### /)) { exit }
         section && /^```(sh|bash)$/ { block = 1; number++; next }
         block && /^```$/ { block = 0; next }
         block && (wanted == 0 || wanted == number) {
@@ -35,7 +35,7 @@ extract_blocks() {
     ' "$source" >> "$destination"
     [[ $(wc -l < "$destination") -gt 1 ]]
 }
-extract_blocks 'Continuous integration' "$temporary/recipe.sh" 1
+extract_blocks 'Continuous integration' "$temporary/recipe.sh" 1 0 "$repository/docs/guides/reports.md"
 
 check_recipe() {
     local scenario=$1 expected_status=$2 expected_out=$3 expected_err=$4 status=0
@@ -76,14 +76,14 @@ for project in '' service/ api/; do
 done
 printf 'version = 1\nroots = ["api", "service"]\n' > "$temporary/workflows/repos.toml"
 for block in 1 3; do
-    extract_blocks 'Explain one file' "$temporary/explain.sh" "$block"
+    extract_blocks 'Explain one file' "$temporary/explain.sh" "$block" 0 "$repository/docs/guides/selection.md"
     (cd "$temporary/workflows" && bash "$temporary/explain.sh") > "$temporary/explanation.json"
     jq -e '.result.state == "counted" and .result.file.counts.code == 1' "$temporary/explanation.json" > /dev/null
 done
-extract_blocks 'Explain one file' "$temporary/explain-markdown.sh" 2
+extract_blocks 'Explain one file' "$temporary/explain-markdown.sh" 2 0 "$repository/docs/guides/selection.md"
 (cd "$temporary/workflows" && bash "$temporary/explain-markdown.sh") > "$temporary/explanation.md"
 grep -Fq 'counted' "$temporary/explanation.md"
-extract_blocks 'Explain one file' "$temporary/explain-schema.sh" 4
+extract_blocks 'Explain one file' "$temporary/explain-schema.sh" 4 0 "$repository/docs/guides/selection.md"
 (cd "$temporary/workflows" && bash "$temporary/explain-schema.sh") > "$temporary/explanation-schema.json"
 jq -e '."$schema"' "$temporary/explanation-schema.json" > /dev/null
 
@@ -143,16 +143,46 @@ for block in 1 2 3 4 5 6 7 8; do
     esac
 done
 # The adaptive example saves a table even though stdout is redirected by this guard.
-awk '
-    /^### Look inside large folders$/ { section = 1; next }
-    section && /^### / { exit }
-    section && /^```sh$/ { block = 1; number++; next }
-    block && /^```$/ { block = 0; next }
-    block && number == 2 { print }
-' "$repository/README.md" > "$temporary/adaptive.sh"
-[[ -s "$temporary/adaptive.sh" ]]
+extract_blocks 'Look inside large folders' "$temporary/adaptive.sh" 2 0 "$repository/docs/guides/reports.md"
 (cd "$temporary/issues" && bash "$temporary/adaptive.sh") > "$temporary/adaptive.stdout"
 [[ ! -s "$temporary/adaptive.stdout" ]]
 grep -Fq 'Adaptive folder detail; rows cover measured source once.' "$temporary/issues/folders.txt"
 grep -Eq '^ web/src +2 .*1 +1 +0 .*1\.00' "$temporary/issues/folders.txt"
-echo 'README and guide examples pass: silent file exports, Markdown content, policy outcomes, compare, workspace compare, explain, partial coverage, troubleshooting queries, and adaptive folder detail.'
+
+# Two test folders distinguish a language sum from a list of per-folder rows.
+mkdir -p "$temporary/issues/acme-orders/web/specs"
+printf 'test();\n' > "$temporary/issues/acme-orders/web/specs/secondary.test.ts"
+extract_blocks 'Query a Saved Report' "$temporary/saved-queries.sh" 0 0 "$repository/docs/guides/reports.md"
+(cd "$temporary/issues" && bash "$temporary/saved-queries.sh") > "$temporary/saved-query-results"
+jq -s -e '.[0] == [{language: "TypeScript", code: 2}] and .[1] == [{purpose: "production", code: 1}, {purpose: "test", code: 2}] and .[2].path == "prototypes/pricing_experiment.py"' "$temporary/saved-query-results" > /dev/null
+
+# README tables come from the checked-in sample; only the measurement time is illustrative.
+extract_sample_block() {
+    local marker=$1 destination=$2 language=${3:-text}
+    awk -v marker="$marker" -v language="$language" '
+        $0 == "<!-- " marker " -->" { section = 1; next }
+        section && $0 == "```" language { block = 1; next }
+        block && /^```$/ { exit }
+        block { print }
+    ' "$repository/README.md" > "$destination"
+    [[ -s "$destination" ]] || { echo "Missing README sample: $marker" >&2; return 1; }
+}
+cp -R "$repository/tests/fixtures/readme/acme-orders" "$temporary/acme-orders"
+for view in language folders; do
+    args=(--root "$temporary/acme-orders" --no-user-config --format table)
+    if [[ $view == folders ]]; then args+=(--folder-rows 30); fi
+    locmetry "${args[@]}" > "$temporary/sample-$view"
+    sed -E 's/^Measured at: .*/Measured at: 2026-10-17 12:00:00 UTC/' "$temporary/sample-$view" > "$temporary/dated-$view"
+    if [[ $view == folders ]]; then
+        awk '/^ Folder / { section = 1 } section { print }' "$temporary/dated-$view" > "$temporary/actual-$view"
+    else
+        cp "$temporary/dated-$view" "$temporary/actual-$view"
+    fi
+    extract_sample_block "readme-$view" "$temporary/expected-$view"
+    diff -u "$temporary/expected-$view" "$temporary/actual-$view"
+done
+
+extract_sample_block readme-config "$temporary/sample-config" toml
+diff -u "$repository/tests/fixtures/readme/acme-orders/.locmetryrc" "$temporary/sample-config"
+
+echo 'README and guide examples pass: silent file exports, Markdown content, policy outcomes, compare, workspace compare, explain, partial coverage, troubleshooting queries, adaptive folder detail, and README sample tables.'

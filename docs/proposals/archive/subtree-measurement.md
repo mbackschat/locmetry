@@ -29,7 +29,7 @@ Add one explicit directory restriction, `--subfolder DIR`, to single-root measur
 
 ## Command and Path Contract
 
-From the directory containing the synthetic [sample project](../../../README.md#a-tour-of-a-sample-project):
+From the directory containing the synthetic [sample project](../../../README.md#what-you-see):
 
 ```sh
 locmetry acme-orders --subfolder web/src

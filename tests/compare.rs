@@ -600,34 +600,14 @@ fn comparison_totals_fit_their_contents_and_keep_large_signed_values_aligned() {
 }
 
 #[test]
-fn producer_identity_and_docs_distinguish_the_checkout_from_stable_installs() {
-    let readme = include_str!("../README.md");
-    let stable = readme
-        .split_once("latest stable release is **")
-        .unwrap()
-        .1
-        .split_once("**")
-        .unwrap()
-        .0;
-    assert!(readme.contains(&format!("### Stable release (v{stable})")));
-    assert!(readme.contains(&format!("--tag v{stable}")));
-    match env!("CARGO_PKG_VERSION_PRE") {
-        "" => assert_eq!(stable, env!("CARGO_PKG_VERSION")),
-        _ => {
-            assert!(readme.contains(&format!(
-                "This development checkout identifies as `{}`",
-                env!("CARGO_PKG_VERSION")
-            )));
-            assert!(!readme.contains(&format!("--tag v{}", env!("CARGO_PKG_VERSION"))));
-        }
-    }
-    assert!(readme.contains(&format!(
-        "\"locmetry_version\": \"{}\"",
-        env!("CARGO_PKG_VERSION")
-    )));
+fn comparisons_report_changed_producer_identity() {
     let temp = tempfile::tempdir().unwrap();
     write(temp.path(), "main.py", "print(1)\n");
     let current = measure(temp.path());
+    assert_eq!(
+        current["metadata"]["locmetry_version"],
+        env!("CARGO_PKG_VERSION")
+    );
     assert_ne!(current["metadata"]["locmetry_version"], "0.1.6");
     let mut released = current.clone();
     released["metadata"]["locmetry_version"] = json!("0.1.6");

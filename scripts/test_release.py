@@ -23,14 +23,7 @@ class ReleaseTests(unittest.TestCase):
         self.git("remote", "add", "origin", "https://github.com/mbackschat/locmetry.git")
         self.write("Cargo.toml", '[package]\nname = "locmetry"\nversion = "0.4.0"\n')
         self.write("Cargo.lock", '[[package]]\nname = "locmetry"\nversion = "0.4.0"\n\n[[package]]\nname = "other"\nversion = "0.4.0"\n')
-        self.write("README.md", '''The latest stable release is **0.4.0**.
-### Stable release (v0.4.0)
-curl /download/v0.4.0/locmetry-v0.4.0-$target.tar.gz
-install "locmetry-v0.4.0-$target/locmetry"
-cargo install --tag v0.4.0
-This checkout identifies as `0.4.0`.
-    "locmetry_version": "0.4.0",
-''')
+        self.write("README.md", '# Locmetry\n\nInstall from the latest release.\n\nIllustrative producer: 0.1.6.\n')
         self.git("add", ".")
         self.git("commit", "-qm", "Initial fixture")
 
@@ -41,15 +34,19 @@ This checkout identifies as `0.4.0`.
         (self.root / name).write_text(text)
 
     def test_prepare_updates_only_release_identity_and_is_repeatable(self):
+        readme = (self.root / "README.md").read_bytes()
         release.prepare(self.root, "0.4.1")
         first = {name: (self.root / name).read_text() for name in release.VERSION_FILES}
         release.prepare(self.root, "0.4.1")
         self.assertEqual(first, {name: (self.root / name).read_text() for name in first})
         self.assertIn('name = "other"\nversion = "0.4.0"', first["Cargo.lock"])
-        self.assertNotIn("0.4.0", first["README.md"])
+        self.assertEqual(readme, (self.root / "README.md").read_bytes())
+        self.assertEqual({"Cargo.toml", "Cargo.lock"}, set(self.git("diff", "--name-only").splitlines()))
+        self.assertEqual("0.4.1", release.crate_version(first["Cargo.toml"]))
+        self.assertIn('name = "locmetry"\nversion = "0.4.1"', first["Cargo.lock"])
 
-    def test_inconsistent_readme_fails_before_any_write(self):
-        self.write("README.md", "Missing release markers\n")
+    def test_inconsistent_lockfile_fails_before_any_write(self):
+        self.write("Cargo.lock", '[[package]]\nname = "locmetry"\nversion = "0.3.9"\n')
         before = (self.root / "Cargo.toml").read_text()
         with self.assertRaises(release.ReleaseError):
             release.prepare(self.root, "0.4.1")
@@ -65,7 +62,7 @@ This checkout identifies as `0.4.0`.
         with self.assertRaises(release.ReleaseError):
             release.check_worktree(self.root, "0.4.1")
 
-    def test_modified_release_file_is_not_silently_committed(self):
+    def test_readme_edit_is_not_silently_committed(self):
         with (self.root / "README.md").open("a") as file:
             file.write("Unrelated edit\n")
         with self.assertRaises(release.ReleaseError):

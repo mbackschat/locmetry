@@ -25,11 +25,37 @@ Normalize original reports to root-relative paths and count direct statistics pl
 
 A Tokei upgrade requires rebuilding and releasing Locmetry and rerunning counting regressions; it cannot arrive through an independent runtime Tokei upgrade.
 
+## Installation
+
+Install the prebuilt binary with `brew install mbackschat/tap/locmetry`, or download an archive and its `SHA256SUMS` from the [latest release](https://github.com/mbackschat/locmetry/releases/latest). Supported archive targets are `aarch64-apple-darwin`, `x86_64-unknown-linux-musl` and `aarch64-unknown-linux-musl`. Linux binaries are static; macOS binaries use operating-system libraries. No separately installed runtime, Git or Tokei executable is needed to measure files.
+
+For a manual download, replace `VERSION` with the release number without its `v` prefix and select your target. Extract the archive, then install the executable into a directory on your `PATH`:
+
+```sh
+version=VERSION
+target=aarch64-apple-darwin
+curl -fsSL "https://github.com/mbackschat/locmetry/releases/download/v$version/locmetry-v$version-$target.tar.gz" | tar -xz
+mkdir -p ~/.local/bin
+install "locmetry-v$version-$target/locmetry" ~/.local/bin/
+```
+
+With a Rust toolchain, build a specific release from source by replacing `VERSION` in `cargo install --locked --git https://github.com/mbackschat/locmetry --tag vVERSION`. To build or install the current local checkout:
+
+```sh
+cargo build --locked
+cargo install --locked --path .
+locmetry --version
+```
+
+Checkout documentation describes that checkout; `locmetry --guide configure` and the other embedded guides describe the installed executable. Installing a checkout does not publish a release.
+
+On Linux distributions with an older toolchain, such as Ubuntu 22.04, Homebrew also installs its own gcc and glibc for this formula; Locmetry itself is a static binary and uses neither.
+
 ## Distribution
 
 Releases target macOS arm64 and Linux x86_64 and aarch64, licensed MIT. The installed executable depends only on operating-system libraries; Cargo dependencies are compiled code, not separate runtime packages.
 
-Use `python3 scripts/release.py VERSION --publish` from a clean `main` checkout to prepare and request a release, for example `python3 scripts/release.py 0.4.1 --publish`. The [release command](../scripts/release.py) updates the crate, lockfile and README versions, runs the release checks sequentially, commits the version update, creates an annotated tag and atomically pushes both `main` and the tag. It requires the existing development tools (Python 3, Cargo, Bash and jq), GitHub access, the project origin and `mbackschat@mail.de` as the Git email. It refuses unrelated edits, conflicting tags, downgrades and a remote main that has not been integrated locally. Omitting `--publish` prepares and checks locally without committing or pushing; publication then repeats the checks.
+Use `python3 scripts/release.py VERSION --publish` from a clean `main` checkout to prepare and request a release, for example `python3 scripts/release.py 0.4.1 --publish`. The [release command](../scripts/release.py) updates the crate and lockfile versions without editing README, runs the release checks sequentially, commits the version update, creates an annotated tag and atomically pushes both `main` and the tag. It requires the existing development tools (Python 3, Cargo, Bash and jq), GitHub access, the project origin and `mbackschat@mail.de` as the Git email. It refuses unrelated edits, conflicting tags, downgrades and a remote main that has not been integrated locally. Omitting `--publish` prepares and checks locally without committing or pushing; publication then repeats the checks.
 
 If a check or push fails, fix the cause and rerun the same command. An exact version-update diff or a committed release can be resumed; existing tags are never moved. An already-pushed release is a no-op, not proof that publication succeeded. Check the [Release workflow](https://github.com/mbackschat/locmetry/actions/workflows/release.yml) and published assets before updating Homebrew. A failed GitHub workflow must be rerun in GitHub after diagnosing the failure; the local command does not retry it or update the separate tap repository.
 

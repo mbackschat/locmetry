@@ -6,7 +6,7 @@ import re
 import subprocess
 import sys
 
-VERSION_FILES = ("Cargo.toml", "Cargo.lock", "README.md")
+VERSION_FILES = ("Cargo.toml", "Cargo.lock")
 ORIGINS = ("https://github.com/mbackschat/locmetry.git", "git@github.com:mbackschat/locmetry.git")
 VERSION = r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)"
 
@@ -47,21 +47,6 @@ def release_files(original, version):
     if original["Cargo.lock"].count(lock_marker) != 1:
         raise ReleaseError("Cargo.lock does not match the crate version.")
     updated["Cargo.lock"] = original["Cargo.lock"].replace(lock_marker, f'name = "locmetry"\nversion = "{version}"')
-    readme = original["README.md"]
-    markers = (
-        f"The latest stable release is **{current}**",
-        f"### Stable release (v{current})",
-        f"/download/v{current}/",
-        f"locmetry-v{current}-$target",
-        f"--tag v{current}",
-        f"This checkout identifies as `{current}`",
-        f'"locmetry_version": "{current}"',
-    )
-    for marker in markers:
-        if marker not in readme:
-            raise ReleaseError(f"README release marker missing: {marker}")
-        readme = readme.replace(marker, marker.replace(current, version))
-    updated["README.md"] = readme
     return updated
 
 
