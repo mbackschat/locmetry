@@ -1,6 +1,7 @@
 use crate::{modules, Counts, FileRecord, Kind, Module, Policy};
 use anyhow::{bail, ensure, Context, Result};
 use ignore::WalkBuilder;
+use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::{
@@ -476,7 +477,6 @@ pub(crate) fn scan_selection(
         });
     }
     let unused_exclusions = policy.unused_exclusions(&applied);
-    let mut languages = tokei::Languages::new();
     let config = tokei::Config {
         hidden: Some(true),
         no_ignore: Some(true),
@@ -486,38 +486,7 @@ pub(crate) fn scan_selection(
         selected_files: paths.len(),
         ..Default::default()
     };
-    let (custom_paths, other_paths): (Vec<_>, Vec<_>) = paths.iter().partition(|path| {
-        matches!(
-            LanguageType::from_path(path, &config),
-            Some(Handlebars | Jupyter)
-        )
-    });
-    if !other_paths.is_empty() {
-        languages.get_statistics(&other_paths, &[], &config);
-    }
-    for path in custom_paths {
-        let kind = LanguageType::from_path(path, &config)
-            .expect("custom paths have a recognized language");
-        let language = languages.entry(kind).or_default();
-        match parse_file(kind, path, &config) {
-            Ok(report) => language.add_report(report),
-            Err(error) => {
-                if let ParseError::Content(reason, message) = error {
-                    coverage.parse_failures.push(ParseFailure {
-                        path: relative_path(path.strip_prefix(&root)?)?,
-                        reason,
-                        message,
-                    });
-                }
-                language.mark_inaccurate();
-            }
-        }
-    }
-    for kind in [Handlebars, Jupyter] {
-        if let Some(language) = languages.get_mut(&kind) {
-            language.total();
-        }
-    }
+    let languages = count_selected(&root, &paths, &config, &mut coverage)?;
     let mut inaccurate = languages.values().any(|language| language.inaccurate);
     let mut payload = serde_json::to_value(languages)?;
     let counted = normalize_reports(&mut payload, &root, policy)?;
@@ -594,6 +563,45 @@ pub(crate) fn scan_selection(
         },
         exclusion,
     ))
+}
+
+fn count_selected(
+    root: &Path,
+    paths: &[PathBuf],
+    config: &tokei::Config,
+    coverage: &mut Coverage,
+) -> Result<tokei::Languages> {
+    let mut languages = tokei::Languages::new();
+    // Tokei 15's src/utils/fs.rs re-walks every get_statistics input. Parse
+    // selected files directly to avoid that traversal and preserve selection
+    // if a file becomes a directory between selection and counting.
+    let parsed: Vec<_> = paths
+        .par_iter()
+        .filter_map(|path| {
+            LanguageType::from_path(path, config)
+                .map(|kind| (path, kind, parse_file(kind, path, config)))
+        })
+        .collect();
+    for (path, kind, result) in parsed {
+        let language = languages.entry(kind).or_default();
+        match result {
+            Ok(report) => language.add_report(report),
+            Err(error) => {
+                if let ParseError::Content(reason, message) = error {
+                    coverage.parse_failures.push(ParseFailure {
+                        path: relative_path(path.strip_prefix(root)?)?,
+                        reason,
+                        message,
+                    });
+                }
+                language.mark_inaccurate();
+            }
+        }
+    }
+    for language in languages.values_mut() {
+        language.total();
+    }
+    Ok(languages)
 }
 
 pub(super) enum ParseError {
@@ -809,4 +817,98 @@ pub fn file_records(payload: Value, policy: &Policy) -> Result<Vec<FileRecord>> 
     }
     rows.sort_by(|a, b| a.path.cmp(&b.path));
     Ok(rows)
+}
+
+#[cfg(test)]
+mod selected_file_tests {
+    use super::*;
+
+    #[test]
+    fn selected_file_statistics_match_tokei_including_embedded_languages() {
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path().canonicalize().unwrap();
+        let mut paths = Vec::new();
+        for (name, source) in [
+            ("a.rs", "// comment\n\nfn main() {}\n"),
+            ("b.rs", "fn other() {}\n"),
+            ("tool", "#!/usr/bin/env python\nprint(1)\n"),
+            (
+                "page.html",
+                "<script>\nconst x = 1;\n</script>\n<style>\na { color: red; }\n</style>\n",
+            ),
+            ("second.html", "<script>\nconst y = 2;\n</script>\n"),
+            ("README.md", "# Example\n\n```rust\nfn item() {}\n```\n"),
+            ("unknown.zzz", "unrecognized\n"),
+        ] {
+            let path = root.join(name);
+            std::fs::write(&path, source).unwrap();
+            paths.push(path);
+        }
+        let config = tokei::Config {
+            hidden: Some(true),
+            no_ignore: Some(true),
+            ..Default::default()
+        };
+        let mut expected = tokei::Languages::new();
+        expected.get_statistics(&paths, &[], &config);
+        let actual = count_selected(&root, &paths, &config, &mut Coverage::default()).unwrap();
+        let ordered = |mut languages: tokei::Languages| {
+            for language in languages.values_mut() {
+                language.reports.sort_by(|a, b| a.name.cmp(&b.name));
+                for reports in language.children.values_mut() {
+                    reports.sort_by(|a, b| a.name.cmp(&b.name));
+                }
+            }
+            serde_json::to_value(languages).unwrap()
+        };
+        assert_eq!(ordered(actual), ordered(expected));
+    }
+
+    #[test]
+    fn a_selected_file_removed_before_counting_marks_counts_unavailable() {
+        let temp = tempfile::tempdir().unwrap();
+        let path = temp.path().join("removed.rs");
+        std::fs::write(&path, "fn main() {}\n").unwrap();
+        let policy = Policy::load_layers(None, None).unwrap();
+        let selected = select_paths(temp.path(), policy.scope(), None).unwrap();
+        std::fs::remove_file(path).unwrap();
+        let languages = count_selected(
+            temp.path(),
+            &selected.paths,
+            &tokei::Config::default(),
+            &mut Coverage::default(),
+        )
+        .unwrap();
+        assert!(languages
+            .values()
+            .all(|language| language.reports.is_empty()));
+        assert!(languages.values().any(|language| language.inaccurate));
+    }
+
+    #[test]
+    fn counting_does_not_expand_a_selected_file_replaced_by_a_directory() {
+        for filename in ["chosen.rs", "chosen.py"] {
+            let temp = tempfile::tempdir().unwrap();
+            let root = temp.path().canonicalize().unwrap();
+            let path = root.join(filename);
+            std::fs::write(&path, "original\n").unwrap();
+            let policy = Policy::load_layers(None, None).unwrap();
+            let selected = select_paths(&root, policy.scope(), None).unwrap();
+            assert_eq!(selected.paths.as_slice(), std::slice::from_ref(&path));
+            std::fs::remove_file(&path).unwrap();
+            std::fs::create_dir(&path).unwrap();
+            std::fs::write(path.join("unselected.rs"), "fn added() {}\n").unwrap();
+            let languages = count_selected(
+                &root,
+                &selected.paths,
+                &tokei::Config::default(),
+                &mut Coverage::default(),
+            )
+            .unwrap();
+            assert!(languages
+                .values()
+                .all(|language| language.reports.is_empty()));
+            assert!(languages.values().any(|language| language.inaccurate));
+        }
+    }
 }

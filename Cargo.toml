@@ -14,6 +14,7 @@ clap = { version = "4", features = ["derive", "wrap_help"] }
 encoding_rs_io = "0.1"
 globset = "0.4"
 ignore = "0.4"
+rayon = "1"
 schemars = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order"] }
