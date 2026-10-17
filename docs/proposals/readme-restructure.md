@@ -156,7 +156,7 @@ Rename the comparison section to “Compared with related tools” if helpful to
 
 Recommend a short factual paragraph or compact table of orientation, with a link to the dated [capability comparison](../research/tool-capability-comparison.md). An exhaustive competitive matrix would require a separate evidence refresh and is outside this proposal. Do not use that existing research as evidence for peer capabilities it did not examine. Describe Locmetry's combination of guarantees without treating unverified competitor absences as facts.
 
-The wrapper sentence must enumerate `gradlew`, `gradlew.bat`, `mvnw`, `mvnw.cmd`, and files under `gradle/wrapper/` or `.mvn/wrapper/`, at any matching repository depth. These have purpose `unclassified` and category `third-party-wrapper`, subject to the existing selection and counting boundaries; wrapper binaries do not become countable merely because their paths match.
+The wrapper sentence must enumerate `gradlew`, `gradlew.bat`, `mvnw`, `mvnw.cmd`, and files under `gradle/wrapper/` or `.mvn/wrapper/`, at any matching repository depth. When enabled, the built-in wrapper convention assigns purpose `unclassified` and category `third-party-wrapper` unless an earlier classification stage or convention wins. Overrides and test conventions take precedence, and `classification.builtin_build = false` disables the wrapper convention. For example, `tests/gradlew` matches the test-directory convention first under default policy. Existing selection and counting boundaries also apply; wrapper binaries do not become countable merely because their paths match.
 
 Recommend one complete sentence in README, linked to a human-readable explanation under [matching and precedence](../PRODUCT.md#matching-and-precedence), where the built-in definition is already referenced. The [source definition](../../src/config.rs) remains the executable authority. Linking only to source minimizes prose duplication but is less helpful to users; creating a separate wrapper document adds navigation without sufficient scope. Maintain the short enumeration and detailed explanation together when the supported set changes.
 
@@ -195,7 +195,14 @@ A dedicated sample-project walkthrough is the main optional extraction. It would
 
 ## Compatibility and Review Constraints
 
-The proposed editorial change has two material executable dependencies. The [release script](../../scripts/release.py) currently requires seven README version markers and rewrites them during release preparation. The [documentation-example check](../../scripts/check-doc-examples.sh) selects some examples by README heading and block position. A version-free or reorganized README must retain valid release preparation and executable-example coverage; merely deleting text would break those assumptions.
+The proposed editorial change has material dependencies in release preparation, executable recipes and Rust regression guards:
+
+- The [release script](../../scripts/release.py) currently requires seven README version markers and rewrites them during release preparation.
+- The [documentation-example check](../../scripts/check-doc-examples.sh) selects some examples by README heading and block position.
+- The `producer_identity_and_docs_distinguish_the_checkout_from_stable_installs` guard in [comparison tests](../../tests/compare.rs) requires the stable-release announcement, installation heading/tag and current producer-version example. Replace the obsolete README identity assertions while retaining executable producer-version and comparison-finding coverage.
+- The `documented_examples_satisfy_their_schemas` guard in [schema tests](../../tests/schema.rs) reads TOML blocks from README, PRODUCT and the configure guide, and requires a workspace example currently supplied by README. If an example moves to another document, include its new location in schema validation and retain workspace-example coverage; do not merely remove the assertion.
+
+A version-free or reorganized README must preserve these guarantees at the examples' final locations. Merely deleting text would break the existing guards or leave relocated examples unchecked.
 
 Existing guide links to the sample tour and CI section must continue to reach an appropriate explanation after any extraction. The [documentation maintenance rules](../documentation-maintenance.md) govern indexes and links. Guide edits also change embedded `--guide` content because the binary includes those Markdown files directly. These constraints do not justify retaining an overloaded README, but they make the documentation boundary a behavior-preserving change rather than a cosmetic deletion.
 
@@ -208,9 +215,10 @@ No change to the README, runtime, release tooling or guides is made by adopting 
 - The language and folder examples use the same synthetic project, show actual output and explain `--folder-rows 30` without implying an exact row count or changed measurement.
 - A reader can find common commands, selected options, configuration rationale and one classification explanation without leaving README.
 - The comparison includes Tokei and ALOC, credits the embedded counting backend, and does not imply unsupported uniqueness or accuracy rankings.
-- The wrapper enumeration is complete and links to its detail owner.
+- The wrapper enumeration is complete, links to its detail owner and describes the enabled convention subject to classification precedence, selection and counting boundaries.
 - Each relocated workflow remains discoverable, unique evidence is preserved, and historical bodies are not rewritten to describe current behavior.
 - Current-release identity changes no longer require README edits; illustrative producer versions and contract versions retain their distinct meanings.
+- Obsolete README release-identity assertions are replaced without weakening executable producer-version or comparison-finding coverage; relocated TOML examples, including the workspace example, remain schema-checked at their final locations.
 - Local links and managed indexes remain valid; affected executable examples, release-preparation guards and embedded-guide checks still establish their existing guarantees.
 - The rendered page has a clear reading path without repeating the same detailed explanation across an introductory list, a feature section and a tour.
 
