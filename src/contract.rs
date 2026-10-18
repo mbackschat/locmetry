@@ -405,13 +405,18 @@ impl From<&crate::FileRecord> for File {
 
 impl MeasurementReport {
     /// Compact projection; coverage failures remain visible while unavailable detail is omitted.
-    pub fn headline(mut self, report: Option<String>) -> Self {
-        self.report = report;
-        self.review = None;
-        self.breakdown = None;
-        self.files = None;
-        self.metadata = self.metadata.headline();
-        self
+    /// It borrows the report, so the omitted detail, such as per-file records, is never copied.
+    pub fn headline(&self, report: Option<String>) -> Self {
+        Self {
+            schema_version: self.schema_version.clone(),
+            project: self.project.clone(),
+            metadata: self.metadata.clone().headline(),
+            summary: self.summary.clone(),
+            review: None,
+            breakdown: None,
+            files: None,
+            report,
+        }
     }
 }
 

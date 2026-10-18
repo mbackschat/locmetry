@@ -1115,6 +1115,7 @@ fn report(
         Sort::Code => RowOrder::Code,
         Sort::Name => RowOrder::Name,
     };
+    let purposes = selected_purposes(&shared.purpose);
     // Table and Markdown views; `stdout` decides styling and automatic bars.
     let human = |format: Format, stdout: bool| {
         let terminal = stdout && io::stdout().is_terminal();
@@ -1136,7 +1137,7 @@ fn report(
                         terminal,
                         bar_columns(stdout),
                     ),
-                    purposes: selected_purposes(&shared.purpose),
+                    purposes: purposes.clone(),
                 },
             ),
             Format::Markdown => {
@@ -1162,11 +1163,8 @@ fn report(
         let mut context = measured_roots(&location, format == Format::Markdown);
         // Only tables filter by purpose; their footer keeps the selection visible.
         if format == Format::Table && !shared.purpose.is_empty() {
-            let purposes: Vec<String> = selected_purposes(&shared.purpose)
-                .iter()
-                .map(Purpose::to_string)
-                .collect();
-            context += &format!("; purposes: {}", purposes.join(", "));
+            let names: Vec<String> = purposes.iter().map(Purpose::to_string).collect();
+            context += &format!("; purposes: {}", names.join(", "));
         }
         human.push_str(&format!(
             "\n{context}{separator}Measured at: {}\n",
@@ -1280,11 +1278,7 @@ fn report(
     let text = |format: Format, human: String| -> Result<String> {
         Ok(match format {
             Format::Json => report_text(&serde_json::to_value(&document)?)?,
-            // `headline` consumes its report; a printed view may need it twice.
-            Format::Headline => format!(
-                "{}\n",
-                serde_json::to_string(&document.clone().headline(None))?
-            ),
+            Format::Headline => format!("{}\n", serde_json::to_string(&document.headline(None))?),
             Format::Table | Format::Markdown => human,
         })
     };

@@ -713,6 +713,39 @@ fn workspace_bars_chart_repository_shares() {
     );
 }
 
+/// The percentage column comment bars add is set apart like every ratio, also
+/// after the repository table's Share column.
+#[test]
+fn comment_bars_separate_their_percentage_column_after_share() {
+    let temp = workspace();
+    let output = Command::new(env!("CARGO_BIN_EXE_locmetry"))
+        .env("XDG_CONFIG_HOME", "/nonexistent/locmetry-tests")
+        .env("COLUMNS", "300")
+        .current_dir(temp.path())
+        .args([
+            "workspace",
+            "--root",
+            "web",
+            "--root",
+            "api",
+            "--format",
+            "table",
+            "--bars=comments",
+        ])
+        .output()
+        .unwrap();
+    assert!(output.status.success(), "{}", stderr_of(&output));
+    let table = String::from_utf8(output.stdout).unwrap();
+    let header = table
+        .lines()
+        .find(|line| line.starts_with(" Repository "))
+        .unwrap();
+    assert!(
+        header.ends_with(" Share │ Comment %  Comment density"),
+        "{header}"
+    );
+}
+
 /// A workspace prints its repository table beside the saved report too.
 #[test]
 fn workspace_print_shows_the_table_beside_the_saved_report() {
