@@ -406,11 +406,11 @@ fn bars_join_each_table_when_the_terminal_leaves_room_beside_it() {
     // The language table is the wider one, so its threshold also fits the folders.
     // Its Total row has no bar, so its length is the table's width.
     let width = total.chars().count();
-    let at = table(width + 2 + 20);
+    let at = table(width + 2 + 10);
     assert!(!at.contains("\n Code share "), "{at}");
     let rust = at.lines().find(|line| line.starts_with(" Rust")).unwrap();
-    assert_eq!(rust.chars().count(), width + 2 + 20, "{rust}");
-    let below = table(width + 2 + 19);
+    assert_eq!(rust.chars().count(), width + 2 + 10, "{rust}");
+    let below = table(width + 2 + 9);
     assert_eq!(below.matches("\n Code share ").count(), 1, "{below}");
     assert!(below
         .lines()

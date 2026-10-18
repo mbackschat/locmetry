@@ -176,6 +176,35 @@ fn comment_bars_compare_densities_under_a_titled_column() {
     );
 }
 
+/// Inline comment bars need room for their 15-character column title, more
+/// than the 10-cell bar minimum, so the header line never outgrows the rows.
+#[test]
+fn inline_comment_bars_need_room_for_their_title() {
+    let temp = project();
+    let root = temp.path().join("project");
+    let table = |columns: usize| {
+        let output = run(
+            &root,
+            &["--format", "table", "--bars=comments"],
+            &columns.to_string(),
+        );
+        String::from_utf8(output.stdout).unwrap()
+    };
+    // The Total row has no bar, so its length is the language table's width.
+    let width = table(300)
+        .lines()
+        .find(|line| line.starts_with(" Total"))
+        .unwrap()
+        .chars()
+        .count();
+    let at = table(width + 2 + 15);
+    let rust = at.lines().find(|line| line.starts_with(" Rust ")).unwrap();
+    assert!(rust.ends_with(&format!("  {}", "▓".repeat(15))), "{rust}");
+    assert!(!at.contains("\n Comment density"), "{at}");
+    let below = table(width + 2 + 14);
+    assert!(below.contains("\n Comment density"), "{below}");
+}
+
 /// One purpose leaves purpose bars nothing to split, so bars follow the
 /// table's Comment % column and chart comment density.
 #[test]

@@ -1102,15 +1102,13 @@ fn bar(kind: BarKind, row: RowCode, scale: BarScale, width: usize, theme: Theme)
     bar
 }
 
-/// Inline bars need this many cells; below it, the chart under the table
-/// shows proportions better than a stub beside it.
-const INLINE_BAR_MIN: usize = 20;
-
 /// Bar cells beside a table `table_width` wide, after a two-space gap, when the
-/// minimum inline bar fits within `columns`.
-fn inline_bar_width(table_width: usize, columns: usize) -> Option<usize> {
+/// minimum bar fits within `columns`: the chart's minimum, widened to the bar
+/// column's `title` so the header line never outgrows the rows.
+fn inline_bar_width(table_width: usize, title: &str, columns: usize) -> Option<usize> {
     let room = columns.checked_sub(table_width + 2)?;
-    (room >= INLINE_BAR_MIN).then(|| room.min(*BAR_CELLS.end()))
+    let minimum = (*BAR_CELLS.start()).max(title.chars().count());
+    (room >= minimum).then(|| room.min(*BAR_CELLS.end()))
 }
 
 /// Each body row's code and the table total, the purposes shown, and where
@@ -1173,7 +1171,7 @@ fn bar_table(
     .lines()
     .next()
     .map_or(0, |line| line.chars().count());
-    let Some(cells) = inline_bar_width(width, columns) else {
+    let Some(cells) = inline_bar_width(width, kind.heading(), columns) else {
         let table = text_table(header, body, Some(total), layout, theme);
         if !chart {
             return (table, String::new());
@@ -2156,18 +2154,23 @@ mod tests {
         assert!(total.contains("\x1b[1;35m   4\x1b[0m"), "{total}");
     }
 
-    /// Bars join a table only when the minimum inline bar fits beside it; the
-    /// threshold follows the table's width, not a fixed terminal size.
+    /// Bars join a table only when the minimum inline bar fits beside it, and
+    /// never narrower than their column title; the threshold follows the
+    /// table's width, not a fixed terminal size.
     #[test]
     fn inline_bars_need_the_minimum_bar_beside_the_table() {
-        let threshold = 90 + 2 + INLINE_BAR_MIN;
-        assert_eq!(inline_bar_width(90, threshold - 1), None);
-        assert_eq!(inline_bar_width(90, threshold), Some(INLINE_BAR_MIN));
+        let threshold = 90 + 2 + 10;
+        assert_eq!(inline_bar_width(90, "Code share", threshold - 1), None);
+        assert_eq!(inline_bar_width(90, "Code share", threshold), Some(10));
+        assert_eq!(inline_bar_width(90, "Code share", threshold + 7), Some(17));
         assert_eq!(
-            inline_bar_width(90, threshold + 7),
-            Some(INLINE_BAR_MIN + 7)
+            inline_bar_width(90, "Code share", 1000),
+            Some(*BAR_CELLS.end())
         );
-        assert_eq!(inline_bar_width(90, 1000), Some(*BAR_CELLS.end()));
+
+        let threshold = 90 + 2 + "Comment density".len();
+        assert_eq!(inline_bar_width(90, "Comment density", threshold - 1), None);
+        assert_eq!(inline_bar_width(90, "Comment density", threshold), Some(15));
     }
 
     /// Automatic bars only decorate a table they fit beside: otherwise the
