@@ -146,16 +146,10 @@ fn member_totals<'a>(
     ordered(rows, |totals| totals.source.code, order)
 }
 
-/// Legends that state how a table's columns add up; readers otherwise
-/// misread Code as a sum of Comments and Blanks.
-const LANGUAGE_LEGEND: &str = "Lines = Code + Comments + Blanks; Production + Test + Unclassified = Code; Test/prod = Test / Production.";
 /// Tests often live in another language than their subject, such as Kotlin
 /// tests for Java code; docs/plans/archive/test-production-ratios.md requires the note.
 const LANGUAGE_RATIO_NOTE: &str =
     "Tests written in another language than the code they test skew per-language Test/prod.";
-const FOLDER_LEGEND: &str =
-    "Production + Test + Unclassified = Code; Test/prod = Test / Production.";
-const REPOSITORY_LEGEND: &str = "Production + Test + Unclassified = Code; Test/prod = Test / Production; Share = Code / workspace Code.";
 const CATEGORY_LEGEND: &str =
     "Rows of one purpose add up to that purpose's Code; all rows add up to the total Code.";
 
@@ -341,7 +335,10 @@ pub fn render_markdown(
         writeln!(
             output,
             "\n{}",
-            Theme::MARKDOWN.paint(Role::Muted, REPOSITORY_LEGEND)
+            Theme::MARKDOWN.paint(
+                Role::Muted,
+                &ALL_PURPOSES.legend(None, Some("Share = Code / workspace Code"))
+            )
         )
         .unwrap();
         repository_grid(
@@ -579,15 +576,26 @@ fn counted(count: u64, noun: &str) -> String {
 ///
 /// The purpose columns split Code, while Comments and Blanks sit beside it, so
 /// separators and an accented Code column show which numbers belong together.
+#[derive(Default)]
 struct Layout {
     /// Columns preceded by a `│` separator. Layouts may name columns a table
     /// lacks, such as the Share column `--bars` adds, which are then ignored.
-    breaks: &'static [usize],
+    breaks: Vec<usize>,
     /// Column carrying the primary metric.
     strong: Option<usize>,
-    secondary: &'static [usize],
-    /// First of the Production, Test and Unclassified columns.
-    purposes: Option<usize>,
+    secondary: Vec<usize>,
+    /// The purpose each purpose column splits Code by.
+    purposes: Vec<(usize, Purpose)>,
+}
+
+/// Production, Test and Unclassified columns starting at `first`.
+#[cfg(test)]
+fn purpose_columns(first: usize) -> Vec<(usize, Purpose)> {
+    Purpose::ALL
+        .into_iter()
+        .enumerate()
+        .map(|(offset, purpose)| (first + offset, purpose))
+        .collect()
 }
 
 #[derive(Clone, Copy)]
@@ -654,7 +662,9 @@ fn text_table_with_bars(
             };
             let purpose = layout
                 .purposes
-                .and_then(|first| Purpose::ALL.get(column.checked_sub(first)?).copied());
+                .iter()
+                .find(|(index, _)| *index == column)
+                .map(|(_, purpose)| *purpose);
             let role = match (column, value.as_str(), purpose, kind) {
                 (0, _, _, _) => Some(Role::Heading),
                 (_, "-" | "0" | "0.00" | "0.0%", _, _) => Some(Role::Muted),
@@ -700,54 +710,312 @@ fn text_table_with_bars(
     output
 }
 
-/// Glyphs per purpose, in `Purpose::ALL` order; distinct shapes keep the split
-/// readable without color, as human presentation requires.
+/// Glyphs per bar segment; distinct shapes keep segments readable without
+/// color, as human presentation requires.
 const BAR_GLYPHS: [char; 3] = ['█', '▓', '░'];
 /// Bar cells: a readable minimum, and a maximum beyond which wider terminals
 /// add length without adding legible detail.
 const BAR_CELLS: std::ops::RangeInclusive<usize> = 10..=100;
 
-/// Bars under a table comparing its rows' Code, split by purpose, after each
-/// row's percentage of `total` Code. The largest row fills the width `columns`
-/// leaves after label and percentage, so the bars never depend on how wide the
-/// table above them is.
-fn share_bars(rows: &[(String, [u64; 3])], total: u64, columns: usize, theme: Theme) -> String {
-    let rows: Vec<(String, [u64; 3])> = rows
+/// Code per purpose and comments of one table row: what its purpose columns,
+/// ratio and bars describe.
+#[derive(Clone, Copy, Default)]
+struct RowCode {
+    purposes: [u64; 3],
+    comments: u64,
+}
+
+impl RowCode {
+    fn of(purposes: &BTreeMap<Purpose, u64>, comments: u64) -> Self {
+        Self {
+            purposes: Purpose::ALL.map(|purpose| purposes.get(&purpose).copied().unwrap_or(0)),
+            comments,
+        }
+    }
+
+    fn of_totals(totals: &Summary) -> Self {
+        Self {
+            purposes: Purpose::ALL.map(|purpose| totals.purpose(purpose).code),
+            comments: totals.source.comments,
+        }
+    }
+
+    fn code(&self) -> u64 {
+        self.purposes.iter().sum()
+    }
+
+    fn purpose(&self, purpose: Purpose) -> u64 {
+        self.purposes[purpose.index()]
+    }
+}
+
+/// Comments per line of code or comment, as SonarQube's comment density;
+/// `-` without either.
+fn comment_share(code: u64, comments: u64) -> String {
+    share_of(comments, code + comments)
+}
+
+fn purpose_title(purpose: Purpose) -> &'static str {
+    match purpose {
+        Purpose::Production => "Production",
+        Purpose::Test => "Test",
+        Purpose::Unclassified => "Unclassified",
+    }
+}
+
+/// The ratio after a table's purpose columns.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Ratio {
+    /// Test code per production line, when both purposes are counted.
+    TestPerProduction,
+    /// Comment density, which replaces a ratio that lacks one of its purposes.
+    CommentShare,
+}
+
+/// The purposes a table counts, which decide its purpose columns and ratio.
+struct PurposeColumns<'a> {
+    shown: &'a [Purpose],
+}
+
+/// Every purpose: the unfiltered view, and Markdown's.
+const ALL_PURPOSES: PurposeColumns<'static> = PurposeColumns {
+    shown: &Purpose::ALL,
+};
+
+impl PurposeColumns<'_> {
+    /// One purpose would only repeat Code, so it gets no column.
+    fn columns(&self) -> &[Purpose] {
+        match self.shown.len() {
+            0 | 1 => &[],
+            _ => self.shown,
+        }
+    }
+
+    fn ratio(&self) -> Ratio {
+        match self.shown.contains(&Purpose::Production) && self.shown.contains(&Purpose::Test) {
+            true => Ratio::TestPerProduction,
+            false => Ratio::CommentShare,
+        }
+    }
+
+    fn header(&self) -> Vec<&'static str> {
+        let mut header: Vec<_> = self.columns().iter().map(|p| purpose_title(*p)).collect();
+        header.push(match self.ratio() {
+            Ratio::TestPerProduction => "Test/prod",
+            Ratio::CommentShare => "Comment %",
+        });
+        header
+    }
+
+    fn cells(&self, row: RowCode) -> Vec<String> {
+        let mut cells: Vec<_> = self
+            .columns()
+            .iter()
+            .map(|purpose| grouped(row.purpose(*purpose)))
+            .collect();
+        cells.push(match self.ratio() {
+            Ratio::TestPerProduction => {
+                test_ratio(row.purpose(Purpose::Production), row.purpose(Purpose::Test))
+            }
+            Ratio::CommentShare => comment_share(row.code(), row.comments),
+        });
+        cells
+    }
+
+    /// The layout of a table whose `lead` columns precede the purpose columns,
+    /// followed by the ratio and the Share column bars may add.
+    fn layout(&self, lead: usize, strong: usize, breaks: &[usize], secondary: &[usize]) -> Layout {
+        let ratio = lead + self.columns().len();
+        let mut layout = Layout {
+            breaks: breaks.to_vec(),
+            strong: Some(strong),
+            secondary: secondary.to_vec(),
+            purposes: (lead..).zip(self.columns().iter().copied()).collect(),
+        };
+        for column in [lead, ratio, ratio + 1] {
+            if !layout.breaks.contains(&column) {
+                layout.breaks.push(column);
+            }
+        }
+        layout.secondary.extend([ratio, ratio + 1]);
+        layout
+    }
+
+    /// How the columns add up: `first` and `last` frame the purpose sum and
+    /// the ratio's definition.
+    fn legend(&self, first: Option<&str>, last: Option<&str>) -> String {
+        let sum = (self.columns().len() > 1).then(|| {
+            let titles: Vec<_> = self.columns().iter().map(|p| purpose_title(*p)).collect();
+            format!("{} = Code", titles.join(" + "))
+        });
+        let ratio = match self.ratio() {
+            Ratio::TestPerProduction => "Test/prod = Test / Production",
+            Ratio::CommentShare => "Comment % = Comments / (Code + Comments)",
+        };
+        let parts: Vec<String> = [
+            first.map(String::from),
+            sum,
+            Some(ratio.into()),
+            last.map(String::from),
+        ]
+        .into_iter()
+        .flatten()
+        .collect();
+        format!("{}.", parts.join("; "))
+    }
+
+    /// Names the selection, so filtered totals are not read as complete ones.
+    fn filter_note(&self) -> Option<String> {
+        let names = |purposes: Vec<Purpose>| {
+            purposes
+                .iter()
+                .map(Purpose::to_string)
+                .collect::<Vec<_>>()
+                .join(" and ")
+        };
+        let excluded: Vec<Purpose> = Purpose::ALL
+            .into_iter()
+            .filter(|purpose| !self.shown.contains(purpose))
+            .collect();
+        (!excluded.is_empty()).then(|| {
+            format!(
+                "Purposes shown: {}; {} excluded.",
+                names(self.shown.to_vec()),
+                names(excluded)
+            )
+        })
+    }
+}
+
+/// What share bars show.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum BarKind {
+    /// Each row's Code split by purpose, scaled to the largest row.
+    Purpose,
+    /// Each row's Code against its Comments, across the full bar.
+    Comments,
+}
+
+impl BarKind {
+    /// The percentage column beside inline bars.
+    fn title(self) -> &'static str {
+        match self {
+            BarKind::Purpose => "Share",
+            BarKind::Comments => "Comment %",
+        }
+    }
+
+    fn definition(self) -> &'static str {
+        match self {
+            BarKind::Purpose => "Share = Code / total Code. ",
+            BarKind::Comments => "Comment % = Comments / (Code + Comments). ",
+        }
+    }
+
+    fn scale_note(self) -> &'static str {
+        match self {
+            BarKind::Purpose => "; the largest row fills the bar.",
+            BarKind::Comments => "; each row fills the bar.",
+        }
+    }
+
+    fn heading(self) -> &'static str {
+        match self {
+            BarKind::Purpose => "Code share",
+            BarKind::Comments => "Code and comments",
+        }
+    }
+
+    fn segments(self, row: RowCode) -> [u64; 3] {
+        match self {
+            BarKind::Purpose => row.purposes,
+            BarKind::Comments => [row.code(), row.comments, 0],
+        }
+    }
+
+    fn role(self, segment: usize) -> Role {
+        match self {
+            BarKind::Purpose => Role::Purpose(Purpose::ALL[segment]),
+            BarKind::Comments => [Role::Primary, Role::Secondary, Role::Muted][segment],
+        }
+    }
+
+    /// The value that fills a bar: the largest row's Code, or the row itself.
+    fn scale(self, row: RowCode, largest: u64) -> u64 {
+        match self {
+            BarKind::Purpose => largest,
+            BarKind::Comments => row.code() + row.comments,
+        }
+    }
+
+    fn percent(self, row: RowCode, total: RowCode) -> String {
+        match self {
+            BarKind::Purpose => share_of(row.code(), total.code()),
+            BarKind::Comments => comment_share(row.code(), row.comments),
+        }
+    }
+
+    /// Glyph and name of each segment the bars can show, in segment hues.
+    fn key(self, shown: &[Purpose], theme: Theme) -> String {
+        let segments: Vec<(usize, &str)> = match self {
+            BarKind::Purpose => shown
+                .iter()
+                .map(|purpose| (purpose.index(), purpose_title(*purpose)))
+                .collect(),
+            BarKind::Comments => vec![(0, "Code"), (1, "Comments")],
+        };
+        segments
+            .into_iter()
+            .map(|(index, name)| {
+                theme.paint(self.role(index), &format!("{} {name}", BAR_GLYPHS[index]))
+            })
+            .collect::<Vec<_>>()
+            .join("  ")
+    }
+}
+
+/// Bars under a table: each row's percentage, then its bar in the width
+/// `columns` leaves after label and percentage, so the bars never depend on
+/// how wide the table above them is.
+fn share_bars(
+    rows: &[(String, RowCode)],
+    total: RowCode,
+    kind: BarKind,
+    columns: usize,
+    shown: &[Purpose],
+    theme: Theme,
+) -> String {
+    let rows: Vec<(String, RowCode)> = rows
         .iter()
-        .map(|(label, code)| (plain(label), *code))
+        .map(|(label, row)| (plain(label), *row))
         .collect();
     let label_width = rows
         .iter()
         .map(|(label, _)| label.chars().count())
         .max()
         .unwrap_or(0);
-    let shares: Vec<String> = rows
+    let percents: Vec<String> = rows
         .iter()
-        .map(|(_, code)| share_of(code.iter().sum(), total))
+        .map(|(_, row)| kind.percent(*row, total))
         .collect();
-    let share_width = shares.iter().map(String::len).max().unwrap_or(0);
+    let percent_width = percents.iter().map(String::len).max().unwrap_or(0);
     let width = columns
-        .saturating_sub(1 + label_width + 2 + 2 + share_width)
+        .saturating_sub(1 + label_width + 2 + 2 + percent_width)
         .clamp(*BAR_CELLS.start(), *BAR_CELLS.end());
-    let largest = rows
-        .iter()
-        .map(|(_, code)| code.iter().sum())
-        .max()
-        .unwrap_or(0);
+    let largest = rows.iter().map(|(_, row)| row.code()).max().unwrap_or(0);
     let mut output = format!(
         " {}  {}\n",
-        theme.paint(Role::Primary, "Code share"),
-        bar_key(theme)
+        theme.paint(Role::Primary, kind.heading()),
+        kind.key(shown, theme)
     );
-    for ((label, code), share) in rows.iter().zip(shares) {
-        let bar = bar(code, largest, width, theme);
-        let row_code: u64 = code.iter().sum();
-        let share = match row_code {
-            0 => theme.paint(Role::Muted, &format!("{share:>share_width$}")),
-            _ => format!("{share:>share_width$}"),
+    for ((label, row), percent) in rows.iter().zip(percents) {
+        let bar = bar(kind, *row, largest, width, theme);
+        let percent = match row.code() {
+            0 => theme.paint(Role::Muted, &format!("{percent:>percent_width$}")),
+            _ => format!("{percent:>percent_width$}"),
         };
         output += &format!(
-            " {}  {share}",
+            " {}  {percent}",
             theme.paint(Role::Heading, &format!("{label:<label_width$}"))
         );
         if !bar.is_empty() {
@@ -758,46 +1026,33 @@ fn share_bars(rows: &[(String, [u64; 3])], total: u64, columns: usize, theme: Th
     output
 }
 
-/// The row's percentage of `total` Code, `-` without any code.
-fn share_of(code: u64, total: u64) -> String {
+/// The row's percentage of `total`, `-` without a total.
+fn share_of(part: u64, total: u64) -> String {
     match total {
         0 => "-".to_string(),
-        _ => format!("{:.1}%", code as f64 * 100.0 / total as f64),
+        _ => format!("{:.1}%", part as f64 * 100.0 / total as f64),
     }
 }
 
-/// The purpose glyphs and names, each in its purpose hue.
-fn bar_key(theme: Theme) -> String {
-    Purpose::ALL
-        .into_iter()
-        .zip(BAR_GLYPHS)
-        .map(|(purpose, glyph)| {
-            let name = match purpose {
-                Purpose::Production => "Production",
-                Purpose::Test => "Test",
-                Purpose::Unclassified => "Unclassified",
-            };
-            theme.paint(Role::Purpose(purpose), &format!("{glyph} {name}"))
-        })
-        .collect::<Vec<_>>()
-        .join("  ")
-}
-
-/// One row's bar, `width` cells for the `largest` row; a row too small for one
-/// cell gets a sliver in its largest purpose, a row without code nothing.
-fn bar(code: &[u64; 3], largest: u64, width: usize, theme: Theme) -> String {
+/// One row's bar in `width` cells for its scale; a row too small for one cell
+/// gets a sliver in its largest segment, a row without any count nothing.
+fn bar(kind: BarKind, row: RowCode, largest: u64, width: usize, theme: Theme) -> String {
+    let segments = kind.segments(row);
     let mut bar = String::new();
-    for (index, count) in bar_cells(code, largest, width).into_iter().enumerate() {
+    for (index, count) in bar_cells(&segments, kind.scale(row, largest), width)
+        .into_iter()
+        .enumerate()
+    {
         if count > 0 {
             let glyphs = BAR_GLYPHS[index].to_string().repeat(count);
-            bar += &theme.paint(Role::Purpose(Purpose::ALL[index]), &glyphs);
+            bar += &theme.paint(kind.role(index), &glyphs);
         }
     }
-    if bar.is_empty() && code.iter().any(|code| *code > 0) {
+    if bar.is_empty() && segments.iter().any(|count| *count > 0) {
         let largest = (0..3)
-            .max_by_key(|index| (code[*index], 3 - index))
+            .max_by_key(|index| (segments[*index], 3 - index))
             .unwrap();
-        bar += &theme.paint(Role::Purpose(Purpose::ALL[largest]), "▏");
+        bar += &theme.paint(kind.role(largest), "▏");
     }
     bar
 }
@@ -813,45 +1068,48 @@ fn inline_bar_width(table_width: usize, columns: usize) -> Option<usize> {
     (room >= INLINE_BAR_MIN).then(|| room.min(*BAR_CELLS.end()))
 }
 
-/// Code per purpose for each body row of a table, and where its bars go.
+/// Each body row's code and the table total, the purposes shown, and where
+/// the bars go.
 struct BarRows<'a> {
-    codes: &'a [[u64; 3]],
-    total_code: u64,
+    rows: &'a [RowCode],
+    total: RowCode,
+    shown: &'a [Purpose],
     bars: Bars,
 }
 
-/// A table with share bars: beside its rows when the minimum inline bar fits,
-/// adding a Share column unless `has_share`; otherwise followed by a chart for
-/// [`Bars::Always`] and left as it is for [`Bars::Fit`]. Returns the table and
-/// what follows its legends.
+/// A table with bars: beside its rows when the minimum inline bar fits,
+/// adding the bar kind's percentage column unless the table has it; otherwise
+/// followed by a chart for [`Bars::Always`] and left as it is for
+/// [`Bars::Fit`]. Returns the table and what follows its legends.
 fn bar_table(
     header: &[&str],
     body: &[Vec<String>],
     total: Vec<String>,
     layout: &Layout,
-    has_share: bool,
     bars: &BarRows,
     theme: Theme,
 ) -> (String, String) {
     let BarRows {
-        codes,
-        total_code,
+        rows,
+        total: total_row,
+        shown,
         bars,
     } = *bars;
-    let (columns, chart) = match bars {
-        Bars::Off => (0, false),
-        Bars::Fit(columns) => (columns, false),
-        Bars::Always(columns) => (columns, true),
+    let (columns, chart, kind) = match bars {
+        Bars::Off => (0, false, BarKind::Purpose),
+        Bars::Fit(columns) => (columns, false, BarKind::Purpose),
+        Bars::Always(columns, kind) => (columns, true, kind),
     };
+    let has_percent = header.contains(&kind.title());
     let mut inline_header = header.to_vec();
     let mut inline_body = body.to_vec();
     let mut inline_total = total.clone();
-    if !has_share {
-        inline_header.push("Share");
-        for (row, code) in inline_body.iter_mut().zip(codes) {
-            row.push(share_of(code.iter().sum(), total_code));
+    if !has_percent {
+        inline_header.push(kind.title());
+        for (cells, row) in inline_body.iter_mut().zip(rows) {
+            cells.push(kind.percent(*row, total_row));
         }
-        inline_total.push(share_of(total_code, total_code));
+        inline_total.push(kind.percent(total_row, total_row));
     }
     // Measured on the plain rendering, so the width always matches the layout.
     let width = text_table(
@@ -869,34 +1127,28 @@ fn bar_table(
         if !chart {
             return (table, String::new());
         }
-        let rows: Vec<_> = body
+        let labelled: Vec<_> = body
             .iter()
-            .map(|row| row[0].clone())
-            .zip(codes.iter().copied())
+            .map(|cells| cells[0].clone())
+            .zip(rows.iter().copied())
             .collect();
-        return (
-            table,
-            format!("\n{}", share_bars(&rows, total_code, columns, theme)),
-        );
+        let chart = share_bars(&labelled, total_row, kind, columns, shown, theme);
+        return (table, format!("\n{chart}"));
     };
-    let largest = codes
+    let largest = rows.iter().map(RowCode::code).max().unwrap_or(0);
+    let row_bars: Vec<String> = rows
         .iter()
-        .map(|code| code.iter().sum())
-        .max()
-        .unwrap_or(0);
-    let row_bars: Vec<String> = codes
-        .iter()
-        .map(|code| bar(code, largest, cells, theme))
+        .map(|row| bar(kind, *row, largest, cells, theme))
         .collect();
-    let defined = match has_share {
+    let defined = match has_percent {
         true => "",
-        false => "Share = Code / total Code. ",
+        false => kind.definition(),
     };
     let key = format!(
         " {}{}{}\n",
         theme.paint(Role::Muted, &format!("{defined}Bars: ")),
-        bar_key(theme),
-        theme.paint(Role::Muted, "; the largest row fills the bar.")
+        kind.key(shown, theme),
+        theme.paint(Role::Muted, kind.scale_note())
     );
     let table = text_table_with_bars(
         &inline_header,
@@ -909,19 +1161,19 @@ fn bar_table(
     (table, key)
 }
 
-/// Whole cells per purpose: the row's length rounds its fraction of `largest`
+/// Whole cells per segment: the row's length rounds its fraction of `scale`
 /// across `width`, and largest remainders distribute it so the segments add up
 /// exactly.
-fn bar_cells(code: &[u64; 3], largest: u64, width: usize) -> [usize; 3] {
-    let row: u64 = code.iter().sum();
-    if largest == 0 || row == 0 {
+fn bar_cells(segments: &[u64; 3], scale: u64, width: usize) -> [usize; 3] {
+    let row: u64 = segments.iter().sum();
+    if scale == 0 || row == 0 {
         return [0; 3];
     }
-    let (row, largest, width) = (row as u128, largest as u128, width as u128);
-    let length = (row * width * 2 + largest) / (largest * 2);
-    let mut cells = code.map(|code| (code as u128 * length / row) as usize);
+    let (row, scale, width) = (row as u128, scale as u128, width as u128);
+    let length = (row * width * 2 + scale) / (scale * 2);
+    let mut cells = segments.map(|count| (count as u128 * length / row) as usize);
     let mut remainders: Vec<(u128, usize)> = (0..3)
-        .map(|index| (code[index] as u128 * length % row, index))
+        .map(|index| (segments[index] as u128 * length % row, index))
         .collect();
     remainders.sort_by(|a, b| b.0.cmp(&a.0).then(a.1.cmp(&b.1)));
     let missing = length as usize - cells.iter().sum::<usize>();
@@ -1026,16 +1278,18 @@ pub struct TableOptions {
     pub theme: Theme,
     pub folder_rows: Option<usize>,
     pub bars: Bars,
+    /// Purposes whose source the tables count, in `Purpose::ALL` order.
+    pub purposes: Vec<Purpose>,
 }
 
-/// Share bars for terminal tables, with the columns available to them.
+/// Bars for terminal tables, with the columns available to them.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Bars {
     Off,
-    /// Beside each table that leaves room for them; omitted elsewhere.
+    /// Purpose bars beside each table that leaves room for them; omitted elsewhere.
     Fit(usize),
-    /// Beside each table that leaves room for them; a chart below elsewhere.
-    Always(usize),
+    /// Bars beside each table that leaves room for them; a chart below elsewhere.
+    Always(usize, BarKind),
 }
 
 /// Render a measurement table using semantic presentation roles.
@@ -1059,6 +1313,7 @@ pub fn render_table_with_theme(
             theme,
             folder_rows: None,
             bars: Bars::Off,
+            purposes: Purpose::ALL.to_vec(),
         },
     )
 }
@@ -1092,21 +1347,40 @@ pub fn render_table_with_options(
         theme,
         folder_rows,
         bars,
+        purposes,
     } = options;
+    // A purpose selection counts only that source, so every table, total and
+    // bar is rebuilt from the selected records.
+    let selected: Vec<FileRecord>;
+    let selected_summary;
+    let (summary, rows) = match purposes.len() < Purpose::ALL.len() {
+        true => {
+            selected = rows
+                .iter()
+                .filter(|row| {
+                    row.kind != Kind::Source || purposes.contains(&row.classification.purpose)
+                })
+                .cloned()
+                .collect();
+            selected_summary = crate::build_report(&selected);
+            (&selected_summary, &selected[..])
+        }
+        false => (summary, rows),
+    };
+    let columns = PurposeColumns { shown: &purposes };
     let languages = ordered(
         source_languages(rows).into_iter().collect(),
         |(counts, _)| counts.code,
         order,
     );
-    let purpose_cells = |code: &dyn Fn(Purpose) -> u64| {
-        Purpose::ALL
-            .into_iter()
-            .map(|purpose| grouped(code(purpose)))
-            .collect::<Vec<_>>()
-    };
+    let codes: Vec<RowCode> = languages
+        .iter()
+        .map(|(_, (counts, purposes))| RowCode::of(purposes, counts.comments))
+        .collect();
     let body: Vec<Vec<String>> = languages
         .iter()
-        .map(|(language, (counts, purposes))| {
+        .zip(&codes)
+        .map(|((language, (counts, _)), code)| {
             let mut row = vec![language.clone()];
             row.extend(
                 [
@@ -1118,13 +1392,12 @@ pub fn render_table_with_options(
                 ]
                 .map(grouped),
             );
-            let code = |purpose| purposes.get(&purpose).copied().unwrap_or(0);
-            row.extend(purpose_cells(&code));
-            row.push(test_ratio(code(Purpose::Production), code(Purpose::Test)));
+            row.extend(columns.cells(*code));
             row
         })
         .collect();
     let source = &summary.totals.source;
+    let total_code = RowCode::of_totals(&summary.totals);
     let mut total = vec!["Total".to_string()];
     total.extend(
         [
@@ -1136,98 +1409,95 @@ pub fn render_table_with_options(
         ]
         .map(grouped),
     );
-    let code = |purpose| summary.totals.purpose(purpose).code;
-    total.extend(purpose_cells(&code));
-    total.push(test_ratio(code(Purpose::Production), code(Purpose::Test)));
+    total.extend(columns.cells(total_code));
     // No title: the footer names the measured root, which a title repeated.
     let mut output = String::new();
-    let total_code = summary.totals.source.code;
-    // With --bars, a table returns what follows its legends: an inline bar key
+    // With bars, a table returns what follows its legends: an inline bar key
     // or the chart below it.
     let table = |header: &[&str],
                  body: &[Vec<String>],
                  total: Vec<String>,
                  layout: &Layout,
-                 has_share: bool,
-                 codes: &[[u64; 3]]| match bars {
-        Bars::Off => (
-            text_table(header, body, Some(total), layout, theme),
-            String::new(),
-        ),
-        Bars::Fit(_) | Bars::Always(_) => bar_table(
-            header,
-            body,
-            total,
-            layout,
-            has_share,
-            &BarRows {
-                codes,
-                total_code,
-                bars,
-            },
-            theme,
-        ),
+                 rows: &[RowCode]| {
+        match bars {
+            Bars::Off => (
+                text_table(header, body, Some(total), layout, theme),
+                String::new(),
+            ),
+            Bars::Fit(_) | Bars::Always(..) => bar_table(
+                header,
+                body,
+                total,
+                layout,
+                &BarRows {
+                    rows,
+                    total: total_code,
+                    shown: &purposes,
+                    bars,
+                },
+                theme,
+            ),
+        }
     };
-    let codes: Vec<[u64; 3]> = languages
-        .iter()
-        .map(|(_, (_, purposes))| {
-            Purpose::ALL.map(|purpose| purposes.get(&purpose).copied().unwrap_or(0))
-        })
-        .collect();
+    let header = |lead: &[&'static str]| {
+        let mut header = lead.to_vec();
+        header.extend(columns.header());
+        header
+    };
     let (text, after) = table(
-        &[
-            "Language",
-            "Files",
-            "Lines",
-            "Code",
-            "Comments",
-            "Blanks",
-            "Production",
-            "Test",
-            "Unclassified",
-            "Test/prod",
-        ],
+        &header(&["Language", "Files", "Lines", "Code", "Comments", "Blanks"]),
         &body,
         total,
-        &Layout {
-            breaks: &[4, 6, 9, 10],
-            strong: Some(3),
-            secondary: &[1, 4, 5, 9, 10],
-            purposes: Some(6),
-        },
-        false,
+        &columns.layout(6, 3, &[4], &[1, 4, 5]),
         &codes,
     );
     output += &text;
-    for legend in [LANGUAGE_LEGEND, LANGUAGE_RATIO_NOTE] {
-        output += &format!(" {}\n", theme.paint(Role::Muted, legend));
+    let mut legends = vec![columns.legend(Some("Lines = Code + Comments + Blanks"), None)];
+    if columns.ratio() == Ratio::TestPerProduction {
+        legends.push(LANGUAGE_RATIO_NOTE.into());
+    }
+    legends.extend(columns.filter_note());
+    for legend in legends {
+        output += &format!(" {}\n", theme.paint(Role::Muted, &legend));
     }
     output += &after;
 
     // A workspace's top-level folders are its members, so repository rows,
     // which add the test ratio and share, take the folder rows' place.
     if !findings.members.is_empty() {
-        let (body, total) = repository_rows(summary, findings.members, order);
-        let codes: Vec<[u64; 3]> = member_totals(summary, findings.members, order)
-            .into_iter()
-            .map(|(_, totals)| Purpose::ALL.map(|purpose| totals.purpose(purpose).code))
+        let members = member_totals(summary, findings.members, order);
+        let codes: Vec<RowCode> = members
+            .iter()
+            .map(|(_, totals)| RowCode::of_totals(totals))
             .collect();
+        let cells = |label: &str, totals: &Summary, code: RowCode| {
+            let mut row = vec![
+                label.to_string(),
+                grouped(totals.source.lines),
+                grouped(totals.source.code),
+            ];
+            row.extend(columns.cells(code));
+            row.push(share_of(code.code(), total_code.code()));
+            row
+        };
+        let body: Vec<Vec<String>> = members
+            .iter()
+            .zip(&codes)
+            .map(|((name, totals), code)| cells(name, totals, *code))
+            .collect();
+        let mut header = header(&["Repository", "Lines", "Code"]);
+        header.push("Share");
         let (text, after) = table(
-            &REPOSITORY_HEADER,
+            &header,
             &body,
-            total,
-            &Layout {
-                breaks: &[3, 6],
-                strong: Some(2),
-                secondary: &[6, 7],
-                purposes: Some(3),
-            },
-            true,
+            cells("Total", &summary.totals, total_code),
+            &columns.layout(3, 2, &[], &[]),
             &codes,
         );
         output += "\n";
         output += &text;
-        output += &format!(" {}\n", theme.paint(Role::Muted, REPOSITORY_LEGEND));
+        let legend = columns.legend(None, Some("Share = Code / workspace Code"));
+        output += &format!(" {}\n", theme.paint(Role::Muted, &legend));
         output += &after;
     }
     if findings.members.is_empty() && (show_folders || folder_rows.is_some()) {
@@ -1236,58 +1506,42 @@ pub fn render_table_with_options(
         let standard = folders::standard(summary, findings.subfolder, order);
         let folders = adaptive.as_ref().map_or(&standard, |view| &view.rows);
         if !folders.is_empty() {
+            let codes: Vec<RowCode> = folders
+                .iter()
+                .map(|folder| RowCode::of(&folder.purposes, folder.counts.comments))
+                .collect();
             let body: Vec<Vec<String>> = folders
                 .iter()
-                .map(|folder| {
-                    let code = |purpose| folder.purposes.get(&purpose).copied().unwrap_or(0);
+                .zip(&codes)
+                .map(|(folder, code)| {
                     let mut row = vec![
                         folder.label(),
                         grouped(folder.counts.lines),
                         grouped(folder.counts.code),
                     ];
-                    row.extend(purpose_cells(&code));
-                    row.push(test_ratio(code(Purpose::Production), code(Purpose::Test)));
+                    row.extend(columns.cells(*code));
                     row
                 })
                 .collect();
-            let code = |purpose| summary.totals.purpose(purpose).code;
             let mut total = vec![
                 "Total".to_string(),
                 grouped(summary.totals.source.lines),
                 grouped(summary.totals.source.code),
             ];
-            total.extend(purpose_cells(&code));
-            total.push(test_ratio(code(Purpose::Production), code(Purpose::Test)));
-            let codes: Vec<[u64; 3]> = folders
-                .iter()
-                .map(|folder| {
-                    Purpose::ALL.map(|purpose| folder.purposes.get(&purpose).copied().unwrap_or(0))
-                })
-                .collect();
+            total.extend(columns.cells(total_code));
             let (text, after) = table(
-                &[
-                    "Folder",
-                    "Lines",
-                    "Code",
-                    "Production",
-                    "Test",
-                    "Unclassified",
-                    "Test/prod",
-                ],
+                &header(&["Folder", "Lines", "Code"]),
                 &body,
                 total,
-                &Layout {
-                    breaks: &[3, 6, 7],
-                    strong: Some(2),
-                    secondary: &[6, 7],
-                    purposes: Some(3),
-                },
-                false,
+                &columns.layout(3, 2, &[], &[]),
                 &codes,
             );
             output += "\n";
             output += &text;
-            output += &format!(" {}\n", theme.paint(Role::Muted, FOLDER_LEGEND));
+            output += &format!(
+                " {}\n",
+                theme.paint(Role::Muted, &columns.legend(None, None))
+            );
             if let Some(view) = &adaptive {
                 output += &format!(
                     " {}\n",
@@ -1328,10 +1582,10 @@ pub fn render_table_with_options(
                 &body,
                 None,
                 &Layout {
-                    breaks: &[],
+                    breaks: vec![],
                     strong: Some(3),
-                    secondary: &[1],
-                    purposes: None,
+                    secondary: vec![1],
+                    purposes: Vec::new(),
                 },
                 theme,
             );
@@ -1661,6 +1915,14 @@ fn human_folders<'a>(
 mod tests {
     use super::*;
 
+    /// A row with this Code per purpose and no comments.
+    fn code(purposes: [u64; 3]) -> RowCode {
+        RowCode {
+            purposes,
+            comments: 0,
+        }
+    }
+
     /// Remove every SGR sequence, whatever the palette emits.
     fn unstyled(text: &str) -> String {
         let mut output = String::new();
@@ -1692,10 +1954,10 @@ mod tests {
     #[test]
     fn table_sanitizes_every_cell_before_padding_and_styling() {
         let layout = Layout {
-            breaks: &[],
+            breaks: vec![],
             strong: None,
-            secondary: &[],
-            purposes: None,
+            secondary: vec![],
+            purposes: Vec::new(),
         };
         for theme in [Theme::PLAIN, Theme::terminal(true)] {
             let actual = text_table(
@@ -1744,9 +2006,11 @@ mod tests {
             assert!(plain.starts_with(" Language "), "{plain}");
             assert!(!plain.contains("Code by purpose"));
             assert!(styled.starts_with(" \x1b[1mLanguage"), "{styled}");
-            assert!(styled.contains(&format!("\x1b[90m{LANGUAGE_LEGEND}\x1b[0m")));
+            let legend = ALL_PURPOSES.legend(Some("Lines = Code + Comments + Blanks"), None);
+            assert!(styled.contains(&format!("\x1b[90m{legend}\x1b[0m")));
             if !members.is_empty() {
-                assert!(styled.contains(&format!("\x1b[90m{REPOSITORY_LEGEND}\x1b[0m")));
+                let legend = ALL_PURPOSES.legend(None, Some("Share = Code / workspace Code"));
+                assert!(styled.contains(&format!("\x1b[90m{legend}\x1b[0m")));
             }
             assert_eq!(unstyled(&styled), plain);
         }
@@ -1780,10 +2044,10 @@ mod tests {
             ]],
             None,
             &Layout {
-                breaks: &[2, 4],
+                breaks: vec![2, 4],
                 strong: Some(1),
-                secondary: &[2, 3],
-                purposes: None,
+                secondary: vec![2, 3],
+                purposes: Vec::new(),
             },
             Theme::TERMINAL,
         );
@@ -1815,10 +2079,10 @@ mod tests {
                 "0".into(),
             ]),
             &Layout {
-                breaks: &[],
+                breaks: vec![],
                 strong: Some(1),
-                secondary: &[],
-                purposes: Some(2),
+                secondary: vec![],
+                purposes: purpose_columns(2),
             },
             Theme::TERMINAL,
         );
@@ -1859,16 +2123,17 @@ mod tests {
         ];
         let total = vec!["Total".to_string(), "12".into()];
         let layout = Layout {
-            breaks: &[2],
+            breaks: vec![2],
             strong: Some(1),
-            secondary: &[],
-            purposes: None,
+            secondary: vec![],
+            purposes: Vec::new(),
         };
-        let codes = [[6, 3, 0], [0, 0, 3]];
+        let codes = [code([6, 3, 0]), code([0, 0, 3])];
         let render = |bars| {
             let rows = BarRows {
-                codes: &codes,
-                total_code: 12,
+                rows: &codes,
+                total: code([12, 0, 0]),
+                shown: &Purpose::ALL,
                 bars,
             };
             bar_table(
@@ -1876,7 +2141,6 @@ mod tests {
                 &body,
                 total.clone(),
                 &layout,
-                false,
                 &rows,
                 Theme::PLAIN,
             )
@@ -1895,7 +2159,7 @@ mod tests {
             "{wide}"
         );
         assert!(key.contains("Bars:"), "{key}");
-        let (_, chart) = render(Bars::Always(30));
+        let (_, chart) = render(Bars::Always(30, BarKind::Purpose));
         assert!(chart.contains("Code share"), "{chart}");
     }
 
@@ -1905,12 +2169,19 @@ mod tests {
     #[test]
     fn share_bars_split_each_row_by_purpose_within_the_available_width() {
         let rows = [
-            ("api".to_string(), [6, 3, 1]),
-            ("web".to_string(), [0, 0, 5]),
-            ("ops".to_string(), [4, 0, 0]),
-            ("dev".to_string(), [0, 1, 0]),
+            ("api".to_string(), code([6, 3, 1])),
+            ("web".to_string(), code([0, 0, 5])),
+            ("ops".to_string(), code([4, 0, 0])),
+            ("dev".to_string(), code([0, 1, 0])),
         ];
-        let plain = share_bars(&rows, 20, 33, Theme::PLAIN);
+        let plain = share_bars(
+            &rows,
+            code([20, 0, 0]),
+            BarKind::Purpose,
+            33,
+            &Purpose::ALL,
+            Theme::PLAIN,
+        );
         assert_eq!(
             plain,
             " Code share  █ Production  ▓ Test  ░ Unclassified\n \
@@ -1919,7 +2190,14 @@ mod tests {
              ops  20.0%  ████████\n \
              dev   5.0%  ▓▓\n"
         );
-        let styled = share_bars(&rows, 20, 33, Theme::TERMINAL);
+        let styled = share_bars(
+            &rows,
+            code([20, 0, 0]),
+            BarKind::Purpose,
+            33,
+            &Purpose::ALL,
+            Theme::TERMINAL,
+        );
         assert!(
             styled.starts_with(" \x1b[1;36mCode share\x1b[0m"),
             "{styled}"
@@ -1935,15 +2213,29 @@ mod tests {
     #[test]
     fn share_bars_mark_slivers_and_clamp_their_width() {
         let rows = [
-            ("big".to_string(), [999, 0, 0]),
-            ("one".to_string(), [0, 1, 0]),
-            ("nil".to_string(), [0, 0, 0]),
+            ("big".to_string(), code([999, 0, 0])),
+            ("one".to_string(), code([0, 1, 0])),
+            ("nil".to_string(), code([0, 0, 0])),
         ];
-        let text = share_bars(&rows, 1000, 33, Theme::PLAIN);
+        let text = share_bars(
+            &rows,
+            code([1000, 0, 0]),
+            BarKind::Purpose,
+            33,
+            &Purpose::ALL,
+            Theme::PLAIN,
+        );
         assert!(text.contains("\n one   0.1%  ▏\n"), "{text}");
         assert!(text.contains("\n nil   0.0%\n"), "{text}");
         let bar = |columns| {
-            let text = share_bars(&rows, 1000, columns, Theme::PLAIN);
+            let text = share_bars(
+                &rows,
+                code([1000, 0, 0]),
+                BarKind::Purpose,
+                columns,
+                &Purpose::ALL,
+                Theme::PLAIN,
+            );
             let line = text.lines().nth(1).unwrap().to_string();
             line.chars().filter(|c| *c == '█').count()
         };
@@ -1972,10 +2264,10 @@ mod tests {
                 "0".into(),
             ]),
             &Layout {
-                breaks: &[],
+                breaks: vec![],
                 strong: Some(1),
-                secondary: &[2],
-                purposes: None,
+                secondary: vec![2],
+                purposes: Vec::new(),
             },
             Theme::TERMINAL,
         );
@@ -1993,10 +2285,10 @@ mod tests {
     #[test]
     fn emphasis_bolds_the_strong_column_without_shifting_alignment() {
         let layout = Layout {
-            breaks: &[2],
+            breaks: vec![2],
             strong: Some(1),
-            secondary: &[],
-            purposes: None,
+            secondary: vec![],
+            purposes: Vec::new(),
         };
         let body = [vec!["a".to_string(), "12".into(), "3".into()]];
         let total = Some(vec!["Total".to_string(), "12".into(), "3".into()]);

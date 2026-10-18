@@ -278,6 +278,7 @@ fn unreadable_counts_and_member_failures_are_separate_from_optional_findings() {
                     theme,
                     folder_rows: None,
                     bars: locmetry::Bars::Off,
+                    purposes: locmetry::Purpose::ALL.to_vec(),
                 },
             );
             assert!(

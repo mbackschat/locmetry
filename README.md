@@ -108,6 +108,7 @@ The 30-row budget limits additional detail; existing top-level rows are retained
 | Save full JSON and print the table from one scan, as for agents | `locmetry --output ../report.json --print table` |
 | Save a Markdown report | `locmetry --format markdown --output ../report.md` |
 | Measure repositories together, each with its own policy | `locmetry workspace --root ../web --root ../api` |
+| Count production source only, with its comment density | `locmetry --purpose production` |
 | Inspect the configuration contract | `locmetry --schema config` |
 
 `locmetry --help` ends with the same examples. Verbose tables total data and documentation files under “Not source code”; to list them, [filter full JSON by `kind`](docs/guides/reports.md#not-source-code-which-files-are-data-or-documentation).
@@ -120,7 +121,8 @@ Without explicit options, a terminal gets a table and a pipe gets a compact JSON
 | --- | --- |
 | `--folders` / `--folder-rows N` | Top-level / adaptive folder rows in single-root table output; adaptive rows require table format. |
 | `--verbose` | Add diagnostic notes to tables independently of folder rows. |
-| `--bars` / `--no-bars` | Share bars per language, folder or repository row, split by purpose. A terminal shows them beside tables they fit; `--bars` also charts them below other tables and in saved tables, and `--no-bars` omits them. |
+| `--bars` / `--no-bars` | Share bars per language, folder or repository row, split by purpose. A terminal shows them beside tables they fit; `--bars` also charts them below other tables and in saved tables, `--bars=comments` charts Code against Comments instead, and `--no-bars` omits them. |
+| `--purpose LIST` | Count only these purposes' source in tables, such as `production` to drop tests; without test or production, `Comment %` replaces `Test/prod`. |
 | `--config FILE` | Replace discovery of the root's `.locmetryrc`; patterns still refer to the scan root. |
 | `--exclude GLOB` | Add an exclusion to the effective scope. |
 | `--no-user-config` | Ignore personal defaults, for example when measuring in CI. |

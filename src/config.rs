@@ -170,7 +170,7 @@ impl fmt::Display for Purpose {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 pub struct Classification {
     pub purpose: Purpose,
     pub category: String,

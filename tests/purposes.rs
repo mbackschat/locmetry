@@ -1,0 +1,174 @@
+//! `--purpose` narrows table views to the selected purposes' source, and
+//! `--bars=comments` charts Code against Comments (docs/PRODUCT.md, Output Routing).
+use std::{fs, path::Path, process::Command};
+
+fn project() -> tempfile::TempDir {
+    let temp = tempfile::tempdir().unwrap();
+    for (path, content) in [
+        (
+            ".locmetryrc",
+            "version = 1\n[[rules]]\nid = \"app\"\nmatch = [\"src/**\"]\npurpose = \"production\"\n",
+        ),
+        ("src/lib.rs", "// doc\nfn a() {}\nfn b() {}\n"),
+        ("tests/it.rs", "// t\nfn t() {}\n"),
+        ("proto/x.py", "x = 1\n"),
+    ] {
+        let path = temp.path().join("project").join(path);
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        fs::write(path, content).unwrap();
+    }
+    temp
+}
+
+fn run(cwd: &Path, args: &[&str], columns: &str) -> std::process::Output {
+    Command::new(env!("CARGO_BIN_EXE_locmetry"))
+        .env("XDG_CONFIG_HOME", "/nonexistent/locmetry-tests")
+        .env("COLUMNS", columns)
+        .current_dir(cwd)
+        .args(args)
+        .output()
+        .unwrap()
+}
+
+fn table(args: &[&str]) -> String {
+    let temp = project();
+    let output = run(&temp.path().join("project"), args, "80");
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(
+        output.stderr.is_empty(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    String::from_utf8(output.stdout).unwrap()
+}
+
+/// Cells of the first line starting with `label`, without separators or commas.
+fn cells(text: &str, label: &str) -> Vec<String> {
+    let line = text
+        .lines()
+        .find(|line| line.starts_with(&format!(" {label} ")))
+        .unwrap_or_else(|| panic!("no {label} row in:\n{text}"));
+    line.replace('│', " ")
+        .split_whitespace()
+        .map(String::from)
+        .collect()
+}
+
+/// Selecting production counts only production source: Comments become its
+/// comments, other purposes leave no rows, and Comment % takes Test/prod's place.
+#[test]
+fn production_only_tables_count_production_source_and_show_comment_share() {
+    let text = table(&["--format", "table", "--folders", "--purpose", "production"]);
+    let header = |label| cells(&text, label).join(" ");
+    assert_eq!(
+        header("Language"),
+        "Language Files Lines Code Comments Blanks Comment %"
+    );
+    assert_eq!(
+        cells(&text, "Rust"),
+        ["Rust", "1", "3", "2", "1", "0", "33.3%"]
+    );
+    assert_eq!(
+        cells(&text, "Total"),
+        ["Total", "1", "3", "2", "1", "0", "33.3%"]
+    );
+    assert!(!text.contains(" Python "), "{text}");
+    assert_eq!(header("Folder"), "Folder Lines Code Comment %");
+    assert_eq!(cells(&text, "src"), ["src", "3", "2", "33.3%"]);
+    assert!(
+        !text.contains("\n tests ") && !text.contains("\n proto "),
+        "{text}"
+    );
+    assert!(text.contains(
+        " Lines = Code + Comments + Blanks; Comment % = Comments / (Code + Comments).\n"
+    ));
+    assert!(text.contains(" Purposes shown: production; test and unclassified excluded.\n"));
+    assert!(!text.contains("Test/prod"), "{text}");
+    assert!(
+        text.contains("; purposes: production\nMeasured at: "),
+        "{text}"
+    );
+}
+
+/// The ratio follows the selection: Test/prod needs both of its purposes.
+#[test]
+fn selected_purposes_keep_their_columns_and_choose_the_ratio() {
+    let text = table(&["--format", "table", "--purpose", "production,test"]);
+    assert_eq!(
+        cells(&text, "Language").join(" "),
+        "Language Files Lines Code Comments Blanks Production Test Test/prod"
+    );
+    assert_eq!(
+        cells(&text, "Rust"),
+        ["Rust", "2", "5", "3", "2", "0", "2", "1", "0.50"]
+    );
+    assert!(text.contains("Production + Test = Code; Test/prod = Test / Production."));
+    assert!(text.contains(" Purposes shown: production and test; unclassified excluded.\n"));
+
+    let text = table(&["--format", "table", "--purpose", "unclassified,test"]);
+    assert_eq!(
+        cells(&text, "Language").join(" "),
+        "Language Files Lines Code Comments Blanks Test Unclassified Comment %"
+    );
+    assert_eq!(
+        cells(&text, "Python"),
+        ["Python", "1", "1", "1", "0", "0", "0", "1", "0.0%"]
+    );
+}
+
+#[test]
+fn purpose_filters_only_tables() {
+    let temp = project();
+    let output = run(
+        &temp.path().join("project"),
+        &["--format", "json", "--purpose", "production"],
+        "80",
+    );
+    assert!(output.status.success());
+    assert!(String::from_utf8(output.stderr)
+        .unwrap()
+        .contains("--purpose has no effect here; it applies only to table output"));
+}
+
+/// Comment bars split each row's Code against its Comments across the full
+/// bar; a bare --bars keeps the purpose split and never swallows a directory.
+#[test]
+fn comment_bars_show_each_row_composition() {
+    let temp = project();
+    let root = temp.path().join("project");
+    let output = run(&root, &["--format", "table", "--bars=comments"], "300");
+    let text = String::from_utf8(output.stdout).unwrap();
+    let rust = text
+        .lines()
+        .find(|line| line.starts_with(" Rust "))
+        .unwrap();
+    assert!(
+        rust.ends_with(&format!(
+            "│     40.0%  {}{}",
+            "█".repeat(60),
+            "▓".repeat(40)
+        )),
+        "{rust}"
+    );
+    assert!(text.contains("Comment % = Comments / (Code + Comments). Bars: █ Code  ▓ Comments; each row fills the bar."));
+
+    let bare = run(
+        temp.path(),
+        &["--format", "table", "--bars", "project"],
+        "300",
+    );
+    assert!(
+        bare.status.success(),
+        "{}",
+        String::from_utf8_lossy(&bare.stderr)
+    );
+    let text = String::from_utf8(bare.stdout).unwrap();
+    assert!(
+        text.contains("Bars: █ Production  ▓ Test  ░ Unclassified"),
+        "{text}"
+    );
+}

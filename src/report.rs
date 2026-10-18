@@ -66,7 +66,7 @@ impl fmt::Display for Kind {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct FileRecord {
     pub path: String,
     pub language: String,

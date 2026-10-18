@@ -8,10 +8,10 @@ use locmetry::style::{plain, Role, Theme};
 use locmetry::{
     breakdown, build_report, build_systems, git_submodules, module_shares, render_markdown,
     render_table_with_options, report_text, review, scan, scope_policy, submodule_shares,
-    unclassified_folders, unused_entries, user_defaults_file, validate_output, write_report, Bars,
-    Coverage, FileRecord, Findings, MemberView, Module, ModuleShare, Policy, RowOrder,
-    ScopeOverrides, SubmoduleShare, TableOptions, BACKEND, CONFIG_FILE, DATA_LANGUAGES,
-    DOCUMENTATION_LANGUAGES,
+    unclassified_folders, unused_entries, user_defaults_file, validate_output, write_report,
+    BarKind, Bars, Coverage, FileRecord, Findings, MemberView, Module, ModuleShare, Policy,
+    Purpose, RowOrder, ScopeOverrides, SubmoduleShare, TableOptions, BACKEND, CONFIG_FILE,
+    DATA_LANGUAGES, DOCUMENTATION_LANGUAGES,
 };
 use std::collections::BTreeMap;
 use std::{
@@ -41,6 +41,40 @@ enum ExplainFormat {
     Json,
     /// Markdown tables and evidence.
     Markdown,
+}
+
+#[derive(Clone, Copy, ValueEnum)]
+enum PurposeArg {
+    Production,
+    Test,
+    Unclassified,
+}
+
+impl PurposeArg {
+    fn purpose(self) -> Purpose {
+        match self {
+            PurposeArg::Production => Purpose::Production,
+            PurposeArg::Test => Purpose::Test,
+            PurposeArg::Unclassified => Purpose::Unclassified,
+        }
+    }
+}
+
+#[derive(Clone, Copy, ValueEnum)]
+enum BarArg {
+    /// Each row's Code split by purpose, scaled to the largest row.
+    Purpose,
+    /// Each row's Code against its Comments, across the full bar.
+    Comments,
+}
+
+impl BarArg {
+    fn kind(self) -> BarKind {
+        match self {
+            BarArg::Purpose => BarKind::Purpose,
+            BarArg::Comments => BarKind::Comments,
+        }
+    }
 }
 
 #[derive(Clone, Copy, ValueEnum)]
@@ -111,6 +145,8 @@ macro_rules! root_after_help {
     locmetry --format markdown --output ../report.md
   Measure repositories together, each with its own policy:
     locmetry workspace --root ../web --root ../api
+  Count production source only, with its comment density:
+    locmetry --purpose production
   Inspect the configuration contract:
     locmetry --schema config
 
@@ -260,14 +296,26 @@ struct SharedArgs {
     /// Include classification, scope and coverage notes in table output.
     #[arg(long)]
     verbose: bool,
-    /// Chart each table row's share of Code, split by purpose: beside a table
-    /// when the width leaves room, otherwise below it. A terminal shows bars
-    /// automatically where they fit; COLUMNS overrides its width. Table format only.
-    #[arg(long)]
-    bars: bool,
+    /// Chart each table row beside the table when the width leaves room,
+    /// otherwise below it: its share of Code by purpose, or with --bars=comments
+    /// its Code against Comments. A terminal shows purpose bars automatically
+    /// where they fit; COLUMNS overrides its width. Table format only.
+    #[arg(
+        long,
+        value_enum,
+        value_name = "KIND",
+        num_args = 0..=1,
+        require_equals = true,
+        default_missing_value = "purpose"
+    )]
+    bars: Option<BarArg>,
     /// Omit the share bars a terminal shows automatically.
     #[arg(long, conflicts_with = "bars")]
     no_bars: bool,
+    /// Count only these purposes' source in tables, such as production to drop
+    /// tests; comma-separated. Table format only.
+    #[arg(long, value_enum, value_delimiter = ',', value_name = "PURPOSES")]
+    purpose: Vec<PurposeArg>,
     /// Result format [default: json with --output; otherwise table on a terminal, headline in pipes].
     #[arg(long, value_enum)]
     format: Option<Format>,
@@ -491,7 +539,8 @@ fn warn_ineffective_options(shared: &SharedArgs, destination: &Destination) {
     if !destination.shows(Format::Table) {
         for (given, option) in [
             (shared.verbose, "--verbose"),
-            (shared.bars, "--bars"),
+            (shared.bars.is_some(), "--bars"),
+            (!shared.purpose.is_empty(), "--purpose"),
             (shared.no_bars, "--no-bars"),
             (shared.categories, "--categories"),
         ] {
@@ -979,14 +1028,24 @@ enum Location {
     },
 }
 
-/// Share bars: forced by `--bars`, refused by `--no-bars`, and otherwise shown
-/// only on a terminal and only where they fit, so files and pipes stay stable.
-fn bar_mode(bars: bool, no_bars: bool, terminal: bool, columns: usize) -> Bars {
+/// Bars: forced by `--bars`, refused by `--no-bars`, and otherwise purpose
+/// bars only on a terminal and only where they fit, so files and pipes stay stable.
+fn bar_mode(bars: Option<BarKind>, no_bars: bool, terminal: bool, columns: usize) -> Bars {
     match (bars, no_bars, terminal) {
-        (true, _, _) => Bars::Always(columns),
-        (false, true, _) | (false, false, false) => Bars::Off,
-        (false, false, true) => Bars::Fit(columns),
+        (Some(kind), _, _) => Bars::Always(columns, kind),
+        (None, true, _) | (None, false, false) => Bars::Off,
+        (None, false, true) => Bars::Fit(columns),
     }
+}
+
+/// The purposes tables count, in `Purpose::ALL` order; all without a selection.
+fn selected_purposes(selection: &[PurposeArg]) -> Vec<Purpose> {
+    Purpose::ALL
+        .into_iter()
+        .filter(|purpose| {
+            selection.is_empty() || selection.iter().any(|arg| arg.purpose() == *purpose)
+        })
+        .collect()
 }
 
 /// The footer line naming what a human report measured: the root and any
@@ -1071,7 +1130,13 @@ fn report(
                     order,
                     theme: terminal_theme(terminal),
                     folder_rows: destination.folder_rows,
-                    bars: bar_mode(shared.bars, shared.no_bars, terminal, bar_columns(stdout)),
+                    bars: bar_mode(
+                        shared.bars.map(BarArg::kind),
+                        shared.no_bars,
+                        terminal,
+                        bar_columns(stdout),
+                    ),
+                    purposes: selected_purposes(&shared.purpose),
                 },
             ),
             Format::Markdown => {
@@ -1094,9 +1159,17 @@ fn report(
             Format::Markdown => "\n\n",
             _ => "\n",
         };
+        let mut context = measured_roots(&location, format == Format::Markdown);
+        // Only tables filter by purpose; their footer keeps the selection visible.
+        if format == Format::Table && !shared.purpose.is_empty() {
+            let purposes: Vec<String> = selected_purposes(&shared.purpose)
+                .iter()
+                .map(Purpose::to_string)
+                .collect();
+            context += &format!("; purposes: {}", purposes.join(", "));
+        }
         human.push_str(&format!(
-            "\n{}{separator}Measured at: {}\n",
-            measured_roots(&location, format == Format::Markdown),
+            "\n{context}{separator}Measured at: {}\n",
             locmetry::measurement_time(measured_at)
         ));
         human
@@ -1407,11 +1480,18 @@ mod tests {
     /// text, and `NO_COLOR` (no-color.org) or `TERM=dumb` turns it off.
     #[test]
     fn bars_are_automatic_only_on_a_terminal_unless_requested_or_refused() {
-        assert_eq!(bar_mode(false, false, true, 150), Bars::Fit(150));
-        assert_eq!(bar_mode(false, false, false, 150), Bars::Off);
-        assert_eq!(bar_mode(true, false, false, 150), Bars::Always(150));
-        assert_eq!(bar_mode(true, false, true, 150), Bars::Always(150));
-        assert_eq!(bar_mode(false, true, true, 150), Bars::Off);
+        let comments = Some(BarKind::Comments);
+        assert_eq!(bar_mode(None, false, true, 150), Bars::Fit(150));
+        assert_eq!(bar_mode(None, false, false, 150), Bars::Off);
+        assert_eq!(
+            bar_mode(comments, false, false, 150),
+            Bars::Always(150, BarKind::Comments)
+        );
+        assert_eq!(
+            bar_mode(comments, false, true, 150),
+            Bars::Always(150, BarKind::Comments)
+        );
+        assert_eq!(bar_mode(None, true, true, 150), Bars::Off);
     }
 
     #[test]

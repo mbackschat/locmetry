@@ -82,6 +82,7 @@ fn render(groups: &[Group], folders: bool) -> String {
             theme: Theme::PLAIN,
             folder_rows: folders.then_some(30),
             bars: locmetry::Bars::Off,
+            purposes: locmetry::Purpose::ALL.to_vec(),
         },
     )
 }

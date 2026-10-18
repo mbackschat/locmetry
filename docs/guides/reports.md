@@ -8,6 +8,7 @@ Start with `locmetry --root . --format headline` at the intended project root. T
 | --- | --- |
 | Source counts by language and folder | `locmetry --root . --format table --folders` |
 | Source tables with classification, scope and coverage notes | `locmetry --root . --format table --verbose` |
+| Production source only, with its comment density | `locmetry --root . --format table --purpose production` |
 | Compact JSON | `locmetry --root . --format headline` |
 | Full JSON on stdout | `locmetry --root . --format json` |
 | Full JSON with per-file decisions | `locmetry --root . --files --format json` |
