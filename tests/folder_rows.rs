@@ -399,7 +399,6 @@ fn adaptive_styling_preserves_plain_alignment_and_mutes_the_legend() {
     };
     let render = |theme| {
         locmetry::render_table_with_options(
-            "example",
             &summary,
             &rows,
             &findings,

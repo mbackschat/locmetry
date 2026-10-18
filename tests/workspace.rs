@@ -236,7 +236,21 @@ fn workspace_notes_name_the_member_of_each_finding() {
         locmetry(temp.path(), &[&args[..], &["table", "--verbose"]].concat()).stdout,
     )
     .unwrap();
-    assert!(table.contains(" api + web · Source code"), "{table}");
+    let roots: Vec<_> = ["api", "web"]
+        .map(|name| {
+            temp.path()
+                .join(name)
+                .canonicalize()
+                .unwrap()
+                .display()
+                .to_string()
+        })
+        .into();
+    assert!(table.starts_with(" Language "), "{table}");
+    assert!(
+        table.contains(&format!("\nRoots: {}\nMeasured at: ", roots.join(", "))),
+        "{table}"
+    );
     assert!(
         table.contains("Entries that decided no file: ghost (web)."),
         "{table}"

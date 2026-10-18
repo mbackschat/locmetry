@@ -229,8 +229,7 @@ fn table_format_splits_source_code_by_language_and_purpose() {
         &["--verbose", "--folders", "--format", "table"],
     );
     assert!(output.status.success());
-    let expected = " project · Source code
- Language  Files  Lines  Code │ Comments  Blanks │ Production  Test  Unclassified │ Test/prod
+    let expected = " Language  Files  Lines  Code │ Comments  Blanks │ Production  Test  Unclassified │ Test/prod
  ─────────────────────────────┼──────────────────┼────────────────────────────────┼──────────
  Rust          3      5     4 │        1       0 │          2     2             0 │      1.00
  Python        1      1     1 │        0       0 │          0     0             1 │         -
@@ -254,6 +253,8 @@ fn table_format_splits_source_code_by_language_and_purpose() {
  To inspect or refine purpose classification, use locmetry --guide configure; --files --output - shows each file's rule.
  Unrecognized files: 1 unrecognized file (png: 1); missing lines are not zero.
 ";
+    let root = temp.path().join("project").canonicalize().unwrap();
+    let expected = format!("{expected}\nRoot: {}", root.display());
     assert_eq!(
         String::from_utf8(output.stdout)
             .unwrap()
@@ -415,7 +416,45 @@ fn bars_join_each_table_when_the_terminal_leaves_room_beside_it() {
         .any(|line| line.starts_with(" src") && line.ends_with('█')));
 }
 
-/// Row positions of `labels` in `text`/// Row positions of `labels` in `text`/// Row positions of `labels` in `text`, to compare orders without pinning layout.
+/// Human reports start with their tables and end with the measured context:
+/// the root, any subfolder, then the measurement time as the final line.
+#[test]
+fn human_reports_end_with_the_measured_root_before_the_time() {
+    let temp = project(&[("src/lib.rs", "fn a() {}\n")]);
+    let root = temp.path().join("project");
+    let canonical = root.canonicalize().unwrap();
+    let stdout = |args: &[&str]| String::from_utf8(run(&root, args).stdout).unwrap();
+    let table = stdout(&["--format", "table"]);
+    assert!(table.starts_with(" Language "), "{table}");
+    let (context, time) = table.rsplit_once("\nMeasured at: ").unwrap();
+    assert!(
+        time.ends_with(" UTC\n") && !time.trim_end().contains('\n'),
+        "{time}"
+    );
+    assert!(
+        context.ends_with(&format!("\n\nRoot: {}", canonical.display())),
+        "{table}"
+    );
+    let subfolder = stdout(&["--format", "table", "--subfolder", "src"]);
+    assert!(subfolder.starts_with(" Language "), "{subfolder}");
+    assert!(
+        subfolder.contains(&format!(
+            "\nRoot: {}, subfolder src\nMeasured at: ",
+            canonical.display()
+        )),
+        "{subfolder}"
+    );
+    let markdown = stdout(&["--format", "markdown"]);
+    assert!(
+        markdown.contains(&format!(
+            "\nRoot: `{}`\n\nMeasured at: ",
+            canonical.display()
+        )),
+        "{markdown}"
+    );
+}
+
+/// Row positions of `labels` in `text`, to compare orders without pinning layout.
 fn positions(text: &str, labels: &[&str]) -> Vec<usize> {
     labels
         .iter()

@@ -230,8 +230,9 @@ fn unrecognized_files_alone_do_not_add_default_findings() {
     no_routine_notes(&text);
     assert!(!text.contains("Not counted:"));
     let after_legend = text.split("skew per-language Test/prod.\n").nth(1).unwrap();
-    assert!(after_legend.trim().starts_with("Measured at:"), "{text}");
-    assert_eq!(after_legend.trim().lines().count(), 1);
+    let footer: Vec<_> = after_legend.trim().lines().collect();
+    assert_eq!(footer.len(), 2, "{text}");
+    assert!(footer[0].starts_with("Root: ") && footer[1].starts_with("Measured at:"));
 }
 
 #[test]
@@ -266,7 +267,6 @@ fn unreadable_counts_and_member_failures_are_separate_from_optional_findings() {
     for verbose in [false, true] {
         for (theme, styled) in [(Theme::PLAIN, false), (Theme::TERMINAL, true)] {
             let text = render_table_with_options(
-                "example",
                 &build_report(&[]),
                 &[],
                 &findings,

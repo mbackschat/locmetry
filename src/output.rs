@@ -991,7 +991,6 @@ const FOLDER_LINES: usize = 8;
 /// split by purpose, with unavailable counts kept visible.
 /// `emphasis` enables the default terminal palette; false keeps plain text.
 pub fn render_table(
-    project: &str,
     summary: &ReportSummary,
     rows: &[FileRecord],
     findings: &Findings,
@@ -1000,7 +999,6 @@ pub fn render_table(
     emphasis: bool,
 ) -> String {
     render_table_with_theme(
-        project,
         summary,
         rows,
         findings,
@@ -1024,7 +1022,6 @@ pub struct TableOptions {
 
 /// Render a measurement table using semantic presentation roles.
 pub fn render_table_with_theme(
-    project: &str,
     summary: &ReportSummary,
     rows: &[FileRecord],
     findings: &Findings,
@@ -1033,7 +1030,6 @@ pub fn render_table_with_theme(
     theme: Theme,
 ) -> String {
     render_table_with_options(
-        project,
         summary,
         rows,
         findings,
@@ -1065,7 +1061,6 @@ fn source_languages(rows: &[FileRecord]) -> BTreeMap<String, (Counts, BTreeMap<P
 
 /// Render terminal tables, optionally partitioning folders within a row budget.
 pub fn render_table_with_options(
-    project: &str,
     summary: &ReportSummary,
     rows: &[FileRecord],
     findings: &Findings,
@@ -1126,11 +1121,8 @@ pub fn render_table_with_options(
     let code = |purpose| summary.totals.purpose(purpose).code;
     total.extend(purpose_cells(&code));
     total.push(test_ratio(code(Purpose::Production), code(Purpose::Test)));
-    let project = display_project(project, findings.subfolder);
-    let mut output = format!(
-        " {}\n",
-        theme.paint(Role::Heading, &format!("{project} · Source code"))
-    );
+    // No title: the footer names the measured root, which a title repeated.
+    let mut output = String::new();
     let total_code = summary.totals.source.code;
     // With --bars, a table returns what follows its legends: an inline bar key
     // or the chart below it.
@@ -1729,30 +1721,11 @@ mod tests {
                 unused_exclusions: &[],
                 members,
             };
-            let styled = render_table(
-                "example",
-                &summary,
-                &rows,
-                &findings,
-                false,
-                RowOrder::Name,
-                true,
-            );
-            let plain = render_table(
-                "example",
-                &summary,
-                &rows,
-                &findings,
-                false,
-                RowOrder::Name,
-                false,
-            );
-            assert!(
-                plain.starts_with(" example · Source code\n Language"),
-                "{plain}"
-            );
+            let styled = render_table(&summary, &rows, &findings, false, RowOrder::Name, true);
+            let plain = render_table(&summary, &rows, &findings, false, RowOrder::Name, false);
+            assert!(plain.starts_with(" Language "), "{plain}");
             assert!(!plain.contains("Code by purpose"));
-            assert!(styled.starts_with(" \x1b[1mexample · Source code\x1b[0m\n"));
+            assert!(styled.starts_with(" \x1b[1mLanguage"), "{styled}");
             assert!(styled.contains(&format!("\x1b[90m{LANGUAGE_LEGEND}\x1b[0m")));
             if !members.is_empty() {
                 assert!(styled.contains(&format!("\x1b[90m{REPOSITORY_LEGEND}\x1b[0m")));

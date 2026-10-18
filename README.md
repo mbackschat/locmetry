@@ -28,7 +28,6 @@ locmetry
 
 <!-- readme-language -->
 ```text
- acme-orders · Source code
  Language    Files    Lines     Code │ Comments  Blanks │ Production    Test  Unclassified │ Test/prod
  ────────────────────────────────────┼──────────────────┼──────────────────────────────────┼──────────
  Kotlin        538   93,760   74,060 │    7,530  12,170 │     46,040  28,020             0 │      0.61

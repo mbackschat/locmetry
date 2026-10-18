@@ -598,13 +598,11 @@ fn subfolder_human_labels_flatten_controls_while_json_preserves_path_identity() 
         &["--subfolder", "src/odd\nname", "--format", "table"],
     );
     let text = String::from_utf8(out.stdout).unwrap();
-    assert!(
-        text.lines()
-            .next()
-            .unwrap()
-            .contains("subfolder src/odd name"),
-        "{text}"
-    );
+    let root = text
+        .lines()
+        .find(|line| line.starts_with("Root: "))
+        .unwrap();
+    assert!(root.ends_with(", subfolder src/odd name"), "{text}");
 }
 
 #[test]

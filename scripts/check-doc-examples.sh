@@ -163,7 +163,7 @@ tour="$repository/docs/sample-project-tour.md"
 for heading in 'Read the first measurement' 'Find where the code resides' 'Review what remains unresolved'; do
     extract_blocks "$heading" "$temporary/tour-view.sh" 0 0 "$tour"
     (cd "$temporary/issues" && bash "$temporary/tour-view.sh") > "$temporary/tour-view.txt"
-    grep -Fq 'Source code' "$temporary/tour-view.txt"
+    grep -Eq '^Root: .*/acme-orders$' "$temporary/tour-view.txt"
 done
 extract_blocks 'Trace a classification decision' "$temporary/tour-explain.sh" 0 0 "$tour"
 (cd "$temporary/issues" && bash "$temporary/tour-explain.sh") > "$temporary/tour-explanation.json"

@@ -958,6 +958,28 @@ enum Location {
     },
 }
 
+/// The footer line naming what a human report measured: the root and any
+/// subfolder, or every workspace root. Markdown sets the paths as code.
+fn measured_roots(location: &Location, markdown: bool) -> String {
+    let path = |path: &str| match markdown {
+        true => format!("`{}`", locmetry::style::plain(path)),
+        false => locmetry::style::plain(path),
+    };
+    match location {
+        Location::Root { root, scope, .. } => {
+            let root = path(&root.to_string_lossy());
+            match &scope.subfolder {
+                Some(subfolder) => format!("Root: {root}, subfolder {}", path(subfolder)),
+                None => format!("Root: {root}"),
+            }
+        }
+        Location::Workspace { members, .. } => {
+            let roots: Vec<_> = members.iter().map(|member| path(&member.root)).collect();
+            format!("Roots: {}", roots.join(", "))
+        }
+    }
+}
+
 /// Writes the report, headline, or human output for `results`.
 ///
 /// `location` holds the mode's own keys: a single root's root, scope, and
@@ -1005,7 +1027,6 @@ fn report(
     };
     let mut human = match format {
         Format::Table => render_table_with_options(
-            &project,
             &summary,
             &rows,
             &findings,
@@ -1035,8 +1056,14 @@ fn report(
         ));
     }
     if matches!(format, Format::Table | Format::Markdown) {
+        // `Measured at:` stays the documented final line; the roots precede it.
+        let separator = match format {
+            Format::Markdown => "\n\n",
+            _ => "\n",
+        };
         human.push_str(&format!(
-            "\nMeasured at: {}\n",
+            "\n{}{separator}Measured at: {}\n",
+            measured_roots(&location, format == Format::Markdown),
             locmetry::measurement_time(measured_at)
         ));
     }

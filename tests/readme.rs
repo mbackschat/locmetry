@@ -63,7 +63,6 @@ fn render(groups: &[Group], folders: bool) -> String {
         }
     }
     render_table_with_options(
-        "acme-orders",
         &build_report(&records),
         &records,
         &Findings {
