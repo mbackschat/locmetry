@@ -560,6 +560,8 @@ struct Layout {
     /// Column carrying the primary metric.
     strong: Option<usize>,
     secondary: &'static [usize],
+    /// First of the Production, Test and Unclassified columns.
+    purposes: Option<usize>,
 }
 
 #[derive(Clone, Copy)]
@@ -595,8 +597,8 @@ fn text_table(
         true => " │ ",
         false => "  ",
     };
-    // Cyan (Primary) marks only the strong column; rows differ by weight, so the
-    // Total row keeps the column roles the body establishes.
+    // Hue identifies a column: cyan (Primary) for Code, one hue per purpose.
+    // Rows differ by weight, so headings and totals keep their column's hue.
     let line = |row: &[String], kind: RowKind| {
         let mut text = String::from(" ");
         for (column, (value, width)) in row.iter().zip(&widths).enumerate() {
@@ -611,10 +613,16 @@ fn text_table(
                 RowKind::Header | RowKind::Total => Some(Role::Heading),
                 RowKind::Body => None,
             };
-            let role = match (kind, column, value.as_str()) {
-                (RowKind::Header, _, _) | (_, 0, _) => emphasis,
-                (_, _, "-" | "0" | "0.00" | "0.0%") => Some(Role::Muted),
+            let purpose = layout
+                .purposes
+                .and_then(|first| Purpose::ALL.get(column.checked_sub(first)?).copied());
+            let role = match (column, value.as_str(), purpose, kind) {
+                (0, _, _, _) => Some(Role::Heading),
+                (_, "-" | "0" | "0.00" | "0.0%", _, _) => Some(Role::Muted),
+                (_, _, Some(purpose), RowKind::Body) => Some(Role::Purpose(purpose)),
+                (_, _, Some(purpose), _) => Some(Role::StrongPurpose(purpose)),
                 _ if layout.strong == Some(column) => Some(Role::Primary),
+                (_, _, _, RowKind::Header) => emphasis,
                 _ if layout.secondary.contains(&column) => Some(Role::Secondary),
                 _ => emphasis,
             };
@@ -866,6 +874,7 @@ pub fn render_table_with_options(
             breaks: &[4, 6],
             strong: Some(3),
             secondary: &[1, 4, 5],
+            purposes: Some(6),
         },
         theme,
     );
@@ -884,6 +893,7 @@ pub fn render_table_with_options(
                 breaks: &[3, 6],
                 strong: Some(2),
                 secondary: &[6, 7],
+                purposes: Some(3),
             },
             theme,
         );
@@ -934,6 +944,7 @@ pub fn render_table_with_options(
                     breaks: &[3, 6],
                     strong: Some(2),
                     secondary: &[6],
+                    purposes: Some(3),
                 },
                 theme,
             );
@@ -980,6 +991,7 @@ pub fn render_table_with_options(
                     breaks: &[],
                     strong: Some(3),
                     secondary: &[1],
+                    purposes: None,
                 },
                 theme,
             );
@@ -1309,6 +1321,17 @@ fn human_folders<'a>(
 mod tests {
     use super::*;
 
+    /// Remove every SGR sequence, whatever the palette emits.
+    fn unstyled(text: &str) -> String {
+        let mut output = String::new();
+        let mut rest = text;
+        while let Some((before, after)) = rest.split_once("\x1b[") {
+            output += before;
+            rest = after.split_once('m').unwrap().1;
+        }
+        output + rest
+    }
+
     #[test]
     fn terminal_notes_sanitize_before_applying_their_own_style() {
         for theme in [Theme::PLAIN, Theme::TERMINAL] {
@@ -1332,6 +1355,7 @@ mod tests {
             breaks: &[],
             strong: None,
             secondary: &[],
+            purposes: None,
         };
         for theme in [Theme::PLAIN, Theme::terminal(true)] {
             let actual = text_table(
@@ -1403,16 +1427,7 @@ mod tests {
             if !members.is_empty() {
                 assert!(styled.contains(&format!("\x1b[90m{REPOSITORY_LEGEND}\x1b[0m")));
             }
-            assert_eq!(
-                styled
-                    .replace("\x1b[1m", "")
-                    .replace("\x1b[90m", "")
-                    .replace("\x1b[1;36m", "")
-                    .replace("\x1b[36m", "")
-                    .replace("\x1b[2m", "")
-                    .replace("\x1b[0m", ""),
-                plain
-            );
+            assert_eq!(unstyled(&styled), plain);
         }
     }
 
@@ -1447,14 +1462,56 @@ mod tests {
                 breaks: &[2, 4],
                 strong: Some(1),
                 secondary: &[2, 3],
+                purposes: None,
             },
             Theme::TERMINAL,
         );
-        assert!(table.contains(" api \x1b[90m"), "{table}");
+        assert!(table.contains("\x1b[1mapi \x1b[0m"), "{table}");
         assert!(table.contains("\x1b[2m       3\x1b[0m"), "{table}");
         assert!(table.contains("\x1b[90m     0\x1b[0m"), "{table}");
         assert!(table.contains("           4\n"), "{table}");
         assert!(!table.contains("\x1b[33m"));
+    }
+
+    /// Each purpose keeps one hue from header to total, so the header doubles as
+    /// the legend; zeros stay gray so an absent purpose recedes.
+    #[test]
+    fn purpose_columns_carry_their_purpose_hue_from_header_to_total() {
+        let table = text_table(
+            &["Name", "Code", "Production", "Test", "Unclassified"],
+            &[vec![
+                "api".into(),
+                "9".into(),
+                "5".into(),
+                "4".into(),
+                "0".into(),
+            ]],
+            Some(vec![
+                "Total".into(),
+                "9".into(),
+                "5".into(),
+                "4".into(),
+                "0".into(),
+            ]),
+            &Layout {
+                breaks: &[],
+                strong: Some(1),
+                secondary: &[],
+                purposes: Some(2),
+            },
+            Theme::TERMINAL,
+        );
+        let lines: Vec<_> = table.lines().collect();
+        let (header, body, total) = (lines[0], lines[2], lines[4]);
+        assert!(header.contains("\x1b[1;36mCode\x1b[0m"), "{header}");
+        assert!(header.contains("\x1b[1;32mProduction\x1b[0m"), "{header}");
+        assert!(header.contains("\x1b[1;35mTest\x1b[0m"), "{header}");
+        assert!(header.contains("\x1b[1;34mUnclassified\x1b[0m"), "{header}");
+        assert!(body.contains("\x1b[32m         5\x1b[0m"), "{body}");
+        assert!(body.contains("\x1b[35m   4\x1b[0m"), "{body}");
+        assert!(body.contains("\x1b[90m           0\x1b[0m"), "{body}");
+        assert!(total.contains("\x1b[1;32m         5\x1b[0m"), "{total}");
+        assert!(total.contains("\x1b[1;35m   4\x1b[0m"), "{total}");
     }
 
     /// Cyan marks only the strong column, so the Total row stays bold without
@@ -1481,6 +1538,7 @@ mod tests {
                 breaks: &[],
                 strong: Some(1),
                 secondary: &[2],
+                purposes: None,
             },
             Theme::TERMINAL,
         );
@@ -1501,6 +1559,7 @@ mod tests {
             breaks: &[2],
             strong: Some(1),
             secondary: &[],
+            purposes: None,
         };
         let body = [vec!["a".to_string(), "12".into(), "3".into()]];
         let total = Some(vec!["Total".to_string(), "12".into(), "3".into()]);
@@ -1522,17 +1581,9 @@ mod tests {
             bold.contains("\x1b[90m"),
             "separators should recede: {bold}"
         );
-        assert!(bold.contains("\x1b[1mCode\x1b[0m"), "{bold}");
+        assert!(bold.contains("\x1b[1;36mCode\x1b[0m"), "{bold}");
         assert!(bold.contains("\x1b[1;36m  12\x1b[0m"), "{bold}");
-        assert_eq!(
-            bold.replace("\x1b[1m", "")
-                .replace("\x1b[90m", "")
-                .replace("\x1b[1;36m", "")
-                .replace("\x1b[36m", "")
-                .replace("\x1b[2m", "")
-                .replace("\x1b[0m", ""),
-            plain
-        );
+        assert_eq!(unstyled(&bold), plain);
         assert!(!plain.contains('\x1b'));
     }
 }

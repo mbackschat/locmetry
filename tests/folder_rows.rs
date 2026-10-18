@@ -418,21 +418,14 @@ fn adaptive_styling_preserves_plain_alignment_and_mutes_the_legend() {
     assert!(
         styled.contains("\x1b[90mAdaptive folder detail; rows cover measured source once.\x1b[0m")
     );
-    let mut unstyled = styled;
-    for escape in [
-        "\x1b[1m",
-        "\x1b[90m",
-        "\x1b[1;36m",
-        "\x1b[36m",
-        "\x1b[2m",
-        "\x1b[33m",
-        "\x1b[31m",
-        "\x1b[35m",
-        "\x1b[0m",
-    ] {
-        unstyled = unstyled.replace(escape, "");
+    // Strip every SGR sequence, whatever the palette emits.
+    let mut unstyled = String::new();
+    let mut rest = styled.as_str();
+    while let Some((before, after)) = rest.split_once("\x1b[") {
+        unstyled += before;
+        rest = after.split_once('m').unwrap().1;
     }
-    assert_eq!(plain, unstyled);
+    assert_eq!(plain, unstyled + rest);
 }
 
 #[test]

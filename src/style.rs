@@ -1,5 +1,7 @@
 //! Semantic presentation roles shared by human renderers; never used for JSON.
 
+use crate::Purpose;
+
 /// Flatten control characters before adding terminal layout or styling.
 pub fn plain(value: &str) -> String {
     value
@@ -19,6 +21,10 @@ pub enum Role {
     Information,
     Warning,
     Error,
+    /// A purpose's identity hue; never a judgement, so no purpose borrows Warning.
+    Purpose(Purpose),
+    /// The bold form of the purpose hue, for column headings and totals.
+    StrongPurpose(Purpose),
 }
 
 #[derive(Clone, Copy)]
@@ -37,6 +43,8 @@ pub struct Theme {
     information: Style,
     warning: Style,
     error: Style,
+    /// Normal and strong styles in `Purpose::ALL` order.
+    purposes: [(Style, Style); 3],
 }
 
 const PLAIN: Style = Style("", "");
@@ -53,6 +61,7 @@ impl Theme {
         information: PLAIN,
         warning: PLAIN,
         error: PLAIN,
+        purposes: [(PLAIN, PLAIN); 3],
     };
     pub const TERMINAL: Self = Self {
         heading: Style("\x1b[1m", "\x1b[0m"),
@@ -64,6 +73,11 @@ impl Theme {
         information: Style("\x1b[36m", "\x1b[0m"),
         warning: Style("\x1b[33m", "\x1b[0m"),
         error: Style("\x1b[31m", "\x1b[0m"),
+        purposes: [
+            (Style("\x1b[32m", "\x1b[0m"), Style("\x1b[1;32m", "\x1b[0m")),
+            (Style("\x1b[35m", "\x1b[0m"), Style("\x1b[1;35m", "\x1b[0m")),
+            (Style("\x1b[34m", "\x1b[0m"), Style("\x1b[1;34m", "\x1b[0m")),
+        ],
     };
     pub const MARKDOWN: Self = Self {
         heading: BOLD,
@@ -94,6 +108,8 @@ impl Theme {
             Role::Information => self.information,
             Role::Warning => self.warning,
             Role::Error => self.error,
+            Role::Purpose(purpose) => self.purposes[purpose.index()].0,
+            Role::StrongPurpose(purpose) => self.purposes[purpose.index()].1,
         };
         format!("{start}{text}{end}")
     }

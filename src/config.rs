@@ -149,6 +149,15 @@ pub enum Purpose {
 
 impl Purpose {
     pub const ALL: [Self; 3] = [Self::Production, Self::Test, Self::Unclassified];
+
+    /// Position in [`Self::ALL`].
+    pub fn index(self) -> usize {
+        match self {
+            Self::Production => 0,
+            Self::Test => 1,
+            Self::Unclassified => 2,
+        }
+    }
 }
 
 impl fmt::Display for Purpose {
