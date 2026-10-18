@@ -1,4 +1,5 @@
 use super::*;
+use crate::paths::{ancestors, member_of, parent, ROOT};
 use anyhow::{ensure, Context};
 use std::{collections::BTreeSet, fs, path::Path};
 
@@ -137,24 +138,28 @@ struct Folder {
     direct: Pair,
     recursive: Pair,
 }
-fn parent(path: &str) -> &str {
-    path.rsplit_once('/').map_or(".", |(p, _)| p)
+/// `path` and the folders holding it, up to the root, or in a workspace up
+/// to its member, whose totals the workspace root does not repeat.
+fn lineage(path: &str, workspace: bool) -> impl Iterator<Item = &str> {
+    let mut done = false;
+    std::iter::once(path)
+        .chain(ancestors(path))
+        .take_while(move |folder| {
+            let take = !done;
+            done = *folder == ROOT || (workspace && !folder.contains('/'));
+            take
+        })
 }
 fn folders(report: &MeasurementReport) -> Result<BTreeMap<String, Folder>> {
     let mut result = BTreeMap::<String, Folder>::new();
     let workspace = report.metadata.members.is_some();
     let mut add_path = |path: &str, evidence: &'static str| {
-        let mut path = path;
-        loop {
+        for folder in lineage(path, workspace) {
             result
-                .entry(path.into())
+                .entry(folder.into())
                 .or_default()
                 .evidence
                 .insert(evidence);
-            if path == "." || (workspace && !path.contains('/')) {
-                break;
-            }
-            path = parent(path);
         }
     };
     match &report.metadata.members {
@@ -182,9 +187,8 @@ fn folders(report: &MeasurementReport) -> Result<BTreeMap<String, Folder>> {
         add_path(parent(&failure.path), "/metadata/coverage/parse_failures");
     }
     for row in report.breakdown.iter().flatten() {
-        let mut path = row.folder.as_str();
         let mut direct = true;
-        loop {
+        for path in lineage(&row.folder, workspace) {
             let folder = result.get_mut(path).expect("ancestor inserted");
             folder.recursive.all = folder.recursive.all.checked_add(&row.counts)?;
             if row.kind == Kind::Source {
@@ -197,10 +201,6 @@ fn folders(report: &MeasurementReport) -> Result<BTreeMap<String, Folder>> {
                 }
                 direct = false;
             }
-            if path == "." || (workspace && !path.contains('/')) {
-                break;
-            }
-            path = parent(path);
         }
     }
     Ok(result)
@@ -221,7 +221,7 @@ fn packages(report: &MeasurementReport) -> BTreeSet<(String, String)> {
         .collect()
 }
 fn member_for(path: &str, workspace: bool) -> Option<String> {
-    workspace.then(|| path.split('/').next().expect("validated path").into())
+    workspace.then(|| member_of(path).into())
 }
 
 pub fn compare(

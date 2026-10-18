@@ -6,6 +6,7 @@ pub mod contract;
 pub mod explain;
 mod modules;
 mod output;
+mod paths;
 mod report;
 mod report_schema;
 mod schema;
@@ -25,6 +26,7 @@ pub use output::{
     measurement_time, render_markdown, render_table_with_options, report_text, validate_output,
     write_report, BarKind, Bars, Findings, MemberView, RowOrder, TableOptions,
 };
+pub use paths::qualify;
 pub use report::{
     breakdown, build_report, build_systems, module_shares, review, submodule_shares,
     unclassified_folders, unused_entries, BreakdownRow, BuildSystemShare, Counts, FileRecord,

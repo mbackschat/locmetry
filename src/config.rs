@@ -582,6 +582,11 @@ pub(crate) fn module_rule(detector: &str) -> String {
     format!("{BUILTIN}{detector}-module")
 }
 
+/// The detector of a [`module_rule`], if `rule` is one.
+pub(crate) fn module_detector(rule: &str) -> Option<&str> {
+    rule.strip_prefix(BUILTIN)?.strip_suffix("-module")
+}
+
 /// Escapes glob metacharacters so `path` matches only itself.
 pub(crate) fn literal_glob(path: &str) -> String {
     path.chars().fold(String::new(), |mut literal, character| {

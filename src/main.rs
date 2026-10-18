@@ -927,10 +927,7 @@ fn run_workspace(args: &WorkspaceArgs) -> Result<Outcome> {
     let mut records = Vec::new();
     for measurement in measurements {
         let name = &measurement.name;
-        let prefixed = |path: &str| match path {
-            "." => name.clone(),
-            _ => format!("{name}/{path}"),
-        };
+        let prefixed = |path: &str| locmetry::qualify(name, path);
         records.push(contract::Member {
             name: name.clone(),
             root: measurement.root.to_string_lossy().into(),

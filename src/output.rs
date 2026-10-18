@@ -437,10 +437,7 @@ pub fn render_markdown(
                 grouped(
                     unknown
                         .iter()
-                        .filter(|entry| match share.folder.as_str() {
-                            "." => !entry.path.contains('/'),
-                            folder => crate::report::below(&entry.path, folder).is_some(),
-                        })
+                        .filter(|entry| crate::report::share_holds(&share.folder, &entry.path))
                         .map(|entry| entry.lines)
                         .sum()
                 ),

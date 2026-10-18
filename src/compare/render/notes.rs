@@ -24,8 +24,9 @@ fn failure_members<'a>(metadata: &Metadata, paths: impl Iterator<Item = &'a str>
         .iter()
         .flatten()
         .filter(|member| {
-            let prefix = format!("{}/", member.name);
-            paths.iter().any(|path| path.starts_with(&prefix))
+            paths
+                .iter()
+                .any(|path| crate::paths::below(path, &member.name).is_some())
         })
         .map(|member| member.name.as_str())
         .collect::<Vec<_>>()

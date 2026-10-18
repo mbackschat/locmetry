@@ -1,5 +1,6 @@
 use crate::{
-    modules::{module_owner, Module},
+    modules::{Module, ModuleOwners},
+    paths::{ancestors, below, parent, ROOT},
     Classification, Purpose,
 };
 use schemars::JsonSchema;
@@ -214,7 +215,7 @@ pub struct BreakdownRow {
 pub fn breakdown(rows: &[FileRecord]) -> Vec<BreakdownRow> {
     let mut cells = BTreeMap::<(String, Kind, Purpose, String, String), Counts>::new();
     for row in rows {
-        let folder = row.path.rsplit_once('/').map_or(".", |(parent, _)| parent);
+        let folder = parent(&row.path);
         for (language, counts) in &row.languages {
             let mut counts = *counts;
             if *language != row.language {
@@ -289,11 +290,12 @@ pub struct FolderShare {
 /// enough to locate the bulk while fitting one terminal screen.
 const FOLDER_ROWS: usize = 8;
 
-/// `path` relative to `folder`, if it lies below it; `""` is the scan root.
-pub(crate) fn below<'p>(path: &'p str, folder: &str) -> Option<&'p str> {
+/// Whether `path` counts toward the share of `folder`, where [`ROOT`] holds
+/// only the files directly in the scan root, so shares never overlap.
+pub(crate) fn share_holds(folder: &str, path: &str) -> bool {
     match folder {
-        "" => Some(path),
-        _ => path.strip_prefix(folder)?.strip_prefix('/'),
+        ROOT => !path.contains('/'),
+        _ => below(path, folder).is_some(),
     }
 }
 
@@ -330,7 +332,7 @@ pub fn unclassified_folders(rows: &[FileRecord]) -> Vec<FolderShare> {
             match below(path, folder).map(|rest| rest.split_once('/')) {
                 Some(Some((child, _))) => {
                     subfolders.insert(match folder {
-                        "" => child.to_string(),
+                        ROOT => child.to_string(),
                         _ => format!("{folder}/{child}"),
                     });
                 }
@@ -349,10 +351,7 @@ pub fn unclassified_folders(rows: &[FileRecord]) -> Vec<FolderShare> {
     let share = |folder: &str| {
         let inside: Vec<u64> = files
             .iter()
-            .filter(|(path, _)| match folder {
-                "." => !path.contains('/'),
-                _ => below(path, folder).is_some(),
-            })
+            .filter(|(path, _)| share_holds(folder, path))
             .map(|(_, code)| *code)
             .collect();
         FolderShare {
@@ -362,15 +361,15 @@ pub fn unclassified_folders(rows: &[FileRecord]) -> Vec<FolderShare> {
         }
     };
     let total: u64 = files.iter().map(|(_, code)| code).sum();
-    let (top, root_files) = children("");
+    let (top, root_files) = children(ROOT);
     let mut folders: Vec<String> = top.into_iter().map(collapse).collect();
     if root_files {
-        folders.push(".".into());
+        folders.push(ROOT.into());
     }
     loop {
         let largest = folders
             .iter()
-            .filter(|folder| *folder != ".")
+            .filter(|folder| *folder != ROOT)
             .map(|folder| (share(folder).code, folder.clone()))
             .filter(|(_, folder)| matches!(children(folder), (subfolders, false) if subfolders.len() > 1))
             .max_by(|a, b| a.0.cmp(&b.0).then_with(|| b.1.cmp(&a.1)));
@@ -388,19 +387,24 @@ pub fn unclassified_folders(rows: &[FileRecord]) -> Vec<FolderShare> {
     shares
 }
 
+/// The entry of folder `path`, looked up before inserting, so only a new
+/// folder allocates its key.
+fn folder<'a>(folders: &'a mut BTreeMap<String, Folder>, path: &str) -> &'a mut Folder {
+    if !folders.contains_key(path) {
+        folders.insert(path.into(), Folder::default());
+    }
+    folders.get_mut(path).expect("inserted above")
+}
+
 pub fn build_report(rows: &[FileRecord]) -> ReportSummary {
     let mut totals = Summary::default();
-    let mut folders: BTreeMap<String, Folder> = BTreeMap::from([(".".into(), Folder::default())]);
+    let mut folders: BTreeMap<String, Folder> = BTreeMap::from([(ROOT.into(), Folder::default())]);
     for row in rows {
         totals.add(row);
-        let mut parent = row.path.rsplit_once('/').map_or(".", |(parent, _)| parent);
-        folders.entry(parent.into()).or_default().direct.add(row);
-        loop {
-            folders.entry(parent.into()).or_default().recursive.add(row);
-            if parent == "." {
-                break;
-            }
-            parent = parent.rsplit_once('/').map_or(".", |(parent, _)| parent);
+        let direct = parent(&row.path);
+        folder(&mut folders, direct).direct.add(row);
+        for path in std::iter::once(direct).chain(ancestors(direct)) {
+            folder(&mut folders, path).recursive.add(row);
         }
     }
     ReportSummary { totals, folders }
@@ -430,12 +434,9 @@ pub fn module_shares(modules: &[Module], rows: &[FileRecord]) -> Vec<ModuleShare
             code: 0,
         })
         .collect();
+    let owners = ModuleOwners::new(modules.iter().map(|m| (m.path.as_str(), m.detector)));
     for row in rows.iter().filter(|row| row.kind == Kind::Source) {
-        if let Some(index) = module_owner(
-            modules.iter().map(|m| (m.path.as_str(), m.detector)),
-            &row.path,
-            &row.classification.rule,
-        ) {
+        if let Some(index) = owners.owner(&row.path, &row.classification.rule) {
             shares[index].files += 1;
             shares[index].lines += row.counts.lines;
             shares[index].code += row.counts.code;

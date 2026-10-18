@@ -113,13 +113,7 @@ impl Explanation {
     }
 
     pub fn qualify(&mut self, member: String) {
-        let prefix = |path: &str| {
-            if path == "." {
-                member.clone()
-            } else {
-                format!("{member}/{path}")
-            }
-        };
+        let prefix = |path: &str| crate::paths::qualify(&member, path);
         self.path = prefix(&self.path);
         match &mut self.result {
             PathResult::Counted { file, decision } => {

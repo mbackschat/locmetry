@@ -249,9 +249,7 @@ impl<'a> Target<'a> {
     fn contains(self, path: &str) -> bool {
         match self {
             Self::File(target) => target == path,
-            Self::Subfolder(target) => path
-                .strip_prefix(target)
-                .is_some_and(|rest| rest.starts_with('/')),
+            Self::Subfolder(target) => crate::paths::below(path, target).is_some(),
         }
     }
 }
@@ -395,7 +393,7 @@ pub(crate) fn select_paths(
         let selected = excluded_by.is_empty();
         if !selected
             && target_path.as_ref().is_some_and(|target| {
-                target == &path || (directory && target.starts_with(&format!("{path}/")))
+                target == &path || (directory && crate::paths::below(target, &path).is_some())
             })
         {
             let patterns = scope.exclusions();

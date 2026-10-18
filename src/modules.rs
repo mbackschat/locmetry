@@ -5,9 +5,10 @@
 //! another build system means adding a detector there. Detectors only look at
 //! the selected files and never run a build (CLAUDE.md, reference projects
 //! stay read-only).
-use crate::config::{literal_glob, module_rule};
+use crate::config::{literal_glob, module_detector};
+use crate::paths::{ancestors, below};
 use serde::Serialize;
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, HashMap};
 
 /// Recognizes one build system's modules and their production source.
 pub trait ModuleDetector: Sync {
@@ -175,20 +176,13 @@ pub struct Module {
 impl Module {
     /// Whether the root-relative `path` lies in this module's directory.
     pub(crate) fn contains(&self, path: &str) -> bool {
-        contains(&self.path, path)
+        below(path, &self.path).is_some()
     }
 
     /// Directory depth, `0` for the scan root; deeper modules nest in shallower ones.
     pub(crate) fn depth(&self) -> usize {
         depth(&self.path)
     }
-}
-
-fn contains(folder: &str, path: &str) -> bool {
-    folder == "."
-        || path
-            .strip_prefix(folder)
-            .is_some_and(|rest| rest.starts_with('/'))
 }
 
 fn depth(folder: &str) -> usize {
@@ -198,19 +192,34 @@ fn depth(folder: &str) -> usize {
     }
 }
 
-/// Index of the innermost module of the detector that decided the file.
-/// Borrowed identities keep live summaries and saved-report validation on the
-/// same ownership rule without requiring detection-only layout data.
-pub(crate) fn module_owner<'a>(
-    modules: impl Iterator<Item = (&'a str, &'a str)>,
-    path: &str,
-    rule: &str,
-) -> Option<usize> {
-    modules
-        .enumerate()
-        .filter(|(_, (folder, detector))| rule == module_rule(detector) && contains(folder, path))
-        .max_by_key(|(_, (folder, _))| depth(folder))
-        .map(|(index, _)| index)
+/// Finds the module that owns a file: the innermost module of the detector
+/// that decided it. Borrowed identities keep live summaries and saved-report
+/// validation on the same ownership rule without requiring detection-only
+/// layout data.
+pub(crate) struct ModuleOwners<'a> {
+    /// Module index by detector and directory; a later duplicate wins.
+    modules: HashMap<(&'a str, &'a str), usize>,
+}
+
+impl<'a> ModuleOwners<'a> {
+    /// Indexes `(directory, detector)` identities by their position.
+    pub(crate) fn new(modules: impl Iterator<Item = (&'a str, &'a str)>) -> Self {
+        let modules = modules
+            .enumerate()
+            .map(|(index, (folder, detector))| ((detector, folder), index))
+            .collect();
+        Self { modules }
+    }
+
+    /// Index of the module owning `path`, decided with provenance `rule`.
+    ///
+    /// Walking the path's folders costs its depth rather than the module
+    /// count, which reached a thousand modules per file in a 2026-10-18
+    /// profile of a synthetic 101k-file monorepo.
+    pub(crate) fn owner(&self, path: &str, rule: &str) -> Option<usize> {
+        let detector = module_detector(rule)?;
+        ancestors(path).find_map(|folder| self.modules.get(&(detector, folder)).copied())
+    }
 }
 
 /// Modules declared among the selected root-relative `files`, sorted by path, then detector ID.

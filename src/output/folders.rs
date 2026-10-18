@@ -1,6 +1,7 @@
 use super::RowOrder;
 use crate::{
-    report::{below, collapse_folder, Summary},
+    paths::{below, parent, ROOT},
+    report::{collapse_folder, Summary},
     Counts, Purpose, ReportSummary,
 };
 use std::collections::BTreeMap;
@@ -144,15 +145,14 @@ pub(super) fn standard(
     subfolder: Option<&str>,
     order: RowOrder,
 ) -> Vec<Row> {
-    let root = subfolder.unwrap_or(".");
-    let base = subfolder.unwrap_or("");
+    let root = subfolder.unwrap_or(ROOT);
     let mut rows = Vec::new();
     for (path, folder) in &summary.folders {
         if path == root {
             if folder.direct.source.files > 0 {
                 rows.push(Row::new(path, RowKind::Direct, &folder.direct));
             }
-        } else if below(path, base).is_some_and(|relative| !relative.contains('/'))
+        } else if below(path, root).is_some_and(|relative| !relative.contains('/'))
             && folder.recursive.source.files > 0
         {
             rows.push(Row::new(path, RowKind::Folder, &folder.recursive));
@@ -176,21 +176,16 @@ pub(super) fn adaptive(
     budget: usize,
     order: RowOrder,
 ) -> View {
-    let root = subfolder.unwrap_or(".");
+    let root = subfolder.unwrap_or(ROOT);
     let mut tree = Tree {
         summary,
         children: BTreeMap::new(),
     };
     for (path, folder) in &summary.folders {
-        if path == "." || folder.recursive.source.files == 0 {
+        if path == ROOT || folder.recursive.source.files == 0 || below(path, root).is_none() {
             continue;
         }
-        let base = if root == "." { "" } else { root };
-        if below(path, base).is_none() {
-            continue;
-        }
-        let parent = path.rsplit_once('/').map_or(".", |(parent, _)| parent);
-        tree.children.entry(parent).or_default().push(path);
+        tree.children.entry(parent(path)).or_default().push(path);
     }
     let mut rows: Vec<_> = tree
         .children(root)

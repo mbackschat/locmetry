@@ -1,5 +1,6 @@
 //! Semantic validation of stored evidence; comparison eligibility is a separate check.
 use super::*;
+use crate::paths::{below, member_of, within};
 use anyhow::{bail, ensure, Context, Result};
 use std::collections::BTreeSet;
 
@@ -213,11 +214,8 @@ impl MeasurementReport {
             return Ok(());
         };
         path(folder, false).context("invalid subfolder restriction")?;
-        let inside = |p: &str| {
-            p.strip_prefix(folder)
-                .is_some_and(|rest| rest.starts_with('/'))
-        };
-        let folder_inside = |p: &str| p == folder || inside(p);
+        let inside = |p: &str| below(p, folder).is_some();
+        let folder_inside = |p: &str| within(p, folder);
         for p in coverage_paths
             .iter()
             .copied()
@@ -241,7 +239,7 @@ impl MeasurementReport {
                 "measured folder {p:?} is outside subfolder {folder:?}"
             );
         }
-        let top = folder.split('/').next().expect("validated path");
+        let top = member_of(folder);
         ensure!(
             self.summary.top_folders.keys().all(|p| p == top),
             "top_folders is outside subfolder ancestry"
@@ -249,11 +247,7 @@ impl MeasurementReport {
         for share in &self.summary.submodules {
             path(&share.path, true)?;
             ensure!(
-                share.path == "."
-                    || folder_inside(&share.path)
-                    || folder
-                        .strip_prefix(&share.path)
-                        .is_some_and(|rest| rest.starts_with('/')),
+                folder_inside(&share.path) || below(folder, &share.path).is_some(),
                 "submodule share is disjoint from subfolder"
             );
             ensure!(
@@ -292,14 +286,13 @@ impl MeasurementReport {
         }
         if let (Some(files), Some(modules)) = (&self.files, &self.metadata.modules) {
             let mut contributions = BTreeMap::<(&str, &str), u64>::new();
+            let owners = crate::modules::ModuleOwners::new(
+                modules
+                    .iter()
+                    .map(|m| (m.path.as_str(), m.detector.as_str())),
+            );
             for file in files.iter().filter(|f| f.kind == Kind::Source) {
-                if let Some(index) = crate::modules::module_owner(
-                    modules
-                        .iter()
-                        .map(|m| (m.path.as_str(), m.detector.as_str())),
-                    &file.path,
-                    &file.rule,
-                ) {
+                if let Some(index) = owners.owner(&file.path, &file.rule) {
                     let owner = &modules[index];
                     let code = contributions
                         .entry((&owner.detector, &owner.path))
@@ -425,7 +418,7 @@ impl MeasurementReport {
             same_totals(&self.summary.totals, &derived, false, "breakdown")?;
             let mut top = BTreeMap::<String, BTreeMap<Purpose, u64>>::new();
             for row in rows.iter().filter(|r| r.kind == Kind::Source) {
-                let name = row.folder.split('/').next().expect("path validated");
+                let name = member_of(&row.folder);
                 let n = top
                     .entry(name.into())
                     .or_default()
@@ -582,28 +575,26 @@ impl MeasurementReport {
                             && c.mapped_files <= c.counted_files,
                         "member coverage conflicts with totals"
                     );
+                    let member_path = |p: &str| below(p, &member.name).is_some();
                     if let Some(rows) = &self.breakdown {
-                        let prefix = format!("{}/", member.name);
-                        let derived =
-                            totals_from_rows(rows.iter().filter(|r| {
-                                r.folder == member.name || r.folder.starts_with(&prefix)
-                            }))?;
+                        let derived = totals_from_rows(
+                            rows.iter().filter(|r| within(&r.folder, &member.name)),
+                        )?;
                         same_totals(totals, &derived, false, "member breakdown")?;
                     }
-                    let prefix = format!("{}/", member.name);
                     ensure!(
                         self.metadata
                             .coverage
                             .unread
                             .iter()
-                            .filter(|p| p.starts_with(&prefix))
+                            .filter(|p| member_path(p))
                             .count() as u64
                             == c.unread_files,
                         "member unread_files does not reconcile"
                     );
                     if let Some(paths) = &self.metadata.coverage.unrecognized {
                         ensure!(
-                            paths.iter().filter(|p| p.starts_with(&prefix)).count() as u64
+                            paths.iter().filter(|p| member_path(p)).count() as u64
                                 == c.unrecognized_files,
                             "member unrecognized_files does not reconcile"
                         );
@@ -612,11 +603,7 @@ impl MeasurementReport {
                         (&self.metadata.coverage.parse_failures, c.parse_failed_files)
                     {
                         ensure!(
-                            failures
-                                .iter()
-                                .filter(|f| f.path.starts_with(&prefix))
-                                .count() as u64
-                                == n,
+                            failures.iter().filter(|f| member_path(&f.path)).count() as u64 == n,
                             "member parse_failed_files does not reconcile"
                         );
                     }
@@ -651,7 +638,7 @@ impl MeasurementReport {
                         "workspace coverage does not reconcile"
                     );
                 }
-                let belongs = |p: &str| names.contains(p.split('/').next().unwrap_or(""));
+                let belongs = |p: &str| names.contains(member_of(p));
                 for p in coverage_paths {
                     ensure!(belongs(p), "coverage path has no workspace member");
                 }
