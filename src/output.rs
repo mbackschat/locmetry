@@ -736,7 +736,7 @@ fn share_bars(rows: &[(String, [u64; 3])], total: u64, columns: usize, theme: Th
         .unwrap_or(0);
     let mut output = format!(
         " {}  {}\n",
-        theme.paint(Role::Heading, "Code share"),
+        theme.paint(Role::Primary, "Code share"),
         bar_key(theme)
     );
     for ((label, code), share) in rows.iter().zip(shares) {
@@ -1879,6 +1879,10 @@ mod tests {
              dev   5.0%  ▓▓\n"
         );
         let styled = share_bars(&rows, 20, 33, Theme::TERMINAL);
+        assert!(
+            styled.starts_with(" \x1b[1;36mCode share\x1b[0m"),
+            "{styled}"
+        );
         assert!(
             styled.contains("\x1b[32m████████████\x1b[0m\x1b[35m▓▓▓▓▓▓\x1b[0m\x1b[34m░░\x1b[0m")
         );
