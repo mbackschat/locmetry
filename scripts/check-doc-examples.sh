@@ -97,10 +97,10 @@ printf 'fn main() {}\n' > "$temporary/workflows/service/src/main.rs"
 extract_blocks 'Compare saved measurements' "$temporary/compare.sh" 1 1 "$repository/docs/guides/compare.md"
 (cd "$temporary/workflows" && bash "$temporary/compare.sh") > "$temporary/workflow-output"
 jq -e '.document_type == "comparison" and .summary.source.delta.code == 1' "$temporary/workflows/net-change.json" > /dev/null
-grep -Fxq '| Source code | 1 | 2 | +1 |' "$temporary/workflows/net-change.md"
+grep -Eq '^\| Source \| [0-9,]+ \| [0-9,]+ \| [^|]+ \| 1 \| 2 \| \+1 \|' "$temporary/workflows/net-change.md"
 extract_blocks 'Compare saved measurements' "$temporary/workspace-compare.sh" 2 1 "$repository/docs/guides/compare.md"
 (cd "$temporary/workflows" && bash "$temporary/workspace-compare.sh") > "$temporary/workspace-change.md"
-grep -Fxq '| Source code | 3 | 4 | +1 |' "$temporary/workspace-change.md"
+grep -Eq '^\| Source \| [0-9,]+ \| [0-9,]+ \| [^|]+ \| 3 \| 4 \| \+1 \|' "$temporary/workspace-change.md"
 grep -Fxq '| service (both) | 2 | 3 | +1 | 2 | 3 | +1 |' "$temporary/workspace-change.md"
 
 # The agent recipe prints the table and saves full JSON from one scan.

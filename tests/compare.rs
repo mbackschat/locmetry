@@ -519,11 +519,7 @@ fn rendering_escapes_markdown_but_preserves_plain_text_labels() {
     let table = String::from_utf8(compare(&before, &after, &["--format", "table"]).stdout).unwrap();
     assert!(table.contains("R&D"));
     assert!(!table.contains("&amp;"));
-    let header = table
-        .lines()
-        .find(|line| line.starts_with("Measure "))
-        .unwrap();
-    assert_eq!(header, "Measure               Before  After  Net change");
+    assert!(table.contains(" <img src=x onerror=alert(1)>`| (after only) "));
 }
 
 #[test]
@@ -535,19 +531,27 @@ fn comparison_totals_fit_their_contents_and_keep_large_signed_values_aligned() {
     let saved = save(temp.path(), "input.json", &measure(&root));
     let full = json(&compare(&saved, &saved, &["--format", "json"]), 0);
     let mut report: locmetry::compare::Comparison = serde_json::from_value(full).unwrap();
-    let table = render_table_with_theme(&report, Theme::PLAIN);
-    let totals = table
-        .split("Totals\n")
-        .nth(1)
-        .unwrap()
-        .split("\n\n")
-        .next()
-        .unwrap();
-    assert!(totals.lines().all(|line| line.len() == 47), "{totals}");
+    let totals = |report: &locmetry::compare::Comparison| {
+        render_table_with_theme(report, Theme::PLAIN)
+            .split("Totals\n")
+            .nth(1)
+            .unwrap()
+            .split("\n\n")
+            .next()
+            .unwrap()
+            .to_string()
+    };
+    let unchanged = totals(&report);
+    let width = |line: &str| line.chars().count();
     assert!(
-        totals.contains("All counted files          1      1          +0"),
-        "{totals}"
+        unchanged
+            .lines()
+            .all(|line| width(line) == width(unchanged.lines().next().unwrap())),
+        "{unchanged}"
     );
+    let all_counted = unchanged.lines().last().unwrap();
+    assert!(all_counted.starts_with(" All counted "), "{unchanged}");
+    assert!(all_counted.ends_with(" │            0"), "{unchanged}");
 
     let change = &mut report.summary.dimensions.all_counted;
     change.before = Counts {
@@ -563,24 +567,28 @@ fn comparison_totals_fit_their_contents_and_keep_large_signed_values_aligned() {
         lines: i64::MIN,
         ..Default::default()
     };
-    report.summary.dimensions.source = report.summary.dimensions.all_counted;
-    let table = render_table_with_theme(&report, Theme::PLAIN);
-    let totals = table
-        .split("Totals\n")
-        .nth(1)
-        .unwrap()
-        .split("\n\n")
-        .next()
-        .unwrap();
-    assert!(totals.lines().all(|line| line.len() == 70), "{totals}");
-    for line in totals.lines() {
-        assert_eq!(&line[20..22], "  ");
-        assert_eq!(&line[41..43], "  ");
-        assert_eq!(&line[48..50], "  ");
-    }
+    let large = totals(&report);
+    let first = large.lines().next().unwrap();
     assert!(
-        totals.contains("All counted code      9223372036854775808      0  -9223372036854775808"),
-        "{totals}"
+        large.lines().all(|line| width(line) == width(first)),
+        "{large}"
+    );
+    // Separators stay in one column however wide the signed values grow.
+    let separators = |line: &str| {
+        line.char_indices()
+            .filter(|(_, c)| matches!(c, '│' | '┼'))
+            .map(|(index, _)| line[..index].chars().count())
+            .collect::<Vec<_>>()
+    };
+    assert!(
+        large
+            .lines()
+            .all(|line| separators(line) == separators(first)),
+        "{large}"
+    );
+    assert!(
+        large.contains("9,223,372,036,854,775,808            0  -9,223,372,036,854,775,808"),
+        "{large}"
     );
 }
 
@@ -1017,19 +1025,22 @@ fn comparison_theme_preserves_plain_text_and_distinguishes_signed_changes() {
     let temp = tempfile::tempdir().unwrap();
     let root = temp.path().join("source");
     write(&root, "main.py", "print(1)\n\n");
+    write(&root, "README.md", "# A\n\ntext\n");
     let before = save(temp.path(), "before.json", &measure(&root));
     write(&root, "main.py", "print(1)\nprint(2)\n");
+    write(&root, "README.md", "# A\n");
     let after = save(temp.path(), "after.json", &measure(&root));
     let value = json(&compare(&before, &after, &["--output", "-"]), 0);
     let report: locmetry::compare::Comparison = serde_json::from_value(value).unwrap();
     let plain = locmetry::compare::render_table_with_theme(&report, Theme::PLAIN);
     let colored = locmetry::compare::render_table_with_theme(&report, Theme::TERMINAL);
-    for expected in [
-        "\x1b[36m        +1",
-        "\x1b[35m        -1",
-        "\x1b[90m        +0",
-    ] {
-        assert!(colored.contains(expected), "{colored}");
+    for (style, value) in [("36m", "+1"), ("35m", "-2"), ("90m", "0")] {
+        assert!(
+            colored.split("\x1b[").any(|cell| cell
+                .strip_prefix(style)
+                .is_some_and(|cell| cell.trim() == value)),
+            "{style} {value}\n{colored}"
+        );
     }
     let stripped: String = colored
         .split('\x1b')
@@ -1043,7 +1054,14 @@ fn comparison_theme_preserves_plain_text_and_distinguishes_signed_changes() {
     let markdown = locmetry::compare::render_markdown(&report);
     assert!(markdown.contains("*Net change = after − before"));
     assert!(!markdown.contains('\x1b'));
-    assert!(markdown.contains("| Source code | 1 | 2 | +1 |"));
+    assert!(
+        markdown.contains("| Source | 2 | 2 | 0 | 1 | 2 | +1 | 0 | -1 | 0 |"),
+        "{markdown}"
+    );
+    assert!(
+        markdown.contains("| **All counted** | **5** | **3** | **-2** |"),
+        "{markdown}"
+    );
 }
 
 #[test]
@@ -1063,10 +1081,10 @@ fn human_comparisons_show_line_changes_and_original_measurement_dates() {
         let language = text.lines().find(|line| line.contains("Python")).unwrap();
         let cells: Vec<_> = language
             .split_whitespace()
-            .filter(|c| *c != "|")
+            .filter(|c| !matches!(*c, "|" | "│"))
             .map(|c| c.trim_matches('*'))
             .collect();
-        assert_eq!(cells, ["Python", "1", "3", "+2", "1", "1", "+0"]);
+        assert_eq!(cells, ["Python", "1", "3", "+2", "1", "1", "0"]);
         assert!(text.ends_with("Before measured at: 1970-01-01 00:00:00 UTC\nAfter measured at: 2000-02-29 12:34:56 UTC\n"), "{text}");
     }
 }
@@ -1096,4 +1114,83 @@ fn human_comparisons_explain_presence_in_plain_words() {
     for absent in ["Entity", "members -", "Presence:"] {
         assert!(!table.contains(absent), "{absent}\n{table}");
     }
+}
+
+/// Locks that the human totals explain All counted: one row per content kind,
+/// whose figures add up to the All counted row, and that the Purpose and
+/// table Folders grids end in the source total, with the root folder as it.
+#[test]
+fn totals_split_all_counted_by_kind_and_grids_end_in_their_source_total() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("project");
+    write(&root, "src/main.py", "a = 1\n");
+    write(&root, "tests/test_main.py", "assert True\n");
+    write(&root, "README.md", "# Project\n\ntext\n");
+    write(&root, "config.json", "{\n  \"a\": 1\n}\n");
+    let before = save(temp.path(), "before.json", &measure(&root));
+    write(&root, "src/main.py", "a = 1\nb = 2\n");
+    write(&root, "config.json", "{\n  \"a\": 1,\n  \"b\": 2\n}\n");
+    let after = save(temp.path(), "after.json", &measure(&root));
+    let table = String::from_utf8(compare(&before, &after, &["--format", "table"]).stdout).unwrap();
+    let section = |title: &str| {
+        table
+            .split(&format!("\n{title}\n"))
+            .nth(1)
+            .unwrap()
+            .split("\n\n")
+            .next()
+            .unwrap()
+            .to_string()
+    };
+    let figures = |line: &str| -> Vec<i64> {
+        line.split_whitespace()
+            .filter_map(|cell| cell.replace(',', "").parse().ok())
+            .collect()
+    };
+    let totals = section("Totals");
+    let rows: Vec<_> = totals
+        .lines()
+        .filter(|line| !line.starts_with(" ─") && !line.starts_with(" Kind "))
+        .collect();
+    let labels: Vec<_> = rows
+        .iter()
+        .map(|row| row.split("  ").next().unwrap().trim())
+        .collect();
+    assert_eq!(
+        labels,
+        ["Source", "Data", "Documentation", "All counted"],
+        "{totals}"
+    );
+    let (kinds, all_counted) = rows.split_at(3);
+    let summed = kinds
+        .iter()
+        .map(|row| figures(row))
+        .fold(vec![0; 10], |sum, row| {
+            sum.iter().zip(row).map(|(a, b)| a + b).collect()
+        });
+    assert_eq!(summed, figures(all_counted[0]), "{totals}");
+    assert!(figures(kinds[1])[2] > 0, "data growth is visible: {totals}");
+
+    let purpose = section("Purpose");
+    assert!(
+        purpose
+            .lines()
+            .last()
+            .unwrap()
+            .starts_with(" Source total "),
+        "{purpose}"
+    );
+    let folders = section("Folders (recursive; do not sum parents and children)");
+    assert!(
+        folders
+            .lines()
+            .last()
+            .unwrap()
+            .starts_with(" Source total "),
+        "{folders}"
+    );
+    assert!(!folders.contains(". (both)"), "{folders}");
+    let markdown =
+        String::from_utf8(compare(&before, &after, &["--format", "markdown"]).stdout).unwrap();
+    assert!(markdown.contains("| . (both) |"), "{markdown}");
 }

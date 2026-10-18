@@ -1,5 +1,7 @@
 use super::*;
+use crate::output::{self, Column, ColumnRole, Columns};
 use crate::style::{Role, Theme};
+use crate::{Counts, Kind};
 use std::fmt::Write;
 
 mod notes;
@@ -10,89 +12,139 @@ fn label(value: &str, markdown: bool) -> String {
         false => crate::style::plain(value),
     }
 }
-fn grid(
-    output: &mut String,
-    title: &str,
-    rows: Vec<(String, CountChange)>,
-    markdown: bool,
-    theme: Theme,
-) {
-    if rows.is_empty() {
-        return;
-    }
-    let headers = [
-        "Source",
-        "Lines before",
-        "Lines after",
-        "Lines change",
-        "Code before",
-        "Code after",
-        "Code change",
-    ];
-    let cells = |name: &str, c: &CountChange| {
-        [
-            label(name, markdown),
-            c.before.lines.to_string(),
-            c.after.lines.to_string(),
-            format!("{:+}", c.delta.lines),
-            c.before.code.to_string(),
-            c.after.code.to_string(),
-            format!("{:+}", c.delta.code),
-        ]
-    };
-    let widths = rows
-        .iter()
-        .fold(headers.map(str::len), |mut widths, (name, c)| {
-            for (width, value) in widths.iter_mut().zip(cells(name, c)) {
-                *width = (*width).max(value.chars().count());
-            }
-            widths
-        });
-    let text_row = |values: &[String; 7]| {
-        values
-            .iter()
-            .zip(widths)
-            .enumerate()
-            .map(|(index, (value, width))| match index {
-                0 => format!("{value:<width$}"),
-                _ => format!("{value:>width$}"),
-            })
-            .collect::<Vec<_>>()
-    };
-    if markdown {
-        writeln!(
-            output,
-            "\n## {title}\n\n| {} |\n| --- |{}\n",
-            headers.join(" | "),
-            " ---: |".repeat(6)
-        )
-        .unwrap();
-    } else {
-        writeln!(
-            output,
-            "\n{}\n{}",
-            theme.paint(Role::Heading, title),
-            theme.paint(
-                Role::Heading,
-                &text_row(&headers.map(String::from)).join("  ")
-            )
-        )
-        .unwrap();
-    }
-    for (name, c) in rows {
-        let values = cells(&name, &c);
-        let mut rendered = match markdown {
-            true => values.to_vec(),
-            false => text_row(&values),
-        };
-        for (index, delta) in [(3, c.delta.lines), (6, c.delta.code)] {
-            rendered[index] = theme.delta(delta, if markdown { 0 } else { widths[index] });
+/// Lines and Code before, after and net change, as every comparison grid shows them.
+const CHANGE_COLUMNS: [Column; 6] = [
+    Column::new("Lines before", ColumnRole::Count),
+    Column::new("Lines after", ColumnRole::Count),
+    Column::new("Lines change", ColumnRole::Change),
+    Column::new("Code before", ColumnRole::Count).separated(),
+    Column::new("Code after", ColumnRole::Count),
+    Column::new("Code change", ColumnRole::Change),
+];
+/// Changes beside the Totals figures, muted as the measurement table mutes
+/// Comments, Blanks and Files.
+const SECONDARY_CHANGE_COLUMNS: [Column; 3] = [
+    Column::new("Comments change", ColumnRole::Secondary).separated(),
+    Column::new("Blanks change", ColumnRole::Secondary),
+    Column::new("Files change", ColumnRole::Secondary).separated(),
+];
+
+/// One row of a comparison grid.
+struct Row {
+    label: String,
+    before: Counts,
+    after: Counts,
+}
+
+impl Row {
+    fn new(label: impl Into<String>, change: &CountChange) -> Self {
+        Self {
+            label: label.into(),
+            before: change.before,
+            after: change.after,
         }
+    }
+
+    /// Cells for `columns`, which start with the label and [`CHANGE_COLUMNS`];
+    /// the change is recomputed wide, so a row summed for display cannot overflow.
+    fn cells(&self, secondary: bool, markdown: bool) -> Vec<String> {
+        let change =
+            |before: u64, after: u64| output::signed(i128::from(after) - i128::from(before));
+        let (before, after) = (&self.before, &self.after);
+        let mut cells = vec![
+            label(&self.label, markdown),
+            output::grouped(before.lines),
+            output::grouped(after.lines),
+            change(before.lines, after.lines),
+            output::grouped(before.code),
+            output::grouped(after.code),
+            change(before.code, after.code),
+        ];
+        if secondary {
+            cells.extend([
+                change(before.comments, after.comments),
+                change(before.blanks, after.blanks),
+                change(before.files, after.files),
+            ]);
+        }
+        cells
+    }
+}
+
+/// A titled comparison grid; [`Grid::write`] writes nothing without body
+/// rows, so a grid never shows only a total.
+struct Grid<'t> {
+    title: &'t str,
+    /// Heading of the label column.
+    label: &'static str,
+    rows: Vec<Row>,
+    total: Option<Row>,
+    /// Adds [`SECONDARY_CHANGE_COLUMNS`].
+    secondary: bool,
+}
+
+impl Grid<'_> {
+    fn write(self, output: &mut String, markdown: bool, theme: Theme) {
+        if self.rows.is_empty() {
+            return;
+        }
+        let mut columns = vec![Column::new(self.label, ColumnRole::Label)];
+        columns.extend(CHANGE_COLUMNS);
+        if self.secondary {
+            columns.extend(SECONDARY_CHANGE_COLUMNS);
+        }
+        let cells = |row: &Row| row.cells(self.secondary, markdown);
+        let body: Vec<_> = self.rows.iter().map(cells).collect();
+        let total = self.total.as_ref().map(cells);
         match markdown {
-            true => writeln!(output, "| {} |", rendered.join(" | ")),
-            false => writeln!(output, "{}", rendered.join("  ")),
+            true => writeln!(output, "\n## {}\n", self.title),
+            false => writeln!(output, "\n{}", theme.paint(Role::Heading, self.title)),
         }
         .unwrap();
+        output.push_str(&output::shared_table(
+            &Columns::of(&columns),
+            &body,
+            total.as_deref(),
+            markdown,
+            theme,
+        ));
+    }
+}
+
+/// Changes per content kind present in either report; together they make up
+/// All counted, which validation guarantees `by_kind_purpose` sums to.
+fn kind_rows(dimensions: &Dimensions) -> Vec<Row> {
+    Kind::ALL
+        .into_iter()
+        .filter_map(|kind| {
+            let prefix = format!("{kind}:");
+            let changes: Vec<_> = dimensions
+                .by_kind_purpose
+                .iter()
+                .filter(|(key, _)| key.starts_with(&prefix))
+                .map(|(_, change)| change)
+                .collect();
+            let sum = |side: fn(&CountChange) -> Counts| {
+                changes.iter().fold(Counts::default(), |sum, change| {
+                    sum.checked_add(&side(change))
+                        .expect("kind totals are bounded by all_counted")
+                })
+            };
+            (!changes.is_empty()).then(|| Row {
+                label: kind_title(kind).to_string(),
+                before: sum(|change| change.before),
+                after: sum(|change| change.after),
+            })
+        })
+        .collect()
+}
+
+fn kind_title(kind: Kind) -> &'static str {
+    match kind {
+        Kind::Source => "Source",
+        Kind::Data => "Data",
+        Kind::Documentation => "Documentation",
+        Kind::Other => "Other",
     }
 }
 
@@ -129,144 +181,61 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
     ] {
         writeln!(out, "{}", theme.paint(Role::Muted, note)).unwrap();
     }
-    let totals: Vec<_> = [
-        ("All counted", c.summary.dimensions.all_counted),
-        ("Source", c.summary.dimensions.source),
-    ]
-    .into_iter()
-    .flat_map(|(label, change)| {
-        [
-            (
-                "files",
-                change.before.files,
-                change.after.files,
-                change.delta.files,
-            ),
-            (
-                "lines",
-                change.before.lines,
-                change.after.lines,
-                change.delta.lines,
-            ),
-            (
-                "code",
-                change.before.code,
-                change.after.code,
-                change.delta.code,
-            ),
-            (
-                "comments",
-                change.before.comments,
-                change.after.comments,
-                change.delta.comments,
-            ),
-            (
-                "blanks",
-                change.before.blanks,
-                change.after.blanks,
-                change.delta.blanks,
-            ),
-        ]
-        .map(|(metric, before, after, delta)| (format!("{label} {metric}"), before, after, delta))
-    })
-    .collect();
-    let headers = ["Measure", "Before", "After", "Net change"];
-    let [measure_width, before_width, after_width, delta_width] = totals.iter().fold(
-        headers.map(str::len),
-        |mut widths, (name, before, after, delta)| {
-            for (width, required) in widths.iter_mut().zip([
-                name.len(),
-                before.to_string().len(),
-                after.to_string().len(),
-                format!("{delta:+}").len(),
-            ]) {
-                *width = (*width).max(required);
-            }
-            widths
-        },
-    );
-    if markdown {
-        out.push_str("\n## Totals\n\n| Measure | Before | After | Net change |\n| --- | ---: | ---: | ---: |\n");
-    } else {
-        writeln!(
-            out,
-            "\n{}\n{}",
-            theme.paint(Role::Heading, "Totals"),
-            theme.paint(
-                Role::Heading,
-                &format!(
-                    "{:<measure_width$}  {:>before_width$}  {:>after_width$}  {:>delta_width$}",
-                    headers[0], headers[1], headers[2], headers[3]
-                )
-            )
-        )
-        .unwrap();
+    let dimensions = &c.summary.dimensions;
+    let source_total = || Some(Row::new("Source total", &dimensions.source));
+    let changed = |change: &CountChange| change.delta.code != 0 || change.delta.lines != 0;
+    Grid {
+        title: "Totals",
+        label: "Kind",
+        rows: kind_rows(dimensions),
+        total: Some(Row::new("All counted", &dimensions.all_counted)),
+        secondary: true,
     }
-    for (name, before, after, delta) in totals {
-        if markdown {
-            writeln!(
-                out,
-                "| {name} | {before} | {after} | {} |",
-                theme.delta(delta, 0)
-            )
-            .unwrap();
-        } else {
-            writeln!(
-                out,
-                "{}  {before:>before_width$}  {after:>after_width$}  {}",
-                theme.paint(Role::Heading, &format!("{name:<measure_width$}")),
-                theme.delta(delta, delta_width)
-            )
-            .unwrap();
-        }
-    }
-    grid(
-        &mut out,
-        "Purpose",
-        c.summary
-            .dimensions
+    .write(&mut out, markdown, theme);
+    Grid {
+        title: "Purpose",
+        label: "Purpose",
+        rows: dimensions
             .source_purpose
             .iter()
-            .filter(|(_, v)| v.delta.code != 0 || v.delta.lines != 0)
-            .map(|(k, v)| (k.to_string(), *v))
+            .filter(|(_, v)| changed(v))
+            .map(|(k, v)| Row::new(output::purpose_title(*k), v))
             .collect(),
-        markdown,
-        theme,
-    );
-    grid(
-        &mut out,
-        "Languages",
-        c.summary
-            .dimensions
+        total: source_total(),
+        secondary: false,
+    }
+    .write(&mut out, markdown, theme);
+    Grid {
+        title: "Languages",
+        label: "Language",
+        rows: dimensions
             .source_languages
             .iter()
-            .filter(|(_, v)| v.delta.code != 0 || v.delta.lines != 0)
-            .map(|(k, v)| (k.clone(), *v))
+            .filter(|(_, v)| changed(v))
+            .map(|(k, v)| Row::new(k.as_str(), v))
             .collect(),
-        markdown,
-        theme,
-    );
+        total: source_total(),
+        secondary: false,
+    }
+    .write(&mut out, markdown, theme);
     if let Some(members) = &c.members {
-        grid(
-            &mut out,
-            "Workspace members",
-            members
+        Grid {
+            title: "Workspace members",
+            label: "Member",
+            rows: members
                 .iter()
-                .filter(|(_, v)| {
-                    v.presence != Presence::Both
-                        || v.dimensions.source.delta.code != 0
-                        || v.dimensions.source.delta.lines != 0
-                })
+                .filter(|(_, v)| v.presence != Presence::Both || changed(&v.dimensions.source))
                 .map(|(k, v)| {
-                    (
+                    Row::new(
                         format!("{k} ({})", presence_name(v.presence)),
-                        v.dimensions.source,
+                        &v.dimensions.source,
                     )
                 })
                 .collect(),
-            markdown,
-            theme,
-        );
+            total: source_total(),
+            secondary: false,
+        }
+        .write(&mut out, markdown, theme);
     }
     if let Some(composition) = &c.summary.composition {
         writeln!(
@@ -309,28 +278,39 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
     if let Some(folders) = &c.folders {
         let mut folders: Vec<_> = folders.iter().collect();
         folders.sort_by(|(a, _), (b, _)| a.split('/').cmp(b.split('/')));
-        grid(
-            &mut out,
-            "Folders (recursive; do not sum parents and children)",
-            folders
-                .into_iter()
-                .filter(|(path, v)| {
-                    (markdown
-                        || (c.members.is_none() && (path.as_str() == "." || !path.contains('/'))))
-                        && (v.presence != Presence::Both
-                            || v.recursive.source.delta.code != 0
-                            || v.recursive.source.delta.lines != 0)
-                })
-                .map(|(k, v)| {
-                    (
-                        format!("{k} ({})", presence_name(v.presence)),
-                        v.recursive.source,
-                    )
-                })
-                .collect(),
-            markdown,
-            theme,
-        );
+        let mut rows: Vec<_> = folders
+            .into_iter()
+            .filter(|(path, v)| {
+                (markdown || (c.members.is_none() && (path.as_str() == "." || !path.contains('/'))))
+                    && (v.presence != Presence::Both || changed(&v.recursive.source))
+            })
+            .map(|(k, v)| {
+                Row::new(
+                    format!("{k} ({})", presence_name(v.presence)),
+                    &v.recursive.source,
+                )
+            })
+            .collect();
+        // The table lists top-level folders only, so the recursive root row is
+        // their source total; Markdown keeps it in place within the hierarchy.
+        let total = match markdown {
+            true => None,
+            false => rows
+                .iter()
+                .position(|row| row.label.starts_with(". ("))
+                .map(|index| Row {
+                    label: "Source total".into(),
+                    ..rows.remove(index)
+                }),
+        };
+        Grid {
+            title: "Folders (recursive; do not sum parents and children)",
+            label: "Folder",
+            rows,
+            total,
+            secondary: false,
+        }
+        .write(&mut out, markdown, theme);
     }
     let summary = &c.presence_summary;
     let presence: Vec<_> = [

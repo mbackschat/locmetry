@@ -536,7 +536,7 @@ fn build_modules_note(modules: &[ModuleShare], order: RowOrder) -> Option<String
 
 /// `count` with a comma between groups of three digits, so large counts read
 /// at a glance in the human formats; the JSON report keeps plain integers.
-fn grouped(count: u64) -> String {
+pub(crate) fn grouped(count: u64) -> String {
     let digits = count.to_string();
     let mut output = String::with_capacity(digits.len() + digits.len() / 3);
     for (index, digit) in digits.chars().enumerate() {
@@ -546,6 +546,17 @@ fn grouped(count: u64) -> String {
         output.push(digit);
     }
     output
+}
+
+/// A signed change grouped like [`grouped`]; no change is a plain `0`, which
+/// tables mute like any other zero.
+pub(crate) fn signed(change: i128) -> String {
+    let magnitude = grouped(change.unsigned_abs() as u64);
+    match change.signum() {
+        1 => format!("+{magnitude}"),
+        -1 => format!("-{magnitude}"),
+        _ => magnitude,
+    }
 }
 
 /// `noun`, pluralized with `s` unless `count` is one.
@@ -572,6 +583,8 @@ struct Layout {
     /// Column carrying the primary metric.
     strong: Option<usize>,
     secondary: Vec<usize>,
+    /// Signed changes, colored by direction.
+    changes: Vec<usize>,
     /// The purpose each purpose column splits Code by.
     purposes: Vec<(usize, Purpose)>,
 }
@@ -579,7 +592,7 @@ struct Layout {
 /// What a measurement table column holds, which decides its styling in text
 /// tables and its emphasis and alignment in Markdown.
 #[derive(Clone, Copy, PartialEq, Eq)]
-enum ColumnRole {
+pub(crate) enum ColumnRole {
     /// Row labels, left-aligned.
     Label,
     Count,
@@ -591,11 +604,13 @@ enum ColumnRole {
     Ratio(Ratio),
     /// Share of the total Code.
     Share,
+    /// A signed net change between two reports.
+    Change,
 }
 
 /// One column of a measurement table.
 #[derive(Clone, Copy)]
-struct Column {
+pub(crate) struct Column {
     title: &'static str,
     role: ColumnRole,
     /// Preceded by a `│` separator, starting a group of related figures.
@@ -603,7 +618,7 @@ struct Column {
 }
 
 impl Column {
-    const fn new(title: &'static str, role: ColumnRole) -> Self {
+    pub(crate) const fn new(title: &'static str, role: ColumnRole) -> Self {
         Self {
             title,
             role,
@@ -611,7 +626,7 @@ impl Column {
         }
     }
 
-    const fn separated(self) -> Self {
+    pub(crate) const fn separated(self) -> Self {
         Self {
             separated: true,
             ..self
@@ -641,9 +656,13 @@ const fn code_columns(label: &'static str) -> [Column; 3] {
 /// A table's columns in order; its header, text layout and Markdown header
 /// all follow from them, so they cannot disagree.
 #[derive(Clone)]
-struct Columns(Vec<Column>);
+pub(crate) struct Columns(Vec<Column>);
 
 impl Columns {
+    pub(crate) fn of(columns: &[Column]) -> Self {
+        Self(columns.to_vec())
+    }
+
     /// `lead` followed by the purpose columns and ratio `purposes` shows.
     fn with_purposes(lead: &[Column], purposes: &PurposeColumns) -> Self {
         Self(
@@ -674,6 +693,7 @@ impl Columns {
                     layout.secondary.push(index)
                 }
                 ColumnRole::Purpose(purpose) => layout.purposes.push((index, purpose)),
+                ColumnRole::Change => layout.changes.push(index),
                 ColumnRole::Label | ColumnRole::Count => {}
             }
         }
@@ -729,6 +749,37 @@ fn text_table(
     theme: Theme,
 ) -> String {
     PlainTable::new(header, body, total.as_deref()).render(layout, None, theme)
+}
+
+/// `columns` over `body` and an optional bold `total` row, as an aligned text
+/// table or a Markdown table; Markdown cells must already be escaped. Compare
+/// renders its grids through it, so both commands share one table style.
+pub(crate) fn shared_table(
+    columns: &Columns,
+    body: &[Vec<String>],
+    total: Option<&[String]>,
+    markdown: bool,
+    theme: Theme,
+) -> String {
+    if !markdown {
+        return PlainTable::new(&columns.titles(), body, total).render(
+            &columns.layout(),
+            None,
+            theme,
+        );
+    }
+    let mut output = columns.markdown_header() + "\n";
+    for row in body {
+        writeln!(output, "| {} |", row.join(" | ")).unwrap();
+    }
+    if let Some(total) = total {
+        let cells: Vec<_> = total
+            .iter()
+            .map(|value| theme.paint(Role::Heading, value))
+            .collect();
+        writeln!(output, "| {} |", cells.join(" | ")).unwrap();
+    }
+    output
 }
 
 /// Already styled bars after each body row, under their kind's titled column;
@@ -801,6 +852,10 @@ impl PlainTable {
                     (_, _, Some(purpose), _) => Some(Role::StrongPurpose(purpose)),
                     _ if layout.strong == Some(column) => Some(Role::Primary),
                     (_, _, _, RowKind::Header) => Some(Role::Heading),
+                    _ if layout.changes.contains(&column) => Some(match value.starts_with('-') {
+                        true => Role::Decrease,
+                        false => Role::Increase,
+                    }),
                     _ if layout.secondary.contains(&column) => Some(Role::Secondary),
                     (_, _, _, RowKind::Total) => Some(Role::Heading),
                     _ => None,
@@ -904,7 +959,7 @@ fn comment_share(code: u64, comments: u64) -> String {
 const COMMENT_SHARE_TITLE: &str = "Comment %";
 const COMMENT_SHARE_DEFINITION: &str = "Comment % = Comments / (Code + Comments)";
 
-fn purpose_title(purpose: Purpose) -> &'static str {
+pub(crate) fn purpose_title(purpose: Purpose) -> &'static str {
     match purpose {
         Purpose::Production => "Production",
         Purpose::Test => "Test",
@@ -914,7 +969,7 @@ fn purpose_title(purpose: Purpose) -> &'static str {
 
 /// The ratio after a table's purpose columns.
 #[derive(Clone, Copy, PartialEq, Eq)]
-enum Ratio {
+pub(crate) enum Ratio {
     /// Test code per production line, when both purposes are counted.
     TestPerProduction,
     /// Comment density, which replaces a ratio that lacks one of its purposes.
@@ -2162,8 +2217,8 @@ mod tests {
             &Layout {
                 breaks: vec![],
                 strong: Some(1),
-                secondary: vec![],
                 purposes: (2..).zip(Purpose::ALL).collect(),
+                ..Layout::default()
             },
             Theme::TERMINAL,
         );
