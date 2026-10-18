@@ -615,17 +615,19 @@ fn text_table(
     layout: &Layout,
     theme: Theme,
 ) -> String {
-    text_table_with_bars(header, body, total, layout, &[], theme)
+    text_table_with_bars(header, body, total, layout, &[], None, theme)
 }
 
-/// [`text_table`] with an already styled bar after each body row; bars stay
-/// outside the column widths, so they never change the table's alignment.
+/// [`text_table`] with an already styled bar after each body row, under a
+/// titled bar column; bars stay outside the column widths, so they never
+/// change the table's alignment.
 fn text_table_with_bars(
     header: &[&str],
     body: &[Vec<String>],
     total: Option<Vec<String>>,
     layout: &Layout,
     bars: &[String],
+    bar_column: Option<BarColumn>,
     theme: Theme,
 ) -> String {
     let clean_row = |row: &[String]| row.iter().map(|value| plain(value)).collect::<Vec<_>>();
@@ -692,9 +694,15 @@ fn text_table_with_bars(
         }
         rule += &"─".repeat(*width);
     }
+    let mut header = line(&header, RowKind::Header);
+    if let Some(BarColumn { title, role, cells }) = bar_column {
+        rule += &format!("──{}", "─".repeat(cells));
+        header.pop();
+        header += &format!("  {}\n", theme.paint(role, title));
+    }
     rule += "\n";
     let rule = theme.paint(Role::Muted, &rule);
-    let mut output = line(&header, RowKind::Header) + &rule;
+    let mut output = header + &rule;
     for (index, row) in body.iter().enumerate() {
         let mut text = line(row, RowKind::Body);
         if let Some(bar) = bars.get(index).filter(|bar| !bar.is_empty()) {
@@ -715,7 +723,7 @@ fn text_table_with_bars(
 const BAR_GLYPHS: [char; 3] = ['█', '▓', '░'];
 /// Bar cells: a readable minimum, and a maximum beyond which wider terminals
 /// add length without adding legible detail.
-const BAR_CELLS: std::ops::RangeInclusive<usize> = 10..=100;
+const BAR_CELLS: std::ops::RangeInclusive<usize> = 10..=40;
 
 /// Code per purpose and comments of one table row: what its purpose columns,
 /// ratio and bars describe.
@@ -746,6 +754,14 @@ impl RowCode {
 
     fn purpose(&self, purpose: Purpose) -> u64 {
         self.purposes[purpose.index()]
+    }
+
+    /// Comments per line of code or comment, 0 without either.
+    fn density(&self) -> f64 {
+        match self.code() + self.comments {
+            0 => 0.0,
+            lines => self.comments as f64 / lines as f64,
+        }
     }
 }
 
@@ -892,8 +908,31 @@ impl PurposeColumns<'_> {
 pub enum BarKind {
     /// Each row's Code split by purpose, scaled to the largest row.
     Purpose,
-    /// Each row's Code against its Comments, across the full bar.
+    /// Each row's comment density, scaled to the densest row.
     Comments,
+}
+
+/// What fills a bar: the largest row's Code, or the highest comment density.
+#[derive(Clone, Copy)]
+struct BarScale {
+    code: u64,
+    density: f64,
+}
+
+impl BarScale {
+    fn of(rows: &[RowCode]) -> Self {
+        Self {
+            code: rows.iter().map(RowCode::code).max().unwrap_or(0),
+            density: rows.iter().map(RowCode::density).fold(0.0, f64::max),
+        }
+    }
+}
+
+/// The bar column's title and the cells its bars take.
+struct BarColumn<'a> {
+    title: &'a str,
+    role: Role,
+    cells: usize,
 }
 
 impl BarKind {
@@ -915,36 +954,32 @@ impl BarKind {
     fn scale_note(self) -> &'static str {
         match self {
             BarKind::Purpose => "; the largest row fills the bar.",
-            BarKind::Comments => "; each row fills the bar.",
+            BarKind::Comments => "; the densest row fills the bar.",
         }
     }
 
+    /// Title of the bar column and of the chart below a table; it names what
+    /// the bars mean, since a single purpose turns purpose bars to comments.
     fn heading(self) -> &'static str {
         match self {
             BarKind::Purpose => "Code share",
-            BarKind::Comments => "Code and comments",
+            BarKind::Comments => "Comment density",
         }
     }
 
-    fn segments(self, row: RowCode) -> [u64; 3] {
+    /// Code share takes the Code hue; comment density stays plain.
+    fn heading_role(self) -> Role {
         match self {
-            BarKind::Purpose => row.purposes,
-            BarKind::Comments => [row.code(), row.comments, 0],
+            BarKind::Purpose => Role::Primary,
+            BarKind::Comments => Role::Heading,
         }
     }
 
+    /// Plain hues, never bold, so bars stay quieter than the numbers.
     fn role(self, segment: usize) -> Role {
         match self {
             BarKind::Purpose => Role::Purpose(Purpose::ALL[segment]),
-            BarKind::Comments => [Role::Primary, Role::Secondary, Role::Muted][segment],
-        }
-    }
-
-    /// The value that fills a bar: the largest row's Code, or the row itself.
-    fn scale(self, row: RowCode, largest: u64) -> u64 {
-        match self {
-            BarKind::Purpose => largest,
-            BarKind::Comments => row.code() + row.comments,
+            BarKind::Comments => Role::Secondary,
         }
     }
 
@@ -962,7 +997,7 @@ impl BarKind {
                 .iter()
                 .map(|purpose| (purpose.index(), purpose_title(*purpose)))
                 .collect(),
-            BarKind::Comments => vec![(0, "Code"), (1, "Comments")],
+            BarKind::Comments => vec![(1, "Comment %")],
         };
         segments
             .into_iter()
@@ -1002,14 +1037,15 @@ fn share_bars(
     let width = columns
         .saturating_sub(1 + label_width + 2 + 2 + percent_width)
         .clamp(*BAR_CELLS.start(), *BAR_CELLS.end());
-    let largest = rows.iter().map(|(_, row)| row.code()).max().unwrap_or(0);
+    let codes: Vec<RowCode> = rows.iter().map(|(_, row)| *row).collect();
+    let scale = BarScale::of(&codes);
     let mut output = format!(
         " {}  {}\n",
-        theme.paint(Role::Primary, kind.heading()),
+        theme.paint(kind.heading_role(), kind.heading()),
         kind.key(shown, theme)
     );
     for ((label, row), percent) in rows.iter().zip(percents) {
-        let bar = bar(kind, *row, largest, width, theme);
+        let bar = bar(kind, *row, scale, width, theme);
         let percent = match row.code() {
             0 => theme.paint(Role::Muted, &format!("{percent:>percent_width$}")),
             _ => format!("{percent:>percent_width$}"),
@@ -1034,25 +1070,34 @@ fn share_of(part: u64, total: u64) -> String {
     }
 }
 
-/// One row's bar in `width` cells for its scale; a row too small for one cell
-/// gets a sliver in its largest segment, a row without any count nothing.
-fn bar(kind: BarKind, row: RowCode, largest: u64, width: usize, theme: Theme) -> String {
-    let segments = kind.segments(row);
+/// One row's bar in `width` cells at `scale`; a row too small for one cell
+/// gets a sliver, a row without any count nothing.
+fn bar(kind: BarKind, row: RowCode, scale: BarScale, width: usize, theme: Theme) -> String {
+    let (cells, sliver) = match kind {
+        BarKind::Purpose => {
+            let cells = bar_cells(&row.purposes, scale.code, width);
+            let largest = (0..3)
+                .max_by_key(|index| (row.purposes[*index], 3 - index))
+                .unwrap();
+            (cells, (row.code() > 0).then_some(largest))
+        }
+        BarKind::Comments => {
+            let length = match scale.density {
+                0.0 => 0,
+                densest => (row.density() / densest * width as f64).round() as usize,
+            };
+            ([0, length, 0], (row.comments > 0).then_some(1))
+        }
+    };
     let mut bar = String::new();
-    for (index, count) in bar_cells(&segments, kind.scale(row, largest), width)
-        .into_iter()
-        .enumerate()
-    {
+    for (index, count) in cells.into_iter().enumerate() {
         if count > 0 {
             let glyphs = BAR_GLYPHS[index].to_string().repeat(count);
             bar += &theme.paint(kind.role(index), &glyphs);
         }
     }
-    if bar.is_empty() && segments.iter().any(|count| *count > 0) {
-        let largest = (0..3)
-            .max_by_key(|index| (segments[*index], 3 - index))
-            .unwrap();
-        bar += &theme.paint(kind.role(largest), "▏");
+    if let (true, Some(segment)) = (bar.is_empty(), sliver) {
+        bar += &theme.paint(kind.role(segment), "▏");
     }
     bar
 }
@@ -1100,6 +1145,12 @@ fn bar_table(
         Bars::Fit(columns) => (columns, false, BarKind::Purpose),
         Bars::Always(columns, kind) => (columns, true, kind),
     };
+    // One purpose leaves purpose bars nothing to split; like the table's ratio
+    // column, they turn to comments.
+    let kind = match (kind, shown.len()) {
+        (BarKind::Purpose, 1) => BarKind::Comments,
+        (kind, _) => kind,
+    };
     let has_percent = header.contains(&kind.title());
     let mut inline_header = header.to_vec();
     let mut inline_body = body.to_vec();
@@ -1135,10 +1186,10 @@ fn bar_table(
         let chart = share_bars(&labelled, total_row, kind, columns, shown, theme);
         return (table, format!("\n{chart}"));
     };
-    let largest = rows.iter().map(RowCode::code).max().unwrap_or(0);
+    let scale = BarScale::of(rows);
     let row_bars: Vec<String> = rows
         .iter()
-        .map(|row| bar(kind, *row, largest, cells, theme))
+        .map(|row| bar(kind, *row, scale, cells, theme))
         .collect();
     let defined = match has_percent {
         true => "",
@@ -1150,12 +1201,18 @@ fn bar_table(
         kind.key(shown, theme),
         theme.paint(Role::Muted, kind.scale_note())
     );
+    let column = BarColumn {
+        title: kind.heading(),
+        role: kind.heading_role(),
+        cells,
+    };
     let table = text_table_with_bars(
         &inline_header,
         &inline_body,
         Some(inline_total),
         layout,
         &row_bars,
+        Some(column),
         theme,
     );
     (table, key)
@@ -2209,7 +2266,7 @@ mod tests {
     }
 
     /// A row too small for one cell still shows a sliver; empty rows show none.
-    /// The bar keeps a readable minimum and stops at 100 cells, one per percent.
+    /// The bar keeps a readable minimum and stops at 40 cells.
     #[test]
     fn share_bars_mark_slivers_and_clamp_their_width() {
         let rows = [
@@ -2240,7 +2297,7 @@ mod tests {
             line.chars().filter(|c| *c == '█').count()
         };
         assert_eq!(bar(10), 10);
-        assert_eq!(bar(500), 100);
+        assert_eq!(bar(500), 40);
     }
 
     /// Cyan marks only the strong column, so the Total row stays bold without

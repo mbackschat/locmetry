@@ -134,10 +134,10 @@ fn purpose_filters_only_tables() {
         .contains("--purpose has no effect here; it applies only to table output"));
 }
 
-/// Comment bars split each row's Code against its Comments across the full
-/// bar; a bare --bars keeps the purpose split and never swallows a directory.
+/// Comment bars compare densities: the densest row fills the bar, under a
+/// titled column; a bare --bars keeps the purpose split and never swallows a directory.
 #[test]
-fn comment_bars_show_each_row_composition() {
+fn comment_bars_compare_densities_under_a_titled_column() {
     let temp = project();
     let root = temp.path().join("project");
     let output = run(&root, &["--format", "table", "--bars=comments"], "300");
@@ -147,14 +147,17 @@ fn comment_bars_show_each_row_composition() {
         .find(|line| line.starts_with(" Rust "))
         .unwrap();
     assert!(
-        rust.ends_with(&format!(
-            "│     40.0%  {}{}",
-            "█".repeat(60),
-            "▓".repeat(40)
-        )),
+        rust.ends_with(&format!("│     40.0%  {}", "▓".repeat(40))),
         "{rust}"
     );
-    assert!(text.contains("Comment % = Comments / (Code + Comments). Bars: █ Code  ▓ Comments; each row fills the bar."));
+    let header = text
+        .lines()
+        .find(|line| line.starts_with(" Language "))
+        .unwrap();
+    assert!(header.ends_with("│ Comment %  Comment density"), "{header}");
+    assert!(text.contains(
+        "Comment % = Comments / (Code + Comments). Bars: ▓ Comment %; the densest row fills the bar."
+    ));
 
     let bare = run(
         temp.path(),
@@ -169,6 +172,31 @@ fn comment_bars_show_each_row_composition() {
     let text = String::from_utf8(bare.stdout).unwrap();
     assert!(
         text.contains("Bars: █ Production  ▓ Test  ░ Unclassified"),
+        "{text}"
+    );
+}
+
+/// One purpose leaves purpose bars nothing to split, so bars follow the
+/// table's Comment % column and chart comment density.
+#[test]
+fn single_purpose_bars_chart_comments() {
+    let temp = project();
+    let output = run(
+        &temp.path().join("project"),
+        &["--format", "table", "--purpose", "production", "--bars"],
+        "300",
+    );
+    let text = String::from_utf8(output.stdout).unwrap();
+    let rust = text
+        .lines()
+        .find(|line| line.starts_with(" Rust "))
+        .unwrap();
+    assert!(
+        rust.ends_with(&format!("│     33.3%  {}", "▓".repeat(40))),
+        "{rust}"
+    );
+    assert!(
+        text.contains(" Bars: ▓ Comment %; the densest row fills the bar.\n"),
         "{text}"
     );
 }

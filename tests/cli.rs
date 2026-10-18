@@ -378,20 +378,20 @@ fn bars_join_each_table_when_the_terminal_leaves_room_beside_it() {
         String::from_utf8(output.stdout).unwrap()
     };
     let wide = table(300);
-    assert!(!wide.contains("Code share"), "{wide}");
+    assert!(!wide.contains("\n Code share "), "no chart below: {wide}");
     let header = wide
         .lines()
         .find(|line| line.starts_with(" Language"))
         .unwrap();
-    assert!(header.ends_with("│  Share"), "{header}");
+    assert!(header.ends_with("│  Share  Code share"), "{header}");
     let rust = wide.lines().find(|line| line.starts_with(" Rust")).unwrap();
     assert!(
-        rust.ends_with(&format!("│ 100.0%  {}{}", "█".repeat(75), "▓".repeat(25))),
+        rust.ends_with(&format!("│ 100.0%  {}{}", "█".repeat(30), "▓".repeat(10))),
         "{rust}"
     );
     let src = wide.lines().find(|line| line.starts_with(" src")).unwrap();
     assert!(
-        src.ends_with(&format!("│  75.0%  {}", "█".repeat(100))),
+        src.ends_with(&format!("│  75.0%  {}", "█".repeat(40))),
         "{src}"
     );
     let total = wide
@@ -404,9 +404,10 @@ fn bars_join_each_table_when_the_terminal_leaves_room_beside_it() {
     );
 
     // The language table is the wider one, so its threshold also fits the folders.
-    let width = header.chars().count();
+    // Its Total row has no bar, so its length is the table's width.
+    let width = total.chars().count();
     let at = table(width + 2 + 20);
-    assert!(!at.contains("Code share"), "{at}");
+    assert!(!at.contains("\n Code share "), "{at}");
     let rust = at.lines().find(|line| line.starts_with(" Rust")).unwrap();
     assert_eq!(rust.chars().count(), width + 2 + 20, "{rust}");
     let below = table(width + 2 + 19);
