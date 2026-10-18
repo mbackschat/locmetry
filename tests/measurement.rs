@@ -61,7 +61,7 @@ fn embedded_languages_count_once_and_docs_stay_out_of_source() {
         "JavaScript":{"reports":[],"children":{"HTML":[report("src/index.html",7)]}},
         "Total":{"reports":[report("duplicate",999)]}
     });
-    let rows = file_records(payload, &policy("")).unwrap();
+    let rows = file_records(&payload, &policy("")).unwrap();
     let summary = summary_json(&rows);
     assert_eq!(rows.len(), 2);
     assert_eq!(summary["source"]["code"], 10);
@@ -74,7 +74,7 @@ fn embedded_languages_count_once_and_docs_stay_out_of_source() {
 fn fixtures_remain_data_and_shell_and_rust_are_source() {
     let config = policy("[[rules]]\nid = \"tests\"\nmatch = [\"**/tests/**\"]\npurpose = \"test\"");
     let rows = file_records(
-        json!({
+        &json!({
             "JSON":{"reports":[report("tests/data.json",100)]},
             "BASH":{"reports":[report("scripts/build.sh",9)]},
             "Rust":{"reports":[report("src/main.rs",2)]}
@@ -90,7 +90,7 @@ fn fixtures_remain_data_and_shell_and_rust_are_source() {
 #[test]
 fn direct_and_recursive_folder_totals_reconcile() {
     let rows = file_records(
-        json!({"TypeScript":{"reports":[
+        &json!({"TypeScript":{"reports":[
             report("root.ts",2),report("packages/a/main.ts",3),report("packages/a/tests/main.ts",5)
         ]}}),
         &policy(""),
@@ -136,7 +136,7 @@ fn invalid_paths_duplicates_and_counts_fail() {
             "Invalid backend statistics",
         ),
     ] {
-        let error = file_records(payload, &policy("")).unwrap_err();
+        let error = file_records(&payload, &policy("")).unwrap_err();
         assert!(format!("{error:#}").contains(message), "{error:#}");
     }
 }
@@ -161,7 +161,7 @@ fn embedded_scan_respects_root_exclusions_and_ignores_but_not_ambient_config() {
     fs::write(temp.path().join("tokei.toml"), "types = [\"Python\"]\n").unwrap();
     let config = policy("[scope]\nexclude = [\"materials/**\"]");
     let result = scan(temp.path(), &config).unwrap();
-    let rows = file_records(result.payload, &config).unwrap();
+    let rows = file_records(&result.payload, &config).unwrap();
     let paths: Vec<_> = rows.iter().map(|row| row.path.as_str()).collect();
     for present in [
         "src/main.ts",
@@ -197,7 +197,7 @@ fn legal_unix_names_with_colons_and_backslashes_keep_their_identity() {
         ],
     );
     let config = policy("");
-    let rows = file_records(scan(temp.path(), &config).unwrap().payload, &config).unwrap();
+    let rows = file_records(&scan(temp.path(), &config).unwrap().payload, &config).unwrap();
     let paths: Vec<_> = rows.iter().map(|row| row.path.as_str()).collect();
     assert_eq!(paths, ["a/b.rs", "a:file.rs", "a\\b.rs"]);
 }
@@ -223,7 +223,7 @@ fn scan_rows(files: &[(&str, &str)]) -> Vec<locmetry::FileRecord> {
     let temp = tempfile::tempdir().unwrap();
     write_tree(temp.path(), files);
     let config = policy("");
-    file_records(scan(temp.path(), &config).unwrap().payload, &config).unwrap()
+    file_records(&scan(temp.path(), &config).unwrap().payload, &config).unwrap()
 }
 
 #[test]

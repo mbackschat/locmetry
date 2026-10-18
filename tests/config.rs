@@ -254,7 +254,7 @@ fn tree(files: &[&str]) -> tempfile::TempDir {
 }
 
 fn scanned(root: &std::path::Path, policy: &Policy) -> Vec<String> {
-    let rows = file_records(scan(root, policy).unwrap().payload, policy).unwrap();
+    let rows = file_records(&scan(root, policy).unwrap().payload, policy).unwrap();
     rows.into_iter().map(|row| row.path).collect()
 }
 
@@ -357,7 +357,7 @@ fn excluded_trees_are_not_traversed_and_single_level_patterns_do_not_prune() {
     );
     fs::set_permissions(&private, fs::Permissions::from_mode(0o755)).unwrap();
     let policy = policy("version = 1\n[scope]\nexclude = [\"private/**\", \"gen/*\"]");
-    let rows = file_records(result.unwrap().payload, &policy).unwrap();
+    let rows = file_records(&result.unwrap().payload, &policy).unwrap();
     let paths: Vec<_> = rows.iter().map(|row| row.path.as_str()).collect();
     assert_eq!(paths, ["gen/sub/b.ts", "src/a.ts"]);
 }

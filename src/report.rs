@@ -131,29 +131,55 @@ impl Summary {
             .unwrap_or_default()
     }
 
-    fn add(&mut self, row: &FileRecord) {
+    /// Adds `row`, whose summary keys `keys` holds; a file adds to every
+    /// folder above it, so the keys are formatted once per file.
+    fn add(&mut self, row: &FileRecord, keys: &RowKeys) {
         self.all_counted.add(&row.counts);
-        let purpose = row.classification.purpose;
-        self.by_kind_purpose
-            .entry(format!("{}:{purpose}", row.kind))
-            .or_default()
-            .add(&row.counts);
+        add_at(&mut self.by_kind_purpose, &keys.kind_purpose, &row.counts);
         if row.kind == Kind::Source {
             self.source.add(&row.counts);
             self.source_purpose
-                .entry(purpose)
+                .entry(row.classification.purpose)
                 .or_default()
                 .add(&row.counts);
-            self.source_categories
-                .entry(format!("{purpose}:{}", row.classification.category))
-                .or_default()
-                .add(&row.counts);
+            add_at(&mut self.source_categories, &keys.category, &row.counts);
             for (language, counts) in &row.languages {
-                self.source_languages
-                    .entry(language.clone())
-                    .or_default()
-                    .add(counts);
+                add_at(&mut self.source_languages, language, counts);
             }
+        }
+    }
+}
+
+/// Adds `counts` under `key`, allocating the key only when it is new.
+fn add_at(map: &mut BTreeMap<String, Counts>, key: &str, counts: &Counts) {
+    match map.get_mut(key) {
+        Some(total) => total.add(counts),
+        None => map.entry(key.into()).or_default().add(counts),
+    }
+}
+
+/// `kind:purpose`, the key of [`Summary::by_kind_purpose`].
+pub(crate) fn kind_purpose_key(kind: Kind, purpose: Purpose) -> String {
+    format!("{kind}:{purpose}")
+}
+
+/// `purpose:category`, the key of [`Summary::source_categories`].
+pub(crate) fn category_key(purpose: Purpose, category: &str) -> String {
+    format!("{purpose}:{category}")
+}
+
+/// A file's summary keys.
+struct RowKeys {
+    kind_purpose: String,
+    category: String,
+}
+
+impl RowKeys {
+    fn of(row: &FileRecord) -> Self {
+        let purpose = row.classification.purpose;
+        Self {
+            kind_purpose: kind_purpose_key(row.kind, purpose),
+            category: category_key(purpose, &row.classification.category),
         }
     }
 }
@@ -400,11 +426,12 @@ pub fn build_report(rows: &[FileRecord]) -> ReportSummary {
     let mut totals = Summary::default();
     let mut folders: BTreeMap<String, Folder> = BTreeMap::from([(ROOT.into(), Folder::default())]);
     for row in rows {
-        totals.add(row);
+        let keys = RowKeys::of(row);
+        totals.add(row, &keys);
         let direct = parent(&row.path);
-        folder(&mut folders, direct).direct.add(row);
+        folder(&mut folders, direct).direct.add(row, &keys);
         for path in std::iter::once(direct).chain(ancestors(direct)) {
-            folder(&mut folders, path).recursive.add(row);
+            folder(&mut folders, path).recursive.add(row, &keys);
         }
     }
     ReportSummary { totals, folders }

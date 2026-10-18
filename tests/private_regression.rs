@@ -141,7 +141,7 @@ fn reviewed_configurations_reproduce_saved_measurements() {
                 }
             }
         }
-        let rows = file_records(raw, &policy).unwrap();
+        let rows = file_records(&raw, &policy).unwrap();
         let actual = serde_json::to_value(&rows).unwrap();
         let actual = actual.as_array().unwrap();
         let expected: Vec<_> = baseline["files"]

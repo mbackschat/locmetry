@@ -713,7 +713,7 @@ fn totals_from_rows<'a>(rows: impl Iterator<Item = &'a crate::BreakdownRow>) -> 
         s.all_counted = s.all_counted.checked_add(&r.counts)?;
         add(
             &mut s.by_kind_purpose,
-            format!("{}:{}", r.kind, r.purpose),
+            crate::report::kind_purpose_key(r.kind, r.purpose),
             &r.counts,
         )?;
         if r.kind == Kind::Source {
@@ -721,7 +721,7 @@ fn totals_from_rows<'a>(rows: impl Iterator<Item = &'a crate::BreakdownRow>) -> 
             add(&mut s.source_purpose, r.purpose, &r.counts)?;
             add(
                 &mut s.source_categories,
-                format!("{}:{}", r.purpose, r.category),
+                crate::report::category_key(r.purpose, &r.category),
                 &r.counts,
             )?;
             add(&mut s.source_languages, r.language.clone(), &r.counts)?;

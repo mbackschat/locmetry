@@ -213,8 +213,8 @@ pub struct Scan {
 impl Scan {
     /// File records from backend and mapped statistics, sorted by path.
     pub fn records(&self, policy: &Policy) -> Result<Vec<FileRecord>> {
-        let mut rows = file_records(self.payload.clone(), policy)?;
-        for mut row in file_records(self.mapped.clone(), policy)? {
+        let mut rows = file_records(&self.payload, policy)?;
+        for mut row in file_records(&self.mapped, policy)? {
             row.language_mapping = self.mappings.get(&row.path).cloned();
             rows.push(row);
         }
@@ -782,14 +782,15 @@ fn language_counts(
     total.files = 1;
 }
 
-pub fn file_records(payload: Value, policy: &Policy) -> Result<Vec<FileRecord>> {
-    let mut groups = payload
+pub fn file_records(payload: &Value, policy: &Policy) -> Result<Vec<FileRecord>> {
+    let groups = payload
         .as_object()
         .context("Invalid backend language map")?
-        .clone();
-    groups.remove("Total");
-    let groups: BTreeMap<String, Group> =
-        serde_json::from_value(Value::Object(groups)).context("Invalid backend statistics")?;
+        .iter()
+        .filter(|(language, _)| *language != "Total")
+        .map(|(language, group)| Ok((language.clone(), Group::deserialize(group)?)))
+        .collect::<serde_json::Result<BTreeMap<String, Group>>>()
+        .context("Invalid backend statistics")?;
     let mut rows = Vec::new();
     let mut seen = BTreeSet::new();
     for (language, group) in groups {

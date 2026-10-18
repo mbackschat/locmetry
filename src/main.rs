@@ -1169,110 +1169,116 @@ fn report(
     };
     let saved_human = human(format, destination.path.is_none());
     let printed = destination.print.map(|print| (print, human(print, true)));
-    let mut member_totals = BTreeMap::new();
-    for member in &members {
-        member_totals.insert(
-            member.name.clone(),
-            summary
-                .folders
-                .get(&member.name)
-                .map(|f| f.recursive.clone())
-                .unwrap_or_default(),
-        );
-    }
-    let summary_document = contract::ReportSummary {
-        top_folders: summary.top_folders(),
-        totals: summary.totals,
-        members: member_totals,
-        unclassified_folders: Some(unclassified_folders(&rows)),
-        build_modules: build_systems(&module_shares)
-            .into_iter()
-            .map(|(k, v)| (k.into(), v))
-            .collect(),
-        submodules,
-        unused_entries: if summary_findings {
-            unused_entries
-        } else {
-            Vec::new()
-        },
-        unused_exclusions: if summary_findings {
-            unused_exclusions
-        } else {
-            Vec::new()
-        },
-    };
-    let mut metadata = contract::Metadata {
-        measured_at_unix_seconds: measured_at,
-        locmetry_version: env!("CARGO_PKG_VERSION").into(),
-        backend: BACKEND.into(),
-        backend_inaccurate: inaccurate,
-        backend_configuration: locmetry::BACKEND_CONFIGURATION.into(),
-        kinds: Some(contract::Kinds {
-            default: locmetry::Kind::Source,
-            data: DATA_LANGUAGES.iter().map(|l| l.name().into()).collect(),
-            documentation: DOCUMENTATION_LANGUAGES
-                .iter()
-                .map(|l| l.name().into())
-                .collect(),
-        }),
-        coverage: contract::Coverage::from(&coverage),
-        modules: Some(
-            modules
-                .iter()
-                .map(|m| contract::Module {
-                    path: m.path.clone(),
-                    detector: m.detector.into(),
-                })
-                .collect(),
-        ),
-        root: None,
-        scope: None,
-        config_path: None,
-        config: None,
-        members: None,
-        workspace_path: None,
-        user_config_path: None,
-    };
-    match location {
-        Location::Root {
-            root,
-            scope,
-            config_path,
-            user_path,
-            config,
-        } => {
-            metadata.root = Some(root.to_string_lossy().into());
-            metadata.scope = Some(scope);
-            metadata.config_path = Some(config_path.map(|p| p.to_string_lossy().into()));
-            metadata.config = Some(*config);
-            metadata.user_config_path = Some(user_path.map(|p| p.to_string_lossy().into()));
+    // The document is built only for JSON views; a headline omits the review,
+    // breakdown and file records, so only full JSON derives them.
+    let document = |full: bool| {
+        let mut member_totals = BTreeMap::new();
+        for member in &members {
+            member_totals.insert(
+                member.name.clone(),
+                summary
+                    .folders
+                    .get(&member.name)
+                    .map(|f| f.recursive.clone())
+                    .unwrap_or_default(),
+            );
         }
-        Location::Workspace {
-            members,
-            workspace_path,
-            user_path,
-        } => {
-            metadata.members = Some(members);
-            metadata.workspace_path = workspace_path.map(|p| p.to_string_lossy().into());
-            metadata.user_config_path = Some(user_path.map(|p| p.to_string_lossy().into()));
+        let summary_document = contract::ReportSummary {
+            top_folders: summary.top_folders(),
+            totals: summary.totals,
+            members: member_totals,
+            unclassified_folders: Some(unclassified_folders(&rows)),
+            build_modules: build_systems(&module_shares)
+                .into_iter()
+                .map(|(k, v)| (k.into(), v))
+                .collect(),
+            submodules,
+            unused_entries: if summary_findings {
+                unused_entries
+            } else {
+                Vec::new()
+            },
+            unused_exclusions: if summary_findings {
+                unused_exclusions
+            } else {
+                Vec::new()
+            },
+        };
+        let mut metadata = contract::Metadata {
+            measured_at_unix_seconds: measured_at,
+            locmetry_version: env!("CARGO_PKG_VERSION").into(),
+            backend: BACKEND.into(),
+            backend_inaccurate: inaccurate,
+            backend_configuration: locmetry::BACKEND_CONFIGURATION.into(),
+            kinds: Some(contract::Kinds {
+                default: locmetry::Kind::Source,
+                data: DATA_LANGUAGES.iter().map(|l| l.name().into()).collect(),
+                documentation: DOCUMENTATION_LANGUAGES
+                    .iter()
+                    .map(|l| l.name().into())
+                    .collect(),
+            }),
+            coverage: contract::Coverage::from(&coverage),
+            modules: Some(
+                modules
+                    .iter()
+                    .map(|m| contract::Module {
+                        path: m.path.clone(),
+                        detector: m.detector.into(),
+                    })
+                    .collect(),
+            ),
+            root: None,
+            scope: None,
+            config_path: None,
+            config: None,
+            members: None,
+            workspace_path: None,
+            user_config_path: None,
+        };
+        match location {
+            Location::Root {
+                root,
+                scope,
+                config_path,
+                user_path,
+                config,
+            } => {
+                metadata.root = Some(root.to_string_lossy().into());
+                metadata.scope = Some(scope);
+                metadata.config_path = Some(config_path.map(|p| p.to_string_lossy().into()));
+                metadata.config = Some(*config);
+                metadata.user_config_path = Some(user_path.map(|p| p.to_string_lossy().into()));
+            }
+            Location::Workspace {
+                members,
+                workspace_path,
+                user_path,
+            } => {
+                metadata.members = Some(members);
+                metadata.workspace_path = workspace_path.map(|p| p.to_string_lossy().into());
+                metadata.user_config_path = Some(user_path.map(|p| p.to_string_lossy().into()));
+            }
         }
-    }
-    let document = MeasurementReport {
-        schema_version: contract::Version::V1,
-        project,
-        metadata,
-        summary: summary_document,
-        review: Some(review(&rows)),
-        breakdown: Some(breakdown(&rows)),
-        files: shared
-            .files
-            .then(|| rows.iter().map(contract::File::from).collect()),
-        report: None,
+        MeasurementReport {
+            schema_version: contract::Version::V1,
+            project,
+            metadata,
+            summary: summary_document,
+            review: full.then(|| review(&rows)),
+            breakdown: full.then(|| breakdown(&rows)),
+            files: (full && shared.files).then(|| rows.iter().map(contract::File::from).collect()),
+            report: None,
+        }
     };
+    let shows = |format| destination.shows(format);
+    let document =
+        (shows(Format::Json) || shows(Format::Headline)).then(|| document(shows(Format::Json)));
     let text = |format: Format, human: String| -> Result<String> {
+        let document = || document.as_ref().expect("built for JSON views");
         Ok(match format {
-            Format::Json => report_text(&serde_json::to_value(&document)?)?,
-            Format::Headline => format!("{}\n", serde_json::to_string(&document.headline())?),
+            Format::Json => report_text(&serde_json::to_value(document())?)?,
+            Format::Headline => format!("{}\n", serde_json::to_string(&document().headline())?),
             Format::Table | Format::Markdown => human,
         })
     };
