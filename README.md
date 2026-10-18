@@ -102,6 +102,7 @@ The 30-row budget limits additional detail; existing top-level rows are retained
 | --- | --- |
 | Measure another project | `locmetry --root ../service` |
 | Inspect scope, classification and coverage notes | `locmetry --verbose` |
+| List the data and documentation files behind “Not source code” | `locmetry --files --output -` with a [`jq` filter on `kind`](docs/guides/reports.md#not-source-code-which-files-are-data-or-documentation) |
 | Measure a subfolder with project policy and module context | `locmetry --subfolder web/src` |
 | Explain a file's classification or missing counts | `locmetry explain web/src/orders/Order.test.ts` |
 | Save full JSON with per-file decisions outside the root | `locmetry --files --output ../report.json` |

@@ -247,7 +247,7 @@ fn table_format_splits_source_code_by_language_and_purpose() {
  Total       6     5 │          2     2             1 │      1.00
  Production + Test + Unclassified = Code; Test/prod = Test / Production.
 
- Not source code: 1 data file (1 line), 1 documentation file (1 line).
+ Not source code: 1 data file (1 line), 1 documentation file (1 line); --files --output - lists each file's kind.
  Unclaimed source: 1 code line in 1 file, here:
    proto  1 code line  1 file
  To inspect or refine purpose classification, use locmetry --guide configure; --files --output - shows each file's rule.

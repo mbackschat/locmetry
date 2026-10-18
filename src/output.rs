@@ -993,7 +993,7 @@ pub fn render_table_with_options(
                 })
                 .collect();
             notes.push(TerminalNote::Text(format!(
-                "Not source code: {}.",
+                "Not source code: {}; --files --output - lists each file's kind.",
                 kinds.join(", ")
             )));
         }

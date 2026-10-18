@@ -104,7 +104,7 @@ locmetry --root acme-orders --no-user-config --format table --verbose
 
 The experiments belong in the unclaimed review list; the wrapper does not. Both remain in Unclassified counts. If the owner later confirms that an experiment should remain deliberately unclassified, a narrow rule with an explicit category and reason records that decision and removes it from the unclaimed list without excluding its code. If its role is still unknown, leave the question open. A clean review list alone does not establish correct classification.
 
-Verbose output also exposes non-source totals, inferred modules, unused policy and unrecognized extensions. A scope exclusion that matches nothing can reveal a misspelling. Actual read/parse failures remain visible without verbose mode and produce a partial measurement with exit status 2. Unclaimed code and an unrecognized image alone do not make the report partial. [Coverage interpretation](guides/reports.md#unavailable-is-not-zero) distinguishes these states.
+Verbose output also exposes non-source totals, inferred modules, unused policy and unrecognized extensions. The “Not source code” note gives only totals per kind; [list its files](guides/reports.md#not-source-code-which-files-are-data-or-documentation) from full JSON. A scope exclusion that matches nothing can reveal a misspelling. Actual read/parse failures remain visible without verbose mode and produce a partial measurement with exit status 2. Unclaimed code and an unrecognized image alone do not make the report partial. [Coverage interpretation](guides/reports.md#unavailable-is-not-zero) distinguishes these states.
 
 ## Save the evidence and ask a narrower question
 

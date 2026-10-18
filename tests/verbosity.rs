@@ -102,6 +102,7 @@ fn verbose_tables_expose_routine_findings_with_optional_classification_advice() 
         let text = String::from_utf8(output.stdout).unwrap();
         for note in [
             "Not source code:",
+            "; --files --output - lists each file's kind.",
             "Production from build modules:",
             "Git submodules:",
             "Unclaimed source:",
