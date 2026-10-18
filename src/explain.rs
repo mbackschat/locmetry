@@ -241,7 +241,7 @@ impl Explanation {
                 text.push_str(&format!(
                     "{}: {}\n",
                     theme.paint(role, key),
-                    crate::output::plain(&value)
+                    crate::style::plain(&value)
                 ));
             }
         }

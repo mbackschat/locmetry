@@ -259,6 +259,16 @@ struct RootArgs {
     respect_ignore_files: Option<bool>,
 }
 
+impl RootArgs {
+    fn overrides(&self) -> ScopeOverrides {
+        ScopeOverrides {
+            hidden: self.hidden,
+            respect_ignore_files: self.respect_ignore_files,
+            exclude: self.exclude.clone(),
+        }
+    }
+}
+
 #[derive(clap::Args)]
 struct WorkspaceArgs {
     /// Member root; repeatable. Its folder name prefixes its paths in the report.
@@ -636,11 +646,7 @@ fn run_explain(args: &ExplainArgs) -> Result<Outcome> {
             None,
         ),
     };
-    let overrides = ScopeOverrides {
-        hidden: args.root.hidden,
-        respect_ignore_files: args.root.respect_ignore_files,
-        exclude: args.root.exclude.clone(),
-    };
+    let overrides = args.root.overrides();
     let mut prepared = prepare(
         &root,
         args.root.config.clone(),
@@ -699,7 +705,7 @@ fn run_compare(args: &CompareArgs) -> Result<Outcome> {
     let partial = result.partial();
     let text = match destination.format {
         Format::Json => report_text(&serde_json::to_value(&result)?)?,
-        Format::Headline => format!("{}\n", serde_json::to_string(&result.headline(None))?),
+        Format::Headline => format!("{}\n", serde_json::to_string(&result.headline())?),
         Format::Table => locmetry::compare::render_table_with_theme(&result, destination.theme()),
         Format::Markdown => locmetry::compare::render_markdown(&result),
     };
@@ -738,11 +744,7 @@ fn run_root(
     }
     warn_ineffective_options(shared, &destination);
     let user_path = user_defaults(shared.no_user_config);
-    let overrides = ScopeOverrides {
-        hidden: args.hidden,
-        respect_ignore_files: args.respect_ignore_files,
-        exclude: args.exclude.clone(),
-    };
+    let overrides = args.overrides();
     let measured_at = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
     let prepared = prepare(
         root,
@@ -802,7 +804,7 @@ fn run_root(
         rows: measurement.rows,
         members: Vec::new(),
     };
-    report(shared, &destination, results, location, measured_at, true)
+    report(shared, &destination, results, location, measured_at)
 }
 
 /// Canonical member roots sorted by name, after the checks that make a merge
@@ -939,14 +941,7 @@ fn run_workspace(args: &WorkspaceArgs) -> Result<Outcome> {
             scope: scope_policy(&measurement.policy),
             unused_entries: measurement.unused_entries.clone(),
             unused_exclusions: measurement.unused_exclusions.clone(),
-            coverage: contract::MemberCoverage {
-                selected_files: measurement.coverage.selected_files as u64,
-                counted_files: measurement.coverage.counted_files as u64,
-                mapped_files: measurement.coverage.mapped_files as u64,
-                unrecognized_files: measurement.coverage.unrecognized_files as u64,
-                unread_files: measurement.coverage.unread.len() as u64,
-                parse_failed_files: Some(measurement.coverage.parse_failures.len() as u64),
-            },
+            coverage: (&measurement.coverage).into(),
             config: Some(measurement.policy.snapshot().clone()),
         });
         let unclaimed = measurement.rows.iter().filter(|row| row.needs_review());
@@ -1010,7 +1005,7 @@ fn run_workspace(args: &WorkspaceArgs) -> Result<Outcome> {
         workspace_path,
         user_path,
     };
-    report(shared, &destination, results, location, measured_at, false)
+    report(shared, &destination, results, location, measured_at)
 }
 
 enum Location {
@@ -1082,8 +1077,10 @@ fn report(
     results: Results,
     location: Location,
     measured_at: u64,
-    summary_findings: bool,
 ) -> Result<Outcome> {
+    // Workspace members record their own unused entries; only a single root
+    // reports them in the summary.
+    let summary_findings = matches!(location, Location::Root { .. });
     let Results {
         project,
         rows,
@@ -1212,8 +1209,7 @@ fn report(
         locmetry_version: env!("CARGO_PKG_VERSION").into(),
         backend: BACKEND.into(),
         backend_inaccurate: inaccurate,
-        backend_configuration: "Explicit defaults; ambient Tokei configuration is not loaded"
-            .into(),
+        backend_configuration: locmetry::BACKEND_CONFIGURATION.into(),
         kinds: Some(contract::Kinds {
             default: locmetry::Kind::Source,
             data: DATA_LANGUAGES.iter().map(|l| l.name().into()).collect(),
@@ -1279,7 +1275,7 @@ fn report(
     let text = |format: Format, human: String| -> Result<String> {
         Ok(match format {
             Format::Json => report_text(&serde_json::to_value(&document)?)?,
-            Format::Headline => format!("{}\n", serde_json::to_string(&document.headline(None))?),
+            Format::Headline => format!("{}\n", serde_json::to_string(&document.headline())?),
             Format::Table | Format::Markdown => human,
         })
     };
@@ -1294,9 +1290,12 @@ fn report(
             .unread
             .iter()
             .map(|path| format!("{path}: unreadable"))
-            .chain(coverage.parse_failures.iter().map(|failure| {
-                format!("{}: {} — {}", failure.path, failure.reason, failure.message)
-            }))
+            .chain(
+                coverage
+                    .parse_failures
+                    .iter()
+                    .map(|failure| failure.to_string()),
+            )
             .take(10)
             .collect();
         let count = coverage.unread.len() + coverage.parse_failures.len();

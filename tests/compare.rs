@@ -543,14 +543,14 @@ fn rendering_escapes_markdown_but_preserves_plain_text_labels() {
 
 #[test]
 fn comparison_totals_fit_their_contents_and_keep_large_signed_values_aligned() {
-    use locmetry::{compare::render_table, Counts};
+    use locmetry::{compare::render_table_with_theme, style::Theme, Counts};
     let temp = tempfile::tempdir().unwrap();
     let root = temp.path().join("project");
     write(&root, "main.py", "print(1)\n");
     let saved = save(temp.path(), "input.json", &measure(&root));
     let full = document(compare(&saved, &saved, &["--format", "json"]), 0);
     let mut report: locmetry::compare::Comparison = serde_json::from_value(full).unwrap();
-    let table = render_table(&report);
+    let table = render_table_with_theme(&report, Theme::PLAIN);
     let totals = table
         .split("Totals\n")
         .nth(1)
@@ -579,7 +579,7 @@ fn comparison_totals_fit_their_contents_and_keep_large_signed_values_aligned() {
         ..Default::default()
     };
     report.summary.dimensions.source = report.summary.dimensions.all_counted;
-    let table = render_table(&report);
+    let table = render_table_with_theme(&report, Theme::PLAIN);
     let totals = table
         .split("Totals\n")
         .nth(1)
@@ -1037,7 +1037,7 @@ fn comparison_theme_preserves_plain_text_and_distinguishes_signed_changes() {
     let after = save(temp.path(), "after.json", &measure(&root));
     let value = document(compare(&before, &after, &["--output", "-"]), 0);
     let report: locmetry::compare::Comparison = serde_json::from_value(value).unwrap();
-    let plain = locmetry::compare::render_table(&report);
+    let plain = locmetry::compare::render_table_with_theme(&report, Theme::PLAIN);
     let colored = locmetry::compare::render_table_with_theme(&report, Theme::TERMINAL);
     for expected in [
         "\x1b[36m        +1",

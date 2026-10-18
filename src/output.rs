@@ -3,8 +3,8 @@ mod folders;
 use crate::report::Summary;
 use crate::style::{Role, Theme};
 use crate::{
-    breakdown, build_systems, unclassified_folders, Counts, Coverage, FileRecord, FolderShare,
-    Kind, ModuleShare, Purpose, ReportSummary, SubmoduleShare,
+    build_systems, review, unclassified_folders, Counts, Coverage, FileRecord, FolderShare, Kind,
+    ModuleShare, Purpose, ReportSummary, SubmoduleShare,
 };
 use anyhow::{ensure, Context, Result};
 use serde_json::Value;
@@ -15,7 +15,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-pub(crate) use crate::style::plain;
+use crate::style::plain;
 
 /// UTC measurement time from recorded Unix seconds; extreme historical values retain their numeric evidence.
 pub fn measurement_time(seconds: u64) -> String {
@@ -37,16 +37,24 @@ pub(crate) fn cell(value: &str) -> String {
         .replace('`', "&#96;")
 }
 
+/// Files, Lines, Code, Comments and Blanks, as count tables list them.
+fn count_cells(counts: &Counts) -> [String; 5] {
+    [
+        counts.files,
+        counts.lines,
+        counts.code,
+        counts.comments,
+        counts.blanks,
+    ]
+    .map(grouped)
+}
+
 fn count_row(output: &mut String, label: &str, counts: &Counts) {
     writeln!(
         output,
-        "| {} | {} | {} | {} | {} | {} |",
+        "| {} | {} |",
         cell(label),
-        grouped(counts.files),
-        grouped(counts.lines),
-        grouped(counts.code),
-        grouped(counts.comments),
-        grouped(counts.blanks)
+        count_cells(counts).join(" | ")
     )
     .unwrap();
 }
@@ -373,21 +381,16 @@ pub fn render_markdown(
         order,
     );
     writeln!(output, "\n## Source languages\n\n{}\n\n| Language | Files | Lines | **Code** | Comments | Blanks | Test/prod |\n| --- | ---: | ---: | ---: | ---: | ---: | ---: |", Theme::MARKDOWN.paint(Role::Muted, LANGUAGE_RATIO_NOTE)).unwrap();
-    for (language, (counts, purposes)) in ordered(
+    for (language, (counts, code)) in ordered(
         source_languages(rows).into_iter().collect(),
         |(counts, _)| counts.code,
         order,
     ) {
-        let code = RowCode::of(&purposes, counts.comments);
         writeln!(
             output,
-            "| {} | {} | {} | {} | {} | {} | {} |",
+            "| {} | {} | {} |",
             cell(&language),
-            grouped(counts.files),
-            grouped(counts.lines),
-            grouped(counts.code),
-            grouped(counts.comments),
-            grouped(counts.blanks),
+            count_cells(&counts).join(" | "),
             test_ratio(
                 code.purpose(Purpose::Production),
                 code.purpose(Purpose::Test)
@@ -400,31 +403,22 @@ pub fn render_markdown(
     // between `web` and `web/src`, because `-` sorts before `/`.
     let mut folders = human_folders(summary, findings.subfolder, depth);
     folders.sort_by(|a, b| a.0.split('/').cmp(b.0.split('/')));
-    for (folder, values) in folders {
-        let totals = values;
+    for (folder, totals) in folders {
         if totals.source.files == 0 {
             continue;
         }
-        let (production, test) = (
-            totals.purpose(Purpose::Production).code,
-            totals.purpose(Purpose::Test).code,
-        );
         writeln!(
             output,
-            "| {} | {} | {} | {} | {} | {} | {} |",
+            "| {} | {} | {} | {} |",
             cell(&folder),
             grouped(totals.source.lines),
             grouped(totals.source.code),
-            grouped(production),
-            grouped(test),
-            grouped(totals.purpose(Purpose::Unclassified).code),
-            test_ratio(production, test)
+            ALL_PURPOSES.cells(RowCode::of_totals(totals)).join(" | ")
         )
         .unwrap();
     }
     render_build_modules(&mut output, findings.modules, order);
-    let mut unknown: Vec<_> = rows.iter().filter(|row| row.needs_review()).collect();
-    unknown.sort_by(|a, b| b.counts.code.cmp(&a.counts.code).then(a.path.cmp(&b.path)));
+    let unknown = review(rows);
     writeln!(
         output,
         "\n## Source requiring review\n\n{} of unclassified source that no rule, convention, or build module claims. Code an entry or convention leaves unclassified on purpose is not listed.",
@@ -443,11 +437,11 @@ pub fn render_markdown(
                 grouped(
                     unknown
                         .iter()
-                        .filter(|row| match share.folder.as_str() {
-                            "." => !row.path.contains('/'),
-                            folder => crate::report::below(&row.path, folder).is_some(),
+                        .filter(|entry| match share.folder.as_str() {
+                            "." => !entry.path.contains('/'),
+                            folder => crate::report::below(&entry.path, folder).is_some(),
                         })
-                        .map(|row| row.counts.lines)
+                        .map(|entry| entry.lines)
                         .sum()
                 ),
                 grouped(share.code)
@@ -461,9 +455,9 @@ pub fn render_markdown(
             output,
             "| {} | {} | {} | {} |",
             cell(&row.path),
-            grouped(row.counts.lines),
-            grouped(row.counts.code),
-            cell(&row.classification.category)
+            grouped(row.lines),
+            grouped(row.code),
+            cell(&row.category)
         )
         .unwrap();
     }
@@ -471,7 +465,6 @@ pub fn render_markdown(
     output
 }
 
-/// `count` followed by `noun`, pluralized with `s` unless it is one.
 /// Build systems and every module, so a reader can see which build files
 /// decided production and spot a module whose layout claimed nothing.
 fn render_build_modules(output: &mut String, modules: &[ModuleShare], order: RowOrder) {
@@ -559,11 +552,17 @@ fn grouped(count: u64) -> String {
     output
 }
 
-fn counted(count: u64, noun: &str) -> String {
+/// `noun`, pluralized with `s` unless `count` is one.
+fn plural(count: u64, noun: &str) -> String {
     match count {
-        1 => format!("1 {noun}"),
-        _ => format!("{} {noun}s", grouped(count)),
+        1 => noun.to_string(),
+        _ => format!("{noun}s"),
     }
+}
+
+/// `count` followed by `noun`, pluralized with `s` unless it is one.
+fn counted(count: u64, noun: &str) -> String {
+    format!("{} {}", grouped(count), plural(count, noun))
 }
 
 /// Column groups of a terminal table and the column that carries Code.
@@ -1257,10 +1256,6 @@ fn folder_label(folder: &str) -> &str {
 /// Where the unclaimed source lives, as an aligned folder list, so a reader
 /// can inspect it instead of only learning its size.
 fn unclaimed_note(folders: &[FolderShare], theme: Theme) -> String {
-    let plural = |count: u64, noun: &str| match count {
-        1 => noun.to_string(),
-        _ => format!("{noun}s"),
-    };
     let shown = &folders[..folders.len().min(FOLDER_LINES)];
     let rows: Vec<[String; 5]> = shown
         .iter()
@@ -1311,27 +1306,6 @@ fn unclaimed_note(folders: &[FolderShare], theme: Theme) -> String {
 /// Folders listed in the terminal note; the JSON headline lists all of them.
 const FOLDER_LINES: usize = 8;
 
-/// Terminal report for people: source code per language
-/// split by purpose, with unavailable counts kept visible.
-/// `emphasis` enables the default terminal palette; false keeps plain text.
-pub fn render_table(
-    summary: &ReportSummary,
-    rows: &[FileRecord],
-    findings: &Findings,
-    categories: bool,
-    order: RowOrder,
-    emphasis: bool,
-) -> String {
-    render_table_with_theme(
-        summary,
-        rows,
-        findings,
-        categories,
-        order,
-        Theme::terminal(emphasis),
-    )
-}
-
 /// Presentation choices for terminal measurement tables; they do not change saved evidence.
 pub struct TableOptions {
     pub categories: bool,
@@ -1355,44 +1329,27 @@ pub enum Bars {
     Always(usize, BarKind),
 }
 
-/// Render a measurement table using semantic presentation roles.
-pub fn render_table_with_theme(
-    summary: &ReportSummary,
-    rows: &[FileRecord],
-    findings: &Findings,
-    categories: bool,
-    order: RowOrder,
-    theme: Theme,
-) -> String {
-    render_table_with_options(
-        summary,
-        rows,
-        findings,
-        TableOptions {
-            categories,
-            folders: false,
-            verbose: false,
-            order,
-            theme,
-            folder_rows: None,
-            bars: Bars::Off,
-            purposes: Purpose::ALL.to_vec(),
-        },
-    )
-}
-
-/// Source counts and code per purpose for each language.
-fn source_languages(rows: &[FileRecord]) -> BTreeMap<String, (Counts, BTreeMap<Purpose, u64>)> {
-    let mut languages = BTreeMap::<String, (Counts, BTreeMap<Purpose, u64>)>::new();
-    for row in breakdown(rows)
-        .iter()
-        .filter(|row| row.kind == Kind::Source)
-    {
-        let (counts, purposes) = languages.entry(row.language.clone()).or_default();
-        counts.add(&row.counts);
-        *purposes.entry(row.purpose).or_default() += row.counts.code;
+/// Source counts and code per purpose for each language. As in the
+/// breakdown, every language of a file adds its lines, and only the file's own
+/// language counts the file.
+fn source_languages(rows: &[FileRecord]) -> BTreeMap<String, (Counts, RowCode)> {
+    let mut languages = BTreeMap::<&str, (Counts, RowCode)>::new();
+    for row in rows.iter().filter(|row| row.kind == Kind::Source) {
+        for (language, counts) in &row.languages {
+            let mut counts = *counts;
+            if *language != row.language {
+                counts.files = 0;
+            }
+            let (total, code) = languages.entry(language).or_default();
+            total.add(&counts);
+            code.purposes[row.classification.purpose.index()] += counts.code;
+            code.comments += counts.comments;
+        }
     }
     languages
+        .into_iter()
+        .map(|(language, entry)| (language.to_string(), entry))
+        .collect()
 }
 
 /// Render terminal tables, optionally partitioning folders within a row budget.
@@ -1436,42 +1393,20 @@ pub fn render_table_with_options(
         |(counts, _)| counts.code,
         order,
     );
-    let codes: Vec<RowCode> = languages
-        .iter()
-        .map(|(_, (counts, purposes))| RowCode::of(purposes, counts.comments))
-        .collect();
+    let codes: Vec<RowCode> = languages.iter().map(|(_, (_, code))| *code).collect();
     let body: Vec<Vec<String>> = languages
         .iter()
         .zip(&codes)
         .map(|((language, (counts, _)), code)| {
             let mut row = vec![language.clone()];
-            row.extend(
-                [
-                    counts.files,
-                    counts.lines,
-                    counts.code,
-                    counts.comments,
-                    counts.blanks,
-                ]
-                .map(grouped),
-            );
+            row.extend(count_cells(counts));
             row.extend(columns.cells(*code));
             row
         })
         .collect();
-    let source = &summary.totals.source;
     let total_code = RowCode::of_totals(&summary.totals);
     let mut total = vec!["Total".to_string()];
-    total.extend(
-        [
-            source.files,
-            source.lines,
-            source.code,
-            source.comments,
-            source.blanks,
-        ]
-        .map(grouped),
-    );
+    total.extend(count_cells(&summary.totals.source));
     total.extend(columns.cells(total_code));
     // No title: the footer names the measured root, which a title repeated.
     let mut output = String::new();
@@ -1666,9 +1601,7 @@ pub fn render_table_with_options(
     let coverage = findings.coverage;
     let mut gaps = Vec::new();
     if verbose && coverage.unrecognized_files > 0 {
-        let mut extensions: Vec<_> = coverage.unrecognized_extensions.iter().collect();
-        extensions.sort_by(|a, b| b.1.cmp(a.1).then(a.0.cmp(b.0)));
-        let extensions: Vec<String> = extensions
+        let extensions: Vec<String> = extensions_by_files(coverage)
             .into_iter()
             .take(5)
             .map(|(extension, files)| match extension.as_str() {
@@ -1692,10 +1625,7 @@ pub fn render_table_with_options(
         ));
         if verbose {
             for failure in coverage.parse_failures.iter().take(25) {
-                notes.push(TerminalNote::Text(format!(
-                    "{}: {} — {}",
-                    failure.path, failure.reason, failure.message
-                )));
+                notes.push(TerminalNote::Text(failure.to_string()));
             }
         }
     }
@@ -1740,11 +1670,17 @@ impl TerminalNote {
     }
 }
 
+/// Unrecognized extensions, most files first, ties by name.
+fn extensions_by_files(coverage: &Coverage) -> Vec<(&String, &usize)> {
+    let mut extensions: Vec<_> = coverage.unrecognized_extensions.iter().collect();
+    extensions.sort_by(|a, b| b.1.cmp(a.1).then(a.0.cmp(b.0)));
+    extensions
+}
+
 fn render_coverage(output: &mut String, findings: &Findings) {
     let coverage = findings.coverage;
     writeln!(output, "\n## Coverage\n\nFiles selected: {}; counted: {}, including {} through language mappings; not recognized: {}; recognized but unreadable: {}. Their lines are missing, not zero. Counts describe the working copy, including untracked files, not a commit.", grouped(coverage.selected_files as u64), grouped(coverage.counted_files as u64), grouped(coverage.mapped_files as u64), grouped(coverage.unrecognized_files as u64), grouped(coverage.unread.len() as u64)).unwrap();
-    let mut extensions: Vec<_> = coverage.unrecognized_extensions.iter().collect();
-    extensions.sort_by(|a, b| b.1.cmp(a.1).then(a.0.cmp(b.0)));
+    let extensions = extensions_by_files(coverage);
     if !extensions.is_empty() {
         output.push_str("\n| Unrecognized extension | Files |\n| --- | ---: |\n");
         for (extension, files) in extensions.into_iter().take(15) {
@@ -1810,17 +1746,21 @@ fn submodules_note(submodules: &[SubmoduleShare]) -> Option<String> {
     ))
 }
 
+/// Qualifies a policy note measured in a subfolder only.
+fn subtree(subfolder: Option<&str>) -> &'static str {
+    match subfolder {
+        Some(_) => " in this subtree",
+        None => "",
+    }
+}
+
 /// Names configuration entries that decided no file, which usually means a
 /// glob that matches nothing or an entry an earlier stage preempts.
 fn unused_entries_note(entries: &[String], subfolder: Option<&str>) -> Option<String> {
     (!entries.is_empty()).then(|| {
         format!(
             "Entries that decided no file{}: {}.",
-            if subfolder.is_some() {
-                " in this subtree"
-            } else {
-                ""
-            },
+            subtree(subfolder),
             entries.join(", ")
         )
     })
@@ -1831,11 +1771,7 @@ fn unused_exclusions_note(patterns: &[String], subfolder: Option<&str>) -> Optio
     (!patterns.is_empty()).then(|| {
         format!(
             "Exclusions that excluded nothing{}: {}; {}.",
-            if subfolder.is_some() {
-                " in this subtree"
-            } else {
-                ""
-            },
+            subtree(subfolder),
             patterns.join(", "),
             match subfolder {
                 Some(_) => "check policy use with an unrestricted measurement",
@@ -2028,8 +1964,20 @@ mod tests {
                 unused_exclusions: &[],
                 members,
             };
-            let styled = render_table(&summary, &rows, &findings, false, RowOrder::Name, true);
-            let plain = render_table(&summary, &rows, &findings, false, RowOrder::Name, false);
+            let render = |theme| {
+                let options = TableOptions {
+                    categories: false,
+                    folders: false,
+                    verbose: false,
+                    order: RowOrder::Name,
+                    theme,
+                    folder_rows: None,
+                    bars: Bars::Off,
+                    purposes: Purpose::ALL.to_vec(),
+                };
+                render_table_with_options(&summary, &rows, &findings, options)
+            };
+            let (styled, plain) = (render(Theme::TERMINAL), render(Theme::PLAIN));
             assert!(plain.starts_with(" Language "), "{plain}");
             assert!(!plain.contains("Code by purpose"));
             assert!(styled.starts_with(" \x1b[1mLanguage"), "{styled}");

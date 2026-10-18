@@ -11,7 +11,7 @@ use std::collections::BTreeMap;
 mod engine;
 mod render;
 pub use engine::{compare, read_input, validate_destination};
-pub use render::{render_markdown, render_table, render_table_with_theme};
+pub use render::{render_markdown, render_table_with_theme};
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 pub enum DocumentType {
@@ -311,8 +311,8 @@ pub struct Comparison {
     pub report: Option<String>,
 }
 impl Comparison {
-    pub fn headline(mut self, report: Option<String>) -> Self {
-        self.report = report;
+    pub fn headline(mut self) -> Self {
+        self.report = None;
         self.folders = None;
         self.packages = None;
         self.breakdown = None;

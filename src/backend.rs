@@ -55,6 +55,12 @@ pub struct ParseFailure {
     pub message: String,
 }
 
+impl std::fmt::Display for ParseFailure {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}: {} — {}", self.path, self.reason, self.message)
+    }
+}
+
 /// Languages counted as data or configuration rather than source.
 ///
 /// Tokei recognizes mostly programming languages, so source is the default

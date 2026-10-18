@@ -35,7 +35,7 @@ fn historical_releases_decode_without_inventing_failure_evidence() {
             let mut aggregate = value;
             aggregate.as_object_mut().unwrap().remove("files");
             let report: MeasurementReport = serde_json::from_value(aggregate).unwrap();
-            let headline = serde_json::to_value(report.headline(None)).unwrap();
+            let headline = serde_json::to_value(report.headline()).unwrap();
             assert!(schema.is_valid(&headline), "{name} headline");
         }
     }
@@ -144,7 +144,7 @@ fn validity_is_separate_from_comparison_eligibility() {
             serde_json::from_value(fixture(&format!("v0.1.{minor}-root"))).unwrap();
         report.validate().unwrap();
         assert_eq!(report.require_comparison_evidence().is_ok(), minor >= 2);
-        assert!(report.headline(None).require_comparison_evidence().is_err());
+        assert!(report.headline().require_comparison_evidence().is_err());
     }
 }
 

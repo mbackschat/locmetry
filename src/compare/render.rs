@@ -7,7 +7,7 @@ mod notes;
 fn label(value: &str, markdown: bool) -> String {
     match markdown {
         true => crate::output::cell(value),
-        false => crate::output::plain(value),
+        false => crate::style::plain(value),
     }
 }
 fn grid(
@@ -411,9 +411,6 @@ fn presence_name(p: Presence) -> &'static str {
         Presence::BeforeOnly => "before only",
         Presence::AfterOnly => "after only",
     }
-}
-pub fn render_table(c: &Comparison) -> String {
-    render_table_with_theme(c, Theme::PLAIN)
 }
 pub fn render_markdown(c: &Comparison) -> String {
     render(c, true, Theme::MARKDOWN)

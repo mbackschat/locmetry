@@ -211,6 +211,19 @@ pub struct Coverage {
     pub parse_failures: Option<Vec<crate::ParseFailure>>,
 }
 
+impl From<&crate::Coverage> for MemberCoverage {
+    fn from(c: &crate::Coverage) -> Self {
+        Self {
+            selected_files: c.selected_files as u64,
+            counted_files: c.counted_files as u64,
+            mapped_files: c.mapped_files as u64,
+            unrecognized_files: c.unrecognized_files as u64,
+            unread_files: c.unread.len() as u64,
+            parse_failed_files: Some(c.parse_failures.len() as u64),
+        }
+    }
+}
+
 impl From<&crate::Coverage> for Coverage {
     fn from(c: &crate::Coverage) -> Self {
         Self {
@@ -406,7 +419,7 @@ impl From<&crate::FileRecord> for File {
 impl MeasurementReport {
     /// Compact projection; coverage failures remain visible while unavailable detail is omitted.
     /// It borrows the report, so the omitted detail, such as per-file records, is never copied.
-    pub fn headline(&self, report: Option<String>) -> Self {
+    pub fn headline(&self) -> Self {
         Self {
             schema_version: self.schema_version.clone(),
             project: self.project.clone(),
@@ -415,7 +428,7 @@ impl MeasurementReport {
             review: None,
             breakdown: None,
             files: None,
-            report,
+            report: None,
         }
     }
 }
@@ -441,7 +454,7 @@ pub(crate) fn headline_example() -> serde_json::Value {
             "root":"/example", "scope":{"hidden":true,"respect_ignore_files":true,"ignore_files":[".ignore"],"symlinks":"not followed","exclude":[]},
             "config_path":null, "user_config_path":null,
             "measured_at_unix_seconds":0, "locmetry_version":env!("CARGO_PKG_VERSION"), "backend":crate::BACKEND,
-            "backend_configuration":"Explicit defaults; ambient Tokei configuration is not loaded", "backend_inaccurate":false,
+            "backend_configuration":crate::BACKEND_CONFIGURATION, "backend_inaccurate":false,
             "coverage":{"selected_files":0,"counted_files":0,"mapped_files":0,"unrecognized_files":0,"unrecognized_extensions":{},"unread":[],"parse_failures":[]}
         },
         "summary":{"all_counted":{"files":0,"code":0,"comments":0,"blanks":0,"lines":0},"top_folders":{},"unclassified_folders":[]}

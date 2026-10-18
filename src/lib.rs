@@ -20,11 +20,10 @@ pub use config::{
     config_schema, user_config_schema, user_defaults_file, workspace_roots, workspace_schema,
     Classification, EffectiveConfig, Policy, Purpose, Scope, ScopeOverrides, CONFIG_FILE,
 };
-pub use modules::{detect as detect_modules, Module, ModuleDetector, DETECTORS};
+pub use modules::{detect as detect_modules, Module};
 pub use output::{
-    measurement_time, render_markdown, render_table, render_table_with_options,
-    render_table_with_theme, report_text, validate_output, write_report, BarKind, Bars, Findings,
-    MemberView, RowOrder, TableOptions,
+    measurement_time, render_markdown, render_table_with_options, report_text, validate_output,
+    write_report, BarKind, Bars, Findings, MemberView, RowOrder, TableOptions,
 };
 pub use report::{
     breakdown, build_report, build_systems, module_shares, review, submodule_shares,
@@ -34,3 +33,5 @@ pub use report::{
 pub use report_schema::report_schema;
 
 pub const BACKEND: &str = "tokei 15.0.0 (embedded)";
+pub const BACKEND_CONFIGURATION: &str =
+    "Explicit defaults; ambient Tokei configuration is not loaded";
