@@ -356,7 +356,66 @@ fn bars_follow_language_and_folder_tables_within_the_terminal_width() {
         .contains("--bars has no effect here; it applies only to table output"));
 }
 
-/// Row positions of `labels` in `text`/// Row positions of `labels` in `text`, to compare orders without pinning layout.
+/// With room for the minimum inline bar beside a table, its rows carry their
+/// share and bar; one column less moves that table's bars below it.
+#[test]
+fn bars_join_each_table_when_the_terminal_leaves_room_beside_it() {
+    let temp = project(&[
+        (".locmetryrc", APP_RULE),
+        ("src/lib.rs", "fn a() {}\nfn b() {}\nfn c() {}\n"),
+        ("tests/it.rs", "fn t() {}\n"),
+    ]);
+    let root = temp.path().join("project");
+    let table = |columns: usize| {
+        let output = locmetry()
+            .current_dir(&root)
+            .env("COLUMNS", columns.to_string())
+            .args(["--format", "table", "--folders", "--bars"])
+            .output()
+            .unwrap();
+        assert!(output.status.success());
+        String::from_utf8(output.stdout).unwrap()
+    };
+    let wide = table(300);
+    assert!(!wide.contains("Code share"), "{wide}");
+    let header = wide
+        .lines()
+        .find(|line| line.starts_with(" Language"))
+        .unwrap();
+    assert!(header.ends_with("│  Share"), "{header}");
+    let rust = wide.lines().find(|line| line.starts_with(" Rust")).unwrap();
+    assert!(
+        rust.ends_with(&format!("│ 100.0%  {}{}", "█".repeat(75), "▓".repeat(25))),
+        "{rust}"
+    );
+    let src = wide.lines().find(|line| line.starts_with(" src")).unwrap();
+    assert!(
+        src.ends_with(&format!("│  75.0%  {}", "█".repeat(100))),
+        "{src}"
+    );
+    let total = wide
+        .lines()
+        .find(|line| line.starts_with(" Total"))
+        .unwrap();
+    assert!(total.ends_with("│ 100.0%"), "{total:?}");
+    assert!(
+        wide.contains("Bars: █ Production  ▓ Test  ░ Unclassified; the largest row fills the bar.")
+    );
+
+    // The language table is the wider one, so its threshold also fits the folders.
+    let width = header.chars().count();
+    let at = table(width + 2 + 20);
+    assert!(!at.contains("Code share"), "{at}");
+    let rust = at.lines().find(|line| line.starts_with(" Rust")).unwrap();
+    assert_eq!(rust.chars().count(), width + 2 + 20, "{rust}");
+    let below = table(width + 2 + 19);
+    assert_eq!(below.matches("\n Code share ").count(), 1, "{below}");
+    assert!(below
+        .lines()
+        .any(|line| line.starts_with(" src") && line.ends_with('█')));
+}
+
+/// Row positions of `labels` in `text`/// Row positions of `labels` in `text`/// Row positions of `labels` in `text`, to compare orders without pinning layout.
 fn positions(text: &str, labels: &[&str]) -> Vec<usize> {
     labels
         .iter()
