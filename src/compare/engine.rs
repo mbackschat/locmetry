@@ -394,18 +394,7 @@ pub fn compare(
         r.breakdown
             .iter()
             .flatten()
-            .map(|r| {
-                (
-                    (
-                        r.folder.clone(),
-                        r.kind,
-                        r.purpose,
-                        r.category.clone(),
-                        r.language.clone(),
-                    ),
-                    r.counts,
-                )
-            })
+            .map(|r| (r.key(), r.counts))
             .collect::<BTreeMap<_, _>>()
     };
     let a = cells(&before);

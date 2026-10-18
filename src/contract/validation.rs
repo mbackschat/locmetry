@@ -47,8 +47,15 @@ fn unique<T: Ord>(keys: impl IntoIterator<Item = T>, context: &str) -> Result<()
     }
     Ok(())
 }
-fn path(path: &str, folder: bool) -> Result<()> {
-    if folder && path == "." {
+/// Whether a root-relative path may name the root itself, as folders may.
+#[derive(Clone, Copy)]
+enum Root {
+    Allowed,
+    Rejected,
+}
+
+fn path(path: &str, root: Root) -> Result<()> {
+    if let (Root::Allowed, crate::paths::ROOT) = (root, path) {
         return Ok(());
     }
     ensure!(
@@ -57,13 +64,21 @@ fn path(path: &str, folder: bool) -> Result<()> {
     );
     Ok(())
 }
-fn purpose_key(key: &str, category: bool) -> Result<()> {
-    let prefix = if category {
-        key.split_once(':')
-            .context("category key must be purpose:category")?
-            .0
-    } else {
-        key
+/// A summary key naming a purpose alone or a purpose and a category.
+#[derive(Clone, Copy)]
+enum PurposeKey {
+    Purpose,
+    Category,
+}
+
+fn purpose_key(key: &str, shape: PurposeKey) -> Result<()> {
+    let prefix = match shape {
+        PurposeKey::Purpose => key,
+        PurposeKey::Category => {
+            key.split_once(':')
+                .context("category key must be purpose:category")?
+                .0
+        }
     };
     ensure!(
         Purpose::ALL.iter().any(|p| p.to_string() == prefix),
@@ -107,10 +122,10 @@ fn validate_totals(s: &Summary, context: &str) -> Result<()> {
             Kind::ALL.iter().any(|k| k.to_string() == kind),
             "invalid kind {kind}"
         );
-        purpose_key(purpose, false)?;
+        purpose_key(purpose, PurposeKey::Purpose)?;
     }
     for key in s.source_categories.keys() {
-        purpose_key(key, true)?;
+        purpose_key(key, PurposeKey::Category)?;
     }
     ensure!(
         total(s.by_kind_purpose.values())? == s.all_counted,
@@ -197,7 +212,7 @@ impl MeasurementReport {
                         "subfolder restriction is unsupported in workspace members"
                     );
                     ensure!(!member.name.contains('/'), "invalid member name");
-                    path(&member.name, false)?;
+                    path(&member.name, Root::Rejected)?;
                 }
             }
         }
@@ -213,7 +228,7 @@ impl MeasurementReport {
         else {
             return Ok(());
         };
-        path(folder, false).context("invalid subfolder restriction")?;
+        path(folder, Root::Rejected).context("invalid subfolder restriction")?;
         let inside = |p: &str| below(p, folder).is_some();
         let folder_inside = |p: &str| within(p, folder);
         for p in coverage_paths
@@ -245,7 +260,7 @@ impl MeasurementReport {
             "top_folders is outside subfolder ancestry"
         );
         for share in &self.summary.submodules {
-            path(&share.path, true)?;
+            path(&share.path, Root::Allowed)?;
             ensure!(
                 folder_inside(&share.path) || below(folder, &share.path).is_some(),
                 "submodule share is disjoint from subfolder"
@@ -367,7 +382,7 @@ impl MeasurementReport {
             .collect::<Vec<_>>();
         unique(coverage_paths.iter().copied(), "coverage paths")?;
         for name in &coverage_paths {
-            path(name, false)?;
+            path(name, Root::Rejected)?;
         }
         Ok(coverage_paths)
     }
@@ -377,7 +392,7 @@ impl MeasurementReport {
         if let Some(modules) = &m.modules {
             unique(modules.iter().map(|m| (&m.path, &m.detector)), "modules")?;
             for module in modules {
-                path(&module.path, true)?;
+                path(&module.path, Root::Allowed)?;
                 ensure!(!module.detector.is_empty(), "empty module detector");
             }
         }
@@ -396,7 +411,7 @@ impl MeasurementReport {
         if let Some(review) = &self.review {
             unique(review.iter().map(|r| &r.path), "review")?;
             for row in review {
-                path(&row.path, false)?;
+                path(&row.path, Root::Rejected)?;
                 ensure!(row.code <= row.lines, "review code exceeds lines");
             }
         }
@@ -411,11 +426,11 @@ impl MeasurementReport {
                 "breakdown",
             )?;
             for row in rows {
-                path(&row.folder, true)?;
+                path(&row.folder, Root::Allowed)?;
                 row.counts.validate("breakdown")?;
             }
             let derived = totals_from_rows(rows.iter())?;
-            same_totals(&self.summary.totals, &derived, false, "breakdown")?;
+            same_totals(&self.summary.totals, &derived, Files::AtLeast, "breakdown")?;
             let mut top = BTreeMap::<String, BTreeMap<Purpose, u64>>::new();
             for row in rows.iter().filter(|r| r.kind == Kind::Source) {
                 let name = member_of(&row.folder);
@@ -443,7 +458,7 @@ impl MeasurementReport {
                 "files count conflicts with coverage"
             );
             for file in files {
-                path(&file.path, false)?;
+                path(&file.path, Root::Rejected)?;
                 Counts::from(file.counts).validate("file")?;
                 ensure!(
                     !coverage_paths.contains(&&file.path),
@@ -496,22 +511,13 @@ impl MeasurementReport {
                 "file totals conflict with summary"
             );
             let derived = crate::build_report(&records);
-            same_totals(&self.summary.totals, &derived.totals, true, "files")?;
+            same_totals(&self.summary.totals, &derived.totals, Files::Exact, "files")?;
             if let Some(rows) = &self.breakdown {
-                let key = |r: &crate::BreakdownRow| {
-                    (
-                        r.folder.clone(),
-                        r.kind,
-                        r.purpose,
-                        r.category.clone(),
-                        r.language.clone(),
-                    )
-                };
                 let expected: BTreeMap<_, _> = crate::breakdown(&records)
                     .iter()
-                    .map(|r| (key(r), r.counts))
+                    .map(|r| (r.key(), r.counts))
                     .collect();
-                let actual: BTreeMap<_, _> = rows.iter().map(|r| (key(r), r.counts)).collect();
+                let actual: BTreeMap<_, _> = rows.iter().map(|r| (r.key(), r.counts)).collect();
                 ensure!(actual == expected, "files conflict with breakdown");
             }
             if let Some(review) = &self.review {
@@ -580,7 +586,7 @@ impl MeasurementReport {
                         let derived = totals_from_rows(
                             rows.iter().filter(|r| within(&r.folder, &member.name)),
                         )?;
-                        same_totals(totals, &derived, false, "member breakdown")?;
+                        same_totals(totals, &derived, Files::AtLeast, "member breakdown")?;
                     }
                     ensure!(
                         self.metadata
@@ -608,7 +614,12 @@ impl MeasurementReport {
                         );
                     }
                 }
-                same_totals(&self.summary.totals, &merged, true, "workspace members")?;
+                same_totals(
+                    &self.summary.totals,
+                    &merged,
+                    Files::Exact,
+                    "workspace members",
+                )?;
                 for (expected, values) in [
                     (
                         c.selected_files,
@@ -746,18 +757,26 @@ fn merge_totals(into: &mut Summary, s: &Summary) -> Result<()> {
     }
     Ok(())
 }
+/// How file counts must agree: exactly, or at least as many when the expected
+/// side derives from breakdown rows, which count a file only for its own
+/// language, not for each language it contains.
+#[derive(Clone, Copy)]
+enum Files {
+    Exact,
+    AtLeast,
+}
+
 fn same_map<K: Ord>(
     actual: &BTreeMap<K, Counts>,
     expected: &BTreeMap<K, Counts>,
-    participation: bool,
+    files: Files,
 ) -> bool {
     actual.keys().chain(expected.keys()).all(|key| {
         let a = actual.get(key).copied().unwrap_or_default();
         let b = expected.get(key).copied().unwrap_or_default();
-        if participation {
-            a == b
-        } else {
-            same_lines(a, b) && a.files >= b.files
+        match files {
+            Files::Exact => a == b,
+            Files::AtLeast => same_lines(a, b) && a.files >= b.files,
         }
     })
 }
@@ -765,22 +784,34 @@ fn same_map<K: Ord>(
 fn same_totals(
     actual: &Summary,
     expected: &Summary,
-    participation: bool,
+    language_files: Files,
     context: &str,
 ) -> Result<()> {
     ensure!(
         actual.all_counted == expected.all_counted
             && actual.source == expected.source
-            && same_map(&actual.by_kind_purpose, &expected.by_kind_purpose, true)
-            && same_map(&actual.source_purpose, &expected.source_purpose, true)
-            && same_map(&actual.source_categories, &expected.source_categories, true),
+            && same_map(
+                &actual.by_kind_purpose,
+                &expected.by_kind_purpose,
+                Files::Exact
+            )
+            && same_map(
+                &actual.source_purpose,
+                &expected.source_purpose,
+                Files::Exact
+            )
+            && same_map(
+                &actual.source_categories,
+                &expected.source_categories,
+                Files::Exact
+            ),
         "{context}: aggregate totals conflict"
     );
     ensure!(
         same_map(
             &actual.source_languages,
             &expected.source_languages,
-            participation
+            language_files
         ),
         "{context}: language counts conflict"
     );

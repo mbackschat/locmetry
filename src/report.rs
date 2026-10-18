@@ -238,8 +238,23 @@ pub struct BreakdownRow {
     pub counts: Counts,
 }
 
+/// A breakdown cell's identity: folder, kind, purpose, category and language.
+pub(crate) type BreakdownKey = (String, Kind, Purpose, String, String);
+
+impl BreakdownRow {
+    pub(crate) fn key(&self) -> BreakdownKey {
+        (
+            self.folder.clone(),
+            self.kind,
+            self.purpose,
+            self.category.clone(),
+            self.language.clone(),
+        )
+    }
+}
+
 pub fn breakdown(rows: &[FileRecord]) -> Vec<BreakdownRow> {
-    let mut cells = BTreeMap::<(String, Kind, Purpose, String, String), Counts>::new();
+    let mut cells = BTreeMap::<BreakdownKey, Counts>::new();
     for row in rows {
         let folder = parent(&row.path);
         for (language, counts) in &row.languages {
