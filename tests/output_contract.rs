@@ -1,12 +1,9 @@
+mod common;
 use serde_json::Value;
-use std::{
-    fs,
-    path::Path,
-    process::{Command, Output},
-};
+use std::{fs, path::Path, process::Output};
 
 fn run(cwd: &Path, args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_locmetry"))
+    common::locmetry()
         .current_dir(cwd)
         .env("XDG_CONFIG_HOME", cwd.join("no-user-config"))
         .args(args)

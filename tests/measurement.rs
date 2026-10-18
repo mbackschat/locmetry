@@ -1,3 +1,5 @@
+mod common;
+use common::write_all;
 use locmetry::{build_report, file_records, scan, Kind, Policy};
 use serde_json::{json, Value};
 use std::fs;
@@ -176,19 +178,11 @@ fn embedded_scan_respects_root_exclusions_and_ignores_but_not_ambient_config() {
     }
 }
 
-fn write_tree(root: &std::path::Path, files: &[(&str, &str)]) {
-    for (path, content) in files {
-        let path = root.join(path);
-        fs::create_dir_all(path.parent().unwrap()).unwrap();
-        fs::write(path, content).unwrap();
-    }
-}
-
 #[cfg(unix)]
 #[test]
 fn legal_unix_names_with_colons_and_backslashes_keep_their_identity() {
     let temp = tempfile::tempdir().unwrap();
-    write_tree(
+    write_all(
         temp.path(),
         &[
             ("a:file.rs", "fn a() {}\n"),
@@ -205,7 +199,7 @@ fn legal_unix_names_with_colons_and_backslashes_keep_their_identity() {
 #[test]
 fn raw_backend_payload_contains_only_root_relative_paths() {
     let temp = tempfile::tempdir().unwrap();
-    write_tree(
+    write_all(
         temp.path(),
         &[(
             "web/index.html",
@@ -221,7 +215,7 @@ fn raw_backend_payload_contains_only_root_relative_paths() {
 
 fn scan_rows(files: &[(&str, &str)]) -> Vec<locmetry::FileRecord> {
     let temp = tempfile::tempdir().unwrap();
-    write_tree(temp.path(), files);
+    write_all(temp.path(), files);
     let config = policy("");
     file_records(&scan(temp.path(), &config).unwrap().payload, &config).unwrap()
 }
@@ -339,7 +333,7 @@ fn unreadable_handlebars_is_reported_as_missing_and_inaccurate() {
 #[test]
 fn mapped_handlebars_uses_the_same_counter_and_keeps_provenance() {
     let temp = tempfile::tempdir().unwrap();
-    write_tree(
+    write_all(
         temp.path(),
         &[("notice.template", "Owner's notice\n\n{{! comment }}\n")],
     );
@@ -415,7 +409,7 @@ fn programming_languages_without_a_kind_list_entry_count_as_source() {
 #[test]
 fn coverage_lists_selected_files_the_backend_did_not_count() {
     let temp = tempfile::tempdir().unwrap();
-    write_tree(
+    write_all(
         temp.path(),
         &[
             ("src/main.rs", "fn main() {}\n"),
@@ -434,7 +428,7 @@ fn coverage_lists_selected_files_the_backend_did_not_count() {
 fn coverage_separates_unreadable_recognized_files() {
     use std::os::unix::fs::PermissionsExt;
     let temp = tempfile::tempdir().unwrap();
-    write_tree(temp.path(), &[("locked.py", "x = 1\n")]);
+    write_all(temp.path(), &[("locked.py", "x = 1\n")]);
     let locked = temp.path().join("locked.py");
     fs::set_permissions(&locked, fs::Permissions::from_mode(0o000)).unwrap();
     if fs::read(&locked).is_ok() {

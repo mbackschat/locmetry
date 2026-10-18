@@ -1,5 +1,6 @@
+mod common;
 use serde_json::Value;
-use std::{fs, process::Command};
+use std::fs;
 
 #[test]
 fn table_and_unclaimed_note_flatten_path_controls_without_changing_json() {
@@ -10,7 +11,7 @@ fn table_and_unclaimed_note_flatten_path_controls_without_changing_json() {
         fs::write(root.path().join(name).join("item.rs"), "fn item() {}\n").unwrap();
     }
     for extra in [vec!["--folders"], vec!["--folder-rows", "10"]] {
-        let output = Command::new(env!("CARGO_BIN_EXE_locmetry"))
+        let output = common::locmetry()
             .args([
                 "--root",
                 root.path().to_str().unwrap(),
@@ -40,7 +41,7 @@ fn table_and_unclaimed_note_flatten_path_controls_without_changing_json() {
             }
         }
     }
-    let output = Command::new(env!("CARGO_BIN_EXE_locmetry"))
+    let output = common::locmetry()
         .args([
             "--root",
             root.path().to_str().unwrap(),
@@ -81,7 +82,7 @@ fn coverage_notes_and_diagnostics_flatten_controls_but_preserve_json_evidence() 
     )
     .unwrap();
     for format in ["table", "json"] {
-        let mut command = Command::new(env!("CARGO_BIN_EXE_locmetry"));
+        let mut command = common::locmetry();
         command.args([
             "--root",
             root.path().to_str().unwrap(),

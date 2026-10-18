@@ -1,3 +1,5 @@
+mod common;
+use common::write_all;
 use locmetry::{file_records, scan, Kind, Policy, ScopeOverrides};
 use std::fs;
 
@@ -362,17 +364,9 @@ fn excluded_trees_are_not_traversed_and_single_level_patterns_do_not_prune() {
     assert_eq!(paths, ["gen/sub/b.ts", "src/a.ts"]);
 }
 
-fn write(root: &std::path::Path, files: &[(&str, &str)]) {
-    for (path, content) in files {
-        let path = root.join(path);
-        fs::create_dir_all(path.parent().unwrap()).unwrap();
-        fs::write(path, content).unwrap();
-    }
-}
-
 fn mapped_tree() -> tempfile::TempDir {
     let temp = tempfile::tempdir().unwrap();
-    write(
+    write_all(
         temp.path(),
         &[
             (
@@ -500,7 +494,7 @@ fn disabled_builtin_mappings_leave_unrecognized_files_visible() {
 fn unreadable_mapped_files_are_reported_as_unread_and_inaccurate() {
     use std::os::unix::fs::PermissionsExt;
     let temp = tempfile::tempdir().unwrap();
-    write(temp.path(), &[("build.gradle", "apply plugin: 'java'\n")]);
+    write_all(temp.path(), &[("build.gradle", "apply plugin: 'java'\n")]);
     let file = temp.path().join("build.gradle");
     fs::set_permissions(&file, fs::Permissions::from_mode(0o000)).unwrap();
     if fs::read(&file).is_ok() {

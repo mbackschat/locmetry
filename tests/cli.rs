@@ -1,5 +1,7 @@
+mod common;
+use common::locmetry;
 use serde_json::{json, Value};
-use std::{fs, path::Path, process::Command};
+use std::{fs, path::Path};
 
 fn fixture() -> tempfile::TempDir {
     let temp = tempfile::tempdir().unwrap();
@@ -22,13 +24,6 @@ fn config_args(temp: &tempfile::TempDir) -> [std::path::PathBuf; 4] {
     ]
 }
 
-/// The binary isolated from the developer's own user defaults.
-fn locmetry() -> Command {
-    let mut command = Command::new(env!("CARGO_BIN_EXE_locmetry"));
-    command.env("XDG_CONFIG_HOME", "/nonexistent/locmetry-tests");
-    command
-}
-
 fn run(cwd: &Path, args: &[&str]) -> std::process::Output {
     locmetry().current_dir(cwd).args(args).output().unwrap()
 }
@@ -36,11 +31,7 @@ fn run(cwd: &Path, args: &[&str]) -> std::process::Output {
 fn project(files: &[(&str, &str)]) -> tempfile::TempDir {
     let temp = tempfile::tempdir().unwrap();
     fs::create_dir_all(temp.path().join("project")).unwrap();
-    for (path, content) in files {
-        let path = temp.path().join("project").join(path);
-        fs::create_dir_all(path.parent().unwrap()).unwrap();
-        fs::write(path, content).unwrap();
-    }
+    common::write_all(&temp.path().join("project"), files);
     temp
 }
 

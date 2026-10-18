@@ -1,16 +1,9 @@
+mod common;
+use common::write;
 use serde_json::{json, Value};
-use std::{
-    fs,
-    path::Path,
-    process::{Command, Output},
-};
-fn write(root: &Path, name: &str, text: &str) {
-    let path = root.join(name);
-    fs::create_dir_all(path.parent().unwrap()).unwrap();
-    fs::write(path, text).unwrap();
-}
+use std::{fs, path::Path, process::Output};
 fn run(root: &Path, path: &str, args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_locmetry"))
+    common::locmetry()
         .args([
             "explain",
             path,
@@ -23,13 +16,7 @@ fn run(root: &Path, path: &str, args: &[&str]) -> Output {
         .unwrap()
 }
 fn document(output: Output, status: i32) -> Value {
-    assert_eq!(
-        output.status.code(),
-        Some(status),
-        "{}",
-        String::from_utf8_lossy(&output.stderr)
-    );
-    let value: Value = serde_json::from_slice(&output.stdout).unwrap();
+    let value = common::json(&output, status);
     if value["document_type"] == "explanation" {
         let schema = locmetry::explain::schema();
         let validator = jsonschema::validator_for(&schema).unwrap();
@@ -85,7 +72,7 @@ fn explains_first_match_module_inference_and_mapping_with_actual_file_counts() {
         mapping["result"]["decision"]["matched_patterns"],
         json!(["ops/**"])
     );
-    let schema = Command::new(env!("CARGO_BIN_EXE_locmetry"))
+    let schema = common::locmetry()
         .args(["--schema", "explanation"])
         .output()
         .unwrap();
@@ -169,7 +156,7 @@ fn workspace_queries_use_member_policy_and_qualified_paths() {
         "version = 1\nroots = [\"api\",\"web\"]\n",
     );
     let run = |path: &str, args: &[&str]| {
-        Command::new(env!("CARGO_BIN_EXE_locmetry"))
+        common::locmetry()
             .args([
                 "explain",
                 path,
@@ -217,7 +204,7 @@ fn counted_explanations_equal_measurement_records_including_embedded_languages()
         write(root, name, text);
     }
     let report = document(
-        Command::new(env!("CARGO_BIN_EXE_locmetry"))
+        common::locmetry()
             .args([
                 "--root",
                 root.to_str().unwrap(),
@@ -255,7 +242,7 @@ fn personal_defaults_explicit_config_and_path_bases_match_measurement() {
     write(&root, ".locmetryrc", "invalid config");
     write(temp.path(), "replacement.toml", "version = 1\n");
     let command = |target: &str, args: &[&str]| {
-        Command::new(env!("CARGO_BIN_EXE_locmetry"))
+        common::locmetry()
             .current_dir(temp.path())
             .env("XDG_CONFIG_HOME", &defaults)
             .args([
@@ -342,7 +329,7 @@ fn symlinks_stay_untraversed_and_unread_counts_stay_unavailable() {
 #[test]
 fn schema_examples_are_valid_and_workspace_only_loads_the_queried_policy() {
     let schema = document(
-        Command::new(env!("CARGO_BIN_EXE_locmetry"))
+        common::locmetry()
             .args(["--schema", "explanation"])
             .output()
             .unwrap(),
@@ -367,7 +354,7 @@ fn schema_examples_are_valid_and_workspace_only_loads_the_queried_policy() {
         "version = 1\nroots = [\"api\",\"web\"]\n",
     );
     let result = document(
-        Command::new(env!("CARGO_BIN_EXE_locmetry"))
+        common::locmetry()
             .args([
                 "explain",
                 "api/src/main.js",
@@ -429,7 +416,7 @@ fn aliases_and_directory_queries_fail_instead_of_claiming_filtering() {
         assert!(String::from_utf8_lossy(&output.stderr).contains("target must be a file"));
     }
     write(root, "repos.toml", "version = 1\nroots = [\"src\"]\n");
-    let output = Command::new(env!("CARGO_BIN_EXE_locmetry"))
+    let output = common::locmetry()
         .args([
             "explain",
             "src",
@@ -446,7 +433,7 @@ fn aliases_and_directory_queries_fail_instead_of_claiming_filtering() {
 #[test]
 fn command_help_describes_formats_without_promising_measurement_headlines() {
     for command in ["explain", "compare"] {
-        let output = Command::new(env!("CARGO_BIN_EXE_locmetry"))
+        let output = common::locmetry()
             .args([command, "--help"])
             .output()
             .unwrap();

@@ -1,11 +1,8 @@
-use std::{
-    fs,
-    path::Path,
-    process::{Command, Output},
-};
+mod common;
+use std::{fs, path::Path, process::Output};
 
 fn run(root: &Path, args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_locmetry"))
+    common::locmetry()
         .current_dir(root)
         .env("XDG_CONFIG_HOME", root.join("personal"))
         .args(args)

@@ -1,15 +1,7 @@
-use std::{
-    collections::BTreeMap,
-    fs,
-    path::Path,
-    process::{Command, Output},
-};
+mod common;
+use common::write;
+use std::{collections::BTreeMap, fs, path::Path, process::Output};
 
-fn write(root: &Path, path: &str, content: &str) {
-    let path = root.join(path);
-    fs::create_dir_all(path.parent().unwrap()).unwrap();
-    fs::write(path, content).unwrap();
-}
 fn source(root: &Path, path: &str, lines: usize) {
     write(root, path, &"fn item() {}\n".repeat(lines));
 }
@@ -19,7 +11,7 @@ fn fixture() -> tempfile::TempDir {
     temp
 }
 fn run(root: &Path, args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_locmetry"))
+    common::locmetry()
         .args(["--root", root.to_str().unwrap(), "--no-user-config"])
         .args(args)
         .env("NO_COLOR", "1")
@@ -354,10 +346,7 @@ fn invalid_options_fail_before_writing_with_format_remedy() {
             temp.path().to_str().unwrap(),
         ],
     ] {
-        let out = Command::new(env!("CARGO_BIN_EXE_locmetry"))
-            .args(args)
-            .output()
-            .unwrap();
+        let out = common::locmetry().args(args).output().unwrap();
         assert_eq!(out.status.code(), Some(1));
         assert!(out.stdout.is_empty());
         assert!(String::from_utf8_lossy(&out.stderr).contains("--folder-rows"));
@@ -419,14 +408,7 @@ fn adaptive_styling_preserves_plain_alignment_and_mutes_the_legend() {
     assert!(
         styled.contains("\x1b[90mAdaptive folder detail; rows cover measured source once.\x1b[0m")
     );
-    // Strip every SGR sequence, whatever the palette emits.
-    let mut unstyled = String::new();
-    let mut rest = styled.as_str();
-    while let Some((before, after)) = rest.split_once("\x1b[") {
-        unstyled += before;
-        rest = after.split_once('m').unwrap().1;
-    }
-    assert_eq!(plain, unstyled + rest);
+    assert_eq!(plain, common::unstyled(&styled));
 }
 
 #[test]

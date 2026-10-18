@@ -1,39 +1,23 @@
 //! `locmetry workspace` measures several roots as one virtual monorepo; the
 //! oracle throughout is a regular run of each member (docs/PRODUCT.md, Workspace
 //! Mode).
+mod common;
+use common::{json, write_all};
 use serde_json::{json, Map, Value};
-use std::{fs, path::Path, process::Command};
+use std::{fs, path::Path};
 
 /// The binary isolated from the developer's own user defaults.
 fn locmetry(cwd: &Path, args: &[&str]) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_locmetry"))
-        .env("XDG_CONFIG_HOME", "/nonexistent/locmetry-tests")
+    common::locmetry()
         .current_dir(cwd)
         .args(args)
         .output()
         .unwrap()
 }
 
-fn json_of(output: &std::process::Output) -> Value {
-    assert!(
-        output.status.success(),
-        "{}",
-        String::from_utf8_lossy(&output.stderr)
-    );
-    serde_json::from_slice(&output.stdout).unwrap()
-}
-
 fn stderr_of(output: &std::process::Output) -> String {
     assert!(!output.status.success(), "unexpected success");
     String::from_utf8_lossy(&output.stderr).into_owned()
-}
-
-fn write(root: &Path, files: &[(&str, &str)]) {
-    for (path, content) in files {
-        let path = root.join(path);
-        fs::create_dir_all(path.parent().unwrap()).unwrap();
-        fs::write(path, content).unwrap();
-    }
 }
 
 const WEB_CONFIG: &str = "version = 1\n[scope]\nexclude = [\"third_party\"]\n[[rules]]\nid = \"tooling\"\nmatch = [\"scripts/**\"]\npurpose = \"production\"\ncategory = \"tooling\"\n[[rules]]\nid = \"ghost\"\nmatch = [\"nowhere/**\"]\npurpose = \"production\"\n";
@@ -42,7 +26,7 @@ const WEB_CONFIG: &str = "version = 1\n[scope]\nexclude = [\"third_party\"]\n[[r
 /// (Cargo, with a Git submodule), beside an unrelated folder.
 fn workspace() -> tempfile::TempDir {
     let temp = tempfile::tempdir().unwrap();
-    write(
+    write_all(
         &temp.path().join("web"),
         &[
             (".locmetryrc", WEB_CONFIG),
@@ -55,7 +39,7 @@ fn workspace() -> tempfile::TempDir {
             ("README.md", "# Web\n"),
         ],
     );
-    write(
+    write_all(
         &temp.path().join("api"),
         &[
             ("Cargo.toml", "[package]\nname = \"api\"\n"),
@@ -69,14 +53,14 @@ fn workspace() -> tempfile::TempDir {
             ("data/seed.json", "{}\n"),
         ],
     );
-    write(&temp.path().join("other"), &[("o.ts", "let o = 1;\n")]);
+    write_all(&temp.path().join("other"), &[("o.ts", "let o = 1;\n")]);
     temp
 }
 
 /// Full report through `--output -`, without the measurement time.
 fn full_report(cwd: &Path, args: &[&str]) -> Value {
     let args = [args, &["--output", "-", "--files"]].concat();
-    let mut report = json_of(&locmetry(cwd, &args));
+    let mut report = json(&locmetry(cwd, &args), 0);
     report["metadata"]
         .as_object_mut()
         .unwrap()
@@ -202,10 +186,13 @@ fn workspace_merges_members_as_prefixed_top_level_folders() {
 #[test]
 fn workspace_headline_drops_member_configurations() {
     let temp = workspace();
-    let headline = json_of(&locmetry(
-        temp.path(),
-        &["workspace", "--root", "web", "--root", "api"],
-    ));
+    let headline = json(
+        &locmetry(
+            temp.path(),
+            &["workspace", "--root", "web", "--root", "api"],
+        ),
+        0,
+    );
     let members = headline["metadata"]["members"].as_array().unwrap();
     assert!(members.iter().all(|member| member.get("config").is_none()));
     assert_eq!(members[1]["unused_entries"], json!(["ghost"]));
@@ -318,7 +305,7 @@ fn workspace_rejects_single_root_flags() {
 #[test]
 fn workspace_members_must_be_distinct_and_disjoint() {
     let temp = workspace();
-    write(&temp.path().join("copy/web"), &[("a.ts", "let a = 1;\n")]);
+    write_all(&temp.path().join("copy/web"), &[("a.ts", "let a = 1;\n")]);
     for (roots, message) in [
         (&["web", "copy/web"][..], "web"),
         (&["web", "./web"], "web"),
@@ -336,7 +323,7 @@ fn workspace_members_must_be_distinct_and_disjoint() {
 #[test]
 fn an_invalid_member_configuration_fails_the_workspace_naming_the_member() {
     let temp = workspace();
-    write(
+    write_all(
         &temp.path().join("api"),
         &[(".locmetryrc", "version = 2\n")],
     );
@@ -392,7 +379,7 @@ fn a_workspace_file_lists_roots_relative_to_itself() {
     let base = temp.path();
     let api = base.join("api").canonicalize().unwrap();
     let file = base.join("defs/cg.toml");
-    write(
+    write_all(
         base,
         &[(
             "defs/cg.toml",
@@ -424,7 +411,7 @@ fn a_workspace_file_lists_roots_relative_to_itself() {
 #[test]
 fn a_workspace_file_inside_a_member_is_not_measured() {
     let temp = workspace();
-    write(
+    write_all(
         temp.path(),
         &[(
             "web/workspace.toml",
@@ -448,7 +435,7 @@ fn a_workspace_file_inside_a_member_is_not_measured() {
 #[test]
 fn invalid_workspace_files_fail_before_measuring() {
     let temp = workspace();
-    write(
+    write_all(
         temp.path(),
         &[
             ("v2.toml", "version = 2\nroots = [\"web\"]\n"),
@@ -495,10 +482,10 @@ fn workspace_summaries_break_totals_down_by_member() {
     let temp = workspace();
     let base = temp.path();
     let merged = full_report(base, &["workspace", "--root", "web", "--root", "api"]);
-    let headline = json_of(&locmetry(
-        base,
-        &["workspace", "--root", "web", "--root", "api"],
-    ));
+    let headline = json(
+        &locmetry(base, &["workspace", "--root", "web", "--root", "api"]),
+        0,
+    );
     let members: Vec<&String> = merged["summary"]["members"]
         .as_object()
         .unwrap()
@@ -654,7 +641,7 @@ fn workspace_markdown_breaks_categories_and_languages_down_by_repository() {
 fn regular_runs_have_no_repository_dimension() {
     let temp = workspace();
     let web = temp.path().join("web");
-    let headline = json_of(&locmetry(&web, &[]));
+    let headline = json(&locmetry(&web, &[]), 0);
     assert!(headline["summary"].get("members").is_none());
     for folders in [false, true] {
         let mut args = vec!["--format", "table"];
@@ -718,8 +705,7 @@ fn workspace_bars_chart_repository_shares() {
 #[test]
 fn comment_bars_separate_their_percentage_column_after_share() {
     let temp = workspace();
-    let output = Command::new(env!("CARGO_BIN_EXE_locmetry"))
-        .env("XDG_CONFIG_HOME", "/nonexistent/locmetry-tests")
+    let output = common::locmetry()
         .env("COLUMNS", "300")
         .current_dir(temp.path())
         .args([

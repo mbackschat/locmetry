@@ -1,12 +1,10 @@
+mod common;
+use common::write;
 use serde_json::{json, Value};
-use std::{
-    fs,
-    path::Path,
-    process::{Command, Output},
-};
+use std::{fs, path::Path, process::Output};
 
 fn run(root: &Path, args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_locmetry"))
+    common::locmetry()
         .current_dir(root)
         .env("XDG_CONFIG_HOME", root.join("personal"))
         .args(args)
@@ -15,14 +13,7 @@ fn run(root: &Path, args: &[&str]) -> Output {
 }
 
 fn document(root: &Path, args: &[&str], code: i32) -> Value {
-    let out = run(root, args);
-    assert_eq!(
-        out.status.code(),
-        Some(code),
-        "{args:?}: {}",
-        String::from_utf8_lossy(&out.stderr)
-    );
-    serde_json::from_slice(&out.stdout).unwrap()
+    common::json(&run(root, args), code)
 }
 
 fn source(topic: &str) -> String {
@@ -46,12 +37,6 @@ fn block<'a>(text: &'a str, marker: &str, language: &str) -> &'a str {
 
 fn expected(topic: &str, marker: &str) -> Value {
     serde_json::from_str(block(&source(topic), marker, "json")).unwrap()
-}
-
-fn write(root: &Path, name: &str, contents: &str) {
-    let path = root.join(name);
-    fs::create_dir_all(path.parent().unwrap()).unwrap();
-    fs::write(path, contents).unwrap();
 }
 
 #[test]

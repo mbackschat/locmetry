@@ -1,6 +1,6 @@
+mod common;
 use locmetry::contract::MeasurementReport;
 use serde_json::{json, Value};
-use std::process::Command;
 
 fn fixture(name: &str) -> Value {
     serde_json::from_str(
@@ -46,7 +46,7 @@ fn current_root_and_workspace_contracts_round_trip_without_shape_changes() {
     let temp = tempfile::tempdir().unwrap();
     std::fs::write(temp.path().join("main.py"), "print(1)\n").unwrap();
     for workspace in [false, true] {
-        let mut command = Command::new(env!("CARGO_BIN_EXE_locmetry"));
+        let mut command = common::locmetry();
         if workspace {
             command.arg("workspace");
         }
@@ -274,7 +274,7 @@ fn language_participation_cannot_be_less_than_host_files_in_breakdown() {
     std::fs::write(temp.path().join("one.py"), "print(1)\n").unwrap();
     std::fs::write(temp.path().join("two.py"), "print(2)\n").unwrap();
     for workspace in [false, true] {
-        let mut command = Command::new(env!("CARGO_BIN_EXE_locmetry"));
+        let mut command = common::locmetry();
         if workspace {
             command.arg("workspace");
         }
@@ -317,7 +317,7 @@ fn member_language_participation_is_checked_even_when_workspace_totals_reconcile
         }
         std::fs::write(root.join("main.js"), "let a = 1;\n").unwrap();
     }
-    let output = Command::new(env!("CARGO_BIN_EXE_locmetry"))
+    let output = common::locmetry()
         .args([
             "workspace",
             "--root",

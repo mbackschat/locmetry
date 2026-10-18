@@ -1,3 +1,4 @@
+mod common;
 use anyhow::{ensure, Result};
 use locmetry::{
     build_report, render_table_with_options, style::Theme, Classification, Counts, Coverage,
@@ -251,10 +252,7 @@ fn refresh_readme_tables() {
 }
 
 fn help(flag: &str) -> String {
-    let output = std::process::Command::new(env!("CARGO_BIN_EXE_locmetry"))
-        .arg(flag)
-        .output()
-        .unwrap();
+    let output = common::locmetry().arg(flag).output().unwrap();
     assert!(output.status.success());
     String::from_utf8(output.stdout).unwrap()
 }

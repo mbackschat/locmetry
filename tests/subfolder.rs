@@ -1,16 +1,9 @@
+mod common;
+use common::write;
 use serde_json::{json, Value};
-use std::{
-    fs,
-    path::Path,
-    process::{Command, Output},
-};
-fn write(root: &Path, name: &str, text: &str) {
-    let path = root.join(name);
-    fs::create_dir_all(path.parent().unwrap()).unwrap();
-    fs::write(path, text).unwrap();
-}
+use std::{fs, path::Path, process::Output};
 fn run(root: &Path, args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_locmetry"))
+    common::locmetry()
         .args(["--root", root.to_str().unwrap(), "--no-user-config"])
         .args(args)
         .output()
@@ -18,13 +11,7 @@ fn run(root: &Path, args: &[&str]) -> Output {
 }
 fn report(root: &Path, args: &[&str], status: i32) -> Value {
     let out = run(root, &[args, &["--files", "--output", "-"]].concat());
-    assert_eq!(
-        out.status.code(),
-        Some(status),
-        "{}",
-        String::from_utf8_lossy(&out.stderr)
-    );
-    let value: Value = serde_json::from_slice(&out.stdout).unwrap();
+    let value = common::json(&out, status);
     assert!(jsonschema::validator_for(&locmetry::report_schema())
         .unwrap()
         .is_valid(&value));
@@ -193,7 +180,7 @@ fn inactive_config_warning_uses_diagnostic_prefix_and_absolute_paths() {
         vec!["--subfolder", "web/src"],
         vec!["--subfolder", "web/src", "--config", ".locmetryrc"],
     ] {
-        let out = Command::new(env!("CARGO_BIN_EXE_locmetry"))
+        let out = common::locmetry()
             .current_dir(&root)
             .args(["--no-user-config", "--root", "."])
             .args(args)
@@ -237,7 +224,7 @@ fn subfolder_paths_and_subcommands_reject_invalid_restrictions() {
         );
     }
     for cmd in ["workspace", "compare", "explain"] {
-        let out = Command::new(env!("CARGO_BIN_EXE_locmetry"))
+        let out = common::locmetry()
             .args([cmd, "--subfolder", "web/src"])
             .output()
             .unwrap();
@@ -401,7 +388,7 @@ fn subfolder_comparison_refusal_protects_output_and_same_scope_preserves_receipt
     fs::write(&after, serde_json::to_vec(&b).unwrap()).unwrap();
     fs::write(&dest, "keep me").unwrap();
     let compare = |format: &str| {
-        Command::new(env!("CARGO_BIN_EXE_locmetry"))
+        common::locmetry()
             .args([
                 "compare",
                 before.to_str().unwrap(),
@@ -466,7 +453,7 @@ fn subfolder_zero_code_modules_aliases_literal_names_and_explanation_are_consist
         v["summary"]["build_modules"],
         json!({"npm":{"modules":1,"code":0}})
     );
-    let out = Command::new(env!("CARGO_BIN_EXE_locmetry"))
+    let out = common::locmetry()
         .args([
             "explain",
             "src/[literal]/empty.ts",
@@ -509,7 +496,7 @@ fn workspace_report_cannot_claim_a_subfolder_restriction() {
     let temp = tempfile::tempdir().unwrap();
     let root = temp.path().join("project");
     fixture(&root);
-    let out = Command::new(env!("CARGO_BIN_EXE_locmetry"))
+    let out = common::locmetry()
         .args([
             "workspace",
             "--root",

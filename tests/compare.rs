@@ -1,20 +1,14 @@
+mod common;
+use common::{json, write};
 use serde_json::{json, Value};
 use std::{
     fs,
     path::{Path, PathBuf},
-    process::{Command, Output},
+    process::Output,
 };
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_locmetry"))
-        .args(args)
-        .output()
-        .unwrap()
-}
-fn write(root: &Path, name: &str, text: &str) {
-    let path = root.join(name);
-    fs::create_dir_all(path.parent().unwrap()).unwrap();
-    fs::write(path, text).unwrap();
+    common::locmetry().args(args).output().unwrap()
 }
 fn measure(root: &Path) -> Value {
     let output = run(&[
@@ -38,21 +32,12 @@ fn save(root: &Path, name: &str, report: &Value) -> PathBuf {
     path
 }
 fn compare(before: &Path, after: &Path, args: &[&str]) -> Output {
-    let mut command = Command::new(env!("CARGO_BIN_EXE_locmetry"));
+    let mut command = common::locmetry();
     command
         .args(["compare", before.to_str().unwrap(), after.to_str().unwrap()])
         .args(args)
         .output()
         .unwrap()
-}
-fn document(output: Output, status: i32) -> Value {
-    assert_eq!(
-        output.status.code(),
-        Some(status),
-        "{}",
-        String::from_utf8_lossy(&output.stderr)
-    );
-    serde_json::from_slice(&output.stdout).unwrap()
 }
 fn change(value: &Value, before: u64, after: u64, delta: i64) {
     assert_eq!(value["before"]["code"], before);
@@ -75,7 +60,7 @@ fn compare_reports_net_change_without_reading_the_source_checkout() {
     write(&root, "src/main.py", "a = 1\nb = 2\nc = 3\n# one\n# two\n");
     let after = save(temp.path(), "after.json", &measure(&root));
     fs::remove_dir_all(root).unwrap();
-    let full = document(compare(&before, &after, &["--output", "-"]), 0);
+    let full = json(&compare(&before, &after, &["--output", "-"]), 0);
     assert_eq!(full["document_type"], "comparison");
     assert_eq!(full["schema_version"], "1");
     change(&full["summary"]["source"], 3, 4, 1);
@@ -86,13 +71,13 @@ fn compare_reports_net_change_without_reading_the_source_checkout() {
     change(&full["summary"]["source_purpose"]["production"], 2, 3, 1);
     change(&full["folders"]["src"]["direct"]["source"], 2, 3, 1);
     assert!(full["findings"].as_array().unwrap().is_empty());
-    let reversed = document(compare(&after, &before, &["--output", "-"]), 0);
+    let reversed = json(&compare(&after, &before, &["--output", "-"]), 0);
     change(&reversed["summary"]["source"], 4, 3, -1);
-    let same = document(compare(&before, &before, &["--output", "-"]), 0);
+    let same = json(&compare(&before, &before, &["--output", "-"]), 0);
     change(&same["summary"]["all_counted"], 3, 3, 0);
-    let schema = document(run(&["--schema", "comparison"]), 0);
+    let schema = json(&run(&["--schema", "comparison"]), 0);
     assert!(jsonschema::validator_for(&schema).unwrap().is_valid(&full));
-    let headline = document(compare(&before, &after, &[]), 0);
+    let headline = json(&compare(&before, &after, &[]), 0);
     for omitted in ["folders", "packages", "breakdown"] {
         assert!(headline.get(omitted).is_none());
     }
@@ -119,7 +104,7 @@ fn descriptor_removal_changes_data_and_purpose_without_claiming_source_deletion(
     let before = save(temp.path(), "before.json", &measure(&root));
     fs::remove_file(root.join("package.json")).unwrap();
     let after = save(temp.path(), "after.json", &measure(&root));
-    let full = document(compare(&before, &after, &["--output", "-"]), 0);
+    let full = json(&compare(&before, &after, &["--output", "-"]), 0);
     change(&full["summary"]["all_counted"], 5, 2, -3);
     change(&full["summary"]["source"], 2, 2, 0);
     change(&full["summary"]["source_purpose"]["production"], 2, 0, -2);
@@ -142,7 +127,7 @@ fn missing_failure_evidence_is_a_finding_and_observed_failures_are_partial() {
         .unwrap()
         .remove("parse_failures");
     let before = save(temp.path(), "before.json", &historical);
-    let full = document(compare(&before, &before, &["--output", "-"]), 0);
+    let full = json(&compare(&before, &before, &["--output", "-"]), 0);
     assert!(full["findings"]
         .as_array()
         .unwrap()
@@ -150,7 +135,7 @@ fn missing_failure_evidence_is_a_finding_and_observed_failures_are_partial() {
         .any(|f| f["code"] == "coverage_gap"));
     write(&root, "broken.ipynb", "{}");
     let after = save(temp.path(), "after.json", &measure(&root));
-    let partial = document(compare(&before, &after, &["--output", "-"]), 2);
+    let partial = json(&compare(&before, &after, &["--output", "-"]), 2);
     change(&partial["summary"]["source"], 1, 1, 0);
     assert!(!partial["findings"].as_array().unwrap().is_empty());
 }
@@ -197,7 +182,7 @@ fn rejects_headlines_versions_inconsistent_counts_and_overwriting_inputs() {
 }
 
 fn workspace(roots: &[&Path]) -> Value {
-    let mut command = Command::new(env!("CARGO_BIN_EXE_locmetry"));
+    let mut command = common::locmetry();
     command.arg("workspace");
     for root in roots {
         command.arg("--root").arg(root);
@@ -206,7 +191,7 @@ fn workspace(roots: &[&Path]) -> Value {
         .args(["--no-user-config", "--output", "-"])
         .output()
         .unwrap();
-    document(output, 0)
+    json(&output, 0)
 }
 
 #[test]
@@ -227,7 +212,7 @@ fn workspace_arrivals_departures_and_empty_roots_reconcile_separately() {
         "after.json",
         &workspace(&[&worker, &empty, &api]),
     );
-    let full = document(compare(&before, &after, &["--output", "-"]), 0);
+    let full = json(&compare(&before, &after, &["--output", "-"]), 0);
     change(&full["summary"]["source"], 140, 150, 10);
     for metric in ["all_counted", "source"] {
         for field in ["files", "code", "comments", "blanks", "lines"] {
@@ -258,19 +243,19 @@ fn workspace_arrivals_departures_and_empty_roots_reconcile_separately() {
         full["presence_summary"]["members"],
         json!({"before_only":1,"after_only":2})
     );
-    let headline = document(compare(&before, &after, &[]), 0);
+    let headline = json(&compare(&before, &after, &[]), 0);
     assert_eq!(headline["presence_summary"], full["presence_summary"]);
     assert!(headline["findings"]
         .as_array()
         .unwrap()
         .iter()
         .all(|f| f["code"] != "presence_changed"));
-    let schema = document(run(&["--schema", "comparison"]), 0);
+    let schema = json(&run(&["--schema", "comparison"]), 0);
     assert!(jsonschema::validator_for(&schema).unwrap().is_valid(&full));
     let disjoint_before = save(temp.path(), "disjoint-before.json", &workspace(&[&legacy]));
     let disjoint_after = save(temp.path(), "disjoint-after.json", &workspace(&[&empty]));
-    let disjoint = document(
-        compare(&disjoint_before, &disjoint_after, &["--output", "-"]),
+    let disjoint = json(
+        &compare(&disjoint_before, &disjoint_after, &["--output", "-"]),
         0,
     );
     change(&disjoint["summary"]["source"], 40, 0, -40);
@@ -293,7 +278,7 @@ fn topology_changes_with_zero_net_code_and_coverage_only_folders_remain_visible(
     fs::rename(root.join("old"), root.join("new")).unwrap();
     write(&root, "assets/icon.unknown", "not counted\n");
     let after = save(temp.path(), "after.json", &measure(&root));
-    let full = document(compare(&before, &after, &["--output", "-"]), 0);
+    let full = json(&compare(&before, &after, &["--output", "-"]), 0);
     change(&full["summary"]["source"], 1, 1, 0);
     assert_eq!(full["folders"]["old"]["presence"], "before_only");
     assert_eq!(full["folders"]["new"]["presence"], "after_only");
@@ -324,14 +309,14 @@ fn comparison_order_is_stable_and_exclusions_are_sets_but_rules_are_ordered() {
     let value = measure(&root);
     let before = save(temp.path(), "before.json", &value);
     let after = save(temp.path(), "after.json", &value);
-    let original = document(compare(&before, &after, &["--output", "-"]), 0);
+    let original = json(&compare(&before, &after, &["--output", "-"]), 0);
     let mut reordered = value.clone();
     for field in ["breakdown", "files", "review"] {
         reordered[field].as_array_mut().unwrap().reverse();
     }
     save(temp.path(), "after.json", &reordered);
     assert_eq!(
-        document(compare(&before, &after, &["--output", "-"]), 0),
+        json(&compare(&before, &after, &["--output", "-"]), 0),
         original
     );
     for pointer in ["/metadata/scope/exclude", "/metadata/config/scope/exclude"] {
@@ -343,14 +328,14 @@ fn comparison_order_is_stable_and_exclusions_are_sets_but_rules_are_ordered() {
             .reverse();
     }
     save(temp.path(), "after.json", &reordered);
-    let changed = document(compare(&before, &after, &["--output", "-"]), 0);
+    let changed = json(&compare(&before, &after, &["--output", "-"]), 0);
     assert!(changed["findings"].as_array().unwrap().is_empty());
     reordered["metadata"]["config"]["rules"]
         .as_array_mut()
         .unwrap()
         .reverse();
     save(temp.path(), "after.json", &reordered);
-    let changed = document(compare(&before, &after, &["--output", "-"]), 0);
+    let changed = json(&compare(&before, &after, &["--output", "-"]), 0);
     assert!(changed["findings"]
         .as_array()
         .unwrap()
@@ -406,8 +391,8 @@ fn large_zero_net_restructures_keep_headline_presence_bounded() {
     let before = save(temp.path(), "before.json", &measure(&root));
     fs::rename(root.join("old"), root.join("new")).unwrap();
     let after = save(temp.path(), "after.json", &measure(&root));
-    let full = document(compare(&before, &after, &["--output", "-"]), 0);
-    let headline = document(compare(&before, &after, &[]), 0);
+    let full = json(&compare(&before, &after, &["--output", "-"]), 0);
+    let headline = json(&compare(&before, &after, &[]), 0);
     change(&full["summary"]["source"], 0, 0, 0);
     assert_eq!(
         full["presence_summary"]["folders"],
@@ -428,7 +413,7 @@ fn large_zero_net_restructures_keep_headline_presence_bounded() {
 
 #[test]
 fn comparison_schema_has_a_valid_example_and_explicit_integer_bounds() {
-    let schema = document(run(&["--schema", "comparison"]), 0);
+    let schema = json(&run(&["--schema", "comparison"]), 0);
     let validator = jsonschema::validator_for(&schema).unwrap();
     let examples = schema["examples"]
         .as_array()
@@ -455,7 +440,7 @@ fn comparison_schema_has_a_valid_example_and_explicit_integer_bounds() {
 fn legacy_full_reports_compare_and_early_reports_name_the_missing_evidence() {
     for n in 2..=6 {
         let path = PathBuf::from(format!("tests/fixtures/reports/v0.1.{n}-root.json"));
-        let full = document(compare(&path, &path, &["--output", "-"]), 0);
+        let full = json(&compare(&path, &path, &["--output", "-"]), 0);
         assert_eq!(full["summary"]["source"]["delta"]["code"], 0);
         assert!(full["findings"]
             .as_array()
@@ -548,7 +533,7 @@ fn comparison_totals_fit_their_contents_and_keep_large_signed_values_aligned() {
     let root = temp.path().join("project");
     write(&root, "main.py", "print(1)\n");
     let saved = save(temp.path(), "input.json", &measure(&root));
-    let full = document(compare(&saved, &saved, &["--format", "json"]), 0);
+    let full = json(&compare(&saved, &saved, &["--format", "json"]), 0);
     let mut report: locmetry::compare::Comparison = serde_json::from_value(full).unwrap();
     let table = render_table_with_theme(&report, Theme::PLAIN);
     let totals = table
@@ -613,7 +598,7 @@ fn comparisons_report_changed_producer_identity() {
     released["metadata"]["locmetry_version"] = json!("0.1.6");
     let before = save(temp.path(), "before.json", &released);
     let after = save(temp.path(), "after.json", &current);
-    let result = document(compare(&before, &after, &[]), 0);
+    let result = json(&compare(&before, &after, &[]), 0);
     assert!(result["findings"]
         .as_array()
         .unwrap()
@@ -632,7 +617,7 @@ fn folder_presence_points_to_the_evidence_that_establishes_it() {
     write(&root, "failed/broken.ipynb", "{}");
     let after_value = measure(&root);
     let after = save(temp.path(), "after.json", &after_value);
-    let result = document(compare(&before, &after, &["--output", "-"]), 2);
+    let result = json(&compare(&before, &after, &["--output", "-"]), 2);
     for (folder, pointer) in [
         ("unknown", "/metadata/coverage/unrecognized"),
         ("unknown/deep", "/metadata/coverage/unrecognized"),
@@ -664,7 +649,7 @@ fn folder_presence_points_to_the_evidence_that_establishes_it() {
     let mut module_only = before_value;
     module_only["metadata"]["modules"] = json!([{"path":"module-only","detector":"npm"}]);
     let module_report = save(temp.path(), "module.json", &module_only);
-    let result = document(compare(&before, &module_report, &["--output", "-"]), 0);
+    let result = json(&compare(&before, &module_report, &["--output", "-"]), 0);
     let finding = result["findings"]
         .as_array()
         .unwrap()
@@ -683,7 +668,7 @@ fn backend_inaccuracy_is_partial_even_without_identified_failure_paths() {
     assert_eq!(input["metadata"]["coverage"]["unread"], json!([]));
     assert_eq!(input["metadata"]["coverage"]["parse_failures"], json!([]));
     let saved = save(temp.path(), "input.json", &input);
-    let result = document(compare(&saved, &saved, &[]), 2);
+    let result = json(&compare(&saved, &saved, &[]), 2);
     assert!(result["findings"]
         .as_array()
         .unwrap()
@@ -713,7 +698,7 @@ fn human_coverage_notes_summarize_paths_without_changing_json_findings() {
     let root = temp.path().join("project");
     write(&root, "a.zzz", "unknown\n");
     let before = save(temp.path(), "before.json", &measure(&root));
-    let full = document(compare(&before, &before, &["--format", "json"]), 0);
+    let full = json(&compare(&before, &before, &["--format", "json"]), 0);
     assert_eq!(full["findings"].as_array().unwrap().len(), 4);
     assert!(full["findings"]
         .as_array()
@@ -813,7 +798,7 @@ fn human_coverage_notes_keep_partial_inputs_visible_and_warn() {
             "{text}"
         );
     }
-    let full = document(compare(&unread, &unread, &["--format", "json"]), 2);
+    let full = json(&compare(&unread, &unread, &["--format", "json"]), 2);
     let comparison: locmetry::compare::Comparison = serde_json::from_value(full).unwrap();
     let styled =
         locmetry::compare::render_table_with_theme(&comparison, locmetry::style::Theme::TERMINAL);
@@ -935,7 +920,7 @@ fn source_grids_include_line_changes_but_omit_data_and_file_count_only_changes()
             _ => unreachable!(),
         }
         let after = save(temp.path(), "after.json", &measure(&root));
-        let full = document(compare(&before, &after, &["--format", "json"]), 0);
+        let full = json(&compare(&before, &after, &["--format", "json"]), 0);
         assert_eq!(
             full["folders"]["src"]["recursive"]["source"]["delta"], source_delta,
             "{variant}"
@@ -982,8 +967,8 @@ fn source_code_grids_preserve_zero_code_folder_and_member_presence() {
     write(&root, "src/main.py", "print(1)\n# comment\n");
     write(&root, "src/settings.json", "{\n  \"a\": 1\n}\n");
     let workspace_after = save(temp.path(), "workspace-after.json", &workspace(&[&root]));
-    let full = document(
-        compare(&workspace_before, &workspace_after, &["--format", "json"]),
+    let full = json(
+        &compare(&workspace_before, &workspace_after, &["--format", "json"]),
         0,
     );
     assert_eq!(full["members"]["project"]["source"]["delta"]["comments"], 1);
@@ -1035,7 +1020,7 @@ fn comparison_theme_preserves_plain_text_and_distinguishes_signed_changes() {
     let before = save(temp.path(), "before.json", &measure(&root));
     write(&root, "main.py", "print(1)\nprint(2)\n");
     let after = save(temp.path(), "after.json", &measure(&root));
-    let value = document(compare(&before, &after, &["--output", "-"]), 0);
+    let value = json(&compare(&before, &after, &["--output", "-"]), 0);
     let report: locmetry::compare::Comparison = serde_json::from_value(value).unwrap();
     let plain = locmetry::compare::render_table_with_theme(&report, Theme::PLAIN);
     let colored = locmetry::compare::render_table_with_theme(&report, Theme::TERMINAL);

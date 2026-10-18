@@ -1,6 +1,7 @@
 //! `--purpose` narrows table views to the selected purposes' source, and
 //! `--bars=comments` charts Code against Comments (docs/PRODUCT.md, Output Routing).
-use std::{fs, path::Path, process::Command};
+mod common;
+use std::path::Path;
 
 fn project() -> tempfile::TempDir {
     let temp = tempfile::tempdir().unwrap();
@@ -13,16 +14,13 @@ fn project() -> tempfile::TempDir {
         ("tests/it.rs", "// t\nfn t() {}\n"),
         ("proto/x.py", "x = 1\n"),
     ] {
-        let path = temp.path().join("project").join(path);
-        fs::create_dir_all(path.parent().unwrap()).unwrap();
-        fs::write(path, content).unwrap();
+        common::write(&temp.path().join("project"), path, content);
     }
     temp
 }
 
 fn run(cwd: &Path, args: &[&str], columns: &str) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_locmetry"))
-        .env("XDG_CONFIG_HOME", "/nonexistent/locmetry-tests")
+    common::locmetry()
         .env("COLUMNS", columns)
         .current_dir(cwd)
         .args(args)

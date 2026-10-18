@@ -1,23 +1,15 @@
+mod common;
+use common::write;
 use serde_json::Value;
-use std::{
-    fs,
-    path::Path,
-    process::{Command, Output},
-};
+use std::{fs, path::Path, process::Output};
 
 fn run(root: &Path, args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_locmetry"))
+    common::locmetry()
         .current_dir(root)
         .env("XDG_CONFIG_HOME", root.join("absent-user-config"))
         .args(args)
         .output()
         .unwrap()
-}
-
-fn write(root: &Path, path: &str, contents: &str) {
-    let path = root.join(path);
-    fs::create_dir_all(path.parent().unwrap()).unwrap();
-    fs::write(path, contents).unwrap();
 }
 
 fn fixture(root: &Path) {

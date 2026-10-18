@@ -1,12 +1,9 @@
+mod common;
 use serde_json::{json, Value};
-use std::{
-    fs,
-    path::Path,
-    process::{Command, Output},
-};
+use std::{fs, path::Path, process::Output};
 
 fn run(root: &Path, args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_locmetry"))
+    common::locmetry()
         .current_dir(root)
         .args(["--no-user-config"])
         .args(args)
@@ -258,7 +255,7 @@ fn workspace_notebook_failures_retain_member_coverage_and_prefixed_paths() {
         &notebook(vec![cell("code", json!("print(1)\n"))]),
     );
     for format in ["json", "table", "markdown"] {
-        let mut command = Command::new(env!("CARGO_BIN_EXE_locmetry"));
+        let mut command = common::locmetry();
         command.current_dir(root.path()).args([
             "workspace",
             "--no-user-config",
@@ -300,7 +297,7 @@ fn report_schema_distinguishes_historical_absence_from_recorded_parse_failures()
     let root = tempfile::tempdir().unwrap();
     write(root.path(), &notebook(vec![]));
     let mut report = full(root.path());
-    let output = Command::new(env!("CARGO_BIN_EXE_locmetry"))
+    let output = common::locmetry()
         .args(["--schema", "report"])
         .output()
         .unwrap();

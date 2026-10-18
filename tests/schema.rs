@@ -1,10 +1,10 @@
 //! `--schema` lets agents discover the configuration contract, including its
 //! semantics, from the binary alone.
+mod common;
 use serde_json::{json, Value};
-use std::process::Command;
 
 fn schema(which: &str) -> Value {
-    let output = Command::new(env!("CARGO_BIN_EXE_locmetry"))
+    let output = common::locmetry()
         .args(["--schema", which])
         .output()
         .unwrap();
@@ -260,8 +260,7 @@ fn report_fixture() -> tempfile::TempDir {
 }
 
 fn measure(temp: &tempfile::TempDir, args: &[&str]) -> Value {
-    let output = Command::new(env!("CARGO_BIN_EXE_locmetry"))
-        .env("XDG_CONFIG_HOME", "/nonexistent/locmetry-tests")
+    let output = common::locmetry()
         .current_dir(temp.path().join("project"))
         .args(args)
         .output()
@@ -281,8 +280,7 @@ fn report_schema_describes_the_headline_and_the_full_report() {
     let validator = jsonschema::validator_for(&schema).unwrap();
     let temp = report_fixture();
     let report_file = temp.path().join("report.json");
-    let saved = Command::new(env!("CARGO_BIN_EXE_locmetry"))
-        .env("XDG_CONFIG_HOME", "/nonexistent/locmetry-tests")
+    let saved = common::locmetry()
         .current_dir(temp.path())
         .args([
             "--root",
@@ -342,8 +340,7 @@ fn report_schema_describes_workspace_reports() {
     let validator = jsonschema::validator_for(&schema).unwrap();
     let temp = report_fixture();
     let output = |args: &[&str]| {
-        let output = Command::new(env!("CARGO_BIN_EXE_locmetry"))
-            .env("XDG_CONFIG_HOME", "/nonexistent/locmetry-tests")
+        let output = common::locmetry()
             .current_dir(temp.path())
             .args(args)
             .output()

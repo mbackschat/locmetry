@@ -1,8 +1,9 @@
+mod common;
 use serde_json::Value;
-use std::{fs, path::Path, process::Command};
+use std::{fs, path::Path};
 
 fn run(root: &Path, args: &[&str]) -> String {
-    let output = Command::new(env!("CARGO_BIN_EXE_locmetry"))
+    let output = common::locmetry()
         .arg("--no-user-config")
         .arg(root)
         .args(args)
@@ -187,7 +188,7 @@ fn workspace_reports_retain_total_lines_in_repository_and_language_grids() {
         fs::write(root.join("main.rs"), "// comment\n\nfn main() {}\n").unwrap();
     }
     for format in ["table", "markdown", "json"] {
-        let output = Command::new(env!("CARGO_BIN_EXE_locmetry"))
+        let output = common::locmetry()
             .current_dir(temp.path())
             .args([
                 "workspace",
