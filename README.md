@@ -102,13 +102,14 @@ The 30-row budget limits additional detail; existing top-level rows are retained
 | --- | --- |
 | Measure another project | `locmetry --root ../service` |
 | Inspect scope, classification and coverage notes | `locmetry --verbose` |
-| List the data and documentation files behind “Not source code” | `locmetry --files --output -` with a [`jq` filter on `kind`](docs/guides/reports.md#not-source-code-which-files-are-data-or-documentation) |
 | Measure a subfolder with project policy and module context | `locmetry --subfolder web/src` |
 | Explain a file's classification or missing counts | `locmetry explain web/src/orders/Order.test.ts` |
 | Save full JSON with per-file decisions outside the root | `locmetry --files --output ../report.json` |
 | Save a Markdown report | `locmetry --format markdown --output ../report.md` |
 | Measure repositories together, each with its own policy | `locmetry workspace --root ../web --root ../api` |
 | Inspect the configuration contract | `locmetry --schema config` |
+
+`locmetry --help` ends with the same examples. Verbose tables total data and documentation files under “Not source code”; to list them, [filter full JSON by `kind`](docs/guides/reports.md#not-source-code-which-files-are-data-or-documentation).
 
 Without explicit options, a terminal gets a table and a pipe gets a compact JSON headline. `--output` defaults to full JSON; choose `--format table` or `--format markdown` explicitly for those exports. File exports are silent on stdout, and the extension does not select the format. [Output routing and reports](docs/guides/reports.md#choose-content-and-destination) explains the choices and protected destinations.
 

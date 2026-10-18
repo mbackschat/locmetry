@@ -79,11 +79,41 @@ fn default_format(stdout_is_terminal: bool, output_given: bool) -> Format {
     }
 }
 
+// A macro rather than a const because `concat!` accepts only literals.
+macro_rules! root_after_help {
+    () => {
+        "Run locmetry for source counts by language. Add --folders for the folder table, or --verbose to inspect classification, scope and coverage notes. For optional project configuration, use locmetry --guide configure.\n\nCommand names are reserved. To measure a directory named compare, use ./compare or --root compare."
+    };
+}
+
 #[derive(Parser)]
 #[command(
     version,
     about = "Measure source code by language, folder, and purpose: production, test, or unclassified. Defaults to a table on a terminal, a JSON headline in pipes. --output FILE saves only to that file, defaulting to full JSON; --format overrides the format.",
-    after_help = "Run locmetry for source counts by language. Add --folders for the folder table, or --verbose to inspect classification, scope and coverage notes. For optional project configuration, use locmetry --guide configure.\n\nCommand names are reserved. To measure a directory named compare, use ./compare or --root compare."
+    after_help = root_after_help!(),
+    // The README "Common commands" table mirrors these examples; tests/readme.rs enforces it.
+    after_long_help = concat!(
+        root_after_help!(),
+        "\n\nExamples:
+  Measure another project:
+    locmetry --root ../service
+  Inspect scope, classification and coverage notes:
+    locmetry --verbose
+  Measure a subfolder with project policy and module context:
+    locmetry --subfolder web/src
+  Explain a file's classification or missing counts:
+    locmetry explain web/src/orders/Order.test.ts
+  Save full JSON with per-file decisions outside the root:
+    locmetry --files --output ../report.json
+  Save a Markdown report:
+    locmetry --format markdown --output ../report.md
+  Measure repositories together, each with its own policy:
+    locmetry workspace --root ../web --root ../api
+  Inspect the configuration contract:
+    locmetry --schema config
+
+For workflows and saved-report recipes, use locmetry --guide TOPIC with a topic listed under --guide."
+    )
 )]
 struct Cli {
     #[command(subcommand)]

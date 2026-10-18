@@ -249,3 +249,57 @@ fn refresh_readme_tables() {
     }
     fs::write(path, readme).unwrap();
 }
+
+fn help(flag: &str) -> String {
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_locmetry"))
+        .arg(flag)
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    String::from_utf8(output.stdout).unwrap()
+}
+
+// Long help owns the examples; the README table is a checked copy, so neither can drift.
+#[test]
+fn readme_common_commands_mirror_long_help_examples() {
+    let long = help("--help");
+    let examples: Vec<(&str, &str)> = long
+        .split_once("\nExamples:\n")
+        .expect("long help ends with examples")
+        .1
+        .split("\n\n")
+        .next()
+        .unwrap()
+        .lines()
+        .collect::<Vec<_>>()
+        .chunks(2)
+        .map(|pair| {
+            let task = pair[0].strip_prefix("  ").unwrap();
+            let command = pair[1].strip_prefix("    ").unwrap();
+            (task.strip_suffix(':').unwrap(), command)
+        })
+        .collect();
+    let readme = fs::read_to_string("README.md").unwrap();
+    let table: Vec<(&str, &str)> = readme
+        .split_once("## Common commands\n\n| Task | Command |\n| --- | --- |\n")
+        .unwrap()
+        .1
+        .lines()
+        .take_while(|line| line.starts_with('|'))
+        .map(|row| {
+            let (task, command) = row
+                .strip_prefix("| ")
+                .and_then(|row| row.strip_suffix(" |"))
+                .and_then(|row| row.split_once(" | "))
+                .unwrap();
+            (task, command.trim_matches('`'))
+        })
+        .collect();
+    assert!(!examples.is_empty());
+    assert_eq!(
+        table, examples,
+        "edit the examples in src/main.rs `after_long_help`, then mirror them in README"
+    );
+    assert_eq!(help("help"), long);
+    assert!(!help("-h").contains("Examples:"));
+}
