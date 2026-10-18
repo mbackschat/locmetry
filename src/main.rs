@@ -253,6 +253,10 @@ struct SharedArgs {
     /// Include classification, scope and coverage notes in table output.
     #[arg(long)]
     verbose: bool,
+    /// Chart each table row's share of Code, split by purpose, below the table;
+    /// bars use the terminal width (COLUMNS overrides it). Table format only.
+    #[arg(long)]
+    bars: bool,
     /// Result format [default: json with --output; otherwise table on a terminal, headline in pipes].
     #[arg(long, value_enum)]
     format: Option<Format>,
@@ -434,6 +438,23 @@ impl Destination<'_> {
         terminal_theme(self.path.is_none() && io::stdout().is_terminal())
     }
 
+    /// Columns available to share bars: `COLUMNS` when set, as for other
+    /// terminal programs, then the terminal's width, else a conventional 80.
+    fn columns(&self) -> usize {
+        std::env::var("COLUMNS")
+            .ok()
+            .and_then(|columns| columns.parse().ok())
+            .filter(|columns| *columns > 0)
+            .or_else(|| {
+                self.path
+                    .is_none()
+                    .then(terminal_size::terminal_size)
+                    .flatten()
+                    .map(|(width, _)| usize::from(width.0))
+            })
+            .unwrap_or(80)
+    }
+
     fn write(&self, text: &str) -> Result<()> {
         match self.path {
             Some(path) => write_report(path, text),
@@ -447,6 +468,12 @@ fn warn_ineffective_options(shared: &SharedArgs, format: Option<Format>) {
         stderr_message(
             Role::Warning,
             "--verbose has no effect here; it applies only to table output",
+        );
+    }
+    if shared.bars && format != Some(Format::Table) {
+        stderr_message(
+            Role::Warning,
+            "--bars has no effect here; it applies only to table output",
         );
     }
     if shared.categories && format != Some(Format::Table) {
@@ -989,6 +1016,7 @@ fn report(
                 order,
                 theme: destination.theme(),
                 folder_rows: destination.folder_rows,
+                bars: shared.bars.then(|| destination.columns()),
             },
         ),
         Format::Markdown => {

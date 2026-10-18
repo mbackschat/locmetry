@@ -119,22 +119,31 @@ fn repository_rows(
         row.extend([ratio, share]);
         row
     };
-    let empty = Summary::default();
+    let body = member_totals(summary, members, order)
+        .into_iter()
+        .map(|(name, totals)| cells(&name, totals))
+        .collect();
+    (body, cells("Total", &summary.totals))
+}
+
+/// Each member's recursive totals, in table row order.
+fn member_totals<'a>(
+    summary: &'a ReportSummary,
+    members: &[MemberView],
+    order: RowOrder,
+) -> Vec<(String, &'a Summary)> {
+    static EMPTY: std::sync::LazyLock<Summary> = std::sync::LazyLock::new(Summary::default);
     let rows = members
         .iter()
         .map(|member| {
             let totals = summary
                 .folders
                 .get(&member.name)
-                .map_or(&empty, |folder| &folder.recursive);
+                .map_or(&*EMPTY, |folder| &folder.recursive);
             (member.name.clone(), totals)
         })
         .collect();
-    let body = ordered(rows, |totals| totals.source.code, order)
-        .into_iter()
-        .map(|(name, totals)| cells(&name, totals))
-        .collect();
-    (body, cells("Total", &summary.totals))
+    ordered(rows, |totals| totals.source.code, order)
 }
 
 /// Legends that state how a table's columns add up; readers otherwise
@@ -672,6 +681,110 @@ fn text_table(
     output
 }
 
+/// Glyphs per purpose, in `Purpose::ALL` order; distinct shapes keep the split
+/// readable without color, as human presentation requires.
+const BAR_GLYPHS: [char; 3] = ['█', '▓', '░'];
+/// Bar cells: a readable minimum, and a maximum beyond which wider terminals
+/// add length without adding legible detail.
+const BAR_CELLS: std::ops::RangeInclusive<usize> = 10..=100;
+
+/// Bars under a table comparing its rows' Code, split by purpose, after each
+/// row's percentage of `total` Code. The largest row fills the width `columns`
+/// leaves after label and percentage, so the bars never depend on how wide the
+/// table above them is.
+fn share_bars(rows: &[(String, [u64; 3])], total: u64, columns: usize, theme: Theme) -> String {
+    let rows: Vec<(String, [u64; 3])> = rows
+        .iter()
+        .map(|(label, code)| (plain(label), *code))
+        .collect();
+    let label_width = rows
+        .iter()
+        .map(|(label, _)| label.chars().count())
+        .max()
+        .unwrap_or(0);
+    let share = |code: u64| match total {
+        0 => "-".to_string(),
+        _ => format!("{:.1}%", code as f64 * 100.0 / total as f64),
+    };
+    let shares: Vec<String> = rows
+        .iter()
+        .map(|(_, code)| share(code.iter().sum()))
+        .collect();
+    let share_width = shares.iter().map(String::len).max().unwrap_or(0);
+    let width = columns
+        .saturating_sub(1 + label_width + 2 + 2 + share_width)
+        .clamp(*BAR_CELLS.start(), *BAR_CELLS.end());
+    let largest = rows
+        .iter()
+        .map(|(_, code)| code.iter().sum())
+        .max()
+        .unwrap_or(0);
+    let mut output = format!(" {}", theme.paint(Role::Heading, "Code share"));
+    for (purpose, glyph) in Purpose::ALL.into_iter().zip(BAR_GLYPHS) {
+        let name = match purpose {
+            Purpose::Production => "Production",
+            Purpose::Test => "Test",
+            Purpose::Unclassified => "Unclassified",
+        };
+        output += "  ";
+        output += &theme.paint(Role::Purpose(purpose), &format!("{glyph} {name}"));
+    }
+    output += "\n";
+    for ((label, code), share) in rows.iter().zip(shares) {
+        let cells = bar_cells(code, largest, width);
+        let mut bar = String::new();
+        for (index, count) in cells.into_iter().enumerate() {
+            if count > 0 {
+                let glyphs = BAR_GLYPHS[index].to_string().repeat(count);
+                bar += &theme.paint(Role::Purpose(Purpose::ALL[index]), &glyphs);
+            }
+        }
+        let row_code: u64 = code.iter().sum();
+        if bar.is_empty() && row_code > 0 {
+            // Too small for one cell: a sliver in the row's largest purpose.
+            let largest = (0..3)
+                .max_by_key(|index| (code[*index], 3 - index))
+                .unwrap();
+            bar += &theme.paint(Role::Purpose(Purpose::ALL[largest]), "▏");
+        }
+        let share = match row_code {
+            0 => theme.paint(Role::Muted, &format!("{share:>share_width$}")),
+            _ => format!("{share:>share_width$}"),
+        };
+        output += &format!(
+            " {}  {share}",
+            theme.paint(Role::Heading, &format!("{label:<label_width$}"))
+        );
+        if !bar.is_empty() {
+            output += &format!("  {bar}");
+        }
+        output += "\n";
+    }
+    output
+}
+
+/// Whole cells per purpose: the row's length rounds its fraction of `largest`
+/// across `width`, and largest remainders distribute it so the segments add up
+/// exactly.
+fn bar_cells(code: &[u64; 3], largest: u64, width: usize) -> [usize; 3] {
+    let row: u64 = code.iter().sum();
+    if largest == 0 || row == 0 {
+        return [0; 3];
+    }
+    let (row, largest, width) = (row as u128, largest as u128, width as u128);
+    let length = (row * width * 2 + largest) / (largest * 2);
+    let mut cells = code.map(|code| (code as u128 * length / row) as usize);
+    let mut remainders: Vec<(u128, usize)> = (0..3)
+        .map(|index| (code[index] as u128 * length % row, index))
+        .collect();
+    remainders.sort_by(|a, b| b.0.cmp(&a.0).then(a.1.cmp(&b.1)));
+    let missing = length as usize - cells.iter().sum::<usize>();
+    for (_, index) in remainders.into_iter().take(missing) {
+        cells[index] += 1;
+    }
+    cells
+}
+
 /// Label of a folder share; `.` holds the files directly in the scan root.
 fn folder_label(folder: &str) -> &str {
     match folder {
@@ -768,6 +881,8 @@ pub struct TableOptions {
     pub order: RowOrder,
     pub theme: Theme,
     pub folder_rows: Option<usize>,
+    /// Terminal columns for share bars below each table; `None` omits them.
+    pub bars: Option<usize>,
 }
 
 /// Render a measurement table using semantic presentation roles.
@@ -792,6 +907,7 @@ pub fn render_table_with_theme(
             order,
             theme,
             folder_rows: None,
+            bars: None,
         },
     )
 }
@@ -825,6 +941,7 @@ pub fn render_table_with_options(
         order,
         theme,
         folder_rows,
+        bars,
     } = options;
     let languages = ordered(
         source_languages(rows).into_iter().collect(),
@@ -903,6 +1020,18 @@ pub fn render_table_with_options(
     for legend in [LANGUAGE_LEGEND, LANGUAGE_RATIO_NOTE] {
         output += &format!(" {}\n", theme.paint(Role::Muted, legend));
     }
+    let total_code = summary.totals.source.code;
+    if let Some(columns) = bars {
+        let rows: Vec<_> = languages
+            .iter()
+            .map(|(language, (_, purposes))| {
+                let code = Purpose::ALL.map(|purpose| purposes.get(&purpose).copied().unwrap_or(0));
+                (language.clone(), code)
+            })
+            .collect();
+        output += "\n";
+        output += &share_bars(&rows, total_code, columns, theme);
+    }
 
     // A workspace's top-level folders are its members, so repository rows,
     // which add the test ratio and share, take the folder rows' place.
@@ -922,6 +1051,19 @@ pub fn render_table_with_options(
             theme,
         );
         output += &format!(" {}\n", theme.paint(Role::Muted, REPOSITORY_LEGEND));
+        if let Some(columns) = bars {
+            let rows: Vec<_> = member_totals(summary, findings.members, order)
+                .into_iter()
+                .map(|(name, totals)| {
+                    (
+                        name,
+                        Purpose::ALL.map(|purpose| totals.purpose(purpose).code),
+                    )
+                })
+                .collect();
+            output += "\n";
+            output += &share_bars(&rows, total_code, columns, theme);
+        }
     }
     if findings.members.is_empty() && (show_folders || folder_rows.is_some()) {
         let adaptive =
@@ -984,6 +1126,18 @@ pub fn render_table_with_options(
                 if let Some(hint) = &view.budget_hint {
                     output += &format!(" {}\n", theme.paint(Role::Muted, &plain(hint)));
                 }
+            }
+            if let Some(columns) = bars {
+                let rows: Vec<_> = folders
+                    .iter()
+                    .map(|folder| {
+                        let code = Purpose::ALL
+                            .map(|purpose| folder.purposes.get(&purpose).copied().unwrap_or(0));
+                        (folder.label(), code)
+                    })
+                    .collect();
+                output += "\n";
+                output += &share_bars(&rows, total_code, columns, theme);
             }
         }
     }
@@ -1536,6 +1690,54 @@ mod tests {
         assert!(body.contains("\x1b[90m           0\x1b[0m"), "{body}");
         assert!(total.contains("\x1b[1;32m         5\x1b[0m"), "{total}");
         assert!(total.contains("\x1b[1;35m   4\x1b[0m"), "{total}");
+    }
+
+    /// The largest row fills the bar; others scale to it, split by purpose into
+    /// whole cells that add up to their length. Percentages are of total Code,
+    /// and the glyphs keep purposes apart without color.
+    #[test]
+    fn share_bars_split_each_row_by_purpose_within_the_available_width() {
+        let rows = [
+            ("api".to_string(), [6, 3, 1]),
+            ("web".to_string(), [0, 0, 5]),
+            ("ops".to_string(), [4, 0, 0]),
+            ("dev".to_string(), [0, 1, 0]),
+        ];
+        let plain = share_bars(&rows, 20, 33, Theme::PLAIN);
+        assert_eq!(
+            plain,
+            " Code share  █ Production  ▓ Test  ░ Unclassified\n \
+             api  50.0%  ████████████▓▓▓▓▓▓░░\n \
+             web  25.0%  ░░░░░░░░░░\n \
+             ops  20.0%  ████████\n \
+             dev   5.0%  ▓▓\n"
+        );
+        let styled = share_bars(&rows, 20, 33, Theme::TERMINAL);
+        assert!(
+            styled.contains("\x1b[32m████████████\x1b[0m\x1b[35m▓▓▓▓▓▓\x1b[0m\x1b[34m░░\x1b[0m")
+        );
+        assert_eq!(unstyled(&styled), plain);
+    }
+
+    /// A row too small for one cell still shows a sliver; empty rows show none.
+    /// The bar keeps a readable minimum and stops at 100 cells, one per percent.
+    #[test]
+    fn share_bars_mark_slivers_and_clamp_their_width() {
+        let rows = [
+            ("big".to_string(), [999, 0, 0]),
+            ("one".to_string(), [0, 1, 0]),
+            ("nil".to_string(), [0, 0, 0]),
+        ];
+        let text = share_bars(&rows, 1000, 33, Theme::PLAIN);
+        assert!(text.contains("\n one   0.1%  ▏\n"), "{text}");
+        assert!(text.contains("\n nil   0.0%\n"), "{text}");
+        let bar = |columns| {
+            let text = share_bars(&rows, 1000, columns, Theme::PLAIN);
+            let line = text.lines().nth(1).unwrap().to_string();
+            line.chars().filter(|c| *c == '█').count()
+        };
+        assert_eq!(bar(10), 10);
+        assert_eq!(bar(500), 100);
     }
 
     /// Cyan marks only the strong column, so the Total row stays bold without

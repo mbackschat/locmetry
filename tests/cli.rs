@@ -317,7 +317,46 @@ fn language_test_ratio_totals_divide_summed_counts() {
     );
 }
 
-/// Row positions of `labels` in `text`, to compare orders without pinning layout.
+/// Share bars follow each table and fit the terminal width they are given,
+/// however wide the table above them is.
+#[test]
+fn bars_follow_language_and_folder_tables_within_the_terminal_width() {
+    let temp = project(&[
+        (".locmetryrc", APP_RULE),
+        ("src/lib.rs", "fn a() {}\nfn b() {}\nfn c() {}\n"),
+        ("tests/it.rs", "fn t() {}\n"),
+    ]);
+    let root = temp.path().join("project");
+    let output = locmetry()
+        .current_dir(&root)
+        .env("COLUMNS", "40")
+        .args(["--format", "table", "--folders", "--bars"])
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    let text = String::from_utf8(output.stdout).unwrap();
+    let charts: Vec<_> = text.match_indices("\n Code share ").collect();
+    assert_eq!(charts.len(), 2, "{text}");
+    assert!(
+        text.contains("\n Rust  100.0%  ███████████████████▓▓▓▓▓▓\n"),
+        "{text}"
+    );
+    assert!(
+        text.contains("\n src    75.0%  █████████████████████████\n"),
+        "{text}"
+    );
+    assert!(text.contains("\n tests  25.0%  ▓▓▓▓▓▓▓▓\n"), "{text}");
+    let json = locmetry()
+        .current_dir(&root)
+        .args(["--format", "json", "--bars"])
+        .output()
+        .unwrap();
+    assert!(String::from_utf8(json.stderr)
+        .unwrap()
+        .contains("--bars has no effect here; it applies only to table output"));
+}
+
+/// Row positions of `labels` in `text`/// Row positions of `labels` in `text`, to compare orders without pinning layout.
 fn positions(text: &str, labels: &[&str]) -> Vec<usize> {
     labels
         .iter()

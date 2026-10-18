@@ -410,6 +410,7 @@ fn adaptive_styling_preserves_plain_alignment_and_mutes_the_legend() {
                 order: locmetry::RowOrder::Code,
                 theme,
                 folder_rows: Some(3),
+                bars: None,
             },
         )
     };

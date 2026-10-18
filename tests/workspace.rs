@@ -652,3 +652,49 @@ fn regular_runs_have_no_repository_dimension() {
         assert!(!table.contains("Repositor"), "{table}");
     }
 }
+
+/// Workspace bars chart repository shares under the repository table, which
+/// takes the folder table's place, so the shares cover the workspace once.
+#[test]
+fn workspace_bars_chart_repository_shares() {
+    let temp = workspace();
+    let output = locmetry(
+        temp.path(),
+        &[
+            "workspace",
+            "--root",
+            "web",
+            "--root",
+            "api",
+            "--format",
+            "table",
+            "--bars",
+        ],
+    );
+    assert!(output.status.success());
+    let table = String::from_utf8(output.stdout).unwrap();
+    let charts: Vec<_> = table.split("\n Code share ").skip(1).collect();
+    assert_eq!(charts.len(), 2, "{table}");
+    let repositories = charts[1].split("\n\n").next().unwrap();
+    let shares: Vec<f64> = repositories
+        .lines()
+        .skip(1)
+        .map(|line| {
+            assert!(
+                line.starts_with(" web ") || line.starts_with(" api "),
+                "{line}"
+            );
+            line.split_whitespace()
+                .nth(1)
+                .unwrap()
+                .trim_end_matches('%')
+                .parse()
+                .unwrap()
+        })
+        .collect();
+    assert_eq!(shares.len(), 2, "{repositories}");
+    assert!(
+        (shares.iter().sum::<f64>() - 100.0).abs() < 0.11,
+        "{repositories}"
+    );
+}
