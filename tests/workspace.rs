@@ -712,3 +712,28 @@ fn workspace_bars_chart_repository_shares() {
         "{repositories}"
     );
 }
+
+/// A workspace prints its repository table beside the saved report too.
+#[test]
+fn workspace_print_shows_the_table_beside_the_saved_report() {
+    let temp = workspace();
+    let saved = temp.path().join("report.json");
+    let output = locmetry(
+        temp.path(),
+        &[
+            "workspace",
+            "--root",
+            "web",
+            "--root",
+            "api",
+            "--output",
+            saved.to_str().unwrap(),
+            "--print",
+            "table",
+        ],
+    );
+    assert!(output.status.success());
+    let printed = String::from_utf8(output.stdout).unwrap();
+    assert!(printed.contains("\n Repository "), "{printed}");
+    assert!(fs::read_to_string(saved).unwrap().contains("\"members\""));
+}

@@ -105,6 +105,8 @@ macro_rules! root_after_help {
     locmetry explain web/src/orders/Order.test.ts
   Save full JSON with per-file decisions outside the root:
     locmetry --files --output ../report.json
+  Save full JSON and print the table from one scan, as for agents:
+    locmetry --output ../report.json --print table
   Save a Markdown report:
     locmetry --format markdown --output ../report.md
   Measure repositories together, each with its own policy:
@@ -242,8 +244,13 @@ struct SharedArgs {
     no_user_config: bool,
     /// Write only to FILE, outside the scan root; - selects stdout.
     /// Defaults to full JSON; --format overrides it. File extensions do not select a format.
+    /// Add --print table to also print the overview from the same run.
     #[arg(long, value_name = "FILE")]
     output: Option<PathBuf>,
+    /// With --output FILE, also print the same measurement to stdout in FORMAT,
+    /// such as table for an overview or headline for compact JSON.
+    #[arg(long, value_enum, value_name = "FORMAT")]
+    print: Option<Format>,
     /// Include per-file records; requires full JSON (--format json or --output FILE).
     #[arg(long)]
     files: bool,
@@ -412,16 +419,23 @@ struct Results {
 struct Destination<'a> {
     path: Option<&'a Path>,
     format: Format,
+    /// A second view of the same measurement for stdout, beside a saved file.
+    print: Option<Format>,
     folders: bool,
     folder_rows: Option<usize>,
 }
 
 fn destination(shared: &SharedArgs) -> Result<Destination<'_>> {
-    let destination = output_destination(&shared.output, shared.format);
+    let mut destination = output_destination(&shared.output, shared.format);
     anyhow::ensure!(
         !shared.files || destination.format == Format::Json,
         "--files adds per-file records only to full JSON; use --format json (or --output FILE without a conflicting --format)"
     );
+    anyhow::ensure!(
+        shared.print.is_none() || destination.path.is_some(),
+        "--print requires --output FILE; without a saved file, stdout already receives the result"
+    );
+    destination.print = shared.print;
     Ok(destination)
 }
 
@@ -432,6 +446,7 @@ fn output_destination(output: &Option<PathBuf>, format: Option<Format>) -> Desti
     Destination {
         path,
         format,
+        print: None,
         folders: false,
         folder_rows: None,
     }
@@ -442,21 +457,10 @@ impl Destination<'_> {
         terminal_theme(self.path.is_none() && io::stdout().is_terminal())
     }
 
-    /// Columns available to share bars: `COLUMNS` when set, as for other
-    /// terminal programs, then the terminal's width, else a conventional 80.
-    fn columns(&self) -> usize {
-        std::env::var("COLUMNS")
-            .ok()
-            .and_then(|columns| columns.parse().ok())
-            .filter(|columns| *columns > 0)
-            .or_else(|| {
-                self.path
-                    .is_none()
-                    .then(terminal_size::terminal_size)
-                    .flatten()
-                    .map(|(width, _)| usize::from(width.0))
-            })
-            .unwrap_or(80)
+    /// Whether the saved result or the printed view uses `format`, so the
+    /// options shaping that format take effect.
+    fn shows(&self, format: Format) -> bool {
+        self.format == format || self.print == Some(format)
     }
 
     fn write(&self, text: &str) -> Result<()> {
@@ -467,32 +471,39 @@ impl Destination<'_> {
     }
 }
 
-fn warn_ineffective_options(shared: &SharedArgs, format: Option<Format>) {
-    if shared.verbose && format != Some(Format::Table) {
-        stderr_message(
-            Role::Warning,
-            "--verbose has no effect here; it applies only to table output",
-        );
+/// Columns available to share bars: `COLUMNS` when set, as for other terminal
+/// programs, then the width of a stdout terminal, else a conventional 80.
+fn bar_columns(stdout: bool) -> usize {
+    std::env::var("COLUMNS")
+        .ok()
+        .and_then(|columns| columns.parse().ok())
+        .filter(|columns| *columns > 0)
+        .or_else(|| {
+            stdout
+                .then(terminal_size::terminal_size)
+                .flatten()
+                .map(|(width, _)| usize::from(width.0))
+        })
+        .unwrap_or(80)
+}
+
+fn warn_ineffective_options(shared: &SharedArgs, destination: &Destination) {
+    if !destination.shows(Format::Table) {
+        for (given, option) in [
+            (shared.verbose, "--verbose"),
+            (shared.bars, "--bars"),
+            (shared.no_bars, "--no-bars"),
+            (shared.categories, "--categories"),
+        ] {
+            if given {
+                stderr_message(
+                    Role::Warning,
+                    format_args!("{option} has no effect here; it applies only to table output"),
+                );
+            }
+        }
     }
-    if shared.bars && format != Some(Format::Table) {
-        stderr_message(
-            Role::Warning,
-            "--bars has no effect here; it applies only to table output",
-        );
-    }
-    if shared.no_bars && format != Some(Format::Table) {
-        stderr_message(
-            Role::Warning,
-            "--no-bars has no effect here; it applies only to table output",
-        );
-    }
-    if shared.categories && format != Some(Format::Table) {
-        stderr_message(
-            Role::Warning,
-            "--categories has no effect here; it applies only to table output",
-        );
-    }
-    if shared.depth_explicit && format != Some(Format::Markdown) {
+    if shared.depth_explicit && !destination.shows(Format::Markdown) {
         stderr_message(
             Role::Warning,
             "--depth has no effect here; it applies only to Markdown output",
@@ -664,19 +675,19 @@ fn run_root(
     let mut destination = destination(shared)?;
     if folder_rows.is_some() {
         anyhow::ensure!(
-            destination.format == Format::Table,
-            "--folder-rows requires table output; add --format table"
+            destination.shows(Format::Table),
+            "--folder-rows requires table output; add --format table or --print table"
         );
     }
     destination.folders = folders;
     destination.folder_rows = folder_rows;
-    if folders && destination.format != Format::Table {
+    if folders && !destination.shows(Format::Table) {
         stderr_message(
             Role::Warning,
             "--folders has no effect here; it applies only to table output",
         );
     }
-    warn_ineffective_options(shared, Some(destination.format));
+    warn_ineffective_options(shared, &destination);
     let user_path = user_defaults(shared.no_user_config);
     let overrides = ScopeOverrides {
         hidden: args.hidden,
@@ -798,7 +809,7 @@ fn workspace_members(roots: &[PathBuf]) -> Result<Vec<(String, PathBuf)>> {
 fn run_workspace(args: &WorkspaceArgs) -> Result<Outcome> {
     let shared = &args.shared;
     let destination = destination(shared)?;
-    warn_ineffective_options(shared, Some(destination.format));
+    warn_ineffective_options(shared, &destination);
     let workspace_path = args
         .file
         .as_deref()
@@ -1045,42 +1056,39 @@ fn report(
         Sort::Code => RowOrder::Code,
         Sort::Name => RowOrder::Name,
     };
-    let mut human = match format {
-        Format::Table => render_table_with_options(
-            &summary,
-            &rows,
-            &findings,
-            TableOptions {
-                categories: shared.categories,
-                folders: destination.folders,
-                verbose: shared.verbose,
-                order,
-                theme: destination.theme(),
-                folder_rows: destination.folder_rows,
-                bars: bar_mode(
-                    shared.bars,
-                    shared.no_bars,
-                    destination.path.is_none() && io::stdout().is_terminal(),
-                    destination.columns(),
-                ),
-            },
-        ),
-        Format::Markdown => {
-            render_markdown(&project, &summary, &rows, &findings, shared.depth, order)
-        }
-        Format::Json | Format::Headline => String::new(),
-    };
-    if inaccurate && matches!(format, Format::Table | Format::Markdown) {
-        let theme = match format {
-            Format::Markdown => Theme::MARKDOWN,
-            _ => destination.theme(),
+    // Table and Markdown views; `stdout` decides styling and automatic bars.
+    let human = |format: Format, stdout: bool| {
+        let terminal = stdout && io::stdout().is_terminal();
+        let mut human = match format {
+            Format::Table => render_table_with_options(
+                &summary,
+                &rows,
+                &findings,
+                TableOptions {
+                    categories: shared.categories,
+                    folders: destination.folders,
+                    verbose: shared.verbose,
+                    order,
+                    theme: terminal_theme(terminal),
+                    folder_rows: destination.folder_rows,
+                    bars: bar_mode(shared.bars, shared.no_bars, terminal, bar_columns(stdout)),
+                },
+            ),
+            Format::Markdown => {
+                render_markdown(&project, &summary, &rows, &findings, shared.depth, order)
+            }
+            Format::Json | Format::Headline => return String::new(),
         };
-        human.push_str(&format!(
-            "\n{}; inspect the JSON metadata.\n",
-            theme.paint(Role::Warning, "Backend reported incomplete counts")
-        ));
-    }
-    if matches!(format, Format::Table | Format::Markdown) {
+        if inaccurate {
+            let theme = match format {
+                Format::Markdown => Theme::MARKDOWN,
+                _ => terminal_theme(terminal),
+            };
+            human.push_str(&format!(
+                "\n{}; inspect the JSON metadata.\n",
+                theme.paint(Role::Warning, "Backend reported incomplete counts")
+            ));
+        }
         // `Measured at:` stays the documented final line; the roots precede it.
         let separator = match format {
             Format::Markdown => "\n\n",
@@ -1091,7 +1099,10 @@ fn report(
             measured_roots(&location, format == Format::Markdown),
             locmetry::measurement_time(measured_at)
         ));
-    }
+        human
+    };
+    let saved_human = human(format, destination.path.is_none());
+    let printed = destination.print.map(|print| (print, human(print, true)));
     let mut member_totals = BTreeMap::new();
     for member in &members {
         member_totals.insert(
@@ -1193,12 +1204,23 @@ fn report(
             .then(|| rows.iter().map(contract::File::from).collect()),
         report: None,
     };
-    let text = match format {
-        Format::Json => report_text(&serde_json::to_value(&document)?)?,
-        Format::Headline => format!("{}\n", serde_json::to_string(&document.headline(None))?),
-        Format::Table | Format::Markdown => human,
+    let text = |format: Format, human: String| -> Result<String> {
+        Ok(match format {
+            Format::Json => report_text(&serde_json::to_value(&document)?)?,
+            // `headline` consumes its report; a printed view may need it twice.
+            Format::Headline => format!(
+                "{}\n",
+                serde_json::to_string(&document.clone().headline(None))?
+            ),
+            Format::Table | Format::Markdown => human,
+        })
     };
-    destination.write(&text)?;
+    destination.write(&text(format, saved_human)?)?;
+    if let Some((print, human)) = printed {
+        io::stdout()
+            .lock()
+            .write_all(text(print, human)?.as_bytes())?;
+    }
     if inaccurate {
         let mut failures: Vec<_> = coverage
             .unread

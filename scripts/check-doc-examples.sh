@@ -22,7 +22,7 @@ extract_blocks() {
         section && /^```(sh|bash)$/ { block = 1; number++; next }
         block && /^```$/ { block = 0; next }
         block && (wanted == 0 || wanted == number) {
-            if ($0 ~ /^locmetry .* --output / && $0 !~ / --output -([ ]|$)/ && $0 !~ /\|\|/) {
+            if ($0 ~ /^locmetry .* --output / && $0 !~ / --output -([ ]|$)/ && $0 !~ / --print / && $0 !~ /\|\|/) {
                 print $0 " > export.stdout"
                 print "test ! -s export.stdout"
             } else {
@@ -103,6 +103,11 @@ extract_blocks 'Compare saved measurements' "$temporary/workspace-compare.sh" 2 
 grep -Fxq '| Source code | 3 | 4 | +1 |' "$temporary/workspace-change.md"
 grep -Fxq '| service (both) | 2 | 3 | +1 | 2 | 3 | +1 |' "$temporary/workspace-change.md"
 
+# The agent recipe prints the table and saves full JSON from one scan.
+extract_blocks 'For agents' "$temporary/agents.sh" 1 0
+(cd "$temporary/workflows/service" && bash "$temporary/agents.sh") > "$temporary/agents.stdout"
+grep -q '^ Language ' "$temporary/agents.stdout"
+jq -e '.breakdown | length > 0' "$temporary/workflows/report.json" > /dev/null
 # The same documented inspection recipe must retain an actual partial-input status.
 printf '{}\n' > "$temporary/workflows/service/broken.ipynb"
 status=0

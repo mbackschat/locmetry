@@ -12,10 +12,11 @@ Start with `locmetry --root . --format headline` at the intended project root. T
 | Full JSON on stdout | `locmetry --root . --format json` |
 | Full JSON with per-file decisions | `locmetry --root . --files --format json` |
 | Save a full baseline outside the root | `locmetry --root service --output before.json` |
+| Save a full baseline and print the table, from one scan | `locmetry --root service --output before.json --print table` |
 | Save Markdown | `locmetry --root service --format markdown --output report.md` |
 | Page a plain text report | `locmetry --root service --format table \| less` |
 
-Without explicit options, a terminal gets a table and a pipe gets a headline. Any `--output` defaults to full JSON; explicit `--format` wins. `--output FILE` writes only that file, with empty stdout; `--output -` selects stdout. Extensions do not infer formats. Files are unstyled. `--files` requires full JSON. A headline is not comparison-ready, and cannot reconstruct the omitted baseline later. Aggregate comparison needs full reports, but not per-file records.
+Without explicit options, a terminal gets a table and a pipe gets a headline. Any `--output` defaults to full JSON; explicit `--format` wins. `--output FILE` writes only that file, with empty stdout, unless `--print FORMAT` adds a view of the same measurement there; `--output -` selects stdout. Extensions do not infer formats. Files are unstyled. `--files` requires full JSON. A headline is not comparison-ready, and cannot reconstruct the omitted baseline later. Aggregate comparison needs full reports, but not per-file records.
 
 Default single-project tables show counted source by language, a reconciliation legend and the measurement date. Add `--folders` for the folder table; workspace repository rows remain visible by default. Default tables deliberately omit non-source totals and unrecognized-file counts, and do not prompt for classification. Use `locmetry --format table --verbose` to inspect notes such as “Unclaimed source” and “Not source code”, build inference, Git submodule hints and unused policy. To inspect or refine purpose classification, use `locmetry --guide configure`; `--files --output -` shows each file's rule. Markdown and JSON retain their existing detail. `--verbose` warns without changing the result in non-table measurement formats.
 

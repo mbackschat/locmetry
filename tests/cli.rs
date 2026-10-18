@@ -476,6 +476,55 @@ fn bars_are_never_automatic_in_pipes_and_cannot_be_both_forced_and_refused() {
         .contains("--no-bars has no effect here; it applies only to table output"));
 }
 
+/// One measurement serves an agent twice: `--print` sends a second view to
+/// stdout while `--output` saves the report, and table options shape that view.
+#[test]
+fn print_shows_a_second_view_of_the_saved_measurement() {
+    let temp = project(&[
+        (".locmetryrc", APP_RULE),
+        ("src/lib.rs", "fn a() {}\n"),
+        ("tests/it.rs", "fn t() {}\n"),
+    ]);
+    let root = temp.path().join("project");
+    let saved = temp.path().join("report.json");
+    let saved_arg = saved.to_str().unwrap();
+    let output = run(
+        &root,
+        &[
+            "--output",
+            saved_arg,
+            "--print",
+            "table",
+            "--folders",
+            "--verbose",
+        ],
+    );
+    assert!(output.status.success());
+    assert!(
+        output.stderr.is_empty(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let printed = String::from_utf8(output.stdout).unwrap();
+    assert!(printed.starts_with(" Language "), "{printed}");
+    assert!(printed.contains("\n Folder "), "{printed}");
+    assert!(printed.lines().last().unwrap().starts_with("Measured at: "));
+    let report: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&saved).unwrap()).unwrap();
+    assert!(report["breakdown"].is_array(), "the file keeps full JSON");
+
+    let headline = run(&root, &["--output", saved_arg, "--print", "headline"]);
+    let headline: serde_json::Value = serde_json::from_slice(&headline.stdout).unwrap();
+    assert!(headline["summary"].is_object() && headline.get("breakdown").is_none());
+
+    let alone = run(&root, &["--print", "table"]);
+    assert_eq!(alone.status.code(), Some(1));
+    assert!(alone.stdout.is_empty());
+    assert!(String::from_utf8(alone.stderr)
+        .unwrap()
+        .contains("--print requires --output FILE"));
+}
+
 /// Row positions of `labels` in `text`, to compare orders without pinning layout.
 fn positions(text: &str, labels: &[&str]) -> Vec<usize> {
     labels

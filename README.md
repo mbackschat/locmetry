@@ -105,6 +105,7 @@ The 30-row budget limits additional detail; existing top-level rows are retained
 | Measure a subfolder with project policy and module context | `locmetry --subfolder web/src` |
 | Explain a file's classification or missing counts | `locmetry explain web/src/orders/Order.test.ts` |
 | Save full JSON with per-file decisions outside the root | `locmetry --files --output ../report.json` |
+| Save full JSON and print the table from one scan, as for agents | `locmetry --output ../report.json --print table` |
 | Save a Markdown report | `locmetry --format markdown --output ../report.md` |
 | Measure repositories together, each with its own policy | `locmetry workspace --root ../web --root ../api` |
 | Inspect the configuration contract | `locmetry --schema config` |
@@ -127,6 +128,16 @@ Without explicit options, a terminal gets a table and a pipe gets a compact JSON
 | `--categories` | Show the source purpose/category breakdown in a table. |
 
 Run `locmetry --help` or `locmetry COMMAND --help` for all options. The positional directory is equivalent to `--root`; in scripts, prefer `--root "$directory"` so a directory named `compare` or `workspace` cannot select a command. Command options follow the command name.
+
+### For agents
+
+One call gives an agent both a readable overview and a saved report:
+
+```sh
+locmetry --root . --output ../report.json --print table
+```
+
+Stdout gets the table, unstyled and without share bars in a pipe; the file gets full JSON for queries or a later `locmetry compare`. Use `--print headline` for compact JSON on stdout instead, and `locmetry --schema report` for every field. `--folders` and `--verbose` extend the printed table.
 
 ### Compare saved measurements
 
