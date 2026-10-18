@@ -20,6 +20,8 @@ Run `locmetry` in a project. The illustrative report below shows a hypothetical 
 
 The numbers are invented, not measured from a real checkout. Both tables use the same [data fixture](tests/fixtures/readme/README.md), rendered by Locmetry and checked for consistent totals.
 
+**[Take the sample-project tour](docs/sample-project-tour.md)** to follow the layout, configuration, classification decisions, folder exploration and saved reports from start to finish.
+
 ```sh
 locmetry
 ```

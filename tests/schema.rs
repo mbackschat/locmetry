@@ -54,6 +54,7 @@ fn documented_examples_satisfy_their_schemas() {
     );
     let (workspaces, blocks): (Vec<String>, Vec<String>) = [
         "README.md",
+        "docs/sample-project-tour.md",
         "docs/PRODUCT.md",
         "docs/guides/configure.md",
         "docs/guides/reports.md",
