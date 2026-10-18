@@ -1161,8 +1161,9 @@ fn report(
             _ => "\n",
         };
         let mut context = measured_roots(&location, format == Format::Markdown);
-        // Only tables filter by purpose; their footer keeps the selection visible.
-        if format == Format::Table && !shared.purpose.is_empty() {
+        // Only tables filter by purpose, and only a strict subset filters, as
+        // the table renderer decides; the footer keeps that selection visible.
+        if format == Format::Table && purposes.len() < Purpose::ALL.len() {
             let names: Vec<String> = purposes.iter().map(Purpose::to_string).collect();
             context += &format!("; purposes: {}", names.join(", "));
         }

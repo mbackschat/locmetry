@@ -120,6 +120,27 @@ fn selected_purposes_keep_their_columns_and_choose_the_ratio() {
     );
 }
 
+/// Naming every purpose selects everything: neither the table nor the footer
+/// may present the complete totals as a selection.
+#[test]
+fn selecting_every_purpose_is_no_selection() {
+    let temp = project();
+    let root = temp.path().join("project");
+    let body = |args: &[&str]| {
+        let text = String::from_utf8(run(&root, args, "80").stdout).unwrap();
+        text.split("\nMeasured at:").next().unwrap().to_string()
+    };
+    assert_eq!(
+        body(&[
+            "--format",
+            "table",
+            "--purpose",
+            "production,test,unclassified"
+        ]),
+        body(&["--format", "table"])
+    );
+}
+
 #[test]
 fn purpose_filters_only_tables() {
     let temp = project();
