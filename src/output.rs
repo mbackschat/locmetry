@@ -139,8 +139,11 @@ fn repository_rows(
 
 /// Legends that state how a table's columns add up; readers otherwise
 /// misread Code as a sum of Comments and Blanks.
-const LANGUAGE_LEGEND: &str =
-    "Lines = Code + Comments + Blanks; Production + Test + Unclassified = Code.";
+const LANGUAGE_LEGEND: &str = "Lines = Code + Comments + Blanks; Production + Test + Unclassified = Code; Test/prod = Test / Production.";
+/// Tests often live in another language than their subject, such as Kotlin
+/// tests for Java code; docs/plans/archive/test-production-ratios.md requires the note.
+const LANGUAGE_RATIO_NOTE: &str =
+    "Tests written in another language than the code they test skew per-language Test/prod.";
 const FOLDER_LEGEND: &str =
     "Production + Test + Unclassified = Code; Test/prod = Test / Production.";
 const REPOSITORY_LEGEND: &str = "Production + Test + Unclassified = Code; Test/prod = Test / Production; Share = Code / workspace Code.";
@@ -372,13 +375,26 @@ pub fn render_markdown(
         &other,
         order,
     );
-    table(
-        &mut output,
-        "Source languages",
-        "Language",
-        &summary.totals.source_languages,
+    writeln!(output, "\n## Source languages\n\n{}\n\n| Language | Files | Lines | **Code** | Comments | Blanks | Test/prod |\n| --- | ---: | ---: | ---: | ---: | ---: | ---: |", Theme::MARKDOWN.paint(Role::Muted, LANGUAGE_RATIO_NOTE)).unwrap();
+    for (language, (counts, purposes)) in ordered(
+        source_languages(rows).into_iter().collect(),
+        |(counts, _)| counts.code,
         order,
-    );
+    ) {
+        let code = |purpose| purposes.get(&purpose).copied().unwrap_or(0);
+        writeln!(
+            output,
+            "| {} | {} | {} | {} | {} | {} | {} |",
+            cell(&language),
+            grouped(counts.files),
+            grouped(counts.lines),
+            grouped(counts.code),
+            grouped(counts.comments),
+            grouped(counts.blanks),
+            test_ratio(code(Purpose::Production), code(Purpose::Test))
+        )
+        .unwrap();
+    }
     write!(output, "\n## Folder breakdown\n\n{}\n\n| Folder | Lines | **Code** | Production | Test | Unclassified | Test/prod |\n| --- | ---: | ---: | ---: | ---: | ---: | ---: |\n", Theme::MARKDOWN.paint(Role::Muted, &format!("Recursive source code totals to depth {depth}. Parent rows include their children; do not sum all displayed rows. The report file's additive `breakdown` rows cover every depth. Multi-language files count once physically but contribute to each contained language. Production + Test + Unclassified = Code; Test/prod = Test / Production."))).unwrap();
     // Compare by path components: as plain strings, `web-admin` would sort
     // between `web` and `web/src`, because `-` sorts before `/`.
@@ -780,6 +796,20 @@ pub fn render_table_with_theme(
     )
 }
 
+/// Source counts and code per purpose for each language.
+fn source_languages(rows: &[FileRecord]) -> BTreeMap<String, (Counts, BTreeMap<Purpose, u64>)> {
+    let mut languages = BTreeMap::<String, (Counts, BTreeMap<Purpose, u64>)>::new();
+    for row in breakdown(rows)
+        .iter()
+        .filter(|row| row.kind == Kind::Source)
+    {
+        let (counts, purposes) = languages.entry(row.language.clone()).or_default();
+        counts.add(&row.counts);
+        *purposes.entry(row.purpose).or_default() += row.counts.code;
+    }
+    languages
+}
+
 /// Render terminal tables, optionally partitioning folders within a row budget.
 pub fn render_table_with_options(
     project: &str,
@@ -796,17 +826,8 @@ pub fn render_table_with_options(
         theme,
         folder_rows,
     } = options;
-    let mut languages = BTreeMap::<String, (Counts, BTreeMap<Purpose, u64>)>::new();
-    for row in breakdown(rows)
-        .iter()
-        .filter(|row| row.kind == Kind::Source)
-    {
-        let (counts, purposes) = languages.entry(row.language.clone()).or_default();
-        counts.add(&row.counts);
-        *purposes.entry(row.purpose).or_default() += row.counts.code;
-    }
     let languages = ordered(
-        languages.into_iter().collect(),
+        source_languages(rows).into_iter().collect(),
         |(counts, _)| counts.code,
         order,
     );
@@ -830,9 +851,9 @@ pub fn render_table_with_options(
                 ]
                 .map(grouped),
             );
-            row.extend(purpose_cells(&|purpose| {
-                purposes.get(&purpose).copied().unwrap_or(0)
-            }));
+            let code = |purpose| purposes.get(&purpose).copied().unwrap_or(0);
+            row.extend(purpose_cells(&code));
+            row.push(test_ratio(code(Purpose::Production), code(Purpose::Test)));
             row
         })
         .collect();
@@ -848,9 +869,9 @@ pub fn render_table_with_options(
         ]
         .map(grouped),
     );
-    total.extend(purpose_cells(&|purpose| {
-        summary.totals.purpose(purpose).code
-    }));
+    let code = |purpose| summary.totals.purpose(purpose).code;
+    total.extend(purpose_cells(&code));
+    total.push(test_ratio(code(Purpose::Production), code(Purpose::Test)));
     let project = display_project(project, findings.subfolder);
     let mut output = format!(
         " {}\n",
@@ -867,18 +888,21 @@ pub fn render_table_with_options(
             "Production",
             "Test",
             "Unclassified",
+            "Test/prod",
         ],
         &body,
         Some(total),
         &Layout {
-            breaks: &[4, 6],
+            breaks: &[4, 6, 9],
             strong: Some(3),
-            secondary: &[1, 4, 5],
+            secondary: &[1, 4, 5, 9],
             purposes: Some(6),
         },
         theme,
     );
-    output += &format!(" {}\n", theme.paint(Role::Muted, LANGUAGE_LEGEND));
+    for legend in [LANGUAGE_LEGEND, LANGUAGE_RATIO_NOTE] {
+        output += &format!(" {}\n", theme.paint(Role::Muted, legend));
+    }
 
     // A workspace's top-level folders are its members, so repository rows,
     // which add the test ratio and share, take the folder rows' place.

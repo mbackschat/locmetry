@@ -230,13 +230,14 @@ fn table_format_splits_source_code_by_language_and_purpose() {
     );
     assert!(output.status.success());
     let expected = " project · Source code
- Language  Files  Lines  Code │ Comments  Blanks │ Production  Test  Unclassified
- ─────────────────────────────┼──────────────────┼───────────────────────────────
- Rust          3      5     4 │        1       0 │          2     2             0
- Python        1      1     1 │        0       0 │          0     0             1
- ─────────────────────────────┼──────────────────┼───────────────────────────────
- Total         4      6     5 │        1       0 │          2     2             1
- Lines = Code + Comments + Blanks; Production + Test + Unclassified = Code.
+ Language  Files  Lines  Code │ Comments  Blanks │ Production  Test  Unclassified │ Test/prod
+ ─────────────────────────────┼──────────────────┼────────────────────────────────┼──────────
+ Rust          3      5     4 │        1       0 │          2     2             0 │      1.00
+ Python        1      1     1 │        0       0 │          0     0             1 │         -
+ ─────────────────────────────┼──────────────────┼────────────────────────────────┼──────────
+ Total         4      6     5 │        1       0 │          2     2             1 │      1.00
+ Lines = Code + Comments + Blanks; Production + Test + Unclassified = Code; Test/prod = Test / Production.
+ Tests written in another language than the code they test skew per-language Test/prod.
 
  Folder  Lines  Code │ Production  Test  Unclassified │ Test/prod
  ────────────────────┼────────────────────────────────┼──────────
@@ -272,9 +273,48 @@ fn table_format_splits_source_code_by_language_and_purpose() {
         "| . | 6 | 5 | 2 | 2 | 1 | 1.00 |\n",
         "| src | 3 | 2 | 2 | 0 | 0 | 0.00 |\n",
         "| tests | 2 | 2 | 0 | 2 | 0 | - |\n",
+        "| Language | Files | Lines | **Code** | Comments | Blanks | Test/prod |\n",
+        "| Rust | 3 | 5 | 4 | 1 | 0 | 1.00 |\n",
+        "| Python | 1 | 1 | 1 | 0 | 0 | - |\n",
+        "*Tests written in another language than the code they test skew per-language Test/prod.*",
     ] {
         assert!(markdown.contains(row), "{row:?} missing in:\n{markdown}");
     }
+}
+
+/// A total ratio divides summed Test by summed Production; averaging the row
+/// ratios (3.00 and 0.11) would give 1.56 instead of 0.40.
+#[test]
+fn language_test_ratio_totals_divide_summed_counts() {
+    let production = "x = 1\n".repeat(9);
+    let temp = project(&[
+        (".locmetryrc", APP_RULE),
+        ("src/lib.rs", "fn a() {}\n"),
+        ("tests/it.rs", "fn t() {}\nfn u() {}\nfn v() {}\n"),
+        ("src/app.py", &production),
+        ("tests/test_app.py", "y = 1\n"),
+    ]);
+    let root = temp.path().join("project");
+    let table = String::from_utf8(run(&root, &["--format", "table"]).stdout).unwrap();
+    let ratio = |label: &str| {
+        let line = table
+            .lines()
+            .find(|line| line.starts_with(&format!(" {label} ")))
+            .unwrap();
+        line.rsplit(' ').next().unwrap().to_string()
+    };
+    assert_eq!(ratio("Rust"), "3.00", "{table}");
+    assert_eq!(ratio("Python"), "0.11", "{table}");
+    assert_eq!(ratio("Total"), "0.40", "{table}");
+    let markdown = String::from_utf8(run(&root, &["--format", "markdown"]).stdout).unwrap();
+    assert!(
+        markdown.contains("| Rust | 2 | 4 | 4 | 0 | 0 | 3.00 |\n"),
+        "{markdown}"
+    );
+    assert!(
+        markdown.contains("| Python | 2 | 10 | 10 | 0 | 0 | 0.11 |\n"),
+        "{markdown}"
+    );
 }
 
 /// Row positions of `labels` in `text`, to compare orders without pinning layout.

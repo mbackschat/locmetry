@@ -11,7 +11,7 @@
 
 Status: deferred candidates, not an accepted implementation sequence. [PLAN](../PLAN.md) indexes current work. Read only the relevant section when its trigger applies; implementation requires its recorded scope decision.
 
-The [archived implementation record](archive/measurement-quality-and-net-change.md) preserves completed stages, reviews and source provenance. The [ratio presentation design](test-production-ratios.md) remains separately on hold. The retained sections below preserve the conditional designs and activation conditions; resolved entries are identified explicitly.
+The [archived implementation record](archive/measurement-quality-and-net-change.md) preserves completed stages, reviews and source provenance. The [ratio presentation design](archive/test-production-ratios.md) is implemented. The retained sections below preserve the conditional designs and activation conditions; resolved entries are identified explicitly.
 
 ## Conditional Follow-ups and Preserved Rationales
 

@@ -229,10 +229,7 @@ fn unrecognized_files_alone_do_not_add_default_findings() {
     let text = String::from_utf8(output.stdout).unwrap();
     no_routine_notes(&text);
     assert!(!text.contains("Not counted:"));
-    let after_legend = text
-        .split("Production + Test + Unclassified = Code.\n")
-        .nth(1)
-        .unwrap();
+    let after_legend = text.split("skew per-language Test/prod.\n").nth(1).unwrap();
     assert!(after_legend.trim().starts_with("Measured at:"), "{text}");
     assert_eq!(after_legend.trim().lines().count(), 1);
 }

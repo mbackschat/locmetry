@@ -147,9 +147,9 @@ fn wide_folders_use_scoped_remainders_but_never_hide_one_child() {
         ])
     );
     assert!(counts(&table(root, 2, &[])).contains_key("packages"));
-    assert!(!table(root, 4, &[]).contains("other "));
+    assert!(!table(root, 4, &[]).contains("(other "));
     fs::remove_dir_all(root.join("packages/d")).unwrap();
-    assert!(!table(root, 3, &[]).contains("other "));
+    assert!(!table(root, 3, &[]).contains("(other "));
     source(root, "packages/p.rs", 1);
     assert!(counts(&table(root, 3, &[])).contains_key("packages"));
     assert!(counts(&table(root, 4, &[])).contains_key("packages (direct files)"));

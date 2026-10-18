@@ -7,7 +7,6 @@ These documents own detailed scope and decision gates. [PLAN](../PLAN.md) owns t
 | Document | Status | Date | Summary |
 | --- | --- | --- | --- |
 | [Conditional Measurement and Comparison Follow-ups](measurement-quality-and-net-change.md) | deferred | 2026-10-16 | Conditional capabilities; each needs its recorded trigger and scope decision. |
-| [Deferred Test-to-Production Ratio Presentation](test-production-ratios.md) | deferred | 2026-10-16 | Reviewed ratio design; implementation remains on hold. |
 
 <!-- doc-index:end -->
 

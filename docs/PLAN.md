@@ -16,7 +16,6 @@
 
 ## Ideas — Not Scheduled
 
-- [Neutral language test/production ratios](plans/test-production-ratios.md): implementation remains on hold. The focused design retains the reviewed scope, research limitations, cross-language caveat and pending acceptance checks.
 - [Conditional measurement/comparison capabilities](plans/measurement-quality-and-net-change.md#conditional-follow-ups-and-preserved-rationales): consumer-driven candidates and their triggers, including [per-file comparison](plans/measurement-quality-and-net-change.md#per-file-comparison), generated/minified evidence and duplicate evidence. Ancestor discovery remains outside accepted scope.
 - [Guide usability research](plans/archive/measurement-quality-and-net-change.md#embedded-guidance-implementation--2026-10-16): a comparative trial remains optional, not a runtime or release prerequisite; preserve the limits of the existing single-agent trial.
 - JSON finding grammar, such as “1 unrecognized files”, remains an optional separate cleanup. The comparison-readability changes intentionally preserved JSON message text.
@@ -30,6 +29,7 @@ None. The [proposal index](proposals/README.md) distinguishes active designs fro
 - [Default report output decision](proposals/archive/default-report-output-proposal-redacted.md): reviewed design and acceptance evidence.
 - [Development and release snapshot through 2026-10-16](plans/archive/development-plan-2026-10-16.md): completed work, published releases and their verification links.
 - [Measurement quality and subsequent implementation checkpoints](plans/archive/measurement-quality-and-net-change.md): S1–S5, reviews, accepted decisions and completion evidence.
+- [Test/production ratio design](plans/archive/test-production-ratios.md): research behind neutral, unbanded ratios.
 - [Research index](research/README.md): dated findings and source provenance.
 
 Contributor workflow and check selection belong in [CLAUDE.md](../CLAUDE.md). Update this index only for material scope/status changes; do not duplicate historical completion narratives here.

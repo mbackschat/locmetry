@@ -2,14 +2,16 @@
 
 <!-- doc-status
 {
-  "status": "deferred",
-  "date": "2026-10-16",
-  "summary": "Reviewed ratio design; implementation remains on hold.",
-  "evidence": "[Review disposition](#test-to-production-ratio-presentation--awaiting-further-direction)"
+  "status": "completed",
+  "date": "2026-10-18",
+  "summary": "Neutral language Test/prod ratios implemented; reviewed design and research preserved.",
+  "evidence": "[Human presentation contract](../../PRODUCT.md#human-presentation)"
 }
 -->
 
-This document owns the unimplemented ratio design, its research provenance and pending acceptance checks. Implementation remains on hold. [PLAN](../PLAN.md) indexes the decision; the [historical implementation record](archive/measurement-quality-and-net-change.md#test-to-production-ratio-presentation--awaiting-further-direction) preserves its original context.
+**Historical decision record — implemented 2026-10-18.** The owner lifted the hold, and the selected scope below shipped: language rows and their total gained neutral `Test/prod` ratios in terminal and Markdown tables, with the cross-language legend. [PRODUCT](../../PRODUCT.md#human-presentation) now owns the behavior. Imperative wording, pending checks and limitations below describe the reviewed design, not current guarantees.
+
+This document owns the unimplemented ratio design, its research provenance and pending acceptance checks. Implementation remains on hold. [PLAN](../../PLAN.md) indexes the decision; the [historical implementation record](measurement-quality-and-net-change.md#test-to-production-ratio-presentation--awaiting-further-direction) preserves its original context.
 
 ## Test to Production Ratio Presentation — Awaiting Further Direction
 
@@ -40,4 +42,4 @@ This document owns the unimplemented ratio design, its research provenance and p
 
 **Deferred cue rationale.** The initial alternative was a neutral descriptive `1–3` band with soft amber above `3`; the later review narrowed the cue to an underline above `3` on whole-project rows only, conditional on an unclassified-code check. Both are product heuristics rather than literature-backed limits and are retained only as rejected designs for this change. Revisit discoverability if an actual workflow comparing many repositories demonstrates that outliers are hard to spot; evaluate sorting or a separate note before adding color. No cue implementation is scheduled.
 
-**Pending acceptance checks.** Before implementation is complete, establish independent examples for language ratios, zero denominators and totals calculated from summed counts; include cross-language tests and unequal row sizes to guard against averaging ratios. Check terminal and Markdown language tables, their total rows, and existing folder/workspace views. Confirm positive ratios receive no magnitude-dependent styling, existing gray undefined/zero treatment remains, alignment survives ANSI stripping, `NO_COLOR` and piped output remain plain, Markdown contains no ANSI, and JSON is unchanged. Update [PRODUCT](../PRODUCT.md#human-presentation) and relevant README/measurement guidance alongside the approved behavior change, including the cross-language legend. This documentation-only checkpoint checks the diff and plan references; it makes no implementation or executable-validation claim.
+**Pending acceptance checks.** Before implementation is complete, establish independent examples for language ratios, zero denominators and totals calculated from summed counts; include cross-language tests and unequal row sizes to guard against averaging ratios. Check terminal and Markdown language tables, their total rows, and existing folder/workspace views. Confirm positive ratios receive no magnitude-dependent styling, existing gray undefined/zero treatment remains, alignment survives ANSI stripping, `NO_COLOR` and piped output remain plain, Markdown contains no ANSI, and JSON is unchanged. Update [PRODUCT](../../PRODUCT.md#human-presentation) and relevant README/measurement guidance alongside the approved behavior change, including the cross-language legend. This documentation-only checkpoint checks the diff and plan references; it makes no implementation or executable-validation claim.

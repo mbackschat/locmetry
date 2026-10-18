@@ -107,7 +107,7 @@ fn block<'a>(readme: &'a str, marker: &str) -> &'a str {
 }
 
 fn reconcile(table: &str, groups: &[Group], folders: bool) -> Result<()> {
-    let columns = if folders { 6 } else { 8 };
+    let columns = if folders { 6 } else { 9 };
     let mut coverage = vec![0; groups.len()];
     let mut total_seen = false;
     let mut row_count = 0;
@@ -170,14 +170,13 @@ fn reconcile(table: &str, groups: &[Group], folders: bool) -> Result<()> {
                 "incorrect {label}: {line}"
             );
         }
-        if folders {
-            if purposes[0] == 0 {
-                ensure!(values[5] == "-", "ratio without production: {label}");
-            } else {
-                let actual = values[5].parse::<f64>()?;
-                let ratio = purposes[1] as f64 / purposes[0] as f64;
-                ensure!((actual - ratio).abs() <= 0.005, "incorrect ratio: {label}");
-            }
+        let ratio_cell = values[columns - 1];
+        if purposes[0] == 0 {
+            ensure!(ratio_cell == "-", "ratio without production: {label}");
+        } else {
+            let actual = ratio_cell.parse::<f64>()?;
+            let ratio = purposes[1] as f64 / purposes[0] as f64;
+            ensure!((actual - ratio).abs() <= 0.005, "incorrect ratio: {label}");
         }
         if !is_total {
             row_count += 1;

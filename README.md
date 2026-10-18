@@ -29,20 +29,21 @@ locmetry
 <!-- readme-language -->
 ```text
  acme-orders · Source code
- Language    Files    Lines     Code │ Comments  Blanks │ Production    Test  Unclassified
- ────────────────────────────────────┼──────────────────┼─────────────────────────────────
- Kotlin        538   93,760   74,060 │    7,530  12,170 │     46,040  28,020             0
- TypeScript    173   26,080   21,030 │    1,660   3,390 │     11,130   9,900             0
- TSX            83   16,580   14,020 │      780   1,780 │     14,020       0             0
- Go             90   17,250   13,770 │    1,300   2,180 │      8,050   5,720             0
- Python         55   10,330    7,660 │    1,340   1,330 │      4,760       0         2,900
- Shell           1      290      160 │       90      40 │          0       0           160
- ────────────────────────────────────┼──────────────────┼─────────────────────────────────
- Total         940  164,290  130,700 │   12,700  20,890 │     84,000  43,640         3,060
- Lines = Code + Comments + Blanks; Production + Test + Unclassified = Code.
+ Language    Files    Lines     Code │ Comments  Blanks │ Production    Test  Unclassified │ Test/prod
+ ────────────────────────────────────┼──────────────────┼──────────────────────────────────┼──────────
+ Kotlin        538   93,760   74,060 │    7,530  12,170 │     46,040  28,020             0 │      0.61
+ TypeScript    173   26,080   21,030 │    1,660   3,390 │     11,130   9,900             0 │      0.89
+ TSX            83   16,580   14,020 │      780   1,780 │     14,020       0             0 │      0.00
+ Go             90   17,250   13,770 │    1,300   2,180 │      8,050   5,720             0 │      0.71
+ Python         55   10,330    7,660 │    1,340   1,330 │      4,760       0         2,900 │      0.00
+ Shell           1      290      160 │       90      40 │          0       0           160 │         -
+ ────────────────────────────────────┼──────────────────┼──────────────────────────────────┼──────────
+ Total         940  164,290  130,700 │   12,700  20,890 │     84,000  43,640         3,060 │      0.52
+ Lines = Code + Comments + Blanks; Production + Test + Unclassified = Code; Test/prod = Test / Production.
+ Tests written in another language than the code they test skew per-language Test/prod.
 ```
 
-Code is split by purpose; comments and blanks stay separate. JSON and Markdown files do not inflate source totals. The experiments and wrapper remain counted as Unclassified, for different [reasons](#how-classification-works).
+Code is split by purpose; comments and blanks stay separate. JSON and Markdown files do not inflate source totals. TSX shows `0.00` because its tests are written in TypeScript, as the second legend line warns. The experiments and wrapper remain counted as Unclassified, for different [reasons](#how-classification-works).
 
 To see where the code resides, add adaptive folder detail:
 
