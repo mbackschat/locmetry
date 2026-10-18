@@ -119,7 +119,7 @@ Without explicit options, a terminal gets a table and a pipe gets a compact JSON
 | --- | --- |
 | `--folders` / `--folder-rows N` | Top-level / adaptive folder rows in single-root table output; adaptive rows require table format. |
 | `--verbose` | Add diagnostic notes to tables independently of folder rows. |
-| `--bars` | Chart each language, folder or repository row's share of Code, split by purpose: beside the table when the terminal is wide enough, otherwise below it. |
+| `--bars` / `--no-bars` | Share bars per language, folder or repository row, split by purpose. A terminal shows them beside tables they fit; `--bars` also charts them below other tables and in saved tables, and `--no-bars` omits them. |
 | `--config FILE` | Replace discovery of the root's `.locmetryrc`; patterns still refer to the scan root. |
 | `--exclude GLOB` | Add an exclusion to the effective scope. |
 | `--no-user-config` | Ignore personal defaults, for example when measuring in CI. |

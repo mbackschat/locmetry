@@ -23,8 +23,8 @@ pub use config::{
 pub use modules::{detect as detect_modules, Module, ModuleDetector, DETECTORS};
 pub use output::{
     measurement_time, render_markdown, render_table, render_table_with_options,
-    render_table_with_theme, report_text, validate_output, write_report, Findings, MemberView,
-    RowOrder, TableOptions,
+    render_table_with_theme, report_text, validate_output, write_report, Bars, Findings,
+    MemberView, RowOrder, TableOptions,
 };
 pub use report::{
     breakdown, build_report, build_systems, module_shares, review, submodule_shares,

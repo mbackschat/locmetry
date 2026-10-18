@@ -454,6 +454,28 @@ fn human_reports_end_with_the_measured_root_before_the_time() {
     );
 }
 
+/// Automatic bars belong to a terminal: piped tables stay bar-free even with a
+/// wide `COLUMNS`, and asking for and refusing bars at once is an error.
+#[test]
+fn bars_are_never_automatic_in_pipes_and_cannot_be_both_forced_and_refused() {
+    let temp = project(&[("src/lib.rs", "fn a() {}\n")]);
+    let root = temp.path().join("project");
+    let output = locmetry()
+        .current_dir(&root)
+        .env("COLUMNS", "300")
+        .args(["--format", "table"])
+        .output()
+        .unwrap();
+    let text = String::from_utf8(output.stdout).unwrap();
+    assert!(!text.contains("Share") && !text.contains('█'), "{text}");
+    let both = run(&root, &["--format", "table", "--bars", "--no-bars"]);
+    assert_eq!(both.status.code(), Some(1));
+    let json = run(&root, &["--format", "json", "--no-bars"]);
+    assert!(String::from_utf8(json.stderr)
+        .unwrap()
+        .contains("--no-bars has no effect here; it applies only to table output"));
+}
+
 /// Row positions of `labels` in `text`, to compare orders without pinning layout.
 fn positions(text: &str, labels: &[&str]) -> Vec<usize> {
     labels

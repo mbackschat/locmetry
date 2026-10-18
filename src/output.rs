@@ -817,12 +817,13 @@ fn inline_bar_width(table_width: usize, columns: usize) -> Option<usize> {
 struct BarRows<'a> {
     codes: &'a [[u64; 3]],
     total_code: u64,
-    columns: usize,
+    bars: Bars,
 }
 
-/// A table rendered with `--bars`: beside its rows when the minimum inline bar
-/// fits, adding a Share column unless `has_share`, otherwise followed by a
-/// chart. Returns the table and what follows its legends.
+/// A table with share bars: beside its rows when the minimum inline bar fits,
+/// adding a Share column unless `has_share`; otherwise followed by a chart for
+/// [`Bars::Always`] and left as it is for [`Bars::Fit`]. Returns the table and
+/// what follows its legends.
 fn bar_table(
     header: &[&str],
     body: &[Vec<String>],
@@ -835,8 +836,13 @@ fn bar_table(
     let BarRows {
         codes,
         total_code,
-        columns,
+        bars,
     } = *bars;
+    let (columns, chart) = match bars {
+        Bars::Off => (0, false),
+        Bars::Fit(columns) => (columns, false),
+        Bars::Always(columns) => (columns, true),
+    };
     let mut inline_header = header.to_vec();
     let mut inline_body = body.to_vec();
     let mut inline_total = total.clone();
@@ -859,12 +865,15 @@ fn bar_table(
     .next()
     .map_or(0, |line| line.chars().count());
     let Some(cells) = inline_bar_width(width, columns) else {
+        let table = text_table(header, body, Some(total), layout, theme);
+        if !chart {
+            return (table, String::new());
+        }
         let rows: Vec<_> = body
             .iter()
             .map(|row| row[0].clone())
             .zip(codes.iter().copied())
             .collect();
-        let table = text_table(header, body, Some(total), layout, theme);
         return (
             table,
             format!("\n{}", share_bars(&rows, total_code, columns, theme)),
@@ -1016,8 +1025,17 @@ pub struct TableOptions {
     pub order: RowOrder,
     pub theme: Theme,
     pub folder_rows: Option<usize>,
-    /// Terminal columns for share bars below each table; `None` omits them.
-    pub bars: Option<usize>,
+    pub bars: Bars,
+}
+
+/// Share bars for terminal tables, with the columns available to them.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Bars {
+    Off,
+    /// Beside each table that leaves room for them; omitted elsewhere.
+    Fit(usize),
+    /// Beside each table that leaves room for them; a chart below elsewhere.
+    Always(usize),
 }
 
 /// Render a measurement table using semantic presentation roles.
@@ -1040,7 +1058,7 @@ pub fn render_table_with_theme(
             order,
             theme,
             folder_rows: None,
-            bars: None,
+            bars: Bars::Off,
         },
     )
 }
@@ -1132,7 +1150,11 @@ pub fn render_table_with_options(
                  layout: &Layout,
                  has_share: bool,
                  codes: &[[u64; 3]]| match bars {
-        Some(columns) => bar_table(
+        Bars::Off => (
+            text_table(header, body, Some(total), layout, theme),
+            String::new(),
+        ),
+        Bars::Fit(_) | Bars::Always(_) => bar_table(
             header,
             body,
             total,
@@ -1141,13 +1163,9 @@ pub fn render_table_with_options(
             &BarRows {
                 codes,
                 total_code,
-                columns,
+                bars,
             },
             theme,
-        ),
-        None => (
-            text_table(header, body, Some(total), layout, theme),
-            String::new(),
         ),
     };
     let codes: Vec<[u64; 3]> = languages
@@ -1829,6 +1847,56 @@ mod tests {
             Some(INLINE_BAR_MIN + 7)
         );
         assert_eq!(inline_bar_width(90, 1000), Some(*BAR_CELLS.end()));
+    }
+
+    /// Automatic bars only decorate a table they fit beside: otherwise the
+    /// table stays exactly as without bars, with neither Share column nor chart.
+    #[test]
+    fn fitting_bars_leave_tables_untouched_when_they_do_not_fit() {
+        let body = [
+            vec!["api".to_string(), "9".into()],
+            vec!["web".into(), "3".into()],
+        ];
+        let total = vec!["Total".to_string(), "12".into()];
+        let layout = Layout {
+            breaks: &[2],
+            strong: Some(1),
+            secondary: &[],
+            purposes: None,
+        };
+        let codes = [[6, 3, 0], [0, 0, 3]];
+        let render = |bars| {
+            let rows = BarRows {
+                codes: &codes,
+                total_code: 12,
+                bars,
+            };
+            bar_table(
+                &["Name", "Code"],
+                &body,
+                total.clone(),
+                &layout,
+                false,
+                &rows,
+                Theme::PLAIN,
+            )
+        };
+        let plain = text_table(
+            &["Name", "Code"],
+            &body,
+            Some(total.clone()),
+            &layout,
+            Theme::PLAIN,
+        );
+        assert_eq!(render(Bars::Fit(30)), (plain, String::new()));
+        let (wide, key) = render(Bars::Fit(60));
+        assert!(
+            wide.contains(" api       9 │  75.0%  █████████████████████████▓▓▓▓▓▓▓▓▓▓▓▓\n"),
+            "{wide}"
+        );
+        assert!(key.contains("Bars:"), "{key}");
+        let (_, chart) = render(Bars::Always(30));
+        assert!(chart.contains("Code share"), "{chart}");
     }
 
     /// The largest row fills the bar; others scale to it, split by purpose into

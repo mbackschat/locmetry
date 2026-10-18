@@ -8,7 +8,7 @@ use locmetry::style::{plain, Role, Theme};
 use locmetry::{
     breakdown, build_report, build_systems, git_submodules, module_shares, render_markdown,
     render_table_with_options, report_text, review, scan, scope_policy, submodule_shares,
-    unclassified_folders, unused_entries, user_defaults_file, validate_output, write_report,
+    unclassified_folders, unused_entries, user_defaults_file, validate_output, write_report, Bars,
     Coverage, FileRecord, Findings, MemberView, Module, ModuleShare, Policy, RowOrder,
     ScopeOverrides, SubmoduleShare, TableOptions, BACKEND, CONFIG_FILE, DATA_LANGUAGES,
     DOCUMENTATION_LANGUAGES,
@@ -253,10 +253,14 @@ struct SharedArgs {
     /// Include classification, scope and coverage notes in table output.
     #[arg(long)]
     verbose: bool,
-    /// Chart each table row's share of Code, split by purpose, below the table;
-    /// bars use the terminal width (COLUMNS overrides it). Table format only.
+    /// Chart each table row's share of Code, split by purpose: beside a table
+    /// when the width leaves room, otherwise below it. A terminal shows bars
+    /// automatically where they fit; COLUMNS overrides its width. Table format only.
     #[arg(long)]
     bars: bool,
+    /// Omit the share bars a terminal shows automatically.
+    #[arg(long, conflicts_with = "bars")]
+    no_bars: bool,
     /// Result format [default: json with --output; otherwise table on a terminal, headline in pipes].
     #[arg(long, value_enum)]
     format: Option<Format>,
@@ -474,6 +478,12 @@ fn warn_ineffective_options(shared: &SharedArgs, format: Option<Format>) {
         stderr_message(
             Role::Warning,
             "--bars has no effect here; it applies only to table output",
+        );
+    }
+    if shared.no_bars && format != Some(Format::Table) {
+        stderr_message(
+            Role::Warning,
+            "--no-bars has no effect here; it applies only to table output",
         );
     }
     if shared.categories && format != Some(Format::Table) {
@@ -958,6 +968,16 @@ enum Location {
     },
 }
 
+/// Share bars: forced by `--bars`, refused by `--no-bars`, and otherwise shown
+/// only on a terminal and only where they fit, so files and pipes stay stable.
+fn bar_mode(bars: bool, no_bars: bool, terminal: bool, columns: usize) -> Bars {
+    match (bars, no_bars, terminal) {
+        (true, _, _) => Bars::Always(columns),
+        (false, true, _) | (false, false, false) => Bars::Off,
+        (false, false, true) => Bars::Fit(columns),
+    }
+}
+
 /// The footer line naming what a human report measured: the root and any
 /// subfolder, or every workspace root. Markdown sets the paths as code.
 fn measured_roots(location: &Location, markdown: bool) -> String {
@@ -1037,7 +1057,12 @@ fn report(
                 order,
                 theme: destination.theme(),
                 folder_rows: destination.folder_rows,
-                bars: shared.bars.then(|| destination.columns()),
+                bars: bar_mode(
+                    shared.bars,
+                    shared.no_bars,
+                    destination.path.is_none() && io::stdout().is_terminal(),
+                    destination.columns(),
+                ),
             },
         ),
         Format::Markdown => {
@@ -1358,6 +1383,15 @@ mod tests {
 
     /// Bold is for people at a terminal: redirected output stays plain
     /// text, and `NO_COLOR` (no-color.org) or `TERM=dumb` turns it off.
+    #[test]
+    fn bars_are_automatic_only_on_a_terminal_unless_requested_or_refused() {
+        assert_eq!(bar_mode(false, false, true, 150), Bars::Fit(150));
+        assert_eq!(bar_mode(false, false, false, 150), Bars::Off);
+        assert_eq!(bar_mode(true, false, false, 150), Bars::Always(150));
+        assert_eq!(bar_mode(true, false, true, 150), Bars::Always(150));
+        assert_eq!(bar_mode(false, true, true, 150), Bars::Off);
+    }
+
     #[test]
     fn emphasis_needs_a_capable_terminal() {
         assert!(emphasis(true, None, Some("xterm-256color".into())));

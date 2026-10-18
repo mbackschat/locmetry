@@ -81,7 +81,7 @@ fn render(groups: &[Group], folders: bool) -> String {
             order: RowOrder::Code,
             theme: Theme::PLAIN,
             folder_rows: folders.then_some(30),
-            bars: None,
+            bars: locmetry::Bars::Off,
         },
     )
 }
