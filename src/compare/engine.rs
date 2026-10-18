@@ -106,18 +106,28 @@ fn presence_finding(
     let (side, message) = match (&entity, p) {
         (Entity::Member { .. }, Presence::BeforeOnly) => (
             Side::Before,
-            "Root removed from the workspace measurement; this does not prove source deletion.",
+            format!(
+                "{} left the workspace measurement; its source may still exist.",
+                entity.named()
+            ),
         ),
-        (Entity::Member { .. }, Presence::AfterOnly) => {
-            (Side::After, "Root added to the workspace measurement.")
-        }
-        (_, Presence::BeforeOnly) => (
-            Side::Before,
-            "Entity appears only in the before report; physical deletion is not established.",
-        ),
-        _ => (
+        (Entity::Member { .. }, _) => (
             Side::After,
-            "Entity appears only in the after report; physical creation is not established.",
+            format!("{} joined the workspace measurement.", entity.named()),
+        ),
+        (entity, Presence::BeforeOnly) => (
+            Side::Before,
+            format!(
+                "{} appears only in the before report; it may be deleted or no longer measured.",
+                entity.named()
+            ),
+        ),
+        (entity, _) => (
+            Side::After,
+            format!(
+                "{} appears only in the after report; it may be new or newly measured.",
+                entity.named()
+            ),
         ),
     };
     Some(Finding::PresenceChanged {

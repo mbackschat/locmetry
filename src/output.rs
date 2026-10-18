@@ -557,7 +557,7 @@ fn plural(count: u64, noun: &str) -> String {
 }
 
 /// `count` followed by `noun`, pluralized with `s` unless it is one.
-fn counted(count: u64, noun: &str) -> String {
+pub(crate) fn counted(count: u64, noun: &str) -> String {
     format!("{} {}", grouped(count), plural(count, noun))
 }
 

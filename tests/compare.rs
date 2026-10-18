@@ -1041,7 +1041,7 @@ fn comparison_theme_preserves_plain_text_and_distinguishes_signed_changes() {
     assert_eq!(stripped, plain);
     assert!(!plain.contains('\x1b'));
     let markdown = locmetry::compare::render_markdown(&report);
-    assert!(markdown.contains("*After minus before"));
+    assert!(markdown.contains("*Net change = after − before"));
     assert!(!markdown.contains('\x1b'));
     assert!(markdown.contains("| Source code | 1 | 2 | +1 |"));
 }
@@ -1068,5 +1068,32 @@ fn human_comparisons_show_line_changes_and_original_measurement_dates() {
             .collect();
         assert_eq!(cells, ["Python", "1", "3", "+2", "1", "1", "+0"]);
         assert!(text.ends_with("Before measured at: 1970-01-01 00:00:00 UTC\nAfter measured at: 2000-02-29 12:34:56 UTC\n"), "{text}");
+    }
+}
+
+/// Locks the plain wording that replaced internal terms: the header caveats,
+/// presence counts in words without zero or non-workspace parts, and findings
+/// that name the folder instead of an "Entity".
+#[test]
+fn human_comparisons_explain_presence_in_plain_words() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("project");
+    write(&root, "src/main.py", "a = 1\n");
+    let before = save(temp.path(), "before.json", &measure(&root));
+    write(&root, "src/extra/more.py", "b = 2\n");
+    let after = save(temp.path(), "after.json", &measure(&root));
+    let output = compare(&before, &after, &["--format", "table"]);
+    assert_eq!(output.status.code(), Some(0));
+    let table = String::from_utf8(output.stdout).unwrap();
+    for expected in [
+        "Net change = after − before, from the two saved reports.",
+        "Unreadable files count as 0; a folder seen in only one report may be newly visible, not newly created.",
+        "Only in one report: 1 folder only after.",
+        "Folder \"src/extra\" appears only in the after report; it may be new or newly measured.",
+    ] {
+        assert!(table.contains(expected), "{expected}\n{table}");
+    }
+    for absent in ["Entity", "members -", "Presence:"] {
+        assert!(!table.contains(absent), "{absent}\n{table}");
     }
 }

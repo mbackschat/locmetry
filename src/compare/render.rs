@@ -122,7 +122,13 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
         )
         .unwrap();
     }
-    writeln!(out,"\n{}", theme.paint(Role::Muted, "After minus before, over recorded counts. Unavailable lines are not estimated; presence does not prove physical creation or deletion.")).unwrap();
+    out.push('\n');
+    for note in [
+        "Net change = after − before, from the two saved reports.",
+        "Unreadable files count as 0; a folder seen in only one report may be newly visible, not newly created.",
+    ] {
+        writeln!(out, "{}", theme.paint(Role::Muted, note)).unwrap();
+    }
     let totals: Vec<_> = [
         ("All counted", c.summary.dimensions.all_counted),
         ("Source", c.summary.dimensions.source),
@@ -326,17 +332,22 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
             theme,
         );
     }
-    writeln!(
-        out,
-        "\nPresence: members -{} +{}; folders -{} +{}; packages -{} +{}.",
-        c.presence_summary.members.before_only,
-        c.presence_summary.members.after_only,
-        c.presence_summary.folders.before_only,
-        c.presence_summary.folders.after_only,
-        c.presence_summary.packages.before_only,
-        c.presence_summary.packages.after_only
-    )
-    .unwrap();
+    let summary = &c.presence_summary;
+    let presence: Vec<_> = [
+        (summary.members.before_only, "member", "before"),
+        (summary.members.after_only, "member", "after"),
+        (summary.folders.before_only, "folder", "before"),
+        (summary.folders.after_only, "folder", "after"),
+        (summary.packages.before_only, "package", "before"),
+        (summary.packages.after_only, "package", "after"),
+    ]
+    .into_iter()
+    .filter(|(count, _, _)| *count > 0)
+    .map(|(count, noun, side)| format!("{} only {side}", crate::output::counted(count, noun)))
+    .collect();
+    if !presence.is_empty() {
+        writeln!(out, "\nOnly in one report: {}.", presence.join("; ")).unwrap();
+    }
     let notes = notes::measurement_notes(c);
     if !notes.is_empty() {
         match markdown {
@@ -362,24 +373,15 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
         writeln!(out, "\n{}Findings", if markdown { "## " } else { "" }).unwrap();
         for f in findings {
             let context = f.context();
-            let entity = match f {
-                Finding::PresenceChanged { entity, .. } => match entity {
-                    Entity::Member { name } => format!("member {name}: "),
-                    Entity::Folder { path } => format!("folder {path}: "),
-                    Entity::Package { path, detector } => format!("package {path} ({detector}): "),
-                },
-                _ => String::new(),
-            };
             writeln!(
                 out,
-                "\n- {} ({:?}{}): {}{}",
+                "\n- {} ({:?}{}): {}",
                 theme.paint(Role::Information, f.code()),
                 context.side,
                 context
                     .member
                     .as_ref()
                     .map_or(String::new(), |m| format!(", {}", label(m, markdown))),
-                label(&entity, markdown),
                 label(&context.message, markdown)
             )
             .unwrap();
