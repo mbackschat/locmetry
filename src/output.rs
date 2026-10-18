@@ -562,6 +562,13 @@ struct Layout {
     secondary: &'static [usize],
 }
 
+#[derive(Clone, Copy)]
+enum RowKind {
+    Header,
+    Body,
+    Total,
+}
+
 /// Aligned plain-text table: the first column left-aligned, the others right.
 /// Padding precedes styling so escape codes never shift alignment. Column names
 /// and legends carry the grouping semantics without a redundant caption row.
@@ -588,7 +595,9 @@ fn text_table(
         true => " │ ",
         false => "  ",
     };
-    let line = |row: &[String], row_role: Option<Role>| {
+    // Cyan (Primary) marks only the strong column; rows differ by weight, so the
+    // Total row keeps the column roles the body establishes.
+    let line = |row: &[String], kind: RowKind| {
         let mut text = String::from(" ");
         for (column, (value, width)) in row.iter().zip(&widths).enumerate() {
             if column > 0 {
@@ -598,13 +607,16 @@ fn text_table(
                 0 => format!("{value:<width$}"),
                 _ => format!("{value:>width$}"),
             };
-            let role = match (row_role, column, value.as_str()) {
-                (Some(role), _, _) => Some(role),
-                (None, 0, _) => Some(Role::Information),
-                (None, _, "-" | "0" | "0.00" | "0.0%") => Some(Role::Muted),
+            let emphasis = match kind {
+                RowKind::Header | RowKind::Total => Some(Role::Heading),
+                RowKind::Body => None,
+            };
+            let role = match (kind, column, value.as_str()) {
+                (RowKind::Header, _, _) | (_, 0, _) => emphasis,
+                (_, _, "-" | "0" | "0.00" | "0.0%") => Some(Role::Muted),
                 _ if layout.strong == Some(column) => Some(Role::Primary),
                 _ if layout.secondary.contains(&column) => Some(Role::Secondary),
-                _ => None,
+                _ => emphasis,
             };
             text += &match role {
                 Some(role) => theme.paint(role, &cell),
@@ -625,13 +637,13 @@ fn text_table(
     }
     rule += "\n";
     let rule = theme.paint(Role::Muted, &rule);
-    let mut output = line(&header, Some(Role::Heading)) + &rule;
+    let mut output = line(&header, RowKind::Header) + &rule;
     for row in &body {
-        output += &line(row, None);
+        output += &line(row, RowKind::Body);
     }
     if let Some(total) = total {
         output += &rule;
-        output += &line(&total, Some(Role::Primary));
+        output += &line(&total, RowKind::Total);
     }
     output
 }
@@ -834,7 +846,7 @@ pub fn render_table_with_options(
     let project = display_project(project, findings.subfolder);
     let mut output = format!(
         " {}\n",
-        theme.paint(Role::Primary, &format!("{project} · Source code"))
+        theme.paint(Role::Heading, &format!("{project} · Source code"))
     );
     output += &text_table(
         &[
@@ -1386,6 +1398,7 @@ mod tests {
                 "{plain}"
             );
             assert!(!plain.contains("Code by purpose"));
+            assert!(styled.starts_with(" \x1b[1mexample · Source code\x1b[0m\n"));
             assert!(styled.contains(&format!("\x1b[90m{LANGUAGE_LEGEND}\x1b[0m")));
             if !members.is_empty() {
                 assert!(styled.contains(&format!("\x1b[90m{REPOSITORY_LEGEND}\x1b[0m")));
@@ -1437,11 +1450,47 @@ mod tests {
             },
             Theme::TERMINAL,
         );
-        assert!(table.contains("\x1b[36mapi \x1b[0m"), "{table}");
+        assert!(table.contains(" api \x1b[90m"), "{table}");
         assert!(table.contains("\x1b[2m       3\x1b[0m"), "{table}");
         assert!(table.contains("\x1b[90m     0\x1b[0m"), "{table}");
         assert!(table.contains("           4\n"), "{table}");
         assert!(!table.contains("\x1b[33m"));
+    }
+
+    /// Cyan marks only the strong column, so the Total row stays bold without
+    /// lifting the columns the body dims.
+    #[test]
+    fn total_row_is_bold_but_keeps_each_column_role() {
+        let table = text_table(
+            &["Name", "Code", "Comments", "Test", "Blanks"],
+            &[vec![
+                "api".into(),
+                "12".into(),
+                "3".into(),
+                "4".into(),
+                "0".into(),
+            ]],
+            Some(vec![
+                "Total".into(),
+                "12".into(),
+                "3".into(),
+                "4".into(),
+                "0".into(),
+            ]),
+            &Layout {
+                breaks: &[],
+                strong: Some(1),
+                secondary: &[2],
+            },
+            Theme::TERMINAL,
+        );
+        let total = table.lines().last().unwrap();
+        assert!(total.contains("\x1b[1mTotal\x1b[0m"), "{total}");
+        assert!(total.contains("\x1b[1;36m  12\x1b[0m"), "{total}");
+        assert!(total.contains("\x1b[2m       3\x1b[0m"), "{total}");
+        assert!(total.contains("\x1b[1m   4\x1b[0m"), "{total}");
+        assert!(total.contains("\x1b[90m     0\x1b[0m"), "{total}");
+        assert!(!table.contains("\x1b[36m"), "{table}");
     }
 
     /// Bold must not shift alignment: without its escape codes, an
