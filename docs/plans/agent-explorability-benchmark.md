@@ -2,9 +2,9 @@
 
 <!-- doc-status
 {
-  "status": "active",
+  "status": "deferred",
   "date": "2026-10-20",
-  "summary": "Test explicit execution-first help routing against current help and the example-only control.",
+  "summary": "Routing helps covered tasks; defer adoption pending broader-task cost verification.",
   "evidence": "[Help-routing study](../research/agent-explorability-help-routing-study.md)"
 }
 -->
@@ -35,13 +35,13 @@ The [first Task 1 pilot](../research/agent-explorability-task1-pilot.md) establi
 
 The owner subsequently authorized the [configuration-recipe experiment](../research/agent-explorability-help-recipe-study.md), revisiting their original usage-example proposal. Its primary 24 fresh sessions all passed, but the example failed the frozen efficiency gate on both configuration fixtures. The study separately records an eight-session simple-rule probe. Keep the tested production interface; this benchmark remains a reusable specification, with the next separately frozen campaign described below.
 
-The owner subsequently authorized the [execution-first routing study](../research/agent-explorability-help-routing-study.md). It adds fresh current-help and example-only controls, tests explicit conditional routing on a covered rule, and retains broader-configuration and unrelated-task guards. This is the active experiment; its frozen protocol owns execution details.
+The authorized [execution-first routing study](../research/agent-explorability-help-routing-study.md) completed 36 fresh sessions with all answers correct. Explicit routing eliminated both reference lookups in all four covered-task C runs and reduced median calls and uncached input against both controls. Broader configuration failed its cost guard, so the complete candidate did not earn adoption. Keep current help and retain this supported direction for a separately frozen revision; further execution is deferred. The study owns detailed results, limits and replay instructions.
 
 For a later session:
 
 1. Read the study's conclusions, limitations, and per-run results before proposing interface changes. Do not repeat the original pilot or pool sequential historical runs with fresh-task results.
 2. Use the frozen task files and runner for replay. Resolve MEDIUM from the owner's active CLI mapping and record the actual model/effort; a changed model is a new campaign.
-3. If testing another improvement, preserve the current interface as control and keep guides available. The tested additive help recipe did not earn adoption; do not repeat it unchanged or treat the result as a rejection of examples generally. Define one new variable, a task-specific oracle, and a practical cost gate before execution. Information placement or retrieval wording would be new hypotheses, not established fixes.
+3. If testing another improvement, preserve the current interface as control and keep guides available. The tested additive help recipe did not earn adoption; do not repeat it unchanged or treat the result as a rejection of examples generally. Define one new variable, a task-specific oracle, and a practical cost gate before execution. Explicit conditional routing now has a demonstrated covered-task benefit; the remaining question is retaining that gain without the broader-task cost seen in its trial. Other information placement or retrieval changes remain new hypotheses.
 4. Add an independent fixture variant when testing generalization, and give each changed prompt, fixture, oracle, or treatment a new revision. Keep old outcomes and all-run costs available.
 5. Treat personal-policy interactions, extended scope cases, and long-session reuse as separate future cases, not as already verified behavior of the benchmark.
 

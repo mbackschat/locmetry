@@ -16,7 +16,7 @@
 
 ## Agent Explorability — Evidence and Follow-up
 
-- [ ] Complete the authorized [execution-first help-routing study](research/agent-explorability-help-routing-study.md), comparing current help, the previous recipe and explicit conditional routing. Preserve correctness, independent grading and all resource costs; the [benchmark](plans/agent-explorability-benchmark.md) owns continuation rules.
+- [ ] Resume the [agent-explorability benchmark](plans/agent-explorability-benchmark.md) for a separately frozen revision that retains the [execution-first routing study](research/agent-explorability-help-routing-study.md)'s covered-task savings while checking broader-task cost. The tested candidate fails its full adoption gate; current production help and optional guides remain unchanged.
 
 ## Ideas — Not Scheduled
 

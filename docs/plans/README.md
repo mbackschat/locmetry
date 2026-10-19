@@ -6,7 +6,7 @@ These documents own detailed scope and decision gates. [PLAN](../PLAN.md) owns t
 
 | Document | Status | Date | Summary |
 | --- | --- | --- | --- |
-| [Agent Explorability Benchmark](agent-explorability-benchmark.md) | active | 2026-10-20 | Test explicit execution-first help routing against current help and the example-only control. |
+| [Agent Explorability Benchmark](agent-explorability-benchmark.md) | deferred | 2026-10-20 | Routing helps covered tasks; defer adoption pending broader-task cost verification. |
 | [Conditional Measurement and Comparison Follow-ups](measurement-quality-and-net-change.md) | deferred | 2026-10-16 | Conditional capabilities; each needs its recorded trigger and scope decision. |
 
 <!-- doc-index:end -->
