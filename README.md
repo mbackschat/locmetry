@@ -1,4 +1,4 @@
-<img src="docs/assets/locmetry.webp" alt="locmetry logo" width="96">
+<img src="docs/assets/locmetry.svg" alt="locmetry logo" width="96">
 
 # locmetry
 
