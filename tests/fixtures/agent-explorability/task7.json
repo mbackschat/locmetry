@@ -1,0 +1,47 @@
+{
+  "revision": "discovery-v1",
+  "files": {
+    "projects/web/README.md": "# Demo\n\nSynthetic project.\n",
+    "projects/web/assets/opaque.xyz": "opaque data\n",
+    "projects/web/data.json": "{\"enabled\":true}\n",
+    "projects/web/examples/old.py": "print(\"historical example\")\n",
+    "projects/web/package.json": "{\"name\":\"demo-web\",\"version\":\"1.0.0\"}\n",
+    "projects/web/scratch/mystery.py": "print(\"purpose undecided\")\n",
+    "projects/web/src/index.js": "// application\nexport const a = 1;\nexport const b = 2;\n\n",
+    "projects/web/tests/index.test.js": "// tests\nassert(a === 1);\nassert(b === 2);\n",
+    "projects/web/tools/release.py": "print(\"release\")\n",
+    "projects/web/vendor/bundle.js": "const vendor = 1;\n"
+  },
+  "prompt": "You have ./bin/locmetry. Work only in this scratch directory. The executable and its built-in discovery material are your only product documentation; do not read other directories, implementation files, telemetry, or the launcher, and do not use the internet or other agents.\n\nDiscover what this executable can do. Produce an actionable capability map for a new agent, including a valid minimal command for each major workflow, configuration possibilities, output/scoping/presentation options, and built-in ways to get precise contracts. State important limitations without inventing functionality. You may query the executable and use shell/Python to inspect its output, but do not measure or modify any project. Stop when your capability map is ready; do not create an assessment file or logging harness. Keep your final answer to at most 800 words.\n",
+  "oracle": {
+    "shared_capabilities": {
+      "measurement": "Single-root source measurement by language and purpose.",
+      "workspace": "Several roots with per-member project policy and a workspace definition option.",
+      "comparison": "Saved full reports, after-minus-before net change, including workspaces.",
+      "explanation": "Selection/classification evidence for one existing file, including workspace context.",
+      "output": "Table, Markdown, full JSON, headline; per-file detail and simultaneous file/human output.",
+      "scope": "Root/subfolder context, exclusion globs, hidden files, ignore-file control.",
+      "configuration": "Project and personal configuration, purpose/category rules, overrides and language mappings.",
+      "folders": "Folder table, adaptive row budget, Markdown depth.",
+      "purpose_views": "Purpose filtering and category table.",
+      "sorting": "Code/name sorting.",
+      "charts": "Purpose/comment bars and disabling automatic bars.",
+      "schemas": "Built-in machine contracts for config, user defaults, report, comparison, explanation, workspace.",
+      "output_defaults": "Terminal/table versus pipe/headline, saved output defaults full JSON and extensions do not choose format."
+    },
+    "critical_errors": [
+      "Invented or materially misleading capability claims",
+      "Invalid commands presented as usable workflows",
+      "Treating net count comparison as churn or Git diff",
+      "Treating headlines as full comparison baselines"
+    ],
+    "coverage_rubric": "For each family: 1 for the described capability/subfeatures correctly covered; 0.5 for a correct but incomplete family; 0 for absent or materially wrong coverage. Common total is out of 13. Separately require valid minimal examples for measure, workspace, compare and explain; identify critical false claims. Do not include guides in common coverage."
+  },
+  "limits": {
+    "wall_seconds": 600,
+    "cli_invocations": 60,
+    "agent_tool_calls": 40,
+    "uncached_input_tokens": 100000
+  },
+  "grading": "Grade shared capability coverage and correctness, not verbosity. Guide discovery is recorded for A but excluded from common coverage because B removes guides. Read-only binary discovery only."
+}

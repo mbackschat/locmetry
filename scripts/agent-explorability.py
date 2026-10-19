@@ -1,6 +1,7 @@
-"""Prepare and check the task1-pilot-v1 experiment; never edit product sources."""
+"""Prepare isolated guide-removal experiments; never edit product sources."""
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 import difflib
 import hashlib
 import json
@@ -21,8 +22,9 @@ def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def seed(root):
-    for name, contents in json.loads(TASK.read_text())["files"].items():
+def seed(root, task=None):
+    task = task or json.loads(TASK.read_text())
+    for name, contents in task["files"].items():
         path = root / name
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(contents)
@@ -63,7 +65,7 @@ def without_guides(source):
     (source.parent / "treatment.patch").write_text("".join(patch))
 
 
-def prepare(destination):
+def prepare(destination, task_path=TASK, binaries=None):
     destination.mkdir(parents=True, exist_ok=False)
     files = [REPO / "Cargo.toml", REPO / "Cargo.lock"]
     files += list((REPO / "src").rglob("*.rs"))
@@ -74,11 +76,17 @@ def prepare(destination):
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(path, target)
     without_guides(destination / "B")
-    task = json.loads(TASK.read_text())
+    if binaries:
+        for condition, binary in zip(["A", "B"], binaries):
+            target = destination / condition / "target/debug/locmetry"
+            target.parent.mkdir(parents=True)
+            shutil.copy2(binary, target)
+    task = json.loads(task_path.read_text())
     manifest = {
         "revision": task["revision"],
         "source_revision": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=REPO, text=True).strip(),
-        "task_sha256": sha(TASK),
+        "task_sha256": sha(task_path),
+        "task": task,
         "harness_sha256": sha(Path(__file__)),
         "source_hashes": {str(p.relative_to(REPO)): sha(p) for p in files},
         "limits": task["limits"],
@@ -87,7 +95,7 @@ def prepare(destination):
     }
     for run, condition in manifest["order"].items():
         root = destination / run
-        seed(root)
+        seed(root, task)
         (root / "bin").mkdir()
         logs = destination / "evidence" / run
         logs.mkdir(parents=True)
@@ -184,23 +192,37 @@ def records(path):
     if not path.exists():
         return []
     result = []
-    for line in path.read_text().splitlines():
+    lines = path.read_text().splitlines(keepends=True)
+    for index, line in enumerate(lines):
         try:
             result.append(json.loads(line))
         except json.JSONDecodeError:
-            # An active writer may not yet have finished the last JSONL record.
-            continue
+            # Session writers can expose an unfinished last line; completed corrupt
+            # records must fail because ignoring them would undercount tool calls.
+            if index == len(lines) - 1 and not line.endswith("\n"):
+                continue
+            raise
     return result
 
 
 def run_agent(destination, run, model, effort):
     manifest = json.loads((destination / "manifest.json").read_text())
+    task = manifest.get("task", json.loads(TASK.read_text()))
     condition = manifest["order"][run]
     evidence = destination / "evidence" / run
     events_path = evidence / "events.jsonl"
     if events_path.exists():
         raise ValueError("Refusing to overwrite a previous run; prepare a fresh campaign")
     executable = destination / condition / "target/debug/locmetry"
+    generated_hashes = {}
+    for item in task.get("generated", []):
+        path = destination / run / item["path"]
+        path.parent.mkdir(parents=True, exist_ok=True)
+        result = subprocess.run([str(executable), *item["args"]], cwd=destination / run,
+                                env=dict(os.environ, XDG_CONFIG_HOME=str(destination / "user-config" / run)),
+                                capture_output=True, check=True)
+        path.write_bytes(result.stdout)
+        generated_hashes[item["path"]] = sha(path)
     invocation = [
         "codex", "exec", "--ignore-user-config", "--skip-git-repo-check",
         "--cd", str(destination / run), "--model", model,
@@ -261,7 +283,14 @@ def run_agent(destination, run, model, effort):
     final_usage = [r["usage"] for r in stream if r["type"] == "turn.completed"]
     if final_usage:
         usage = final_usage[-1]
-    integrity = all((destination / run / p).read_text() == content for p, content in json.loads(TASK.read_text())["files"].items())
+    if session:
+        shutil.copyfile(session, evidence / "session.jsonl")
+        rows = records(evidence / "session.jsonl")
+        tool_calls = sum(r["type"] == "response_item" and r["payload"].get("type") in ["function_call", "custom_tool_call"] for r in rows)
+    integrity = all((destination / run / p).is_file() and (destination / run / p).read_text() == content
+                    for p, content in task["files"].items() if p not in task.get("mutable", []))
+    integrity = integrity and all((destination / run / p).is_file() and sha(destination / run / p) == digest
+                                  for p, digest in generated_hashes.items())
     summary = dict(condition=condition, run=run, thread_id=thread, session=str(session) if session else None,
                    elapsed=time.time()-settings["started"], returncode=process.returncode, stopped=stopped,
                    fixture_intact=integrity, usage=usage, agent_tool_calls=tool_calls,
@@ -271,11 +300,38 @@ def run_agent(destination, run, model, effort):
     print(json.dumps(summary, indent=2))
 
 
+def campaign(destination, binaries, model, effort):
+    destination.mkdir(parents=True, exist_ok=False)
+    tasks = [TASK.with_name(f"task{n}.json") for n in range(1, 7)]
+    jobs = [(n, repetition) for repetition in range(1, 4) for n in range(1, 7)]
+    plan = dict(revision="six-tasks-v1", model=model, effort=effort, repetitions=3,
+                task_hashes={p.name: sha(p) for p in tasks}, harness_sha256=sha(Path(__file__)),
+                binary_hashes={c: sha(p) for c, p in zip(["A", "B"], binaries)},
+                pairs=[dict(task=n, repetition=r, first="A" if (n+r)%2==0 else "B") for n, r in jobs],
+                concurrent_pairs=3, previous_pilot_included=False)
+    (destination / "campaign.json").write_text(json.dumps(plan, indent=2) + "\n")
+
+    def pair(job):
+        n, repetition = job
+        target = destination / f"task{n}-rep{repetition}"
+        prepare(target, tasks[n-1], binaries)
+        order = ["run-02", "run-01"] if (n+repetition)%2==0 else ["run-01", "run-02"]
+        for run in order:
+            run_agent(target, run, model, effort)
+        return target.name
+
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        for done in pool.map(pair, jobs):
+            print("Completed pair:", done, flush=True)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
     prep = sub.add_parser("prepare")
     prep.add_argument("destination", type=Path)
+    prep.add_argument("--task", type=Path, default=TASK)
+    prep.add_argument("--binaries", type=Path, nargs=2, metavar=("A", "B"))
     check = sub.add_parser("verify")
     check.add_argument("current", type=Path)
     check.add_argument("without_guides", type=Path)
@@ -284,13 +340,20 @@ def main():
     run.add_argument("run", choices=["run-01", "run-02"])
     run.add_argument("--model", required=True)
     run.add_argument("--effort", required=True)
+    batch = sub.add_parser("campaign")
+    batch.add_argument("destination", type=Path)
+    batch.add_argument("--binaries", type=Path, nargs=2, required=True)
+    batch.add_argument("--model", required=True)
+    batch.add_argument("--effort", required=True)
     args = parser.parse_args()
     if args.command == "prepare":
-        prepare(args.destination.resolve())
+        prepare(args.destination.resolve(), args.task.resolve(), args.binaries)
     elif args.command == "verify":
         verify(args.current.resolve(), args.without_guides.resolve())
-    else:
+    elif args.command == "run":
         run_agent(args.destination.resolve(), args.run, args.model, args.effort)
+    else:
+        campaign(args.destination.resolve(), [p.resolve() for p in args.binaries], args.model, args.effort)
 
 
 if __name__ == "__main__":

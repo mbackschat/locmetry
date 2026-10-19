@@ -1,0 +1,43 @@
+{
+  "revision": "task6-campaign-v1",
+  "files": {
+    "projects/web/README.md": "# Demo\n\nSynthetic project.\n",
+    "projects/web/assets/opaque.xyz": "opaque data\n",
+    "projects/web/data.json": "{\"enabled\":true}\n",
+    "projects/web/examples/old.py": "print(\"historical example\")\n",
+    "projects/web/package.json": "{\"name\":\"demo-web\",\"version\":\"1.0.0\"}\n",
+    "projects/web/scratch/mystery.py": "print(\"purpose undecided\")\n",
+    "projects/web/src/index.js": "// application\nexport const a = 1;\nexport const b = 2;\n\n",
+    "projects/web/tests/index.test.js": "// tests\nassert(a === 1);\nassert(b === 2);\n",
+    "projects/web/tools/release.py": "print(\"release\")\n",
+    "projects/web/vendor/bundle.js": "const vendor = 1;\n",
+    "projects/web/.locmetryrc": "version = 1\n[scope]\nexclude = [\"vendor/**\"]\n[categories]\ntooling = \"Maintained project tooling\"\nexamples = \"Intentional historical examples\"\n[[rules]]\nid = \"project-tooling\"\nmatch = [\"tools/**\"]\npurpose = \"production\"\ncategory = \"tooling\"\n[[rules]]\nid = \"intentional-examples\"\nmatch = [\"examples/**\"]\npurpose = \"other\"\ncategory = \"examples\"\n",
+    "projects/worker/package.json": "{\"name\":\"demo-worker\",\"version\":\"1.0.0\"}\n",
+    "projects/worker/src/job.js": "export const job = 1;\n",
+    "projects/worker/tests/job.test.js": "assert(job === 1);\nassert(job > 0);\nassert(job < 2);\nassert(typeof job === \"number\");\n",
+    "workspace.toml": "version = 1\nroots = [\"projects/web\", \"projects/worker\"]\n"
+  },
+  "prompt": "You have ./bin/locmetry and synthetic inputs in this scratch directory. Work only here. The executable and its built-in discovery material are your only product documentation; do not read other directories, implementation files, telemetry, or the launcher, and do not use the internet or other agents. You may inspect synthetic inputs and use ordinary shell/Python tools. Do not change project files or the supplied workspace definition. Diagnose these web paths: src/index.js (key app), tools/release.py (tool), vendor/bundle.js (vendor), assets/opaque.xyz (asset), scratch/mystery.py (scratch). Also diagnose web/tools/release.py through the supplied workspace.toml (workspace_tool). Save explanations.json as a JSON object mapping these six keys to the complete machine explanations returned by locmetry. Explain which files are counted, excluded, or unrecognized; which source remains unclaimed; and the recorded reason/stage for the application and tooling classifications. Explain how workspace member identity and pattern scope relate.\n\nUse whatever built-in discovery you need. Give a concise final answer of at most 250 words, including supporting commands and any unresolved result. Create the requested working artifacts, but do not write an assessment document or a logging harness.\n",
+  "oracle": {
+    "states": {
+      "app": "counted",
+      "tool": "counted",
+      "vendor": "excluded",
+      "asset": "unrecognized",
+      "scratch": "counted",
+      "workspace_tool": "counted"
+    },
+    "artifacts": [
+      "explanations.json"
+    ]
+  },
+  "limits": {
+    "wall_seconds": 600,
+    "cli_invocations": 60,
+    "agent_tool_calls": 40,
+    "uncached_input_tokens": 100000
+  },
+  "grading": "Recovered mistakes may pass; record recovery cost. Required conclusions missing => incomplete. Wrong delivered figures, ratio basis, or unknown/zero or counted/unclaimed interpretation => critical failure. Inspect fixture integrity and supporting calls.",
+  "mutable": [],
+  "generated": []
+}

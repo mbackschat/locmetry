@@ -1,0 +1,46 @@
+{
+  "revision": "task3-campaign-v1",
+  "files": {
+    "projects/web/README.md": "# Demo\n\nSynthetic project.\n",
+    "projects/web/assets/opaque.xyz": "opaque data\n",
+    "projects/web/data.json": "{\"enabled\":true}\n",
+    "projects/web/examples/old.py": "print(\"historical example\")\n",
+    "projects/web/package.json": "{\"name\":\"demo-web\",\"version\":\"1.0.0\"}\n",
+    "projects/web/scratch/mystery.py": "print(\"purpose undecided\")\n",
+    "projects/web/src/index.js": "// application\nexport const a = 1;\nexport const b = 2;\n\n",
+    "projects/web/tests/index.test.js": "// tests\nassert(a === 1);\nassert(b === 2);\n",
+    "projects/web/tools/release.py": "print(\"release\")\n",
+    "projects/web/vendor/bundle.js": "const vendor = 1;\n"
+  },
+  "prompt": "You have ./bin/locmetry and synthetic inputs in this scratch directory. Work only here. The executable and its built-in discovery material are your only product documentation; do not read other directories, implementation files, telemetry, or the launcher, and do not use the internet or other agents. You may inspect synthetic inputs and use ordinary shell/Python tools. You may create or edit only project configuration and files outside measured roots; leave all existing source/data/documentation files unchanged. Configure projects/web so tools/ is Production with category tooling, examples/ is intentionally Other with category examples, and vendor/ is excluded. Retain inferred application Production and the existing test classification. The purpose of scratch/ is unresolved: keep it counted and visible as review work. Save a full verification report with per-file decisions to outputs/configured.json. Report the resulting counts and remaining review item, and explain why an empty review list would not itself establish correct classification.\n\nUse whatever built-in discovery you need. Give a concise final answer of at most 250 words, including supporting commands and any unresolved result. Create the requested working artifacts, but do not write an assessment document or a logging harness.\n",
+  "oracle": {
+    "source": {
+      "files": 5,
+      "code": 7,
+      "lines": 10
+    },
+    "purpose_code": {
+      "production": 3,
+      "test": 2,
+      "other": 2
+    },
+    "review": [
+      "scratch/mystery.py"
+    ],
+    "artifacts": [
+      "projects/web/.locmetryrc",
+      "outputs/configured.json"
+    ]
+  },
+  "limits": {
+    "wall_seconds": 600,
+    "cli_invocations": 60,
+    "agent_tool_calls": 40,
+    "uncached_input_tokens": 100000
+  },
+  "grading": "Recovered mistakes may pass; record recovery cost. Required conclusions missing => incomplete. Wrong delivered figures, ratio basis, or unknown/zero or counted/unclaimed interpretation => critical failure. Inspect fixture integrity and supporting calls.",
+  "mutable": [
+    "projects/web/.locmetryrc"
+  ],
+  "generated": []
+}

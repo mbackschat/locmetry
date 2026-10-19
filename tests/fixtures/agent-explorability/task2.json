@@ -1,0 +1,62 @@
+{
+  "revision": "task2-campaign-v1",
+  "files": {
+    "projects/web/README.md": "# Demo\n\nSynthetic project.\n",
+    "projects/web/assets/opaque.xyz": "opaque data\n",
+    "projects/web/data.json": "{\"enabled\":true}\n",
+    "projects/web/examples/old.py": "print(\"historical example\")\n",
+    "projects/web/package.json": "{\"name\":\"demo-web\",\"version\":\"1.0.0\"}\n",
+    "projects/web/scratch/mystery.py": "print(\"purpose undecided\")\n",
+    "projects/web/src/index.js": "// application\nexport const a = 1;\nexport const b = 2;\n\n",
+    "projects/web/tests/index.test.js": "// tests\nassert(a === 1);\nassert(b === 2);\n",
+    "projects/web/tools/release.py": "print(\"release\")\n",
+    "projects/web/vendor/bundle.js": "const vendor = 1;\n",
+    "projects/partial/empty.py": "",
+    "projects/partial/broken.ipynb": "{}\n"
+  },
+  "prompt": "You have ./bin/locmetry and synthetic inputs in this scratch directory. Work only here. The executable and its built-in discovery material are your only product documentation; do not read other directories, implementation files, telemetry, or the launcher, and do not use the internet or other agents. You may inspect synthetic inputs and use ordinary shell/Python tools. Do not modify project files. Create collect.py accepting ROOT and OUTPUT arguments. It must invoke locmetry once to save complete measurement JSON with per-file decisions to OUTPUT and display a human overview from that same measurement. It must preserve the measurement exit status so partial counts or a command failure cannot masquerade as success. Demonstrate it on projects/web (outputs/web.json) and projects/partial (outputs/partial.json). Explain the Production Code and unrecognized paths for web, whether the partial project has trustworthy zero counts or unavailable counts, and how the script distinguishes a usable partial report from a failed command. Explain whether the ordinary compact machine output would be sufficient as a future comparison baseline. The evaluator will replay your script on these roots and an invalid project configuration.\n\nUse whatever built-in discovery you need. Give a concise final answer of at most 250 words, including supporting commands and any unresolved result. Create the requested working artifacts, but do not write an assessment document or a logging harness.\n",
+  "oracle": {
+    "web": {
+      "source": {
+        "files": 6,
+        "lines": 11,
+        "code": 8
+      },
+      "all_counted": {
+        "files": 9,
+        "lines": 16,
+        "code": 10
+      },
+      "purpose_code": {
+        "production": 2,
+        "test": 2,
+        "other": 4
+      },
+      "unrecognized": [
+        "assets/opaque.xyz"
+      ],
+      "test_prod_code": 1.0
+    },
+    "partial": {
+      "exit": 2,
+      "counted_files": 1,
+      "parse_failure": "broken.ipynb",
+      "known_zero": "empty.py"
+    },
+    "invalid_config_exit": 1,
+    "artifacts": [
+      "collect.py",
+      "outputs/web.json",
+      "outputs/partial.json"
+    ]
+  },
+  "limits": {
+    "wall_seconds": 600,
+    "cli_invocations": 60,
+    "agent_tool_calls": 40,
+    "uncached_input_tokens": 100000
+  },
+  "grading": "Recovered mistakes may pass; record recovery cost. Required conclusions missing => incomplete. Wrong delivered figures, ratio basis, or unknown/zero or counted/unclaimed interpretation => critical failure. Inspect fixture integrity and supporting calls.",
+  "mutable": [],
+  "generated": []
+}
