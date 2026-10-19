@@ -167,6 +167,28 @@ fn kind_rows(dimensions: &Dimensions) -> Vec<Row> {
         .collect()
 }
 
+fn counts_unchanged(c: &Comparison) -> bool {
+    std::iter::once(&c.summary.dimensions)
+        .chain(
+            c.members
+                .iter()
+                .flat_map(|members| members.values().map(|m| &m.dimensions)),
+        )
+        .all(|d| {
+            [&d.all_counted, &d.source]
+                .into_iter()
+                .chain(d.by_kind_purpose.values())
+                .chain(d.source_purpose.values())
+                .chain(d.source_categories.values())
+                .chain(d.source_languages.values())
+                .all(|change| change.delta == SignedCounts::default())
+        })
+        && c.breakdown
+            .iter()
+            .flatten()
+            .all(|row| row.counts.delta == SignedCounts::default())
+}
+
 fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
     let mut out = String::new();
     let title = format!(
@@ -293,7 +315,18 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
     for grid in grids {
         grid.write(&mut out, markdown, titled, theme);
     }
-    if let Some(composition) = &c.summary.composition {
+    if let Some(composition) = c.summary.composition.as_ref().filter(|composition| {
+        [&composition.source, &composition.all_counted]
+            .into_iter()
+            .any(|part| {
+                part.matched.lines != 0
+                    || part.matched.code != 0
+                    || part.entering.lines != 0
+                    || part.entering.code != 0
+                    || part.leaving.lines != 0
+                    || part.leaving.code != 0
+            })
+    }) {
         writeln!(
             out,
             "\nWorkspace source lines: matched {:+}, entering +{}, leaving -{}; total {:+}.",
@@ -349,6 +382,8 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
     .collect();
     if !presence.is_empty() {
         writeln!(out, "\nOnly in one report: {}.", presence.join("; ")).unwrap();
+    } else if c.members.is_some() && counts_unchanged(c) {
+        writeln!(out, "\nNo recorded count or presence changes.").unwrap();
     }
     let notes = notes::measurement_notes(c);
     if !notes.is_empty() {

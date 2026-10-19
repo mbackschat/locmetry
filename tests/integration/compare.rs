@@ -753,6 +753,105 @@ fn human_comparisons(before: &Path, after: &Path, status: i32) -> Vec<String> {
 }
 
 #[test]
+fn unchanged_workspace_replaces_zero_composition_with_a_no_change_message() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("project");
+    write(&root, "main.py", "print(1)\n");
+    let saved = save(temp.path(), "input.json", &workspace(&[&root]));
+    let full = json(&compare(&saved, &saved, &["--format", "json"]), 0);
+    assert_eq!(
+        full["summary"]["composition"]["source"]["matched"]["code"],
+        0
+    );
+    let report = serde_json::from_value(full).unwrap();
+    let mut texts = human_comparisons(&saved, &saved, 0);
+    texts.push(locmetry::compare::render_table_with_theme(
+        &report,
+        locmetry::style::Theme::TERMINAL,
+    ));
+    for text in texts {
+        assert!(text.contains("All counted"), "{text}");
+        assert!(
+            text.contains("No recorded count or presence changes."),
+            "{text}"
+        );
+        assert!(!text.contains("Workspace source"), "{text}");
+        assert!(!text.contains("Workspace all-counted"), "{text}");
+    }
+}
+
+#[test]
+fn workspace_composition_keeps_offsetting_arrivals_and_departures() {
+    let temp = tempfile::tempdir().unwrap();
+    let old = temp.path().join("old");
+    let new = temp.path().join("new");
+    write(&old, "main.py", "print(1)\n");
+    write(&new, "main.py", "print(2)\n");
+    let before = save(temp.path(), "before.json", &workspace(&[&old]));
+    let after = save(temp.path(), "after.json", &workspace(&[&new]));
+    for text in human_comparisons(&before, &after, 0) {
+        assert!(
+            text.contains("Workspace source lines: matched +0, entering +1, leaving -1; total +0."),
+            "{text}"
+        );
+        assert!(
+            text.contains("Workspace source code: matched +0, entering +1, leaving -1; total +0."),
+            "{text}"
+        );
+        assert!(
+            !text.contains("No recorded count or presence changes."),
+            "{text}"
+        );
+    }
+}
+
+#[test]
+fn zero_workspace_totals_do_not_hide_folder_transfers_or_empty_member_presence() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("project");
+    write(&root, "left/main.py", "print(1)\nprint(2)\n");
+    write(&root, "right/main.py", "print(1)\n");
+    let before = save(temp.path(), "before.json", &workspace(&[&root]));
+    write(&root, "left/main.py", "print(1)\n");
+    write(&root, "right/main.py", "print(1)\nprint(2)\n");
+    let after = save(temp.path(), "after.json", &workspace(&[&root]));
+    let empty = temp.path().join("empty");
+    fs::create_dir(&empty).unwrap();
+    let arrived = save(temp.path(), "arrived.json", &workspace(&[&root, &empty]));
+    for (a, b) in [(&before, &after), (&after, &arrived)] {
+        for text in human_comparisons(a, b, 0) {
+            assert!(!text.contains("Workspace source"), "{text}");
+            assert!(
+                !text.contains("No recorded count or presence changes."),
+                "{text}"
+            );
+        }
+    }
+}
+
+#[test]
+fn workspace_no_change_message_accounts_for_comments_blanks_and_files() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("project");
+    write(&root, "main.py", "print(1)\n# comment\n");
+    let before = save(temp.path(), "before.json", &workspace(&[&root]));
+    write(&root, "main.py", "print(1)\n\n");
+    let after = save(temp.path(), "after.json", &workspace(&[&root]));
+    write(&root, "empty.py", "");
+    let added = save(temp.path(), "added.json", &workspace(&[&root]));
+    for (a, b) in [(&before, &after), (&after, &added)] {
+        for text in human_comparisons(a, b, 0) {
+            assert!(!text.contains("Workspace source"), "{text}");
+            assert!(!text.contains("Workspace all-counted"), "{text}");
+            assert!(
+                !text.contains("No recorded count or presence changes."),
+                "{text}"
+            );
+        }
+    }
+}
+
+#[test]
 fn human_coverage_notes_summarize_paths_without_changing_json_findings() {
     let temp = tempfile::tempdir().unwrap();
     let root = temp.path().join("project");
