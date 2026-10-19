@@ -14,10 +14,13 @@
 
 - Folder-partition convergence remains deferred: adaptive folder detail and JSON `unclassified_folders` intentionally use different policies. Revisit only if a workflow demonstrates confusing divergence, with explicit compatibility review. The [adaptive-folder decision](proposals/archive/adaptive-folder-detail.md#existing-partition-and-feasibility) owns the rationale.
 
+## Agent Explorability — Benchmark Definition
+
+- [ ] Review the [agent explorability benchmark](plans/agent-explorability-benchmark.md): establish MEDIUM-agent task oracles, critical errors, and resource metrics before testing whether embedded guides are necessary. The specification preserves exploratory evidence and the next review step; it does not authorize guide navigation or removal. The earlier [guidance checkpoint](plans/archive/measurement-quality-and-net-change.md#embedded-guidance-implementation--2026-10-16) remains historical evidence, not a release prerequisite.
+
 ## Ideas — Not Scheduled
 
 - [Conditional measurement/comparison capabilities](plans/measurement-quality-and-net-change.md#conditional-follow-ups-and-preserved-rationales): consumer-driven candidates and their triggers, including [per-file comparison](plans/measurement-quality-and-net-change.md#per-file-comparison), generated/minified evidence and duplicate evidence. Ancestor discovery remains outside accepted scope.
-- [Guide usability research](plans/archive/measurement-quality-and-net-change.md#embedded-guidance-implementation--2026-10-16): a comparative trial remains optional, not a runtime or release prerequisite; preserve the limits of the existing single-agent trial.
 - JSON finding grammar, such as “1 unrecognized files”, remains an optional separate cleanup. The comparison-readability changes intentionally preserved JSON message text.
 
 ## Proposals — Under Discussion
