@@ -95,37 +95,74 @@ fn a_single_table_top_rule_spans_inline_bars_but_not_a_separate_chart() {
 }
 
 #[test]
-fn measurement_tables_have_distinct_titles_and_spacing_without_color() {
+fn measurement_tables_use_attached_top_rules_instead_of_redundant_titles() {
     let dir = fixture();
-    for (mut args, titles) in [
-        (vec!["service", "--folders"], vec!["Folders"]),
-        (vec!["service", "--categories"], vec!["Source categories"]),
+    for (args, labels) in [
+        (vec!["service", "--folders"], vec!["Folder"]),
+        (vec!["service", "--categories"], vec!["Category"]),
+        (vec!["service", "--folder-rows", "5"], vec!["Folder"]),
+        (
+            vec![
+                "service",
+                "--subfolder",
+                "src",
+                "--folder-rows",
+                "5",
+                "--categories",
+            ],
+            vec!["Folder", "Category"],
+        ),
+        (
+            vec!["service", "--purpose", "other", "--folders"],
+            vec!["Folder"],
+        ),
         (
             vec!["service", "--folders", "--categories"],
-            vec!["Folders", "Source categories"],
+            vec!["Folder", "Category"],
         ),
         (
             vec!["workspace", "--file", "workspace.toml"],
-            vec!["Workspace members"],
+            vec!["Repository"],
         ),
         (
             vec!["workspace", "--file", "workspace.toml", "--categories"],
-            vec!["Workspace members", "Source categories"],
+            vec!["Repository", "Category"],
         ),
     ] {
-        args.extend(["--format", "table", "--no-bars"]);
-        let out = run(dir.path(), &args);
-        success(&out);
-        let table = String::from_utf8(out.stdout).unwrap();
-        assert!(
-            table.starts_with("▸ Source languages\n\n Language "),
-            "{table}"
-        );
-        assert_eq!(table.matches('▸').count(), 1 + titles.len(), "{table}");
-        for title in titles {
-            assert!(table.contains(&format!("\n\n▸ {title}\n\n")), "{table}");
+        for (bars, width) in [
+            ("--no-bars", "80"),
+            ("--bars", "40"),
+            ("--bars", "200"),
+            ("--bars=comments", "200"),
+        ] {
+            let out = common::locmetry()
+                .current_dir(dir.path())
+                .env("XDG_CONFIG_HOME", dir.path().join("no-user-config"))
+                .env("COLUMNS", width)
+                .args(&args)
+                .args(["--format", "table", bars])
+                .output()
+                .unwrap();
+            success(&out);
+            let table = String::from_utf8(out.stdout).unwrap();
+            assert!(!table.contains('▸'), "{table}");
+            let lines: Vec<_> = table.lines().collect();
+            for label in std::iter::once("Language").chain(labels.iter().copied()) {
+                let header = lines
+                    .iter()
+                    .position(|line| line.starts_with(&format!(" {label} ")))
+                    .unwrap();
+                assert_eq!(
+                    lines[header - 1],
+                    lines[header + 1].replace('┼', "─"),
+                    "{table}"
+                );
+                if label != "Language" {
+                    assert!(lines[header - 2].is_empty(), "{table}");
+                }
+            }
+            assert!(!table.contains('\x1b'));
         }
-        assert!(!table.contains('\x1b'));
     }
 }
 

@@ -100,7 +100,7 @@ struct Grid {
 }
 
 impl Grid {
-    fn write(self, output: &mut String, markdown: bool, titled: bool, theme: Theme) {
+    fn write(self, output: &mut String, markdown: bool, theme: Theme) {
         if self.rows.is_empty() {
             return;
         }
@@ -125,13 +125,12 @@ impl Grid {
         let total = self.total.as_ref().map(cells);
         match markdown {
             true => writeln!(output, "\n## {}\n", self.title),
-            false if titled => write!(output, "\n{}", output::section_title(self.title, theme)),
             false => writeln!(output),
         }
         .unwrap();
         let columns = Columns::of(&columns);
-        output.push_str(&if !markdown && !titled {
-            output::standalone_table(&columns, &body, total.as_deref(), theme)
+        output.push_str(&if !markdown {
+            output::table_with_top_rule(&columns, &body, total.as_deref(), theme)
         } else {
             output::shared_table(&columns, &body, total.as_deref(), markdown, theme)
         });
@@ -306,14 +305,8 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
             secondary: false,
         }
     });
-    let titled = grids
-        .iter()
-        .chain(folder_grid.iter())
-        .filter(|grid| !grid.rows.is_empty())
-        .count()
-        > 1;
     for grid in grids {
-        grid.write(&mut out, markdown, titled, theme);
+        grid.write(&mut out, markdown, theme);
     }
     if let Some(composition) = c.summary.composition.as_ref().filter(|composition| {
         [&composition.source, &composition.all_counted]
@@ -365,7 +358,19 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
         .unwrap();
     }
     if let Some(grid) = folder_grid {
-        grid.write(&mut out, markdown, titled, theme);
+        let has_rows = !grid.rows.is_empty();
+        grid.write(&mut out, markdown, theme);
+        if !markdown && has_rows {
+            writeln!(
+                out,
+                " {}",
+                theme.paint(
+                    Role::Muted,
+                    "Folders are recursive; do not sum parents and children."
+                )
+            )
+            .unwrap();
+        }
     }
     let summary = &c.presence_summary;
     let presence: Vec<_> = [

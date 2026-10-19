@@ -234,7 +234,7 @@ fn workspace_notes_name_the_member_of_each_finding() {
         })
         .into();
     assert!(
-        table.starts_with("▸ Source languages\n\n Language "),
+        table.starts_with(" ─") && table.lines().nth(1).unwrap().starts_with(" Language "),
         "{table}"
     );
     assert!(

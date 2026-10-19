@@ -219,8 +219,7 @@ fn table_format_splits_source_code_by_language_and_purpose() {
         &["--verbose", "--folders", "--format", "table"],
     );
     assert!(output.status.success());
-    let expected = "▸ Source languages
-
+    let expected = " ────────────────────────────────────────────────────────────────────────────────
  Language  Files  Lines  Code │ Comments  Blanks │ Prod.  Test  Other │ Test/prod
  ─────────────────────────────┼──────────────────┼────────────────────┼──────────
  Rust          3      5     4 │        1       0 │     2     2      0 │      1.00
@@ -230,8 +229,7 @@ fn table_format_splits_source_code_by_language_and_purpose() {
  Lines = Code + Comments + Blanks; Production + Test + Other = Code; Test/prod = Test / Production.
  Tests written in another language than the code they test skew per-language Test/prod.
 
-▸ Folders
-
+ ────────────────────────────────────────────────────
  Folder  Lines  Code │ Prod.  Test  Other │ Test/prod
  ────────────────────┼────────────────────┼──────────
  src         3     2 │     2     0      0 │      0.00
@@ -508,7 +506,7 @@ fn print_shows_a_second_view_of_the_saved_measurement() {
     );
     let printed = String::from_utf8(output.stdout).unwrap();
     assert!(
-        printed.starts_with("▸ Source languages\n\n Language "),
+        printed.starts_with(" ─") && printed.lines().nth(1).unwrap().starts_with(" Language "),
         "{printed}"
     );
     assert!(printed.contains("\n Folder "), "{printed}");

@@ -481,7 +481,7 @@ fn folder_grid_keeps_its_total_when_code_only_moves_between_folders() {
     let after = save(temp.path(), "after.json", &measure(&root));
     let output = compare(&before, &after, &["--format", "table"]);
     let text = String::from_utf8(output.stdout).unwrap();
-    let folders = text.split("Folders (recursive").nth(1).unwrap();
+    let folders = text.split("\n Folder ").nth(1).unwrap();
     let total = folders
         .lines()
         .find(|line| line.starts_with(" Source total"))
@@ -1095,7 +1095,7 @@ fn source_grids_include_line_changes_but_omit_data_and_file_count_only_changes()
             );
         }
         for text in human_comparisons(&before, &after, 0) {
-            for heading in ["Purpose", "Languages", "Folders (recursive"] {
+            for heading in [" Purpose ", " Language ", " Folder "] {
                 assert_eq!(
                     text.contains(heading),
                     matches!(variant, "comment" | "blank"),
@@ -1136,9 +1136,10 @@ fn source_code_grids_preserve_zero_code_folder_and_member_presence() {
         2
     );
     for text in human_comparisons(&workspace_before, &workspace_after, 0) {
-        assert!(text.contains("Workspace members"), "{text}");
+        assert!(text.contains(" Member "), "{text}");
         assert_eq!(
-            text.contains("Folders (recursive"),
+            text.lines()
+                .any(|line| line.starts_with(" Folder ") || line.starts_with("| Folder |")),
             text.starts_with("# "),
             "{text}"
         );
@@ -1156,7 +1157,7 @@ fn source_code_grids_preserve_zero_code_folder_and_member_presence() {
     write(&root, "src/main.py", "print(1)\nprint(2)\n");
     let source_after = save(temp.path(), "source-after.json", &measure(&root));
     for text in human_comparisons(&after, &source_after, 0) {
-        for heading in ["Purpose", "Languages", "Folders (recursive"] {
+        for heading in [" Purpose ", " Language ", " Folder "] {
             assert!(text.contains(heading), "{text}");
         }
     }
@@ -1289,36 +1290,37 @@ fn totals_split_all_counted_by_kind_and_grids_end_in_their_source_total() {
     write(&root, "config.json", "{\n  \"a\": 1,\n  \"b\": 2\n}\n");
     let after = save(temp.path(), "after.json", &measure(&root));
     let table = String::from_utf8(compare(&before, &after, &["--format", "table"]).stdout).unwrap();
-    let section = |title: &str| {
+    let section = |label: &str| {
         table
-            .split(&format!("\n▸ {title}\n\n"))
-            .nth(1)
-            .unwrap()
             .split("\n\n")
-            .next()
+            .find(|block| {
+                block
+                    .lines()
+                    .any(|line| line.starts_with(&format!(" {label} ")))
+            })
             .unwrap()
             .to_string()
     };
-    for title in [
-        "Totals",
-        "Purpose",
-        "Languages",
-        "Folders (recursive; do not sum parents and children)",
-    ] {
-        assert!(table.contains(&format!("\n\n▸ {title}\n\n")), "{table}");
-        let group_header = section(title).lines().next().unwrap().to_owned();
+    for label in ["Kind", "Purpose", "Language", "Folder"] {
+        let block = section(label);
+        let lines: Vec<_> = block.lines().collect();
+        assert_eq!(lines[0], lines[3].replace('┼', "─"), "{block}");
+        let group_header = lines[1];
         assert!(
             group_header.contains("Lines") && group_header.contains("Code"),
             "{group_header}"
         );
         assert!(!group_header.contains('─'), "{group_header}");
     }
+    for title in ["Totals", "Purpose", "Languages", "Folders"] {
+        assert!(!table.contains(&format!("▸ {title}")), "{table}");
+    }
     let figures = |line: &str| -> Vec<i64> {
         line.split_whitespace()
             .filter_map(|cell| cell.replace(',', "").parse().ok())
             .collect()
     };
-    let totals = section("Totals");
+    let totals = section("Kind");
     let rows: Vec<_> = totals
         .lines()
         .filter(|line| !figures(line).is_empty())
@@ -1351,13 +1353,15 @@ fn totals_split_all_counted_by_kind_and_grids_end_in_their_source_total() {
             .starts_with(" Source total "),
         "{purpose}"
     );
-    let folders = section("Folders (recursive; do not sum parents and children)");
+    let folders = section("Folder");
     assert!(
         folders
             .lines()
-            .last()
-            .unwrap()
-            .starts_with(" Source total "),
+            .any(|line| line.starts_with(" Source total ")),
+        "{folders}"
+    );
+    assert!(
+        folders.contains("Folders are recursive; do not sum parents and children."),
         "{folders}"
     );
     assert!(!folders.contains(". (both)"), "{folders}");

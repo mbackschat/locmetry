@@ -763,7 +763,7 @@ struct InlineBars {
     bars: Vec<String>,
 }
 
-pub(crate) fn standalone_table(
+pub(crate) fn table_with_top_rule(
     columns: &Columns,
     body: &[Vec<String>],
     total: Option<&[String]>,
@@ -773,8 +773,7 @@ pub(crate) fn standalone_table(
     table.top_rule(theme) + &table.text
 }
 
-/// Keep geometry with styled text: later tables determine whether this one
-/// needs a top rule, whose width must not include ANSI escapes.
+/// Keep geometry with styled text so top-rule widths exclude ANSI escapes.
 struct RenderedTable {
     text: String,
     width: usize,
@@ -1693,7 +1692,6 @@ pub fn render_table_with_options(
     total.extend(count_cells(&summary.totals.source));
     total.extend(columns.cells(total_code));
     let mut output = String::new();
-    let mut has_detail_table = false;
     // With bars, a table returns what follows its legends: an inline bar key
     // or the chart below it.
     let table =
@@ -1712,6 +1710,7 @@ pub fn render_table_with_options(
         total,
         &codes,
     );
+    output += &language_table.top_rule(theme);
     output += &language_table.text;
     let mut legends = vec![columns.legend(Some("Lines = Code + Comments + Blanks"), None)];
     if columns.ratio() == Ratio::TestPerProduction {
@@ -1729,8 +1728,7 @@ pub fn render_table_with_options(
         let (body, codes, total) = repository_rows(summary, findings.members, order, &columns);
         let (text, after) = table(&repository_columns(&columns), &body, total, &codes);
         output += "\n";
-        output += &section_title("Workspace members", theme);
-        has_detail_table = true;
+        output += &text.top_rule(theme);
         output += &text.text;
         let legend = columns.legend(None, Some("Share = Code / workspace Code"));
         output += &format!(" {}\n", theme.paint(Role::Muted, &legend));
@@ -1772,8 +1770,7 @@ pub fn render_table_with_options(
                 &codes,
             );
             output += "\n";
-            output += &section_title("Folders", theme);
-            has_detail_table = true;
+            output += &text.top_rule(theme);
             output += &text.text;
             output += &format!(
                 " {}\n",
@@ -1814,18 +1811,10 @@ pub fn render_table_with_options(
             .collect();
         if !body.is_empty() {
             output += "\n";
-            output += &section_title("Source categories", theme);
-            has_detail_table = true;
             let columns = Columns::of(&count_columns("Category")[..4]);
-            output += &shared_table(&columns, &body, None, false, theme);
+            output += &table_with_top_rule(&columns, &body, None, theme);
             output += &format!(" {}\n", theme.paint(Role::Muted, CATEGORY_LEGEND));
         }
-    }
-
-    if has_detail_table {
-        output.insert_str(0, &section_title("Source languages", theme));
-    } else {
-        output.insert_str(0, &language_table.top_rule(theme));
     }
 
     let mut notes = Vec::new();
@@ -2259,21 +2248,15 @@ mod tests {
                 render_table_with_options(&summary, &rows, &findings, options)
             };
             let (styled, plain) = (render(Theme::TERMINAL), render(Theme::PLAIN));
-            let (plain_start, styled_start) = if members.is_empty() {
-                (" ─", "\x1b[90m ─")
-            } else {
-                (
-                    "▸ Source languages\n\n Language ",
-                    "\x1b[1m▸ Source languages\x1b[0m\n\n",
-                )
-            };
+            let (plain_start, styled_start) = (" ─", "\x1b[90m ─");
             assert!(plain.starts_with(plain_start), "{plain}");
             assert!(!plain.contains("Code by purpose"));
             assert!(styled.starts_with(styled_start), "{styled}");
             let legend = ALL_PURPOSES.legend(Some("Lines = Code + Comments + Blanks"), None);
             assert!(styled.contains(&format!("\x1b[90m{legend}\x1b[0m")));
             if !members.is_empty() {
-                assert!(plain.contains("\n\n▸ Workspace members\n\n"), "{plain}");
+                assert!(!plain.contains('▸'), "{plain}");
+                assert!(plain.contains("\n Repository "), "{plain}");
                 let legend = ALL_PURPOSES.legend(None, Some("Share = Code / workspace Code"));
                 assert!(styled.contains(&format!("\x1b[90m{legend}\x1b[0m")));
             }

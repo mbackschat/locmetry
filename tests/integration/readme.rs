@@ -91,10 +91,10 @@ fn render(groups: &[Group], folders: bool) -> String {
 fn tables(groups: &[Group]) -> [(String, String); 2] {
     let language = render(groups, false);
     let combined = render(groups, true);
-    let (_, folders) = combined.split_once("\n▸ Folders\n").unwrap();
+    let (_, folders) = combined.split_once("\n\n").unwrap();
     [
         ("readme-language".into(), language),
-        ("readme-folders".into(), format!("▸ Folders\n{folders}")),
+        ("readme-folders".into(), folders.to_string()),
     ]
 }
 

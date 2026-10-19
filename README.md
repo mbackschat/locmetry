@@ -51,12 +51,11 @@ To see where the code resides, add adaptive folder detail:
 locmetry --folder-rows 30
 ```
 
-Reports with one table use a thin top rule instead of a section title. When multiple tables are rendered, each gets a title: the language table above replaces its top rule with `▸ Source languages` and is followed by the folder table below. Empty optional tables do not trigger titles.
+Each terminal table starts with a thin top rule directly above its column headers. The headers identify the table without a separate title; a blank line separates it from the preceding table and legends.
 
 <!-- readme-folders -->
 ```text
-▸ Folders
-
+ ──────────────────────────────────────────────────────────────────────────────────────────────
  Folder                                      Lines     Code │  Prod.    Test  Other │ Test/prod
  ───────────────────────────────────────────────────────────┼───────────────────────┼──────────
  web/src/orders                             11,670    9,580 │  6,100   3,480      0 │      0.57
