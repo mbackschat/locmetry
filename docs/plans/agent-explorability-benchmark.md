@@ -4,7 +4,7 @@
 {
   "status": "active",
   "date": "2026-10-19",
-  "summary": "Retain replayable MEDIUM-agent benchmarks and evaluate targeted follow-ups from the guide-removal study.",
+  "summary": "Evaluate a configuration recipe in help while retaining guides and measuring unrelated-task cost.",
   "evidence": "[Six-task study](../research/agent-explorability-six-task-study.md)"
 }
 -->
@@ -33,6 +33,8 @@ The recommended target, still subject to review, is successful ordinary use with
 
 The [first Task 1 pilot](../research/agent-explorability-task1-pilot.md) established isolation and telemetry. The subsequent [study](../research/agent-explorability-six-task-study.md) completed 36 new task runs, excluded the earlier pair, and added a separate six-run capability-discovery track. The six-task sample passed 18/18 with guides and 17/18 without; resource totals were close, with 4.9% more uncached input after guide removal. Retain guides as optional reference and leave navigation unchanged; the study records the interpretation failure and task-specific tradeoffs. This is a tested recommendation, not evidence that guides are indispensable.
 
+The owner subsequently authorized the [configuration-recipe experiment](../research/agent-explorability-help-recipe-study.md), revisiting their original usage-example proposal. Its frozen design uses 24 fresh sessions across the original configuration task, an independent Cargo layout, and report understanding. It retains guides in both conditions and measures the cost imposed on unrelated tasks.
+
 For a later session:
 
 1. Read the study's conclusions, limitations, and per-run results before proposing interface changes. Do not repeat the original pilot or pool sequential historical runs with fresh-task results.
@@ -41,7 +43,7 @@ For a later session:
 4. Add an independent fixture variant when testing generalization, and give each changed prompt, fixture, oracle, or treatment a new revision. Keep old outcomes and all-run costs available.
 5. Treat personal-policy interactions, extended scope cases, and long-session reuse as separate future cases, not as already verified behavior of the benchmark.
 
-The owner authorized autonomous experimental design on 2026-10-20. No further experimental work or product modification is silently scheduled by this continuation record.
+The owner authorized autonomous experimental design on 2026-10-20. The configuration-recipe follow-up is explicitly authorized; no production modification is authorized by this continuation record.
 
 ## Proposed Experiment
 

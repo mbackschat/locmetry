@@ -12,6 +12,7 @@ The [archived implementation record](../plans/archive/measurement-quality-and-ne
 - [Trials on real projects](real-project-trials.md): blind agent configuration trials, their scores, and what they changed.
 - [First agent-explorability pilot](agent-explorability-task1-pilot.md): paired MEDIUM report-understanding runs with and without guides, verified outcomes, token/tool metrics, and replay instructions.
 - [Six-task guide-removal study](agent-explorability-six-task-study.md): repeated MEDIUM trials across six workflows plus initial capability discovery, with correctness, token/tool costs, and a guide-retention recommendation.
+- [Configuration recipe in help](agent-explorability-help-recipe-study.md): controlled test of the owner's usage-example proposal, independent configuration layout, and unrelated-task reading cost.
 - [Integration and distribution](../tokei-integration.md): embedded Rust backend and minimal dependency model.
 - [Measurement semantics and limits](../measurement.md): selection and counting details as implemented.
 

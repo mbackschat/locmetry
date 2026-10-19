@@ -16,7 +16,7 @@
 
 ## Agent Explorability — Evidence and Follow-up
 
-- [ ] Use the [guide-removal study](research/agent-explorability-six-task-study.md) and [replayable benchmark](plans/agent-explorability-benchmark.md) to assess a targeted follow-up before changing the interface. Current evidence supports retaining optional guides and leaving navigation unchanged; removing guides did not give a consistent resource advantage. Personal-policy interactions and an independent fixture family remain untested. The [earlier guidance checkpoint](plans/archive/measurement-quality-and-net-change.md#embedded-guidance-implementation--2026-10-16) remains historical evidence.
+- [ ] Complete the authorized [configuration-recipe experiment](research/agent-explorability-help-recipe-study.md): retain guides in both conditions, test two configuration fixtures, and measure unrelated-task reading cost. The [guide-removal study](research/agent-explorability-six-task-study.md) supports retaining optional guides. The [benchmark](plans/agent-explorability-benchmark.md) owns continuation and revision rules.
 
 ## Ideas — Not Scheduled
 

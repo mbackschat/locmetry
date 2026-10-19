@@ -1,0 +1,104 @@
+{
+  "revision": "task8-config-layout-v1",
+  "files": {
+    "projects/worker/Cargo.toml": "[package]\nname = \"harbor-worker\"\nversion = \"0.1.0\"\nedition = \"2024\"\n",
+    "projects/worker/README.md": "# Harbor worker\n\nSynthetic Rust worker and maintained operations scripts.\n",
+    "projects/worker/ops/rotate.sh": "# maintained operations\nprintf 'rotate\\n'\nprintf 'verify\\n'\n",
+    "projects/worker/reference/replay.sh": "printf 'historical replay\\n'\n",
+    "projects/worker/scratch/probe.rs": "// purpose undecided\nfn main() {\n    println!(\"probe\");\n}\n",
+    "projects/worker/settings.toml": "[worker]\nqueue = \"demo\"\n",
+    "projects/worker/src/lib.rs": "pub fn greeting() -> &'static str {\n    \"ready\"\n}\n",
+    "projects/worker/src/main.rs": "// application\nfn main() {\n    println!(\"ready\");\n}\n\n",
+    "projects/worker/tests/cli.rs": "// integration test\n#[test]\nfn readiness_message() {\n    assert_eq!(\"ready\".len(), 5);\n}\n",
+    "projects/worker/vendor/generated/client.rs": "pub const GENERATED: bool = true;\n"
+  },
+  "prompt": "You have ./bin/locmetry and synthetic inputs in this scratch directory. Work only here. The executable and its built-in discovery material are your only product documentation; do not read other directories, implementation files, telemetry, or the launcher, and do not use the internet or other agents. You may inspect synthetic inputs and use ordinary shell/Python tools. You may create or edit only project configuration and files outside measured roots; leave all existing source/data/documentation files unchanged. Configure projects/worker so ops/ is Production with category operations, reference/ is intentionally Other with category historical, and vendor/ is excluded. Retain inferred application Production and the existing test classification. The purpose of scratch/ is unresolved: keep it counted and visible as review work. Save a full verification report with per-file decisions to outputs/configured.json. Report the resulting source and all-counted counts, source Code by purpose, and remaining review item, and explain why an empty review list would not itself establish correct classification.\n\nUse whatever built-in discovery you need. Give a concise final answer of at most 250 words, including supporting commands and any unresolved result. Create the requested working artifacts, but do not write an assessment document or a logging harness.\n",
+  "oracle": {
+    "root": "projects/worker",
+    "source": {
+      "files": 6,
+      "code": 16,
+      "comments": 4,
+      "blanks": 1,
+      "lines": 21
+    },
+    "all_counted": {
+      "files": 9,
+      "code": 22,
+      "comments": 6,
+      "blanks": 2,
+      "lines": 30
+    },
+    "purpose_code": {
+      "production": 8,
+      "test": 4,
+      "other": 4
+    },
+    "decisions": {
+      "Cargo.toml": {
+        "purpose": "other",
+        "category": "unclaimed",
+        "rule": "fallback"
+      },
+      "README.md": {
+        "purpose": "other",
+        "category": "unclaimed",
+        "rule": "fallback"
+      },
+      "ops/rotate.sh": {
+        "purpose": "production",
+        "category": "operations"
+      },
+      "reference/replay.sh": {
+        "purpose": "other",
+        "category": "historical"
+      },
+      "scratch/probe.rs": {
+        "purpose": "other",
+        "category": "unclaimed",
+        "rule": "fallback"
+      },
+      "settings.toml": {
+        "purpose": "other",
+        "category": "unclaimed",
+        "rule": "fallback"
+      },
+      "src/lib.rs": {
+        "purpose": "production",
+        "category": "implementation",
+        "rule": "builtin:cargo-module"
+      },
+      "src/main.rs": {
+        "purpose": "production",
+        "category": "implementation",
+        "rule": "builtin:cargo-module"
+      },
+      "tests/cli.rs": {
+        "purpose": "test",
+        "category": "test",
+        "rule": "builtin:test-directory"
+      }
+    },
+    "excluded": [
+      "vendor/generated/client.rs"
+    ],
+    "review": [
+      "scratch/probe.rs"
+    ],
+    "artifacts": [
+      "projects/worker/.locmetryrc",
+      "outputs/configured.json"
+    ]
+  },
+  "limits": {
+    "wall_seconds": 600,
+    "cli_invocations": 60,
+    "agent_tool_calls": 40,
+    "uncached_input_tokens": 100000
+  },
+  "grading": "Recovered mistakes may pass; record recovery cost. Required conclusions missing => incomplete. Wrong delivered figures, ratio basis, or unknown/zero or counted/unclaimed interpretation => critical failure. Inspect fixture integrity and supporting calls.",
+  "mutable": [
+    "projects/worker/.locmetryrc"
+  ],
+  "generated": []
+}

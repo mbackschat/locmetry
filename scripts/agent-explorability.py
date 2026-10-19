@@ -1,4 +1,4 @@
-"""Prepare isolated guide-removal experiments; never edit product sources."""
+"""Prepare isolated CLI discovery experiments; never edit product sources."""
 
 import argparse
 from concurrent.futures import ThreadPoolExecutor
@@ -65,7 +65,21 @@ def without_guides(source):
     (source.parent / "treatment.patch").write_text("".join(patch))
 
 
-def prepare(destination, task_path=TASK, binaries=None):
+def with_help_recipe(source):
+    path = source / "src/main.rs"
+    original = path.read_text()
+    marker = "For workflows and saved-report recipes, use locmetry --guide TOPIC"
+    if original.count(marker) != 1:
+        raise ValueError("Help recipe insertion point must match exactly once")
+    recipe = (TASK.parent / "help-recipe.txt").read_text()
+    escaped = recipe.replace('\\', '\\\\').replace('"', '\\"')
+    changed = original.replace(marker, escaped + marker)
+    path.write_text(changed)
+    patch = difflib.unified_diff(original.splitlines(True), changed.splitlines(True), "a/src/main.rs", "b/src/main.rs")
+    (source.parent / "treatment.patch").write_text("".join(patch))
+
+
+def prepare(destination, task_path=TASK, binaries=None, treatment="without-guides"):
     destination.mkdir(parents=True, exist_ok=False)
     files = [REPO / "Cargo.toml", REPO / "Cargo.lock"]
     files += list((REPO / "src").rglob("*.rs"))
@@ -75,7 +89,12 @@ def prepare(destination, task_path=TASK, binaries=None):
             target = destination / condition / path.relative_to(REPO)
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(path, target)
-    without_guides(destination / "B")
+    if treatment == "without-guides":
+        without_guides(destination / "B")
+    elif treatment == "help-recipe":
+        with_help_recipe(destination / "B")
+    else:
+        raise ValueError(f"Unknown treatment: {treatment}")
     if binaries:
         for condition, binary in zip(["A", "B"], binaries):
             target = destination / condition / "target/debug/locmetry"
@@ -84,6 +103,7 @@ def prepare(destination, task_path=TASK, binaries=None):
     task = json.loads(task_path.read_text())
     manifest = {
         "revision": task["revision"],
+        "treatment": treatment,
         "source_revision": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=REPO, text=True).strip(),
         "task_sha256": sha(task_path),
         "task": task,
@@ -300,21 +320,26 @@ def run_agent(destination, run, model, effort):
     print(json.dumps(summary, indent=2))
 
 
-def campaign(destination, binaries, model, effort):
+def campaign(destination, binaries, model, effort, treatment="without-guides", task_ids=(1, 2, 3, 4, 5, 6), repetitions=3):
     destination.mkdir(parents=True, exist_ok=False)
-    tasks = [TASK.with_name(f"task{n}.json") for n in range(1, 7)]
-    jobs = [(n, repetition) for repetition in range(1, 4) for n in range(1, 7)]
-    plan = dict(revision="six-tasks-v1", model=model, effort=effort, repetitions=3,
-                task_hashes={p.name: sha(p) for p in tasks}, harness_sha256=sha(Path(__file__)),
+    tasks = {n: TASK.with_name(f"task{n}.json") for n in task_ids}
+    jobs = [(n, repetition) for repetition in range(1, repetitions + 1) for n in task_ids]
+    plan = dict(revision="six-tasks-v1" if treatment == "without-guides" else "help-recipe-v1",
+                treatment=treatment, model=model, effort=effort, repetitions=repetitions,
+                task_hashes={p.name: sha(p) for p in tasks.values()}, harness_sha256=sha(Path(__file__)),
                 binary_hashes={c: sha(p) for c, p in zip(["A", "B"], binaries)},
                 pairs=[dict(task=n, repetition=r, first="A" if (n+r)%2==0 else "B") for n, r in jobs],
                 concurrent_pairs=3, previous_pilot_included=False)
+    if treatment == "help-recipe":
+        plan["recipe_sha256"] = sha(TASK.parent / "help-recipe.txt")
+        plan["study_sha256"] = sha(TASK.parent / "help-recipe-study.json")
+        plan["grader_sha256"] = sha(REPO / "scripts/score_agent_explorability.py")
     (destination / "campaign.json").write_text(json.dumps(plan, indent=2) + "\n")
 
     def pair(job):
         n, repetition = job
         target = destination / f"task{n}-rep{repetition}"
-        prepare(target, tasks[n-1], binaries)
+        prepare(target, tasks[n], binaries, treatment)
         order = ["run-02", "run-01"] if (n+repetition)%2==0 else ["run-01", "run-02"]
         for run in order:
             run_agent(target, run, model, effort)
@@ -331,6 +356,7 @@ def main():
     prep = sub.add_parser("prepare")
     prep.add_argument("destination", type=Path)
     prep.add_argument("--task", type=Path, default=TASK)
+    prep.add_argument("--treatment", choices=["without-guides", "help-recipe"], default="without-guides")
     prep.add_argument("--binaries", type=Path, nargs=2, metavar=("A", "B"))
     check = sub.add_parser("verify")
     check.add_argument("current", type=Path)
@@ -345,15 +371,19 @@ def main():
     batch.add_argument("--binaries", type=Path, nargs=2, required=True)
     batch.add_argument("--model", required=True)
     batch.add_argument("--effort", required=True)
+    batch.add_argument("--treatment", choices=["without-guides", "help-recipe"], default="without-guides")
+    batch.add_argument("--task-ids", type=int, nargs="+", default=[1, 2, 3, 4, 5, 6])
+    batch.add_argument("--repetitions", type=int, default=3)
     args = parser.parse_args()
     if args.command == "prepare":
-        prepare(args.destination.resolve(), args.task.resolve(), args.binaries)
+        prepare(args.destination.resolve(), args.task.resolve(), args.binaries, args.treatment)
     elif args.command == "verify":
         verify(args.current.resolve(), args.without_guides.resolve())
     elif args.command == "run":
         run_agent(args.destination.resolve(), args.run, args.model, args.effort)
     else:
-        campaign(args.destination.resolve(), [p.resolve() for p in args.binaries], args.model, args.effort)
+        campaign(args.destination.resolve(), [p.resolve() for p in args.binaries], args.model, args.effort,
+                 args.treatment, args.task_ids, args.repetitions)
 
 
 if __name__ == "__main__":

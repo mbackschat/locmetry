@@ -11,7 +11,7 @@ import sys
 def grade(pair, run):
     manifest = json.loads((pair / "manifest.json").read_text())
     task = manifest["task"]
-    number = int(task["revision"][4])
+    number = int(task["revision"].split("-")[0].removeprefix("task"))
     root = pair / run
     evidence = pair / "evidence" / run
     summary = json.loads((evidence / "summary.json").read_text())
@@ -29,7 +29,11 @@ def grade(pair, run):
             missing.append(name)
             return None
         try:
-            return json.loads(path.read_text())
+            value = json.loads(path.read_text())
+            if not isinstance(value, dict) or not value:
+                check("nonempty-report-object:" + name, False)
+                return None
+            return value
         except json.JSONDecodeError:
             check("valid-json:" + name, False)
             return None
@@ -139,6 +143,29 @@ def grade(pair, run):
                 check("unclaimed-counted", result["scratch"]["result"]["file"]["category"] == "unclaimed")
                 check("workspace-identity", result["workspace_tool"]["member"] == "web" and result["workspace_tool"]["path"] == "web/tools/release.py")
                 check("member-relative-pattern", result["workspace_tool"]["result"]["decision"]["matched_patterns"] == ["tools/**"])
+        elif number == 8:
+            oracle = task["oracle"]
+            report = load("outputs/configured.json")
+            result = command(["--root", oracle["root"], "--files", "--format", "json"])
+            check("configuration-loads", result.returncode == 0)
+            actual = json.loads(result.stdout)
+            if report:
+                check("saved-report-matches-policy", report["summary"] == actual["summary"])
+                check("saved-per-file-evidence", report.get("files") == actual["files"])
+            counts(actual, oracle["source"])
+            for key, value in oracle["all_counted"].items():
+                check("all-counted:" + key, actual["summary"]["all_counted"][key] == value)
+            for purpose, value in oracle["purpose_code"].items():
+                check("purpose-code:" + purpose, actual["summary"]["source_purpose"][purpose]["code"] == value)
+            check("remaining-review", [x["path"] for x in actual["review"]] == oracle["review"])
+            files = {f["path"]: f for f in actual["files"]}
+            check("exact-file-set", set(files) == set(oracle["decisions"]))
+            for name, expected in oracle["decisions"].items():
+                check("decision:" + name, all(files[name][k] == v for k, v in expected.items()))
+            for name in oracle["excluded"]:
+                check("excluded:" + name, name not in files)
+        else:
+            check("supported-task", False)
     except (KeyError, TypeError, ValueError, subprocess.TimeoutExpired) as error:
         check("artifact-structure-or-execution", False)
         checks["error"] = str(error)

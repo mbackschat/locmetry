@@ -1,0 +1,27 @@
+{
+  "revision": "help-recipe-v1",
+  "owner_proposal": "Usage examples at the end of help, analogous to man pages; revisited after the assistant had argued against the idea.",
+  "conditions": {
+    "A": "Current help, guides and schemas unchanged",
+    "B": "Add only help-recipe.txt to root long help; retain guides and schemas"
+  },
+  "task_ids": [
+    1,
+    3,
+    8
+  ],
+  "repetitions": 4,
+  "model": "gpt-6.1-sol",
+  "effort": "xhigh",
+  "previous_trials_included": false,
+  "decision_rule": {
+    "correctness": "No treatment critical failures or incomplete runs and no lower pass count than control on any case.",
+    "configuration_benefit": "For each of tasks 3 and 8: either median agent calls at least 1 lower with median uncached input no more than 5% higher, or median uncached input at least 10% lower with median agent calls no higher. The improved metric must favor treatment in at least 3 of 4 pairs for that case.",
+    "unrelated_cost": "Task 1 median agent calls no higher and median uncached input no more than 5% higher.",
+    "secondary_metrics": "Always report cached input, output including reasoning, shell/CLI calls, guide/schema retrievals and completion time; a material regression in these prevents unqualified adoption.",
+    "interpretation": "Practical diagnostic thresholds, not statistical significance. Failure to meet them means no demonstrated adoption benefit for this exact recipe; it does not reject usage examples generally.",
+    "product_change": "This experiment does not install the treatment into production."
+  },
+  "integrity": "Freeze prompts, fixtures, treatment, harness and grading rules before launch. Exclude invalid instrumentation/context sessions explicitly; retain valid failures and their costs.",
+  "review": "Independently review final answers with condition/cost labels concealed; answers may reveal their route."
+}
