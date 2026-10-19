@@ -1,4 +1,4 @@
-mod common;
+use crate::common;
 use anyhow::{ensure, Result};
 use locmetry::{
     build_report, render_table_with_options, style::Theme, Classification, Counts, Coverage,
@@ -20,7 +20,7 @@ struct Group {
 }
 
 fn fixture() -> Vec<Group> {
-    serde_json::from_str(include_str!("fixtures/readme/report.json")).unwrap()
+    serde_json::from_str(include_str!("../fixtures/readme/report.json")).unwrap()
 }
 
 fn render(groups: &[Group], folders: bool) -> String {

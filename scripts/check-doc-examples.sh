@@ -182,5 +182,5 @@ extract_blocks 'Share a report and follow changes' "$temporary/tour-share.sh" 0 
 grep -Fq '## Source categories' "$temporary/issues/acme-orders-report.md"
 jq -e '.document_type == "comparison" and .summary.source.delta.code == 0' "$temporary/tour-comparison.json" > /dev/null
 
-# Illustrative README tables are checked by cargo test --locked --test readme.
+# Illustrative README tables are checked by cargo test --locked --test integration readme::.
 echo 'README and guide examples pass: silent file exports, Markdown content, policy outcomes, compare, workspace compare, explain, partial coverage, troubleshooting queries, adaptive folder detail, and the sample-project tour.'

@@ -66,7 +66,7 @@ cargo build --release --locked
 The optional guard replays saved raw backend statistics through each reviewed TOML configuration, requires the saved file records and totals, and checks reviewed example paths. It is skipped by ordinary `cargo test` runs:
 
 ```sh
-LOCMETRY_PRIVATE_FIXTURES=docs/research/local/poc cargo test --locked --test private_regression -- --ignored
+LOCMETRY_PRIVATE_FIXTURES=docs/research/local/poc cargo test --locked --test integration private_regression:: -- --ignored
 ```
 
 For each `<name>.locmetry.toml`, the directory must contain `<name>-measurement.json`, `<name>-measurement.tokei.json`, and `<name>.examples.json` with the checkout `root` and reviewed `examples`. The fixtures are frozen: Locmetry no longer writes raw backend statistics, so they cannot be regenerated, and the guard normalizes their older serialization instead. They predate language mappings, so files they never counted are absent from both sides. Fresh scans can differ when a working copy changes; compare equivalent snapshots before attributing differences to the counter.

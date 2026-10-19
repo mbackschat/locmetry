@@ -1,6 +1,6 @@
 //! `--purpose` narrows table views to the selected purposes' source, and
 //! `--bars=comments` charts Code against Comments (docs/PRODUCT.md, Output Routing).
-mod common;
+use crate::common;
 use std::path::Path;
 
 fn project() -> tempfile::TempDir {

@@ -42,11 +42,11 @@ Keep changed guarantees and affected user-facing entry points consistent in the 
 
 | Document | Owns | Check when behavior changes |
 | --- | --- | --- |
-| [README](README.md) | Task entry points, CLI examples and navigation | Check affected examples when their commands, values or behavior change; use `bash scripts/check-doc-examples.sh` for executable recipes and `cargo test --locked --test readme` for illustrative tables and the Common commands table, which mirrors the `--help` examples in [src/main.rs](src/main.rs). |
+| [README](README.md) | Task entry points, CLI examples and navigation | Check affected examples when their commands, values or behavior change; use `bash scripts/check-doc-examples.sh` for executable recipes and `cargo test --locked --test integration readme::` for illustrative tables and the Common commands table, which mirrors the `--help` examples in [src/main.rs](src/main.rs). |
 | [PRODUCT](docs/PRODUCT.md) | Supported public contract | Reconcile flags, report fields and compatibility with executable schemas and tests. |
 | [Measurement semantics](docs/measurement.md) | Counting, selection boundaries and limitations | Add independent regression oracles for changed measurement behavior. |
-| [Configure](docs/guides/configure.md), [selection](docs/guides/selection.md), [reports](docs/guides/reports.md), [compare](docs/guides/compare.md) | Task workflows, examples and evidence interpretation | `cargo test --locked --test guides` checks embedded sources and examples. Add `--test explain` or `--test queries` when those behaviors change, and the documentation script when executable recipes are affected. |
-| Executable schemas | Machine-readable structure and semantics | `cargo test --locked --test schema` checks emitted reports and documented TOML examples. |
+| [Configure](docs/guides/configure.md), [selection](docs/guides/selection.md), [reports](docs/guides/reports.md), [compare](docs/guides/compare.md) | Task workflows, examples and evidence interpretation | `cargo test --locked --test integration guides::` checks embedded sources and examples. Add the `explain::` or `queries::` filter when those behaviors change, and the documentation script when executable recipes are affected. |
+| Executable schemas | Machine-readable structure and semantics | `cargo test --locked --test integration schema::` checks emitted reports and documented TOML examples. |
 | [PLAN](docs/PLAN.md) and its linked live plans | Open scope, decisions and acceptance criteria | Update material changes only; record verified outcomes and retain deferred activation conditions. |
 | [Research](docs/research/README.md) | Dated findings and provenance | Preserve the historical evidence; link its resolution from the active plan. |
 
@@ -56,13 +56,13 @@ CI checks executable examples and schema agreement; it cannot establish that eve
 
 ## Testing Guidelines
 
-Use red/green TDD. Name tests after observable behavior and guard precedence, scope boundaries, embedded-language deduplication, and folder reconciliation. No coverage threshold is set. Public tests must run without external executables. Private regression instructions are in [measurement semantics](docs/measurement.md#private-regression). Keep reference projects read-only; do not run their builds or tests merely to count files.
+Use red/green TDD. Name tests after observable behavior and guard precedence, scope boundaries, embedded-language deduplication, and folder reconciliation. No coverage threshold is set. Integration tests are modules of the single `tests/integration` binary, filtered as `cargo test --locked --test integration compare::`; a guard rejects new top-level `tests/*.rs` files because each would link its own binary again. Public tests must run without external executables. Private regression instructions are in [measurement semantics](docs/measurement.md#private-regression). Keep reference projects read-only; do not run their builds or tests merely to count files.
 
 Choose verification from the changed behavior before implementation; combine rows when a change crosses boundaries. Full-suite runs are not required for every local checkpoint.
 
 | Change | Required local verification |
 | --- | --- |
-| Isolated renderer/presentation change | Focused renderer/CLI regressions (for example, `cargo test --locked --test compare`), formatting and Clippy; preserve styling/plain-text parity when affected. |
+| Isolated renderer/presentation change | Focused renderer/CLI regressions (for example, `cargo test --locked --test integration compare::`), formatting and Clippy; preserve styling/plain-text parity when affected. |
 | Counting, selection, classification, schemas, dependencies or cross-cutting behavior | Full `cargo test --locked`, formatting and Clippy; add the private regression for measurement changes and affected executable documentation checks. |
 | Embedded guide source or guide discovery | Guides tests plus affected query/explanation tests; formatting and Clippy for Rust changes. Run documentation recipes when their commands, expected results or behavior change. |
 | Documentation-only instructions, plans, links or prose outside embedded guides | Check changed links/fragments, preserved history when moving records, and `git diff --check`; do not run unrelated Rust tests or builds. |

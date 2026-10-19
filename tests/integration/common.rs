@@ -1,6 +1,4 @@
-//! Helpers shared by the integration tests. Each test crate compiles its own
-//! copy and uses a subset, so unused helpers are expected.
-#![allow(dead_code)]
+//! Helpers shared by the integration tests.
 
 use serde_json::Value;
 use std::{

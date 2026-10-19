@@ -1,4 +1,4 @@
-mod common;
+use crate::common;
 use std::{fs, path::Path, process::Output};
 
 fn run(root: &Path, args: &[&str]) -> Output {

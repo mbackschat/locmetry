@@ -5,11 +5,11 @@
   "status": "implemented",
   "date": "2026-10-17",
   "summary": "Quiet default measurement tables with opt-in findings and visible real failures.",
-  "evidence": "[Supported contract](../../PRODUCT.md#report-content), [acceptance guards](../../../tests/verbosity.rs)"
+  "evidence": "[Supported contract](../../PRODUCT.md#report-content), [acceptance guards](../../../tests/integration/verbosity.rs)"
 }
 -->
 
-Status: historical decision record — implemented and verified on 2026-10-17. The owner approved the revised proposal on that date and excluded the subsequent Tokei discussion; the historical parity paragraph below creates no scheduled follow-up. [PRODUCT](../../PRODUCT.md#report-content) owns the supported contract; [acceptance guards](../../../tests/verbosity.rs) cover the default/detail boundary, failures, output formats and saved tables. Imperative wording, examples and limitations below describe the reviewed design, not current guarantees. Implementation does not imply publication.
+Status: historical decision record — implemented and verified on 2026-10-17. The owner approved the revised proposal on that date and excluded the subsequent Tokei discussion; the historical parity paragraph below creates no scheduled follow-up. [PRODUCT](../../PRODUCT.md#report-content) owns the supported contract; [acceptance guards](../../../tests/integration/verbosity.rs) cover the default/detail boundary, failures, output formats and saved tables. Imperative wording, examples and limitations below describe the reviewed design, not current guarantees. Implementation does not imply publication.
 
 Total Lines and UTC measurement dates: implemented in `846283b`; not part of this decision.
 
@@ -110,10 +110,10 @@ These references identify the scope to reconcile if the proposal is approved; so
 | [Reports guide](../../guides/reports.md) | Explain how to request notes before sections organised around “Unclaimed source” and “Not source code”; retain the inspection recipes |
 | [PRODUCT workspace contract](../../PRODUCT.md#per-repository-breakdown) | Replace the unconditional mixed member-note guarantee with the default failure/detail boundary; preserve comprehensive Markdown |
 | [PRODUCT reporting](../../PRODUCT.md#report-content) and [adaptive folders](../../PRODUCT.md#adaptive-folder-detail) | Document the default and verbose content contract; the unclaimed-note partition remains independent of `--folder-rows` when requested |
-| [CLI regressions](../../../tests/cli.rs) and [workspace regressions](../../../tests/workspace.rs) | Preserve detail assertions with explicit `--verbose`; add default, mixed-finding and per-member failure cases |
-| [Adaptive folder regressions](../../../tests/folder_rows.rs) | Preserve the note-partition guards with `--verbose`; also ensure adaptive tables stay quiet by default |
-| [Terminal safety regressions](../../../tests/terminal_safety.rs) | Preserve sanitization guards with `--verbose` for optional notes and default coverage for visible failures; do not delete existing guards |
-| [Query guards](../../../tests/queries.rs), [output routing guards](../../../tests/output_contract.rs), [guide guards](../../../tests/guides.rs) and [executable examples](../../../scripts/check-doc-examples.sh) | Cover standalone-query rejection of the presentation flag, its ineffective-format warning, saved-table behavior and changed embedded help/recipes |
+| [CLI regressions](../../../tests/integration/cli.rs) and [workspace regressions](../../../tests/integration/workspace.rs) | Preserve detail assertions with explicit `--verbose`; add default, mixed-finding and per-member failure cases |
+| [Adaptive folder regressions](../../../tests/integration/folder_rows.rs) | Preserve the note-partition guards with `--verbose`; also ensure adaptive tables stay quiet by default |
+| [Terminal safety regressions](../../../tests/integration/terminal_safety.rs) | Preserve sanitization guards with `--verbose` for optional notes and default coverage for visible failures; do not delete existing guards |
+| [Query guards](../../../tests/integration/queries.rs), [output routing guards](../../../tests/integration/output_contract.rs), [guide guards](../../../tests/integration/guides.rs) and [executable examples](../../../scripts/check-doc-examples.sh) | Cover standalone-query rejection of the presentation flag, its ineffective-format warning, saved-table behavior and changed embedded help/recipes |
 
 ## Review disposition and parity follow-up
 

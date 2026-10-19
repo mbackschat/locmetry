@@ -1,7 +1,7 @@
 //! `locmetry workspace` measures several roots as one virtual monorepo; the
 //! oracle throughout is a regular run of each member (docs/PRODUCT.md, Workspace
 //! Mode).
-mod common;
+use crate::common;
 use common::{json, write_all};
 use serde_json::{json, Map, Value};
 use std::{fs, path::Path};

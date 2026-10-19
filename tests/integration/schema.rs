@@ -1,6 +1,6 @@
 //! `--schema` lets agents discover the configuration contract, including its
 //! semantics, from the binary alone.
-mod common;
+use crate::common;
 use serde_json::{json, Value};
 
 fn schema(which: &str) -> Value {

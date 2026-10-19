@@ -1,4 +1,4 @@
-mod common;
+use crate::common;
 use common::write;
 use serde_json::{json, Value};
 use std::{fs, path::Path, process::Output};
@@ -372,7 +372,7 @@ fn schema_examples_are_valid_and_workspace_only_loads_the_queried_policy() {
 
 #[test]
 fn troubleshooting_example_matches_the_executable() {
-    let guide = include_str!("../docs/guides/selection.md");
+    let guide = include_str!("../../docs/guides/selection.md");
     let example = guide
         .split_once("<!-- explanation-result -->")
         .unwrap()

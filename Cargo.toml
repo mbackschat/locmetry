@@ -22,6 +22,10 @@ terminal_size = "0.4"
 tokei = { version = "=15.0.0", default-features = false }
 toml = "1"
 
+# No doc-tests exist; skipping rustdoc saves about 3 s per run (measured 2026-10-19).
+[lib]
+doctest = false
+
 [dev-dependencies]
 jsonschema = { version = "0.58", default-features = false }
 tempfile = "3"

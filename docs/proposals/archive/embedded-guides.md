@@ -109,7 +109,7 @@ Target roughly 4–8 KB of UTF-8 Markdown per topic, using the existing 7,078-by
 
 At `4065e81`, config/report schemas measured 27,882/57,095 bytes. A fresh LOW-tier agent (`gpt-6-luna`, medium effort) used five shell calls to inspect help and schemas, without repository docs or real-project scans. It recovered precedence, setup, coverage and export semantics, but reported buried workflow prose and noisy enumerations. It never configured a project: this is retrieval evidence, not a benchmark or demonstrated guide benefit. Earlier [classification trials](../../research/real-project-trials.md#agent-configuration-trials) do not measure this proposal either.
 
-The external review of `2b28641` and local checks confirmed the existing marked-result example in [explanation tests](../../../tests/explain.rs), ignored schema arguments, schema success beside invalid configuration, and the packaging feasibility of embedding repository Markdown. A local unknown-schema probe lists names without descriptions, so the interface above does not promise descriptions in errors.
+The external review of `2b28641` and local checks confirmed the existing marked-result example in [explanation tests](../../../tests/integration/explain.rs), ignored schema arguments, schema success beside invalid configuration, and the packaging feasibility of embedding repository Markdown. A local unknown-schema probe lists names without descriptions, so the interface above does not promise descriptions in errors.
 
 Official documentation inspected online on 2026-10-16 provides these bounded precedents; peer binaries were not tested:
 

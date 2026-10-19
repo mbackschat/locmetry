@@ -1,4 +1,4 @@
-mod common;
+use crate::common;
 use common::write_all;
 use locmetry::{file_records, scan, Kind, Policy, ScopeOverrides};
 use std::fs;

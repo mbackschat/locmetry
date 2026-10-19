@@ -1,4 +1,4 @@
-mod common;
+use crate::common;
 use locmetry::contract::MeasurementReport;
 use serde_json::{json, Value};
 

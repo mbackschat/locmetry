@@ -1,4 +1,4 @@
-mod common;
+use crate::common;
 use common::{json, write};
 use serde_json::{json, Value};
 use std::{

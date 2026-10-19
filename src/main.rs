@@ -125,7 +125,7 @@ macro_rules! root_after_help {
     version,
     about = "Measure source code by language, folder, and purpose: production, test, or other. Defaults to a table on a terminal, a JSON headline in pipes. --output FILE saves only to that file, defaulting to full JSON; --format overrides the format.",
     after_help = root_after_help!(),
-    // The README "Common commands" table mirrors these examples; tests/readme.rs enforces it.
+    // The README "Common commands" table mirrors these examples; tests/integration/readme.rs enforces it.
     after_long_help = concat!(
         root_after_help!(),
         "\n\nExamples:

@@ -1,4 +1,4 @@
-mod common;
+use crate::common;
 use common::write;
 use std::{collections::BTreeMap, fs, path::Path, process::Output};
 

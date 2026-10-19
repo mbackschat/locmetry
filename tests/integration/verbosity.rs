@@ -1,4 +1,4 @@
-mod common;
+use crate::common;
 use common::write;
 use serde_json::Value;
 use std::{fs, path::Path, process::Output};

@@ -1,4 +1,4 @@
-mod common;
+use crate::common;
 use common::write_all;
 use locmetry::{build_report, file_records, scan, Kind, Policy};
 use serde_json::{json, Value};
