@@ -12,12 +12,12 @@ SPEC.loader.exec_module(BENCH)
 PROTOCOL = BENCH.TASK.parent / "help-routing-study.json"
 
 
-def campaign(destination, binaries):
-    protocol = json.loads(PROTOCOL.read_text())
+def campaign(destination, binaries, protocol_path=PROTOCOL):
+    protocol = json.loads(protocol_path.read_text())
     if len(binaries) != 3:
         raise ValueError("Supply the current, example-only and routed-example binaries")
     destination.mkdir(parents=True, exist_ok=False)
-    plan = dict(protocol, treatment="help-routing", protocol_sha256=BENCH.sha(PROTOCOL),
+    plan = dict(protocol, treatment="help-routing", protocol_sha256=BENCH.sha(protocol_path), protocol_file=protocol_path.name,
                 runner_sha256=BENCH.sha(Path(__file__)), harness_sha256=BENCH.sha(Path(BENCH.__file__)),
                 grader_sha256=BENCH.sha(BENCH.REPO / "scripts/score_agent_explorability.py"),
                 recipe_sha256=BENCH.sha(BENCH.TASK.parent / "help-recipe.txt"),
@@ -43,5 +43,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("destination", type=Path)
     parser.add_argument("--binaries", type=Path, nargs=3, required=True, metavar=("A", "B", "C"))
+    parser.add_argument("--protocol", type=Path, default=PROTOCOL)
     args = parser.parse_args()
-    campaign(args.destination.resolve(), [p.resolve() for p in args.binaries])
+    campaign(args.destination.resolve(), [p.resolve() for p in args.binaries], args.protocol.resolve())

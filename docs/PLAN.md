@@ -16,7 +16,7 @@
 
 ## Agent Explorability — Evidence and Follow-up
 
-- [ ] Resume the [agent-explorability benchmark](plans/agent-explorability-benchmark.md) for a separately frozen revision that retains the [execution-first routing study](research/agent-explorability-help-routing-study.md)'s covered-task savings while checking broader-task cost. The tested candidate fails its full adoption gate; current production help and optional guides remain unchanged.
+- [ ] Complete the bounded [routing cost replication](research/agent-explorability-routing-replication.md): twelve broader-task triads, then six report triads only if all Stage 1 gates pass. Preserve wording and earlier evidence; stop according to the frozen rule.
 
 ## Ideas — Not Scheduled
 

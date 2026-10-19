@@ -95,6 +95,27 @@ class ExperimentTests(unittest.TestCase):
                 actual = [c.args[1] for c in run.call_args_list if c.args[0] == target]
                 self.assertEqual(actual, [{"A": "run-02", "B": "run-01", "C": "run-03"}[a] for a in item["order"]])
 
+    def test_routing_replication_uses_its_own_frozen_protocol(self):
+        spec = importlib.util.spec_from_file_location("routing", Path(__file__).with_name("agent-routing-study.py"))
+        routing = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(routing)
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            binary = root / "binary"
+            binary.write_text("test binary")
+            protocol = json.loads(routing.PROTOCOL.read_text())
+            protocol.update(revision="replication-test", task_ids=[8], repetitions=1,
+                            triads=[{"task": 8, "repetition": 1, "order": "CBA"}])
+            definition = root / "protocol.json"
+            definition.write_text(json.dumps(protocol))
+            with patch.object(routing.BENCH, "prepare"), patch.object(routing.BENCH, "run_agent") as run:
+                routing.campaign(root / "campaign", [binary] * 3, definition)
+            self.assertEqual([c.args[1] for c in run.call_args_list], ["run-03", "run-01", "run-02"])
+            plan = json.loads((root / "campaign/campaign.json").read_text())
+            self.assertEqual(plan["revision"], "replication-test")
+            self.assertEqual(plan["protocol_sha256"], routing.BENCH.sha(definition))
+            self.assertEqual(set(plan["task_hashes"]), {"8"})
+
     def test_campaign_honors_selected_tasks_repetitions_and_treatment(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

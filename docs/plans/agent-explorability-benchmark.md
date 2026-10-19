@@ -2,10 +2,10 @@
 
 <!-- doc-status
 {
-  "status": "deferred",
+  "status": "active",
   "date": "2026-10-20",
-  "summary": "Routing helps covered tasks; defer adoption pending broader-task cost verification.",
-  "evidence": "[Help-routing study](../research/agent-explorability-help-routing-study.md)"
+  "summary": "Replicate routing cost guards with fixed samples and a bounded stopping rule.",
+  "evidence": "[Routing replication](../research/agent-explorability-routing-replication.md)"
 }
 -->
 
@@ -36,6 +36,8 @@ The [first Task 1 pilot](../research/agent-explorability-task1-pilot.md) establi
 The owner subsequently authorized the [configuration-recipe experiment](../research/agent-explorability-help-recipe-study.md), revisiting their original usage-example proposal. Its primary 24 fresh sessions all passed, but the example failed the frozen efficiency gate on both configuration fixtures. The study separately records an eight-session simple-rule probe. Keep the tested production interface; this benchmark remains a reusable specification, with the next separately frozen campaign described below.
 
 The authorized [execution-first routing study](../research/agent-explorability-help-routing-study.md) completed 36 fresh sessions with all answers correct. Explicit routing eliminated both reference lookups in all four covered-task C runs and reduced median calls and uncached input against both controls. Broader configuration failed its cost guard, so the complete candidate did not earn adoption. Keep current help and retain this supported direction for a separately frozen revision; further execution is deferred. The study owns detailed results, limits and replay instructions.
+
+The owner authorized the [bounded routing-cost replication](../research/agent-explorability-routing-replication.md) to resolve the remaining decision. It preserves the candidate and previous results, freezes both stages in advance, and stops after a failed guard or the conditional report check. This is the active work; do not revise wording or add repetitions based on its outcomes.
 
 For a later session:
 

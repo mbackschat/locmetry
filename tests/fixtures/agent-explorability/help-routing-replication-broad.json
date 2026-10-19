@@ -1,0 +1,91 @@
+{
+  "model": "gpt-6.1-sol",
+  "effort": "xhigh",
+  "conditions": {
+    "A": "Current help",
+    "B": "Previous help recipe, unchanged",
+    "C": "Same recipe plus explicit conditional execution-first routing paragraph"
+  },
+  "concurrent_triads": 3,
+  "previous_trials_included": false,
+  "integrity": "Use unchanged task/oracle/prompt and exact prior A/B/C binaries. Freeze both stages before launch; sequential arms, no outcome-dependent order changes. Keep all valid failures and costs. Invalid context/model/telemetry makes the affected stage inadmissible; do not silently replace trials. Retain existing per-run budgets and audit final counters.",
+  "review": "Independent final-answer review with condition/resource labels hidden. Answers can reveal their route, so blinding is imperfect.",
+  "decision_rule": {
+    "correctness": "Every C run must pass executable artifacts and independent semantic grading; no lower pass count than A or B. Valid incomplete/failed/budget-limited runs remain in costs and fail correctness when in C.",
+    "primary_guard": "C median agent calls <=A; C median uncached input <=105% of A.",
+    "secondary_guard": "For shell executions, CLI invocations, cached input, output including reasoning, duration, guide calls and schema calls, C median must be <=120% of BOTH A and B medians. Positive C versus zero comparator fails; no division by zero.",
+    "interpretation": "Practical diagnostic decision, not statistical significance, equivalence, proof of absence, or a general no-regression guarantee. Prior covered-task benefit remains the original four repetitions. No automatic production installation."
+  },
+  "revision": "help-routing-replication-broad-v1",
+  "stage": 1,
+  "task_ids": [
+    8
+  ],
+  "repetitions": 12,
+  "triads": [
+    {
+      "task": 8,
+      "repetition": 1,
+      "order": "ABC"
+    },
+    {
+      "task": 8,
+      "repetition": 2,
+      "order": "BCA"
+    },
+    {
+      "task": 8,
+      "repetition": 3,
+      "order": "CAB"
+    },
+    {
+      "task": 8,
+      "repetition": 4,
+      "order": "ACB"
+    },
+    {
+      "task": 8,
+      "repetition": 5,
+      "order": "CBA"
+    },
+    {
+      "task": 8,
+      "repetition": 6,
+      "order": "BAC"
+    },
+    {
+      "task": 8,
+      "repetition": 7,
+      "order": "CBA"
+    },
+    {
+      "task": 8,
+      "repetition": 8,
+      "order": "ACB"
+    },
+    {
+      "task": 8,
+      "repetition": 9,
+      "order": "BAC"
+    },
+    {
+      "task": 8,
+      "repetition": 10,
+      "order": "CAB"
+    },
+    {
+      "task": 8,
+      "repetition": 11,
+      "order": "BCA"
+    },
+    {
+      "task": 8,
+      "repetition": 12,
+      "order": "ABC"
+    }
+  ],
+  "paired_directions": "For EACH failed primary metric against A, classify its penalty direction as consistent only when strict C>A occurs in >=9 of12 pairs; ties do not count. A primary failure lacking this consistency is mixed/inconclusive, not established harm. A secondary-only failure is a guard failure, not evidence of a consistent primary penalty.",
+  "followup_protocol": "help-routing-replication-report.json",
+  "followup_protocol_sha256": "c5cdf6b67c4db80b5c335b6e63506af72196145d365058fe6e28f3fbe0de61c8",
+  "stopping_rule": "After all36 stage1 sessions and independent grading: if inadmissible or any gate fails, stop and retain current help; no extra trials or wording change. If all gates pass, run the already frozen18-session stage2. After stage2 stop: both admissible stages passing supports a narrow adoption recommendation; otherwise retain current help. Do not pool prior runs or continue until favorable."
+}
