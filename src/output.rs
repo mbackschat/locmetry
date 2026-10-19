@@ -968,22 +968,27 @@ impl PlainTable {
                     .iter()
                     .find(|(index, _)| *index == column)
                     .map(|(_, purpose)| *purpose);
-                let role = match (column, value.as_str(), purpose, kind) {
-                    (0, _, _, _) => Some(Role::Heading),
-                    (_, "-" | "0" | "0.00" | "0.0%", _, _) => Some(Role::Muted),
-                    (_, _, Some(purpose), RowKind::Body) => Some(Role::Purpose(purpose)),
-                    (_, _, Some(purpose), _) => Some(Role::StrongPurpose(purpose)),
-                    _ if layout.strong == Some(column) => Some(Role::Primary),
-                    (_, _, _, RowKind::Header) => Some(Role::Heading),
-                    _ if layout.changes.contains(&column) => Some(match value.starts_with('-') {
-                        true => Role::Decrease,
-                        false => Role::Increase,
-                    }),
-                    _ if layout.secondary.contains(&column) => Some(Role::Secondary),
-                    (_, _, _, RowKind::Total) => Some(Role::Heading),
-                    _ => None,
+                // Headings and totals emphasize the hue a column already has.
+                let emphasized = !matches!(kind, RowKind::Body);
+                let (role, strong) = match (column, value.as_str(), purpose, kind) {
+                    (0, _, _, _) => (Some(Role::Heading), false),
+                    (_, "-" | "0" | "0.00" | "0.0%", _, _) => (Some(Role::Muted), false),
+                    (_, _, Some(purpose), _) => (Some(Role::Purpose(purpose)), emphasized),
+                    _ if layout.strong == Some(column) => (Some(Role::Code), false),
+                    (_, _, _, RowKind::Header) => (Some(Role::Heading), false),
+                    _ if layout.changes.contains(&column) => {
+                        let direction = match value.starts_with('-') {
+                            true => Role::Decrease,
+                            false => Role::Increase,
+                        };
+                        (Some(direction), emphasized)
+                    }
+                    _ if layout.secondary.contains(&column) => (Some(Role::Secondary), false),
+                    (_, _, _, RowKind::Total) => (Some(Role::Heading), false),
+                    _ => (None, false),
                 };
                 text += &match role {
+                    Some(role) if strong => theme.strong(role, &cell),
                     Some(role) => theme.paint(role, &cell),
                     None => cell,
                 };
@@ -1291,7 +1296,7 @@ impl BarKind {
     /// Code share takes the Code hue; comment density stays plain.
     fn heading_role(self) -> Role {
         match self {
-            BarKind::Purpose => Role::Primary,
+            BarKind::Purpose => Role::Code,
             BarKind::Comments => Role::Heading,
         }
     }
@@ -2414,6 +2419,23 @@ mod tests {
         };
         let layout = Columns::with_purposes(&code_columns("Folder"), &production).layout();
         assert_eq!((layout.breaks, layout.secondary), (vec![3], vec![3]));
+    }
+
+    /// Total rows emphasize every hue, so a total's change stays as bold as
+    /// the rest of its row while keeping its direction color.
+    #[test]
+    fn total_rows_emphasize_changes_like_their_other_figures() {
+        let columns = Columns::of(&[
+            Column::new("Kind", ColumnRole::Label),
+            Column::new("Lines", ColumnRole::Count),
+            Column::new("Change", ColumnRole::Change),
+        ]);
+        let body = [vec!["Source".into(), "2".into(), "+1".into()]];
+        let total = vec!["All".into(), "2".into(), "-1".into()];
+        let table = shared_table(&columns, &body, Some(&total), false, Theme::TERMINAL);
+        assert!(table.contains("\x1b[32m    +1\x1b[0m"), "{table:?}");
+        assert!(table.contains("\x1b[1;31m    -1\x1b[0m"), "{table:?}");
+        assert!(table.contains("\x1b[1m    2\x1b[0m"), "{table:?}");
     }
 
     /// A group name is printed once, centred over its columns; groups end at

@@ -30,7 +30,7 @@ Update the owner of an affected public guarantee and any user-facing entry point
 
 Keep PLAN focused on open work. When a plan is complete, transfer live follow-ups to PLAN or a focused deferred-design document, archive the completed record under `docs/plans/archive/`, and update tracked inbound/outbound links and fragments. Preserve historical text and provenance apart from link relocation and an archival status notice; do not maintain a second live copy. A history link in PLAN is sufficient; do not repeat completion narratives there.
 
-Human presentation roles and palettes live in [src/style.rs](src/style.rs). Renderers select semantic roles and pad terminal cells before styling; keep escape sequences out of individual renderers and JSON. Configuration for custom themes remains outside the supported interface.
+Human presentation roles and palettes live in [src/style.rs](src/style.rs). Renderers select semantic roles, emphasis through `Theme::strong`, and pad terminal cells before styling; a palette alone maps roles to colors, so a new look (for example, light backgrounds) is a new palette, not renderer changes; keep escape sequences out of individual renderers and JSON. Configuration for custom themes remains outside the supported interface.
 
 Follow the [proposal retirement procedure](docs/proposals/README.md#retirement-procedure) when an accepted design is verified, rejected or superseded. Move retired records to the archive, transfer live follow-ups to the plan, and preserve their evidence and links.
 

@@ -1350,7 +1350,7 @@ fn validate_query(
 }
 
 fn parse_cli() -> clap::error::Result<Cli> {
-    let mut command = Cli::command();
+    let mut command = Cli::command().styles(locmetry::style::Palette::ANSI.cli_styles());
     let matches = command.try_get_matches_from_mut(std::env::args_os())?;
     for query in ["schema", "guide"] {
         if matches.value_source(query) == Some(clap::parser::ValueSource::CommandLine) {
@@ -1429,6 +1429,20 @@ fn main() -> ExitCode {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Usage errors follow the palette: clap's own green for valid values
+    /// would give green a third meaning beside Production and increases.
+    #[test]
+    fn usage_errors_use_the_palette_instead_of_clap_colors() {
+        let error = Cli::command()
+            .styles(locmetry::style::Palette::ANSI.cli_styles())
+            .color(clap::ColorChoice::Always)
+            .try_get_matches_from(["locmetry", "--format", "nope"])
+            .unwrap_err();
+        let styled = error.render().ansi().to_string();
+        assert!(styled.contains("\x1b[1mtable\x1b[0m"), "{styled:?}");
+        assert!(!styled.contains("\x1b[32m"), "{styled:?}");
+    }
 
     fn assert_help_layout(args: &[&str]) {
         for width in [60, 80, 100] {
