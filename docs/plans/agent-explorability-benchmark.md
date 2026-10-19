@@ -4,12 +4,12 @@
 {
   "status": "active",
   "date": "2026-10-19",
-  "summary": "Define and review a MEDIUM-agent benchmark before testing whether embedded guides are necessary.",
+  "summary": "Review MEDIUM-agent task oracles and extend the first paired guide-removal pilot.",
   "evidence": ""
 }
 -->
 
-This is the working specification and continuation record for an experiment-driven assessment of Locmetry's agent-facing interface. It preserves the discussion and exploratory evidence from 2026-10-19. The benchmark is not frozen, and the proposed scoring rules and task oracles have not yet been approved. No guide removal, new guide navigation, or other product-interface change is authorized by this document.
+This is the working specification and continuation record for an experiment-driven assessment of Locmetry's agent-facing interface. It preserves the discussion and exploratory evidence from 2026-10-19 and links the first authorized paired pilot from 2026-10-20. The broader benchmark is not frozen. The recommended scoring rule and an explicit Task 1 prompt were used provisionally for that pilot; the remaining task oracles still need review. No production guide removal, new guide navigation, or other product-interface change is authorized by this document.
 
 [PLAN](../PLAN.md) owns the open-work index. [PRODUCT](../PRODUCT.md) owns supported behavior; this document owns the experiment, not a competing product contract. The earlier [embedded-guidance checkpoint](archive/measurement-quality-and-net-change.md#embedded-guidance-implementation--2026-10-16) preserves prior implementation evidence.
 
@@ -31,17 +31,17 @@ The recommended target, still subject to review, is successful ordinary use with
 
 ## Current State and Next Session
 
-The initial exploration is complete. A clean MEDIUM run passed six outcome checks. The conversation then moved to designing a controlled experiment and reviewing task oracles. It paused after presenting the proposed scoring rule and the detailed Task 1 oracle. The owner requested this document before answering that scoring question.
+The initial exploration is complete. A clean MEDIUM run passed six outcome checks. After requesting this document, the owner authorized starting the first experiment on 2026-10-20 using the recommended approach and emphasized double-checking recommendations. The [first Task 1 pilot](../research/agent-explorability-task1-pilot.md) used fresh agents with and without guides. Both passed; guide removal reduced fresh input slightly but increased calls and output tokens in this single pair. The production interface remains unchanged.
 
 Resume here:
 
-1. Review the [scoring rule](#proposed-scoring-rule), especially whether a corrected mistake can still pass while its recovery cost is recorded separately.
-2. Review [Task 1](#task-1-understand-a-report), including its required conclusions and critical errors.
+1. Review the first paired result and decide whether to repeat Task 1 with execution order reversed before interpreting efficiency. The report provides commands and evidence limits.
+2. Confirm or revise the provisional [scoring rule](#proposed-scoring-rule) and [Task 1](#task-1-understand-a-report) contract before counting further runs toward a frozen campaign.
 3. Work through Tasks 2–6 one at a time. Their descriptions below are drafts, not approved test contracts.
-4. Specify independent task starting states, edge cases, prompts, budgets, and evidence checks. Then freeze a benchmark revision.
-5. Implement and validate the harness, run the pilot, and review its validity before drawing product conclusions.
+4. Specify independent task starting states, edge cases, prompts, budgets, and evidence checks. Extend the bounded Task 1 harness only for reviewed cases, then freeze a benchmark revision.
+5. Complete the broader pilot and review its validity before drawing product conclusions.
 
-Do not treat this continuation sequence as permission to skip unresolved review decisions or begin changing the product. The current requested deliverable is the benchmark specification.
+Do not treat this continuation sequence as permission to skip unresolved review decisions or change the production interface. The first temporary guide-removal treatment was authorized for the experiment, not as a product change.
 
 ## Proposed Experiment
 
@@ -77,7 +77,7 @@ An oracle is the independently established expected result. It checks observable
 | Incomplete | A required result is missing or explicitly unresolved, without a misleading conclusion. |
 | Critical failure | A delivered answer or artifact would cause a materially wrong downstream decision, or an action irreversibly violates the task's constraints. |
 
-Recommended rule, awaiting owner review: a mistaken command or hypothesis that is corrected before delivery can still pass. Record the failed attempt and its extra calls, tokens, and time as recovery cost. An irreversible harmful action remains a failure even if acknowledged afterward. A wrong conclusion that survives into the delivered answer or artifact is not excused by otherwise correct work.
+Recommended rule, used provisionally in the first authorized pilot: a mistaken command or hypothesis that is corrected before delivery can still pass. Record the failed attempt and its extra calls, tokens, and time as recovery cost. An irreversible harmful action remains a failure even if acknowledged afterward. A wrong conclusion that survives into the delivered answer or artifact is not excused by otherwise correct work.
 
 An assertion of certainty unsupported by the available evidence can be a critical error. An explicit, justified statement of uncertainty is not. Unresolved required work still makes the task incomplete; uncertainty must not become a way to earn a pass without doing the work.
 
@@ -91,7 +91,7 @@ Each frozen task will need an ID and revision, an exact user prompt, a starting-
 
 ### Task 1: Understand a Report
 
-**Review status:** discussed in detail; awaiting owner review.
+**Review status:** exercised provisionally in `task1-pilot-v1`; broader campaign acceptance remains open. The [versioned pilot task](../../tests/fixtures/agent-explorability/task1.json) explicitly asks for the graded counts and Test/prod basis. The shorter original draft below is preserved as discussion history, not the exact executed prompt.
 
 Proposed user prompt:
 
@@ -204,7 +204,7 @@ Report per-task success, critical failures, incomplete runs, and resource distri
 
 ## Isolation, Fixtures, and Replay Contract
 
-The harness has not been implemented. The following is the recommended contract, to review before freezing the experiment:
+A bounded [Task 1 harness](../../scripts/agent-explorability.py) was implemented and exercised for the first pair. It is not a six-task benchmark runner or an automatic semantic grader. The following is the recommended broader contract, to review before freezing the campaign:
 
 - Place each explorer outside the repository with only the test binary, task fixtures, and output space. Do not provide source, project instructions, this specification, expected answers, or previous sessions.
 - Verify the actual initial context. In this environment, a supposedly fresh subagent inherited repository instructions; a fresh agent alone did not establish blindness.

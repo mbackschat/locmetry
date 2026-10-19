@@ -16,7 +16,7 @@
 
 ## Agent Explorability — Benchmark Definition
 
-- [ ] Review the [agent explorability benchmark](plans/agent-explorability-benchmark.md): establish MEDIUM-agent task oracles, critical errors, and resource metrics before testing whether embedded guides are necessary. The specification preserves exploratory evidence and the next review step; it does not authorize guide navigation or removal. The earlier [guidance checkpoint](plans/archive/measurement-quality-and-net-change.md#embedded-guidance-implementation--2026-10-16) remains historical evidence, not a release prerequisite.
+- [ ] Review the [first paired Task 1 pilot](research/agent-explorability-task1-pilot.md) and continue the [agent explorability benchmark](plans/agent-explorability-benchmark.md): both MEDIUM runs passed, with mixed resource results. Confirm task oracles and repetition scope before broader conclusions or production guide changes. The earlier [guidance checkpoint](plans/archive/measurement-quality-and-net-change.md#embedded-guidance-implementation--2026-10-16) remains historical evidence, not a release prerequisite.
 
 ## Ideas — Not Scheduled
 

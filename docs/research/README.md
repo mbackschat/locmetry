@@ -1,6 +1,6 @@
 # Research
 
-Research conducted on 2026-10-15. Repository-facing findings describe tool capabilities and general design implications without identifying measured projects.
+Research records carry their own evaluation dates. Repository-facing findings describe tool capabilities and general design implications without identifying private measured projects.
 
 The [archived implementation record](../plans/archive/measurement-quality-and-net-change.md) preserves how the recommendations were implemented and verified. [PLAN](../PLAN.md) indexes remaining work and deferred designs; these reports retain the dated research evidence.
 
@@ -10,6 +10,7 @@ The [archived implementation record](../plans/archive/measurement-quality-and-ne
 - [Read historical findings and recommendations](tool-lessons-and-gaps.md): reproduced notebook defects, documentation/schema priorities, optional ideas and deliberate scope boundaries.
 - [Learn from comparable net-change tools](net-change-tools.md): saved-report comparison, source diffs, history analysis, and bounded lessons for topology, coverage, and schema contracts.
 - [Trials on real projects](real-project-trials.md): blind agent configuration trials, their scores, and what they changed.
+- [First agent-explorability pilot](agent-explorability-task1-pilot.md): paired MEDIUM report-understanding runs with and without guides, verified outcomes, token/tool metrics, and replay instructions.
 - [Integration and distribution](../tokei-integration.md): embedded Rust backend and minimal dependency model.
 - [Measurement semantics and limits](../measurement.md): selection and counting details as implemented.
 

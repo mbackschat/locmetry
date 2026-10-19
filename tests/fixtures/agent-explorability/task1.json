@@ -1,0 +1,44 @@
+{
+  "revision": "task1-pilot-v1",
+  "files": {
+    "projects/web/README.md": "# Demo\n\nSynthetic project.\n",
+    "projects/web/assets/opaque.xyz": "opaque data\n",
+    "projects/web/data.json": "{\"enabled\":true}\n",
+    "projects/web/examples/old.py": "print(\"historical example\")\n",
+    "projects/web/package.json": "{\"name\":\"demo-web\",\"version\":\"1.0.0\"}\n",
+    "projects/web/scratch/mystery.py": "print(\"purpose undecided\")\n",
+    "projects/web/src/index.js": "// application\nexport const a = 1;\nexport const b = 2;\n\n",
+    "projects/web/tests/index.test.js": "// tests\nassert(a === 1);\nassert(b === 2);\n",
+    "projects/web/tools/release.py": "print(\"release\")\n",
+    "projects/web/vendor/bundle.js": "const vendor = 1;\n"
+  },
+  "prompt": "You have ./bin/locmetry and a synthetic project at projects/web. Work only in this scratch directory. The executable and its built-in discovery material are your only product documentation; do not read other directories, implementation files, telemetry, or the launcher, and do not use the internet or other agents. You may inspect the synthetic project and use ordinary shell/Python tools. Do not modify project files.\n\nMeasure this project. Report its source Files, Lines, and Code; its Production, Test, and Other Code; its Test/prod ratio and the basis of that ratio; and the overall counted Files, Lines, and Code including data and documentation. Explain how non-source content contributes. Identify any selected content whose size the report cannot establish.\n\nUse whatever built-in discovery you need. Give a concise answer, at most 250 words, including the commands supporting your results. Do not write an assessment document or create a logging harness.\n",
+  "oracle": {
+    "source": {
+      "files": 6,
+      "lines": 11,
+      "code": 8
+    },
+    "all_counted": {
+      "files": 9,
+      "lines": 16,
+      "code": 10
+    },
+    "purpose_code": {
+      "production": 2,
+      "test": 2,
+      "other": 4
+    },
+    "unrecognized": [
+      "assets/opaque.xyz"
+    ],
+    "test_prod_code": 1.0
+  },
+  "limits": {
+    "wall_seconds": 600,
+    "cli_invocations": 60,
+    "agent_tool_calls": 40,
+    "uncached_input_tokens": 100000
+  },
+  "grading": "Recovered mistakes may pass; record recovery cost. Required conclusions missing => incomplete. Wrong delivered figures, ratio basis, or unknown/zero or counted/unclaimed interpretation => critical failure. Inspect fixture integrity and supporting calls."
+}
