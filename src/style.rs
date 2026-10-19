@@ -68,8 +68,10 @@ impl Theme {
         primary: Style("\x1b[1;36m", "\x1b[0m"),
         secondary: Style("\x1b[2m", "\x1b[0m"),
         muted: Style("\x1b[90m", "\x1b[0m"),
-        increase: Style("\x1b[36m", "\x1b[0m"),
-        decrease: Style("\x1b[35m", "\x1b[0m"),
+        // Diff convention (git, pull requests): green added, red removed;
+        // signs keep the direction readable without color.
+        increase: Style("\x1b[32m", "\x1b[0m"),
+        decrease: Style("\x1b[31m", "\x1b[0m"),
         information: Style("\x1b[36m", "\x1b[0m"),
         warning: Style("\x1b[33m", "\x1b[0m"),
         error: Style("\x1b[31m", "\x1b[0m"),

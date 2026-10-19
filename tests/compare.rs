@@ -1028,7 +1028,7 @@ fn comparison_theme_preserves_plain_text_and_distinguishes_signed_changes() {
     let report: locmetry::compare::Comparison = serde_json::from_value(value).unwrap();
     let plain = locmetry::compare::render_table_with_theme(&report, Theme::PLAIN);
     let colored = locmetry::compare::render_table_with_theme(&report, Theme::TERMINAL);
-    for (style, value) in [("36m", "+1"), ("35m", "-2"), ("90m", "0")] {
+    for (style, value) in [("32m", "+1"), ("31m", "-2"), ("90m", "0")] {
         assert!(
             colored.split("\x1b[").any(|cell| cell
                 .strip_prefix(style)
