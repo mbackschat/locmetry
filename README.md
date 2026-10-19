@@ -28,6 +28,8 @@ locmetry
 
 <!-- readme-language -->
 ```text
+▸ Source languages
+
  Language    Files    Lines     Code │ Comments  Blanks │  Prod.    Test  Other │ Test/prod
  ────────────────────────────────────┼──────────────────┼───────────────────────┼──────────
  Kotlin        538   93,760   74,060 │    7,530  12,170 │ 46,040  28,020      0 │      0.61
@@ -54,6 +56,8 @@ The language table stays the same, followed by:
 
 <!-- readme-folders -->
 ```text
+▸ Folders
+
  Folder                                      Lines     Code │  Prod.    Test  Other │ Test/prod
  ───────────────────────────────────────────────────────────┼───────────────────────┼──────────
  web/src/orders                             11,670    9,580 │  6,100   3,480      0 │      0.57

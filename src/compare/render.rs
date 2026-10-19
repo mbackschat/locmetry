@@ -125,7 +125,7 @@ impl Grid {
         let total = self.total.as_ref().map(cells);
         match markdown {
             true => writeln!(output, "\n## {}\n", self.title),
-            false => writeln!(output, "\n{}", theme.paint(Role::Heading, self.title)),
+            false => write!(output, "\n{}", output::section_title(self.title, theme)),
         }
         .unwrap();
         output.push_str(&output::shared_table(
@@ -345,7 +345,11 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
     if !notes.is_empty() {
         match markdown {
             true => writeln!(out, "\n## Measurement notes\n"),
-            false => writeln!(out, "\n{}", theme.paint(Role::Heading, "Measurement notes")),
+            false => write!(
+                out,
+                "\n{}",
+                output::section_title("Measurement notes", theme)
+            ),
         }
         .unwrap();
         for (role, note) in notes {
@@ -363,7 +367,11 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
         })
         .collect();
     if !findings.is_empty() {
-        writeln!(out, "\n{}Findings", if markdown { "## " } else { "" }).unwrap();
+        match markdown {
+            true => writeln!(out, "\n## Findings"),
+            false => write!(out, "\n{}", output::section_title("Findings", theme)),
+        }
+        .unwrap();
         for f in findings {
             let context = f.context();
             writeln!(

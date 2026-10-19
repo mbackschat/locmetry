@@ -776,8 +776,7 @@ struct PlainTable {
 impl PlainTable {
     /// Values set the widths first, so a column takes its short title only
     /// where the full one would be wider than every value; a group name then
-    /// widens its span's last column when it would not fit with a rule on
-    /// either side.
+    /// widens its span's last column when it would not fit.
     fn new(columns: &Columns, body: &[Vec<String>], total: Option<&[String]>) -> Self {
         let clean_row = |row: &[String]| row.iter().map(|value| plain(value)).collect::<Vec<_>>();
         let body: Vec<_> = body.iter().map(|row| clean_row(row)).collect();
@@ -805,7 +804,7 @@ impl PlainTable {
             widths,
         };
         for (start, end) in table.spans() {
-            let needed = table.group(start).chars().count() + 4;
+            let needed = table.group(start).chars().count();
             let width = table.span_width(start, end);
             if needed > width {
                 table.widths[end] += needed - width;
@@ -852,7 +851,7 @@ impl PlainTable {
         self.widths[start..=end].iter().sum::<usize>() + gaps
     }
 
-    /// The line of group names above the header, each centred in a rule.
+    /// Whitespace keeps group labels subordinate to the section title.
     fn group_line(&self, theme: Theme) -> Option<String> {
         let spans = self.spans();
         if spans.is_empty() {
@@ -867,11 +866,13 @@ impl PlainTable {
             match spans.iter().find(|(start, _)| *start == column) {
                 Some(&(start, end)) => {
                     let name = self.group(start);
-                    let fill = self.span_width(start, end) - name.chars().count() - 2;
-                    let rule = |cells: usize| theme.paint(Role::Muted, &"─".repeat(cells));
-                    text += &rule(fill / 2);
-                    text += &format!(" {} ", theme.paint(Role::Heading, name));
-                    text += &rule(fill - fill / 2);
+                    let fill = self.span_width(start, end) - name.chars().count();
+                    let cell = format!(
+                        "{}{name}{}",
+                        " ".repeat(fill / 2),
+                        " ".repeat(fill - fill / 2)
+                    );
+                    text += &theme.paint(Role::Heading, &cell);
                     column = end + 1;
                 }
                 None => {
@@ -880,7 +881,7 @@ impl PlainTable {
                 }
             }
         }
-        Some(text.trim_end().to_string() + "\n")
+        Some(text + "\n")
     }
 
     /// Characters per line without bars, as [`PlainTable::render`] lays it out.
@@ -1599,6 +1600,13 @@ fn source_languages(rows: &[FileRecord]) -> BTreeMap<String, (Counts, RowCode)> 
         .collect()
 }
 
+pub(crate) fn section_title(title: &str, theme: Theme) -> String {
+    format!(
+        "{}\n\n",
+        theme.strong(Role::Heading, &format!("▸ {}", plain(title)))
+    )
+}
+
 /// Render terminal tables, optionally partitioning folders within a row budget.
 pub fn render_table_with_options(
     summary: &ReportSummary,
@@ -1655,8 +1663,7 @@ pub fn render_table_with_options(
     let mut total = vec!["Total".to_string()];
     total.extend(count_cells(&summary.totals.source));
     total.extend(columns.cells(total_code));
-    // No title: the footer names the measured root, which a title repeated.
-    let mut output = String::new();
+    let mut output = section_title("Source languages", theme);
     // With bars, a table returns what follows its legends: an inline bar key
     // or the chart below it.
     let table =
@@ -1692,6 +1699,7 @@ pub fn render_table_with_options(
         let (body, codes, total) = repository_rows(summary, findings.members, order, &columns);
         let (text, after) = table(&repository_columns(&columns), &body, total, &codes);
         output += "\n";
+        output += &section_title("Workspace members", theme);
         output += &text;
         let legend = columns.legend(None, Some("Share = Code / workspace Code"));
         output += &format!(" {}\n", theme.paint(Role::Muted, &legend));
@@ -1733,6 +1741,7 @@ pub fn render_table_with_options(
                 &codes,
             );
             output += "\n";
+            output += &section_title("Folders", theme);
             output += &text;
             output += &format!(
                 " {}\n",
@@ -1773,6 +1782,7 @@ pub fn render_table_with_options(
             .collect();
         if !body.is_empty() {
             output += "\n";
+            output += &section_title("Source categories", theme);
             let columns = Columns::of(&count_columns("Category")[..4]);
             output += &shared_table(&columns, &body, None, false, theme);
             output += &format!(" {}\n", theme.paint(Role::Muted, CATEGORY_LEGEND));
@@ -2210,12 +2220,19 @@ mod tests {
                 render_table_with_options(&summary, &rows, &findings, options)
             };
             let (styled, plain) = (render(Theme::TERMINAL), render(Theme::PLAIN));
-            assert!(plain.starts_with(" Language "), "{plain}");
+            assert!(
+                plain.starts_with("▸ Source languages\n\n Language "),
+                "{plain}"
+            );
             assert!(!plain.contains("Code by purpose"));
-            assert!(styled.starts_with(" \x1b[1mLanguage"), "{styled}");
+            assert!(
+                styled.starts_with("\x1b[1m▸ Source languages\x1b[0m\n\n"),
+                "{styled}"
+            );
             let legend = ALL_PURPOSES.legend(Some("Lines = Code + Comments + Blanks"), None);
             assert!(styled.contains(&format!("\x1b[90m{legend}\x1b[0m")));
             if !members.is_empty() {
+                assert!(plain.contains("\n\n▸ Workspace members\n\n"), "{plain}");
                 let legend = ALL_PURPOSES.legend(None, Some("Share = Code / workspace Code"));
                 assert!(styled.contains(&format!("\x1b[90m{legend}\x1b[0m")));
             }
@@ -2388,11 +2405,12 @@ mod tests {
         let table = shared_table(&columns, &body, None, false, Theme::PLAIN);
         let lines: Vec<_> = table.lines().collect();
         assert_eq!(
-            lines[0], "         ─── Lines ─── │ ─ Changes in files ─",
+            lines[0].trim_end(),
+            "             Lines     │ Changes in files",
             "{table}"
         );
         assert_eq!(
-            lines[1], " Kind    before  after │                    n",
+            lines[1], " Kind    before  after │                n",
             "{table}"
         );
         assert!(shared_table(&columns, &body, None, true, Theme::MARKDOWN)

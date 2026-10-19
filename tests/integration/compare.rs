@@ -553,7 +553,7 @@ fn comparison_totals_fit_their_contents_and_keep_large_signed_values_aligned() {
     let mut report: locmetry::compare::Comparison = serde_json::from_value(full).unwrap();
     let totals = |report: &locmetry::compare::Comparison| {
         render_table_with_theme(report, Theme::PLAIN)
-            .split("Totals\n")
+            .split("▸ Totals\n\n")
             .nth(1)
             .unwrap()
             .split("\n\n")
@@ -1163,7 +1163,7 @@ fn totals_split_all_counted_by_kind_and_grids_end_in_their_source_total() {
     let table = String::from_utf8(compare(&before, &after, &["--format", "table"]).stdout).unwrap();
     let section = |title: &str| {
         table
-            .split(&format!("\n{title}\n"))
+            .split(&format!("\n▸ {title}\n\n"))
             .nth(1)
             .unwrap()
             .split("\n\n")
@@ -1171,6 +1171,20 @@ fn totals_split_all_counted_by_kind_and_grids_end_in_their_source_total() {
             .unwrap()
             .to_string()
     };
+    for title in [
+        "Totals",
+        "Purpose",
+        "Languages",
+        "Folders (recursive; do not sum parents and children)",
+    ] {
+        assert!(table.contains(&format!("\n\n▸ {title}\n\n")), "{table}");
+        let group_header = section(title).lines().next().unwrap().to_owned();
+        assert!(
+            group_header.contains("Lines") && group_header.contains("Code"),
+            "{group_header}"
+        );
+        assert!(!group_header.contains('─'), "{group_header}");
+    }
     let figures = |line: &str| -> Vec<i64> {
         line.split_whitespace()
             .filter_map(|cell| cell.replace(',', "").parse().ok())
@@ -1179,7 +1193,7 @@ fn totals_split_all_counted_by_kind_and_grids_end_in_their_source_total() {
     let totals = section("Totals");
     let rows: Vec<_> = totals
         .lines()
-        .filter(|line| !line.trim_start().starts_with('─') && !line.starts_with(" Kind "))
+        .filter(|line| !figures(line).is_empty())
         .collect();
     let labels: Vec<_> = rows
         .iter()

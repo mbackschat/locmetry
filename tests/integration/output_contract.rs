@@ -49,6 +49,34 @@ fn baseline(dir: &Path) {
 }
 
 #[test]
+fn measurement_tables_have_distinct_titles_and_spacing_without_color() {
+    let dir = fixture();
+    for args in [
+        vec!["service", "--folders", "--categories"],
+        vec!["workspace", "--file", "workspace.toml", "--categories"],
+    ] {
+        let mut command = args.clone();
+        command.extend(["--format", "table", "--no-bars"]);
+        let out = run(dir.path(), &command);
+        success(&out);
+        let table = String::from_utf8(out.stdout).unwrap();
+        assert!(
+            table.starts_with("▸ Source languages\n\n Language "),
+            "{table}"
+        );
+        let detail = if args[0] == "workspace" {
+            "Workspace members"
+        } else {
+            "Folders"
+        };
+        for title in [detail, "Source categories"] {
+            assert!(table.contains(&format!("\n\n▸ {title}\n\n")), "{table}");
+        }
+        assert!(!table.contains('\x1b'));
+    }
+}
+
+#[test]
 fn file_output_is_silent_and_defaults_to_a_comparable_full_report_in_both_modes() {
     let dir = fixture();
     for args in [

@@ -200,9 +200,8 @@ fn markdown_format_writes_a_readable_report_to_stdout() {
 }
 
 #[cfg(unix)]
-/// Locks the terminal layout: totals in the familiar Code, Comments, Blanks
-/// order, then the code split by purpose under its caption; rows sorted by code,
-/// then one line each for non-source content, review, and coverage gaps.
+/// The complete report guards section separation while preserving source
+/// totals, purpose splits, verbose notes and root context.
 #[test]
 fn table_format_splits_source_code_by_language_and_purpose() {
     let temp = project(&[
@@ -220,7 +219,9 @@ fn table_format_splits_source_code_by_language_and_purpose() {
         &["--verbose", "--folders", "--format", "table"],
     );
     assert!(output.status.success());
-    let expected = " Language  Files  Lines  Code │ Comments  Blanks │ Prod.  Test  Other │ Test/prod
+    let expected = "▸ Source languages
+
+ Language  Files  Lines  Code │ Comments  Blanks │ Prod.  Test  Other │ Test/prod
  ─────────────────────────────┼──────────────────┼────────────────────┼──────────
  Rust          3      5     4 │        1       0 │     2     2      0 │      1.00
  Python        1      1     1 │        0       0 │     0     0      1 │         -
@@ -228,6 +229,8 @@ fn table_format_splits_source_code_by_language_and_purpose() {
  Total         4      6     5 │        1       0 │     2     2      1 │      1.00
  Lines = Code + Comments + Blanks; Production + Test + Other = Code; Test/prod = Test / Production.
  Tests written in another language than the code they test skew per-language Test/prod.
+
+▸ Folders
 
  Folder  Lines  Code │ Prod.  Test  Other │ Test/prod
  ────────────────────┼────────────────────┼──────────
@@ -415,7 +418,10 @@ fn human_reports_end_with_the_measured_root_before_the_time() {
     let canonical = root.canonicalize().unwrap();
     let stdout = |args: &[&str]| String::from_utf8(run(&root, args).stdout).unwrap();
     let table = stdout(&["--format", "table"]);
-    assert!(table.starts_with(" Language "), "{table}");
+    assert!(
+        table.starts_with("▸ Source languages\n\n Language "),
+        "{table}"
+    );
     let (context, time) = table.rsplit_once("\nMeasured at: ").unwrap();
     assert!(
         time.ends_with(" UTC\n") && !time.trim_end().contains('\n'),
@@ -426,7 +432,10 @@ fn human_reports_end_with_the_measured_root_before_the_time() {
         "{table}"
     );
     let subfolder = stdout(&["--format", "table", "--subfolder", "src"]);
-    assert!(subfolder.starts_with(" Language "), "{subfolder}");
+    assert!(
+        subfolder.starts_with("▸ Source languages\n\n Language "),
+        "{subfolder}"
+    );
     assert!(
         subfolder.contains(&format!(
             "\nRoot: {}, subfolder src\nMeasured at: ",
@@ -496,7 +505,10 @@ fn print_shows_a_second_view_of_the_saved_measurement() {
         String::from_utf8_lossy(&output.stderr)
     );
     let printed = String::from_utf8(output.stdout).unwrap();
-    assert!(printed.starts_with(" Language "), "{printed}");
+    assert!(
+        printed.starts_with("▸ Source languages\n\n Language "),
+        "{printed}"
+    );
     assert!(printed.contains("\n Folder "), "{printed}");
     assert!(printed.lines().last().unwrap().starts_with("Measured at: "));
     let report: serde_json::Value =

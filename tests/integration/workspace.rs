@@ -233,7 +233,10 @@ fn workspace_notes_name_the_member_of_each_finding() {
                 .to_string()
         })
         .into();
-    assert!(table.starts_with(" Language "), "{table}");
+    assert!(
+        table.starts_with("▸ Source languages\n\n Language "),
+        "{table}"
+    );
     assert!(
         table.contains(&format!("\nRoots: {}\nMeasured at: ", roots.join(", "))),
         "{table}"
