@@ -1,7 +1,8 @@
 use super::*;
 use crate::output::{self, Column, ColumnRole, Columns};
+use crate::report::kind_purpose_key;
 use crate::style::{Role, Theme};
-use crate::{Counts, Kind};
+use crate::{Counts, Kind, Purpose};
 use std::fmt::Write;
 
 mod notes;
@@ -12,25 +13,61 @@ fn label(value: &str, markdown: bool) -> String {
         false => crate::style::plain(value),
     }
 }
+/// One figure of a comparison row.
+type Cell = fn(&Row) -> String;
+
+/// The signed change from `before` to `after`, computed wide so a row summed
+/// for display cannot overflow.
+fn change(before: u64, after: u64) -> String {
+    output::signed(i128::from(after) - i128::from(before))
+}
+
 /// Lines and Code before, after and net change, as every comparison grid shows them.
-const CHANGE_COLUMNS: [Column; 6] = [
-    Column::new("Lines before", ColumnRole::Count).under("Lines", "before"),
-    Column::new("Lines after", ColumnRole::Count).under("Lines", "after"),
-    Column::new("Lines change", ColumnRole::Change).under("Lines", "change"),
-    Column::new("Code before", ColumnRole::Count)
-        .under("Code", "before")
-        .separated(),
-    Column::new("Code after", ColumnRole::Count).under("Code", "after"),
-    Column::new("Code change", ColumnRole::Change).under("Code", "change"),
+const CHANGE_COLUMNS: [(Column, Cell); 6] = [
+    (
+        Column::new("Lines before", ColumnRole::Count).under("Lines", "before"),
+        |row| output::grouped(row.before.lines),
+    ),
+    (
+        Column::new("Lines after", ColumnRole::Count).under("Lines", "after"),
+        |row| output::grouped(row.after.lines),
+    ),
+    (
+        Column::new("Lines change", ColumnRole::Change).under("Lines", "change"),
+        |row| change(row.before.lines, row.after.lines),
+    ),
+    (
+        Column::new("Code before", ColumnRole::Count)
+            .under("Code", "before")
+            .separated(),
+        |row| output::grouped(row.before.code),
+    ),
+    (
+        Column::new("Code after", ColumnRole::Count).under("Code", "after"),
+        |row| output::grouped(row.after.code),
+    ),
+    (
+        Column::new("Code change", ColumnRole::Change).under("Code", "change"),
+        |row| change(row.before.code, row.after.code),
+    ),
 ];
 /// Changes beside the Totals figures, muted as the measurement table mutes
 /// Comments, Blanks and Files.
-const SECONDARY_CHANGE_COLUMNS: [Column; 3] = [
-    Column::new("Comments change", ColumnRole::Secondary)
-        .under("Change", "Comments")
-        .separated(),
-    Column::new("Blanks change", ColumnRole::Secondary).under("Change", "Blanks"),
-    Column::new("Files change", ColumnRole::Secondary).under("Change", "Files"),
+const SECONDARY_CHANGE_COLUMNS: [(Column, Cell); 3] = [
+    (
+        Column::new("Comments change", ColumnRole::Secondary)
+            .under("Change", "Comments")
+            .separated(),
+        |row| change(row.before.comments, row.after.comments),
+    ),
+    (
+        Column::new("Blanks change", ColumnRole::Secondary).under("Change", "Blanks"),
+        |row| change(row.before.blanks, row.after.blanks),
+    ),
+    (
+        Column::new("Files change", ColumnRole::Secondary).under("Change", "Files"),
+        |row| change(row.before.files, row.after.files),
+    ),
 ];
 
 /// One row of a comparison grid.
@@ -48,37 +85,12 @@ impl Row {
             after: change.after,
         }
     }
-
-    /// Cells for `columns`, which start with the label and [`CHANGE_COLUMNS`];
-    /// the change is recomputed wide, so a row summed for display cannot overflow.
-    fn cells(&self, secondary: bool, markdown: bool) -> Vec<String> {
-        let change =
-            |before: u64, after: u64| output::signed(i128::from(after) - i128::from(before));
-        let (before, after) = (&self.before, &self.after);
-        let mut cells = vec![
-            label(&self.label, markdown),
-            output::grouped(before.lines),
-            output::grouped(after.lines),
-            change(before.lines, after.lines),
-            output::grouped(before.code),
-            output::grouped(after.code),
-            change(before.code, after.code),
-        ];
-        if secondary {
-            cells.extend([
-                change(before.comments, after.comments),
-                change(before.blanks, after.blanks),
-                change(before.files, after.files),
-            ]);
-        }
-        cells
-    }
 }
 
 /// A titled comparison grid; [`Grid::write`] writes nothing without body
 /// rows, so a grid never shows only a total.
-struct Grid<'t> {
-    title: &'t str,
+struct Grid {
+    title: &'static str,
     /// Heading of the label column.
     label: &'static str,
     rows: Vec<Row>,
@@ -87,17 +99,28 @@ struct Grid<'t> {
     secondary: bool,
 }
 
-impl Grid<'_> {
+impl Grid {
     fn write(self, output: &mut String, markdown: bool, theme: Theme) {
         if self.rows.is_empty() {
             return;
         }
-        let mut columns = vec![Column::new(self.label, ColumnRole::Label)];
-        columns.extend(CHANGE_COLUMNS);
-        if self.secondary {
-            columns.extend(SECONDARY_CHANGE_COLUMNS);
-        }
-        let cells = |row: &Row| row.cells(self.secondary, markdown);
+        let figures: Vec<(Column, Cell)> = CHANGE_COLUMNS
+            .into_iter()
+            .chain(
+                self.secondary
+                    .then_some(SECONDARY_CHANGE_COLUMNS)
+                    .into_iter()
+                    .flatten(),
+            )
+            .collect();
+        let columns: Vec<Column> = std::iter::once(Column::new(self.label, ColumnRole::Label))
+            .chain(figures.iter().map(|(column, _)| *column))
+            .collect();
+        let cells = |row: &Row| {
+            std::iter::once(label(&row.label, markdown))
+                .chain(figures.iter().map(|(_, cell)| cell(row)))
+                .collect::<Vec<_>>()
+        };
         let body: Vec<_> = self.rows.iter().map(cells).collect();
         let total = self.total.as_ref().map(cells);
         match markdown {
@@ -121,12 +144,13 @@ fn kind_rows(dimensions: &Dimensions) -> Vec<Row> {
     Kind::ALL
         .into_iter()
         .filter_map(|kind| {
-            let prefix = format!("{kind}:");
-            let changes: Vec<_> = dimensions
-                .by_kind_purpose
+            let changes: Vec<_> = Purpose::ALL
                 .iter()
-                .filter(|(key, _)| key.starts_with(&prefix))
-                .map(|(_, change)| change)
+                .filter_map(|purpose| {
+                    dimensions
+                        .by_kind_purpose
+                        .get(&kind_purpose_key(kind, *purpose))
+                })
                 .collect();
             let sum = |side: fn(&CountChange) -> Counts| {
                 changes.iter().fold(Counts::default(), |sum, change| {
@@ -135,21 +159,12 @@ fn kind_rows(dimensions: &Dimensions) -> Vec<Row> {
                 })
             };
             (!changes.is_empty()).then(|| Row {
-                label: kind_title(kind).to_string(),
+                label: output::kind_title(kind).to_string(),
                 before: sum(|change| change.before),
                 after: sum(|change| change.after),
             })
         })
         .collect()
-}
-
-fn kind_title(kind: Kind) -> &'static str {
-    match kind {
-        Kind::Source => "Source",
-        Kind::Data => "Data",
-        Kind::Documentation => "Documentation",
-        Kind::Unknown => "Unknown",
-    }
 }
 
 fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
@@ -280,12 +295,18 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
         .unwrap();
     }
     if let Some(folders) = &c.folders {
+        // The table lists top-level folders only, so the recursive root is
+        // their source total; Markdown keeps the root in place within the hierarchy.
+        let total = folders
+            .get(".")
+            .filter(|_| !markdown)
+            .map(|root| Row::new("Source total", &root.recursive.source));
         let mut folders: Vec<_> = folders.iter().collect();
         folders.sort_by(|(a, _), (b, _)| a.split('/').cmp(b.split('/')));
-        let mut rows: Vec<_> = folders
+        let rows: Vec<_> = folders
             .into_iter()
             .filter(|(path, v)| {
-                (markdown || (c.members.is_none() && (path.as_str() == "." || !path.contains('/'))))
+                (markdown || (c.members.is_none() && path.as_str() != "." && !path.contains('/')))
                     && (v.presence != Presence::Both || changed(&v.recursive.source))
             })
             .map(|(k, v)| {
@@ -295,18 +316,6 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
                 )
             })
             .collect();
-        // The table lists top-level folders only, so the recursive root row is
-        // their source total; Markdown keeps it in place within the hierarchy.
-        let total = match markdown {
-            true => None,
-            false => rows
-                .iter()
-                .position(|row| row.label.starts_with(". ("))
-                .map(|index| Row {
-                    label: "Source total".into(),
-                    ..rows.remove(index)
-                }),
-        };
         Grid {
             title: "Folders (recursive; do not sum parents and children)",
             label: "Folder",

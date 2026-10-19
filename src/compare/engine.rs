@@ -4,19 +4,23 @@ use anyhow::{ensure, Context};
 use std::{collections::BTreeSet, fs, path::Path};
 
 pub fn read_input(path: &Path) -> Result<MeasurementReport> {
+    /// Only the version: recognizing an old report skips every other field
+    /// instead of building a document tree of a possibly large report.
+    #[derive(serde::Deserialize)]
+    struct Probe {
+        schema_version: Option<String>,
+    }
     let bytes = fs::read(path).with_context(|| format!("Cannot read {}", path.display()))?;
-    let value: serde_json::Value = serde_json::from_slice(&bytes)
-        .with_context(|| format!("Invalid measurement report {}", path.display()))?;
+    let invalid = || format!("Invalid measurement report {}", path.display());
+    let probe: Probe = serde_json::from_slice(&bytes).with_context(invalid)?;
     // Version 1 used the purpose names retired in 0.5; translating them would
     // keep two vocabularies alive, so old reports are re-measured instead.
     ensure!(
-        value["schema_version"] != "1",
+        probe.schema_version.as_deref() != Some("1"),
         "{} has report schema version 1 from locmetry 0.4 or earlier; measure again with this version to compare",
         path.display()
     );
-    let report: MeasurementReport = serde_json::from_value(value)
-        .with_context(|| format!("Invalid measurement report {}", path.display()))?;
-    Ok(report)
+    serde_json::from_slice(&bytes).with_context(invalid)
 }
 
 pub fn validate_destination(path: &Path, inputs: [&Path; 2]) -> Result<()> {

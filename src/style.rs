@@ -106,17 +106,22 @@ impl Ink {
         Self { dim: true, ..self }
     }
 
-    /// SGR parameters, `None` when the ink adds nothing; `strong` adds bold.
-    fn sgr(self, strong: bool) -> Option<String> {
-        let params: Vec<&str> = [
+    /// `text` in this ink, `strong` adding bold; unchanged when the ink adds nothing.
+    fn paint(self, strong: bool, text: &str) -> String {
+        let params = [
             (self.bold || strong).then_some("1"),
             self.dim.then_some("2"),
             self.hue.map(Hue::sgr),
-        ]
-        .into_iter()
-        .flatten()
-        .collect();
-        (!params.is_empty()).then(|| params.join(";"))
+        ];
+        let mut styled = String::new();
+        for param in params.into_iter().flatten() {
+            styled += if styled.is_empty() { "\x1b[" } else { ";" };
+            styled += param;
+        }
+        if styled.is_empty() {
+            return text.to_string();
+        }
+        styled + "m" + text + "\x1b[0m"
     }
 
     fn cli(self) -> CliStyle {
@@ -233,10 +238,7 @@ impl Theme {
     fn style(self, role: Role, strong: bool, text: &str) -> String {
         match self {
             Theme::Plain => text.to_string(),
-            Theme::Terminal(palette) => match palette.ink(role).sgr(strong) {
-                Some(params) => format!("\x1b[{params}m{text}\x1b[0m"),
-                None => text.to_string(),
-            },
+            Theme::Terminal(palette) => palette.ink(role).paint(strong, text),
             // Markdown has only bold and italic: bold carries labels, headings
             // and emphasis, italic marks what recedes, and hues are dropped.
             Theme::Markdown => match (role, strong) {

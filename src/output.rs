@@ -268,11 +268,12 @@ fn ordered<T>(
 fn table(
     output: &mut String,
     title: &str,
-    label: &str,
+    label: &'static str,
     counts: &BTreeMap<String, Counts>,
     order: RowOrder,
 ) {
-    writeln!(output, "\n## {title}\n\n| {label} | Files | Lines | **Code** | Comments | Blanks |\n| --- | ---: | ---: | ---: | ---: | ---: |").unwrap();
+    let header = Columns::of(&count_columns(label)).markdown_header();
+    writeln!(output, "\n## {title}\n\n{header}").unwrap();
     let rows = counts
         .iter()
         .map(|(label, counts)| (label.clone(), counts))
@@ -291,7 +292,7 @@ pub fn render_markdown(
     order: RowOrder,
 ) -> String {
     let project = display_project(project, findings.subfolder);
-    let mut output = format!("# {}: lines of code by purpose\n\n{}\n\n## Source purpose\n\n| Purpose | Files | Lines | **Code** | Comments | Blanks |\n| --- | ---: | ---: | ---: | ---: | ---: |\n", cell(&project), Theme::MARKDOWN.paint(Role::Muted, "Production means maintained non-test source, including separately categorized tooling. Data, configuration, and documentation are counted apart from source. Lines = Code + Comments + Blanks in every table with these columns, and the purpose rows add up to all source."));
+    let mut output = format!("# {}: lines of code by purpose\n\n{}\n\n## Source purpose\n\n{}\n", cell(&project), Theme::MARKDOWN.paint(Role::Muted, "Production means maintained non-test source, including separately categorized tooling. Data, configuration, and documentation are counted apart from source. Lines = Code + Comments + Blanks in every table with these columns, and the purpose rows add up to all source."), Columns::of(&count_columns("Purpose")).markdown_header());
     for purpose in Purpose::ALL {
         count_row(
             &mut output,
@@ -301,26 +302,20 @@ pub fn render_markdown(
     }
     if !findings.members.is_empty() {
         let (body, _, total) = repository_rows(summary, findings.members, order, &ALL_PURPOSES);
-        writeln!(
+        let escaped = |row: &Vec<String>| row.iter().map(|value| cell(value)).collect::<Vec<_>>();
+        let body: Vec<_> = body.iter().map(escaped).collect();
+        write!(
             output,
             "\n## Repositories\n\n{}",
-            repository_columns(&ALL_PURPOSES).markdown_header()
+            shared_table(
+                &repository_columns(&ALL_PURPOSES),
+                &body,
+                Some(&escaped(&total)),
+                true,
+                Theme::MARKDOWN
+            )
         )
         .unwrap();
-        for (row, is_total) in body.iter().map(|row| (row, false)).chain([(&total, true)]) {
-            let cells: Vec<String> = row
-                .iter()
-                .map(|value| {
-                    let value = cell(value);
-                    if is_total {
-                        Theme::MARKDOWN.paint(Role::Heading, &value)
-                    } else {
-                        value
-                    }
-                })
-                .collect();
-            writeln!(output, "| {} |", cells.join(" | ")).unwrap();
-        }
         writeln!(
             output,
             "\n{}",
@@ -572,25 +567,11 @@ pub(crate) fn counted(count: u64, noun: &str) -> String {
     format!("{} {}", grouped(count), plural(count, noun))
 }
 
-/// Column groups of a terminal table and the column that carries Code.
+/// What a measurement table column holds, which decides its styling in text
+/// tables and its emphasis and alignment in Markdown.
 ///
 /// The purpose columns split Code, while Comments and Blanks sit beside it, so
 /// separators and an accented Code column show which numbers belong together.
-#[derive(Default)]
-struct Layout {
-    /// Columns preceded by a `│` separator.
-    breaks: Vec<usize>,
-    /// Column carrying the primary metric.
-    strong: Option<usize>,
-    secondary: Vec<usize>,
-    /// Signed changes, colored by direction.
-    changes: Vec<usize>,
-    /// The purpose each purpose column splits Code by.
-    purposes: Vec<(usize, Purpose)>,
-}
-
-/// What a measurement table column holds, which decides its styling in text
-/// tables and its emphasis and alignment in Markdown.
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub(crate) enum ColumnRole {
     /// Row labels, left-aligned.
@@ -654,17 +635,32 @@ impl Column {
             ..self
         }
     }
+
+    /// Terminal heading over values at most `widest` characters wide: the
+    /// group's column heading, or the short title where the full one is wider.
+    fn heading(&self, widest: usize) -> &'static str {
+        match (self.group, self.short) {
+            (Some((_, heading)), _) => heading,
+            (None, Some(short)) if self.title.chars().count() > widest => short,
+            _ => self.title,
+        }
+    }
+}
+
+/// The full counts of a language, purpose or category row.
+const fn count_columns(label: &'static str) -> [Column; 6] {
+    [
+        Column::new(label, ColumnRole::Label),
+        Column::new("Files", ColumnRole::Secondary),
+        Column::new("Lines", ColumnRole::Count),
+        Column::new("Code", ColumnRole::Code),
+        Column::new("Comments", ColumnRole::Secondary).separated(),
+        Column::new("Blanks", ColumnRole::Secondary),
+    ]
 }
 
 /// The language table's columns before its purpose columns.
-const LANGUAGE_COLUMNS: [Column; 6] = [
-    Column::new("Language", ColumnRole::Label),
-    Column::new("Files", ColumnRole::Secondary),
-    Column::new("Lines", ColumnRole::Count),
-    Column::new("Code", ColumnRole::Code),
-    Column::new("Comments", ColumnRole::Secondary).separated(),
-    Column::new("Blanks", ColumnRole::Secondary),
-];
+const LANGUAGE_COLUMNS: [Column; 6] = count_columns("Language");
 
 /// The columns of a folder or repository table before its purpose columns.
 const fn code_columns(label: &'static str) -> [Column; 3] {
@@ -695,58 +691,8 @@ impl Columns {
         )
     }
 
-    /// Terminal headings: each column's short title where its full title is
-    /// wider than all of its values in `body` and `total`.
-    fn fitted_titles(&self, body: &[Vec<String>], total: Option<&[String]>) -> Vec<&'static str> {
-        self.0
-            .iter()
-            .enumerate()
-            .map(|(index, column)| {
-                let widest = body
-                    .iter()
-                    .map(Vec::as_slice)
-                    .chain(total)
-                    .filter_map(|row| row.get(index))
-                    .map(|value| plain(value).chars().count())
-                    .max()
-                    .unwrap_or(0);
-                match (column.group, column.short) {
-                    (Some((_, heading)), _) => heading,
-                    (None, Some(short)) if column.title.chars().count() > widest => short,
-                    _ => column.title,
-                }
-            })
-            .collect()
-    }
-
-    fn groups(&self) -> Vec<Option<&'static str>> {
-        self.0
-            .iter()
-            .map(|column| column.group.map(|(group, _)| group))
-            .collect()
-    }
-
     fn has(&self, role: ColumnRole) -> bool {
         self.0.iter().any(|column| column.role == role)
-    }
-
-    fn layout(&self) -> Layout {
-        let mut layout = Layout::default();
-        for (index, column) in self.0.iter().enumerate() {
-            if column.separated {
-                layout.breaks.push(index);
-            }
-            match column.role {
-                ColumnRole::Code => layout.strong = Some(index),
-                ColumnRole::Secondary | ColumnRole::Ratio(_) | ColumnRole::Share => {
-                    layout.secondary.push(index)
-                }
-                ColumnRole::Purpose(purpose) => layout.purposes.push((index, purpose)),
-                ColumnRole::Change => layout.changes.push(index),
-                ColumnRole::Label | ColumnRole::Count => {}
-            }
-        }
-        layout
     }
 
     /// Header and alignment rows; bold Code marks the column the purpose
@@ -772,14 +718,6 @@ impl Columns {
     }
 }
 
-/// Separator between `column` and the column before it.
-fn gap(layout: &Layout, column: usize) -> &'static str {
-    match layout.breaks.contains(&column) {
-        true => " │ ",
-        false => "  ",
-    }
-}
-
 #[derive(Clone, Copy)]
 enum RowKind {
     Header,
@@ -787,22 +725,10 @@ enum RowKind {
     Total,
 }
 
-/// Aligned plain-text table: the first column left-aligned, the others right.
-/// Padding precedes styling so escape codes never shift alignment. Column names
-/// and legends carry the grouping semantics without a redundant caption row.
-fn text_table(
-    header: &[&str],
-    body: &[Vec<String>],
-    total: Option<Vec<String>>,
-    layout: &Layout,
-    theme: Theme,
-) -> String {
-    PlainTable::new(header, body, total.as_deref()).render(layout, None, theme)
-}
-
 /// `columns` over `body` and an optional bold `total` row, as an aligned text
-/// table or a Markdown table; Markdown cells must already be escaped. Compare
-/// renders its grids through it, so both commands share one table style.
+/// table or a Markdown table; Markdown cells must already be escaped. Every
+/// table without bars, compare's grids included, renders through it, so all
+/// share one table style.
 pub(crate) fn shared_table(
     columns: &Columns,
     body: &[Vec<String>],
@@ -811,10 +737,7 @@ pub(crate) fn shared_table(
     theme: Theme,
 ) -> String {
     if !markdown {
-        let layout = columns.layout();
-        return PlainTable::new(&columns.fitted_titles(body, total), body, total)
-            .grouped(&columns.groups(), &layout)
-            .render(&layout, None, theme);
+        return PlainTable::new(columns, body, total).render(None, theme);
     }
     let mut output = columns.markdown_header() + "\n";
     for row in body {
@@ -838,10 +761,12 @@ struct InlineBars {
     bars: Vec<String>,
 }
 
-/// A table's cells without control characters, and each column's width.
+/// Aligned plain-text table: labels left-aligned, figures right. Padding
+/// precedes styling so escape codes never shift alignment. Column names and
+/// legends carry the grouping semantics without a redundant caption row.
 struct PlainTable {
-    /// Group heading per column, empty when the table has none.
-    groups: Vec<Option<String>>,
+    columns: Vec<Column>,
+    /// Cells without control characters.
     header: Vec<String>,
     body: Vec<Vec<String>>,
     total: Option<Vec<String>>,
@@ -849,71 +774,87 @@ struct PlainTable {
 }
 
 impl PlainTable {
-    fn new(header: &[&str], body: &[Vec<String>], total: Option<&[String]>) -> Self {
+    /// Values set the widths first, so a column takes its short title only
+    /// where the full one would be wider than every value; a group name then
+    /// widens its span's last column when it would not fit with a rule on
+    /// either side.
+    fn new(columns: &Columns, body: &[Vec<String>], total: Option<&[String]>) -> Self {
         let clean_row = |row: &[String]| row.iter().map(|value| plain(value)).collect::<Vec<_>>();
-        let header: Vec<String> = header.iter().map(|title| plain(title)).collect();
         let body: Vec<_> = body.iter().map(|row| clean_row(row)).collect();
         let total = total.map(clean_row);
-        let all = std::iter::once(&header).chain(&body).chain(total.as_ref());
-        let mut widths = vec![0; header.len()];
-        for row in all {
+        let mut widths = vec![0; columns.0.len()];
+        for row in body.iter().chain(total.as_ref()) {
             for (width, value) in widths.iter_mut().zip(row) {
                 *width = (*width).max(value.chars().count());
             }
         }
-        Self {
-            groups: Vec::new(),
+        let header: Vec<String> = columns
+            .0
+            .iter()
+            .zip(&widths)
+            .map(|(column, widest)| plain(column.heading(*widest)))
+            .collect();
+        for (width, title) in widths.iter_mut().zip(&header) {
+            *width = (*width).max(title.chars().count());
+        }
+        let mut table = Self {
+            columns: columns.0.clone(),
             header,
             body,
             total,
             widths,
-        }
-    }
-
-    /// Adds group headings, widening a group's last column when its name
-    /// would not fit over the group with a rule on either side.
-    fn grouped(mut self, groups: &[Option<&str>], layout: &Layout) -> Self {
-        self.groups = groups.iter().map(|group| group.map(plain)).collect();
-        for (start, end) in self.spans(layout) {
-            let name = self.groups[start].as_deref().unwrap_or_default();
-            let needed = name.chars().count() + 4;
-            let width = self.span_width(start, end, layout);
+        };
+        for (start, end) in table.spans() {
+            let needed = table.group(start).chars().count() + 4;
+            let width = table.span_width(start, end);
             if needed > width {
-                self.widths[end] += needed - width;
+                table.widths[end] += needed - width;
             }
         }
-        self
+        table
+    }
+
+    fn group(&self, column: usize) -> &'static str {
+        self.columns[column].group.map_or("", |(group, _)| group)
+    }
+
+    /// Separator between `column` and the column before it.
+    fn gap(&self, column: usize) -> &'static str {
+        match self.columns[column].separated {
+            true => " │ ",
+            false => "  ",
+        }
     }
 
     /// Runs of neighbouring columns under one group, never across a `│`.
-    fn spans(&self, layout: &Layout) -> Vec<(usize, usize)> {
+    fn spans(&self) -> Vec<(usize, usize)> {
         let mut spans: Vec<(usize, usize)> = Vec::new();
-        for (column, group) in self.groups.iter().enumerate() {
-            let Some(group) = group else { continue };
+        for (index, column) in self.columns.iter().enumerate() {
+            let Some((group, _)) = column.group else {
+                continue;
+            };
             match spans.last_mut() {
                 Some((start, end))
-                    if *end + 1 == column
-                        && self.groups[*start].as_ref() == Some(group)
-                        && !layout.breaks.contains(&column) =>
+                    if *end + 1 == index && self.group(*start) == group && !column.separated =>
                 {
-                    *end = column
+                    *end = index
                 }
-                _ => spans.push((column, column)),
+                _ => spans.push((index, index)),
             }
         }
         spans
     }
 
-    fn span_width(&self, start: usize, end: usize, layout: &Layout) -> usize {
+    fn span_width(&self, start: usize, end: usize) -> usize {
         let gaps: usize = (start + 1..=end)
-            .map(|column| gap(layout, column).chars().count())
+            .map(|column| self.gap(column).chars().count())
             .sum();
         self.widths[start..=end].iter().sum::<usize>() + gaps
     }
 
     /// The line of group names above the header, each centred in a rule.
-    fn group_line(&self, layout: &Layout, theme: Theme) -> Option<String> {
-        let spans = self.spans(layout);
+    fn group_line(&self, theme: Theme) -> Option<String> {
+        let spans = self.spans();
         if spans.is_empty() {
             return None;
         }
@@ -921,12 +862,12 @@ impl PlainTable {
         let mut column = 0;
         while column < self.widths.len() {
             if column > 0 {
-                text += &theme.paint(Role::Muted, gap(layout, column));
+                text += &theme.paint(Role::Muted, self.gap(column));
             }
             match spans.iter().find(|(start, _)| *start == column) {
                 Some(&(start, end)) => {
-                    let name = self.groups[start].as_deref().unwrap_or_default();
-                    let fill = self.span_width(start, end, layout) - name.chars().count() - 2;
+                    let name = self.group(start);
+                    let fill = self.span_width(start, end) - name.chars().count() - 2;
                     let rule = |cells: usize| theme.paint(Role::Muted, &"─".repeat(cells));
                     text += &rule(fill / 2);
                     text += &format!(" {} ", theme.paint(Role::Heading, name));
@@ -943,49 +884,46 @@ impl PlainTable {
     }
 
     /// Characters per line without bars, as [`PlainTable::render`] lays it out.
-    fn width(&self, layout: &Layout) -> usize {
-        let gaps: usize = (1..self.widths.len())
-            .map(|column| gap(layout, column).chars().count())
-            .sum();
-        1 + self.widths.iter().sum::<usize>() + gaps
+    fn width(&self) -> usize {
+        1 + self.span_width(0, self.widths.len() - 1)
     }
 
-    fn render(&self, layout: &Layout, inline: Option<&InlineBars>, theme: Theme) -> String {
-        // Hue identifies a column: cyan (Primary) for Code, one hue per purpose.
-        // Rows differ by weight, so headings and totals keep their column's hue.
+    fn render(&self, inline: Option<&InlineBars>, theme: Theme) -> String {
+        // Hue identifies a column: cyan for Code, one hue per purpose. Rows
+        // differ by weight, so headings and totals keep their column's hue.
         let line = |row: &[String], kind: RowKind, trailer: Option<&str>| {
             let mut text = String::from(" ");
-            for (column, (value, width)) in row.iter().zip(&self.widths).enumerate() {
-                if column > 0 {
-                    text += &theme.paint(Role::Muted, gap(layout, column));
+            for (index, (value, width)) in row.iter().zip(&self.widths).enumerate() {
+                if index > 0 {
+                    text += &theme.paint(Role::Muted, self.gap(index));
                 }
+                let column = self.columns[index].role;
                 let cell = match column {
-                    0 => format!("{value:<width$}"),
+                    ColumnRole::Label => format!("{value:<width$}"),
                     _ => format!("{value:>width$}"),
                 };
-                let purpose = layout
-                    .purposes
-                    .iter()
-                    .find(|(index, _)| *index == column)
-                    .map(|(_, purpose)| *purpose);
-                // Headings and totals emphasize the hue a column already has.
+                // Headings and totals emphasize the hue a column already has;
+                // headings of uncolored columns are plain headings.
                 let emphasized = !matches!(kind, RowKind::Body);
-                let (role, strong) = match (column, value.as_str(), purpose, kind) {
-                    (0, _, _, _) => (Some(Role::Heading), false),
-                    (_, "-" | "0" | "0.00" | "0.0%", _, _) => (Some(Role::Muted), false),
-                    (_, _, Some(purpose), _) => (Some(Role::Purpose(purpose)), emphasized),
-                    _ if layout.strong == Some(column) => (Some(Role::Code), false),
-                    (_, _, _, RowKind::Header) => (Some(Role::Heading), false),
-                    _ if layout.changes.contains(&column) => {
+                let zero = matches!(value.as_str(), "-" | "0" | "0.00" | "0.0%");
+                let (role, strong) = match (column, kind) {
+                    (ColumnRole::Label, _) => (Some(Role::Heading), false),
+                    _ if zero => (Some(Role::Muted), false),
+                    (ColumnRole::Purpose(purpose), _) => (Some(Role::Purpose(purpose)), emphasized),
+                    (ColumnRole::Code, _) => (Some(Role::Code), false),
+                    (_, RowKind::Header) => (Some(Role::Heading), false),
+                    (ColumnRole::Change, _) => {
                         let direction = match value.starts_with('-') {
                             true => Role::Decrease,
                             false => Role::Increase,
                         };
                         (Some(direction), emphasized)
                     }
-                    _ if layout.secondary.contains(&column) => (Some(Role::Secondary), false),
-                    (_, _, _, RowKind::Total) => (Some(Role::Heading), false),
-                    _ => (None, false),
+                    (ColumnRole::Secondary | ColumnRole::Ratio(_) | ColumnRole::Share, _) => {
+                        (Some(Role::Secondary), false)
+                    }
+                    (ColumnRole::Count, RowKind::Total) => (Some(Role::Heading), false),
+                    (ColumnRole::Count, RowKind::Body) => (None, false),
                 };
                 text += &match role {
                     Some(role) if strong => theme.strong(role, &cell),
@@ -1002,7 +940,7 @@ impl PlainTable {
         let mut rule = String::from(" ");
         for (column, width) in self.widths.iter().enumerate() {
             if column > 0 {
-                rule += match layout.breaks.contains(&column) {
+                rule += match self.columns[column].separated {
                     true => "─┼─",
                     false => "──",
                 };
@@ -1015,7 +953,7 @@ impl PlainTable {
         }
         rule += "\n";
         let rule = theme.paint(Role::Muted, &rule);
-        let mut output = self.group_line(layout, theme).unwrap_or_default()
+        let mut output = self.group_line(theme).unwrap_or_default()
             + &line(&self.header, RowKind::Header, title.as_deref())
             + &rule;
         for (index, row) in self.body.iter().enumerate() {
@@ -1088,6 +1026,15 @@ fn comment_share(code: u64, comments: u64) -> String {
 
 const COMMENT_SHARE_TITLE: &str = "Comment %";
 const COMMENT_SHARE_DEFINITION: &str = "Comment % = Comments / (Code + Comments)";
+
+pub(crate) fn kind_title(kind: Kind) -> &'static str {
+    match kind {
+        Kind::Source => "Source",
+        Kind::Data => "Data",
+        Kind::Documentation => "Documentation",
+        Kind::Unknown => "Unknown",
+    }
+}
 
 pub(crate) fn purpose_title(purpose: Purpose) -> &'static str {
     match purpose {
@@ -1468,15 +1415,7 @@ fn bar_table(
         columns: purposes,
         bars,
     } = *bars;
-    let plain_table = |theme| {
-        text_table(
-            &table_columns.fitted_titles(body, Some(&total)),
-            body,
-            Some(total.clone()),
-            &table_columns.layout(),
-            theme,
-        )
-    };
+    let plain_table = |theme| shared_table(table_columns, body, Some(&total), false, theme);
     let (columns, chart, kind) = match bars {
         Bars::Off => return (plain_table(theme), String::new()),
         Bars::Fit(columns) => (columns, false, BarKind::Purpose),
@@ -1495,13 +1434,8 @@ fn bar_table(
         }
         inline_total.push(kind.percent(total_row, total_row));
     }
-    let inline_layout = inline_columns.layout();
-    let table = PlainTable::new(
-        &inline_columns.fitted_titles(&inline_body, Some(&inline_total)),
-        &inline_body,
-        Some(&inline_total),
-    );
-    let Some(cells) = inline_bar_width(table.width(&inline_layout), kind.heading(), columns) else {
+    let table = PlainTable::new(&inline_columns, &inline_body, Some(&inline_total));
+    let Some(cells) = inline_bar_width(table.width(), kind.heading(), columns) else {
         let table = plain_table(theme);
         if !chart {
             return (table, String::new());
@@ -1533,7 +1467,7 @@ fn bar_table(
         kind.key(shown, theme),
         theme.paint(Role::Muted, kind.scale_note())
     );
-    (table.render(&inline_layout, Some(&bars), theme), key)
+    (table.render(Some(&bars), theme), key)
 }
 
 /// Whole cells per segment: the row's length rounds its fraction of `scale`
@@ -1839,18 +1773,8 @@ pub fn render_table_with_options(
             .collect();
         if !body.is_empty() {
             output += "\n";
-            output += &text_table(
-                &["Category", "Files", "Lines", "Code"],
-                &body,
-                None,
-                &Layout {
-                    breaks: vec![],
-                    strong: Some(3),
-                    secondary: vec![1],
-                    ..Default::default()
-                },
-                theme,
-            );
+            let columns = Columns::of(&count_columns("Category")[..4]);
+            output += &shared_table(&columns, &body, None, false, theme);
             output += &format!(" {}\n", theme.paint(Role::Muted, CATEGORY_LEGEND));
         }
     }
@@ -2186,6 +2110,16 @@ mod tests {
         }
     }
 
+    /// `columns` over `body` and `total` as a text table.
+    fn text_table(
+        columns: &[Column],
+        body: &[Vec<String>],
+        total: Option<&[String]>,
+        theme: Theme,
+    ) -> String {
+        shared_table(&Columns::of(columns), body, total, false, theme)
+    }
+
     /// Remove every SGR sequence, whatever the palette emits.
     fn unstyled(text: &str) -> String {
         let mut output = String::new();
@@ -2216,25 +2150,23 @@ mod tests {
 
     #[test]
     fn table_sanitizes_every_cell_before_padding_and_styling() {
-        let layout = Layout {
-            breaks: vec![],
-            strong: None,
-            secondary: vec![],
-            ..Default::default()
-        };
         for theme in [Theme::PLAIN, Theme::terminal(true)] {
             let actual = text_table(
-                &["Na\tme", "Co\nde"],
+                &[
+                    Column::new("Na\tme", ColumnRole::Label),
+                    Column::new("Co\nde", ColumnRole::Count),
+                ],
                 &[vec!["a\x1b[31mred".into(), "1\r2".into()]],
-                Some(vec!["To\ttal".into(), "3\x07".into()]),
-                &layout,
+                Some(&["To\ttal".into(), "3\x07".into()]),
                 theme,
             );
             let expected = text_table(
-                &["Na me", "Co de"],
+                &[
+                    Column::new("Na me", ColumnRole::Label),
+                    Column::new("Co de", ColumnRole::Count),
+                ],
                 &[vec!["a [31mred".into(), "1 2".into()]],
-                Some(vec!["To tal".into(), "3 ".into()]),
-                &layout,
+                Some(&["To tal".into(), "3 ".into()]),
                 theme,
             );
             assert_eq!(actual, expected);
@@ -2309,7 +2241,13 @@ mod tests {
     #[test]
     fn table_shades_secondary_counts_and_zeros_without_judging_purpose() {
         let table = text_table(
-            &["Name", "Code", "Comments", "Blanks", "Other"],
+            &[
+                Column::new("Name", ColumnRole::Label),
+                Column::new("Code", ColumnRole::Code),
+                Column::new("Comments", ColumnRole::Secondary).separated(),
+                Column::new("Blanks", ColumnRole::Secondary),
+                Column::new("Other", ColumnRole::Count).separated(),
+            ],
             &[vec![
                 "api".into(),
                 "12".into(),
@@ -2318,12 +2256,6 @@ mod tests {
                 "4".into(),
             ]],
             None,
-            &Layout {
-                breaks: vec![2, 4],
-                strong: Some(1),
-                secondary: vec![2, 3],
-                ..Default::default()
-            },
             Theme::TERMINAL,
         );
         assert!(table.contains("\x1b[1mapi \x1b[0m"), "{table}");
@@ -2337,8 +2269,16 @@ mod tests {
     /// the legend; zeros stay gray so an absent purpose recedes.
     #[test]
     fn purpose_columns_carry_their_purpose_hue_from_header_to_total() {
+        let mut columns = vec![
+            Column::new("Name", ColumnRole::Label),
+            Column::new("Code", ColumnRole::Code),
+        ];
+        columns.extend(
+            Purpose::ALL
+                .map(|purpose| Column::new(purpose_title(purpose), ColumnRole::Purpose(purpose))),
+        );
         let table = text_table(
-            &["Name", "Code", "Production", "Test", "Other"],
+            &columns,
             &[vec![
                 "api".into(),
                 "9".into(),
@@ -2346,19 +2286,13 @@ mod tests {
                 "4".into(),
                 "0".into(),
             ]],
-            Some(vec![
+            Some(&[
                 "Total".into(),
                 "9".into(),
                 "5".into(),
                 "4".into(),
                 "0".into(),
             ]),
-            &Layout {
-                breaks: vec![],
-                strong: Some(1),
-                purposes: (2..).zip(Purpose::ALL).collect(),
-                ..Layout::default()
-            },
             Theme::TERMINAL,
         );
         let lines: Vec<_> = table.lines().collect();
@@ -2400,25 +2334,25 @@ mod tests {
     /// counts beside Code and the ratio secondary.
     #[test]
     fn columns_derive_the_layout_their_roles_describe() {
-        let layout = Columns::with_purposes(&LANGUAGE_COLUMNS, &ALL_PURPOSES).layout();
-        assert_eq!(layout.strong, Some(3));
-        assert_eq!(layout.breaks, [4, 6, 9]);
-        assert_eq!(layout.secondary, [1, 4, 5, 9]);
+        let header = |columns: &Columns| {
+            let table = shared_table(columns, &[], None, false, Theme::PLAIN);
+            table.lines().next().unwrap().to_string()
+        };
+        let language = Columns::with_purposes(&LANGUAGE_COLUMNS, &ALL_PURPOSES);
         assert_eq!(
-            layout.purposes,
-            [
-                (6, Purpose::Production),
-                (7, Purpose::Test),
-                (8, Purpose::Other)
-            ]
+            header(&language),
+            " Language  Files  Lines  Code │ Comments  Blanks │ Prod.  Test  Other │ Test/prod"
         );
+        let styled = shared_table(&language, &[], None, false, Theme::TERMINAL);
+        assert!(styled.contains("\x1b[1;36mCode\x1b[0m"), "{styled}");
+        assert!(styled.contains("\x1b[1;34mOther\x1b[0m"), "{styled}");
 
         // One purpose leaves only the ratio, which still starts its group.
         let production = PurposeColumns {
             shown: &[Purpose::Production],
         };
-        let layout = Columns::with_purposes(&code_columns("Folder"), &production).layout();
-        assert_eq!((layout.breaks, layout.secondary), (vec![3], vec![3]));
+        let folder = Columns::with_purposes(&code_columns("Folder"), &production);
+        assert_eq!(header(&folder), " Folder  Lines  Code │ Comment %");
     }
 
     /// Total rows emphasize every hue, so a total's change stays as bold as
@@ -2481,10 +2415,10 @@ mod tests {
                 "-".into(),
             ]
         };
-        let narrow = columns.fitted_titles(&[row("9,978")], None);
-        assert_eq!(narrow[3], "Prod.");
-        let wide = columns.fitted_titles(&[row("1,234,567,890")], None);
-        assert_eq!(wide[3], "Production");
+        let heading =
+            |production| PlainTable::new(&columns, &[row(production)], None).header[3].clone();
+        assert_eq!(heading("9,978"), "Prod.");
+        assert_eq!(heading("1,234,567,890"), "Production");
         assert!(columns.markdown_header().contains("| Production |"));
     }
 
@@ -2517,13 +2451,7 @@ mod tests {
             };
             bar_table(&columns, &body, total.clone(), &rows, Theme::PLAIN)
         };
-        let plain = text_table(
-            &columns.fitted_titles(&body, Some(&total)),
-            &body,
-            Some(total.clone()),
-            &columns.layout(),
-            Theme::PLAIN,
-        );
+        let plain = shared_table(&columns, &body, Some(&total), false, Theme::PLAIN);
         assert_eq!(render(Bars::Fit(30)), (plain, String::new()));
         let (wide, key) = render(Bars::Fit(60));
         assert!(
@@ -2620,7 +2548,13 @@ mod tests {
     #[test]
     fn total_row_is_bold_but_keeps_each_column_role() {
         let table = text_table(
-            &["Name", "Code", "Comments", "Test", "Blanks"],
+            &[
+                Column::new("Name", ColumnRole::Label),
+                Column::new("Code", ColumnRole::Code),
+                Column::new("Comments", ColumnRole::Secondary),
+                Column::new("Test", ColumnRole::Count),
+                Column::new("Blanks", ColumnRole::Count),
+            ],
             &[vec![
                 "api".into(),
                 "12".into(),
@@ -2628,19 +2562,13 @@ mod tests {
                 "4".into(),
                 "0".into(),
             ]],
-            Some(vec![
+            Some(&[
                 "Total".into(),
                 "12".into(),
                 "3".into(),
                 "4".into(),
                 "0".into(),
             ]),
-            &Layout {
-                breaks: vec![],
-                strong: Some(1),
-                secondary: vec![2],
-                ..Default::default()
-            },
             Theme::TERMINAL,
         );
         let total = table.lines().last().unwrap();
@@ -2656,28 +2584,15 @@ mod tests {
     /// emphasized table equals the plain one.
     #[test]
     fn emphasis_bolds_the_strong_column_without_shifting_alignment() {
-        let layout = Layout {
-            breaks: vec![2],
-            strong: Some(1),
-            secondary: vec![],
-            ..Default::default()
-        };
+        let columns = [
+            Column::new("Name", ColumnRole::Label),
+            Column::new("Code", ColumnRole::Code),
+            Column::new("Test", ColumnRole::Count).separated(),
+        ];
         let body = [vec!["a".to_string(), "12".into(), "3".into()]];
-        let total = Some(vec!["Total".to_string(), "12".into(), "3".into()]);
-        let plain = text_table(
-            &["Name", "Code", "Test"],
-            &body,
-            total.clone(),
-            &layout,
-            Theme::PLAIN,
-        );
-        let bold = text_table(
-            &["Name", "Code", "Test"],
-            &body,
-            total,
-            &layout,
-            Theme::TERMINAL,
-        );
+        let total = ["Total".to_string(), "12".into(), "3".into()];
+        let plain = text_table(&columns, &body, Some(&total), Theme::PLAIN);
+        let bold = text_table(&columns, &body, Some(&total), Theme::TERMINAL);
         assert!(
             bold.contains("\x1b[90m"),
             "separators should recede: {bold}"

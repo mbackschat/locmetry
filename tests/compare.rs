@@ -436,6 +436,35 @@ fn comparison_schema_has_a_valid_example_and_explicit_integer_bounds() {
     );
 }
 
+/// The Folders grid ends in the root's source total like every other grid,
+/// even when code only moves between top-level folders and the root nets zero.
+#[test]
+fn folder_grid_keeps_its_total_when_code_only_moves_between_folders() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("project");
+    write(&root, "a/main.py", "print(1)\nprint(2)\n");
+    write(&root, "b/util.py", "print(3)\n");
+    let before = save(temp.path(), "before.json", &measure(&root));
+    write(&root, "a/main.py", "print(1)\n");
+    write(&root, "b/util.py", "print(3)\nprint(2)\n");
+    let after = save(temp.path(), "after.json", &measure(&root));
+    let output = compare(&before, &after, &["--format", "table"]);
+    let text = String::from_utf8(output.stdout).unwrap();
+    let folders = text.split("Folders (recursive").nth(1).unwrap();
+    let total = folders
+        .lines()
+        .find(|line| line.starts_with(" Source total"))
+        .unwrap_or_else(|| panic!("no total in:\n{text}"));
+    assert_eq!(
+        total
+            .replace('│', " ")
+            .split_whitespace()
+            .collect::<Vec<_>>(),
+        ["Source", "total", "3", "3", "0", "3", "3", "0"]
+    );
+    assert!(!folders.contains(" . ("), "{text}");
+}
+
 #[test]
 fn released_version_one_reports_are_refused_with_a_remedy() {
     for n in 0..=6 {
