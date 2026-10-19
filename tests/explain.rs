@@ -51,7 +51,7 @@ fn explains_first_match_module_inference_and_mapping_with_actual_file_counts() {
     write(root, "src/main.js", "let a = 1;\n");
     write(root, "src/example.test.js", "assert(true);\n");
     write(root, "ops/task.custom", "echo ok\n");
-    write(root,".locmetryrc","version = 1\n[[overrides]]\nid = \"archive\"\nmatch = [\"src/example.test.js\"]\npurpose = \"unclassified\"\nreason = \"Historical example\"\n[[rules]]\nid = \"first\"\nmatch = [\"ops/**\"]\npurpose = \"production\"\n[[rules]]\nid = \"second\"\nmatch = [\"ops/**\"]\npurpose = \"test\"\n[[languages.mappings]]\nid = \"custom\"\nmatch = [\"**/*.custom\"]\nlanguage = \"BASH\"\n");
+    write(root,".locmetryrc","version = 1\n[[overrides]]\nid = \"archive\"\nmatch = [\"src/example.test.js\"]\npurpose = \"other\"\nreason = \"Historical example\"\n[[rules]]\nid = \"first\"\nmatch = [\"ops/**\"]\npurpose = \"production\"\n[[rules]]\nid = \"second\"\nmatch = [\"ops/**\"]\npurpose = \"test\"\n[[languages.mappings]]\nid = \"custom\"\nmatch = [\"**/*.custom\"]\nlanguage = \"BASH\"\n");
     let module = document(run(root, "src/main.js", &[]), 0);
     assert_eq!(module["document_type"], "explanation");
     assert_eq!(module["result"]["state"], "counted");
@@ -174,7 +174,7 @@ fn workspace_queries_use_member_policy_and_qualified_paths() {
     assert_eq!(api["result"]["file"]["path"], "api/main.py");
     assert_eq!(api["result"]["file"]["purpose"], "production");
     let web = document(run("web/main.py", &[]), 0);
-    assert_eq!(web["result"]["file"]["purpose"], "unclassified");
+    assert_eq!(web["result"]["file"]["purpose"], "other");
     assert_eq!(
         run("api/main.py", &["--hidden", "false"]).status.code(),
         Some(1)

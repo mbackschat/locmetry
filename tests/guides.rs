@@ -175,9 +175,9 @@ fn configuration_example_preserves_decisions_and_open_questions() {
     assert_eq!(projection, expected("configure", "configuration-result"));
     for (path, purpose, rule) in [
         ("src/app.js", "production", "builtin:npm-module"),
-        ("src/sample.js", "unclassified", "historical-sample"),
+        ("src/sample.js", "other", "historical-sample"),
         ("scripts/tool.py", "production", "tooling"),
-        ("unknown.py", "unclassified", "fallback"),
+        ("unknown.py", "other", "fallback"),
     ] {
         let result = document(
             root.path(),
@@ -190,7 +190,7 @@ fn configuration_example_preserves_decisions_and_open_questions() {
     let schema = document(root.path(), &["--schema", "config"], 0);
     let description = schema["description"].as_str().unwrap();
     assert!(description.contains("open question"));
-    assert!(!description.contains("read `summary.unclassified_folders` and add entries"));
+    assert!(!description.contains("read `summary.unclaimed_folders` and add entries"));
 }
 
 #[test]
@@ -339,10 +339,7 @@ fn comparison_example_and_scope_refusal_match_documented_evidence() {
         subtree["summary"]["source_purpose"]["production"]["code"],
         1
     );
-    assert_eq!(
-        independent["summary"]["source_purpose"]["unclassified"]["code"],
-        1
-    );
+    assert_eq!(independent["summary"]["source_purpose"]["other"]["code"], 1);
     fs::write(
         root.path().join("subtree.json"),
         serde_json::to_vec(&subtree).unwrap(),

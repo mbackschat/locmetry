@@ -70,12 +70,12 @@ fn folder_rows(text: &str) -> Vec<(String, Vec<String>)> {
 fn counts(text: &str) -> BTreeMap<String, Vec<String>> {
     folder_rows(text).into_iter().collect()
 }
-fn values(code: u64, prod: u64, test: u64, unclassified: u64, ratio: &str) -> Vec<String> {
+fn values(code: u64, prod: u64, test: u64, other: u64, ratio: &str) -> Vec<String> {
     vec![
         code.to_string(),
         prod.to_string(),
         test.to_string(),
-        unclassified.to_string(),
+        other.to_string(),
         ratio.into(),
     ]
 }
@@ -132,7 +132,7 @@ fn wide_folders_use_scoped_remainders_but_never_hide_one_child() {
             ("packages/a".into(), values(8, 8, 0, 0, "0.00")),
             ("packages/b".into(), values(4, 4, 0, 0, "0.00")),
             (
-                "packages (other 2 child folders)".into(),
+                "packages (2 more child folders)".into(),
                 values(3, 3, 0, 0, "0.00")
             ),
             ("Total".into(), values(15, 15, 0, 0, "0.00")),
@@ -148,7 +148,7 @@ fn wide_folders_use_scoped_remainders_but_never_hide_one_child() {
     source(root, "packages/d/p.rs", 1);
     let rows = counts(&table(root, 4, &[]));
     assert_eq!(
-        rows["packages (other 2 child folders)"],
+        rows["packages (2 more child folders)"],
         values(3, 3, 0, 0, "0.00")
     );
     assert_eq!(rows["packages (direct files)"], values(1, 1, 0, 0, "0.00"));
@@ -512,7 +512,7 @@ fn budget_hint_names_the_parent_of_the_largest_remainder() {
         source(root, &format!("packages/{child}/p.rs"), lines);
     }
     let text = table(root, 3, &[]);
-    assert_eq!(counts(&text)["packages (other 5 child folders)"][0], "50");
+    assert_eq!(counts(&text)["packages (5 more child folders)"][0], "50");
     assert!(
         text.contains("More child folders of packages can be shown; increase --folder-rows."),
         "{text}"

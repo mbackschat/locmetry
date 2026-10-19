@@ -137,7 +137,7 @@ fn workspace_merges_members_as_prefixed_top_level_folders() {
         json!([{"path": "api", "detector": "cargo"}, {"path": "web", "detector": "npm"}])
     );
     assert_eq!(
-        merged["summary"]["unclassified_folders"],
+        merged["summary"]["unclaimed_folders"],
         json!([
             {"folder": "api/vendor/proto", "files": 1, "code": 1},
             {"folder": "web/prototype", "files": 1, "code": 1},
@@ -558,9 +558,9 @@ fn workspace_table_compares_repositories() {
             "Repository",
             "Lines",
             "Code",
-            "Production",
+            "Prod.",
             "Test",
-            "Unclassified",
+            "Other",
             "Test/prod",
             "Share"
         ]
@@ -589,7 +589,7 @@ fn workspace_table_compares_repositories() {
     );
     assert!(!table.contains(" Folder "), "{table}");
     assert!(
-        table.contains(" Production + Test + Unclassified = Code; Test/prod = Test / Production; Share = Code / workspace Code.\n"),
+        table.contains(" Production + Test + Other = Code; Test/prod = Test / Production; Share = Code / workspace Code.\n"),
         "{table}"
     );
     assert!(
@@ -616,10 +616,10 @@ fn workspace_markdown_breaks_categories_and_languages_down_by_repository() {
     let markdown = String::from_utf8(output.stdout).unwrap();
     for expected in [
         "## Repositories\n",
-        "| Repository | Lines | **Code** | Production | Test | Unclassified | Test/prod | Share |\n",
+        "| Repository | Lines | **Code** | Production | Test | Other | Test/prod | Share |\n",
         "| web | 6 | 6 | 3 | 1 | 2 | 0.33 | 60.0% |\n",
         "| **Total** | **10** | **10** | **4** | **3** | **3** | **0.75** | **100.0%** |\n",
-        "Production + Test + Unclassified = Code; Test/prod = Test / Production; Share = Code / workspace Code.",
+        "Production + Test + Other = Code; Test/prod = Test / Production; Share = Code / workspace Code.",
         "Each total is the sum of its repository columns.",
         "## Source categories by repository\n",
         "| Category | api Lines | api Code | web Lines | web Code | Total Lines | Total Code |\n",
@@ -659,9 +659,11 @@ fn regular_runs_have_no_repository_dimension() {
 #[test]
 fn workspace_bars_chart_repository_shares() {
     let temp = workspace();
-    let output = locmetry(
-        temp.path(),
-        &[
+    // Narrow enough that no bar fits beside a table, so both charts appear.
+    let output = common::locmetry()
+        .current_dir(temp.path())
+        .env("COLUMNS", "60")
+        .args([
             "workspace",
             "--root",
             "web",
@@ -670,8 +672,9 @@ fn workspace_bars_chart_repository_shares() {
             "--format",
             "table",
             "--bars",
-        ],
-    );
+        ])
+        .output()
+        .unwrap();
     assert!(output.status.success());
     let table = String::from_utf8(output.stdout).unwrap();
     let charts: Vec<_> = table.split("\n Code share ").skip(1).collect();

@@ -62,7 +62,7 @@ fn compare_reports_net_change_without_reading_the_source_checkout() {
     fs::remove_dir_all(root).unwrap();
     let full = json(&compare(&before, &after, &["--output", "-"]), 0);
     assert_eq!(full["document_type"], "comparison");
-    assert_eq!(full["schema_version"], "1");
+    assert_eq!(full["schema_version"], "2");
     change(&full["summary"]["source"], 3, 4, 1);
     assert_eq!(
         full["summary"]["source"]["delta"],
@@ -108,7 +108,7 @@ fn descriptor_removal_changes_data_and_purpose_without_claiming_source_deletion(
     change(&full["summary"]["all_counted"], 5, 2, -3);
     change(&full["summary"]["source"], 2, 2, 0);
     change(&full["summary"]["source_purpose"]["production"], 2, 0, -2);
-    change(&full["summary"]["source_purpose"]["unclassified"], 0, 2, 2);
+    change(&full["summary"]["source_purpose"]["other"], 0, 2, 2);
     assert_eq!(full["packages"][0]["folder"], ".");
     assert_eq!(full["packages"][0]["detector"], "npm");
     assert_eq!(full["packages"][0]["presence"], "before_only");
@@ -153,7 +153,7 @@ fn rejects_headlines_versions_inconsistent_counts_and_overwriting_inputs() {
             "headline" => {
                 bad.as_object_mut().unwrap().remove("breakdown");
             }
-            "version" => bad["schema_version"] = json!("2"),
+            "version" => bad["schema_version"] = json!("3"),
             "counts" => bad["summary"]["source"]["lines"] = json!(100),
             "duplicate" => {
                 let row = bad["breakdown"][0].clone();
@@ -373,7 +373,7 @@ fn signed_delta_overflow_fails_without_output() {
         }
     }
     enlarge(&mut after_value);
-    after_value["summary"]["top_folders"]["."]["unclassified"] = json!(u64::MAX);
+    after_value["summary"]["top_folders"]["."]["other"] = json!(u64::MAX);
     let after = save(temp.path(), "after.json", &after_value);
     let output = compare(&before, &after, &[]);
     assert_eq!(output.status.code(), Some(1));
@@ -437,22 +437,13 @@ fn comparison_schema_has_a_valid_example_and_explicit_integer_bounds() {
 }
 
 #[test]
-fn legacy_full_reports_compare_and_early_reports_name_the_missing_evidence() {
-    for n in 2..=6 {
-        let path = PathBuf::from(format!("tests/fixtures/reports/v0.1.{n}-root.json"));
-        let full = json(&compare(&path, &path, &["--output", "-"]), 0);
-        assert_eq!(full["summary"]["source"]["delta"]["code"], 0);
-        assert!(full["findings"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .any(|f| f["code"] == "coverage_gap"));
-    }
-    for n in 0..=1 {
+fn released_version_one_reports_are_refused_with_a_remedy() {
+    for n in 0..=6 {
         let path = PathBuf::from(format!("tests/fixtures/reports/v0.1.{n}-root.json"));
         let output = compare(&path, &path, &[]);
         assert_eq!(output.status.code(), Some(1));
-        assert!(String::from_utf8_lossy(&output.stderr).contains("metadata.modules"));
+        assert!(output.stdout.is_empty());
+        assert!(String::from_utf8_lossy(&output.stderr).contains("measure again"));
     }
 }
 
@@ -1193,4 +1184,22 @@ fn totals_split_all_counted_by_kind_and_grids_end_in_their_source_total() {
     let markdown =
         String::from_utf8(compare(&before, &after, &["--format", "markdown"]).stdout).unwrap();
     assert!(markdown.contains("| . (both) |"), "{markdown}");
+}
+
+/// Locks the 0.5 clean break: version-1 reports use the retired vocabulary, so
+/// compare names the version and the remedy instead of failing on a key.
+#[test]
+fn version_one_reports_are_rejected_with_a_remedy() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("project");
+    write(&root, "main.py", "a = 1\n");
+    let mut old = measure(&root);
+    old["schema_version"] = json!("1");
+    let old = save(temp.path(), "old.json", &old);
+    let current = save(temp.path(), "current.json", &measure(&root));
+    let output = compare(&old, &current, &[]);
+    assert_eq!(output.status.code(), Some(1));
+    let error = String::from_utf8_lossy(&output.stderr);
+    assert!(error.contains("schema version 1"), "{error}");
+    assert!(error.contains("measure again"), "{error}");
 }

@@ -110,10 +110,10 @@ pub const DOCUMENTATION_LANGUAGES: &[LanguageType] = &[
 const TOOL_IGNORE_FILE: &str = ".tokeignore";
 
 /// Content kind of a backend language name; names unknown to this Tokei
-/// version, for example from saved payloads, stay visible as `Other`.
+/// version, for example from saved payloads, stay visible as `Unknown`.
 pub fn language_kind(name: &str) -> Kind {
     match LanguageType::from_name(name) {
-        None => Kind::Other,
+        None => Kind::Unknown,
         Some(language) if DATA_LANGUAGES.contains(&language) => Kind::Data,
         Some(language) if DOCUMENTATION_LANGUAGES.contains(&language) => Kind::Documentation,
         Some(_) => Kind::Source,

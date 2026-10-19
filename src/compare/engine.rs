@@ -4,10 +4,18 @@ use anyhow::{ensure, Context};
 use std::{collections::BTreeSet, fs, path::Path};
 
 pub fn read_input(path: &Path) -> Result<MeasurementReport> {
-    let report: MeasurementReport = serde_json::from_slice(
-        &fs::read(path).with_context(|| format!("Cannot read {}", path.display()))?,
-    )
-    .with_context(|| format!("Invalid measurement report {}", path.display()))?;
+    let bytes = fs::read(path).with_context(|| format!("Cannot read {}", path.display()))?;
+    let value: serde_json::Value = serde_json::from_slice(&bytes)
+        .with_context(|| format!("Invalid measurement report {}", path.display()))?;
+    // Version 1 used the purpose names retired in 0.5; translating them would
+    // keep two vocabularies alive, so old reports are re-measured instead.
+    ensure!(
+        value["schema_version"] != "1",
+        "{} has report schema version 1 from locmetry 0.4 or earlier; measure again with this version to compare",
+        path.display()
+    );
+    let report: MeasurementReport = serde_json::from_value(value)
+        .with_context(|| format!("Invalid measurement report {}", path.display()))?;
     Ok(report)
 }
 
@@ -275,7 +283,7 @@ pub fn compare(
     normalize_metadata(&mut after.metadata);
     let mut result = Comparison {
         document_type: DocumentType::Comparison,
-        schema_version: Version::V1,
+        schema_version: Version::V2,
         before: Input {
             filename: before_name,
             project: before.project.clone(),

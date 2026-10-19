@@ -24,8 +24,8 @@ The JSON includes the canonical root, effective scope, loaded configuration path
     "path": "main.py",
     "language": "Python",
     "kind": "source",
-    "purpose": "unclassified",
-    "category": "unclassified",
+    "purpose": "other",
+    "category": "unclaimed",
     "rule": "fallback",
     "counts": { "code": 1, "comments": 0, "blanks": 0, "lines": 1 }
   },

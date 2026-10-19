@@ -172,7 +172,7 @@ fn config_schema_states_order_layers_and_a_valid_example() {
 }
 
 /// Agents test-driving the schema parked maintained tooling and examples as
-/// `unclassified` because the purposes read as "shipped" versus "not
+/// `unclassified` (since 0.5 `other`) because the purposes read as "shipped" versus "not
 /// shipped"; the descriptions must carry docs/PRODUCT.md's definition instead.
 #[test]
 fn config_schema_defines_production_as_maintained_non_test_source() {
@@ -198,9 +198,9 @@ fn config_schema_defines_production_as_maintained_non_test_source() {
     ] {
         assert!(production.contains(term), "{term} in {production}");
     }
-    let unclassified = meaning("unclassified");
-    assert!(unclassified.contains("not maintained"), "{unclassified}");
-    assert!(unclassified.contains("is production"), "{unclassified}");
+    let other = meaning("other");
+    assert!(other.contains("neither production nor test"), "{other}");
+    assert!(other.contains("is production"), "{other}");
 }
 
 #[test]

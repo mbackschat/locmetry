@@ -3,7 +3,7 @@ mod folders;
 use crate::report::Summary;
 use crate::style::{Role, Theme};
 use crate::{
-    build_systems, review, unclassified_folders, Counts, Coverage, FileRecord, FolderShare, Kind,
+    build_systems, review, unclaimed_folders, Counts, Coverage, FileRecord, FolderShare, Kind,
     ModuleShare, Purpose, ReportSummary, SubmoduleShare,
 };
 use anyhow::{ensure, Context, Result};
@@ -356,7 +356,7 @@ pub fn render_markdown(
         &summary.totals.source_categories,
         order,
     );
-    let other = summary
+    let non_source = summary
         .totals
         .by_kind_purpose
         .iter()
@@ -365,9 +365,9 @@ pub fn render_markdown(
         .collect();
     table(
         &mut output,
-        "Other counted content",
+        "Non-source content",
         "Kind:purpose",
-        &other,
+        &non_source,
         order,
     );
     let languages = Columns(
@@ -420,11 +420,11 @@ pub fn render_markdown(
     let unknown = review(rows);
     writeln!(
         output,
-        "\n## Source requiring review\n\n{} of unclassified source that no rule, convention, or build module claims. Code an entry or convention leaves unclassified on purpose is not listed.",
+        "\n## Source requiring review\n\n{} of unclaimed source: no rule, convention, or build module claims it. Code an entry or convention assigns to Other on purpose is not listed.",
         counted(unknown.len() as u64, "file")
     )
     .unwrap();
-    let folders = unclassified_folders(rows);
+    let folders = unclaimed_folders(rows);
     if !folders.is_empty() {
         output.push_str("\n| Folder | Files | Lines | Code |\n| --- | ---: | ---: | ---: |\n");
         for share in &folders {
@@ -612,6 +612,9 @@ pub(crate) enum ColumnRole {
 #[derive(Clone, Copy)]
 pub(crate) struct Column {
     title: &'static str,
+    /// Heading for terminal tables when `title` would be wider than every
+    /// value, so a long title does not widen a column of short figures.
+    short: Option<&'static str>,
     role: ColumnRole,
     /// Preceded by a `│` separator, starting a group of related figures.
     separated: bool,
@@ -621,8 +624,16 @@ impl Column {
     pub(crate) const fn new(title: &'static str, role: ColumnRole) -> Self {
         Self {
             title,
+            short: None,
             role,
             separated: false,
+        }
+    }
+
+    pub(crate) const fn abbreviated(self, short: &'static str) -> Self {
+        Self {
+            short: Some(short),
+            ..self
         }
     }
 
@@ -673,8 +684,27 @@ impl Columns {
         )
     }
 
-    fn titles(&self) -> Vec<&'static str> {
-        self.0.iter().map(|column| column.title).collect()
+    /// Terminal headings: each column's short title where its full title is
+    /// wider than all of its values in `body` and `total`.
+    fn fitted_titles(&self, body: &[Vec<String>], total: Option<&[String]>) -> Vec<&'static str> {
+        self.0
+            .iter()
+            .enumerate()
+            .map(|(index, column)| {
+                let widest = body
+                    .iter()
+                    .map(Vec::as_slice)
+                    .chain(total)
+                    .filter_map(|row| row.get(index))
+                    .map(|value| plain(value).chars().count())
+                    .max()
+                    .unwrap_or(0);
+                match column.short {
+                    Some(short) if column.title.chars().count() > widest => short,
+                    _ => column.title,
+                }
+            })
+            .collect()
     }
 
     fn has(&self, role: ColumnRole) -> bool {
@@ -762,7 +792,7 @@ pub(crate) fn shared_table(
     theme: Theme,
 ) -> String {
     if !markdown {
-        return PlainTable::new(&columns.titles(), body, total).render(
+        return PlainTable::new(&columns.fitted_titles(body, total), body, total).render(
             &columns.layout(),
             None,
             theme,
@@ -963,7 +993,7 @@ pub(crate) fn purpose_title(purpose: Purpose) -> &'static str {
     match purpose {
         Purpose::Production => "Production",
         Purpose::Test => "Test",
-        Purpose::Unclassified => "Unclassified",
+        Purpose::Other => "Other",
     }
 }
 
@@ -1006,6 +1036,10 @@ impl PurposeColumns<'_> {
     fn table_columns(&self) -> Vec<Column> {
         let purposes = self.purposes().iter().enumerate().map(|(index, purpose)| {
             let column = Column::new(purpose_title(*purpose), ColumnRole::Purpose(*purpose));
+            let column = match purpose {
+                Purpose::Production => column.abbreviated("Prod."),
+                Purpose::Test | Purpose::Other => column,
+            };
             match index {
                 0 => column.separated(),
                 _ => column,
@@ -1076,11 +1110,12 @@ impl PurposeColumns<'_> {
     }
 
     /// Names the selection, so filtered totals are not read as complete ones.
+    /// Column titles name the purposes, so "Other" cannot read as "others".
     fn filter_note(&self) -> Option<String> {
         let names = |purposes: Vec<Purpose>| {
             purposes
                 .iter()
-                .map(Purpose::to_string)
+                .map(|purpose| purpose_title(*purpose))
                 .collect::<Vec<_>>()
                 .join(" and ")
         };
@@ -1335,7 +1370,7 @@ fn bar_table(
     } = *bars;
     let plain_table = |theme| {
         text_table(
-            &table_columns.titles(),
+            &table_columns.fitted_titles(body, Some(&total)),
             body,
             Some(total.clone()),
             &table_columns.layout(),
@@ -1361,7 +1396,11 @@ fn bar_table(
         inline_total.push(kind.percent(total_row, total_row));
     }
     let inline_layout = inline_columns.layout();
-    let table = PlainTable::new(&inline_columns.titles(), &inline_body, Some(&inline_total));
+    let table = PlainTable::new(
+        &inline_columns.fitted_titles(&inline_body, Some(&inline_total)),
+        &inline_body,
+        Some(&inline_total),
+    );
     let Some(cells) = inline_bar_width(table.width(&inline_layout), kind.heading(), columns) else {
         let table = plain_table(theme);
         if !chart {
@@ -1740,7 +1779,7 @@ pub fn render_table_with_options(
         }
         notes.extend(build_modules_note(findings.modules, order).map(TerminalNote::Text));
         notes.extend(submodules_note(findings.submodules).map(TerminalNote::Text));
-        let folders = unclassified_folders(rows);
+        let folders = unclaimed_folders(rows);
         if !folders.is_empty() {
             notes.push(TerminalNote::Unclaimed(folders));
         }
@@ -2170,7 +2209,7 @@ mod tests {
     #[test]
     fn table_shades_secondary_counts_and_zeros_without_judging_purpose() {
         let table = text_table(
-            &["Name", "Code", "Comments", "Blanks", "Unclassified"],
+            &["Name", "Code", "Comments", "Blanks", "Other"],
             &[vec![
                 "api".into(),
                 "12".into(),
@@ -2190,7 +2229,7 @@ mod tests {
         assert!(table.contains("\x1b[1mapi \x1b[0m"), "{table}");
         assert!(table.contains("\x1b[2m       3\x1b[0m"), "{table}");
         assert!(table.contains("\x1b[90m     0\x1b[0m"), "{table}");
-        assert!(table.contains("           4\n"), "{table}");
+        assert!(table.contains("    4\n"), "{table}");
         assert!(!table.contains("\x1b[33m"));
     }
 
@@ -2199,7 +2238,7 @@ mod tests {
     #[test]
     fn purpose_columns_carry_their_purpose_hue_from_header_to_total() {
         let table = text_table(
-            &["Name", "Code", "Production", "Test", "Unclassified"],
+            &["Name", "Code", "Production", "Test", "Other"],
             &[vec![
                 "api".into(),
                 "9".into(),
@@ -2227,10 +2266,10 @@ mod tests {
         assert!(header.contains("\x1b[1;36mCode\x1b[0m"), "{header}");
         assert!(header.contains("\x1b[1;32mProduction\x1b[0m"), "{header}");
         assert!(header.contains("\x1b[1;35mTest\x1b[0m"), "{header}");
-        assert!(header.contains("\x1b[1;34mUnclassified\x1b[0m"), "{header}");
+        assert!(header.contains("\x1b[1;34mOther\x1b[0m"), "{header}");
         assert!(body.contains("\x1b[32m         5\x1b[0m"), "{body}");
         assert!(body.contains("\x1b[35m   4\x1b[0m"), "{body}");
-        assert!(body.contains("\x1b[90m           0\x1b[0m"), "{body}");
+        assert!(body.contains("\x1b[90m    0\x1b[0m"), "{body}");
         assert!(total.contains("\x1b[1;32m         5\x1b[0m"), "{total}");
         assert!(total.contains("\x1b[1;35m   4\x1b[0m"), "{total}");
     }
@@ -2270,7 +2309,7 @@ mod tests {
             [
                 (6, Purpose::Production),
                 (7, Purpose::Test),
-                (8, Purpose::Unclassified)
+                (8, Purpose::Other)
             ]
         );
 
@@ -2282,11 +2321,34 @@ mod tests {
         assert_eq!((layout.breaks, layout.secondary), (vec![3], vec![3]));
     }
 
+    /// A short title replaces a full one only while the full title would be
+    /// wider than every value; Markdown keeps the full title regardless.
+    #[test]
+    fn short_titles_apply_only_when_the_full_title_outgrows_its_values() {
+        let columns = Columns::with_purposes(&code_columns("Folder"), &ALL_PURPOSES);
+        let row = |production: &str| {
+            vec![
+                "src".into(),
+                "1".into(),
+                "1".into(),
+                production.into(),
+                "0".into(),
+                "0".into(),
+                "-".into(),
+            ]
+        };
+        let narrow = columns.fitted_titles(&[row("9,978")], None);
+        assert_eq!(narrow[3], "Prod.");
+        let wide = columns.fitted_titles(&[row("1,234,567,890")], None);
+        assert_eq!(wide[3], "Production");
+        assert!(columns.markdown_header().contains("| Production |"));
+    }
+
     #[test]
     fn markdown_headers_bold_code_and_right_align_figures() {
         assert_eq!(
             Columns::with_purposes(&code_columns("Folder"), &ALL_PURPOSES).markdown_header(),
-            "| Folder | Lines | **Code** | Production | Test | Unclassified | Test/prod |\n| --- | ---: | ---: | ---: | ---: | ---: | ---: |"
+            "| Folder | Lines | **Code** | Production | Test | Other | Test/prod |\n| --- | ---: | ---: | ---: | ---: | ---: | ---: |"
         );
     }
 
@@ -2312,7 +2374,7 @@ mod tests {
             bar_table(&columns, &body, total.clone(), &rows, Theme::PLAIN)
         };
         let plain = text_table(
-            &columns.titles(),
+            &columns.fitted_titles(&body, Some(&total)),
             &body,
             Some(total.clone()),
             &columns.layout(),
@@ -2350,7 +2412,7 @@ mod tests {
         );
         assert_eq!(
             plain,
-            " Code share  █ Production  ▓ Test  ░ Unclassified\n \
+            " Code share  █ Production  ▓ Test  ░ Other\n \
              api  50.0%  ████████████▓▓▓▓▓▓░░\n \
              web  25.0%  ░░░░░░░░░░\n \
              ops  20.0%  ████████\n \

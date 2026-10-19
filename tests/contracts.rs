@@ -2,42 +2,61 @@ mod common;
 use locmetry::contract::MeasurementReport;
 use serde_json::{json, Value};
 
-fn fixture(name: &str) -> Value {
-    serde_json::from_str(
-        &std::fs::read_to_string(format!("tests/fixtures/reports/{name}.json")).unwrap(),
-    )
-    .unwrap()
+/// A full report with file detail, freshly measured from a synthetic project
+/// shaped like the release fixtures' input: a build module, production and
+/// test source, documentation, an unrecognized file, unclaimed source and an
+/// unused rule, so every report section the validation tests mutate is populated.
+fn current(workspace: bool) -> Value {
+    let temp = tempfile::tempdir().unwrap();
+    common::write_all(
+        temp.path(),
+        &[
+            ("package.json", "{\"name\": \"synthetic\"}\n"),
+            ("src/index.js", "let a = 1;\nlet b = 2;\n"),
+            ("tests/test_main.py", "assert True\n"),
+            ("README.md", "# Synthetic\n\n```python\nprint(1)\n```\n"),
+            ("assets/blob.xyz", "opaque\n"),
+            ("scripts/tool.py", "print(1)\n"),
+            (
+                ".locmetryrc",
+                "version = 1\n[scope]\nexclude = [\"never/**\"]\n[[rules]]\nid = \"unused\"\nmatch = [\"nothing/**\"]\npurpose = \"test\"\n",
+            ),
+        ],
+    );
+    let mut command = common::locmetry();
+    if workspace {
+        command.arg("workspace");
+    }
+    let output = command
+        .args([
+            "--root",
+            temp.path().to_str().unwrap(),
+            "--files",
+            "--output",
+            "-",
+        ])
+        .output()
+        .unwrap();
+    common::json(&output, 0)
 }
 
+/// Locks the 0.5 clean break: every released version-1 report is refused by
+/// the typed reader, because its purpose names no longer exist.
 #[test]
-fn historical_releases_decode_without_inventing_failure_evidence() {
-    let schema = jsonschema::validator_for(&locmetry::report_schema()).unwrap();
-    for minor in 0..=6 {
-        for mode in if minor >= 4 {
-            vec!["root", "workspace"]
-        } else {
-            vec!["root"]
-        } {
-            let name = format!("v0.1.{minor}-{mode}");
-            let value = fixture(&name);
-            let report: MeasurementReport =
-                serde_json::from_value(value.clone()).unwrap_or_else(|e| panic!("{name}: {e}"));
-            assert!(
-                schema.is_valid(&value),
-                "{name}: {:?}",
-                schema.iter_errors(&value).collect::<Vec<_>>()
-            );
-            report
-                .validate()
-                .unwrap_or_else(|e| panic!("{name}: {e:#}"));
-            assert!(report.metadata.coverage.parse_failures.is_none());
-            // Per-file detail is optional in every historical full export.
-            let mut aggregate = value;
-            aggregate.as_object_mut().unwrap().remove("files");
-            let report: MeasurementReport = serde_json::from_value(aggregate).unwrap();
-            let headline = serde_json::to_value(report.headline()).unwrap();
-            assert!(schema.is_valid(&headline), "{name} headline");
-        }
+fn version_one_release_reports_are_refused() {
+    let names = (0..=6)
+        .map(|minor| format!("v0.1.{minor}-root"))
+        .chain((4..=6).map(|minor| format!("v0.1.{minor}-workspace")));
+    for name in names {
+        let value: Value = serde_json::from_str(
+            &std::fs::read_to_string(format!("tests/fixtures/reports/{name}.json")).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(value["schema_version"], "1", "{name}");
+        assert!(
+            serde_json::from_value::<MeasurementReport>(value).is_err(),
+            "{name}"
+        );
     }
 }
 
@@ -77,7 +96,7 @@ fn typed_contract_rejects_unknown_keys_invalid_modes_and_negative_counts() {
         ("/metadata/config/surprise", json!(true)),
         ("/summary/surprise", json!(true)),
     ] {
-        let mut value = fixture("v0.1.6-root");
+        let mut value = current(false);
         let (parent, key) = pointer.rsplit_once('/').unwrap();
         value.pointer_mut(parent).unwrap()[key] = replacement;
         assert!(
@@ -107,14 +126,14 @@ fn semantic_validation_rejects_conflicting_counts_coverage_and_duplicate_rows() 
             "top_folders",
         ),
     ] {
-        let mut value = fixture("v0.1.6-root");
+        let mut value = current(false);
         let (parent, key) = pointer.rsplit_once('/').unwrap();
         value.pointer_mut(parent).unwrap()[key] = replacement;
         let typed: MeasurementReport = serde_json::from_value(value).unwrap();
         assert!(typed.validate().unwrap_err().to_string().contains(message));
     }
     for field in ["breakdown", "review", "files"] {
-        let mut value = fixture("v0.1.6-root");
+        let mut value = current(false);
         let rows = value[field].as_array_mut().unwrap();
         rows.push(rows[0].clone());
         let typed: MeasurementReport = serde_json::from_value(value).unwrap();
@@ -127,7 +146,7 @@ fn semantic_validation_rejects_conflicting_counts_coverage_and_duplicate_rows() 
             "{field}"
         );
     }
-    let mut value = fixture("v0.1.6-root");
+    let mut value = current(false);
     value["summary"]["all_counted"]["code"] = json!(u64::MAX);
     let typed: MeasurementReport = serde_json::from_value(value).unwrap();
     assert!(typed
@@ -139,18 +158,19 @@ fn semantic_validation_rejects_conflicting_counts_coverage_and_duplicate_rows() 
 
 #[test]
 fn validity_is_separate_from_comparison_eligibility() {
-    for minor in 0..=6 {
-        let report: MeasurementReport =
-            serde_json::from_value(fixture(&format!("v0.1.{minor}-root"))).unwrap();
+    for workspace in [false, true] {
+        let report: MeasurementReport = serde_json::from_value(current(workspace)).unwrap();
         report.validate().unwrap();
-        assert_eq!(report.require_comparison_evidence().is_ok(), minor >= 2);
-        assert!(report.headline().require_comparison_evidence().is_err());
+        assert!(report.require_comparison_evidence().is_ok());
+        let headline = report.headline();
+        headline.validate().unwrap();
+        assert!(headline.require_comparison_evidence().is_err());
     }
 }
 
 #[test]
 fn duplicate_dynamic_map_keys_retain_the_last_value_before_validation() {
-    let mut value = fixture("v0.1.6-root");
+    let mut value = current(false);
     value["summary"]["source_languages"]=serde_json::from_str(r#"{"Python":{"files":1,"code":9,"comments":0,"blanks":0,"lines":9},"Python":{"files":1,"code":1,"comments":0,"blanks":0,"lines":1}}"#).unwrap();
     let typed: MeasurementReport = serde_json::from_value(value).unwrap();
     assert_eq!(typed.summary.totals.source_languages["Python"].code, 1);
@@ -159,7 +179,7 @@ fn duplicate_dynamic_map_keys_retain_the_last_value_before_validation() {
 #[test]
 fn workspace_modes_and_duplicate_metadata_identities_are_rejected() {
     for field in ["members", "modules"] {
-        let mut value = fixture("v0.1.6-workspace");
+        let mut value = current(true);
         let rows = value["metadata"][field].as_array_mut().unwrap();
         rows.push(rows[0].clone());
         let typed: MeasurementReport = serde_json::from_value(value).unwrap();
@@ -169,7 +189,7 @@ fn workspace_modes_and_duplicate_metadata_identities_are_rejected() {
             .to_string()
             .contains("duplicate"));
     }
-    let mut value = fixture("v0.1.6-workspace");
+    let mut value = current(true);
     value["metadata"]["root"] = json!("/synthetic/invalid");
     let typed: MeasurementReport = serde_json::from_value(value.clone()).unwrap();
     assert!(typed.validate().unwrap_err().to_string().contains("mixed"));
@@ -180,7 +200,7 @@ fn workspace_modes_and_duplicate_metadata_identities_are_rejected() {
 
 #[test]
 fn explicit_zero_summary_entries_equal_omission() {
-    let mut value = fixture("v0.1.6-root");
+    let mut value = current(false);
     value["summary"]["source_categories"]["production:empty"] =
         json!({"files":0,"code":0,"comments":0,"blanks":0,"lines":0});
     let typed: MeasurementReport = serde_json::from_value(value).unwrap();
@@ -204,7 +224,7 @@ fn schema_examples_are_valid_measurement_headlines() {
 
 #[test]
 fn nonzero_physical_totals_need_counted_files() {
-    let mut value = fixture("v0.1.6-root");
+    let mut value = current(false);
     for pointer in ["/summary/all_counted", "/summary/source"] {
         value.pointer_mut(pointer).unwrap()["files"] = json!(0);
     }
@@ -238,27 +258,11 @@ fn nonzero_physical_totals_need_counted_files() {
 }
 
 #[test]
-fn historical_reports_round_trip_without_inventing_provenance() {
-    for version in 0..=6 {
-        for mode in if version >= 4 {
-            vec!["root", "workspace"]
-        } else {
-            vec!["root"]
-        } {
-            let name = format!("v0.1.{version}-{mode}");
-            let original = fixture(&name);
-            let report: MeasurementReport = serde_json::from_value(original.clone()).unwrap();
-            assert_eq!(serde_json::to_value(report).unwrap(), original, "{name}");
-        }
-    }
-}
-
-#[test]
 fn schemas_and_reader_reject_invalid_purpose_map_keys() {
     let schema = jsonschema::validator_for(&locmetry::report_schema()).unwrap();
     for invalid in ["bogus", "Test"] {
         for path in ["/summary/source_purpose", "/summary/top_folders/src"] {
-            let mut value = fixture("v0.1.6-root");
+            let mut value = current(false);
             let map = value.pointer_mut(path).unwrap().as_object_mut().unwrap();
             let valid = map.values().next().unwrap().clone();
             map.insert(invalid.into(), valid);

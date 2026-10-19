@@ -44,7 +44,7 @@
   {"folder":"scripts/imports/orders","language":"Python","purpose":"production","files":16,"code":2180,"comments":420,"blanks":380},
   {"folder":"scripts/imports/catalog","language":"Python","purpose":"production","files":11,"code":1460,"comments":280,"blanks":250},
   {"folder":"scripts/maintenance","language":"Python","purpose":"production","files":9,"code":1120,"comments":230,"blanks":210},
-  {"folder":"prototypes/pricing","language":"Python","purpose":"unclassified","files":12,"code":1840,"comments":260,"blanks":310},
-  {"folder":"prototypes/forecasting","language":"Python","purpose":"unclassified","files":7,"code":1060,"comments":150,"blanks":180},
-  {"folder":".","language":"Shell","purpose":"unclassified","files":1,"code":160,"comments":90,"blanks":40}
+  {"folder":"prototypes/pricing","language":"Python","purpose":"other","files":12,"code":1840,"comments":260,"blanks":310},
+  {"folder":"prototypes/forecasting","language":"Python","purpose":"other","files":7,"code":1060,"comments":150,"blanks":180},
+  {"folder":".","language":"Shell","purpose":"other","files":1,"code":160,"comments":90,"blanks":40}
 ]

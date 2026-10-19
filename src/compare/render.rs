@@ -144,7 +144,7 @@ fn kind_title(kind: Kind) -> &'static str {
         Kind::Source => "Source",
         Kind::Data => "Data",
         Kind::Documentation => "Documentation",
-        Kind::Other => "Other",
+        Kind::Unknown => "Unknown",
     }
 }
 

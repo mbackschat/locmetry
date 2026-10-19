@@ -9,8 +9,10 @@ mod validation;
 /// Report contract version, independent of the executable version.
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 pub enum Version {
-    #[serde(rename = "1")]
-    V1,
+    /// Since 0.5: purposes `production`, `test`, `other`, the content kind
+    /// `unknown`, and `summary.unclaimed_folders`.
+    #[serde(rename = "2")]
+    V2,
 }
 
 /// Locmetry measurement: --format json emits the full report; --format headline emits compact JSON.
@@ -300,7 +302,7 @@ pub struct MemberCoverage {
     pub parse_failed_files: Option<u64>,
 }
 
-/// Aggregate omissions mean zero; historical missing unclassified-folder evidence stays unknown. Language file counts are participation counts and may overlap;
+/// Aggregate omissions mean zero; historical missing unclaimed-folder evidence stays unknown. Language file counts are participation counts and may overlap;
 /// all other totals and breakdown file counts count physical files once.
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
@@ -317,7 +319,7 @@ pub struct ReportSummary {
         deserialize_with = "present"
     )]
     #[schemars(with = "Vec<crate::FolderShare>")]
-    pub unclassified_folders: Option<Vec<crate::FolderShare>>,
+    pub unclaimed_folders: Option<Vec<crate::FolderShare>>,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub members: BTreeMap<String, Summary>,
     /// Without subfolder selection: adopted modules. With it: only modules classifying at least one measured source file; code is their measured contribution. Context-only modules remain in metadata.modules.
@@ -449,7 +451,7 @@ impl Metadata {
 
 pub(crate) fn headline_example() -> serde_json::Value {
     serde_json::json!({
-        "schema_version":"1", "project":"empty-example",
+        "schema_version":"2", "project":"empty-example",
         "metadata":{
             "root":"/example", "scope":{"hidden":true,"respect_ignore_files":true,"ignore_files":[".ignore"],"symlinks":"not followed","exclude":[]},
             "config_path":null, "user_config_path":null,
@@ -457,6 +459,6 @@ pub(crate) fn headline_example() -> serde_json::Value {
             "backend_configuration":crate::BACKEND_CONFIGURATION, "backend_inaccurate":false,
             "coverage":{"selected_files":0,"counted_files":0,"mapped_files":0,"unrecognized_files":0,"unrecognized_extensions":{},"unread":[],"parse_failures":[]}
         },
-        "summary":{"all_counted":{"files":0,"code":0,"comments":0,"blanks":0,"lines":0},"top_folders":{},"unclassified_folders":[]}
+        "summary":{"all_counted":{"files":0,"code":0,"comments":0,"blanks":0,"lines":0},"top_folders":{},"unclaimed_folders":[]}
     })
 }

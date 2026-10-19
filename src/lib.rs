@@ -29,7 +29,7 @@ pub use output::{
 pub use paths::qualify;
 pub use report::{
     breakdown, build_report, build_systems, module_shares, review, submodule_shares,
-    unclassified_folders, unused_entries, BreakdownRow, BuildSystemShare, Counts, FileRecord,
+    unclaimed_folders, unused_entries, BreakdownRow, BuildSystemShare, Counts, FileRecord,
     FolderShare, Kind, ModuleShare, ReportSummary, ReviewEntry, SubmoduleShare, Summary,
 };
 pub use report_schema::report_schema;

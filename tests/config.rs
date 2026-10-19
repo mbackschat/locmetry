@@ -83,11 +83,11 @@ builtin_tests = false
 [[rules]]
 id = "root-only"
 match = ["materials/**"]
-purpose = "unclassified"
+purpose = "other"
 [[rules]]
 id = "any-depth"
 match = ["**/vendor/**"]
-purpose = "unclassified"
+purpose = "other"
 [[rules]]
 id = "one-segment"
 match = ["packages/*/src/**"]
@@ -135,7 +135,7 @@ fallback = "production"
 [[overrides]]
 id = "archived-evidence"
 match = ["docs/archive/**"]
-purpose = "unclassified"
+purpose = "other"
 category = "evidence"
 [[rules]]
 id = "application"
@@ -161,7 +161,7 @@ reason = "Owned application source."
         (data.rule.as_str(), data.purpose.to_string()),
         ("fallback", "production".into())
     );
-    assert_eq!(data.category, "production");
+    assert_eq!(data.category, "unclaimed");
     let tests = policy.classify("src/a.test.ts", Kind::Source);
     assert_eq!(
         (tests.purpose.to_string(), tests.category),
@@ -182,9 +182,9 @@ fn only_the_order_within_each_entry_list_matters() {
     let entry = |table: &str, id: &str, glob: &str, purpose: &str| {
         format!("[[{table}]]\nid = \"{id}\"\nmatch = [\"{glob}\"]\npurpose = \"{purpose}\"\n")
     };
-    let archive = entry("overrides", "archive", "old/**", "unclassified");
+    let archive = entry("overrides", "archive", "old/**", "other");
     let tools = entry("rules", "tools", "tools/**", "production");
-    let generated = entry("rules", "generated", "tools/gen/**", "unclassified");
+    let generated = entry("rules", "generated", "tools/gen/**", "other");
     let decisions = |entries: &[&str]| {
         let policy = policy(&format!("version = 1\n{}", entries.concat()));
         ["old/a.test.ts", "tools/gen/b.ts", "tools/c.ts"]
@@ -580,19 +580,19 @@ fn builtin_build_conventions_separate_build_scripts_and_wrappers() {
         (
             "gradlew",
             "builtin:build-wrapper",
-            "unclassified",
+            "other",
             "third-party-wrapper",
         ),
         (
             "gradle/wrapper/gradle-wrapper.properties",
             "builtin:build-wrapper",
-            "unclassified",
+            "other",
             "third-party-wrapper",
         ),
         (
             "service/mvnw.cmd",
             "builtin:build-wrapper",
-            "unclassified",
+            "other",
             "third-party-wrapper",
         ),
         (
@@ -604,8 +604,8 @@ fn builtin_build_conventions_separate_build_scripts_and_wrappers() {
         (
             "gradle/libs.versions.toml",
             "fallback",
-            "unclassified",
-            "unclassified",
+            "other",
+            "unclaimed",
         ),
     ] {
         let result = policy.classify(path, Kind::Source);
@@ -672,4 +672,26 @@ fn backend_name_follows_the_pinned_tokei_version() {
         .and_then(|rest| rest.split('"').next())
         .expect("Cargo.toml pins tokei exactly");
     assert_eq!(locmetry::BACKEND, format!("tokei {pin} (embedded)"));
+}
+
+/// Locks the 0.5 clean break: the old purpose name fails with a pointer to its
+/// replacement wherever a purpose is written, instead of a bare unknown variant.
+#[test]
+fn the_old_unclassified_purpose_names_its_replacement() {
+    for toml in [
+        "version = 1\n[classification]\nfallback = \"unclassified\"",
+        "version = 1\n[[rules]]\nid = \"a\"\nmatch = [\"x/**\"]\npurpose = \"unclassified\"",
+    ] {
+        let error = format!("{:#}", Policy::from_toml(toml).unwrap_err());
+        assert!(
+            error.contains("\"unclassified\" was renamed to \"other\""),
+            "{error}"
+        );
+    }
+    let policy =
+        policy("version = 1\n[[rules]]\nid = \"a\"\nmatch = [\"x/**\"]\npurpose = \"other\"");
+    assert_eq!(
+        policy.classify("x/a.rs", Kind::Source).purpose.to_string(),
+        "other"
+    );
 }

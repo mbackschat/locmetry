@@ -250,7 +250,7 @@ pub fn schema() -> serde_json::Value {
 fn example() -> Explanation {
     Explanation {
         document_type: DocumentType::Explanation,
-        schema_version: contract::Version::V1,
+        schema_version: contract::Version::V2,
         root: "/synthetic/project".into(),
         path: "unknown.custom".into(),
         member: None,

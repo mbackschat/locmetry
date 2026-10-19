@@ -84,7 +84,7 @@ fn production_only_tables_count_production_source_and_show_comment_share() {
     assert!(text.contains(
         " Lines = Code + Comments + Blanks; Comment % = Comments / (Code + Comments).\n"
     ));
-    assert!(text.contains(" Purposes shown: production; test and unclassified excluded.\n"));
+    assert!(text.contains(" Purposes shown: Production; Test and Other excluded.\n"));
     assert!(!text.contains("Test/prod"), "{text}");
     assert!(
         text.contains("; purposes: production\nMeasured at: "),
@@ -98,19 +98,19 @@ fn selected_purposes_keep_their_columns_and_choose_the_ratio() {
     let text = table(&["--format", "table", "--purpose", "production,test"]);
     assert_eq!(
         cells(&text, "Language").join(" "),
-        "Language Files Lines Code Comments Blanks Production Test Test/prod"
+        "Language Files Lines Code Comments Blanks Prod. Test Test/prod"
     );
     assert_eq!(
         cells(&text, "Rust"),
         ["Rust", "2", "5", "3", "2", "0", "2", "1", "0.50"]
     );
     assert!(text.contains("Production + Test = Code; Test/prod = Test / Production."));
-    assert!(text.contains(" Purposes shown: production and test; unclassified excluded.\n"));
+    assert!(text.contains(" Purposes shown: Production and Test; Other excluded.\n"));
 
-    let text = table(&["--format", "table", "--purpose", "unclassified,test"]);
+    let text = table(&["--format", "table", "--purpose", "other,test"]);
     assert_eq!(
         cells(&text, "Language").join(" "),
-        "Language Files Lines Code Comments Blanks Test Unclassified Comment %"
+        "Language Files Lines Code Comments Blanks Test Other Comment %"
     );
     assert_eq!(
         cells(&text, "Python"),
@@ -129,12 +129,7 @@ fn selecting_every_purpose_is_no_selection() {
         text.split("\nMeasured at:").next().unwrap().to_string()
     };
     assert_eq!(
-        body(&[
-            "--format",
-            "table",
-            "--purpose",
-            "production,test,unclassified"
-        ]),
+        body(&["--format", "table", "--purpose", "production,test,other"]),
         body(&["--format", "table"])
     );
 }
@@ -190,7 +185,7 @@ fn comment_bars_compare_densities_under_a_titled_column() {
     );
     let text = String::from_utf8(bare.stdout).unwrap();
     assert!(
-        text.contains("Bars: █ Production  ▓ Test  ░ Unclassified"),
+        text.contains("Bars: █ Production  ▓ Test  ░ Other"),
         "{text}"
     );
 }
@@ -247,4 +242,39 @@ fn single_purpose_bars_chart_comments() {
         text.contains(" Bars: ▓ Comment %; the densest row fills the bar.\n"),
         "{text}"
     );
+}
+
+/// Locks the 0.5 vocabulary across every output format: the neutral purpose
+/// is `other`, undecided code is `unclaimed`, and the retired word is gone.
+#[test]
+fn every_format_uses_other_and_unclaimed_instead_of_unclassified() {
+    let temp = tempfile::tempdir().unwrap();
+    common::write(temp.path(), "loose/a.py", "a = 1\n");
+    let root = temp.path().to_str().unwrap();
+    for format in ["table", "markdown", "json", "headline"] {
+        let output = common::locmetry()
+            .args([root, "--no-user-config", "--format", format])
+            .output()
+            .unwrap();
+        let text = String::from_utf8(output.stdout).unwrap();
+        assert!(
+            !text.to_lowercase().contains("unclassified"),
+            "{format}: {text}"
+        );
+        let expected = match format {
+            "table" | "markdown" => "Other",
+            _ => "\"other\"",
+        };
+        assert!(text.contains(expected), "{format}: {text}");
+    }
+    let json = common::json(
+        &common::locmetry()
+            .args([root, "--no-user-config", "--format", "json", "--files"])
+            .output()
+            .unwrap(),
+        0,
+    );
+    assert_eq!(json["schema_version"], "2");
+    assert_eq!(json["summary"]["unclaimed_folders"][0]["folder"], "loose");
+    assert_eq!(json["files"][0]["category"], "unclaimed");
 }

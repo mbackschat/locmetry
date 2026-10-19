@@ -55,6 +55,6 @@ class Locmetry < Formula
     purposes = JSON.parse(output)["summary"]["source_purpose"]
     assert_equal 3, purposes["production"]["code"]
     assert_equal 4, purposes["test"]["code"]
-    refute purposes.key?("unclassified")
+    refute purposes.key?("other")
   end
 end

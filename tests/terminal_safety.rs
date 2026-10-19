@@ -60,7 +60,7 @@ fn table_and_unclaimed_note_flatten_path_controls_without_changing_json() {
             .unwrap()
             .iter()
             .any(|row| row["path"] == format!("{name}/item.rs")));
-        assert!(json["summary"]["unclassified_folders"]
+        assert!(json["summary"]["unclaimed_folders"]
             .as_array()
             .unwrap()
             .iter()

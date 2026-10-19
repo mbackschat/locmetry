@@ -10,7 +10,7 @@ use std::collections::BTreeMap;
 enum RowKind {
     Folder,
     Direct,
-    Other(usize),
+    More(usize),
 }
 
 pub(super) struct Row {
@@ -55,7 +55,7 @@ impl Row {
             RowKind::Folder => self.path.clone(),
             RowKind::Direct if self.path == "." => "(root files)".into(),
             RowKind::Direct => format!("{} (direct files)", self.path),
-            RowKind::Other(n) => format!("{} (other {n} child folders)", self.path),
+            RowKind::More(n) => format!("{} ({n} more child folders)", self.path),
         }
     }
 }
@@ -121,7 +121,7 @@ impl Tree<'_> {
             let omitted = children.split_off(named);
             let mut remainder = Row {
                 path: row.path.clone(),
-                kind: RowKind::Other(omitted.len()),
+                kind: RowKind::More(omitted.len()),
                 counts: Counts::default(),
                 purposes: BTreeMap::new(),
             };
@@ -225,7 +225,7 @@ pub(super) fn adaptive(
                 "{} has more folder detail; increase --folder-rows.",
                 row.path
             )),
-            RowKind::Other(_) => Some(format!(
+            RowKind::More(_) => Some(format!(
                 "More child folders of {} can be shown; increase --folder-rows.",
                 row.path
             )),

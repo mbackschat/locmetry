@@ -62,7 +62,7 @@ fn successful_tables_require_no_audit_in_root_subfolder_workspace_or_exports() {
         );
         assert!(output.stderr.is_empty());
         let text = String::from_utf8(output.stdout).unwrap();
-        assert!(text.contains("Unclassified"));
+        assert!(text.contains("Other"));
         assert!(text.contains("Lines"));
         assert!(text.lines().last().unwrap().starts_with("Measured at:"));
         no_routine_notes(&text);

@@ -48,12 +48,12 @@ pub enum Kind {
     Data,
     /// Prose formats such as Markdown; reports list them in `metadata.kinds`.
     Documentation,
-    /// Language names the embedded counter does not know, as in replayed older statistics.
-    Other,
+    /// Language names the embedded counter does not know, as in statistics a newer counter saved; unlike unrecognized files, they are counted.
+    Unknown,
 }
 
 impl Kind {
-    pub const ALL: [Self; 4] = [Self::Source, Self::Data, Self::Documentation, Self::Other];
+    pub const ALL: [Self; 4] = [Self::Source, Self::Data, Self::Documentation, Self::Unknown];
 }
 
 impl fmt::Display for Kind {
@@ -62,7 +62,7 @@ impl fmt::Display for Kind {
             Kind::Source => "source",
             Kind::Data => "data",
             Kind::Documentation => "documentation",
-            Kind::Other => "other",
+            Kind::Unknown => "unknown",
         })
     }
 }
@@ -110,7 +110,7 @@ pub struct Summary {
     pub by_kind_purpose: BTreeMap<String, Counts>,
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     #[serde(default)]
-    /// Source only, keyed production/test/unclassified; additive.
+    /// Source only, keyed production/test/other; additive.
     #[schemars(schema_with = "crate::schema::purpose_map::<Counts>")]
     pub source_purpose: BTreeMap<Purpose, Counts>,
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
@@ -287,7 +287,7 @@ pub fn breakdown(rows: &[FileRecord]) -> Vec<BreakdownRow> {
         .collect()
 }
 
-/// An unclassified source file, listed so configurations can be tuned.
+/// An unclaimed source file, listed so configurations can be tuned.
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct ReviewEntry {
@@ -359,7 +359,7 @@ pub(crate) fn collapse_folder(
 /// [`FOLDER_ROWS`] rows, or regardless of rows while it holds most of the
 /// code, so a dominant folder is always located precisely. The folders never
 /// overlap, so their counts add up.
-pub fn unclassified_folders(rows: &[FileRecord]) -> Vec<FolderShare> {
+pub fn unclaimed_folders(rows: &[FileRecord]) -> Vec<FolderShare> {
     let files: Vec<(&str, u64)> = rows
         .iter()
         .filter(|row| row.needs_review())

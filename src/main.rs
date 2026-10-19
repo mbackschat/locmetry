@@ -8,10 +8,10 @@ use locmetry::style::{plain, Role, Theme};
 use locmetry::{
     breakdown, build_report, build_systems, git_submodules, module_shares, render_markdown,
     render_table_with_options, report_text, review, scan, scope_policy, submodule_shares,
-    unclassified_folders, unused_entries, user_defaults_file, validate_output, write_report,
-    BarKind, Bars, Coverage, FileRecord, Findings, MemberView, Module, ModuleShare, Policy,
-    Purpose, RowOrder, ScopeOverrides, SubmoduleShare, TableOptions, BACKEND, CONFIG_FILE,
-    DATA_LANGUAGES, DOCUMENTATION_LANGUAGES,
+    unclaimed_folders, unused_entries, user_defaults_file, validate_output, write_report, BarKind,
+    Bars, Coverage, FileRecord, Findings, MemberView, Module, ModuleShare, Policy, Purpose,
+    RowOrder, ScopeOverrides, SubmoduleShare, TableOptions, BACKEND, CONFIG_FILE, DATA_LANGUAGES,
+    DOCUMENTATION_LANGUAGES,
 };
 use std::collections::BTreeMap;
 use std::{
@@ -47,7 +47,7 @@ enum ExplainFormat {
 enum PurposeArg {
     Production,
     Test,
-    Unclassified,
+    Other,
 }
 
 impl PurposeArg {
@@ -55,7 +55,7 @@ impl PurposeArg {
         match self {
             PurposeArg::Production => Purpose::Production,
             PurposeArg::Test => Purpose::Test,
-            PurposeArg::Unclassified => Purpose::Unclassified,
+            PurposeArg::Other => Purpose::Other,
         }
     }
 }
@@ -123,7 +123,7 @@ macro_rules! root_after_help {
 #[derive(Parser)]
 #[command(
     version,
-    about = "Measure source code by language, folder, and purpose: production, test, or unclassified. Defaults to a table on a terminal, a JSON headline in pipes. --output FILE saves only to that file, defaulting to full JSON; --format overrides the format.",
+    about = "Measure source code by language, folder, and purpose: production, test, or other. Defaults to a table on a terminal, a JSON headline in pipes. --output FILE saves only to that file, defaulting to full JSON; --format overrides the format.",
     after_help = root_after_help!(),
     // The README "Common commands" table mirrors these examples; tests/readme.rs enforces it.
     after_long_help = concat!(
@@ -657,7 +657,7 @@ fn run_explain(args: &ExplainArgs) -> Result<Outcome> {
     let (path, result) = locmetry::explain::inspect(&prepared.root, &target, &mut prepared.policy)?;
     let mut explanation = locmetry::explain::Explanation {
         document_type: locmetry::explain::DocumentType::Explanation,
-        schema_version: contract::Version::V1,
+        schema_version: contract::Version::V2,
         root: prepared.root.to_string_lossy().into(),
         path,
         member: None,
@@ -1187,7 +1187,7 @@ fn report(
             top_folders: summary.top_folders(),
             totals: summary.totals,
             members: member_totals,
-            unclassified_folders: Some(unclassified_folders(&rows)),
+            unclaimed_folders: Some(unclaimed_folders(&rows)),
             build_modules: build_systems(&module_shares)
                 .into_iter()
                 .map(|(k, v)| (k.into(), v))
@@ -1261,7 +1261,7 @@ fn report(
             }
         }
         MeasurementReport {
-            schema_version: contract::Version::V1,
+            schema_version: contract::Version::V2,
             project,
             metadata,
             summary: summary_document,

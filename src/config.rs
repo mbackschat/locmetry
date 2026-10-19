@@ -21,6 +21,8 @@ pub const CONFIG_FILE: &str = ".locmetryrc";
 
 /// Provenance of files that no entry matched.
 const FALLBACK: &str = "fallback";
+/// Category of files no stage decided, whatever the fallback purpose.
+const UNCLAIMED: &str = "unclaimed";
 
 /// Category of source that a build module classifies.
 const MODULE_CATEGORY: &str = "implementation";
@@ -117,7 +119,7 @@ const BUILTIN_BUILD_V1: &[Convention] = &[
             "**/gradle/wrapper/**",
             "**/.mvn/wrapper/**",
         ],
-        purpose: Purpose::Unclassified,
+        purpose: Purpose::Other,
         category: "third-party-wrapper",
     },
 ];
@@ -134,28 +136,26 @@ const BUILTIN_LANGUAGES_V1: &[(&str, &[&str], LanguageType)] = &[
 ];
 
 /// What a file is for, decided by whether code is maintained rather than whether it ships; `category` then says what kind of code it is, so `source_categories` separates the product from its tooling.
-#[derive(
-    Clone, Copy, Debug, Deserialize, Serialize, JsonSchema, PartialEq, Eq, PartialOrd, Ord,
-)]
+#[derive(Clone, Copy, Debug, Serialize, JsonSchema, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "lowercase")]
 pub enum Purpose {
     /// Maintained non-test source, not necessarily shipped runtime code: the product itself and the tooling, build logic, examples, and demos a project keeps working. Tell these apart with `category`, such as `implementation`, `tooling`, `build-tooling`, or `example`, not with another purpose.
     Production,
     /// Tests and code that exists only to support them, such as fixtures, harnesses, and test utilities.
     Test,
-    /// Source that is not maintained or not yet judged, such as abandoned prototypes, archived experiments, and copied snippets. Code no stage claims lands here and is listed for review as `summary.unclassified_folders`; code an entry assigns here on purpose is counted but not listed. Maintained code that is not the product, such as tooling or examples, is production with its own category.
-    Unclassified,
+    /// Source that counts as neither production nor test. Code no stage claims lands here with category `unclaimed` and is listed for review as `summary.unclaimed_folders`; code an entry or convention assigns here on purpose, such as abandoned prototypes, archived experiments, copied snippets, or build-tool wrappers, is counted but not listed. Maintained code that is not the product, such as tooling or examples, is production with its own category.
+    Other,
 }
 
 impl Purpose {
-    pub const ALL: [Self; 3] = [Self::Production, Self::Test, Self::Unclassified];
+    pub const ALL: [Self; 3] = [Self::Production, Self::Test, Self::Other];
 
     /// Position in [`Self::ALL`].
     pub fn index(self) -> usize {
         match self {
             Self::Production => 0,
             Self::Test => 1,
-            Self::Unclassified => 2,
+            Self::Other => 2,
         }
     }
 }
@@ -165,8 +165,26 @@ impl fmt::Display for Purpose {
         f.write_str(match self {
             Self::Production => "production",
             Self::Test => "test",
-            Self::Unclassified => "unclassified",
+            Self::Other => "other",
         })
+    }
+}
+
+/// Deserialized by name so the purpose retired in 0.5 names its replacement
+/// instead of failing as an unknown variant.
+impl<'de> Deserialize<'de> for Purpose {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        use serde::de::Error;
+        let name = std::borrow::Cow::<str>::deserialize(deserializer)?;
+        Self::ALL
+            .into_iter()
+            .find(|purpose| purpose.to_string() == name)
+            .ok_or_else(|| match name.as_ref() {
+                "unclassified" => D::Error::custom(
+                    "purpose \"unclassified\" was renamed to \"other\" in locmetry 0.5",
+                ),
+                _ => D::Error::unknown_variant(&name, &["production", "test", "other"]),
+            })
     }
 }
 
@@ -179,10 +197,10 @@ pub struct Classification {
 
 impl Classification {
     /// Whether no stage decided this file, so it still needs a decision.
-    /// Code an entry or convention leaves `unclassified` on purpose, such as a
+    /// Code an entry or convention assigns `other` on purpose, such as a
     /// parked prototype or a build wrapper, is decided.
     pub fn is_unclaimed(&self) -> bool {
-        self.purpose == Purpose::Unclassified && self.rule == FALLBACK
+        self.purpose == Purpose::Other && self.rule == FALLBACK
     }
 }
 
@@ -239,7 +257,7 @@ struct ClassificationSettings {
     /// Whether built-in test conventions classify files, after `overrides` and before `rules`. A test convention also wins over a `rules` entry that matches the same file, so tests inside production trees stay tests; an `overrides` entry is the way to beat one.
     #[schemars(transform = schema::describe_test_conventions)]
     builtin_tests: bool,
-    /// Whether built-in build conventions classify files, right after the test conventions: build scripts are `production` with category `build-tooling`, and build-tool wrappers are `unclassified` with category `third-party-wrapper`.
+    /// Whether built-in build conventions classify files, right after the test conventions: build scripts are `production` with category `build-tooling`, and build-tool wrappers are `other` with category `third-party-wrapper`.
     #[schemars(transform = schema::describe_build_conventions)]
     builtin_build: bool,
     /// Whether build modules classify files that no override, convention, or rule matched. A build module is a folder where a selected descriptor triggers conventional source-layout inference; build systems call it a module, project, package, or crate, and it is unrelated to modules or packages inside a language. The build system's default production layout in that folder is `production` with category `implementation`. The innermost build module containing a file decides, and build files in one folder combine their layouts. Only file names are read, never the build file's content, so a source directory that a build file reconfigures needs a rule. Set `false` when build files mislead and rules classify the production source; a rule alone corrects a single folder. The headline counts modules and their code per build system as `summary.build_modules`; full JSON from `--format json` or the default `--output FILE` export lists every module as `metadata.modules`.
@@ -251,7 +269,7 @@ struct ClassificationSettings {
     )]
     #[schemars(with = "bool", extend("default" = true))]
     builtin_modules: Option<bool>,
-    /// Purpose of files that no stage matched; their category equals the purpose, and their `rule` is `fallback`. Keep `unclassified` so unclaimed code is reported for review instead of silently counted.
+    /// Purpose of files that no stage matched; their category is `unclaimed` and their `rule` is `fallback`. Keep `other` so unclaimed code is reported for review instead of silently counted.
     fallback: Purpose,
 }
 
@@ -261,7 +279,7 @@ impl Default for ClassificationSettings {
             builtin_tests: true,
             builtin_build: true,
             builtin_modules: None,
-            fallback: Purpose::Unclassified,
+            fallback: Purpose::Other,
         }
     }
 }
@@ -338,13 +356,13 @@ struct LanguageMapping {
 
 /// Locmetry project configuration: TOML in `.locmetryrc` at the scan root, or the file `--config` names.
 ///
-/// Every measured file gets one purpose (`production`, `test`, or `unclassified`) and a category from the first stage that matches: (1) `overrides`, in order; (2) built-in test conventions, then built-in build conventions; (3) `rules`, in order; (4) build modules, conventional source layouts inferred from descriptors; (5) the fallback. Scope exclusions apply before all stages. The stage order is fixed, so where `[[overrides]]` and `[[rules]]` appear in the file does not matter; only the order within each list decides between entries that match the same file. A broad rule never swallows conventional tests or build scripts, and an override beats the conventions; but a rule does take source a build module would claim, so match only the folders a rule is about. Each file records the deciding stage in its `rule` field: an entry ID, `builtin:<convention>`, `builtin:<detector>-module`, or `fallback`.
+/// Every measured file gets one purpose (`production`, `test`, or `other`) and a category from the first stage that matches: (1) `overrides`, in order; (2) built-in test conventions, then built-in build conventions; (3) `rules`, in order; (4) build modules, conventional source layouts inferred from descriptors; (5) the fallback. Scope exclusions apply before all stages. The stage order is fixed, so where `[[overrides]]` and `[[rules]]` appear in the file does not matter; only the order within each list decides between entries that match the same file. A broad rule never swallows conventional tests or build scripts, and an override beats the conventions; but a rule does take source a build module would claim, so match only the folders a rule is about. Each file records the deciding stage in its `rule` field: an entry ID, `builtin:<convention>`, `builtin:<detector>-module`, or `fallback`.
 ///
 /// This file is the only one that classifies: `--config` replaces `.locmetryrc`, while user defaults (`--schema user-config`) and command-line flags only add exclusions and language mappings or switch scope settings. The same files and configuration always give the same classification, independent of the order in which files are found.
 ///
 /// Globs are root-relative, `/`-separated, and case-sensitive: `*` stays within a path segment, `**` spans directories, `?` matches one character, `[...]` a character class, `{a,b}` alternatives, and a backslash escapes. `*` also matches names that start with a dot. Negation, absolute paths, and basename-only matching are not supported, so `*.rs` matches only at the root; use `**/*.rs`. Globs match files, not folders: `docs/**` covers a folder, while `docs` matches only a file of that name.
 ///
-/// To create or evaluate configuration, start with `locmetry --guide configure` and measure the unrestricted project before editing. Inspect `summary.submodules`, `summary.unclassified_folders` and representative already-classified files, including module-inferred production, because nothing reports it as unclaimed. Names suggesting tests, fixtures or examples are prompts to inspect evidence, not classification verdicts. For source needing a decision, either add an evidence-based entry, record an intentional `purpose = "unclassified"` entry with a `reason`, or leave it unclaimed and report an open question to the owner. Do not add entries merely to remove findings; correct built-in decisions need no redundant rules. Measure the unrestricted project again (without `--subfolder`) with `--config <file>` and review `summary.unused_entries`, `summary.unused_exclusions` and coverage. `--files --output -` shows each file's `purpose`, `category`, and `rule`. An entry looks like this:
+/// To create or evaluate configuration, start with `locmetry --guide configure` and measure the unrestricted project before editing. Inspect `summary.submodules`, `summary.unclaimed_folders` and representative already-classified files, including module-inferred production, because nothing reports it as unclaimed. Names suggesting tests, fixtures or examples are prompts to inspect evidence, not classification verdicts. For source needing a decision, either add an evidence-based entry, record an intentional `purpose = "other"` entry with a `reason`, or leave it unclaimed and report an open question to the owner. Do not add entries merely to remove findings; correct built-in decisions need no redundant rules. Measure the unrestricted project again (without `--subfolder`) with `--config <file>` and review `summary.unused_entries`, `summary.unused_exclusions` and coverage. `--files --output -` shows each file's `purpose`, `category`, and `rule`. An entry looks like this:
 ///
 /// ```toml
 /// version = 1
@@ -374,10 +392,10 @@ struct ConfigFile {
     /// Optional list of the categories entries may use, each mapped to its meaning, such as `proof = "Machine-checked theorems behind the assurance claim"`. When present, an entry's `category` must be listed here or be built in: a purpose name, `implementation`, or a built-in convention's category. Declaring categories catches typos and keeps names consistent; reports record the meanings in the effective configuration.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     categories: BTreeMap<String, String>,
-    /// Entries checked first, before the built-in conventions; the first matching entry decides. Use them only for decisions that must beat a convention, such as a test-support package whose build scripts are test support, or archived code with test file names that must stay unclassified.
+    /// Entries checked first, before the built-in conventions; the first matching entry decides. Use them only for decisions that must beat a convention, such as a test-support package whose build scripts are test support, or archived code with test file names that must stay `other`.
     #[serde(default)]
     overrides: Vec<EntryConfig>,
-    /// Entries checked after the built-in conventions and before build modules; the first matching entry decides. Use them for ordinary project knowledge: maintained tooling or examples as `production` with a category, unmaintained prototypes as `unclassified`, or source no build file declares; conventional tests, build scripts, and build-tool wrappers inside a matched tree keep their built-in classification, but build-module source does not.
+    /// Entries checked after the built-in conventions and before build modules; the first matching entry decides. Use them for ordinary project knowledge: maintained tooling or examples as `production` with a category, unmaintained prototypes as `other`, or source no build file declares; conventional tests, build scripts, and build-tool wrappers inside a matched tree keep their built-in classification, but build-module source does not.
     #[serde(default)]
     rules: Vec<EntryConfig>,
 }
@@ -870,7 +888,7 @@ pub struct Policy {
     /// One production entry per adopted module; applied after rules and
     /// before the fallback.
     module_entries: Vec<(Module, Entry)>,
-    fallback: (Purpose, String),
+    fallback: Purpose,
     /// Literal exclusions of the policy files inside the scan root: the
     /// project configuration, user defaults, or a workspace file.
     configuration_exclusions: BTreeSet<String>,
@@ -1004,7 +1022,7 @@ impl Policy {
             detect_modules,
             modules: Vec::new(),
             module_entries: Vec::new(),
-            fallback: (fallback, fallback.to_string()),
+            fallback,
             configuration_exclusions: BTreeSet::new(),
             languages,
             snapshot,
@@ -1139,8 +1157,8 @@ impl Policy {
         self.deciding_entry(path, kind)
             .map(|(_, entry, _)| entry.classification())
             .unwrap_or_else(|| Classification {
-                purpose: self.fallback.0,
-                category: self.fallback.1.clone(),
+                purpose: self.fallback,
+                category: UNCLAIMED.into(),
                 rule: FALLBACK.into(),
             })
     }

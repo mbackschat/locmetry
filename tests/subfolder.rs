@@ -324,10 +324,10 @@ fn subfolder_receipts_reject_malformed_scope_and_outside_measurement_evidence() 
         assert!(!valid(value), "{path}");
     }
     let mut outside = base.clone();
-    outside["review"] = json!([{"path":"elsewhere.py","language":"Python","category":"unclassified","rule":"fallback","code":0,"lines":0}]);
+    outside["review"] = json!([{"path":"elsewhere.py","language":"Python","category":"unclaimed","rule":"fallback","code":0,"lines":0}]);
     assert!(!valid(outside));
     let mut outside = base.clone();
-    outside["summary"]["unclassified_folders"] = json!([{"folder":"web","files":0,"code":0}]);
+    outside["summary"]["unclaimed_folders"] = json!([{"folder":"web","files":0,"code":0}]);
     assert!(!valid(outside));
     let mut modules = base.clone();
     modules["summary"]["build_modules"]["gradle"] = json!({"modules":1,"code":0});

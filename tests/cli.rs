@@ -220,23 +220,23 @@ fn table_format_splits_source_code_by_language_and_purpose() {
         &["--verbose", "--folders", "--format", "table"],
     );
     assert!(output.status.success());
-    let expected = " Language  Files  Lines  Code │ Comments  Blanks │ Production  Test  Unclassified │ Test/prod
- ─────────────────────────────┼──────────────────┼────────────────────────────────┼──────────
- Rust          3      5     4 │        1       0 │          2     2             0 │      1.00
- Python        1      1     1 │        0       0 │          0     0             1 │         -
- ─────────────────────────────┼──────────────────┼────────────────────────────────┼──────────
- Total         4      6     5 │        1       0 │          2     2             1 │      1.00
- Lines = Code + Comments + Blanks; Production + Test + Unclassified = Code; Test/prod = Test / Production.
+    let expected = " Language  Files  Lines  Code │ Comments  Blanks │ Prod.  Test  Other │ Test/prod
+ ─────────────────────────────┼──────────────────┼────────────────────┼──────────
+ Rust          3      5     4 │        1       0 │     2     2      0 │      1.00
+ Python        1      1     1 │        0       0 │     0     0      1 │         -
+ ─────────────────────────────┼──────────────────┼────────────────────┼──────────
+ Total         4      6     5 │        1       0 │     2     2      1 │      1.00
+ Lines = Code + Comments + Blanks; Production + Test + Other = Code; Test/prod = Test / Production.
  Tests written in another language than the code they test skew per-language Test/prod.
 
- Folder  Lines  Code │ Production  Test  Unclassified │ Test/prod
- ────────────────────┼────────────────────────────────┼──────────
- src         3     2 │          2     0             0 │      0.00
- tests       2     2 │          0     2             0 │         -
- proto       1     1 │          0     0             1 │         -
- ────────────────────┼────────────────────────────────┼──────────
- Total       6     5 │          2     2             1 │      1.00
- Production + Test + Unclassified = Code; Test/prod = Test / Production.
+ Folder  Lines  Code │ Prod.  Test  Other │ Test/prod
+ ────────────────────┼────────────────────┼──────────
+ src         3     2 │     2     0      0 │      0.00
+ tests       2     2 │     0     2      0 │         -
+ proto       1     1 │     0     0      1 │         -
+ ────────────────────┼────────────────────┼──────────
+ Total       6     5 │     2     2      1 │      1.00
+ Production + Test + Other = Code; Test/prod = Test / Production.
 
  Not source code: 1 data file (1 line), 1 documentation file (1 line); --files --output - lists each file's kind.
  Unclaimed source: 1 code line in 1 file, here:
@@ -259,8 +259,8 @@ fn table_format_splits_source_code_by_language_and_purpose() {
             .unwrap();
     for row in [
         "Lines = Code + Comments + Blanks in every table with these columns",
-        "Production + Test + Unclassified = Code; Test/prod = Test / Production.",
-        "| Folder | Lines | **Code** | Production | Test | Unclassified | Test/prod |\n",
+        "Production + Test + Other = Code; Test/prod = Test / Production.",
+        "| Folder | Lines | **Code** | Production | Test | Other | Test/prod |\n",
         "| Purpose | Files | Lines | **Code** | Comments | Blanks |\n",
         "| . | 6 | 5 | 2 | 2 | 1 | 1.00 |\n",
         "| src | 3 | 2 | 2 | 0 | 0 | 0.00 |\n",
@@ -390,9 +390,7 @@ fn bars_join_each_table_when_the_terminal_leaves_room_beside_it() {
         .find(|line| line.starts_with(" Total"))
         .unwrap();
     assert!(total.ends_with("│ 100.0%"), "{total:?}");
-    assert!(
-        wide.contains("Bars: █ Production  ▓ Test  ░ Unclassified; the largest row fills the bar.")
-    );
+    assert!(wide.contains("Bars: █ Production  ▓ Test  ░ Other; the largest row fills the bar."));
 
     // The language table is the wider one, so its threshold also fits the folders.
     // Its Total row has no bar, so its length is the table's width.
@@ -564,11 +562,11 @@ fn human_tables_sort_by_code_or_by_name() {
     )));
 }
 
-/// Unclassified source is located, not just counted: folders partition it,
+/// Unclaimed source is located, not just counted: folders partition it,
 /// single-child chains collapse to the deepest folder, and the largest
 /// folder splits while the list stays short.
 #[test]
-fn unclassified_source_is_located_by_folder() {
+fn unclaimed_source_is_located_by_folder() {
     let temp = project(&[
         (
             "docs/planning/m1/evidence/a.js",
@@ -582,7 +580,7 @@ fn unclassified_source_is_located_by_folder() {
     let (success, document, stderr) = headline(&temp.path().join("project"), &[]);
     assert!(success, "{stderr}");
     assert_eq!(
-        document["summary"]["unclassified_folders"],
+        document["summary"]["unclaimed_folders"],
         json!([
             {"folder": "docs/planning/m1/evidence", "files": 2, "code": 5},
             {"folder": ".", "files": 1, "code": 1},
@@ -599,11 +597,11 @@ fn unclassified_source_is_located_by_folder() {
 }
 
 /// Review lists only source no stage decided: code an entry or convention
-/// deliberately leaves unclassified is counted as unclassified but not
+/// deliberately assigns to `other` is counted as other but not
 /// reported as still needing a decision.
 #[test]
 fn review_lists_only_unclaimed_source() {
-    const PARKED: &str = "version = 1\n[[rules]]\nid = \"parked\"\nmatch = [\"proto/**\"]\npurpose = \"unclassified\"\ncategory = \"prototype\"\n";
+    const PARKED: &str = "version = 1\n[[rules]]\nid = \"parked\"\nmatch = [\"proto/**\"]\npurpose = \"other\"\ncategory = \"prototype\"\n";
     let temp = project(&[
         (".locmetryrc", PARKED),
         ("proto/model.py", "a = 1\nb = 2\n"),
@@ -613,12 +611,9 @@ fn review_lists_only_unclaimed_source() {
     let root = temp.path().join("project");
     let (success, document, stderr) = report(&root, &[]);
     assert!(success, "{stderr}");
+    assert_eq!(document["summary"]["source_purpose"]["other"]["files"], 3);
     assert_eq!(
-        document["summary"]["source_purpose"]["unclassified"]["files"],
-        3
-    );
-    assert_eq!(
-        document["summary"]["unclassified_folders"],
+        document["summary"]["unclaimed_folders"],
         json!([{"folder": "loose", "files": 1, "code": 1}])
     );
     let reviewed: Vec<&str> = document["review"]
@@ -649,7 +644,7 @@ fn review_lists_only_unclaimed_source() {
     assert!(!table.contains("Unclaimed source"), "{table}");
     // The documented next step stays readable when it is done: an empty list, not a missing key.
     let (_, document, _) = headline(&root, &[]);
-    assert_eq!(document["summary"]["unclassified_folders"], json!([]));
+    assert_eq!(document["summary"]["unclaimed_folders"], json!([]));
 }
 
 /// The Markdown folder table keeps the path hierarchy: a folder's subfolders
@@ -807,11 +802,11 @@ fn categories_table_is_shown_on_request() {
     let table =
         String::from_utf8(run(&root, &["--format", "table", "--categories"]).stdout).unwrap();
     let expected = "
- Category                   Files  Lines  Code
- ─────────────────────────────────────────────
- unclassified:unclassified      1      2     2
- production:tooling             1      1     1
- test:test                      1      1     1
+ Category            Files  Lines  Code
+ ──────────────────────────────────────
+ other:unclaimed         1      2     2
+ production:tooling      1      1     1
+ test:test               1      1     1
  Rows of one purpose add up to that purpose's Code; all rows add up to the total Code.
 ";
     assert!(table.contains(expected), "{table}");
@@ -874,10 +869,10 @@ fn reports_name_the_build_modules_that_decided_production() {
     assert!(!markdown.contains("## Build modules"), "{markdown}");
 }
 
-/// A folder holding most of the unclassified code splits even when many
+/// A folder holding most of the unclaimed code splits even when many
 /// top-level folders already fill the list, so the bulk is located precisely.
 #[test]
-fn dominant_unclassified_folders_split_beyond_the_row_limit() {
+fn dominant_unclaimed_folders_split_beyond_the_row_limit() {
     let mut files: Vec<(String, String)> = (0..9)
         .map(|n| (format!("f{n}/x.js"), "let a = 1;\n".to_string()))
         .collect();
@@ -890,9 +885,7 @@ fn dominant_unclassified_folders_split_beyond_the_row_limit() {
     let temp = project(&borrowed);
     let (success, document, stderr) = headline(&temp.path().join("project"), &[]);
     assert!(success, "{stderr}");
-    let folders = document["summary"]["unclassified_folders"]
-        .as_array()
-        .unwrap();
+    let folders = document["summary"]["unclaimed_folders"].as_array().unwrap();
     assert_eq!(
         folders[0],
         json!({"folder": "big/one", "files": 1, "code": 20})
@@ -1189,17 +1182,13 @@ fn declared_modules_make_their_source_production() {
                 "production",
                 "builtin:cargo-module"
             ),
-            triple("docs/probe.js", "unclassified", "fallback"),
+            triple("docs/probe.js", "other", "fallback"),
             triple(
                 "legacy/src/main/java/A.java",
                 "production",
                 "builtin:maven-module"
             ),
-            triple(
-                "packages/core/scripts/release.ts",
-                "unclassified",
-                "fallback"
-            ),
+            triple("packages/core/scripts/release.ts", "other", "fallback"),
             triple(
                 "packages/core/src/a.test.ts",
                 "test",
@@ -1255,11 +1244,7 @@ fn the_innermost_module_decides_nested_layouts() {
             ),
             triple("app/src/web/ui.ts", "production", "builtin:npm-module"),
             triple("src/index.ts", "production", "builtin:npm-module"),
-            triple(
-                "src/plugins/fancy/scripts/build.ts",
-                "unclassified",
-                "fallback"
-            ),
+            triple("src/plugins/fancy/scripts/build.ts", "other", "fallback"),
             triple(
                 "src/plugins/fancy/src/fancy.ts",
                 "production",
@@ -1382,8 +1367,8 @@ fn python_modules_follow_setuptools_package_discovery() {
     assert_eq!(
         source,
         [
-            triple("flat/notebook.py", "unclassified", "fallback"),
-            triple("flat/scripts/seed.py", "unclassified", "fallback"),
+            triple("flat/notebook.py", "other", "fallback"),
+            triple("flat/scripts/seed.py", "other", "fallback"),
             triple("flat/shop/cart.py", "production", "builtin:python-module"),
             triple("flat/tests/test_cart.py", "test", "builtin:test-directory"),
             triple(
@@ -1415,7 +1400,7 @@ fn swift_packages_and_test_targets_are_recognized() {
     assert_eq!(
         source,
         [
-            triple("Plugins/Gen/plugin.swift", "unclassified", "fallback"),
+            triple("Plugins/Gen/plugin.swift", "other", "fallback"),
             triple(
                 "Sources/App/main.swift",
                 "production",
@@ -1472,21 +1457,21 @@ fn lake_packages_and_test_libraries_are_recognized() {
 /// Project knowledge beats generic detection, and detection can be disabled.
 #[test]
 fn project_rules_precede_module_detection_which_can_be_disabled() {
-    let legacy = "version = 1\n[[rules]]\nid = \"legacy\"\nmatch = [\"lib/src/legacy/**\"]\npurpose = \"unclassified\"\ncategory = \"legacy\"\n";
+    let legacy = "version = 1\n[[rules]]\nid = \"legacy\"\nmatch = [\"lib/src/legacy/**\"]\npurpose = \"other\"\ncategory = \"legacy\"\n";
     let disabled = "version = 1\n[classification]\nbuiltin_modules = false\n";
     for (config, expected) in [
         (
             legacy,
             [
-                triple("lib/src/legacy/old.ts", "unclassified", "legacy"),
+                triple("lib/src/legacy/old.ts", "other", "legacy"),
                 triple("lib/src/new.ts", "production", "builtin:npm-module"),
             ],
         ),
         (
             disabled,
             [
-                triple("lib/src/legacy/old.ts", "unclassified", "fallback"),
-                triple("lib/src/new.ts", "unclassified", "fallback"),
+                triple("lib/src/legacy/old.ts", "other", "fallback"),
+                triple("lib/src/new.ts", "other", "fallback"),
             ],
         ),
     ] {
@@ -1641,7 +1626,7 @@ fn stdout_headline_keeps_compact_evidence_without_a_report_pointer() {
     assert!(saved.stdout.is_empty());
     let (success, headline, stderr) = headline(&root, &[]);
     assert!(success, "{stderr}");
-    assert_eq!(headline["schema_version"], "1");
+    assert_eq!(headline["schema_version"], "2");
     assert!(headline.get("report").is_none());
     for absent in ["breakdown", "review", "files"] {
         assert!(headline.get(absent).is_none(), "{absent}");
@@ -1652,8 +1637,8 @@ fn stdout_headline_keeps_compact_evidence_without_a_report_pointer() {
     assert_eq!(coverage["unrecognized_files"], 2);
     assert_eq!(coverage["unrecognized_extensions"], json!({"xyz": 2}));
     let top = &headline["summary"]["top_folders"];
-    assert_eq!(top["src"]["unclassified"], 1);
-    assert_eq!(top["tools"]["unclassified"], 1);
+    assert_eq!(top["src"]["other"], 1);
+    assert_eq!(top["tools"]["other"], 1);
     assert!(headline["metadata"].get("kinds").is_none());
     let full: Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
     assert_eq!(full["summary"], headline["summary"]);
@@ -1704,8 +1689,8 @@ fn report_lists_one_breakdown_row_per_line_and_records_only_on_request() {
     assert_eq!(
         report["review"],
         json!([
-            {"path":"web/index.html","language":"HTML","category":"unclassified","rule":"fallback","code":4,"lines":4},
-            {"path":"src/a.rs","language":"Rust","category":"unclassified","rule":"fallback","code":1,"lines":1}
+            {"path":"web/index.html","language":"HTML","category":"unclaimed","rule":"fallback","code":4,"lines":4},
+            {"path":"src/a.rs","language":"Rust","category":"unclaimed","rule":"fallback","code":1,"lines":1}
         ])
     );
     let (_, detailed, _) = report_with_files(&root);
@@ -1770,7 +1755,7 @@ fn markdown_and_json_report_the_same_totals() {
     let root = temp.path().join("project");
     let (_, document, _) = headline(&root, &[]);
     let markdown = String::from_utf8(run(&root, &["--format", "markdown"]).stdout).unwrap();
-    for purpose in ["production", "test", "unclassified"] {
+    for purpose in ["production", "test", "other"] {
         // Absent purposes are zero in JSON; Markdown lists every purpose.
         let counts = &document["summary"]["source_purpose"][purpose];
         let count = |metric: &str| counts[metric].as_u64().unwrap_or(0);
@@ -1819,7 +1804,7 @@ fn breakdown_rows_add_up_to_the_summary() {
         .map(|row| row["code"].as_u64().unwrap())
         .sum();
     let top = &document["summary"]["top_folders"]["src"];
-    let top_code: u64 = ["production", "test", "unclassified"]
+    let top_code: u64 = ["production", "test", "other"]
         .iter()
         .map(|purpose| top[purpose].as_u64().unwrap_or(0))
         .sum();

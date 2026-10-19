@@ -52,9 +52,9 @@ The exclusion removes the SDK from the measurement. The rule retains maintained 
 locmetry --root acme-orders --no-user-config --format table
 ```
 
-Read the [language table](../README.md#what-you-see) from left to right: physical lines split into code, comments and blanks; code then splits into production, test and unclassified. Tooling is a category within production, rather than a fourth purpose.
+Read the [language table](../README.md#what-you-see) from left to right: physical lines split into code, comments and blanks; code then splits into production, test and other. Tooling is a category within production, rather than a fourth purpose.
 
-The frontend tests and Kotlin tests contribute to Test even when their enclosing module is production. The Python experiments and shell wrapper both contribute to Unclassified, but require different interpretation. JSON configuration and Markdown documentation are counted separately from source; an unrecognized image has unavailable counts, not an invented zero.
+The frontend tests and Kotlin tests contribute to Test even when their enclosing module is production. The Python experiments and shell wrapper both contribute to Other, but require different interpretation. JSON configuration and Markdown documentation are counted separately from source; an unrecognized image has unavailable counts, not an invented zero.
 
 The illustrative dataset has no embedded-language overlap, so its language file counts also reconcile. In general, a file can participate in more than one language: adding language file counts does not necessarily give the number of physical files. [Report interpretation](guides/reports.md#interpret-the-numbers) explains that distinction.
 
@@ -91,8 +91,8 @@ The same policy produces several different kinds of decision:
 | `backend/orders/src/main/kotlin/domain/Order.kt` | production / implementation | A selected Gradle descriptor supplies the conventional source layout. |
 | `web/src/orders/Order.test.ts` | test / test | Test conventions run before ordinary rules and module inference. |
 | `scripts/imports/orders/order.py` | production / tooling | The project rule supplies the local intent. |
-| `gradlew` | unclassified / third-party-wrapper | The build-wrapper convention deliberately classifies it. |
-| `prototypes/pricing/candidate_1.py` | unclassified / unclassified | No earlier stage claims it, so it reaches fallback. |
+| `gradlew` | other / third-party-wrapper | The build-wrapper convention deliberately classifies it. |
+| `prototypes/pricing/candidate_1.py` | other / unclaimed | No earlier stage claims it, so it reaches fallback. |
 
 Overrides run first, followed by test/build conventions, ordinary rules, module inference and fallback. Consequently, an ordinary tooling rule does not override a matching test convention. Use an override only when evidence justifies changing that precedence for a specific path. See [matching and precedence](PRODUCT.md#matching-and-precedence) for the full contract and wrapper patterns.
 
@@ -102,7 +102,7 @@ Overrides run first, followed by test/build conventions, ordinary rules, module 
 locmetry --root acme-orders --no-user-config --format table --verbose
 ```
 
-The experiments belong in the unclaimed review list; the wrapper does not. Both remain in Unclassified counts. If the owner later confirms that an experiment should remain deliberately unclassified, a narrow rule with an explicit category and reason records that decision and removes it from the unclaimed list without excluding its code. If its role is still unknown, leave the question open. A clean review list alone does not establish correct classification.
+The experiments belong in the unclaimed review list; the wrapper does not. Both remain in Other counts. If the owner later confirms that an experiment should deliberately stay `other`, a narrow rule with an explicit category and reason records that decision and removes it from the unclaimed list without excluding its code. If its role is still unknown, leave the question open. A clean review list alone does not establish correct classification.
 
 Verbose output also exposes non-source totals, inferred modules, unused policy and unrecognized extensions. The “Not source code” note gives only totals per kind; [list its files](guides/reports.md#not-source-code-which-files-are-data-or-documentation) from full JSON. A scope exclusion that matches nothing can reveal a misspelling. Actual read/parse failures remain visible without verbose mode and produce a partial measurement with exit status 2. Unclaimed code and an unrecognized image alone do not make the report partial. [Coverage interpretation](guides/reports.md#unavailable-is-not-zero) distinguishes these states.
 

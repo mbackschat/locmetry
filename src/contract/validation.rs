@@ -244,7 +244,7 @@ impl MeasurementReport {
         }
         for p in self.breakdown.iter().flatten().map(|r| &r.folder).chain(
             self.summary
-                .unclassified_folders
+                .unclaimed_folders
                 .iter()
                 .flatten()
                 .map(|f| &f.folder),
@@ -402,11 +402,11 @@ impl MeasurementReport {
         )?;
         unique(
             self.summary
-                .unclassified_folders
+                .unclaimed_folders
                 .iter()
                 .flatten()
                 .map(|f| &f.folder),
-            "unclassified_folders",
+            "unclaimed_folders",
         )?;
         if let Some(review) = &self.review {
             unique(review.iter().map(|r| &r.path), "review")?;
