@@ -1,0 +1,18 @@
+{
+  "revision": "help-recipe-simple-v1",
+  "task_ids": [
+    9
+  ],
+  "repetitions": 4,
+  "conditions": {
+    "A": "Current help",
+    "B": "Same frozen 435-byte help recipe; guides/schemas retained"
+  },
+  "rationale": "The primary configuration tasks require scope exclusions and intentional Other rules beyond the displayed recipe. Test the mechanism separately on a task whose syntax is covered by the example. Designed before primary aggregate results were inspected; primary gates remain unchanged.",
+  "sample_relation": "Supplementary diagnostic, not pooled with the preregistered 24 runs and cannot override their adoption gate.",
+  "decision_rule": "All treatment runs must pass. A simple-task efficiency signal requires at least 3 of 4 paired wins and either median agent calls at least 1 lower with median uncached input no more than 5% higher, or median uncached input at least 10% lower with median agent calls no higher. Report all resource metrics, retrieval routes and uncertainty.",
+  "model": "gpt-6.1-sol",
+  "effort": "xhigh",
+  "primary_aggregate_inspected_at_design": false,
+  "design_basis": "Recipe syntax coverage versus task requirements, not observed efficiency."
+}

@@ -69,7 +69,13 @@ class ExperimentTests(unittest.TestCase):
             self.assertTrue(all(json.loads(p.read_text())["treatment"] == "help-recipe" for p in manifests))
 
     def test_independent_config_case_rejects_wrong_saved_decisions(self):
-        task = json.loads(BENCH.TASK.with_name("task8.json").read_text())
+        self.check_configuration_case(8)
+
+    def test_simple_config_case_rejects_wrong_saved_decisions(self):
+        self.check_configuration_case(9)
+
+    def check_configuration_case(self, number):
+        task = json.loads(BENCH.TASK.with_name(f"task{number}.json").read_text())
         oracle = task["oracle"]
         report = {"summary": {"source": oracle["source"], "all_counted": oracle["all_counted"],
                               "source_purpose": {k: {"code": v} for k, v in oracle["purpose_code"].items()}},
@@ -94,7 +100,7 @@ class ExperimentTests(unittest.TestCase):
                 for bad in [report, {}, []]:
                     (root / "run-02/outputs/configured.json").write_text(json.dumps(bad))
                     self.assertEqual(SCORING.grade(root, "run-02")["outcome"], "needs_review")
-                task["revision"] = "task9-unsupported-v1"
+                task["revision"] = "task10-unsupported-v1"
                 (root / "manifest.json").write_text(json.dumps({"task": task}))
                 self.assertEqual(SCORING.grade(root, "run-02")["outcome"], "needs_review")
 

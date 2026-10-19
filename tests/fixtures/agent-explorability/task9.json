@@ -1,0 +1,72 @@
+{
+  "revision": "task9-simple-rule-v1",
+  "files": {
+    "projects/toolbox/README.md": "# Demo\n",
+    "projects/toolbox/bin/deploy.py": "# deployment\nprint(\"prepare\")\nprint(\"deploy\")\n",
+    "projects/toolbox/notes/probe.py": "print(\"undecided\")\n",
+    "projects/toolbox/tests/test_deploy.py": "assert True\n"
+  },
+  "prompt": "You have ./bin/locmetry and synthetic inputs in this scratch directory. Work only here. The executable and its built-in discovery material are your only product documentation; do not read other directories, implementation files, telemetry, or the launcher, and do not use the internet or other agents. You may inspect synthetic inputs and use ordinary shell/Python tools. You may create or edit only project configuration and files outside measured roots; leave all existing source/data/documentation files unchanged. Configure projects/toolbox so bin/ is Production with category automation. Preserve the existing Test classification and leave notes/ counted as unresolved Other. Save a full verification report with per-file decisions to outputs/configured.json. Report source Files, Lines, and Code, source Code by purpose, and the remaining review item.\n\nUse whatever built-in discovery you need. Give a concise final answer of at most 250 words, including supporting commands and any unresolved result. Create the requested working artifacts, but do not write an assessment document or a logging harness.\n",
+  "oracle": {
+    "root": "projects/toolbox",
+    "source": {
+      "files": 3,
+      "code": 4,
+      "comments": 1,
+      "blanks": 0,
+      "lines": 5
+    },
+    "all_counted": {
+      "files": 4,
+      "code": 4,
+      "comments": 2,
+      "blanks": 0,
+      "lines": 6
+    },
+    "purpose_code": {
+      "production": 2,
+      "test": 1,
+      "other": 1
+    },
+    "decisions": {
+      "README.md": {
+        "purpose": "other",
+        "category": "unclaimed",
+        "rule": "fallback"
+      },
+      "bin/deploy.py": {
+        "purpose": "production",
+        "category": "automation"
+      },
+      "notes/probe.py": {
+        "purpose": "other",
+        "category": "unclaimed",
+        "rule": "fallback"
+      },
+      "tests/test_deploy.py": {
+        "purpose": "test",
+        "category": "test",
+        "rule": "builtin:test-directory"
+      }
+    },
+    "excluded": [],
+    "review": [
+      "notes/probe.py"
+    ],
+    "artifacts": [
+      "projects/toolbox/.locmetryrc",
+      "outputs/configured.json"
+    ]
+  },
+  "limits": {
+    "wall_seconds": 600,
+    "cli_invocations": 60,
+    "agent_tool_calls": 40,
+    "uncached_input_tokens": 100000
+  },
+  "grading": "Recovered mistakes may pass; record recovery cost. Required conclusions missing => incomplete. Wrong delivered figures, ratio basis, or unknown/zero or counted/unclaimed interpretation => critical failure. Inspect fixture integrity and supporting calls.",
+  "mutable": [
+    "projects/toolbox/.locmetryrc"
+  ],
+  "generated": []
+}

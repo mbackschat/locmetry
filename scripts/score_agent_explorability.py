@@ -143,7 +143,7 @@ def grade(pair, run):
                 check("unclaimed-counted", result["scratch"]["result"]["file"]["category"] == "unclaimed")
                 check("workspace-identity", result["workspace_tool"]["member"] == "web" and result["workspace_tool"]["path"] == "web/tools/release.py")
                 check("member-relative-pattern", result["workspace_tool"]["result"]["decision"]["matched_patterns"] == ["tools/**"])
-        elif number == 8:
+        elif number in [8, 9]:
             oracle = task["oracle"]
             report = load("outputs/configured.json")
             result = command(["--root", oracle["root"], "--files", "--format", "json"])

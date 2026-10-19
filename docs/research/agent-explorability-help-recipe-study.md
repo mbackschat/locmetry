@@ -32,6 +32,12 @@ The recipe was added only in a temporary source copy. The control binary is byte
 
 The runner gained an explicit treatment selector and configurable task/repetition selection. Red/green checks guard retaining guides and other source files, selected cases, repetition counts, and balanced launch order. Extending the artifact grader exposed a boundary defect: unsupported task IDs could silently skip task-specific assertions. The grader now rejects unsupported tasks and empty/non-object report artifacts; fault-injection checks cover incorrect per-file decisions and empty artifacts. Earlier recorded artifacts were nonempty and used supported tasks, so this does not alter their outcomes.
 
+## Supplementary Simple-Rule Probe
+
+The primary configuration cases need exclusions and intentional Other rules beyond the displayed example. A separate [Task 9](../../tests/fixtures/agent-explorability/task9.json) tests a single production rule, custom category, retained conventional tests and unresolved review work; its required syntax is covered by the recipe. This limitation and the [supplementary definition](../../tests/fixtures/agent-explorability/help-recipe-simple-study.json) were recorded before primary aggregate results were inspected, although individual primary runs and artifact results had been observed. Its eight new sessions are not pooled with the primary sample and cannot override the original adoption gate. Four pairs alternate launch order; at most two pairs run concurrently. Both frozen native binaries are reused.
+
+The supplementary gate requires all B runs to pass and at least three of four paired wins on the improved metric: either one fewer median agent call with uncached input no more than 5% higher, or at least 10% lower median uncached input with calls no higher. The source oracle is Files 3, Lines 5, Code 4; Production/Test/Other Code 2/1/1, with only `notes/probe.py` unresolved. Both native binaries independently reproduce it.
+
 ## Results
 
 Pending execution, artifact checks, semantic review, and telemetry reconciliation. The frozen definition above must not change based on intermediate results.
