@@ -16,7 +16,7 @@
 
 ## Agent Explorability — Evidence and Follow-up
 
-- [ ] Complete the authorized [configuration-recipe experiment](research/agent-explorability-help-recipe-study.md): retain guides in both conditions, test two configuration fixtures, and measure unrelated-task reading cost. The [guide-removal study](research/agent-explorability-six-task-study.md) supports retaining optional guides. The [benchmark](plans/agent-explorability-benchmark.md) owns continuation and revision rules.
+- [ ] Resume the [agent-explorability benchmark](plans/agent-explorability-benchmark.md) only for a newly defined interface hypothesis, fixture, or model. The [guide study](research/agent-explorability-six-task-study.md) supports retaining optional guides; the [help-recipe study](research/agent-explorability-help-recipe-study.md) does not support adopting its additive configuration example. Production help and guide navigation remain unchanged.
 
 ## Ideas — Not Scheduled
 

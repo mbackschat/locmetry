@@ -28,8 +28,11 @@ def verify(control, treatment):
 
         for args in [["--help"], ["-h"], ["help"], ["--version"], *[[n, "--help"] for n in ["workspace", "compare", "explain"]]]:
             a, b = run(control, args), run(treatment, args)
-            assert b.replace(recipe, "") == a, args
-        assert run(treatment, ["--help"]).count(recipe) == 1, "Treatment recipe missing or duplicated"
+            if args in [["--help"], ["help"]]:
+                assert b.count(recipe) == 1, "Treatment recipe missing or duplicated"
+                assert b.replace(recipe, "") == a, args
+            else:
+                assert b == a, args
         for flag, topics in [("--guide", ["configure", "selection", "reports", "compare"]),
                              ("--schema", ["config", "user-config", "workspace", "report", "comparison", "explanation"])]:
             for topic in topics:

@@ -2,10 +2,10 @@
 
 <!-- doc-status
 {
-  "status": "active",
-  "date": "2026-10-19",
-  "summary": "Evaluate a configuration recipe in help while retaining guides and measuring unrelated-task cost.",
-  "evidence": "[Six-task study](../research/agent-explorability-six-task-study.md)"
+  "status": "deferred",
+  "date": "2026-10-20",
+  "summary": "Retain tested interface; resume experiments for a new hypothesis, fixture or model.",
+  "evidence": "[Guide study](../research/agent-explorability-six-task-study.md), [Help recipe study](../research/agent-explorability-help-recipe-study.md)"
 }
 -->
 
@@ -33,13 +33,13 @@ The recommended target, still subject to review, is successful ordinary use with
 
 The [first Task 1 pilot](../research/agent-explorability-task1-pilot.md) established isolation and telemetry. The subsequent [study](../research/agent-explorability-six-task-study.md) completed 36 new task runs, excluded the earlier pair, and added a separate six-run capability-discovery track. The six-task sample passed 18/18 with guides and 17/18 without; resource totals were close, with 4.9% more uncached input after guide removal. Retain guides as optional reference and leave navigation unchanged; the study records the interpretation failure and task-specific tradeoffs. This is a tested recommendation, not evidence that guides are indispensable.
 
-The owner subsequently authorized the [configuration-recipe experiment](../research/agent-explorability-help-recipe-study.md), revisiting their original usage-example proposal. Its frozen design uses 24 fresh sessions across the original configuration task, an independent Cargo layout, and report understanding. It retains guides in both conditions and measures the cost imposed on unrelated tasks.
+The owner subsequently authorized the [configuration-recipe experiment](../research/agent-explorability-help-recipe-study.md), revisiting their original usage-example proposal. Its primary 24 fresh sessions all passed, but the example failed the frozen efficiency gate on both configuration fixtures. The study separately records an eight-session simple-rule probe. Keep the tested production interface; this benchmark remains a reusable specification, with further execution deferred until a new hypothesis, fixture, or model justifies a separately frozen campaign.
 
 For a later session:
 
 1. Read the study's conclusions, limitations, and per-run results before proposing interface changes. Do not repeat the original pilot or pool sequential historical runs with fresh-task results.
 2. Use the frozen task files and runner for replay. Resolve MEDIUM from the owner's active CLI mapping and record the actual model/effort; a changed model is a new campaign.
-3. If testing an improvement, preserve the current interface as control and keep guides available. The [next-variable proposal](../research/agent-explorability-six-task-study.md#next-variable-information-placement) tests a minimal configuration recipe in help, with an independent configuration variant and unrelated-task checks for the cost of longer help. This hypothesis is motivated by repeated schema retrieval, not yet validated by an experiment.
+3. If testing another improvement, preserve the current interface as control and keep guides available. The tested additive help recipe did not earn adoption; do not repeat it unchanged or treat the result as a rejection of examples generally. Define one new variable, a task-specific oracle, and a practical cost gate before execution. Information placement or retrieval wording would be new hypotheses, not established fixes.
 4. Add an independent fixture variant when testing generalization, and give each changed prompt, fixture, oracle, or treatment a new revision. Keep old outcomes and all-run costs available.
 5. Treat personal-policy interactions, extended scope cases, and long-session reuse as separate future cases, not as already verified behavior of the benchmark.
 

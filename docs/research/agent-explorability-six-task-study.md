@@ -96,6 +96,8 @@ Three repetitions per task are diagnostic evidence, not a powered reliability es
 
 ## Next Variable: Information Placement
 
+Follow-up: the [configuration-recipe study](agent-explorability-help-recipe-study.md) records the subsequently authorized test of the owner's usage-example proposal. The proposal below preserves the reasoning before that experiment; consult the follow-up for its result.
+
 After seeing interim results, the owner asked whether another variable would be more useful than guide availability. The recommended next experiment keeps guides and schemas available in both conditions and varies how much task-relevant information the first help response supplies. For configuration, the control is current help; a candidate treatment puts a minimal valid configuration recipe and its essential constraints beside the configuration entry point. This is an untested hypothesis, not a product change or an established improvement.
 
 The retrieval traces support testing this narrower question: all six configuration trials requested the configuration schema, and four requested it twice. The emitted schema is 28,268 bytes in A and 28,224 in B; pipelines can filter that output before it reaches the model, so those byte sizes are not token-cost estimates. A short recipe could remove an initial syntax lookup, but might leave later schema queries necessary for precedence and classification evidence. The current experiment does not establish that a missing recipe caused those queries.
