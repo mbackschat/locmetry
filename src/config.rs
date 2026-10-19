@@ -2,7 +2,7 @@
 //!
 //! The input is the version-1 TOML contract in docs/PRODUCT.md.
 use crate::{backend::relative_path, modules::Module, Kind};
-use anyhow::{ensure, Context, Result};
+use anyhow::{anyhow, ensure, Context, Result};
 use globset::{Glob, GlobBuilder, GlobSet, GlobSetBuilder};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -23,6 +23,25 @@ pub const CONFIG_FILE: &str = ".locmetryrc";
 const FALLBACK: &str = "fallback";
 /// Category of files no stage decided, whatever the fallback purpose.
 const UNCLAIMED: &str = "unclaimed";
+
+/// Parses TOML, reporting a failure as one line: `line L, column C: message`.
+///
+/// The parser's own report is a multi-line source snippet, and stderr
+/// sanitizing turns newlines into spaces, which garbled it into one line.
+fn parse_toml<T: serde::de::DeserializeOwned>(input: &str) -> Result<T> {
+    toml::from_str(input).map_err(|error| {
+        let message = error.message();
+        match error.span() {
+            Some(span) => {
+                let before = &input[..span.start];
+                let line = before.matches('\n').count() + 1;
+                let column = before.rsplit('\n').next().unwrap_or(before).chars().count() + 1;
+                anyhow!("line {line}, column {column}: {message}")
+            }
+            None => anyhow!("{message}"),
+        }
+    })
+}
 
 /// Category of source that a build module classifies.
 const MODULE_CATEGORY: &str = "implementation";
@@ -512,7 +531,7 @@ impl UserDefaults {
     fn load(path: &Path) -> Result<Self> {
         let input = std::fs::read_to_string(path)
             .with_context(|| format!("Cannot read user defaults {}", path.display()))?;
-        let defaults: Self = toml::from_str(&input).with_context(|| {
+        let defaults: Self = parse_toml(&input).with_context(|| {
             format!(
                 "Invalid user defaults {}; they may set only `version`, `scope.exclude`, and `[[languages.mappings]]`",
                 path.display()
@@ -567,8 +586,8 @@ pub(crate) struct WorkspaceFile {
 pub fn workspace_roots(path: &Path) -> Result<Vec<PathBuf>> {
     let input = std::fs::read_to_string(path)
         .with_context(|| format!("Cannot read workspace file {}", path.display()))?;
-    let file: WorkspaceFile = toml::from_str(&input)
-        .with_context(|| format!("Invalid workspace file {}", path.display()))?;
+    let file: WorkspaceFile =
+        parse_toml(&input).with_context(|| format!("Invalid workspace file {}", path.display()))?;
     ensure!(
         file.version == 1,
         "Unsupported version {} in workspace file {}",
@@ -904,7 +923,7 @@ impl Policy {
     }
 
     pub fn from_toml(input: &str) -> Result<Self> {
-        Self::from_config(toml::from_str(input).context("Invalid TOML configuration")?)
+        Self::from_config(parse_toml(input).context("Invalid TOML configuration")?)
     }
 
     fn from_config(mut config: ConfigFile) -> Result<Self> {
@@ -1048,7 +1067,7 @@ impl Policy {
                 );
                 let input = std::fs::read_to_string(path)
                     .with_context(|| format!("Cannot read configuration {}", path.display()))?;
-                toml::from_str(&input)
+                parse_toml(&input)
                     .with_context(|| format!("Invalid configuration {}", path.display()))?
             }
             None => toml::from_str("version = 1").expect("built-in configuration is valid"),

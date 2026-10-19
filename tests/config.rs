@@ -695,3 +695,27 @@ fn the_old_unclassified_purpose_names_its_replacement() {
         "other"
     );
 }
+
+/// Locks readable configuration errors: stderr sanitizing flattens newlines,
+/// so the parser's multi-line snippet became one garbled line; errors now
+/// name the position and the problem on one line instead.
+#[test]
+fn configuration_errors_name_the_position_on_one_line() {
+    let temp = tempfile::tempdir().unwrap();
+    common::write(
+        temp.path(),
+        ".locmetryrc",
+        "version = 1\n\n[[rules]]\nid = \"a\"\nmatch = [\"x/**\"]\npurpose = \"unclassified\"\n",
+    );
+    let output = common::locmetry().arg(temp.path()).output().unwrap();
+    assert_eq!(output.status.code(), Some(1));
+    let error = String::from_utf8(output.stderr).unwrap();
+    assert_eq!(error.lines().count(), 1, "{error}");
+    assert!(
+        error.contains(
+            ".locmetryrc: line 6, column 11: purpose \"unclassified\" was renamed to \"other\""
+        ),
+        "{error}"
+    );
+    assert!(!error.contains('|') && !error.contains('^'), "{error}");
+}
