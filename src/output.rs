@@ -92,7 +92,7 @@ pub struct MemberView {
 }
 
 /// Test code lines per production code line, `-` without production code.
-fn test_ratio(production: u64, test: u64) -> String {
+pub(crate) fn test_ratio(production: u64, test: u64) -> String {
     match production {
         0 => "-".to_string(),
         _ => format!("{:.2}", test as f64 / production as f64),

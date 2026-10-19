@@ -753,6 +753,85 @@ fn human_comparisons(before: &Path, after: &Path, status: i32) -> Vec<String> {
 }
 
 #[test]
+fn purpose_ratio_uses_source_code_and_handles_missing_purposes_on_each_side() {
+    for (before, after, expected) in [
+        ((5, 6), (17, 20), "1.20 → 1.18"),
+        ((4, 0), (4, 2), "0.00 → 0.50"),
+        ((0, 2), (2, 2), "- → 1.00"),
+        ((2, 2), (0, 3), "1.00 → -"),
+        ((0, 0), (0, 1), "- → -"),
+        ((2, 0), (4, 0), "0.00 → 0.00"),
+    ] {
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path().join("project");
+        write(&root, ".locmetryrc", "version = 1\n[[rules]]\nid = \"production\"\nmatch = [\"prod/**\"]\npurpose = \"production\"\n[[rules]]\nid = \"test\"\nmatch = [\"tests/**\"]\npurpose = \"test\"\n");
+        write(&root, "other.py", &"print(1)\n".repeat(100));
+        let mut snapshots = Vec::new();
+        for (name, (production, test)) in [("before.json", before), ("after.json", after)] {
+            for (folder, count) in [("prod", production), ("tests", test)] {
+                let file = format!("{folder}/main.py");
+                if count > 0 {
+                    write(
+                        &root,
+                        &file,
+                        &format!("{}{}", "print(1)\n".repeat(count), "# comment\n".repeat(10)),
+                    );
+                } else if root.join(&file).exists() {
+                    fs::remove_file(root.join(&file)).unwrap();
+                }
+            }
+            snapshots.push(save(temp.path(), name, &measure(&root)));
+        }
+        for text in human_comparisons(&snapshots[0], &snapshots[1], 0) {
+            let expected = format!("Test/prod: {expected} (before → after)");
+            assert_eq!(text.matches(&expected).count(), 1, "{text}");
+            let ratio = text.find(&expected).unwrap();
+            let total = text[..ratio].rfind("Source total").unwrap();
+            let between = &text[total..ratio];
+            assert!(!between.contains("Language"), "{text}");
+            if text.starts_with("# ") {
+                assert!(text.contains(&format!("\n\n*{expected}*\n")), "{text}");
+            } else {
+                assert_eq!(between.lines().count(), 2, "{text}");
+            }
+        }
+        for text in human_comparisons(&snapshots[1], &snapshots[1], 0) {
+            assert!(!text.contains("Test/prod:"), "{text}");
+        }
+    }
+}
+
+#[test]
+fn workspace_purpose_ratio_uses_aggregate_counts_including_unchanged_rows() {
+    let temp = tempfile::tempdir().unwrap();
+    let api = temp.path().join("api");
+    let web = temp.path().join("web");
+    for (root, production) in [(&api, 2), (&web, 8)] {
+        write(root, ".locmetryrc", "version = 1\n[[rules]]\nid = \"production\"\nmatch = [\"main.py\"]\npurpose = \"production\"\n");
+        write(root, "main.py", &"print(1)\n".repeat(production));
+    }
+    write(&api, "tests/check.py", &"assert True\n".repeat(6));
+    let before = save(temp.path(), "before.json", &workspace(&[&api, &web]));
+    write(&api, "tests/check.py", &"assert True\n".repeat(12));
+    let after = save(temp.path(), "after.json", &workspace(&[&api, &web]));
+    for text in human_comparisons(&before, &after, 0) {
+        assert!(
+            text.contains("Test/prod: 0.60 → 1.20 (before → after)"),
+            "{text}"
+        );
+        assert!(!text.contains(" Production "), "{text}");
+    }
+    let full = json(&compare(&before, &after, &["--format", "json"]), 0);
+    let report = serde_json::from_value(full).unwrap();
+    let colored =
+        locmetry::compare::render_table_with_theme(&report, locmetry::style::Theme::TERMINAL);
+    assert!(
+        colored.contains("\x1b[90mTest/prod: 0.60 → 1.20 (before → after)\x1b[0m"),
+        "{colored}"
+    );
+}
+
+#[test]
 fn unchanged_workspace_replaces_zero_composition_with_a_no_change_message() {
     let temp = tempfile::tempdir().unwrap();
     let root = temp.path().join("project");
@@ -1348,7 +1427,8 @@ fn totals_split_all_counted_by_kind_and_grids_end_in_their_source_total() {
     assert!(
         purpose
             .lines()
-            .last()
+            .rev()
+            .nth(1)
             .unwrap()
             .starts_with(" Source total "),
         "{purpose}"

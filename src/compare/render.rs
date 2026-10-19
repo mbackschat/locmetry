@@ -97,6 +97,7 @@ struct Grid {
     total: Option<Row>,
     /// Adds [`SECONDARY_CHANGE_COLUMNS`].
     secondary: bool,
+    legend: Option<String>,
 }
 
 impl Grid {
@@ -134,6 +135,15 @@ impl Grid {
         } else {
             output::shared_table(&columns, &body, total.as_deref(), markdown, theme)
         });
+        if let Some(legend) = self.legend {
+            writeln!(
+                output,
+                "{}{}",
+                if markdown { "\n" } else { " " },
+                theme.paint(Role::Muted, &legend)
+            )
+            .unwrap();
+        }
     }
 }
 
@@ -164,6 +174,23 @@ fn kind_rows(dimensions: &Dimensions) -> Vec<Row> {
             })
         })
         .collect()
+}
+
+fn purpose_ratio(dimensions: &Dimensions) -> String {
+    let ratio = |side: fn(&CountChange) -> Counts| {
+        let code = |purpose| {
+            dimensions
+                .source_purpose
+                .get(&purpose)
+                .map_or(0, |change| side(change).code)
+        };
+        output::test_ratio(code(Purpose::Production), code(Purpose::Test))
+    };
+    format!(
+        "Test/prod: {} → {} (before → after)",
+        ratio(|change| change.before),
+        ratio(|change| change.after)
+    )
 }
 
 fn counts_unchanged(c: &Comparison) -> bool {
@@ -231,6 +258,7 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
             rows: kind_rows(dimensions),
             total: Some(Row::new("All counted", &dimensions.all_counted)),
             secondary: true,
+            legend: None,
         },
         Grid {
             title: "Purpose",
@@ -243,6 +271,7 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
                 .collect(),
             total: source_total(),
             secondary: false,
+            legend: Some(purpose_ratio(dimensions)),
         },
         Grid {
             title: "Languages",
@@ -255,6 +284,7 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
                 .collect(),
             total: source_total(),
             secondary: false,
+            legend: None,
         },
     ];
     if let Some(members) = &c.members {
@@ -273,6 +303,7 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
                 .collect(),
             total: source_total(),
             secondary: false,
+            legend: None,
         });
     }
     let folder_grid = c.folders.as_ref().map(|folders| {
@@ -303,6 +334,8 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
             rows,
             total,
             secondary: false,
+            legend: (!markdown)
+                .then(|| "Folders are recursive; do not sum parents and children.".into()),
         }
     });
     for grid in grids {
@@ -358,19 +391,7 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
         .unwrap();
     }
     if let Some(grid) = folder_grid {
-        let has_rows = !grid.rows.is_empty();
         grid.write(&mut out, markdown, theme);
-        if !markdown && has_rows {
-            writeln!(
-                out,
-                " {}",
-                theme.paint(
-                    Role::Muted,
-                    "Folders are recursive; do not sum parents and children."
-                )
-            )
-            .unwrap();
-        }
     }
     let summary = &c.presence_summary;
     let presence: Vec<_> = [
