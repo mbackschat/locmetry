@@ -187,7 +187,7 @@ fn purpose_ratio(dimensions: &Dimensions) -> String {
         output::test_ratio(code(Purpose::Production), code(Purpose::Test))
     };
     format!(
-        "Test/prod: {} → {} (before → after)",
+        "Test/prod (Code): {} → {} (before → after)",
         ratio(|change| change.before),
         ratio(|change| change.after)
     )
@@ -353,40 +353,53 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
                     || part.leaving.code != 0
             })
     }) {
+        let theme = if markdown { Theme::PLAIN } else { theme };
+        let signed = |value: i128| {
+            let role = match value.cmp(&0) {
+                std::cmp::Ordering::Less => Role::Decrease,
+                std::cmp::Ordering::Equal => Role::Muted,
+                std::cmp::Ordering::Greater => Role::Increase,
+            };
+            theme.paint(role, &format!("{value:+}"))
+        };
+        let leaving = |value: u64| match value {
+            0 => theme.paint(Role::Muted, "-0"),
+            _ => signed(-i128::from(value)),
+        };
         writeln!(
             out,
-            "\nWorkspace source lines: matched {:+}, entering +{}, leaving -{}; total {:+}.",
-            composition.source.matched.lines,
-            composition.source.entering.lines,
-            composition.source.leaving.lines,
-            c.summary.dimensions.source.delta.lines
+            "\nWorkspace source lines: matched {}, entering {}, leaving {}; total {}.",
+            signed(composition.source.matched.lines.into()),
+            signed(composition.source.entering.lines.into()),
+            leaving(composition.source.leaving.lines),
+            signed(c.summary.dimensions.source.delta.lines.into())
         )
         .unwrap();
         writeln!(
             out,
-            "Workspace all-counted lines: matched {:+}, entering +{}, leaving -{}; total {:+}.",
-            composition.all_counted.matched.lines,
-            composition.all_counted.entering.lines,
-            composition.all_counted.leaving.lines,
-            c.summary.dimensions.all_counted.delta.lines
+            "Workspace all-counted lines: matched {}, entering {}, leaving {}; total {}.",
+            signed(composition.all_counted.matched.lines.into()),
+            signed(composition.all_counted.entering.lines.into()),
+            leaving(composition.all_counted.leaving.lines),
+            signed(c.summary.dimensions.all_counted.delta.lines.into())
         )
         .unwrap();
         writeln!(
             out,
-            "\nWorkspace source code: matched {:+}, entering +{}, leaving -{}; total {:+}.",
-            composition.source.matched.code,
-            composition.source.entering.code,
-            composition.source.leaving.code,
-            c.summary.dimensions.source.delta.code
+            "\nWorkspace source code: matched {}, entering {}, leaving {}; total {}.",
+            signed(composition.source.matched.code.into()),
+            signed(composition.source.entering.code.into()),
+            leaving(composition.source.leaving.code),
+            signed(c.summary.dimensions.source.delta.code.into())
         )
         .unwrap();
         writeln!(
             out,
-            "Workspace all-counted code: matched {:+}, entering +{}, leaving -{}; total {:+}.",
-            composition.all_counted.matched.code,
-            composition.all_counted.entering.code,
-            composition.all_counted.leaving.code,
-            c.summary.dimensions.all_counted.delta.code
+            "Workspace all-counted code: matched {}, entering {}, leaving {}; total {}.",
+            signed(composition.all_counted.matched.code.into()),
+            signed(composition.all_counted.entering.code.into()),
+            leaving(composition.all_counted.leaving.code),
+            signed(c.summary.dimensions.all_counted.delta.code.into())
         )
         .unwrap();
     }

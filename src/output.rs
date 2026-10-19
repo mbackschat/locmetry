@@ -1169,7 +1169,7 @@ impl PurposeColumns<'_> {
             format!("{} = Code", titles.join(" + "))
         });
         let ratio = match self.ratio() {
-            Ratio::TestPerProduction => "Test/prod = Test / Production",
+            Ratio::TestPerProduction => "Test/prod = Test / Production (Code)",
             Ratio::CommentShare => COMMENT_SHARE_DEFINITION,
         };
         let parts: Vec<String> = [

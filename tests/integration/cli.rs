@@ -226,7 +226,7 @@ fn table_format_splits_source_code_by_language_and_purpose() {
  Python        1      1     1 │        0       0 │     0     0      1 │         -
  ─────────────────────────────┼──────────────────┼────────────────────┼──────────
  Total         4      6     5 │        1       0 │     2     2      1 │      1.00
- Lines = Code + Comments + Blanks; Production + Test + Other = Code; Test/prod = Test / Production.
+ Lines = Code + Comments + Blanks; Production + Test + Other = Code; Test/prod = Test / Production (Code).
  Tests written in another language than the code they test skew per-language Test/prod.
 
  ────────────────────────────────────────────────────
@@ -237,7 +237,7 @@ fn table_format_splits_source_code_by_language_and_purpose() {
  proto       1     1 │     0     0      1 │         -
  ────────────────────┼────────────────────┼──────────
  Total       6     5 │     2     2      1 │      1.00
- Production + Test + Other = Code; Test/prod = Test / Production.
+ Production + Test + Other = Code; Test/prod = Test / Production (Code).
 
  Not source code: 1 data file (1 line), 1 documentation file (1 line); --files --output - lists each file's kind.
  Unclaimed source: 1 code line in 1 file, here:
@@ -260,7 +260,7 @@ fn table_format_splits_source_code_by_language_and_purpose() {
             .unwrap();
     for row in [
         "Lines = Code + Comments + Blanks in every table with these columns",
-        "Production + Test + Other = Code; Test/prod = Test / Production.",
+        "Production + Test + Other = Code; Test/prod = Test / Production (Code).",
         "| Folder | Lines | **Code** | Production | Test | Other | Test/prod |\n",
         "| Purpose | Files | Lines | **Code** | Comments | Blanks |\n",
         "| . | 6 | 5 | 2 | 2 | 1 | 1.00 |\n",

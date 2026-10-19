@@ -592,7 +592,7 @@ fn workspace_table_compares_repositories() {
     );
     assert!(!table.contains(" Folder "), "{table}");
     assert!(
-        table.contains(" Production + Test + Other = Code; Test/prod = Test / Production; Share = Code / workspace Code.\n"),
+        table.contains(" Production + Test + Other = Code; Test/prod = Test / Production (Code); Share = Code / workspace Code.\n"),
         "{table}"
     );
     assert!(
@@ -622,7 +622,7 @@ fn workspace_markdown_breaks_categories_and_languages_down_by_repository() {
         "| Repository | Lines | **Code** | Production | Test | Other | Test/prod | Share |\n",
         "| web | 6 | 6 | 3 | 1 | 2 | 0.33 | 60.0% |\n",
         "| **Total** | **10** | **10** | **4** | **3** | **3** | **0.75** | **100.0%** |\n",
-        "Production + Test + Other = Code; Test/prod = Test / Production; Share = Code / workspace Code.",
+        "Production + Test + Other = Code; Test/prod = Test / Production (Code); Share = Code / workspace Code.",
         "Each total is the sum of its repository columns.",
         "## Source categories by repository\n",
         "| Category | api Lines | api Code | web Lines | web Code | Total Lines | Total Code |\n",

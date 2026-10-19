@@ -104,7 +104,7 @@ fn selected_purposes_keep_their_columns_and_choose_the_ratio() {
         cells(&text, "Rust"),
         ["Rust", "2", "5", "3", "2", "0", "2", "1", "0.50"]
     );
-    assert!(text.contains("Production + Test = Code; Test/prod = Test / Production."));
+    assert!(text.contains("Production + Test = Code; Test/prod = Test / Production (Code)."));
     assert!(text.contains(" Purposes shown: Production and Test; Other excluded.\n"));
 
     let text = table(&["--format", "table", "--purpose", "other,test"]);

@@ -39,7 +39,7 @@ locmetry
  Shell           1      290      160 │       90      40 │      0       0    160 │         -
  ────────────────────────────────────┼──────────────────┼───────────────────────┼──────────
  Total         940  164,290  130,700 │   12,700  20,890 │ 84,000  43,640  3,060 │      0.52
- Lines = Code + Comments + Blanks; Production + Test + Other = Code; Test/prod = Test / Production.
+ Lines = Code + Comments + Blanks; Production + Test + Other = Code; Test/prod = Test / Production (Code).
  Tests written in another language than the code they test skew per-language Test/prod.
 ```
 
@@ -90,7 +90,7 @@ Each terminal table starts with a thin top rule directly above its column header
  (root files)                                  290      160 │      0       0    160 │         -
  ───────────────────────────────────────────────────────────┼───────────────────────┼──────────
  Total                                     164,290  130,700 │ 84,000  43,640  3,060 │      0.52
- Production + Test + Other = Code; Test/prod = Test / Production.
+ Production + Test + Other = Code; Test/prod = Test / Production (Code).
  Adaptive folder detail; rows cover measured source once.
 ```
 

@@ -783,7 +783,7 @@ fn purpose_ratio_uses_source_code_and_handles_missing_purposes_on_each_side() {
             snapshots.push(save(temp.path(), name, &measure(&root)));
         }
         for text in human_comparisons(&snapshots[0], &snapshots[1], 0) {
-            let expected = format!("Test/prod: {expected} (before → after)");
+            let expected = format!("Test/prod (Code): {expected} (before → after)");
             assert_eq!(text.matches(&expected).count(), 1, "{text}");
             let ratio = text.find(&expected).unwrap();
             let total = text[..ratio].rfind("Source total").unwrap();
@@ -796,7 +796,7 @@ fn purpose_ratio_uses_source_code_and_handles_missing_purposes_on_each_side() {
             }
         }
         for text in human_comparisons(&snapshots[1], &snapshots[1], 0) {
-            assert!(!text.contains("Test/prod:"), "{text}");
+            assert!(!text.contains("Test/prod (Code):"), "{text}");
         }
     }
 }
@@ -816,7 +816,7 @@ fn workspace_purpose_ratio_uses_aggregate_counts_including_unchanged_rows() {
     let after = save(temp.path(), "after.json", &workspace(&[&api, &web]));
     for text in human_comparisons(&before, &after, 0) {
         assert!(
-            text.contains("Test/prod: 0.60 → 1.20 (before → after)"),
+            text.contains("Test/prod (Code): 0.60 → 1.20 (before → after)"),
             "{text}"
         );
         assert!(!text.contains(" Production "), "{text}");
@@ -826,7 +826,7 @@ fn workspace_purpose_ratio_uses_aggregate_counts_including_unchanged_rows() {
     let colored =
         locmetry::compare::render_table_with_theme(&report, locmetry::style::Theme::TERMINAL);
     assert!(
-        colored.contains("\x1b[90mTest/prod: 0.60 → 1.20 (before → after)\x1b[0m"),
+        colored.contains("\x1b[90mTest/prod (Code): 0.60 → 1.20 (before → after)\x1b[0m"),
         "{colored}"
     );
 }
@@ -1247,6 +1247,90 @@ fn source_code_grids_preserve_zero_code_folder_and_member_presence() {
     );
     for text in human_comparisons(&workspace_after, &workspace_source_after, 0) {
         assert!(text.contains("project (both)"), "{text}");
+    }
+}
+
+#[test]
+fn workspace_composition_colors_signed_contributions_and_mutes_signed_zero() {
+    use locmetry::style::Theme;
+    let temp = tempfile::tempdir().unwrap();
+    let api = temp.path().join("api");
+    let legacy = temp.path().join("legacy");
+    let worker = temp.path().join("worker");
+    write(&api, "main.py", &"print(1)\n".repeat(6));
+    write(&legacy, "main.py", &"print(1)\n".repeat(2));
+    let before = save(temp.path(), "before.json", &workspace(&[&api, &legacy]));
+    write(&api, "main.py", &"print(1)\n".repeat(3));
+    write(&worker, "main.py", &"print(1)\n".repeat(5));
+    let after = save(temp.path(), "after.json", &workspace(&[&api, &worker]));
+    write(&worker, "main.py", &"print(1)\n".repeat(6));
+    let grown = save(temp.path(), "grown.json", &workspace(&[&api, &worker]));
+    for (a, b, matched, entering, leaving, total) in [
+        (
+            &before,
+            &after,
+            "\x1b[31m-3\x1b[0m",
+            "\x1b[32m+5\x1b[0m",
+            "\x1b[31m-2\x1b[0m",
+            "\x1b[90m+0\x1b[0m",
+        ),
+        (
+            &after,
+            &before,
+            "\x1b[32m+3\x1b[0m",
+            "\x1b[32m+2\x1b[0m",
+            "\x1b[31m-5\x1b[0m",
+            "\x1b[90m+0\x1b[0m",
+        ),
+        (
+            &after,
+            &grown,
+            "\x1b[32m+1\x1b[0m",
+            "\x1b[90m+0\x1b[0m",
+            "\x1b[90m-0\x1b[0m",
+            "\x1b[32m+1\x1b[0m",
+        ),
+        (
+            &grown,
+            &before,
+            "\x1b[32m+3\x1b[0m",
+            "\x1b[32m+2\x1b[0m",
+            "\x1b[31m-6\x1b[0m",
+            "\x1b[31m-1\x1b[0m",
+        ),
+    ] {
+        let full = json(&compare(a, b, &["--format", "json"]), 0);
+        let report = serde_json::from_value(full).unwrap();
+        let colored = locmetry::compare::render_table_with_theme(&report, Theme::TERMINAL);
+        let expected =
+            format!("matched {matched}, entering {entering}, leaving {leaving}; total {total}.");
+        for label in [
+            "source lines",
+            "all-counted lines",
+            "source code",
+            "all-counted code",
+        ] {
+            assert!(
+                colored.contains(&format!("Workspace {label}: {expected}")),
+                "{colored}"
+            );
+        }
+        let stripped: String = colored
+            .split('\x1b')
+            .map(|part| match part.strip_prefix('[') {
+                Some(control) => control.split_once('m').unwrap().1,
+                None => part,
+            })
+            .collect();
+        let plain = locmetry::compare::render_table_with_theme(&report, Theme::PLAIN);
+        assert_eq!(stripped, plain);
+        let markdown = locmetry::compare::render_markdown(&report);
+        for text in human_comparisons(a, b, 0).into_iter().chain([markdown]) {
+            assert!(!text.contains('\x1b'), "{text}");
+            for line in plain.lines().filter(|line| line.starts_with("Workspace ")) {
+                assert!(text.contains(line), "{text}");
+            }
+        }
     }
 }
 
