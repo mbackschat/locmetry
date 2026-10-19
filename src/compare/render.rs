@@ -14,19 +14,23 @@ fn label(value: &str, markdown: bool) -> String {
 }
 /// Lines and Code before, after and net change, as every comparison grid shows them.
 const CHANGE_COLUMNS: [Column; 6] = [
-    Column::new("Lines before", ColumnRole::Count),
-    Column::new("Lines after", ColumnRole::Count),
-    Column::new("Lines change", ColumnRole::Change),
-    Column::new("Code before", ColumnRole::Count).separated(),
-    Column::new("Code after", ColumnRole::Count),
-    Column::new("Code change", ColumnRole::Change),
+    Column::new("Lines before", ColumnRole::Count).under("Lines", "before"),
+    Column::new("Lines after", ColumnRole::Count).under("Lines", "after"),
+    Column::new("Lines change", ColumnRole::Change).under("Lines", "change"),
+    Column::new("Code before", ColumnRole::Count)
+        .under("Code", "before")
+        .separated(),
+    Column::new("Code after", ColumnRole::Count).under("Code", "after"),
+    Column::new("Code change", ColumnRole::Change).under("Code", "change"),
 ];
 /// Changes beside the Totals figures, muted as the measurement table mutes
 /// Comments, Blanks and Files.
 const SECONDARY_CHANGE_COLUMNS: [Column; 3] = [
-    Column::new("Comments change", ColumnRole::Secondary).separated(),
-    Column::new("Blanks change", ColumnRole::Secondary),
-    Column::new("Files change", ColumnRole::Secondary).separated(),
+    Column::new("Comments change", ColumnRole::Secondary)
+        .under("Change", "Comments")
+        .separated(),
+    Column::new("Blanks change", ColumnRole::Secondary).under("Change", "Blanks"),
+    Column::new("Files change", ColumnRole::Secondary).under("Change", "Files"),
 ];
 
 /// One row of a comparison grid.

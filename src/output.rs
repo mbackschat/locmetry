@@ -615,6 +615,9 @@ pub(crate) struct Column {
     /// Heading for terminal tables when `title` would be wider than every
     /// value, so a long title does not widen a column of short figures.
     short: Option<&'static str>,
+    /// Terminal group heading spanning neighbouring columns of the same group,
+    /// and this column's heading beneath it; Markdown keeps `title`.
+    group: Option<(&'static str, &'static str)>,
     role: ColumnRole,
     /// Preceded by a `│` separator, starting a group of related figures.
     separated: bool,
@@ -625,8 +628,16 @@ impl Column {
         Self {
             title,
             short: None,
+            group: None,
             role,
             separated: false,
+        }
+    }
+
+    pub(crate) const fn under(self, group: &'static str, heading: &'static str) -> Self {
+        Self {
+            group: Some((group, heading)),
+            ..self
         }
     }
 
@@ -699,11 +710,19 @@ impl Columns {
                     .map(|value| plain(value).chars().count())
                     .max()
                     .unwrap_or(0);
-                match column.short {
-                    Some(short) if column.title.chars().count() > widest => short,
+                match (column.group, column.short) {
+                    (Some((_, heading)), _) => heading,
+                    (None, Some(short)) if column.title.chars().count() > widest => short,
                     _ => column.title,
                 }
             })
+            .collect()
+    }
+
+    fn groups(&self) -> Vec<Option<&'static str>> {
+        self.0
+            .iter()
+            .map(|column| column.group.map(|(group, _)| group))
             .collect()
     }
 
@@ -792,11 +811,10 @@ pub(crate) fn shared_table(
     theme: Theme,
 ) -> String {
     if !markdown {
-        return PlainTable::new(&columns.fitted_titles(body, total), body, total).render(
-            &columns.layout(),
-            None,
-            theme,
-        );
+        let layout = columns.layout();
+        return PlainTable::new(&columns.fitted_titles(body, total), body, total)
+            .grouped(&columns.groups(), &layout)
+            .render(&layout, None, theme);
     }
     let mut output = columns.markdown_header() + "\n";
     for row in body {
@@ -822,6 +840,8 @@ struct InlineBars {
 
 /// A table's cells without control characters, and each column's width.
 struct PlainTable {
+    /// Group heading per column, empty when the table has none.
+    groups: Vec<Option<String>>,
     header: Vec<String>,
     body: Vec<Vec<String>>,
     total: Option<Vec<String>>,
@@ -842,11 +862,84 @@ impl PlainTable {
             }
         }
         Self {
+            groups: Vec::new(),
             header,
             body,
             total,
             widths,
         }
+    }
+
+    /// Adds group headings, widening a group's last column when its name
+    /// would not fit over the group with a rule on either side.
+    fn grouped(mut self, groups: &[Option<&str>], layout: &Layout) -> Self {
+        self.groups = groups.iter().map(|group| group.map(plain)).collect();
+        for (start, end) in self.spans(layout) {
+            let name = self.groups[start].as_deref().unwrap_or_default();
+            let needed = name.chars().count() + 4;
+            let width = self.span_width(start, end, layout);
+            if needed > width {
+                self.widths[end] += needed - width;
+            }
+        }
+        self
+    }
+
+    /// Runs of neighbouring columns under one group, never across a `│`.
+    fn spans(&self, layout: &Layout) -> Vec<(usize, usize)> {
+        let mut spans: Vec<(usize, usize)> = Vec::new();
+        for (column, group) in self.groups.iter().enumerate() {
+            let Some(group) = group else { continue };
+            match spans.last_mut() {
+                Some((start, end))
+                    if *end + 1 == column
+                        && self.groups[*start].as_ref() == Some(group)
+                        && !layout.breaks.contains(&column) =>
+                {
+                    *end = column
+                }
+                _ => spans.push((column, column)),
+            }
+        }
+        spans
+    }
+
+    fn span_width(&self, start: usize, end: usize, layout: &Layout) -> usize {
+        let gaps: usize = (start + 1..=end)
+            .map(|column| gap(layout, column).chars().count())
+            .sum();
+        self.widths[start..=end].iter().sum::<usize>() + gaps
+    }
+
+    /// The line of group names above the header, each centred in a rule.
+    fn group_line(&self, layout: &Layout, theme: Theme) -> Option<String> {
+        let spans = self.spans(layout);
+        if spans.is_empty() {
+            return None;
+        }
+        let mut text = String::from(" ");
+        let mut column = 0;
+        while column < self.widths.len() {
+            if column > 0 {
+                text += &theme.paint(Role::Muted, gap(layout, column));
+            }
+            match spans.iter().find(|(start, _)| *start == column) {
+                Some(&(start, end)) => {
+                    let name = self.groups[start].as_deref().unwrap_or_default();
+                    let fill = self.span_width(start, end, layout) - name.chars().count() - 2;
+                    let rule = |cells: usize| theme.paint(Role::Muted, &"─".repeat(cells));
+                    text += &rule(fill / 2);
+                    text += &format!(" {} ", theme.paint(Role::Heading, name));
+                    text += &rule(fill - fill / 2);
+                    column = end + 1;
+                }
+                None => {
+                    text += &" ".repeat(self.widths[column]);
+                    column += 1;
+                }
+            }
+        }
+        Some(text.trim_end().to_string() + "\n")
     }
 
     /// Characters per line without bars, as [`PlainTable::render`] lays it out.
@@ -917,7 +1010,9 @@ impl PlainTable {
         }
         rule += "\n";
         let rule = theme.paint(Role::Muted, &rule);
-        let mut output = line(&self.header, RowKind::Header, title.as_deref()) + &rule;
+        let mut output = self.group_line(layout, theme).unwrap_or_default()
+            + &line(&self.header, RowKind::Header, title.as_deref())
+            + &rule;
         for (index, row) in self.body.iter().enumerate() {
             let bar = inline
                 .and_then(|bars| bars.bars.get(index))
@@ -2319,6 +2414,33 @@ mod tests {
         };
         let layout = Columns::with_purposes(&code_columns("Folder"), &production).layout();
         assert_eq!((layout.breaks, layout.secondary), (vec![3], vec![3]));
+    }
+
+    /// A group name is printed once, centred over its columns; groups end at
+    /// a `│`, widen to fit their name, and Markdown keeps the full titles.
+    #[test]
+    fn group_headings_span_their_columns_and_widen_to_fit_their_name() {
+        let columns = Columns::of(&[
+            Column::new("Kind", ColumnRole::Label),
+            Column::new("Lines before", ColumnRole::Count).under("Lines", "before"),
+            Column::new("Lines after", ColumnRole::Count).under("Lines", "after"),
+            Column::new("Files change", ColumnRole::Count)
+                .under("Changes in files", "n")
+                .separated(),
+        ]);
+        let body = [vec!["Source".into(), "1".into(), "2".into(), "+1".into()]];
+        let table = shared_table(&columns, &body, None, false, Theme::PLAIN);
+        let lines: Vec<_> = table.lines().collect();
+        assert_eq!(
+            lines[0], "         ─── Lines ─── │ ─ Changes in files ─",
+            "{table}"
+        );
+        assert_eq!(
+            lines[1], " Kind    before  after │                    n",
+            "{table}"
+        );
+        assert!(shared_table(&columns, &body, None, true, Theme::MARKDOWN)
+            .starts_with("| Kind | Lines before | Lines after | Files change |"));
     }
 
     /// A short title replaces a full one only while the full title would be

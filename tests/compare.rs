@@ -542,7 +542,10 @@ fn comparison_totals_fit_their_contents_and_keep_large_signed_values_aligned() {
     );
     let all_counted = unchanged.lines().last().unwrap();
     assert!(all_counted.starts_with(" All counted "), "{unchanged}");
-    assert!(all_counted.ends_with(" │            0"), "{unchanged}");
+    assert!(
+        all_counted.ends_with(" │        0       0      0"),
+        "{unchanged}"
+    );
 
     let change = &mut report.summary.dimensions.all_counted;
     change.before = Counts {
@@ -578,7 +581,7 @@ fn comparison_totals_fit_their_contents_and_keep_large_signed_values_aligned() {
         "{large}"
     );
     assert!(
-        large.contains("9,223,372,036,854,775,808            0  -9,223,372,036,854,775,808"),
+        large.contains("9,223,372,036,854,775,808      0  -9,223,372,036,854,775,808"),
         "{large}"
     );
 }
@@ -1068,7 +1071,13 @@ fn human_comparisons_show_line_changes_and_original_measurement_dates() {
     let before = save(temp.path(), "before.json", &before);
     let after = save(temp.path(), "after.json", &after);
     for text in human_comparisons(&before, &after, 0) {
-        assert!(text.contains("Lines before"), "{text}");
+        // Markdown cannot span columns, so it keeps the full titles that the
+        // table splits into a group heading and the column headings below it.
+        let headed = match text.starts_with("# ") {
+            true => text.contains("| Lines before |"),
+            false => text.contains(" Lines ") && text.contains(" before "),
+        };
+        assert!(headed, "{text}");
         let language = text.lines().find(|line| line.contains("Python")).unwrap();
         let cells: Vec<_> = language
             .split_whitespace()
@@ -1141,7 +1150,7 @@ fn totals_split_all_counted_by_kind_and_grids_end_in_their_source_total() {
     let totals = section("Totals");
     let rows: Vec<_> = totals
         .lines()
-        .filter(|line| !line.starts_with(" ─") && !line.starts_with(" Kind "))
+        .filter(|line| !line.trim_start().starts_with('─') && !line.starts_with(" Kind "))
         .collect();
     let labels: Vec<_> = rows
         .iter()
