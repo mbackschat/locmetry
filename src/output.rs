@@ -737,7 +737,9 @@ pub(crate) fn shared_table(
     theme: Theme,
 ) -> String {
     if !markdown {
-        return PlainTable::new(columns, body, total).render(None, theme);
+        return PlainTable::new(columns, body, total)
+            .render(None, theme)
+            .text;
     }
     let mut output = columns.markdown_header() + "\n";
     for row in body {
@@ -759,6 +761,29 @@ struct InlineBars {
     kind: BarKind,
     cells: usize,
     bars: Vec<String>,
+}
+
+pub(crate) fn standalone_table(
+    columns: &Columns,
+    body: &[Vec<String>],
+    total: Option<&[String]>,
+    theme: Theme,
+) -> String {
+    let table = PlainTable::new(columns, body, total).render(None, theme);
+    table.top_rule(theme) + &table.text
+}
+
+/// Keep geometry with styled text: later tables determine whether this one
+/// needs a top rule, whose width must not include ANSI escapes.
+struct RenderedTable {
+    text: String,
+    width: usize,
+}
+
+impl RenderedTable {
+    fn top_rule(&self, theme: Theme) -> String {
+        theme.paint(Role::Muted, &format!(" {}\n", "─".repeat(self.width - 1)))
+    }
 }
 
 /// Aligned plain-text table: labels left-aligned, figures right. Padding
@@ -889,7 +914,7 @@ impl PlainTable {
         1 + self.span_width(0, self.widths.len() - 1)
     }
 
-    fn render(&self, inline: Option<&InlineBars>, theme: Theme) -> String {
+    fn render(&self, inline: Option<&InlineBars>, theme: Theme) -> RenderedTable {
         // Hue identifies a column: cyan for Code, one hue per purpose. Rows
         // differ by weight, so headings and totals keep their column's hue.
         let line = |row: &[String], kind: RowKind, trailer: Option<&str>| {
@@ -967,7 +992,10 @@ impl PlainTable {
             output += &rule;
             output += &line(total, RowKind::Total, None);
         }
-        output
+        RenderedTable {
+            text: output,
+            width: self.width() + inline.map_or(0, |bars| 2 + bars.cells),
+        }
     }
 }
 
@@ -1409,14 +1437,15 @@ fn bar_table(
     total: Vec<String>,
     bars: &BarRows,
     theme: Theme,
-) -> (String, String) {
+) -> (RenderedTable, String) {
     let BarRows {
         rows,
         total: total_row,
         columns: purposes,
         bars,
     } = *bars;
-    let plain_table = |theme| shared_table(table_columns, body, Some(&total), false, theme);
+    let plain_table =
+        |theme| PlainTable::new(table_columns, body, Some(&total)).render(None, theme);
     let (columns, chart, kind) = match bars {
         Bars::Off => return (plain_table(theme), String::new()),
         Bars::Fit(columns) => (columns, false, BarKind::Purpose),
@@ -1663,7 +1692,8 @@ pub fn render_table_with_options(
     let mut total = vec!["Total".to_string()];
     total.extend(count_cells(&summary.totals.source));
     total.extend(columns.cells(total_code));
-    let mut output = section_title("Source languages", theme);
+    let mut output = String::new();
+    let mut has_detail_table = false;
     // With bars, a table returns what follows its legends: an inline bar key
     // or the chart below it.
     let table =
@@ -1676,13 +1706,13 @@ pub fn render_table_with_options(
             };
             bar_table(table_columns, body, total, &rows, theme)
         };
-    let (text, after) = table(
+    let (language_table, after) = table(
         &Columns::with_purposes(&LANGUAGE_COLUMNS, &columns),
         &body,
         total,
         &codes,
     );
-    output += &text;
+    output += &language_table.text;
     let mut legends = vec![columns.legend(Some("Lines = Code + Comments + Blanks"), None)];
     if columns.ratio() == Ratio::TestPerProduction {
         legends.push(LANGUAGE_RATIO_NOTE.into());
@@ -1700,7 +1730,8 @@ pub fn render_table_with_options(
         let (text, after) = table(&repository_columns(&columns), &body, total, &codes);
         output += "\n";
         output += &section_title("Workspace members", theme);
-        output += &text;
+        has_detail_table = true;
+        output += &text.text;
         let legend = columns.legend(None, Some("Share = Code / workspace Code"));
         output += &format!(" {}\n", theme.paint(Role::Muted, &legend));
         output += &after;
@@ -1742,7 +1773,8 @@ pub fn render_table_with_options(
             );
             output += "\n";
             output += &section_title("Folders", theme);
-            output += &text;
+            has_detail_table = true;
+            output += &text.text;
             output += &format!(
                 " {}\n",
                 theme.paint(Role::Muted, &columns.legend(None, None))
@@ -1783,10 +1815,17 @@ pub fn render_table_with_options(
         if !body.is_empty() {
             output += "\n";
             output += &section_title("Source categories", theme);
+            has_detail_table = true;
             let columns = Columns::of(&count_columns("Category")[..4]);
             output += &shared_table(&columns, &body, None, false, theme);
             output += &format!(" {}\n", theme.paint(Role::Muted, CATEGORY_LEGEND));
         }
+    }
+
+    if has_detail_table {
+        output.insert_str(0, &section_title("Source languages", theme));
+    } else {
+        output.insert_str(0, &language_table.top_rule(theme));
     }
 
     let mut notes = Vec::new();
@@ -2208,8 +2247,8 @@ mod tests {
             };
             let render = |theme| {
                 let options = TableOptions {
-                    categories: false,
-                    folders: false,
+                    categories: true,
+                    folders: true,
                     verbose: false,
                     order: RowOrder::Name,
                     theme,
@@ -2220,15 +2259,17 @@ mod tests {
                 render_table_with_options(&summary, &rows, &findings, options)
             };
             let (styled, plain) = (render(Theme::TERMINAL), render(Theme::PLAIN));
-            assert!(
-                plain.starts_with("▸ Source languages\n\n Language "),
-                "{plain}"
-            );
+            let (plain_start, styled_start) = if members.is_empty() {
+                (" ─", "\x1b[90m ─")
+            } else {
+                (
+                    "▸ Source languages\n\n Language ",
+                    "\x1b[1m▸ Source languages\x1b[0m\n\n",
+                )
+            };
+            assert!(plain.starts_with(plain_start), "{plain}");
             assert!(!plain.contains("Code by purpose"));
-            assert!(
-                styled.starts_with("\x1b[1m▸ Source languages\x1b[0m\n\n"),
-                "{styled}"
-            );
+            assert!(styled.starts_with(styled_start), "{styled}");
             let legend = ALL_PURPOSES.legend(Some("Lines = Code + Comments + Blanks"), None);
             assert!(styled.contains(&format!("\x1b[90m{legend}\x1b[0m")));
             if !members.is_empty() {
@@ -2467,7 +2508,8 @@ mod tests {
                 columns: &ALL_PURPOSES,
                 bars,
             };
-            bar_table(&columns, &body, total.clone(), &rows, Theme::PLAIN)
+            let (table, after) = bar_table(&columns, &body, total.clone(), &rows, Theme::PLAIN);
+            (table.text, after)
         };
         let plain = shared_table(&columns, &body, Some(&total), false, Theme::PLAIN);
         assert_eq!(render(Bars::Fit(30)), (plain, String::new()));

@@ -46,6 +46,37 @@ fn change(value: &Value, before: u64, after: u64, delta: i64) {
 }
 
 #[test]
+fn a_single_comparison_grid_omits_its_title_when_detail_grids_are_empty() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("project");
+    write(&root, "src/main.py", "print(1)\n");
+    let saved = save(temp.path(), "input.json", &measure(&root));
+    let full = json(&compare(&saved, &saved, &["--format", "json"]), 0);
+    let report: locmetry::compare::Comparison = serde_json::from_value(full).unwrap();
+    for theme in [
+        locmetry::style::Theme::PLAIN,
+        locmetry::style::Theme::TERMINAL,
+    ] {
+        let text = locmetry::compare::render_table_with_theme(&report, theme);
+        assert!(!text.contains("▸ Totals"), "{text}");
+        assert!(!text.contains("▸ Purpose"), "{text}");
+        assert!(text.contains("All counted"), "{text}");
+    }
+    let plain = locmetry::compare::render_table_with_theme(&report, locmetry::style::Theme::PLAIN);
+    let lines: Vec<_> = plain.lines().collect();
+    let group = lines
+        .iter()
+        .position(|line| line.contains(" Lines "))
+        .unwrap();
+    assert_eq!(
+        lines[group - 1],
+        lines[group + 2].replace('┼', "─"),
+        "{plain}"
+    );
+    assert!(locmetry::compare::render_markdown(&report).contains("## Totals"));
+}
+
+#[test]
 fn compare_reports_net_change_without_reading_the_source_checkout() {
     let temp = tempfile::tempdir().unwrap();
     let root = temp.path().join("project");
@@ -553,13 +584,11 @@ fn comparison_totals_fit_their_contents_and_keep_large_signed_values_aligned() {
     let mut report: locmetry::compare::Comparison = serde_json::from_value(full).unwrap();
     let totals = |report: &locmetry::compare::Comparison| {
         render_table_with_theme(report, Theme::PLAIN)
-            .split("▸ Totals\n\n")
-            .nth(1)
-            .unwrap()
-            .split("\n\n")
-            .next()
-            .unwrap()
-            .to_string()
+            .lines()
+            .skip_while(|line| !line.contains(" Lines "))
+            .take_while(|line| !line.is_empty())
+            .collect::<Vec<_>>()
+            .join("\n")
     };
     let unchanged = totals(&report);
     let width = |line: &str| line.chars().count();

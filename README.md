@@ -28,8 +28,7 @@ locmetry
 
 <!-- readme-language -->
 ```text
-▸ Source languages
-
+ ──────────────────────────────────────────────────────────────────────────────────────────
  Language    Files    Lines     Code │ Comments  Blanks │  Prod.    Test  Other │ Test/prod
  ────────────────────────────────────┼──────────────────┼───────────────────────┼──────────
  Kotlin        538   93,760   74,060 │    7,530  12,170 │ 46,040  28,020      0 │      0.61
@@ -52,7 +51,7 @@ To see where the code resides, add adaptive folder detail:
 locmetry --folder-rows 30
 ```
 
-The language table stays the same, followed by:
+Reports with one table use a thin top rule instead of a section title. When multiple tables are rendered, each gets a title: the language table above replaces its top rule with `▸ Source languages` and is followed by the folder table below. Empty optional tables do not trigger titles.
 
 <!-- readme-folders -->
 ```text

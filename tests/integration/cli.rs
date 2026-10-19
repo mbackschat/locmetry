@@ -418,8 +418,9 @@ fn human_reports_end_with_the_measured_root_before_the_time() {
     let canonical = root.canonicalize().unwrap();
     let stdout = |args: &[&str]| String::from_utf8(run(&root, args).stdout).unwrap();
     let table = stdout(&["--format", "table"]);
+    assert!(table.starts_with(" ─"), "{table}");
     assert!(
-        table.starts_with("▸ Source languages\n\n Language "),
+        table.lines().nth(1).unwrap().starts_with(" Language "),
         "{table}"
     );
     let (context, time) = table.rsplit_once("\nMeasured at: ").unwrap();
@@ -432,8 +433,9 @@ fn human_reports_end_with_the_measured_root_before_the_time() {
         "{table}"
     );
     let subfolder = stdout(&["--format", "table", "--subfolder", "src"]);
+    assert!(subfolder.starts_with(" ─"), "{subfolder}");
     assert!(
-        subfolder.starts_with("▸ Source languages\n\n Language "),
+        subfolder.lines().nth(1).unwrap().starts_with(" Language "),
         "{subfolder}"
     );
     assert!(

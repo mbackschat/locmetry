@@ -87,7 +87,7 @@ impl Row {
     }
 }
 
-/// A titled comparison grid; [`Grid::write`] writes nothing without body
+/// A comparison grid; [`Grid::write`] writes nothing without body
 /// rows, so a grid never shows only a total.
 struct Grid {
     title: &'static str,
@@ -100,7 +100,7 @@ struct Grid {
 }
 
 impl Grid {
-    fn write(self, output: &mut String, markdown: bool, theme: Theme) {
+    fn write(self, output: &mut String, markdown: bool, titled: bool, theme: Theme) {
         if self.rows.is_empty() {
             return;
         }
@@ -125,16 +125,16 @@ impl Grid {
         let total = self.total.as_ref().map(cells);
         match markdown {
             true => writeln!(output, "\n## {}\n", self.title),
-            false => write!(output, "\n{}", output::section_title(self.title, theme)),
+            false if titled => write!(output, "\n{}", output::section_title(self.title, theme)),
+            false => writeln!(output),
         }
         .unwrap();
-        output.push_str(&output::shared_table(
-            &Columns::of(&columns),
-            &body,
-            total.as_deref(),
-            markdown,
-            theme,
-        ));
+        let columns = Columns::of(&columns);
+        output.push_str(&if !markdown && !titled {
+            output::standalone_table(&columns, &body, total.as_deref(), theme)
+        } else {
+            output::shared_table(&columns, &body, total.as_deref(), markdown, theme)
+        });
     }
 }
 
@@ -203,42 +203,41 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
     let dimensions = &c.summary.dimensions;
     let source_total = || Some(Row::new("Source total", &dimensions.source));
     let changed = |change: &CountChange| change.delta.code != 0 || change.delta.lines != 0;
-    Grid {
-        title: "Totals",
-        label: "Kind",
-        rows: kind_rows(dimensions),
-        total: Some(Row::new("All counted", &dimensions.all_counted)),
-        secondary: true,
-    }
-    .write(&mut out, markdown, theme);
-    Grid {
-        title: "Purpose",
-        label: "Purpose",
-        rows: dimensions
-            .source_purpose
-            .iter()
-            .filter(|(_, v)| changed(v))
-            .map(|(k, v)| Row::new(output::purpose_title(*k), v))
-            .collect(),
-        total: source_total(),
-        secondary: false,
-    }
-    .write(&mut out, markdown, theme);
-    Grid {
-        title: "Languages",
-        label: "Language",
-        rows: dimensions
-            .source_languages
-            .iter()
-            .filter(|(_, v)| changed(v))
-            .map(|(k, v)| Row::new(k.as_str(), v))
-            .collect(),
-        total: source_total(),
-        secondary: false,
-    }
-    .write(&mut out, markdown, theme);
-    if let Some(members) = &c.members {
+    let mut grids = vec![
         Grid {
+            title: "Totals",
+            label: "Kind",
+            rows: kind_rows(dimensions),
+            total: Some(Row::new("All counted", &dimensions.all_counted)),
+            secondary: true,
+        },
+        Grid {
+            title: "Purpose",
+            label: "Purpose",
+            rows: dimensions
+                .source_purpose
+                .iter()
+                .filter(|(_, v)| changed(v))
+                .map(|(k, v)| Row::new(output::purpose_title(*k), v))
+                .collect(),
+            total: source_total(),
+            secondary: false,
+        },
+        Grid {
+            title: "Languages",
+            label: "Language",
+            rows: dimensions
+                .source_languages
+                .iter()
+                .filter(|(_, v)| changed(v))
+                .map(|(k, v)| Row::new(k.as_str(), v))
+                .collect(),
+            total: source_total(),
+            secondary: false,
+        },
+    ];
+    if let Some(members) = &c.members {
+        grids.push(Grid {
             title: "Workspace members",
             label: "Member",
             rows: members
@@ -253,8 +252,46 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
                 .collect(),
             total: source_total(),
             secondary: false,
+        });
+    }
+    let folder_grid = c.folders.as_ref().map(|folders| {
+        // The table lists top-level folders only, so the recursive root is
+        // their source total; Markdown keeps the root in place within the hierarchy.
+        let total = folders
+            .get(".")
+            .filter(|_| !markdown)
+            .map(|root| Row::new("Source total", &root.recursive.source));
+        let mut folders: Vec<_> = folders.iter().collect();
+        folders.sort_by(|(a, _), (b, _)| a.split('/').cmp(b.split('/')));
+        let rows: Vec<_> = folders
+            .into_iter()
+            .filter(|(path, v)| {
+                (markdown || (c.members.is_none() && path.as_str() != "." && !path.contains('/')))
+                    && (v.presence != Presence::Both || changed(&v.recursive.source))
+            })
+            .map(|(k, v)| {
+                Row::new(
+                    format!("{k} ({})", presence_name(v.presence)),
+                    &v.recursive.source,
+                )
+            })
+            .collect();
+        Grid {
+            title: "Folders (recursive; do not sum parents and children)",
+            label: "Folder",
+            rows,
+            total,
+            secondary: false,
         }
-        .write(&mut out, markdown, theme);
+    });
+    let titled = grids
+        .iter()
+        .chain(folder_grid.iter())
+        .filter(|grid| !grid.rows.is_empty())
+        .count()
+        > 1;
+    for grid in grids {
+        grid.write(&mut out, markdown, titled, theme);
     }
     if let Some(composition) = &c.summary.composition {
         writeln!(
@@ -294,36 +331,8 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
         )
         .unwrap();
     }
-    if let Some(folders) = &c.folders {
-        // The table lists top-level folders only, so the recursive root is
-        // their source total; Markdown keeps the root in place within the hierarchy.
-        let total = folders
-            .get(".")
-            .filter(|_| !markdown)
-            .map(|root| Row::new("Source total", &root.recursive.source));
-        let mut folders: Vec<_> = folders.iter().collect();
-        folders.sort_by(|(a, _), (b, _)| a.split('/').cmp(b.split('/')));
-        let rows: Vec<_> = folders
-            .into_iter()
-            .filter(|(path, v)| {
-                (markdown || (c.members.is_none() && path.as_str() != "." && !path.contains('/')))
-                    && (v.presence != Presence::Both || changed(&v.recursive.source))
-            })
-            .map(|(k, v)| {
-                Row::new(
-                    format!("{k} ({})", presence_name(v.presence)),
-                    &v.recursive.source,
-                )
-            })
-            .collect();
-        Grid {
-            title: "Folders (recursive; do not sum parents and children)",
-            label: "Folder",
-            rows,
-            total,
-            secondary: false,
-        }
-        .write(&mut out, markdown, theme);
+    if let Some(grid) = folder_grid {
+        grid.write(&mut out, markdown, titled, theme);
     }
     let summary = &c.presence_summary;
     let presence: Vec<_> = [

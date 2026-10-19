@@ -49,27 +49,80 @@ fn baseline(dir: &Path) {
 }
 
 #[test]
+fn a_single_measurement_table_omits_its_title_even_with_empty_optional_tables() {
+    let dir = fixture();
+    for extra in [
+        vec![],
+        vec!["--verbose"],
+        vec!["--purpose", "production", "--folders", "--categories"],
+        vec![
+            "--purpose",
+            "production",
+            "--folder-rows",
+            "5",
+            "--categories",
+        ],
+    ] {
+        let mut args = vec!["service", "--format", "table", "--no-bars"];
+        args.extend(extra);
+        let out = run(dir.path(), &args);
+        success(&out);
+        let text = String::from_utf8(out.stdout).unwrap();
+        let lines: Vec<_> = text.lines().collect();
+        assert!(lines[1].starts_with(" Language "), "{text}");
+        assert_eq!(lines[0], lines[2].replace('┼', "─"), "{text}");
+        assert!(!text.contains('▸'), "{text}");
+    }
+}
+
+#[test]
+fn a_single_table_top_rule_spans_inline_bars_but_not_a_separate_chart() {
+    let dir = fixture();
+    for width in [40, 160] {
+        let out = common::locmetry()
+            .current_dir(dir.path())
+            .args(["service", "--format", "table", "--bars"])
+            .env("COLUMNS", width.to_string())
+            .output()
+            .unwrap();
+        success(&out);
+        let text = String::from_utf8(out.stdout).unwrap();
+        let lines: Vec<_> = text.lines().collect();
+        assert_eq!(lines[0], lines[2].replace('┼', "─"), "{text}");
+        assert_eq!(lines[1].contains("Code share"), width == 160, "{text}");
+        assert!(!text.contains('▸'), "{text}");
+    }
+}
+
+#[test]
 fn measurement_tables_have_distinct_titles_and_spacing_without_color() {
     let dir = fixture();
-    for args in [
-        vec!["service", "--folders", "--categories"],
-        vec!["workspace", "--file", "workspace.toml", "--categories"],
+    for (mut args, titles) in [
+        (vec!["service", "--folders"], vec!["Folders"]),
+        (vec!["service", "--categories"], vec!["Source categories"]),
+        (
+            vec!["service", "--folders", "--categories"],
+            vec!["Folders", "Source categories"],
+        ),
+        (
+            vec!["workspace", "--file", "workspace.toml"],
+            vec!["Workspace members"],
+        ),
+        (
+            vec!["workspace", "--file", "workspace.toml", "--categories"],
+            vec!["Workspace members", "Source categories"],
+        ),
     ] {
-        let mut command = args.clone();
-        command.extend(["--format", "table", "--no-bars"]);
-        let out = run(dir.path(), &command);
+        args.extend(["--format", "table", "--no-bars"]);
+        let out = run(dir.path(), &args);
         success(&out);
         let table = String::from_utf8(out.stdout).unwrap();
         assert!(
             table.starts_with("▸ Source languages\n\n Language "),
             "{table}"
         );
-        let detail = if args[0] == "workspace" {
-            "Workspace members"
-        } else {
-            "Folders"
-        };
-        for title in [detail, "Source categories"] {
+        assert_eq!(table.matches('▸').count(), 1 + titles.len(), "{table}");
+        for title in titles {
             assert!(table.contains(&format!("\n\n▸ {title}\n\n")), "{table}");
         }
         assert!(!table.contains('\x1b'));
@@ -180,7 +233,7 @@ fn explicit_formats_control_files_and_stdout_for_all_exporting_commands() {
                         assert!(saved.starts_with(b"# "));
                     } else {
                         let label = if args[0] == "compare" {
-                            "Totals"
+                            "All counted"
                         } else {
                             "Language"
                         };
