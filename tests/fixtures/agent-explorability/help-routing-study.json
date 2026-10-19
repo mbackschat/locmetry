@@ -1,0 +1,91 @@
+{
+  "revision": "help-routing-v1",
+  "model": "gpt-6.1-sol",
+  "effort": "xhigh",
+  "conditions": {
+    "A": "Current help",
+    "B": "Previous help recipe, unchanged",
+    "C": "Same recipe plus explicit conditional execution-first routing paragraph"
+  },
+  "task_ids": [
+    9,
+    8,
+    1
+  ],
+  "repetitions": 4,
+  "concurrent_triads": 3,
+  "triads": [
+    {
+      "task": 9,
+      "repetition": 1,
+      "order": "ABC"
+    },
+    {
+      "task": 8,
+      "repetition": 1,
+      "order": "ACB"
+    },
+    {
+      "task": 1,
+      "repetition": 1,
+      "order": "BAC"
+    },
+    {
+      "task": 9,
+      "repetition": 2,
+      "order": "BCA"
+    },
+    {
+      "task": 8,
+      "repetition": 2,
+      "order": "BAC"
+    },
+    {
+      "task": 1,
+      "repetition": 2,
+      "order": "ACB"
+    },
+    {
+      "task": 9,
+      "repetition": 3,
+      "order": "CAB"
+    },
+    {
+      "task": 8,
+      "repetition": 3,
+      "order": "CBA"
+    },
+    {
+      "task": 1,
+      "repetition": 3,
+      "order": "BCA"
+    },
+    {
+      "task": 9,
+      "repetition": 4,
+      "order": "CBA"
+    },
+    {
+      "task": 8,
+      "repetition": 4,
+      "order": "ABC"
+    },
+    {
+      "task": 1,
+      "repetition": 4,
+      "order": "CAB"
+    }
+  ],
+  "previous_trials_included": false,
+  "decision_rule": {
+    "correctness": "Every C run must pass both artifact and semantic grading; no lower pass count on any task than A or B. All valid failed runs and recovery costs remain in resource totals.",
+    "covered_task": "For Task 9 the SAME branch must succeed against both A and B: either >=1 fewer median agent calls with median uncached input <=105% of comparator, with >=3/4 paired call wins against each; OR median uncached input <=90% with calls no higher, with >=3/4 paired uncached-input wins against each.",
+    "mechanism": "Task 9: >=3/4 C runs skip BOTH configure guide and config schema, versus <=1/4 B runs. Retrieval is a process measure, never an oracle for correctness.",
+    "guards": "For tasks 8 and 1, C median agent calls no higher and median uncached input <=105% of A. Task 8 reference reading is appropriate; correct results, not retrieval compliance, determine success.",
+    "secondary": "Report cached input, output including reasoning, shell and CLI calls, guide/schema retrievals, and final-delivery duration. On any task a C median >120% of either A or B for any secondary metric prevents unqualified adoption; retain the primary and mechanism conclusions separately.",
+    "interpretation": "Diagnostic practical gates, not statistical significance. C-B isolates the complete routing paragraph, not individual sentences or causal mediation; C-A measures the complete proposed help against current product. No automatic product installation."
+  },
+  "integrity": "Freeze wording, task definitions, schedule, runner, grader and binary hashes before launching. Sequential arms within triads; at most three fresh explorers concurrently. Preserve prior samples separately. Model/effort/context and final counters audited.",
+  "review": "Independent final-answer review with condition/resource labels hidden. Answers can reveal their route, so blinding is imperfect.",
+  "preflight": "Independent MEDIUM preflight added baseline measurement before edits, explicit intentional Other routing, same efficiency branch across comparators, exact schedule, and a numeric secondary-cost threshold."
+}

@@ -14,8 +14,9 @@ BENCH = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(BENCH)
 
 
-def verify(control, treatment):
+def verify(control, treatment, addition=None):
     recipe = (BENCH.TASK.parent / "help-recipe.txt").read_text()
+    addition = recipe if addition is None else addition
     with tempfile.TemporaryDirectory(prefix="locmetry-recipe-parity-") as tmp:
         root = Path(tmp)
         BENCH.seed(root)
@@ -29,8 +30,8 @@ def verify(control, treatment):
         for args in [["--help"], ["-h"], ["help"], ["--version"], *[[n, "--help"] for n in ["workspace", "compare", "explain"]]]:
             a, b = run(control, args), run(treatment, args)
             if args in [["--help"], ["help"]]:
-                assert b.count(recipe) == 1, "Treatment recipe missing or duplicated"
-                assert b.replace(recipe, "") == a, args
+                assert b.count(addition) == 1, "Treatment recipe missing or duplicated"
+                assert b.replace(addition, "") == a, args
             else:
                 assert b == a, args
         for flag, topics in [("--guide", ["configure", "selection", "reports", "compare"]),
@@ -73,5 +74,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("control", type=Path)
     parser.add_argument("treatment", type=Path)
+    parser.add_argument("--routing-only", action="store_true", help="Compare example-only with routed-example help")
     args = parser.parse_args()
-    verify(args.control.resolve(), args.treatment.resolve())
+    addition = (BENCH.TASK.parent / "help-routing.txt").read_text() if args.routing_only else None
+    verify(args.control.resolve(), args.treatment.resolve(), addition)

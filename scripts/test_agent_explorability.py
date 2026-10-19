@@ -51,6 +51,50 @@ class ExperimentTests(unittest.TestCase):
             manifest = json.loads((pair / "manifest.json").read_text())
             self.assertEqual(manifest["treatment"], "help-recipe")
 
+    def test_routing_trial_isolates_wording_from_the_recipe_and_maps_three_binaries(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            binaries = []
+            for arm in ["A", "B", "C"]:
+                binary = root / arm
+                binary.write_text(arm)
+                binaries.append(binary)
+            pair = root / "triad"
+            BENCH.prepare(pair, binaries=binaries, treatment="help-routing")
+            manifest = json.loads((pair / "manifest.json").read_text())
+            self.assertEqual(manifest["order"], {"run-01": "B", "run-02": "A", "run-03": "C"})
+            routing = (BENCH.TASK.parent / "help-routing.txt").read_text().replace('\\', '\\\\').replace('"', '\\"')
+            b = (pair / "B/src/main.rs").read_text()
+            c = (pair / "C/src/main.rs").read_text()
+            self.assertEqual(c.count(routing), 1)
+            self.assertEqual(c.replace(routing, ""), b)
+            for arm in ["A", "B", "C"]:
+                self.assertEqual((pair / arm / "target/debug/locmetry").read_text(), arm)
+                for path in (pair / "A/src").rglob("*.rs"):
+                    if path.name != "main.rs":
+                        self.assertEqual(path.read_bytes(), (pair / arm / path.relative_to(pair / "A")).read_bytes())
+            self.assertTrue((pair / "run-03/projects/web").is_dir())
+
+    def test_routing_schedule_uses_every_permutation_and_executes_frozen_arms(self):
+        from collections import Counter
+        spec = importlib.util.spec_from_file_location("routing", Path(__file__).with_name("agent-routing-study.py"))
+        routing = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(routing)
+        protocol = json.loads(routing.PROTOCOL.read_text())
+        self.assertEqual(Counter(t["order"] for t in protocol["triads"]),
+                         {"ABC": 2, "ACB": 2, "BAC": 2, "BCA": 2, "CAB": 2, "CBA": 2})
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            binary = root / "binary"
+            binary.write_text("test binary")
+            with patch.object(routing.BENCH, "prepare"), patch.object(routing.BENCH, "run_agent") as run:
+                routing.campaign(root / "campaign", [binary] * 3)
+            self.assertEqual(run.call_count, 36)
+            for item in protocol["triads"]:
+                target = root / "campaign" / f"task{item['task']}-rep{item['repetition']}"
+                actual = [c.args[1] for c in run.call_args_list if c.args[0] == target]
+                self.assertEqual(actual, [{"A": "run-02", "B": "run-01", "C": "run-03"}[a] for a in item["order"]])
+
     def test_campaign_honors_selected_tasks_repetitions_and_treatment(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

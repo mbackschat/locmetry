@@ -2,10 +2,10 @@
 
 <!-- doc-status
 {
-  "status": "deferred",
+  "status": "active",
   "date": "2026-10-20",
-  "summary": "Retain tested interface; resume experiments for a new hypothesis, fixture or model.",
-  "evidence": "[Guide study](../research/agent-explorability-six-task-study.md), [Help recipe study](../research/agent-explorability-help-recipe-study.md)"
+  "summary": "Test explicit execution-first help routing against current help and the example-only control.",
+  "evidence": "[Help-routing study](../research/agent-explorability-help-routing-study.md)"
 }
 -->
 
@@ -33,7 +33,9 @@ The recommended target, still subject to review, is successful ordinary use with
 
 The [first Task 1 pilot](../research/agent-explorability-task1-pilot.md) established isolation and telemetry. The subsequent [study](../research/agent-explorability-six-task-study.md) completed 36 new task runs, excluded the earlier pair, and added a separate six-run capability-discovery track. The six-task sample passed 18/18 with guides and 17/18 without; resource totals were close, with 4.9% more uncached input after guide removal. Retain guides as optional reference and leave navigation unchanged; the study records the interpretation failure and task-specific tradeoffs. This is a tested recommendation, not evidence that guides are indispensable.
 
-The owner subsequently authorized the [configuration-recipe experiment](../research/agent-explorability-help-recipe-study.md), revisiting their original usage-example proposal. Its primary 24 fresh sessions all passed, but the example failed the frozen efficiency gate on both configuration fixtures. The study separately records an eight-session simple-rule probe. Keep the tested production interface; this benchmark remains a reusable specification, with further execution deferred until a new hypothesis, fixture, or model justifies a separately frozen campaign.
+The owner subsequently authorized the [configuration-recipe experiment](../research/agent-explorability-help-recipe-study.md), revisiting their original usage-example proposal. Its primary 24 fresh sessions all passed, but the example failed the frozen efficiency gate on both configuration fixtures. The study separately records an eight-session simple-rule probe. Keep the tested production interface; this benchmark remains a reusable specification, with the next separately frozen campaign described below.
+
+The owner subsequently authorized the [execution-first routing study](../research/agent-explorability-help-routing-study.md). It adds fresh current-help and example-only controls, tests explicit conditional routing on a covered rule, and retains broader-configuration and unrelated-task guards. This is the active experiment; its frozen protocol owns execution details.
 
 For a later session:
 

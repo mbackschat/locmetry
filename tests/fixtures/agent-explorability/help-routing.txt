@@ -1,0 +1,7 @@
+  For a production-rule change covered by the example below, inspect existing
+  configuration and measure current decisions, then adapt the paths and category
+  and run the verification command. Reading a guide or schema first is optional
+  for this route. Use --guide configure or --schema config for exclusions,
+  overrides, intentional Other, or semantics not shown here. Verify the reported
+  per-file decisions and unresolved review items before concluding.
+

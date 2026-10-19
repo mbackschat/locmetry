@@ -65,13 +65,15 @@ def without_guides(source):
     (source.parent / "treatment.patch").write_text("".join(patch))
 
 
-def with_help_recipe(source):
+def with_help_recipe(source, routing=False):
     path = source / "src/main.rs"
     original = path.read_text()
     marker = "For workflows and saved-report recipes, use locmetry --guide TOPIC"
     if original.count(marker) != 1:
         raise ValueError("Help recipe insertion point must match exactly once")
     recipe = (TASK.parent / "help-recipe.txt").read_text()
+    if routing:
+        recipe = (TASK.parent / "help-routing.txt").read_text() + recipe
     escaped = recipe.replace('\\', '\\\\').replace('"', '\\"')
     changed = original.replace(marker, escaped + marker)
     path.write_text(changed)
@@ -80,11 +82,14 @@ def with_help_recipe(source):
 
 
 def prepare(destination, task_path=TASK, binaries=None, treatment="without-guides"):
+    conditions = ["A", "B", "C"] if treatment == "help-routing" else ["A", "B"]
+    if binaries and len(binaries) != len(conditions):
+        raise ValueError("One binary is required per treatment condition")
     destination.mkdir(parents=True, exist_ok=False)
     files = [REPO / "Cargo.toml", REPO / "Cargo.lock"]
     files += list((REPO / "src").rglob("*.rs"))
     files += list((REPO / "docs/guides").glob("*.md"))
-    for condition in ["A", "B"]:
+    for condition in conditions:
         for path in files:
             target = destination / condition / path.relative_to(REPO)
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -93,10 +98,15 @@ def prepare(destination, task_path=TASK, binaries=None, treatment="without-guide
         without_guides(destination / "B")
     elif treatment == "help-recipe":
         with_help_recipe(destination / "B")
+    elif treatment == "help-routing":
+        with_help_recipe(destination / "B")
+        (destination / "treatment.patch").rename(destination / "B.patch")
+        with_help_recipe(destination / "C", routing=True)
+        (destination / "treatment.patch").rename(destination / "C.patch")
     else:
         raise ValueError(f"Unknown treatment: {treatment}")
     if binaries:
-        for condition, binary in zip(["A", "B"], binaries):
+        for condition, binary in zip(conditions, binaries):
             target = destination / condition / "target/debug/locmetry"
             target.parent.mkdir(parents=True)
             shutil.copy2(binary, target)
@@ -113,6 +123,8 @@ def prepare(destination, task_path=TASK, binaries=None, treatment="without-guide
         "order": {"run-01": "B", "run-02": "A"},
         "environment": {"COLUMNS": "100", "NO_COLOR": "1", "LC_ALL": "C", "stdout_tty": False},
     }
+    if treatment == "help-routing":
+        manifest["order"]["run-03"] = "C"
     for run, condition in manifest["order"].items():
         root = destination / run
         seed(root, task)
@@ -356,14 +368,14 @@ def main():
     prep = sub.add_parser("prepare")
     prep.add_argument("destination", type=Path)
     prep.add_argument("--task", type=Path, default=TASK)
-    prep.add_argument("--treatment", choices=["without-guides", "help-recipe"], default="without-guides")
-    prep.add_argument("--binaries", type=Path, nargs=2, metavar=("A", "B"))
+    prep.add_argument("--treatment", choices=["without-guides", "help-recipe", "help-routing"], default="without-guides")
+    prep.add_argument("--binaries", type=Path, nargs="+", metavar="BINARY")
     check = sub.add_parser("verify")
     check.add_argument("current", type=Path)
     check.add_argument("without_guides", type=Path)
     run = sub.add_parser("run")
     run.add_argument("destination", type=Path)
-    run.add_argument("run", choices=["run-01", "run-02"])
+    run.add_argument("run", choices=["run-01", "run-02", "run-03"])
     run.add_argument("--model", required=True)
     run.add_argument("--effort", required=True)
     batch = sub.add_parser("campaign")

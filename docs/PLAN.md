@@ -16,7 +16,7 @@
 
 ## Agent Explorability — Evidence and Follow-up
 
-- [ ] Resume the [agent-explorability benchmark](plans/agent-explorability-benchmark.md) only for a newly defined interface hypothesis, fixture, or model. The [guide study](research/agent-explorability-six-task-study.md) supports retaining optional guides; the [help-recipe study](research/agent-explorability-help-recipe-study.md) does not support adopting its additive configuration example. Production help and guide navigation remain unchanged.
+- [ ] Complete the authorized [execution-first help-routing study](research/agent-explorability-help-routing-study.md), comparing current help, the previous recipe and explicit conditional routing. Preserve correctness, independent grading and all resource costs; the [benchmark](plans/agent-explorability-benchmark.md) owns continuation rules.
 
 ## Ideas — Not Scheduled
 
