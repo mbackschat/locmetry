@@ -46,10 +46,12 @@ Globs match root-relative file paths. `docs/**` covers descendants; `docs` does 
 
 ## Recognize a Language, Then Review Purpose
 
-A language mapping makes an otherwise unrecognized selected file countable; it does not assign purpose. For example, after inspecting an extensionless `bin/launch` and establishing that it contains JavaScript, merge this entry into the existing configuration:
+A language mapping makes an otherwise unrecognized selected file countable; it does not assign purpose. For example, after inspecting an extensionless `bin/launch` and establishing that it contains JavaScript, use this minimal configuration. In an existing configuration, merge only the mapping entry and preserve its single top-level `version`:
 
 <!-- recognition-mapping -->
 ```toml
+version = 1
+
 [[languages.mappings]]
 id = "node-launcher"
 match = ["bin/launch"]
@@ -71,6 +73,8 @@ Classification selects a whole entry, not a separate winner for purpose and cate
 
 <!-- category-rule -->
 ```toml
+version = 1
+
 [[rules]]
 id = "test-helpers"
 match = ["__test__/helpers/**"]
@@ -78,10 +82,12 @@ purpose = "test"
 category = "test-support"
 ```
 
-When repository evidence confirms these files are test helpers and the finer category is useful, replace that entry with this narrow override. Keep its ID unique; if `[categories]` is present, declare `test-support` there.
+When repository evidence confirms these files are test helpers and the finer category is useful, replace that entry with this narrow override. These are minimal complete configurations; when merging into existing policy, preserve the top-level `version` and unrelated entries. Keep the entry ID unique; if `[categories]` is present, declare `test-support` there.
 
 <!-- category-override -->
 ```toml
+version = 1
+
 [[overrides]]
 id = "test-helpers"
 match = ["__test__/helpers/**"]

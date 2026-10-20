@@ -194,18 +194,11 @@ fn configuration_example_preserves_decisions_and_open_questions() {
 }
 
 #[test]
-fn configuration_mapping_and_category_examples_keep_recognition_separate_from_purpose() {
+fn configuration_mapping_example_keeps_recognition_separate_from_purpose() {
     let root = tempfile::tempdir().unwrap();
     write(root.path(), "bin/launch", "console.log('start');\n");
-    write(
-        root.path(),
-        "__test__/helpers/setup.js",
-        "export const setup = 1;\n",
-    );
     let guide = source("configure");
     let mapping = block(&guide, "recognition-mapping", "toml");
-    let ordinary = block(&guide, "category-rule", "toml");
-    let override_entry = block(&guide, "category-override", "toml");
     let baseline = document(
         root.path(),
         &["--no-user-config", "--files", "--output", "-"],
@@ -216,11 +209,7 @@ fn configuration_mapping_and_category_examples_keep_recognition_separate_from_pu
         json!(["bin/launch"])
     );
 
-    write(
-        root.path(),
-        ".locmetryrc",
-        &format!("version = 1\n{mapping}\n{ordinary}"),
-    );
+    write(root.path(), ".locmetryrc", mapping);
     let mapped = document(
         root.path(),
         &["--no-user-config", "--files", "--output", "-"],
@@ -237,6 +226,25 @@ fn configuration_mapping_and_category_examples_keep_recognition_separate_from_pu
     assert_eq!(launcher["purpose"], "other");
     assert_eq!(launcher["category"], "unclaimed");
     assert_eq!(launcher["rule"], "fallback");
+}
+
+#[test]
+fn configuration_category_example_requires_an_override_without_changing_purpose() {
+    let root = tempfile::tempdir().unwrap();
+    write(
+        root.path(),
+        "__test__/helpers/setup.js",
+        "export const setup = 1;\n",
+    );
+    let guide = source("configure");
+    let ordinary = block(&guide, "category-rule", "toml");
+    let override_entry = block(&guide, "category-override", "toml");
+    write(root.path(), ".locmetryrc", ordinary);
+    let classified = document(
+        root.path(),
+        &["--no-user-config", "--files", "--output", "-"],
+        0,
+    );
     let helper = document(
         root.path(),
         &[
@@ -252,18 +260,14 @@ fn configuration_mapping_and_category_examples_keep_recognition_separate_from_pu
     assert_eq!(helper["result"]["file"]["category"], "test");
     assert_eq!(helper["result"]["decision"]["stage"], "convention");
 
-    write(
-        root.path(),
-        ".locmetryrc",
-        &format!("version = 1\n{mapping}\n{override_entry}"),
-    );
+    write(root.path(), ".locmetryrc", override_entry);
     let refined = document(
         root.path(),
         &["--no-user-config", "--files", "--output", "-"],
         0,
     );
     assert_eq!(
-        mapped["summary"]["source_purpose"],
+        classified["summary"]["source_purpose"],
         refined["summary"]["source_purpose"]
     );
     let helper = document(
