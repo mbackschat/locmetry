@@ -18,10 +18,11 @@
 
 - [Conditional measurement/comparison capabilities](plans/measurement-quality-and-net-change.md#conditional-follow-ups-and-preserved-rationales): consumer-driven candidates and their triggers, including [per-file comparison](plans/measurement-quality-and-net-change.md#per-file-comparison), generated/minified evidence and duplicate evidence. Ancestor discovery remains outside accepted scope.
 - JSON finding grammar, such as “1 unrecognized files”, remains an optional separate cleanup. The comparison-readability changes intentionally preserved JSON message text.
+- [Ineffective-option compatibility policy](proposals/cli-option-clarity.md#deferred-compatibility-decision): blanket rejection is excluded from the CLI clarity proposal. Reopen only with a separate compatibility assessment of reusable option sets, terminal-to-pipe transitions and existing script expectations.
 
 ## Proposals — Under Discussion
 
-- [CLI option clarity and applicability](proposals/cli-option-clarity.md): draft for external review covering selection versus presentation names, complete CLI surface consistency, output-view applicability and agent discovery cost. Implementation is not yet approved.
+- [CLI option clarity and applicability](proposals/cli-option-clarity.md): revised draft covering additive canonical names, bounded help corrections and file detail across output views, while preserving existing warning/success behavior. Implementation is not yet approved.
 
 The [proposal index](proposals/README.md) distinguishes active designs from historical decisions.
 
