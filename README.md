@@ -23,7 +23,9 @@ Or download a binary from the [latest release](https://github.com/mbackschat/loc
 
 Run `locmetry` in a project. These table excerpts come from the checked-in [synthetic Acme Orders workspace](examples/cli-workspace/README.md): a tiny Go service and TypeScript/TSX web client, with Python tooling and an unresolved experiment. Tests run the CLI against its actual source files and check the published tables.
 
-**[Take the sample-project tour](docs/sample-project-tour.md)** to follow configuration, classification decisions, folder exploration and saved reports. The [recorded command guides](docs/cli/README.md) show reproducible commands and their captured output.
+**[Take the sample-project tour](docs/sample-project-tour.md)** to follow configuration, classification decisions, folder exploration and saved reports.
+
+▶️ **The [recorded command guides](docs/cli/README.md) illustrate the commands and their options.**
 
 From this repository's root:
 
@@ -215,18 +217,6 @@ This removes `service/third_party/` from scope and classifies `service/scripts/`
 The [configuration guide](docs/guides/configure.md) covers overrides, custom categories, language mappings and evidence-based review. [Personal defaults](docs/PRODUCT.md#user-defaults) can supply exclusions and language mappings across projects; they cannot assign purposes or categories.
 
 For a production-rule change covered by the example in `locmetry --help`, inspect existing configuration and measure current decisions, adapt the paths and category, then run the displayed verification command. Reading a guide or schema first is optional for that route. Use `locmetry --guide configure` or `locmetry --schema config` for exclusions, overrides, intentional Other, or semantics not shown there. Verify per-file decisions and unresolved review items before concluding. Guides and schemas are available from the installed binary without a network connection.
-
-## Compared with related tools
-
-| Tool | Relationship and documented capabilities |
-| --- | --- |
-| [Tokei](https://github.com/XAMPPRocky/tokei) | Supplies Locmetry's embedded counting backend. |
-| [SLOC](https://github.com/flosse/sloc) | Line-count statistics through a CLI and library. |
-| [cloc](https://github.com/AlDanial/cloc) | Source comparison and filtering diagnostics alongside counting. |
-| [scc](https://github.com/boyter/scc) | Counting with additional analytics and integrations. |
-| [ALOC](https://github.com/modern-tooling/aloc) | Counting with classification by role. |
-
-Locmetry combines reviewable scope, whole-file purpose/category classification with provenance, source/data/documentation separation, explicit coverage and independently configured workspace members. The dated [capability research](docs/research/tool-capability-comparison.md) examines several related tools and its stated versions; it is not a performance ranking or a current comparison of every tool named here.
 
 ## Guides and reference
 
