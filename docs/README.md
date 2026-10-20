@@ -2,7 +2,7 @@
 
 Start with the workflow or contract relevant to your task. Status tables in the linked indexes summarize decisions; they do not authorize implementation or publication.
 
-- [Sample-project tour](sample-project-tour.md): follow one illustrative project from configuration through classification, folder exploration and saved reports.
+- [Sample-project tour](sample-project-tour.md): follow the checked-in synthetic workspace from configuration through classification, folder exploration and saved reports.
 - [Supported product contract](PRODUCT.md): flags, configuration, reports and compatibility guarantees.
 - [Measurement semantics](measurement.md): counting, selection boundaries and private regression instructions.
 - [Saved report compatibility](report-compatibility.md): historical fields and comparison evidence.
@@ -14,3 +14,10 @@ Start with the workflow or contract relevant to your task. Status tables in the 
 - [Plans](plans/README.md): status of detailed plans and deferred designs.
 - [Proposals](proposals/README.md): designs under review and historical decisions.
 - [Research](research/README.md): dated evidence and design implications.
+
+- [Recorded CLI guides](cli/README.md): one replayable Showboat guide per command, with option coverage and regeneration instructions.
+- [DuckDB cookbook](duckdb-cookbook.md): analyze full measurements with typed SQL views.
+- [pandas and Polars cookbook](dataframe-cookbook.md): prove tool-neutral report analytics with dataframe recipes.
+- [Recorded analytics demo](analytics-demo.md): capture and query the shared synthetic workspace.
+
+- [Author Showboat guides](showboat-authoring.md): recording, wrapping, isolation, regeneration and verification rules for contributors and agents.

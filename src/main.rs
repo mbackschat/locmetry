@@ -852,7 +852,7 @@ fn run_explain(args: &ExplainArgs, styling: Styling) -> Result<Outcome> {
     let (path, result) = locmetry::explain::inspect(&prepared.root, &target, &mut prepared.policy)?;
     let mut explanation = locmetry::explain::Explanation {
         document_type: locmetry::explain::DocumentType::Explanation,
-        schema_version: contract::Version::V2,
+        schema_version: locmetry::explain::Version::V2,
         root: prepared.root.to_string_lossy().into(),
         path,
         member: None,
@@ -1479,14 +1479,19 @@ fn report(
             }
         }
         MeasurementReport {
-            schema_version: contract::Version::V2,
+            document_type: contract::DocumentType::Measurement,
+            detail: if full {
+                contract::Detail::Full
+            } else {
+                contract::Detail::Headline
+            },
+            schema_version: contract::Version::V3,
             project,
             metadata,
             summary: summary_document,
             review: full.then(|| review(&rows)),
             breakdown: full.then(|| breakdown(&rows)),
             files: (full && shared.files).then(|| rows.iter().map(contract::File::from).collect()),
-            report: None,
         }
     };
     let shows = |format| destination.shows(format);

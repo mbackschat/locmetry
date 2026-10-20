@@ -1,0 +1,9 @@
+version = 1
+[scope]
+hidden = false
+exclude = ["third_party/**"]
+[[rules]]
+id = "tooling"
+match = ["scripts/**"]
+purpose = "production"
+category = "tooling"

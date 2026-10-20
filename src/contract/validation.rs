@@ -168,6 +168,25 @@ impl MeasurementReport {
     /// Validates arithmetic and identities supported by the stored detail, without rescanning.
     /// This internal boundary is exposed to CLI users only through compare input errors.
     pub fn validate(&self) -> Result<()> {
+        match self.detail {
+            Detail::Full => self.require_comparison_evidence()?,
+            Detail::Headline => ensure!(
+                self.review.is_none()
+                    && self.breakdown.is_none()
+                    && self.files.is_none()
+                    && self.metadata.kinds.is_none()
+                    && self.metadata.modules.is_none()
+                    && self.metadata.config.is_none()
+                    && self.metadata.coverage.unrecognized.is_none()
+                    && self
+                        .metadata
+                        .members
+                        .iter()
+                        .flatten()
+                        .all(|member| member.config.is_none()),
+                "headline detail must omit full-report evidence"
+            ),
+        }
         self.validate_mode()?;
         if let Some(config) = &self.metadata.config {
             config.validate()?;
@@ -671,7 +690,7 @@ impl MeasurementReport {
         Ok(())
     }
 
-    /// Requires recorded evidence for aggregate comparison, separately from ordinary validity.
+    /// Requires full-report evidence for schema-3 validity and aggregate comparison; headlines lack this detail.
     pub fn require_comparison_evidence(&self) -> Result<()> {
         let mut missing = Vec::new();
         if self.review.is_none() {

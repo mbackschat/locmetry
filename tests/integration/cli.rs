@@ -1638,7 +1638,7 @@ fn stdout_headline_keeps_compact_evidence_without_a_report_pointer() {
     assert!(saved.stdout.is_empty());
     let (success, headline, stderr) = headline(&root, &[]);
     assert!(success, "{stderr}");
-    assert_eq!(headline["schema_version"], "2");
+    assert_eq!(headline["schema_version"], "3");
     assert!(headline.get("report").is_none());
     for absent in ["breakdown", "review", "files"] {
         assert!(headline.get(absent).is_none(), "{absent}");

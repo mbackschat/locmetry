@@ -195,3 +195,7 @@ printf '%s\n' "$report" | jq -r '
 [CI executes this block and the comparison/explanation workflows](../../scripts/check-doc-examples.sh) against synthetic projects. The policy scenarios check stdout and stderr as well as status, so invalid configuration cannot masquerade as an unclaimed-code rejection. The Cargo tests separately guard its JSON and exit-code assumptions without requiring `jq`.
 
 [Command outcomes](../PRODUCT.md#command-outcomes) defines exit statuses for measurement, comparison and explanation, including backend inaccuracy without identified failure paths.
+
+## Analyze saved measurements
+
+Full schema-3 measurements identify their document type and projection explicitly. Use the repository's [DuckDB cookbook](../duckdb-cookbook.md) for SQL views, portfolio totals, trends and ownership, or the [pandas and Polars cookbook](../dataframe-cookbook.md) for dataframe examples. These are optional external workflows; Locmetry has no analytics runtime dependency. The [recorded demo](../analytics-demo.md) captures and queries the same synthetic workspace used by the CLI guides.

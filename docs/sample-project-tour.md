@@ -1,80 +1,57 @@
-# A tour of a sample project
+# A Tour of the Sample Project
 
-Follow `acme-orders` from its first measurement through configuration, classification checks, folder exploration and saved reports. This is the hypothetical monorepo behind the [README tables](../README.md#what-you-see), with Kotlin backend modules, a TypeScript/TSX frontend, Go workers, Python tooling and unresolved experiments.
+Follow the checked-in [Acme Orders workspace](../examples/cli-workspace/README.md) from measurement through classification, folder exploration and saved reports. This is the same source tree used by the [README tables](../README.md#what-you-see) and the [recorded command guides](cli/README.md). Its files are tiny measurement examples; nothing needs building or installing.
 
-The report numbers are illustrative and come from one [checked data fixture](../tests/fixtures/readme/README.md). There is no downloadable source checkout. The paths below sketch the project; commands demonstrate the real CLI and can be adapted to an existing checkout. Run them from the directory containing `acme-orders`; report exports go beside that directory so they cannot become part of the next measurement. `--no-user-config` isolates the examples from personal defaults.
+## Prepare a working copy
 
-## Start with the layout and local intent
+From the Locmetry repository root, with `locmetry` on `PATH`, copy the fixture into a fresh temporary directory. All following commands run there. Reports stay outside the measured roots, and `--no-user-config` isolates the examples from personal defaults.
 
-These representative paths explain the different roles within the project; this is not a complete file inventory:
+```sh
+sample_directory=$(mktemp -d)
+cp -R examples/cli-workspace/. "$sample_directory/"
+cd "$sample_directory"
+```
+
+The tree contains a Go service and a TypeScript/TSX web client:
 
 ```text
 acme-orders/
 ├── .locmetryrc
-├── gradlew
-├── backend/
-│   ├── orders/src/main/kotlin/domain/Order.kt
-│   ├── orders/src/test/kotlin/OrderTest.kt
-│   └── billing/, catalog/, customers/, inventory/, shipping/
-├── web/src/orders/{Order.ts,OrderView.tsx,Order.test.ts}
-├── workers/{billing,inventory,shipping}/
-├── scripts/imports/orders/order.py
-├── scripts/maintenance/
-├── prototypes/{pricing,forecasting}/
-├── docs/{architecture.md,order-flow.png}
-└── third_party/payment-sdk/
+├── service/
+│   ├── .locmetryrc, go.mod, .ignore
+│   ├── src/main.go
+│   ├── tests/main_test.go
+│   ├── scripts/check.py
+│   ├── experiments/probe.py
+│   ├── third_party/sdk.py
+│   ├── .hidden.py
+│   └── ignored.py
+└── web/
+    ├── .locmetryrc, package.json
+    ├── src/orders/{Order.ts,Order.test.ts,OrderView.tsx}
+    ├── src/index.html
+    ├── data/status.json
+    └── docs/{architecture.md,wireframe.asset}
 ```
 
-Assume the backend modules have selected Gradle descriptors, the frontend has `package.json`, and the workers have Go module descriptors. Locmetry recognizes those filenames and their conventional layouts; it does not parse build targets or execute a build. The innermost module supplies the context for a file. The [module contract](PRODUCT.md#module-detection) defines each supported layout.
-
-The project owner has established that the SDK is vendored and outside the intended scope, while `scripts/` is maintained tooling. The experiments have no settled ownership yet. These are project decisions, not facts Locmetry can infer from the amount of code.
-
-Save that policy in `acme-orders/.locmetryrc`:
-
-```toml
-version = 1
-
-[scope]
-exclude = ["third_party/**"]
-
-[[rules]]
-id = "tooling"
-match = ["scripts/**"]
-purpose = "production"
-category = "tooling"
-```
-
-The exclusion removes the SDK from the measurement. The rule retains maintained scripts and labels their role within production. No broad production rule is needed for conventional module source. Use the [configuration guide](guides/configure.md) to establish this evidence for a real repository, including already-classified files that might be wrong.
+The combined-root policy excludes `service/third_party/**`, disables hidden files and classifies `service/scripts/**` as production tooling. The service's own policy uses member-relative patterns for workspace measurement. Module descriptors establish conventional layouts; Locmetry never runs their build tools. The experiment has no ownership decision yet. These policies are visible in the fixture's configuration files.
 
 ## Read the first measurement
 
 ```sh
-locmetry --root acme-orders --no-user-config --format table
+locmetry --root acme-orders --no-user-config --no-color --no-bars --format table
 ```
 
-Read the [language table](../README.md#what-you-see) from left to right: physical lines split into code, comments and blanks; code then splits into production, test and other. Tooling is a category within production, rather than a fourth purpose.
-
-The frontend tests and Kotlin tests contribute to Test even when their enclosing module is production. The Python experiments and shell wrapper both contribute to Other, but require different interpretation. JSON configuration and Markdown documentation are counted separately from source; an unrecognized image has unavailable counts, not an invented zero.
-
-The illustrative dataset has no embedded-language overlap, so its language file counts also reconcile. In general, a file can participate in more than one language: adding language file counts does not necessarily give the number of physical files. [Report interpretation](guides/reports.md#interpret-the-numbers) explains that distinction.
+The source total is 25 code lines: 17 production, 7 test and 1 other. Data and documentation stay separate. The HTML file contributes four HTML lines and one embedded JavaScript line; the JavaScript row does not add a physical file. `Test/prod` is a volume ratio, not test coverage. The [recorded root guide](cli/root.md) includes the captured output.
 
 ## Find where the code resides
 
 ```sh
-locmetry --root acme-orders --no-user-config --format table --folder-rows 30
+locmetry --root acme-orders --no-user-config --no-color --no-bars --format table --folder-rows 12
+locmetry --root acme-orders --subfolder web/src --no-user-config --no-color --no-bars --format table --folders
 ```
 
-The [second README table](../README.md#what-you-see) keeps the same measurement but distributes its source across folder rows. Larger backend areas receive more detail, while some smaller areas remain grouped. Parent and child contributions are not counted twice. Direct files can have their own row when a parent expands.
-
-Compare the mixed production/test rows under `web/src/` and `workers/` with the separate main/test folders under `backend/`. The folder layout changes where the two purposes appear, not their meaning. `Test/prod` divides test code by production code; a dash means there is no production denominator. It does not measure test coverage, and the total ratio is computed from total counts rather than the average of row ratios.
-
-To inspect only the frontend while retaining the root's configuration and module context:
-
-```sh
-locmetry --root acme-orders --subfolder web/src --no-user-config --format table --folders
-```
-
-Changing `--root` to `acme-orders/web/src` would establish a different scan root and could lose the project policy or enclosing module descriptor. [Selection diagnostics](guides/selection.md#common-issues-and-useful-queries) explains that failure mode. [Folder reporting](guides/reports.md#look-inside-large-folders) covers the row budget, saved tables and deeper expansion.
+Adaptive rows cover the source once, separating direct files from expanded descendants. `--subfolder` retains the combined root's policy and module context; changing the root would change that context. [Folder reporting](guides/reports.md#look-inside-large-folders) owns the expansion rules.
 
 ## Trace a classification decision
 
@@ -82,63 +59,42 @@ Changing `--root` to `acme-orders/web/src` would establish a different scan root
 locmetry explain web/src/orders/Order.test.ts --root acme-orders --no-user-config --format json
 ```
 
-For that path in the assumed layout, the JavaScript test-file convention decides `test` / `test` with rule `builtin:js-test-file`. The explanation exposes the matching convention and available module evidence. It lets you distinguish a deliberate decision from a surprising total before changing configuration.
-
-The same policy produces several different kinds of decision:
-
-| Representative path | Decision | Why |
-| --- | --- | --- |
-| `backend/orders/src/main/kotlin/domain/Order.kt` | production / implementation | A selected Gradle descriptor supplies the conventional source layout. |
-| `web/src/orders/Order.test.ts` | test / test | Test conventions run before ordinary rules and module inference. |
-| `scripts/imports/orders/order.py` | production / tooling | The project rule supplies the local intent. |
-| `gradlew` | other / third-party-wrapper | The build-wrapper convention deliberately classifies it. |
-| `prototypes/pricing/candidate_1.py` | other / unclaimed | No earlier stage claims it, so it reaches fallback. |
-
-Overrides run first, followed by test/build conventions, ordinary rules, module inference and fallback. Consequently, an ordinary tooling rule does not override a matching test convention. Use an override only when evidence justifies changing that precedence for a specific path. See [matching and precedence](PRODUCT.md#matching-and-precedence) for the full contract and wrapper patterns.
+The deciding rule is `builtin:js-test-file`, even though the file sits inside production source. The [recorded explanation guide](cli/explain.md) also traces an explicit tooling rule, exclusion, ignored file, hidden file, unresolved source and unrecognized content.
 
 ## Review what remains unresolved
 
 ```sh
-locmetry --root acme-orders --no-user-config --format table --verbose
+locmetry --root acme-orders --no-user-config --no-color --no-bars --format table --verbose
 ```
 
-The experiments belong in the unclaimed review list; the wrapper does not. Both remain in Other counts. If the owner later confirms that an experiment should deliberately stay `other`, a narrow rule with an explicit category and reason records that decision and removes it from the unclaimed list without excluding its code. If its role is still unknown, leave the question open. A clean review list alone does not establish correct classification.
-
-Verbose output also exposes non-source totals, inferred modules, unused policy and unrecognized extensions. The “Not source code” note gives only totals per kind; [list its files](guides/reports.md#not-source-code-which-files-are-data-or-documentation) from full JSON. A scope exclusion that matches nothing can reveal a misspelling. Actual read/parse failures remain visible without verbose mode and produce a partial measurement with exit status 2. Unclaimed code and an unrecognized image alone do not make the report partial. [Coverage interpretation](guides/reports.md#unavailable-is-not-zero) distinguishes these states.
+`service/experiments/probe.py` is counted as Other/unclaimed. `web/docs/wireframe.asset` is selected but unrecognized, so it has no invented zero count. Neither condition alone makes the successfully measured counts partial. Review is about local intent: assigning a category can resolve classification without establishing that the choice is correct.
 
 ## Save the evidence and ask a narrower question
 
+With optional external `jq`:
+
 ```sh
 locmetry --root acme-orders --no-user-config --files --output acme-orders-report.json
+jq '[.breakdown[] | select(.kind == "source" and .purpose == "test")] | group_by(.language) | map({language: .[0].language, code: (map(.code) | add)})' acme-orders-report.json
 ```
 
-This saves full JSON outside the project, with per-file counts and deciding rules, and emits nothing on stdout. The full report also includes the review list and additive breakdown rows by direct folder, kind, purpose, category and language. The compact headline produced by piping a default measurement does not contain all of that evidence.
-
-For example, use the optional external `jq` tool to sum source test code by language across all folders:
-
-```sh
-jq '[.breakdown[] | select(.kind == "source" and .purpose == "test")]
-    | group_by(.language)
-    | map({language: .[0].language, code: (map(.code) | add)})' acme-orders-report.json
-```
-
-Grouping before summing matters: one language can have many folder rows. Other useful questions include which files remain unclaimed and how production/test totals split beneath `web/`. The [saved-report queries](guides/reports.md#query-a-saved-report) demonstrate those operations without a second scan.
+The result contains Go 4 and TypeScript 3. Full reports contain additive breakdown rows even without `--files`; optional file detail supports path-level questions. The [DuckDB cookbook](duckdb-cookbook.md) and [pandas/Polars cookbook](dataframe-cookbook.md) use this tool-neutral structure for broader analysis.
 
 ## Share a report and follow changes
 
 ```sh
-locmetry --root acme-orders --no-user-config --format markdown --output acme-orders-report.md
+locmetry --root acme-orders --no-user-config --format markdown --depth 3 --output acme-orders-report.md
+printf 'export const discount = 1;\n' >> acme-orders/web/src/orders/Order.ts
+locmetry --root acme-orders --no-user-config --output acme-orders-after.json
+locmetry compare acme-orders-report.json acme-orders-after.json --format json
 ```
 
-Markdown includes purpose/category summaries, languages, recursive folder detail, review findings and coverage. It suits a review or wiki where readers need more than the terminal overview. The explicit format matters: `--output acme-orders-report.md` alone would still save JSON. This command performs another measurement; it is not a conversion of the previously saved JSON.
+Source code increases by one line, from 25 to 26. This is net change between measured states, not Git churn. The [recorded comparison guide](cli/compare.md) shows tables, exports, member selection and an explicit workspace membership change.
 
-To follow changes, capture full reports on either side of the work:
+## Measure the members together
 
 ```sh
-locmetry --root acme-orders --no-user-config --output acme-orders-before.json
-# After changing the source or its measurement policy:
-locmetry --root acme-orders --no-user-config --output acme-orders-after.json
-locmetry compare acme-orders-before.json acme-orders-after.json
+locmetry workspace --file workspace.toml --no-user-config --no-color --no-bars --format table
 ```
 
-Interpret net change together with coverage and policy differences. Reports describe working copies, not Git commits, and a changed classification policy can move code between purposes without changing source text. The [comparison guide](guides/compare.md) covers those boundaries. For automated checks, use the [CI recipe](guides/reports.md#continuous-integration), which preserves measurement failure and partial-result status before applying a policy threshold.
+The workspace file names `service` and `web`. Their own policies give the same source total as the combined root at the same state; paths and provenance reflect separate members. The [recorded workspace guide](cli/workspace.md) explains the distinction and demonstrates workspace report options. Delete your temporary copy when finished; the checked-in source remains unchanged.

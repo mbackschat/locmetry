@@ -21,87 +21,63 @@ Or download a binary from the [latest release](https://github.com/mbackschat/loc
 
 ## What you see
 
-Run `locmetry` in a project. The illustrative report below shows a hypothetical monorepo with Kotlin backend modules, a TypeScript/TSX frontend, Go workers, Python tooling and unresolved experiments.
+Run `locmetry` in a project. These table excerpts come from the checked-in [synthetic Acme Orders workspace](examples/cli-workspace/README.md): a tiny Go service and TypeScript/TSX web client, with Python tooling and an unresolved experiment. Tests run the CLI against its actual source files and check the published tables.
 
-The numbers are invented, not measured from a real checkout. Both tables use the same [data fixture](tests/fixtures/readme/README.md), rendered by Locmetry and checked for consistent totals.
+**[Take the sample-project tour](docs/sample-project-tour.md)** to follow configuration, classification decisions, folder exploration and saved reports. The [recorded command guides](docs/cli/README.md) show reproducible commands and their captured output.
 
-**[Take the sample-project tour](docs/sample-project-tour.md)** to follow the layout, configuration, classification decisions, folder exploration and saved reports from start to finish.
+From this repository's root:
 
 ```sh
-locmetry
+locmetry --root examples/cli-workspace/acme-orders --no-user-config --no-color --no-bars --format table
 ```
+
+The excerpts omit the root-location and measurement-time footer.
 
 <!-- readme-language -->
 ```text
- ──────────────────────────────────────────────────────────────────────────────────────────
- Language    Files    Lines     Code │ Comments  Blanks │  Prod.    Test  Other │ Test/prod
- ────────────────────────────────────┼──────────────────┼───────────────────────┼──────────
- Kotlin        538   93,760   74,060 │    7,530  12,170 │ 46,040  28,020      0 │      0.61
- TypeScript    173   26,080   21,030 │    1,660   3,390 │ 11,130   9,900      0 │      0.89
- TSX            83   16,580   14,020 │      780   1,780 │ 14,020       0      0 │      0.00
- Go             90   17,250   13,770 │    1,300   2,180 │  8,050   5,720      0 │      0.71
- Python         55   10,330    7,660 │    1,340   1,330 │  4,760       0  2,900 │      0.00
- Shell           1      290      160 │       90      40 │      0       0    160 │         -
- ────────────────────────────────────┼──────────────────┼───────────────────────┼──────────
- Total         940  164,290  130,700 │   12,700  20,890 │ 84,000  43,640  3,060 │      0.52
+ ──────────────────────────────────────────────────────────────────────────────────
+ Language    Files  Lines  Code │ Comments  Blanks │ Prod.  Test  Other │ Test/prod
+ ───────────────────────────────┼──────────────────┼────────────────────┼──────────
+ Go              2     11     8 │        1       2 │     4     4      0 │      1.00
+ TypeScript      2      8     6 │        2       0 │     3     3      0 │      1.00
+ HTML            1      4     4 │        0       0 │     4     0      0 │      0.00
+ Python          2      5     3 │        2       0 │     2     0      1 │      0.00
+ TSX             1      3     3 │        0       0 │     3     0      0 │      0.00
+ JavaScript      0      1     1 │        0       0 │     1     0      0 │      0.00
+ ───────────────────────────────┼──────────────────┼────────────────────┼──────────
+ Total           8     32    25 │        5       2 │    17     7      1 │      0.41
  Lines = Code + Comments + Blanks; Production + Test + Other = Code; Test/prod = Test / Production (Code).
  Tests written in another language than the code they test skew per-language Test/prod.
 ```
 
-Code is split by purpose; comments and blanks stay separate. JSON and Markdown files do not inflate source totals. TSX shows `0.00` because its tests are written in TypeScript, as the second legend line warns. The experiments and wrapper remain counted as Other, for different [reasons](#how-classification-works). Narrow terminals head the Production column `Prod.`; the legend keeps the full word.
+Code is split by purpose; comments and blanks stay separate. JSON and Markdown files do not inflate source totals. The HTML file contributes both HTML and JavaScript; its embedded JavaScript row adds code with zero additional physical files. The experiment remains Other/unclaimed. TSX has no test code in the same language, illustrating why a per-language ratio is not test coverage.
 
 To see where the code resides, add adaptive folder detail:
 
 ```sh
-locmetry --folder-rows 30
+locmetry --root examples/cli-workspace/acme-orders --no-user-config --no-color --no-bars --format table --folder-rows 12
 ```
-
-Each terminal table starts with a thin top rule directly above its column headers. The headers identify the table without a separate title; a blank line separates it from the preceding table and legends.
 
 <!-- readme-folders -->
 ```text
- ──────────────────────────────────────────────────────────────────────────────────────────────
- Folder                                      Lines     Code │  Prod.    Test  Other │ Test/prod
- ───────────────────────────────────────────────────────────┼───────────────────────┼──────────
- web/src/orders                             11,670    9,580 │  6,100   3,480      0 │      0.57
- backend/orders/src/test/kotlin             10,670    8,930 │      0   8,930      0 │         -
- backend/orders/src/main/kotlin/domain      11,396    8,722 │  8,722       0      0 │      0.00
- backend/billing/src/main/kotlin/domain      9,408    7,196 │  7,196       0      0 │      0.00
- web/src/catalog                             8,480    6,990 │  5,510   1,480      0 │      0.27
- web/src/billing                             8,510    6,980 │  4,520   2,460      0 │      0.54
- backend/billing/src/test/kotlin             8,130    6,740 │      0   6,740      0 │         -
- workers/billing                             7,820    6,260 │  3,420   2,840      0 │      0.83
- backend/catalog/src/main/kotlin/domain      7,021    5,474 │  5,474       0      0 │      0.00
- web/src/inventory                           5,520    4,530 │  3,510   1,020      0 │      0.29
- workers/inventory                           5,530    4,410 │  2,650   1,760      0 │      0.66
- backend/customers/src/main/kotlin           5,730    4,360 │  4,360       0      0 │      0.00
- backend/catalog/src/test/kotlin             5,170    4,250 │      0   4,250      0 │         -
- backend/inventory/src/main/kotlin/domain    5,460    4,186 │  4,186       0      0 │      0.00
- web/src/shipping                            4,640    3,810 │  2,970     840      0 │      0.28
- backend/orders/src/main/kotlin/api          4,884    3,738 │  3,738       0      0 │      0.00
- scripts/imports                             4,970    3,640 │  3,640       0      0 │      0.00
- backend/shipping/src/main/kotlin/domain     4,711    3,598 │  3,598       0      0 │      0.00
- backend/inventory/src/test/kotlin           4,180    3,460 │      0   3,460      0 │         -
- web/src/customers                           3,840    3,160 │  2,540     620      0 │      0.24
- workers/shipping                            3,900    3,100 │  1,980   1,120      0 │      0.57
- backend/billing/src/main/kotlin/api         4,032    3,084 │  3,084       0      0 │      0.00
- prototypes                                  3,800    2,900 │      0       0  2,900 │         -
- backend/shipping/src/test/kotlin            3,230    2,680 │      0   2,680      0 │         -
- backend/catalog/src/main/kotlin/api         3,009    2,346 │  2,346       0      0 │      0.00
- backend/customers/src/test/kotlin           2,370    1,960 │      0   1,960      0 │         -
- backend/inventory/src/main/kotlin/api       2,340    1,794 │  1,794       0      0 │      0.00
- backend/shipping/src/main/kotlin/api        2,019    1,542 │  1,542       0      0 │      0.00
- scripts/maintenance                         1,560    1,120 │  1,120       0      0 │      0.00
- (root files)                                  290      160 │      0       0    160 │         -
- ───────────────────────────────────────────────────────────┼───────────────────────┼──────────
- Total                                     164,290  130,700 │ 84,000  43,640  3,060 │      0.52
+ ────────────────────────────────────────────────────────────────────
+ Folder                  Lines  Code │ Prod.  Test  Other │ Test/prod
+ ────────────────────────────────────┼────────────────────┼──────────
+ web/src/orders             11     9 │     6     3      0 │      0.50
+ web/src (direct files)      5     5 │     5     0      0 │      0.00
+ service/src                 6     4 │     4     0      0 │      0.00
+ service/tests               5     4 │     0     4      0 │         -
+ service/scripts             3     2 │     2     0      0 │      0.00
+ service/experiments         2     1 │     0     0      1 │         -
+ ────────────────────────────────────┼────────────────────┼──────────
+ Total                      32    25 │    17     7      1 │      0.41
  Production + Test + Other = Code; Test/prod = Test / Production (Code).
  Adaptive folder detail; rows cover measured source once.
 ```
 
 The rows cover the measured source once: a parent and its expanded children do not contribute twice. `Test/prod` is test code divided by production code; `-` means there is no production denominator. It describes code volume, not test coverage or quality.
 
-The 30-row budget limits additional detail; existing top-level rows are retained even if they exceed it. Here some backend folders are expanded while `prototypes` and `scripts/imports` remain grouped. Use `--folders` for just top-level folders, or `--verbose` for classification and coverage notes. These views do not change the measurement. [Folder reporting](docs/guides/reports.md#look-inside-large-folders) explains expansion, saved tables and format limits.
+The 12-row budget allows this small tree to expand to six source rows. Use `--folders` for top-level folders or `--verbose` for classification and coverage notes. These views do not change the measurement. [Folder reporting](docs/guides/reports.md#look-inside-large-folders) explains expansion, saved tables and format limits.
 
 ## Common commands
 
@@ -176,6 +152,14 @@ Check `Member: service` and its `Source total`; the folder table shows changes i
 
 The [comparison guide](docs/guides/compare.md) covers changed scope, producer versions, partial inputs and workspace changes. Reports describe measured working copies, not Git commits. For automated policies, use the [CI recipe](docs/guides/reports.md#continuous-integration), which preserves measurement failure and partial-result status before querying JSON.
 
+## Analyze saved measurements
+
+Full schema-3 reports support external analytics without adding runtime dependencies to Locmetry. Capture reports with the current executable; older schema-1/2 measurements must be recaptured.
+
+- [DuckDB cookbook](docs/duckdb-cookbook.md): typed SQL views, portfolio totals, trends, ownership and Parquet export.
+- [pandas and Polars cookbook](docs/dataframe-cookbook.md): equivalent dataframe analysis with optional external packages.
+- [Recorded analytics demo](docs/analytics-demo.md): replay a capture and query against the shared synthetic workspace.
+
 ## How classification works
 
 Locmetry embeds Tokei for counting and applies project policy to each file. Purpose (`production`, `test`, `other`), category (such as `implementation` or `tooling`) and content kind (source, data, documentation or unknown) are separate dimensions. `other` means neither production nor test; code no stage claimed is `other` with category `unclaimed`.
@@ -188,16 +172,16 @@ These example paths illustrate how the rules apply in a project with the corresp
 
 | File | Purpose / category | Deciding rule |
 | --- | --- | --- |
-| `backend/orders/src/main/kotlin/domain/Order.kt` | production / implementation | `builtin:gradle-module` |
+| `service/src/main.go` | production / implementation | `builtin:go-module` |
 | `web/src/orders/Order.test.ts` | test / test | `builtin:js-test-file` |
-| `scripts/imports/orders/order.py` | production / tooling | `tooling` (project rule) |
-| `gradlew` | other / third-party-wrapper | `builtin:build-wrapper` |
-| `prototypes/pricing/candidate_1.py` | other / unclaimed | `fallback` |
+| `service/scripts/check.py` | production / tooling | `tooling` (project rule) |
+| `service/experiments/probe.py` | other / unclaimed | `fallback` |
 
 Inspect the evidence for one file:
 
 ```sh
-locmetry explain web/src/orders/Order.test.ts
+locmetry explain web/src/orders/Order.test.ts \
+  --root examples/cli-workspace/acme-orders --no-user-config
 ```
 
 The explanation identifies `builtin:js-test-file`, the matching pattern and the convention stage. It also reports parser, counts and module evidence where applicable. The [selection guide](docs/guides/selection.md) explains other states and how to investigate a missing file.
@@ -210,22 +194,23 @@ Module inference examines filenames and conventional layouts, not build-file con
 
 No configuration is required to start. Add `.locmetryrc` when conventions cannot know local intent: which code is vendored, which scripts are maintained tooling, or which experiments should explicitly count as `other`. Locmetry does not automatically recognize vendored or generated code.
 
-For the layout illustrated above:
+For the combined Acme Orders root:
 
 ```toml
 version = 1
 
 [scope]
-exclude = ["third_party/**"]
+hidden = false
+exclude = ["service/third_party/**"]
 
 [[rules]]
 id = "tooling"
-match = ["scripts/**"]
+match = ["service/scripts/**"]
 purpose = "production"
 category = "tooling"
 ```
 
-This removes `third_party/` from scope and classifies `scripts/` as production tooling. Tests still win over ordinary rules. The experiments remain in the review list; assigning them an explicit category such as `prototype` with purpose `other` would retain their counts but remove them from that list. The wrapper is already deliberately `other`. A clean review list alone does not establish correct classification.
+This removes `service/third_party/` from scope and classifies `service/scripts/` as production tooling. Tests still win over ordinary rules. The experiment remains in the review list; assigning them an explicit category such as `prototype` with purpose `other` would retain their counts but remove them from that list. A clean review list alone does not establish correct classification.
 
 The [configuration guide](docs/guides/configure.md) covers overrides, custom categories, language mappings and evidence-based review. [Personal defaults](docs/PRODUCT.md#user-defaults) can supply exclusions and language mappings across projects; they cannot assign purposes or categories.
 

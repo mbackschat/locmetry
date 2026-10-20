@@ -184,7 +184,7 @@ fn rejects_headlines_versions_inconsistent_counts_and_overwriting_inputs() {
             "headline" => {
                 bad.as_object_mut().unwrap().remove("breakdown");
             }
-            "version" => bad["schema_version"] = json!("3"),
+            "version" => bad["schema_version"] = json!("4"),
             "counts" => bad["summary"]["source"]["lines"] = json!(100),
             "duplicate" => {
                 let row = bad["breakdown"][0].clone();
@@ -1564,22 +1564,27 @@ fn totals_split_all_counted_by_kind_and_grids_end_in_their_source_total() {
     assert!(markdown.contains("| . (both) |"), "{markdown}");
 }
 
-/// Locks the 0.5 clean break: version-1 reports use the retired vocabulary, so
-/// compare names the version and the remedy instead of failing on a key.
 #[test]
-fn version_one_reports_are_rejected_with_a_remedy() {
+fn older_measurement_schemas_are_rejected_with_a_remedy() {
     let temp = tempfile::tempdir().unwrap();
     let root = temp.path().join("project");
     write(&root, "main.py", "a = 1\n");
-    let mut old = measure(&root);
-    old["schema_version"] = json!("1");
-    let old = save(temp.path(), "old.json", &old);
     let current = save(temp.path(), "current.json", &measure(&root));
-    let output = compare(&old, &current, &[]);
-    assert_eq!(output.status.code(), Some(1));
-    let error = String::from_utf8_lossy(&output.stderr);
-    assert!(error.contains("schema version 1"), "{error}");
-    assert!(error.contains("measure again"), "{error}");
+    for version in ["1", "2"] {
+        let mut old = measure(&root);
+        old["schema_version"] = json!(version);
+        old.as_object_mut().unwrap().remove("document_type");
+        old.as_object_mut().unwrap().remove("detail");
+        let old = save(temp.path(), "old.json", &old);
+        let output = compare(&old, &current, &[]);
+        assert_eq!(output.status.code(), Some(1));
+        let error = String::from_utf8_lossy(&output.stderr);
+        assert!(
+            error.contains(&format!("schema version {version}")),
+            "{error}"
+        );
+        assert!(error.contains("measure again"), "{error}");
+    }
 }
 
 #[test]

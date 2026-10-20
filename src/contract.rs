@@ -9,10 +9,23 @@ mod validation;
 /// Report contract version, independent of the executable version.
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 pub enum Version {
-    /// Since 0.5: purposes `production`, `test`, `other`, the content kind
-    /// `unknown`, and `summary.unclaimed_folders`.
-    #[serde(rename = "2")]
-    V2,
+    /// Explicit measurement identity and full/headline projection.
+    #[serde(rename = "3")]
+    V3,
+}
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum DocumentType {
+    Measurement,
+}
+
+/// The requested projection; omitted file records still mean detail was not requested.
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum Detail {
+    Full,
+    Headline,
 }
 
 /// Locmetry measurement: --format json emits the full report; --format headline emits compact JSON.
@@ -22,20 +35,13 @@ pub enum Version {
 /// Duplicate raw keys in dynamic JSON maps retain the last value; overwritten keys cannot be validated.
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
-#[schemars(example = headline_example())]
+#[schemars(example = headline_example(), transform = measurement_detail)]
 pub struct MeasurementReport {
+    pub document_type: DocumentType,
+    pub detail: Detail,
     pub schema_version: Version,
     /// Scan-root name, or workspace member names joined for display; not verified identity.
     pub project: String,
-    /// Historical headline field through v0.3.0: destination of a separately saved full report.
-    /// Retained when reading historical documents; new CLI output omits it.
-    #[serde(
-        default,
-        skip_serializing_if = "Option::is_none",
-        deserialize_with = "present"
-    )]
-    #[schemars(with = "String")]
-    pub report: Option<String>,
     pub metadata: Metadata,
     pub summary: ReportSummary,
     /// Full report only: unclaimed source, largest first. Empty is recorded no findings.
@@ -146,6 +152,37 @@ pub struct Metadata {
     )]
     #[schemars(with = "String")]
     pub workspace_path: Option<String>,
+}
+
+fn measurement_detail(schema: &mut schemars::Schema) {
+    schema.insert(
+        "allOf".into(),
+        serde_json::json!([{
+            "if": {"properties": {"detail": {"const": "full"}}},
+            "then": {
+                "required": ["review", "breakdown"],
+                "properties": {"metadata": {
+                    "required": ["kinds", "modules"],
+                    "properties": {
+                        "coverage": {"required": ["unrecognized"]},
+                        "members": {"items": {"required": ["config"]}}
+                    },
+                    "if": {"required": ["root"]},
+                    "then": {"required": ["config"]}
+                }}
+            },
+            "else": {
+                "properties": {
+                    "review": false, "breakdown": false, "files": false,
+                    "metadata": {"properties": {
+                        "kinds": false, "modules": false, "config": false,
+                        "coverage": {"properties": {"unrecognized": false}},
+                        "members": {"items": {"properties": {"config": false}}}
+                    }}
+                }
+            }
+        }]),
+    );
 }
 
 fn metadata_modes(schema: &mut schemars::Schema) {
@@ -423,6 +460,8 @@ impl MeasurementReport {
     /// It borrows the report, so the omitted detail, such as per-file records, is never copied.
     pub fn headline(&self) -> Self {
         Self {
+            document_type: self.document_type,
+            detail: Detail::Headline,
             schema_version: self.schema_version.clone(),
             project: self.project.clone(),
             metadata: self.metadata.clone().headline(),
@@ -430,7 +469,6 @@ impl MeasurementReport {
             review: None,
             breakdown: None,
             files: None,
-            report: None,
         }
     }
 }
@@ -451,7 +489,8 @@ impl Metadata {
 
 pub(crate) fn headline_example() -> serde_json::Value {
     serde_json::json!({
-        "schema_version":"2", "project":"empty-example",
+        "document_type":"measurement", "detail":"headline",
+        "schema_version":"3", "project":"empty-example",
         "metadata":{
             "root":"/example", "scope":{"hidden":true,"respect_ignore_files":true,"ignore_files":[".ignore"],"symlinks":"not followed","exclude":[]},
             "config_path":null, "user_config_path":null,

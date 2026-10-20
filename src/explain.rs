@@ -12,13 +12,19 @@ pub enum DocumentType {
     Explanation,
 }
 
+#[derive(Serialize, JsonSchema)]
+pub enum Version {
+    #[serde(rename = "2")]
+    V2,
+}
+
 /// One path's selection, parser and classification evidence. Exit 2 means the target's counts are unavailable; exit 0 includes counted, excluded, unrecognized, filtered and symlink paths. This is not a saved measurement input for compare.
 #[derive(Serialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 #[schemars(example = example())]
 pub struct Explanation {
     pub document_type: DocumentType,
-    pub schema_version: contract::Version,
+    pub schema_version: Version,
     /// Canonical scan root; the selected member's root in workspace mode.
     pub root: String,
     /// Root-relative path, prefixed with member name in workspace mode.
@@ -250,7 +256,7 @@ pub fn schema() -> serde_json::Value {
 fn example() -> Explanation {
     Explanation {
         document_type: DocumentType::Explanation,
-        schema_version: contract::Version::V2,
+        schema_version: Version::V2,
         root: "/synthetic/project".into(),
         path: "unknown.custom".into(),
         member: None,

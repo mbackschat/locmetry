@@ -40,6 +40,40 @@ fn current(workspace: bool) -> Value {
     common::json(&output, 0)
 }
 
+#[test]
+fn measurement_envelope_identifies_full_and_headline_projections() {
+    for workspace in [false, true] {
+        let full = current(workspace);
+        assert_eq!(full["document_type"], "measurement");
+        assert_eq!(full["detail"], "full");
+        assert_eq!(full["schema_version"], "3");
+        let typed: MeasurementReport = serde_json::from_value(full.clone()).unwrap();
+        let headline = serde_json::to_value(typed.headline()).unwrap();
+        assert_eq!(headline["document_type"], "measurement");
+        assert_eq!(headline["detail"], "headline");
+        assert_eq!(headline["schema_version"], "3");
+        for (field, value) in [
+            ("document_type", json!("comparison")),
+            ("detail", json!("summary")),
+            ("schema_version", json!("2")),
+        ] {
+            let mut invalid = full.clone();
+            invalid[field] = value;
+            assert!(serde_json::from_value::<MeasurementReport>(invalid).is_err());
+        }
+        for field in ["document_type", "detail"] {
+            let mut invalid = full.clone();
+            invalid.as_object_mut().unwrap().remove(field);
+            assert!(serde_json::from_value::<MeasurementReport>(invalid).is_err());
+        }
+        for (mut invalid, detail) in [(full, "headline"), (headline, "full")] {
+            invalid["detail"] = json!(detail);
+            let typed: MeasurementReport = serde_json::from_value(invalid).unwrap();
+            assert!(typed.validate().is_err(), "{detail}");
+        }
+    }
+}
+
 /// Locks the 0.5 clean break: every released version-1 report is refused by
 /// the typed reader, because its purpose names no longer exist.
 #[test]

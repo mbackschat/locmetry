@@ -322,6 +322,18 @@ fn report_schema_describes_the_headline_and_the_full_report() {
             .map(|error| format!("{} at {}", error, error.instance_path()))
             .collect();
         assert!(errors.is_empty(), "{errors:#?}");
+        let mut mismatched = document.clone();
+        mismatched["detail"] = json!(if document["detail"] == "full" {
+            "headline"
+        } else {
+            "full"
+        });
+        assert!(!validator.is_valid(&mismatched));
+        for field in ["document_type", "detail"] {
+            let mut absent = document.clone();
+            absent.as_object_mut().unwrap().remove(field);
+            assert!(!validator.is_valid(&absent), "{field}");
+        }
     }
     let mut surprise = full.clone();
     surprise["summary"]["surprise"] = json!(1);

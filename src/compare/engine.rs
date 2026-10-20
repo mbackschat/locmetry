@@ -13,13 +13,12 @@ pub fn read_input(path: &Path) -> Result<MeasurementReport> {
     let bytes = fs::read(path).with_context(|| format!("Cannot read {}", path.display()))?;
     let invalid = || format!("Invalid measurement report {}", path.display());
     let probe: Probe = serde_json::from_slice(&bytes).with_context(invalid)?;
-    // Version 1 used the purpose names retired in 0.5; translating them would
-    // keep two vocabularies alive, so old reports are re-measured instead.
-    ensure!(
-        probe.schema_version.as_deref() != Some("1"),
-        "{} has report schema version 1 from locmetry 0.4 or earlier; measure again with this version to compare",
-        path.display()
-    );
+    if let Some(version @ ("1" | "2")) = probe.schema_version.as_deref() {
+        anyhow::bail!(
+            "{} has report schema version {version}; measure again with this version to compare schema-3 measurements",
+            path.display()
+        );
+    }
     serde_json::from_slice(&bytes).with_context(invalid)
 }
 

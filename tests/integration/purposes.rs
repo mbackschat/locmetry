@@ -274,7 +274,7 @@ fn every_format_uses_other_and_unclaimed_instead_of_unclassified() {
             .unwrap(),
         0,
     );
-    assert_eq!(json["schema_version"], "2");
+    assert_eq!(json["schema_version"], "3");
     assert_eq!(json["summary"]["unclaimed_folders"][0]["folder"], "loose");
     assert_eq!(json["files"][0]["category"], "unclaimed");
 }

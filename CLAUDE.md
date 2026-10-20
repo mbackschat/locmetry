@@ -44,7 +44,7 @@ Keep changed guarantees and affected user-facing entry points consistent in the 
 
 | Document | Owns | Check when behavior changes |
 | --- | --- | --- |
-| [README](README.md) | Task entry points, CLI examples and navigation | Check affected examples when their commands, values or behavior change; use `bash scripts/check-doc-examples.sh` for executable recipes and `cargo test --locked --test integration readme::` for illustrative tables and the Common commands table, which mirrors the `--help` examples in [src/main.rs](src/main.rs). |
+| [README](README.md) | Task entry points, CLI examples and navigation | Check affected examples when their commands, values or behavior change; use `bash scripts/check-doc-examples.sh` for executable recipes and `cargo test --locked --test integration readme::` for measured sample tables and the Common commands table, which mirrors the `--help` examples in [src/main.rs](src/main.rs). |
 | [PRODUCT](docs/PRODUCT.md) | Supported public contract | Reconcile flags, report fields and compatibility with executable schemas and tests. |
 | [Measurement semantics](docs/measurement.md) | Counting, selection boundaries and limitations | Add independent regression oracles for changed measurement behavior. |
 | [Configure](docs/guides/configure.md), [selection](docs/guides/selection.md), [reports](docs/guides/reports.md), [compare](docs/guides/compare.md) | Task workflows, examples and evidence interpretation | `cargo test --locked --test integration guides::` checks embedded sources and examples. Add the `explain::` or `queries::` filter when those behaviors change, and the documentation script when executable recipes are affected. |
@@ -53,6 +53,8 @@ Keep changed guarantees and affected user-facing entry points consistent in the 
 | [Research](docs/research/README.md) | Dated findings and provenance | Preserve the historical evidence; link its resolution from the active plan. |
 
 Edit the regular Markdown files in `docs/guides/` directly. [src/guides.rs](src/guides.rs) embeds them verbatim with `include_str!`; rebuilding updates `--guide` output, with no generated documentation copy to maintain.
+
+Before creating or editing recorded demonstrations, follow the [Showboat authoring guidelines](docs/showboat-authoring.md). Recorded command guides live in [docs/cli](docs/cli/README.md) and use the shared [synthetic workspace](examples/cli-workspace/README.md). After CLI, fixture or recorded-guide changes, run the pinned Showboat verification command documented there; it also runs in Linux documentation CI. Preserve real captured output: edit commands/prose and regenerate with Showboat, never hand-edit output. Analytics recipes have optional external checks described in the [DuckDB cookbook](docs/duckdb-cookbook.md#verification). Keep installed packages, environments and Python dependency/lock files out of Git.
 
 CI checks executable examples and schema agreement; it cannot establish that every prose claim is current. Review affected prose. The example script is a development check, not a dependency of the executable or public Cargo tests.
 

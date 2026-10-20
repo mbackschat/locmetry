@@ -513,16 +513,17 @@ fn human_file_output_preserves_destination_protection_and_write_errors() {
 }
 
 #[test]
-fn historical_headline_report_pointers_round_trip_in_both_contracts() {
+fn measurement_v3_retires_the_pointer_while_comparison_v2_preserves_it() {
     let dir = fixture();
     baseline(dir.path());
     let mut measurement = json(&run(dir.path(), &["service"]).stdout);
     measurement["report"] = "old-report.json".into();
     measurement["metadata"]["locmetry_version"] = "0.3.0".into();
-    let decoded: locmetry::contract::MeasurementReport =
-        serde_json::from_value(measurement.clone()).unwrap();
-    assert_eq!(serde_json::to_value(decoded).unwrap(), measurement);
-    assert!(jsonschema::is_valid(
+    assert!(
+        serde_json::from_value::<locmetry::contract::MeasurementReport>(measurement.clone())
+            .is_err()
+    );
+    assert!(!jsonschema::is_valid(
         &locmetry::report_schema(),
         &measurement
     ));
