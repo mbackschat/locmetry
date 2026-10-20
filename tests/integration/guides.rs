@@ -194,6 +194,95 @@ fn configuration_example_preserves_decisions_and_open_questions() {
 }
 
 #[test]
+fn configuration_mapping_and_category_examples_keep_recognition_separate_from_purpose() {
+    let root = tempfile::tempdir().unwrap();
+    write(root.path(), "bin/launch", "console.log('start');\n");
+    write(
+        root.path(),
+        "__test__/helpers/setup.js",
+        "export const setup = 1;\n",
+    );
+    let guide = source("configure");
+    let mapping = block(&guide, "recognition-mapping", "toml");
+    let ordinary = block(&guide, "category-rule", "toml");
+    let override_entry = block(&guide, "category-override", "toml");
+    let baseline = document(
+        root.path(),
+        &["--no-user-config", "--files", "--output", "-"],
+        0,
+    );
+    assert_eq!(
+        baseline["metadata"]["coverage"]["unrecognized"],
+        json!(["bin/launch"])
+    );
+
+    write(
+        root.path(),
+        ".locmetryrc",
+        &format!("version = 1\n{mapping}\n{ordinary}"),
+    );
+    let mapped = document(
+        root.path(),
+        &["--no-user-config", "--files", "--output", "-"],
+        0,
+    );
+    let launcher = mapped["files"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|f| f["path"] == "bin/launch")
+        .unwrap();
+    assert_eq!(launcher["counts"]["code"], 1);
+    assert_eq!(launcher["language_mapping"], "node-launcher");
+    assert_eq!(launcher["purpose"], "other");
+    assert_eq!(launcher["category"], "unclaimed");
+    assert_eq!(launcher["rule"], "fallback");
+    let helper = document(
+        root.path(),
+        &[
+            "explain",
+            "__test__/helpers/setup.js",
+            "--no-user-config",
+            "--format",
+            "json",
+        ],
+        0,
+    );
+    assert_eq!(helper["result"]["file"]["purpose"], "test");
+    assert_eq!(helper["result"]["file"]["category"], "test");
+    assert_eq!(helper["result"]["decision"]["stage"], "convention");
+
+    write(
+        root.path(),
+        ".locmetryrc",
+        &format!("version = 1\n{mapping}\n{override_entry}"),
+    );
+    let refined = document(
+        root.path(),
+        &["--no-user-config", "--files", "--output", "-"],
+        0,
+    );
+    assert_eq!(
+        mapped["summary"]["source_purpose"],
+        refined["summary"]["source_purpose"]
+    );
+    let helper = document(
+        root.path(),
+        &[
+            "explain",
+            "__test__/helpers/setup.js",
+            "--no-user-config",
+            "--format",
+            "json",
+        ],
+        0,
+    );
+    assert_eq!(helper["result"]["file"]["purpose"], "test");
+    assert_eq!(helper["result"]["file"]["category"], "test-support");
+    assert_eq!(helper["result"]["decision"]["stage"], "override");
+}
+
+#[test]
 fn documented_discovery_path_and_topic_destinations_are_executable() {
     let root = tempfile::tempdir().unwrap();
     write(root.path(), "main.py", "print(1)\n");

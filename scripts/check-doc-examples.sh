@@ -35,6 +35,145 @@ extract_blocks() {
     ' "$source" >> "$destination"
     [[ $(wc -l < "$destination") -gt 1 ]]
 }
+
+check_configuration_transitions() {
+    local work="$temporary/configuration"
+    mkdir -p "$work/project/"{qa,bin,archive,__test__/helpers}
+    printf 'helper();\nhelper();\n' > "$work/project/qa/helper.js"
+    printf 'run();\n' > "$work/project/qa/runner.js"
+    printf 'check();\ncheck();\ncheck();\n' > "$work/project/qa/assertions.js"
+    printf 'setup();\n' > "$work/project/__test__/helpers/setup.js"
+    printf 'console.log("start");\n' > "$work/project/bin/launch"
+    printf 'old();\n' > "$work/project/archive/old.js"
+    printf '# History\n' > "$work/project/archive/history.md"
+    printf '{"old":true}\n' > "$work/project/archive/data.json"
+    cp -R "$work/project" "$work/unchanged-input"
+    mkdir "$work/capture"
+    cp -R "$work/project" "$work/capture/service"
+    extract_blocks 'Inspect configuration transitions' "$work/capture.sh" 1 0 "$repository/docs/guides/compare.md"
+    (cd "$work/capture" && bash "$work/capture.sh") > "$work/capture.stdout"
+    jq -e '.detail == "full" and (.files | length) == 7' "$work/capture/before.json" "$work/capture/after.json" > /dev/null
+    cat > "$work/baseline.toml" <<'TOML'
+version = 1
+[classification]
+fallback = "production"
+[[overrides]]
+id = "archive"
+match = ["archive/**"]
+purpose = "other"
+category = "historical"
+reason = "Historical material remains counted"
+TOML
+    cp "$work/baseline.toml" "$work/classified.toml"
+    cat >> "$work/classified.toml" <<'TOML'
+[[languages.mappings]]
+id = "node-launcher"
+match = ["bin/launch"]
+language = "JavaScript"
+[[rules]]
+id = "qa"
+match = ["qa/**"]
+purpose = "test"
+TOML
+    cat > "$work/refined.toml" <<'TOML'
+version = 1
+[classification]
+fallback = "production"
+[[languages.mappings]]
+id = "node-launcher"
+match = ["bin/launch"]
+language = "JavaScript"
+[[overrides]]
+id = "archive"
+match = ["archive/**"]
+kind = ["source"]
+purpose = "other"
+category = "historical"
+reason = "Only historical source needs this purpose decision"
+[[overrides]]
+id = "test-helpers"
+match = ["__test__/helpers/**"]
+purpose = "test"
+category = "test-support"
+[[rules]]
+id = "qa-helpers"
+match = ["qa/helper.js"]
+purpose = "test"
+category = "test-support"
+[[rules]]
+id = "qa-infrastructure"
+match = ["qa/runner.js"]
+purpose = "test"
+category = "infrastructure"
+[[rules]]
+id = "qa-assertions"
+match = ["qa/assertions.js"]
+purpose = "test"
+category = "assertions"
+TOML
+    local policy
+    for policy in baseline classified refined; do
+        (cd "$work" && locmetry --root project --config "$policy.toml" --no-user-config --files --output "$policy.json")
+        diff -r "$work/unchanged-input" "$work/project"
+    done
+    extract_blocks 'Inspect configuration transitions' "$work/transitions.sh" 2 0 "$repository/docs/guides/compare.md"
+    cp "$work/baseline.json" "$work/before.json"
+    cp "$work/classified.json" "$work/after.json"
+    (cd "$work" && bash transitions.sh)
+    jq -e --slurpfile before "$work/before.json" --slurpfile after "$work/after.json" '
+      .before.metadata == $before[0].metadata and .after.metadata == $after[0].metadata
+      and .source_identity == "not established by reports"
+      and (.changes | length) == 4
+      and ([.changes[] | select(.before.purpose == "production" and .after.purpose == "test") | .after.counts.code] | add) == 6
+      and ([.changes[] | select(.path == "bin/launch")] | .[0] |
+        .before.state == "unrecognized" and .before.counts == null
+        and .after.state == "counted" and .after.purpose == "production"
+        and .after.language_mapping == "node-launcher" and .after.counts.code == 1 and .code_delta == null)
+      and $before[0].summary.source_purpose.production.code == 6
+      and $after[0].summary.source_purpose.production.code == 1
+      and $before[0].summary.source_purpose.test.code == 1
+      and $after[0].summary.source_purpose.test.code == 7
+      and ($after[0].summary.source.code - $before[0].summary.source.code) == 1
+    ' "$work/transitions.json" > /dev/null
+    cp "$work/classified.json" "$work/before.json"
+    cp "$work/refined.json" "$work/after.json"
+    (cd "$work" && bash transitions.sh)
+    jq -e --slurpfile before "$work/before.json" --slurpfile after "$work/after.json" '
+      $before[0].summary.source_purpose == $after[0].summary.source_purpose
+      and $after[0].summary.source_purpose.other.code == 1
+      and (.changes | length) == 6
+      and all(.changes[]; .code_delta == 0)
+      and ([.changes[] | select(.after.kind == "source") | .after.category] | sort) ==
+        ["assertions", "infrastructure", "test-support", "test-support"]
+      and ([.changes[] | select(.before.purpose != .after.purpose) | .after.kind] | sort) ==
+        ["data", "documentation"]
+    ' "$work/transitions.json" > /dev/null
+
+    # Actual recaptures exercise unavailable and absent states without inventing report evidence.
+    printf '{}\n' > "$work/project/broken.ipynb"
+    rm "$work/project/bin/launch"
+    local status=0
+    (cd "$work" && locmetry --root project --config refined.toml --no-user-config --files --output after.json) > "$work/out" 2> "$work/err" || status=$?
+    [[ $status == 2 ]]
+    status=0
+    (cd "$work" && bash transitions.sh) > "$work/out" 2> "$work/err" || status=$?
+    [[ $status == 2 ]]
+    jq -e '
+      any(.changes[]; .path == "broken.ipynb" and .before.state == "not_recorded" and .after.state == "parse_failed" and .after.counts == null and .code_delta == null)
+      and any(.changes[]; .path == "bin/launch" and .after.state == "not_recorded" and .after.counts == null and .code_delta == null)
+    ' "$work/transitions.json" > /dev/null
+    rm "$work/project/broken.ipynb"
+    (cd "$work" && locmetry --root project --config refined.toml --no-user-config --output after.json)
+    rm "$work/transitions.json"
+    if (cd "$work" && bash transitions.sh) > "$work/out" 2> "$work/err"; then
+        echo 'Configuration recipe accepted a report without file detail' >&2
+        exit 1
+    fi
+    grep -Fq 'single-root full reports with --files' "$work/err"
+    [[ ! -s "$work/transitions.json" ]]
+}
+check_configuration_transitions
+
 extract_blocks 'Continuous integration' "$temporary/recipe.sh" 1 0 "$repository/docs/guides/reports.md"
 
 check_recipe() {
@@ -193,4 +332,4 @@ extract_blocks 'Measure the members together' "$temporary/tour-workspace.sh" 0 0
 grep -q 'service' "$temporary/tour-workspace.txt"
 
 # Measured README table excerpts are checked by cargo test --locked --test integration readme::.
-echo 'README and guide examples pass: silent file exports, Markdown content, policy outcomes, compare, workspace compare, explain, partial coverage, troubleshooting queries, adaptive folder detail, and the sample-project tour.'
+echo 'README and guide examples pass: silent file exports, Markdown content, policy outcomes, configuration transitions, compare, workspace compare, explain, partial coverage, troubleshooting queries, adaptive folder detail, and the sample-project tour.'

@@ -4,21 +4,20 @@ Use this guide to create `.locmetryrc` or review an existing one. Start at the i
 
 ## Start with Evidence
 
-The first measurement precedes edits. These commands work with the installed binary alone; `.` means the intended project root:
+The first measurement precedes edits. This command works with the installed binary alone; `.` means the intended project root:
 
 <!-- discovery-commands -->
 ```sh
-locmetry --help
-locmetry --guide configure
-locmetry --schema config
 locmetry --root . --format headline
 ```
 
 Read the compact headline first: effective scope, loaded configuration paths, coverage, `summary.submodules`, `summary.unclaimed_folders` and unused-policy findings. `.locmetryrc` is discovered only at the scan root, not in ancestors. `--config FILE` replaces project discovery; its patterns still use the scan root as their base. Personal defaults can affect selection and language recognition; inspect them rather than silently disabling them for a real project.
 
+To review what a configuration edit changes, save a full baseline with `--files` before editing; the [configuration-transition recipe](compare.md#inspect-configuration-transitions) provides capture and comparison commands. A headline alone cannot recover earlier per-file decisions.
+
 Decide whether submodules, vendored dependencies and reference material belong in the intended measurement. Exclude out-of-scope trees through scope policy; keep maintained project code measured and classify it from evidence. A submodule hint does not establish ownership. Report uncertain scope to the owner instead of assuming that all external-looking code should be excluded.
 
-The config schema describes accepted keys, defaults, exact built-ins and language names. To retrieve smaller sections, an optional external tool such as `jq` can help:
+Retrieve `locmetry --help` when command syntax is unclear, or `locmetry --schema config` when the intended edit needs keys, defaults, exact built-ins or accepted language names not shown here. These are optional references, not prerequisites for the first measurement. To retrieve smaller schema sections, an optional external tool such as `jq` can help:
 
 ```sh
 locmetry --schema config | jq -r .description
@@ -44,6 +43,53 @@ Substitute an existing root-relative path. Inspect `result.file.rule`, `result.d
 3. Leave it unclaimed and report the open question to the owner. Do not manufacture a rule just to remove the finding.
 
 Globs match root-relative file paths. `docs/**` covers descendants; `docs` does not mean the directory. `*.py` matches root files only; `**/*.py` also covers deeper paths. Patterns are case-sensitive. Use `[[rules]]` for decisions after conventions, and `[[overrides]]` only when the evidence requires winning before conventions. An optional `[categories]` table documents permitted custom categories and catches typos. The schema supplies the complete matching contract.
+
+## Recognize a Language, Then Review Purpose
+
+A language mapping makes an otherwise unrecognized selected file countable; it does not assign purpose. For example, after inspecting an extensionless `bin/launch` and establishing that it contains JavaScript, merge this entry into the existing configuration:
+
+<!-- recognition-mapping -->
+```toml
+[[languages.mappings]]
+id = "node-launcher"
+match = ["bin/launch"]
+language = "JavaScript"
+```
+
+Mappings apply only when backend recognition fails. After adding one, remeasure and explain the affected file using the same root and policy:
+
+```sh
+locmetry --root . --files --output ../mapped.json --print table --verbose
+locmetry explain bin/launch --root . --format json
+```
+
+Inspect `result.file.language_mapping`, `purpose`, `category` and `rule`. Without a matching classification entry, convention or module, this launcher defaults to `other` / `unclaimed`; counting it successfully does not settle its role. Add a narrow purpose rule only after establishing that role, then verify again. A single capture establishes “mapped but unclaimed”; “newly mapped” requires comparison with an earlier capture. The [configuration-transition recipe](compare.md#inspect-configuration-transitions) shows how to inspect both classification and recognition changes.
+
+## Refine a Category Without Changing Purpose
+
+Classification selects a whole entry, not a separate winner for purpose and category. For a helper at `__test__/helpers/setup.js`, this ordinary rule loses to the built-in test-directory convention, leaving both purpose and category as `test`:
+
+<!-- category-rule -->
+```toml
+[[rules]]
+id = "test-helpers"
+match = ["__test__/helpers/**"]
+purpose = "test"
+category = "test-support"
+```
+
+When repository evidence confirms these files are test helpers and the finer category is useful, replace that entry with this narrow override. Keep its ID unique; if `[categories]` is present, declare `test-support` there.
+
+<!-- category-override -->
+```toml
+[[overrides]]
+id = "test-helpers"
+match = ["__test__/helpers/**"]
+purpose = "test"
+category = "test-support"
+```
+
+Verify with `locmetry explain __test__/helpers/setup.js --root . --format json`: the deciding stage becomes `override`, purpose stays `test`, and category becomes `test-support`. Remeasure to verify unchanged source purpose totals. A category subtotal covers files assigned that label; it is not proof that all conceptual helper code has been identified.
 
 ## Worked Configuration
 
@@ -107,6 +153,8 @@ The synthetic commands disable personal defaults for reproducibility. For a real
 ## Validate and Hand Back
 
 Measure the unrestricted project again, without `--subfolder`. Inspect unused entries and exclusions: they may be shadowed, mistyped or unused in the current checkout. Subtree-only findings do not justify deleting project policy. Review coverage too: unavailable counts are not zero, and a successful config load does not establish completeness. Exit 1 means a command/configuration failure; exit 2 means partial counts, not an unresolved purpose decision.
+
+Compare against the saved baseline to check expected transfers, recognition changes and unchanged totals where applicable, including affected data/documentation records. A rule assigning intentional `other` keeps those files counted; a scope exclusion removes them from measurement before classification.
 
 Finish with resolved decisions and their evidence, intentional `other` entries and reasons, remaining unclaimed questions, coverage limitations and unused-policy findings. Open questions do not prevent delivering a review, but do prevent claiming that all policy is settled. Configuration edits should remain reviewable; preserve unrelated settings.
 

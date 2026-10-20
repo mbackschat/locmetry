@@ -90,3 +90,70 @@ Check `Member: service` and its presence (`both`, `before only`, or `after only`
 `--member` requires two full workspace reports and a name present in at least one. Unknown names and single-root reports fail without writing output. A member missing on one side contributes zero on that side because it was absent from the measurement. The selector cannot name an arbitrary nested folder, and it never rescans the source roots.
 
 Full JSON and headline retain `member: "service"`. Summary dimensions, composition and presence counts cover that member; full folders, packages, breakdown and member-specific findings are filtered to it. JSON paths keep their member prefixes. Original input metadata and report-level findings remain whole-input provenance, and partial status still reflects either complete workspace input, including failures in other members. The human scope note names this boundary. Inspect `member`, `summary.source`, `folders["service"].recursive.source` and findings in `member-change.json` to verify scope, counts and limitations.
+
+## Inspect configuration transitions
+
+Use this optional `jq` recipe when the question is which files changed classification or became countable. It handles two full single-root captures with `--files`; native `compare` continues to provide aggregate comparison without file detail. Preserve the intended personal defaults and selection settings for both captures. Save reports outside the measured root, using fresh output names:
+
+```sh
+locmetry --root service --files --output before.json --print table --verbose
+# After reviewing and editing the project's configuration:
+locmetry --root service --files --output after.json --print table --verbose
+```
+
+Run the following block as a shell script from the directory containing those captures. It validates them through `compare`, saves aggregate findings in `policy-change.json`, and writes changed file records to `transitions.json`. It retains both captures' complete metadata, including effective policy, coverage, producer and measurement time; retain the original reports too. Exit 2 is preserved when counts are partial; other comparison errors stop the script.
+
+```sh
+status=0
+locmetry compare before.json after.json --output policy-change.json || status=$?
+case "$status" in 0|2) ;; *) exit "$status" ;; esac
+jq -n --slurpfile before before.json --slurpfile after after.json '
+  def eligible:
+    .detail == "full" and (.metadata.root | type) == "string"
+    and (.files | type) == "array";
+  def records:
+    [
+      (.files[] | {key: .path, value: (del(.path) + {state: "counted"})}),
+      (.metadata.coverage.unrecognized[] |
+        {key: ., value: {state: "unrecognized", counts: null}}),
+      (.metadata.coverage.unread[] |
+        {key: ., value: {state: "unread", counts: null}}),
+      ((.metadata.coverage.parse_failures // [])[] |
+        {key: .path, value: {state: "parse_failed", counts: null, reason: .reason}})
+    ] | from_entries;
+  if ($before[0] | eligible) and ($after[0] | eligible) then
+    ($before[0] | records) as $b | ($after[0] | records) as $a |
+    {
+      before: {input: "before.json", metadata: $before[0].metadata},
+      after: {input: "after.json", metadata: $after[0].metadata},
+      source_identity: "not established by reports",
+      changes: [
+        (($b + $a) | keys[]) as $path |
+        ($b[$path] // {state: "not_recorded", counts: null}) as $old |
+        ($a[$path] // {state: "not_recorded", counts: null}) as $new |
+        select($old != $new) |
+        {path: $path, before: $old, after: $new,
+         code_delta: (if $old.state == "counted" and $new.state == "counted"
+                      then $new.counts.code - $old.counts.code else null end)}
+      ]
+    }
+  else error("Use single-root full reports with --files on both sides")
+  end
+' > transitions.json || exit 1
+exit "$status"
+```
+
+Rows match exact root-relative paths and retain language, content kind, purpose, category, deciding rule, mapping provenance and counts when available. Classification-only changes remain visible with zero code delta. For a previously unrecognized file, the new count is available but the old count and numeric delta remain `null`. `not_recorded` means absent from counted and coverage records, not proven absent on disk; selection changes can also produce it. Missing historical parse-failure evidence stays missing in metadata. This projection is a recipe, not a new Locmetry report schema or a replacement for aggregate findings.
+
+Read `policy-change.json` alongside these rows. Different recorded policies establish a policy difference, not its causal share of the observed changes. Equal counts do not establish equal source contents. For a controlled policy experiment, independently verify unchanged input paths and bytes, including build descriptors and ignore files, and keep the same tool and selection settings. Store that verification separately; the recipe always says source identity is not established by the reports themselves. Current `explain` output describes the current tree and policy, not either historical capture.
+
+The [executable recipe checks](../../scripts/check-doc-examples.sh) use a synthetic tree and three policies, with policy files and reports outside the measured root. A recursive byte comparison against a saved copy independently checks unchanged input paths and contents after each capture. The checks establish these outcomes:
+
+| Policy change | Expected observation |
+| --- | --- |
+| Classify three QA files as tests | Six source code lines transfer from production to test without changing those files' counts. |
+| Map an extensionless launcher to JavaScript | Its state changes from unrecognized to counted production, adding one available source code line; its baseline count is not zero. |
+| Refine helper, infrastructure and assertion categories | Category and deciding-rule changes remain visible; source purpose totals stay identical. |
+| Restrict the archive override to `kind = ["source"]` | One source code line stays intentional `other`; documentation and data change purpose while remaining counted. |
+
+Production starts at six source code lines and test at one; after the first two changes, production is one and test is seven. Intentional Other stays at one throughout. Those bucket changes reconcile with one additional counted source code line. The category/archive refinement then changes no source purpose totals. These small counts are fixture expectations, not defaults or claims about another project.
