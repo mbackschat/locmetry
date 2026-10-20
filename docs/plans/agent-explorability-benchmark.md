@@ -2,10 +2,10 @@
 
 <!-- doc-status
 {
-  "status": "deferred",
+  "status": "active",
   "date": "2026-10-20",
-  "summary": "Tested help routing adopted; retain the benchmark for separately scoped variants.",
-  "evidence": "[Routing replication](../research/agent-explorability-routing-replication.md)"
+  "summary": "Evaluate full-feature help coverage with a frozen ten-task campaign.",
+  "evidence": "[Full-help study](../research/agent-explorability-full-help-study.md)"
 }
 -->
 
@@ -37,7 +37,7 @@ The owner subsequently authorized the [configuration-recipe experiment](../resea
 
 The authorized [execution-first routing study](../research/agent-explorability-help-routing-study.md) completed 36 fresh sessions with all answers correct. Explicit routing eliminated both reference lookups in all four covered-task C runs and reduced median calls and uncached input against both controls. Its broader-task and secondary cost guards failed, prompting the unchanged-candidate replication below. The original study owns those historical results, limits and replay instructions.
 
-The [bounded routing-cost replication](../research/agent-explorability-routing-replication.md) completed both frozen stages: 36 broader-configuration sessions and 18 report-understanding sessions, all correct and all cost guards passing. The earlier penalties did not recur. Its narrow adoption recommendation was subsequently authorized by the owner on 2026-10-20: root long help now includes the exact tested example plus conditional execution-first routing, with guides and navigation retained. The [help-design guidelines](../help-design.md) preserve the rationale for future work. No further experiment is scheduled; this reusable benchmark is deferred until a separately scoped variant or use case is chosen. Do not pool the historical samples or treat the adverse-guard replication as a new covered-task benefit test.
+The [bounded routing-cost replication](../research/agent-explorability-routing-replication.md) completed both frozen stages: 36 broader-configuration sessions and 18 report-understanding sessions, all correct and all cost guards passing. The earlier penalties did not recur. Its narrow adoption recommendation was subsequently authorized by the owner on 2026-10-20: root long help now includes the exact tested example plus conditional execution-first routing, with guides and navigation retained. The [help-design guidelines](../help-design.md) preserve the rationale for future work. The owner subsequently clarified that completion requires every supported feature/use case. The [full-help study](../research/agent-explorability-full-help-study.md) now evaluates the combined interface across ten tasks, including new scope/views and personal-policy cases. Do not pool the historical samples or treat the adverse-guard replication as a new covered-task benefit test.
 
 For a later session:
 
@@ -45,7 +45,7 @@ For a later session:
 2. Use the frozen task files and runner for replay. Resolve MEDIUM from the owner's active CLI mapping and record the actual model/effort; a changed model is a new campaign.
 3. If testing another improvement, record the then-current interface as control and keep guides available. The example alone did not earn adoption; its combination with conditional routing now has a narrow adoption recommendation after the cost replication. Define one new variable, a task-specific oracle, and a practical cost gate before execution. Other information placement or retrieval changes remain new hypotheses; there is no outstanding requirement to repeat the completed guard checks.
 4. Add an independent fixture variant when testing generalization, and give each changed prompt, fixture, oracle, or treatment a new revision. Keep old outcomes and all-run costs available.
-5. Treat personal-policy interactions, extended scope cases, and long-session reuse as separate future cases, not as already verified behavior of the benchmark.
+5. The full-help study adds personal-policy and extended scope cases with independent oracles; long-session reuse remains outside the fresh-session benchmark.
 
 The owner authorized autonomous experimental design on 2026-10-20 and separately authorized the guidelines and tested help improvement after the bounded replication. Future product changes require their own task scope; this reusable benchmark does not authorize them.
 
