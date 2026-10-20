@@ -2,6 +2,11 @@
 
 # locmetry
 
+[![CI](https://github.com/mbackschat/locmetry/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/mbackschat/locmetry/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/mbackschat/locmetry/actions/workflows/github-code-scanning/codeql/badge.svg?branch=main)](https://github.com/mbackschat/locmetry/actions/workflows/github-code-scanning/codeql)
+[![Latest release](https://img.shields.io/github/v/release/mbackschat/locmetry)](https://github.com/mbackschat/locmetry/releases/latest)
+[![Licence: MIT](https://img.shields.io/github/license/mbackschat/locmetry)](LICENSE)
+
 Locmetry counts code, comments and blank lines, classifies files as production, test or other, and records the rule behind each classification. Reports separate source code from data and documentation and show results by language and folder.
 
 ## Install
