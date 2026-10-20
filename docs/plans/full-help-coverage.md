@@ -41,3 +41,8 @@ Every user-facing option must map to one of these tasks. Root help must expose t
 - Compare the current `c17fece` interface (the adopted help plus the shared Code-based workspace-ratio correction) with the combined help candidate using fresh MEDIUM agents, exact binaries, isolated inputs, captured calls/tokens/time and independent final-answer grading. Freeze tasks, oracles, schedule and decision thresholds before launch. Retain all valid failures and recovery costs.
 - Resolve observed correctness defects and material discovery gaps; distinguish functional coverage from measured efficiency. If a cost guard fails, identify the route responsible and record a new candidate before corrective testing; do not relabel the failure or repeat unchanged trials until they pass.
 - Record findings, verified limits and replay inputs, update contributor guidance, commit the completed implementation and close this active plan. No remaining row may be silently treated as outside scope.
+
+
+## Evidence Checkpoint
+
+The [full-help study](../research/agent-explorability-full-help-study.md) completed 80 fresh sessions with all artifact and independent answer checks passing, including full discovery coverage. Aggregate calls and uncached input decreased, but Task 4 missed its primary call guard. Preserve that result. A [separate 32-session correction](../../tests/fixtures/agent-explorability/compare-help-routing-study.json) tests explicit comparison execution routing against the original control, with unchanged numeric gates and no pooling. Completion and the final recommendation await that bounded check; the current feature inventory is maintained in [help design](../help-design.md#current-feature-inventory).

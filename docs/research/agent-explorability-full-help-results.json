@@ -1,0 +1,3635 @@
+{
+  "revision": "full-help-results-v1",
+  "date": "2026-10-20",
+  "protocol": "tests/fixtures/agent-explorability/full-help-study.json",
+  "model": "gpt-6.1-sol",
+  "effort": "xhigh",
+  "arms": {
+    "A": {
+      "source_revision": "c17fece1c4415f3b871ff9694ef6c30d70ae0074",
+      "source_provenance": "operator-declared prebuilt binary",
+      "binary_sha256": "79f8d3db22667ab429457d834e1ec036fdf8d18575c8e927fab38af13e490eac"
+    },
+    "B": {
+      "source_revision": "6fdaef3",
+      "source_provenance": "operator-declared prebuilt binary",
+      "binary_sha256": "ca6e949b73fa6114f6c04458ca27879914e4c530adc8294c9d9b6f08dd4ed400"
+    }
+  },
+  "preparation_revision": "1ee4f4249b05b8565e14b3dc33833a2da0f74780",
+  "previous_trials_included": false,
+  "analysis": {
+    "per_task": {
+      "1": {
+        "A": {
+          "tools": {
+            "total": 11,
+            "median": 3.0,
+            "minimum": 2,
+            "maximum": 3
+          },
+          "shell": {
+            "total": 18,
+            "median": 4.5,
+            "minimum": 3,
+            "maximum": 6
+          },
+          "cli": {
+            "total": 15,
+            "median": 4.0,
+            "minimum": 3,
+            "maximum": 4
+          },
+          "fresh": {
+            "total": 95510,
+            "median": 20802.0,
+            "minimum": 19882,
+            "maximum": 34024
+          },
+          "cached": {
+            "total": 319232,
+            "median": 83904.0,
+            "minimum": 60672,
+            "maximum": 90752
+          },
+          "output": {
+            "total": 4137,
+            "median": 1024.0,
+            "minimum": 895,
+            "maximum": 1194
+          },
+          "seconds": {
+            "total": 109.82590222358704,
+            "median": 26.693853616714478,
+            "minimum": 26.20163106918335,
+            "maximum": 30.23656392097473
+          },
+          "guide_calls": {
+            "total": 4,
+            "median": 1.0,
+            "minimum": 1,
+            "maximum": 1
+          },
+          "schema_calls": {
+            "total": 0,
+            "median": 0.0,
+            "minimum": 0,
+            "maximum": 0
+          },
+          "passes": 4
+        },
+        "B": {
+          "tools": {
+            "total": 8,
+            "median": 2.0,
+            "minimum": 2,
+            "maximum": 2
+          },
+          "shell": {
+            "total": 16,
+            "median": 4.0,
+            "minimum": 4,
+            "maximum": 4
+          },
+          "cli": {
+            "total": 12,
+            "median": 3.0,
+            "minimum": 3,
+            "maximum": 3
+          },
+          "fresh": {
+            "total": 95893,
+            "median": 20714.0,
+            "minimum": 20624,
+            "maximum": 33841
+          },
+          "cached": {
+            "total": 231424,
+            "median": 61184.0,
+            "minimum": 47744,
+            "maximum": 61312
+          },
+          "output": {
+            "total": 3805,
+            "median": 939.0,
+            "minimum": 887,
+            "maximum": 1040
+          },
+          "seconds": {
+            "total": 94.99004793167114,
+            "median": 23.2453351020813,
+            "minimum": 22.14387083053589,
+            "maximum": 26.355506896972656
+          },
+          "guide_calls": {
+            "total": 4,
+            "median": 1.0,
+            "minimum": 1,
+            "maximum": 1
+          },
+          "schema_calls": {
+            "total": 0,
+            "median": 0.0,
+            "minimum": 0,
+            "maximum": 0
+          },
+          "passes": 4
+        }
+      },
+      "2": {
+        "A": {
+          "tools": {
+            "total": 29,
+            "median": 7.5,
+            "minimum": 6,
+            "maximum": 8
+          },
+          "shell": {
+            "total": 53,
+            "median": 13.5,
+            "minimum": 11,
+            "maximum": 15
+          },
+          "cli": {
+            "total": 36,
+            "median": 8.5,
+            "minimum": 8,
+            "maximum": 11
+          },
+          "fresh": {
+            "total": 148054,
+            "median": 35099.0,
+            "minimum": 32254,
+            "maximum": 45602
+          },
+          "cached": {
+            "total": 1075200,
+            "median": 274176.0,
+            "minimum": 214272,
+            "maximum": 312576
+          },
+          "output": {
+            "total": 22805,
+            "median": 5855.0,
+            "minimum": 4501,
+            "maximum": 6594
+          },
+          "seconds": {
+            "total": 452.8634560108185,
+            "median": 115.99111890792847,
+            "minimum": 86.67282199859619,
+            "maximum": 134.20839619636536
+          },
+          "guide_calls": {
+            "total": 7,
+            "median": 1.5,
+            "minimum": 1,
+            "maximum": 3
+          },
+          "schema_calls": {
+            "total": 7,
+            "median": 2.0,
+            "minimum": 1,
+            "maximum": 2
+          },
+          "passes": 4
+        },
+        "B": {
+          "tools": {
+            "total": 27,
+            "median": 7.0,
+            "minimum": 6,
+            "maximum": 7
+          },
+          "shell": {
+            "total": 49,
+            "median": 12.5,
+            "minimum": 10,
+            "maximum": 14
+          },
+          "cli": {
+            "total": 28,
+            "median": 7.0,
+            "minimum": 6,
+            "maximum": 8
+          },
+          "fresh": {
+            "total": 158048,
+            "median": 37620.0,
+            "minimum": 34192,
+            "maximum": 48616
+          },
+          "cached": {
+            "total": 998144,
+            "median": 256640.0,
+            "minimum": 219904,
+            "maximum": 264960
+          },
+          "output": {
+            "total": 23260,
+            "median": 5899.5,
+            "minimum": 5213,
+            "maximum": 6248
+          },
+          "seconds": {
+            "total": 483.2367720603943,
+            "median": 120.51282465457916,
+            "minimum": 106.96658897399902,
+            "maximum": 135.24453377723694
+          },
+          "guide_calls": {
+            "total": 6,
+            "median": 1.5,
+            "minimum": 1,
+            "maximum": 2
+          },
+          "schema_calls": {
+            "total": 6,
+            "median": 1.5,
+            "minimum": 1,
+            "maximum": 2
+          },
+          "passes": 4
+        }
+      },
+      "3": {
+        "A": {
+          "tools": {
+            "total": 26,
+            "median": 6.5,
+            "minimum": 5,
+            "maximum": 8
+          },
+          "shell": {
+            "total": 50,
+            "median": 13.0,
+            "minimum": 10,
+            "maximum": 14
+          },
+          "cli": {
+            "total": 32,
+            "median": 8.5,
+            "minimum": 6,
+            "maximum": 9
+          },
+          "fresh": {
+            "total": 130526,
+            "median": 32249.0,
+            "minimum": 27799,
+            "maximum": 38229
+          },
+          "cached": {
+            "total": 946560,
+            "median": 232640.0,
+            "minimum": 170624,
+            "maximum": 310656
+          },
+          "output": {
+            "total": 17051,
+            "median": 4345.5,
+            "minimum": 2929,
+            "maximum": 5431
+          },
+          "seconds": {
+            "total": 317.98461079597473,
+            "median": 81.2851573228836,
+            "minimum": 61.68082618713379,
+            "maximum": 93.73346996307373
+          },
+          "guide_calls": {
+            "total": 5,
+            "median": 1.0,
+            "minimum": 1,
+            "maximum": 2
+          },
+          "schema_calls": {
+            "total": 4,
+            "median": 1.0,
+            "minimum": 1,
+            "maximum": 1
+          },
+          "passes": 4
+        },
+        "B": {
+          "tools": {
+            "total": 24,
+            "median": 6.0,
+            "minimum": 5,
+            "maximum": 7
+          },
+          "shell": {
+            "total": 49,
+            "median": 13.0,
+            "minimum": 9,
+            "maximum": 14
+          },
+          "cli": {
+            "total": 28,
+            "median": 7.0,
+            "minimum": 6,
+            "maximum": 8
+          },
+          "fresh": {
+            "total": 142104,
+            "median": 31531.5,
+            "minimum": 30630,
+            "maximum": 48411
+          },
+          "cached": {
+            "total": 851072,
+            "median": 214976.0,
+            "minimum": 176000,
+            "maximum": 245120
+          },
+          "output": {
+            "total": 13687,
+            "median": 3353.0,
+            "minimum": 3150,
+            "maximum": 3831
+          },
+          "seconds": {
+            "total": 273.26767778396606,
+            "median": 67.55963206291199,
+            "minimum": 63.48054003715515,
+            "maximum": 74.66787362098694
+          },
+          "guide_calls": {
+            "total": 4,
+            "median": 1.0,
+            "minimum": 1,
+            "maximum": 1
+          },
+          "schema_calls": {
+            "total": 4,
+            "median": 1.0,
+            "minimum": 1,
+            "maximum": 1
+          },
+          "passes": 4
+        }
+      },
+      "4": {
+        "A": {
+          "tools": {
+            "total": 26,
+            "median": 6.5,
+            "minimum": 5,
+            "maximum": 8
+          },
+          "shell": {
+            "total": 67,
+            "median": 17.0,
+            "minimum": 15,
+            "maximum": 18
+          },
+          "cli": {
+            "total": 33,
+            "median": 8.0,
+            "minimum": 8,
+            "maximum": 9
+          },
+          "fresh": {
+            "total": 155571,
+            "median": 38992.0,
+            "minimum": 29725,
+            "maximum": 47862
+          },
+          "cached": {
+            "total": 804224,
+            "median": 196288.0,
+            "minimum": 175616,
+            "maximum": 236032
+          },
+          "output": {
+            "total": 16529,
+            "median": 3994.5,
+            "minimum": 3907,
+            "maximum": 4633
+          },
+          "seconds": {
+            "total": 338.8956127166748,
+            "median": 82.67056095600128,
+            "minimum": 76.69595694541931,
+            "maximum": 96.85853385925293
+          },
+          "guide_calls": {
+            "total": 4,
+            "median": 1.0,
+            "minimum": 1,
+            "maximum": 1
+          },
+          "schema_calls": {
+            "total": 1,
+            "median": 0.0,
+            "minimum": 0,
+            "maximum": 1
+          },
+          "passes": 4
+        },
+        "B": {
+          "tools": {
+            "total": 32,
+            "median": 8.0,
+            "minimum": 7,
+            "maximum": 9
+          },
+          "shell": {
+            "total": 57,
+            "median": 14.0,
+            "minimum": 13,
+            "maximum": 16
+          },
+          "cli": {
+            "total": 32,
+            "median": 8.0,
+            "minimum": 8,
+            "maximum": 8
+          },
+          "fresh": {
+            "total": 138704,
+            "median": 34919.0,
+            "minimum": 26172,
+            "maximum": 42694
+          },
+          "cached": {
+            "total": 1036288,
+            "median": 251840.0,
+            "minimum": 220544,
+            "maximum": 312064
+          },
+          "output": {
+            "total": 15999,
+            "median": 4130.5,
+            "minimum": 3570,
+            "maximum": 4168
+          },
+          "seconds": {
+            "total": 315.5613775253296,
+            "median": 79.64229226112366,
+            "minimum": 69.45751690864563,
+            "maximum": 86.81927609443665
+          },
+          "guide_calls": {
+            "total": 4,
+            "median": 1.0,
+            "minimum": 1,
+            "maximum": 1
+          },
+          "schema_calls": {
+            "total": 0,
+            "median": 0.0,
+            "minimum": 0,
+            "maximum": 0
+          },
+          "passes": 4
+        }
+      },
+      "5": {
+        "A": {
+          "tools": {
+            "total": 28,
+            "median": 7.0,
+            "minimum": 5,
+            "maximum": 9
+          },
+          "shell": {
+            "total": 69,
+            "median": 17.5,
+            "minimum": 16,
+            "maximum": 18
+          },
+          "cli": {
+            "total": 41,
+            "median": 10.0,
+            "minimum": 10,
+            "maximum": 11
+          },
+          "fresh": {
+            "total": 226978,
+            "median": 60008.0,
+            "minimum": 35346,
+            "maximum": 71616
+          },
+          "cached": {
+            "total": 1051008,
+            "median": 254528.0,
+            "minimum": 172288,
+            "maximum": 369664
+          },
+          "output": {
+            "total": 14796,
+            "median": 3706.0,
+            "minimum": 3177,
+            "maximum": 4207
+          },
+          "seconds": {
+            "total": 300.875216960907,
+            "median": 74.6319500207901,
+            "minimum": 62.59935784339905,
+            "maximum": 89.01195907592773
+          },
+          "guide_calls": {
+            "total": 8,
+            "median": 2.0,
+            "minimum": 2,
+            "maximum": 2
+          },
+          "schema_calls": {
+            "total": 5,
+            "median": 1.0,
+            "minimum": 1,
+            "maximum": 2
+          },
+          "passes": 4
+        },
+        "B": {
+          "tools": {
+            "total": 24,
+            "median": 6.0,
+            "minimum": 5,
+            "maximum": 7
+          },
+          "shell": {
+            "total": 61,
+            "median": 15.0,
+            "minimum": 14,
+            "maximum": 17
+          },
+          "cli": {
+            "total": 37,
+            "median": 9.0,
+            "minimum": 9,
+            "maximum": 10
+          },
+          "fresh": {
+            "total": 153412,
+            "median": 37457.5,
+            "minimum": 36739,
+            "maximum": 41758
+          },
+          "cached": {
+            "total": 848128,
+            "median": 205504.0,
+            "minimum": 174592,
+            "maximum": 262528
+          },
+          "output": {
+            "total": 13145,
+            "median": 3362.5,
+            "minimum": 2627,
+            "maximum": 3793
+          },
+          "seconds": {
+            "total": 274.2698609828949,
+            "median": 67.11335098743439,
+            "minimum": 56.48087692260742,
+            "maximum": 83.5622820854187
+          },
+          "guide_calls": {
+            "total": 5,
+            "median": 1.0,
+            "minimum": 1,
+            "maximum": 2
+          },
+          "schema_calls": {
+            "total": 4,
+            "median": 1.0,
+            "minimum": 1,
+            "maximum": 1
+          },
+          "passes": 4
+        }
+      },
+      "6": {
+        "A": {
+          "tools": {
+            "total": 17,
+            "median": 4.0,
+            "minimum": 4,
+            "maximum": 5
+          },
+          "shell": {
+            "total": 40,
+            "median": 10.0,
+            "minimum": 8,
+            "maximum": 12
+          },
+          "cli": {
+            "total": 47,
+            "median": 12.0,
+            "minimum": 11,
+            "maximum": 12
+          },
+          "fresh": {
+            "total": 112198,
+            "median": 29273.0,
+            "minimum": 24025,
+            "maximum": 29627
+          },
+          "cached": {
+            "total": 556800,
+            "median": 130240.0,
+            "minimum": 124928,
+            "maximum": 171392
+          },
+          "output": {
+            "total": 11049,
+            "median": 2847.5,
+            "minimum": 2359,
+            "maximum": 2995
+          },
+          "seconds": {
+            "total": 241.97227025032043,
+            "median": 59.06696963310242,
+            "minimum": 52.38860511779785,
+            "maximum": 71.44972586631775
+          },
+          "guide_calls": {
+            "total": 4,
+            "median": 1.0,
+            "minimum": 1,
+            "maximum": 1
+          },
+          "schema_calls": {
+            "total": 3,
+            "median": 1.0,
+            "minimum": 0,
+            "maximum": 1
+          },
+          "passes": 4
+        },
+        "B": {
+          "tools": {
+            "total": 17,
+            "median": 4.0,
+            "minimum": 3,
+            "maximum": 6
+          },
+          "shell": {
+            "total": 50,
+            "median": 12.0,
+            "minimum": 9,
+            "maximum": 17
+          },
+          "cli": {
+            "total": 47,
+            "median": 11.5,
+            "minimum": 11,
+            "maximum": 13
+          },
+          "fresh": {
+            "total": 121270,
+            "median": 27485.5,
+            "minimum": 25217,
+            "maximum": 41082
+          },
+          "cached": {
+            "total": 554112,
+            "median": 128768.0,
+            "minimum": 92416,
+            "maximum": 204160
+          },
+          "output": {
+            "total": 11507,
+            "median": 2685.5,
+            "minimum": 2479,
+            "maximum": 3657
+          },
+          "seconds": {
+            "total": 235.866375207901,
+            "median": 53.41108012199402,
+            "minimum": 49.382529973983765,
+            "maximum": 79.6616849899292
+          },
+          "guide_calls": {
+            "total": 4,
+            "median": 1.0,
+            "minimum": 1,
+            "maximum": 1
+          },
+          "schema_calls": {
+            "total": 3,
+            "median": 0.5,
+            "minimum": 0,
+            "maximum": 2
+          },
+          "passes": 4
+        }
+      },
+      "7": {
+        "A": {
+          "tools": {
+            "total": 22,
+            "median": 5.5,
+            "minimum": 5,
+            "maximum": 6
+          },
+          "shell": {
+            "total": 66,
+            "median": 16.5,
+            "minimum": 16,
+            "maximum": 17
+          },
+          "cli": {
+            "total": 66,
+            "median": 16.5,
+            "minimum": 16,
+            "maximum": 17
+          },
+          "fresh": {
+            "total": 201960,
+            "median": 50830.5,
+            "minimum": 38638,
+            "maximum": 61661
+          },
+          "cached": {
+            "total": 763392,
+            "median": 191104.0,
+            "minimum": 155776,
+            "maximum": 225408
+          },
+          "output": {
+            "total": 13184,
+            "median": 3323.0,
+            "minimum": 3002,
+            "maximum": 3536
+          },
+          "seconds": {
+            "total": 302.7457559108734,
+            "median": 79.15416991710663,
+            "minimum": 62.605453968048096,
+            "maximum": 81.83196210861206
+          },
+          "guide_calls": {
+            "total": 22,
+            "median": 5.5,
+            "minimum": 5,
+            "maximum": 6
+          },
+          "schema_calls": {
+            "total": 24,
+            "median": 6.0,
+            "minimum": 6,
+            "maximum": 6
+          },
+          "passes": 4
+        },
+        "B": {
+          "tools": {
+            "total": 20,
+            "median": 5.0,
+            "minimum": 4,
+            "maximum": 6
+          },
+          "shell": {
+            "total": 70,
+            "median": 17.0,
+            "minimum": 17,
+            "maximum": 19
+          },
+          "cli": {
+            "total": 70,
+            "median": 17.0,
+            "minimum": 17,
+            "maximum": 19
+          },
+          "fresh": {
+            "total": 191372,
+            "median": 47100.0,
+            "minimum": 40581,
+            "maximum": 56591
+          },
+          "cached": {
+            "total": 714880,
+            "median": 174080.0,
+            "minimum": 135296,
+            "maximum": 231424
+          },
+          "output": {
+            "total": 14338,
+            "median": 3536.0,
+            "minimum": 3087,
+            "maximum": 4179
+          },
+          "seconds": {
+            "total": 310.78043031692505,
+            "median": 72.41374349594116,
+            "minimum": 63.594242095947266,
+            "maximum": 102.35870122909546
+          },
+          "guide_calls": {
+            "total": 23,
+            "median": 6.0,
+            "minimum": 5,
+            "maximum": 6
+          },
+          "schema_calls": {
+            "total": 27,
+            "median": 6.5,
+            "minimum": 6,
+            "maximum": 8
+          },
+          "passes": 4
+        }
+      },
+      "9": {
+        "A": {
+          "tools": {
+            "total": 23,
+            "median": 5.5,
+            "minimum": 4,
+            "maximum": 8
+          },
+          "shell": {
+            "total": 41,
+            "median": 10.0,
+            "minimum": 9,
+            "maximum": 12
+          },
+          "cli": {
+            "total": 15,
+            "median": 3.0,
+            "minimum": 3,
+            "maximum": 6
+          },
+          "fresh": {
+            "total": 115974,
+            "median": 31352.5,
+            "minimum": 18168,
+            "maximum": 35101
+          },
+          "cached": {
+            "total": 688128,
+            "median": 151232.0,
+            "minimum": 102144,
+            "maximum": 283520
+          },
+          "output": {
+            "total": 11439,
+            "median": 2632.0,
+            "minimum": 2011,
+            "maximum": 4164
+          },
+          "seconds": {
+            "total": 257.52768301963806,
+            "median": 63.14412319660187,
+            "minimum": 40.273979902267456,
+            "maximum": 90.96545672416687
+          },
+          "guide_calls": {
+            "total": 1,
+            "median": 0.0,
+            "minimum": 0,
+            "maximum": 1
+          },
+          "schema_calls": {
+            "total": 1,
+            "median": 0.0,
+            "minimum": 0,
+            "maximum": 1
+          },
+          "passes": 4
+        },
+        "B": {
+          "tools": {
+            "total": 23,
+            "median": 6.0,
+            "minimum": 5,
+            "maximum": 6
+          },
+          "shell": {
+            "total": 30,
+            "median": 7.5,
+            "minimum": 6,
+            "maximum": 9
+          },
+          "cli": {
+            "total": 12,
+            "median": 3.0,
+            "minimum": 3,
+            "maximum": 3
+          },
+          "fresh": {
+            "total": 115956,
+            "median": 28941.5,
+            "minimum": 19242,
+            "maximum": 38831
+          },
+          "cached": {
+            "total": 643328,
+            "median": 160896.0,
+            "minimum": 147840,
+            "maximum": 173696
+          },
+          "output": {
+            "total": 10350,
+            "median": 2557.0,
+            "minimum": 2416,
+            "maximum": 2820
+          },
+          "seconds": {
+            "total": 231.8678503036499,
+            "median": 57.525397062301636,
+            "minimum": 49.355863094329834,
+            "maximum": 67.4611930847168
+          },
+          "guide_calls": {
+            "total": 0,
+            "median": 0.0,
+            "minimum": 0,
+            "maximum": 0
+          },
+          "schema_calls": {
+            "total": 0,
+            "median": 0.0,
+            "minimum": 0,
+            "maximum": 0
+          },
+          "passes": 4
+        }
+      },
+      "10": {
+        "A": {
+          "tools": {
+            "total": 30,
+            "median": 7.5,
+            "minimum": 6,
+            "maximum": 9
+          },
+          "shell": {
+            "total": 68,
+            "median": 16.5,
+            "minimum": 14,
+            "maximum": 21
+          },
+          "cli": {
+            "total": 37,
+            "median": 9.0,
+            "minimum": 9,
+            "maximum": 10
+          },
+          "fresh": {
+            "total": 146985,
+            "median": 35114.5,
+            "minimum": 34132,
+            "maximum": 42624
+          },
+          "cached": {
+            "total": 1099648,
+            "median": 257984.0,
+            "minimum": 204416,
+            "maximum": 379264
+          },
+          "output": {
+            "total": 19243,
+            "median": 4650.5,
+            "minimum": 4315,
+            "maximum": 5627
+          },
+          "seconds": {
+            "total": 366.4005265235901,
+            "median": 91.88266515731812,
+            "minimum": 76.58439207077026,
+            "maximum": 106.0508041381836
+          },
+          "guide_calls": {
+            "total": 8,
+            "median": 2.0,
+            "minimum": 2,
+            "maximum": 2
+          },
+          "schema_calls": {
+            "total": 1,
+            "median": 0.0,
+            "minimum": 0,
+            "maximum": 1
+          },
+          "passes": 4
+        },
+        "B": {
+          "tools": {
+            "total": 28,
+            "median": 7.0,
+            "minimum": 6,
+            "maximum": 8
+          },
+          "shell": {
+            "total": 63,
+            "median": 15.0,
+            "minimum": 15,
+            "maximum": 18
+          },
+          "cli": {
+            "total": 36,
+            "median": 9.0,
+            "minimum": 9,
+            "maximum": 9
+          },
+          "fresh": {
+            "total": 140528,
+            "median": 35127.0,
+            "minimum": 33028,
+            "maximum": 37246
+          },
+          "cached": {
+            "total": 981120,
+            "median": 245312.0,
+            "minimum": 212224,
+            "maximum": 278272
+          },
+          "output": {
+            "total": 20036,
+            "median": 5363.0,
+            "minimum": 3819,
+            "maximum": 5491
+          },
+          "seconds": {
+            "total": 377.3378837108612,
+            "median": 96.30108642578125,
+            "minimum": 73.61884999275208,
+            "maximum": 111.11686086654663
+          },
+          "guide_calls": {
+            "total": 8,
+            "median": 2.0,
+            "minimum": 2,
+            "maximum": 2
+          },
+          "schema_calls": {
+            "total": 0,
+            "median": 0.0,
+            "minimum": 0,
+            "maximum": 0
+          },
+          "passes": 4
+        }
+      },
+      "11": {
+        "A": {
+          "tools": {
+            "total": 30,
+            "median": 7.5,
+            "minimum": 7,
+            "maximum": 8
+          },
+          "shell": {
+            "total": 77,
+            "median": 19.5,
+            "minimum": 15,
+            "maximum": 23
+          },
+          "cli": {
+            "total": 70,
+            "median": 17.0,
+            "minimum": 16,
+            "maximum": 20
+          },
+          "fresh": {
+            "total": 154103,
+            "median": 38581.0,
+            "minimum": 35839,
+            "maximum": 41102
+          },
+          "cached": {
+            "total": 1164672,
+            "median": 289024.0,
+            "minimum": 259456,
+            "maximum": 327168
+          },
+          "output": {
+            "total": 19723,
+            "median": 5121.0,
+            "minimum": 4086,
+            "maximum": 5395
+          },
+          "seconds": {
+            "total": 387.3047173023224,
+            "median": 103.37886011600494,
+            "minimum": 76.65042209625244,
+            "maximum": 103.89657497406006
+          },
+          "guide_calls": {
+            "total": 5,
+            "median": 1.0,
+            "minimum": 1,
+            "maximum": 2
+          },
+          "schema_calls": {
+            "total": 15,
+            "median": 3.5,
+            "minimum": 3,
+            "maximum": 5
+          },
+          "passes": 4
+        },
+        "B": {
+          "tools": {
+            "total": 32,
+            "median": 8.0,
+            "minimum": 7,
+            "maximum": 9
+          },
+          "shell": {
+            "total": 85,
+            "median": 21.5,
+            "minimum": 19,
+            "maximum": 23
+          },
+          "cli": {
+            "total": 64,
+            "median": 16.0,
+            "minimum": 14,
+            "maximum": 18
+          },
+          "fresh": {
+            "total": 157249,
+            "median": 38420.5,
+            "minimum": 35521,
+            "maximum": 44887
+          },
+          "cached": {
+            "total": 1258112,
+            "median": 311872.0,
+            "minimum": 285312,
+            "maximum": 349056
+          },
+          "output": {
+            "total": 25974,
+            "median": 6930.5,
+            "minimum": 4953,
+            "maximum": 7160
+          },
+          "seconds": {
+            "total": 495.5107743740082,
+            "median": 130.57973396778107,
+            "minimum": 98.98334622383118,
+            "maximum": 135.36796021461487
+          },
+          "guide_calls": {
+            "total": 4,
+            "median": 1.0,
+            "minimum": 1,
+            "maximum": 1
+          },
+          "schema_calls": {
+            "total": 15,
+            "median": 3.5,
+            "minimum": 3,
+            "maximum": 5
+          },
+          "passes": 4
+        }
+      }
+    },
+    "totals": {
+      "A": {
+        "tools": 242,
+        "shell": 549,
+        "cli": 392,
+        "fresh": 1487859,
+        "cached": 8468864,
+        "output": 149956,
+        "seconds": 3076.3957517147064,
+        "guide_calls": 68,
+        "schema_calls": 61
+      },
+      "B": {
+        "tools": 235,
+        "shell": 530,
+        "cli": 366,
+        "fresh": 1414536,
+        "cached": 8116608,
+        "output": 152101,
+        "seconds": 3092.6890501976013,
+        "guide_calls": 62,
+        "schema_calls": 59
+      }
+    },
+    "paired": {
+      "1": {
+        "tools": {
+          "lower": 3,
+          "equal": 1,
+          "higher": 0,
+          "differences": [
+            -1,
+            -1,
+            -1,
+            0
+          ]
+        },
+        "fresh": {
+          "lower": 2,
+          "equal": 0,
+          "higher": 2,
+          "differences": [
+            188,
+            -516,
+            -13248,
+            13959
+          ]
+        }
+      },
+      "2": {
+        "tools": {
+          "lower": 2,
+          "equal": 1,
+          "higher": 1,
+          "differences": [
+            -1,
+            1,
+            0,
+            -2
+          ]
+        },
+        "fresh": {
+          "lower": 1,
+          "equal": 0,
+          "higher": 3,
+          "differences": [
+            2570,
+            3489,
+            15345,
+            -11410
+          ]
+        }
+      },
+      "3": {
+        "tools": {
+          "lower": 2,
+          "equal": 2,
+          "higher": 0,
+          "differences": [
+            0,
+            -1,
+            0,
+            -1
+          ]
+        },
+        "fresh": {
+          "lower": 2,
+          "equal": 0,
+          "higher": 2,
+          "differences": [
+            -1815,
+            10182,
+            3723,
+            -512
+          ]
+        }
+      },
+      "4": {
+        "tools": {
+          "lower": 0,
+          "equal": 1,
+          "higher": 3,
+          "differences": [
+            2,
+            2,
+            0,
+            2
+          ]
+        },
+        "fresh": {
+          "lower": 3,
+          "equal": 0,
+          "higher": 1,
+          "differences": [
+            -5168,
+            -6154,
+            -7119,
+            1574
+          ]
+        }
+      },
+      "5": {
+        "tools": {
+          "lower": 3,
+          "equal": 0,
+          "higher": 1,
+          "differences": [
+            1,
+            -2,
+            -1,
+            -2
+          ]
+        },
+        "fresh": {
+          "lower": 3,
+          "equal": 0,
+          "higher": 1,
+          "differences": [
+            2563,
+            -29858,
+            -17905,
+            -28366
+          ]
+        }
+      },
+      "6": {
+        "tools": {
+          "lower": 2,
+          "equal": 1,
+          "higher": 1,
+          "differences": [
+            0,
+            2,
+            -1,
+            -1
+          ]
+        },
+        "fresh": {
+          "lower": 2,
+          "equal": 0,
+          "higher": 2,
+          "differences": [
+            -3751,
+            11858,
+            -227,
+            1192
+          ]
+        }
+      },
+      "7": {
+        "tools": {
+          "lower": 1,
+          "equal": 3,
+          "higher": 0,
+          "differences": [
+            0,
+            0,
+            0,
+            -2
+          ]
+        },
+        "fresh": {
+          "lower": 3,
+          "equal": 0,
+          "higher": 1,
+          "differences": [
+            9678,
+            -5070,
+            -766,
+            -14430
+          ]
+        }
+      },
+      "9": {
+        "tools": {
+          "lower": 2,
+          "equal": 0,
+          "higher": 2,
+          "differences": [
+            2,
+            2,
+            -1,
+            -3
+          ]
+        },
+        "fresh": {
+          "lower": 2,
+          "equal": 0,
+          "higher": 2,
+          "differences": [
+            20663,
+            -10976,
+            3217,
+            -12922
+          ]
+        }
+      },
+      "10": {
+        "tools": {
+          "lower": 3,
+          "equal": 0,
+          "higher": 1,
+          "differences": [
+            -1,
+            -2,
+            2,
+            -1
+          ]
+        },
+        "fresh": {
+          "lower": 3,
+          "equal": 0,
+          "higher": 1,
+          "differences": [
+            -1675,
+            -5378,
+            1581,
+            -985
+          ]
+        }
+      },
+      "11": {
+        "tools": {
+          "lower": 0,
+          "equal": 3,
+          "higher": 1,
+          "differences": [
+            0,
+            0,
+            0,
+            2
+          ]
+        },
+        "fresh": {
+          "lower": 3,
+          "equal": 0,
+          "higher": 1,
+          "differences": [
+            -2492,
+            -2727,
+            9048,
+            -683
+          ]
+        }
+      }
+    },
+    "primary_failures": [
+      {
+        "scope": "task",
+        "task": 4,
+        "metric": "tools",
+        "control": 6.5,
+        "candidate": 8.0,
+        "bound": 7.5
+      }
+    ],
+    "secondary_flags": [
+      {
+        "task": 4,
+        "metric": "cached",
+        "control": 196288.0,
+        "candidate": 251840.0
+      },
+      {
+        "task": 11,
+        "metric": "output",
+        "control": 5121.0,
+        "candidate": 6930.5
+      },
+      {
+        "task": 11,
+        "metric": "seconds",
+        "control": 103.37886011600494,
+        "candidate": 130.57973396778107
+      }
+    ],
+    "correctness": true,
+    "primary_cost_pass": false,
+    "peak_concurrency": 3
+  },
+  "runs": [
+    {
+      "task": 1,
+      "rep": 1,
+      "arm": "B",
+      "tools": 2,
+      "shell": 4,
+      "cli": 3,
+      "fresh": 20652,
+      "cached": 61312,
+      "output": 985,
+      "seconds": 22.14387083053589,
+      "guides": [
+        "reports"
+      ],
+      "schemas": [],
+      "guide_calls": 1,
+      "schema_calls": 0,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 1,
+      "rep": 1,
+      "arm": "A",
+      "tools": 3,
+      "shell": 4,
+      "cli": 4,
+      "fresh": 20464,
+      "cached": 89984,
+      "output": 895,
+      "seconds": 26.20163106918335,
+      "guides": [
+        "reports"
+      ],
+      "schemas": [],
+      "guide_calls": 1,
+      "schema_calls": 0,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 2,
+      "rep": 1,
+      "arm": "B",
+      "tools": 7,
+      "shell": 14,
+      "cli": 6,
+      "fresh": 39497,
+      "cached": 262016,
+      "output": 6248,
+      "seconds": 117.00411224365234,
+      "guides": [
+        "reports"
+      ],
+      "schemas": [
+        "report"
+      ],
+      "guide_calls": 1,
+      "schema_calls": 1,
+      "cli_nonzero": 2,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 2,
+      "rep": 1,
+      "arm": "A",
+      "tools": 8,
+      "shell": 11,
+      "cli": 8,
+      "fresh": 36927,
+      "cached": 294400,
+      "output": 6270,
+      "seconds": 113.06502389907837,
+      "guides": [
+        "reports"
+      ],
+      "schemas": [
+        "report"
+      ],
+      "guide_calls": 1,
+      "schema_calls": 1,
+      "cli_nonzero": 4,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 3,
+      "rep": 1,
+      "arm": "B",
+      "tools": 6,
+      "shell": 14,
+      "cli": 8,
+      "fresh": 30630,
+      "cached": 214528,
+      "output": 3396,
+      "seconds": 66.55255818367004,
+      "guides": [
+        "configure"
+      ],
+      "schemas": [
+        "config"
+      ],
+      "guide_calls": 1,
+      "schema_calls": 1,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 3,
+      "rep": 1,
+      "arm": "A",
+      "tools": 6,
+      "shell": 14,
+      "cli": 9,
+      "fresh": 32445,
+      "cached": 214656,
+      "output": 3754,
+      "seconds": 69.57719993591309,
+      "guides": [
+        "configure"
+      ],
+      "schemas": [
+        "config"
+      ],
+      "guide_calls": 1,
+      "schema_calls": 1,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 4,
+      "rep": 1,
+      "arm": "B",
+      "tools": 9,
+      "shell": 16,
+      "cli": 8,
+      "fresh": 42694,
+      "cached": 312064,
+      "output": 4168,
+      "seconds": 77.6707513332367,
+      "guides": [
+        "compare"
+      ],
+      "schemas": [],
+      "guide_calls": 1,
+      "schema_calls": 0,
+      "cli_nonzero": 1,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 4,
+      "rep": 1,
+      "arm": "A",
+      "tools": 7,
+      "shell": 18,
+      "cli": 8,
+      "fresh": 47862,
+      "cached": 196864,
+      "output": 4042,
+      "seconds": 76.69595694541931,
+      "guides": [
+        "compare"
+      ],
+      "schemas": [],
+      "guide_calls": 1,
+      "schema_calls": 0,
+      "cli_nonzero": 1,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 5,
+      "rep": 1,
+      "arm": "B",
+      "tools": 6,
+      "shell": 15,
+      "cli": 9,
+      "fresh": 37909,
+      "cached": 203392,
+      "output": 2627,
+      "seconds": 56.48087692260742,
+      "guides": [
+        "reports"
+      ],
+      "schemas": [
+        "workspace"
+      ],
+      "guide_calls": 1,
+      "schema_calls": 1,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 5,
+      "rep": 1,
+      "arm": "A",
+      "tools": 5,
+      "shell": 16,
+      "cli": 10,
+      "fresh": 35346,
+      "cached": 172288,
+      "output": 3282,
+      "seconds": 62.59935784339905,
+      "guides": [
+        "reports",
+        "compare"
+      ],
+      "schemas": [
+        "workspace"
+      ],
+      "guide_calls": 2,
+      "schema_calls": 1,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 6,
+      "rep": 1,
+      "arm": "B",
+      "tools": 4,
+      "shell": 9,
+      "cli": 11,
+      "fresh": 25876,
+      "cached": 128768,
+      "output": 2886,
+      "seconds": 54.41307616233826,
+      "guides": [
+        "selection"
+      ],
+      "schemas": [],
+      "guide_calls": 1,
+      "schema_calls": 0,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 6,
+      "rep": 1,
+      "arm": "A",
+      "tools": 4,
+      "shell": 12,
+      "cli": 12,
+      "fresh": 29627,
+      "cached": 130432,
+      "output": 2888,
+      "seconds": 52.38860511779785,
+      "guides": [
+        "selection"
+      ],
+      "schemas": [
+        "explanation"
+      ],
+      "guide_calls": 1,
+      "schema_calls": 1,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 7,
+      "rep": 1,
+      "arm": "B",
+      "tools": 5,
+      "shell": 17,
+      "cli": 17,
+      "fresh": 48316,
+      "cached": 180224,
+      "output": 4179,
+      "seconds": 79.77286505699158,
+      "guides": [
+        "configure",
+        "selection",
+        "reports",
+        "compare",
+        "compare",
+        "selection"
+      ],
+      "schemas": [
+        "workspace",
+        "user-config",
+        "config",
+        "report",
+        "explanation",
+        "comparison"
+      ],
+      "guide_calls": 6,
+      "schema_calls": 6,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 7,
+      "rep": 1,
+      "arm": "A",
+      "tools": 5,
+      "shell": 17,
+      "cli": 17,
+      "fresh": 38638,
+      "cached": 174080,
+      "output": 3123,
+      "seconds": 62.605453968048096,
+      "guides": [
+        "selection",
+        "compare",
+        "configure",
+        "reports",
+        "compare",
+        "reports"
+      ],
+      "schemas": [
+        "config",
+        "report",
+        "comparison",
+        "workspace",
+        "user-config",
+        "explanation"
+      ],
+      "guide_calls": 6,
+      "schema_calls": 6,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 9,
+      "rep": 1,
+      "arm": "B",
+      "tools": 6,
+      "shell": 7,
+      "cli": 3,
+      "fresh": 38831,
+      "cached": 160768,
+      "output": 2820,
+      "seconds": 52.38763403892517,
+      "guides": [],
+      "schemas": [],
+      "guide_calls": 0,
+      "schema_calls": 0,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 9,
+      "rep": 1,
+      "arm": "A",
+      "tools": 4,
+      "shell": 9,
+      "cli": 3,
+      "fresh": 18168,
+      "cached": 117632,
+      "output": 2011,
+      "seconds": 40.273979902267456,
+      "guides": [],
+      "schemas": [],
+      "guide_calls": 0,
+      "schema_calls": 0,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 10,
+      "rep": 1,
+      "arm": "B",
+      "tools": 6,
+      "shell": 15,
+      "cli": 9,
+      "fresh": 33028,
+      "cached": 212224,
+      "output": 5491,
+      "seconds": 97.73119616508484,
+      "guides": [
+        "selection",
+        "reports"
+      ],
+      "schemas": [],
+      "guide_calls": 2,
+      "schema_calls": 0,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 10,
+      "rep": 1,
+      "arm": "A",
+      "tools": 7,
+      "shell": 17,
+      "cli": 9,
+      "fresh": 34703,
+      "cached": 247552,
+      "output": 4401,
+      "seconds": 76.58439207077026,
+      "guides": [
+        "reports",
+        "selection"
+      ],
+      "schemas": [],
+      "guide_calls": 2,
+      "schema_calls": 0,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 11,
+      "rep": 1,
+      "arm": "B",
+      "tools": 8,
+      "shell": 20,
+      "cli": 14,
+      "fresh": 38610,
+      "cached": 316288,
+      "output": 7160,
+      "seconds": 135.11449909210205,
+      "guides": [
+        "configure"
+      ],
+      "schemas": [
+        "user-config",
+        "config",
+        "config"
+      ],
+      "guide_calls": 1,
+      "schema_calls": 3,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 11,
+      "rep": 1,
+      "arm": "A",
+      "tools": 8,
+      "shell": 19,
+      "cli": 18,
+      "fresh": 41102,
+      "cached": 327168,
+      "output": 5395,
+      "seconds": 102.89675807952881,
+      "guides": [
+        "configure"
+      ],
+      "schemas": [
+        "config",
+        "user-config",
+        "config"
+      ],
+      "guide_calls": 1,
+      "schema_calls": 3,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 1,
+      "rep": 2,
+      "arm": "B",
+      "tools": 2,
+      "shell": 4,
+      "cli": 3,
+      "fresh": 20624,
+      "cached": 61056,
+      "output": 893,
+      "seconds": 22.30110216140747,
+      "guides": [
+        "reports"
+      ],
+      "schemas": [],
+      "guide_calls": 1,
+      "schema_calls": 0,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 1,
+      "rep": 2,
+      "arm": "A",
+      "tools": 3,
+      "shell": 6,
+      "cli": 4,
+      "fresh": 21140,
+      "cached": 90752,
+      "output": 1194,
+      "seconds": 27.170045137405396,
+      "guides": [
+        "reports"
+      ],
+      "schemas": [],
+      "guide_calls": 1,
+      "schema_calls": 0,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 2,
+      "rep": 2,
+      "arm": "B",
+      "tools": 7,
+      "shell": 13,
+      "cli": 8,
+      "fresh": 35743,
+      "cached": 264960,
+      "output": 6005,
+      "seconds": 124.02153706550598,
+      "guides": [
+        "reports",
+        "compare"
+      ],
+      "schemas": [
+        "report",
+        "report"
+      ],
+      "guide_calls": 2,
+      "schema_calls": 2,
+      "cli_nonzero": 2,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 2,
+      "rep": 2,
+      "arm": "A",
+      "tools": 6,
+      "shell": 13,
+      "cli": 9,
+      "fresh": 32254,
+      "cached": 214272,
+      "output": 4501,
+      "seconds": 86.67282199859619,
+      "guides": [
+        "reports",
+        "selection"
+      ],
+      "schemas": [
+        "report",
+        "report"
+      ],
+      "guide_calls": 2,
+      "schema_calls": 2,
+      "cli_nonzero": 3,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 3,
+      "rep": 2,
+      "arm": "B",
+      "tools": 7,
+      "shell": 14,
+      "cli": 8,
+      "fresh": 48411,
+      "cached": 245120,
+      "output": 3150,
+      "seconds": 63.48054003715515,
+      "guides": [
+        "configure"
+      ],
+      "schemas": [
+        "config"
+      ],
+      "guide_calls": 1,
+      "schema_calls": 1,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 3,
+      "rep": 2,
+      "arm": "A",
+      "tools": 8,
+      "shell": 14,
+      "cli": 9,
+      "fresh": 38229,
+      "cached": 310656,
+      "output": 5431,
+      "seconds": 92.99311470985413,
+      "guides": [
+        "configure",
+        "reports"
+      ],
+      "schemas": [
+        "config"
+      ],
+      "guide_calls": 2,
+      "schema_calls": 1,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 4,
+      "rep": 2,
+      "arm": "B",
+      "tools": 7,
+      "shell": 15,
+      "cli": 8,
+      "fresh": 26172,
+      "cached": 220544,
+      "output": 3570,
+      "seconds": 69.45751690864563,
+      "guides": [
+        "compare"
+      ],
+      "schemas": [],
+      "guide_calls": 1,
+      "schema_calls": 0,
+      "cli_nonzero": 1,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 4,
+      "rep": 2,
+      "arm": "A",
+      "tools": 5,
+      "shell": 17,
+      "cli": 9,
+      "fresh": 32326,
+      "cached": 175616,
+      "output": 4633,
+      "seconds": 96.85853385925293,
+      "guides": [
+        "compare"
+      ],
+      "schemas": [
+        "comparison"
+      ],
+      "guide_calls": 1,
+      "schema_calls": 1,
+      "cli_nonzero": 1,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 5,
+      "rep": 2,
+      "arm": "B",
+      "tools": 7,
+      "shell": 17,
+      "cli": 10,
+      "fresh": 41758,
+      "cached": 262528,
+      "output": 3793,
+      "seconds": 83.5622820854187,
+      "guides": [
+        "reports",
+        "compare"
+      ],
+      "schemas": [
+        "workspace"
+      ],
+      "guide_calls": 2,
+      "schema_calls": 1,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 5,
+      "rep": 2,
+      "arm": "A",
+      "tools": 9,
+      "shell": 18,
+      "cli": 11,
+      "fresh": 71616,
+      "cached": 369664,
+      "output": 4130,
+      "seconds": 89.01195907592773,
+      "guides": [
+        "reports",
+        "compare"
+      ],
+      "schemas": [
+        "workspace",
+        "report"
+      ],
+      "guide_calls": 2,
+      "schema_calls": 2,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 6,
+      "rep": 2,
+      "arm": "B",
+      "tools": 6,
+      "shell": 17,
+      "cli": 12,
+      "fresh": 41082,
+      "cached": 204160,
+      "output": 3657,
+      "seconds": 79.6616849899292,
+      "guides": [
+        "selection"
+      ],
+      "schemas": [
+        "explanation"
+      ],
+      "guide_calls": 1,
+      "schema_calls": 1,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 6,
+      "rep": 2,
+      "arm": "A",
+      "tools": 4,
+      "shell": 10,
+      "cli": 12,
+      "fresh": 29224,
+      "cached": 130048,
+      "output": 2807,
+      "seconds": 71.44972586631775,
+      "guides": [
+        "selection"
+      ],
+      "schemas": [
+        "explanation"
+      ],
+      "guide_calls": 1,
+      "schema_calls": 1,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 7,
+      "rep": 2,
+      "arm": "B",
+      "tools": 5,
+      "shell": 17,
+      "cli": 17,
+      "fresh": 56591,
+      "cached": 167936,
+      "output": 3087,
+      "seconds": 65.05462193489075,
+      "guides": [
+        "configure",
+        "reports",
+        "selection",
+        "compare",
+        "selection",
+        "reports"
+      ],
+      "schemas": [
+        "config",
+        "workspace",
+        "report",
+        "explanation",
+        "user-config",
+        "comparison"
+      ],
+      "guide_calls": 6,
+      "schema_calls": 6,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 7,
+      "rep": 2,
+      "arm": "A",
+      "tools": 5,
+      "shell": 16,
+      "cli": 16,
+      "fresh": 61661,
+      "cached": 155776,
+      "output": 3523,
+      "seconds": 81.83196210861206,
+      "guides": [
+        "selection",
+        "compare",
+        "configure",
+        "reports",
+        "reports"
+      ],
+      "schemas": [
+        "workspace",
+        "config",
+        "user-config",
+        "comparison",
+        "report",
+        "explanation"
+      ],
+      "guide_calls": 5,
+      "schema_calls": 6,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 9,
+      "rep": 2,
+      "arm": "B",
+      "tools": 6,
+      "shell": 9,
+      "cli": 3,
+      "fresh": 19565,
+      "cached": 173696,
+      "output": 2478,
+      "seconds": 67.4611930847168,
+      "guides": [],
+      "schemas": [],
+      "guide_calls": 0,
+      "schema_calls": 0,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 9,
+      "rep": 2,
+      "arm": "A",
+      "tools": 4,
+      "shell": 10,
+      "cli": 3,
+      "fresh": 30541,
+      "cached": 102144,
+      "output": 2025,
+      "seconds": 43.42206430435181,
+      "guides": [],
+      "schemas": [],
+      "guide_calls": 0,
+      "schema_calls": 0,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 10,
+      "rep": 2,
+      "arm": "B",
+      "tools": 7,
+      "shell": 18,
+      "cli": 9,
+      "fresh": 37246,
+      "cached": 255488,
+      "output": 5471,
+      "seconds": 94.87097668647766,
+      "guides": [
+        "selection",
+        "reports"
+      ],
+      "schemas": [],
+      "guide_calls": 2,
+      "schema_calls": 0,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 10,
+      "rep": 2,
+      "arm": "A",
+      "tools": 9,
+      "shell": 21,
+      "cli": 10,
+      "fresh": 42624,
+      "cached": 379264,
+      "output": 5627,
+      "seconds": 106.0508041381836,
+      "guides": [
+        "selection",
+        "reports"
+      ],
+      "schemas": [
+        "report"
+      ],
+      "guide_calls": 2,
+      "schema_calls": 1,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 11,
+      "rep": 2,
+      "arm": "B",
+      "tools": 8,
+      "shell": 23,
+      "cli": 17,
+      "fresh": 35521,
+      "cached": 307456,
+      "output": 6728,
+      "seconds": 135.36796021461487,
+      "guides": [
+        "configure"
+      ],
+      "schemas": [
+        "user-config",
+        "config",
+        "config",
+        "user-config"
+      ],
+      "guide_calls": 1,
+      "schema_calls": 4,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 11,
+      "rep": 2,
+      "arm": "A",
+      "tools": 8,
+      "shell": 20,
+      "cli": 16,
+      "fresh": 38248,
+      "cached": 312320,
+      "output": 5060,
+      "seconds": 103.86096215248108,
+      "guides": [
+        "configure"
+      ],
+      "schemas": [
+        "user-config",
+        "config",
+        "config"
+      ],
+      "guide_calls": 1,
+      "schema_calls": 3,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 1,
+      "rep": 3,
+      "arm": "B",
+      "tools": 2,
+      "shell": 4,
+      "cli": 3,
+      "fresh": 20776,
+      "cached": 61312,
+      "output": 1040,
+      "seconds": 26.355506896972656,
+      "guides": [
+        "reports"
+      ],
+      "schemas": [],
+      "guide_calls": 1,
+      "schema_calls": 0,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 1,
+      "rep": 3,
+      "arm": "A",
+      "tools": 3,
+      "shell": 5,
+      "cli": 4,
+      "fresh": 34024,
+      "cached": 77824,
+      "output": 1017,
+      "seconds": 26.21766209602356,
+      "guides": [
+        "reports"
+      ],
+      "schemas": [],
+      "guide_calls": 1,
+      "schema_calls": 0,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 2,
+      "rep": 3,
+      "arm": "B",
+      "tools": 7,
+      "shell": 12,
+      "cli": 6,
+      "fresh": 48616,
+      "cached": 251264,
+      "output": 5794,
+      "seconds": 135.24453377723694,
+      "guides": [
+        "reports"
+      ],
+      "schemas": [
+        "report"
+      ],
+      "guide_calls": 1,
+      "schema_calls": 1,
+      "cli_nonzero": 2,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 2,
+      "rep": 3,
+      "arm": "A",
+      "tools": 7,
+      "shell": 14,
+      "cli": 8,
+      "fresh": 33271,
+      "cached": 253952,
+      "output": 5440,
+      "seconds": 118.91721391677856,
+      "guides": [
+        "reports"
+      ],
+      "schemas": [
+        "report",
+        "report"
+      ],
+      "guide_calls": 1,
+      "schema_calls": 2,
+      "cli_nonzero": 2,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 3,
+      "rep": 3,
+      "arm": "B",
+      "tools": 5,
+      "shell": 12,
+      "cli": 6,
+      "fresh": 31522,
+      "cached": 176000,
+      "output": 3831,
+      "seconds": 74.66787362098694,
+      "guides": [
+        "configure"
+      ],
+      "schemas": [
+        "config"
+      ],
+      "guide_calls": 1,
+      "schema_calls": 1,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 3,
+      "rep": 3,
+      "arm": "A",
+      "tools": 5,
+      "shell": 10,
+      "cli": 6,
+      "fresh": 27799,
+      "cached": 170624,
+      "output": 2929,
+      "seconds": 61.68082618713379,
+      "guides": [
+        "configure"
+      ],
+      "schemas": [
+        "config"
+      ],
+      "guide_calls": 1,
+      "schema_calls": 1,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 4,
+      "rep": 3,
+      "arm": "B",
+      "tools": 8,
+      "shell": 13,
+      "cli": 8,
+      "fresh": 38539,
+      "cached": 242816,
+      "output": 4109,
+      "seconds": 81.61383318901062,
+      "guides": [
+        "compare"
+      ],
+      "schemas": [],
+      "guide_calls": 1,
+      "schema_calls": 0,
+      "cli_nonzero": 1,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 4,
+      "rep": 3,
+      "arm": "A",
+      "tools": 8,
+      "shell": 17,
+      "cli": 8,
+      "fresh": 45658,
+      "cached": 236032,
+      "output": 3907,
+      "seconds": 84.78348898887634,
+      "guides": [
+        "compare"
+      ],
+      "schemas": [],
+      "guide_calls": 1,
+      "schema_calls": 0,
+      "cli_nonzero": 1,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 5,
+      "rep": 3,
+      "arm": "B",
+      "tools": 6,
+      "shell": 15,
+      "cli": 9,
+      "fresh": 36739,
+      "cached": 207616,
+      "output": 3235,
+      "seconds": 68.72104811668396,
+      "guides": [
+        "reports"
+      ],
+      "schemas": [
+        "workspace"
+      ],
+      "guide_calls": 1,
+      "schema_calls": 1,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 5,
+      "rep": 3,
+      "arm": "A",
+      "tools": 7,
+      "shell": 17,
+      "cli": 10,
+      "fresh": 54644,
+      "cached": 249216,
+      "output": 3177,
+      "seconds": 66.51540422439575,
+      "guides": [
+        "compare",
+        "reports"
+      ],
+      "schemas": [
+        "workspace"
+      ],
+      "guide_calls": 2,
+      "schema_calls": 1,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 6,
+      "rep": 3,
+      "arm": "B",
+      "tools": 4,
+      "shell": 13,
+      "cli": 13,
+      "fresh": 29095,
+      "cached": 128768,
+      "output": 2485,
+      "seconds": 52.40908408164978,
+      "guides": [
+        "selection"
+      ],
+      "schemas": [
+        "workspace",
+        "explanation"
+      ],
+      "guide_calls": 1,
+      "schema_calls": 2,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 6,
+      "rep": 3,
+      "arm": "A",
+      "tools": 5,
+      "shell": 8,
+      "cli": 12,
+      "fresh": 29322,
+      "cached": 171392,
+      "output": 2995,
+      "seconds": 65.72598505020142,
+      "guides": [
+        "selection"
+      ],
+      "schemas": [
+        "explanation"
+      ],
+      "guide_calls": 1,
+      "schema_calls": 1,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 7,
+      "rep": 3,
+      "arm": "B",
+      "tools": 6,
+      "shell": 19,
+      "cli": 19,
+      "fresh": 45884,
+      "cached": 231424,
+      "output": 3917,
+      "seconds": 102.35870122909546,
+      "guides": [
+        "configure",
+        "reports",
+        "selection",
+        "compare",
+        "reports",
+        "compare"
+      ],
+      "schemas": [
+        "config",
+        "config",
+        "report",
+        "user-config",
+        "workspace",
+        "explanation",
+        "report",
+        "comparison"
+      ],
+      "guide_calls": 6,
+      "schema_calls": 8,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 7,
+      "rep": 3,
+      "arm": "A",
+      "tools": 6,
+      "shell": 17,
+      "cli": 17,
+      "fresh": 46650,
+      "cached": 225408,
+      "output": 3002,
+      "seconds": 77.3182110786438,
+      "guides": [
+        "compare",
+        "configure",
+        "selection",
+        "reports",
+        "configure",
+        "reports"
+      ],
+      "schemas": [
+        "report",
+        "comparison",
+        "user-config",
+        "config",
+        "workspace",
+        "explanation"
+      ],
+      "guide_calls": 6,
+      "schema_calls": 6,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 9,
+      "rep": 3,
+      "arm": "B",
+      "tools": 6,
+      "shell": 8,
+      "cli": 3,
+      "fresh": 38318,
+      "cached": 161024,
+      "output": 2636,
+      "seconds": 62.6631600856781,
+      "guides": [],
+      "schemas": [],
+      "guide_calls": 0,
+      "schema_calls": 0,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 9,
+      "rep": 3,
+      "arm": "A",
+      "tools": 7,
+      "shell": 10,
+      "cli": 3,
+      "fresh": 35101,
+      "cached": 184832,
+      "output": 3239,
+      "seconds": 82.86618208885193,
+      "guides": [],
+      "schemas": [],
+      "guide_calls": 0,
+      "schema_calls": 0,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 10,
+      "rep": 3,
+      "arm": "B",
+      "tools": 8,
+      "shell": 15,
+      "cli": 9,
+      "fresh": 37107,
+      "cached": 278272,
+      "output": 5255,
+      "seconds": 111.11686086654663,
+      "guides": [
+        "reports",
+        "selection"
+      ],
+      "schemas": [],
+      "guide_calls": 2,
+      "schema_calls": 0,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 10,
+      "rep": 3,
+      "arm": "A",
+      "tools": 6,
+      "shell": 14,
+      "cli": 9,
+      "fresh": 35526,
+      "cached": 204416,
+      "output": 4900,
+      "seconds": 100.06406617164612,
+      "guides": [
+        "reports",
+        "selection"
+      ],
+      "schemas": [],
+      "guide_calls": 2,
+      "schema_calls": 0,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 11,
+      "rep": 3,
+      "arm": "B",
+      "tools": 7,
+      "shell": 23,
+      "cli": 15,
+      "fresh": 44887,
+      "cached": 285312,
+      "output": 4953,
+      "seconds": 98.98334622383118,
+      "guides": [
+        "configure"
+      ],
+      "schemas": [
+        "config",
+        "user-config",
+        "config"
+      ],
+      "guide_calls": 1,
+      "schema_calls": 3,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 11,
+      "rep": 3,
+      "arm": "A",
+      "tools": 7,
+      "shell": 23,
+      "cli": 16,
+      "fresh": 35839,
+      "cached": 259456,
+      "output": 4086,
+      "seconds": 76.65042209625244,
+      "guides": [
+        "configure"
+      ],
+      "schemas": [
+        "config",
+        "user-config",
+        "user-config",
+        "config",
+        "user-config"
+      ],
+      "guide_calls": 1,
+      "schema_calls": 5,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 1,
+      "rep": 4,
+      "arm": "B",
+      "tools": 2,
+      "shell": 4,
+      "cli": 3,
+      "fresh": 33841,
+      "cached": 47744,
+      "output": 887,
+      "seconds": 24.189568042755127,
+      "guides": [
+        "reports"
+      ],
+      "schemas": [],
+      "guide_calls": 1,
+      "schema_calls": 0,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 1,
+      "rep": 4,
+      "arm": "A",
+      "tools": 2,
+      "shell": 3,
+      "cli": 3,
+      "fresh": 19882,
+      "cached": 60672,
+      "output": 1031,
+      "seconds": 30.23656392097473,
+      "guides": [
+        "reports"
+      ],
+      "schemas": [],
+      "guide_calls": 1,
+      "schema_calls": 0,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 2,
+      "rep": 4,
+      "arm": "B",
+      "tools": 6,
+      "shell": 10,
+      "cli": 8,
+      "fresh": 34192,
+      "cached": 219904,
+      "output": 5213,
+      "seconds": 106.96658897399902,
+      "guides": [
+        "reports",
+        "compare"
+      ],
+      "schemas": [
+        "report",
+        "report"
+      ],
+      "guide_calls": 2,
+      "schema_calls": 2,
+      "cli_nonzero": 2,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 2,
+      "rep": 4,
+      "arm": "A",
+      "tools": 8,
+      "shell": 15,
+      "cli": 11,
+      "fresh": 45602,
+      "cached": 312576,
+      "output": 6594,
+      "seconds": 134.20839619636536,
+      "guides": [
+        "reports",
+        "compare",
+        "selection"
+      ],
+      "schemas": [
+        "report",
+        "report"
+      ],
+      "guide_calls": 3,
+      "schema_calls": 2,
+      "cli_nonzero": 3,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 3,
+      "rep": 4,
+      "arm": "B",
+      "tools": 6,
+      "shell": 9,
+      "cli": 6,
+      "fresh": 31541,
+      "cached": 215424,
+      "output": 3310,
+      "seconds": 68.56670594215393,
+      "guides": [
+        "configure"
+      ],
+      "schemas": [
+        "config"
+      ],
+      "guide_calls": 1,
+      "schema_calls": 1,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 3,
+      "rep": 4,
+      "arm": "A",
+      "tools": 7,
+      "shell": 12,
+      "cli": 8,
+      "fresh": 32053,
+      "cached": 250624,
+      "output": 4937,
+      "seconds": 93.73346996307373,
+      "guides": [
+        "configure"
+      ],
+      "schemas": [
+        "config"
+      ],
+      "guide_calls": 1,
+      "schema_calls": 1,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 4,
+      "rep": 4,
+      "arm": "B",
+      "tools": 8,
+      "shell": 13,
+      "cli": 8,
+      "fresh": 31299,
+      "cached": 260864,
+      "output": 4152,
+      "seconds": 86.81927609443665,
+      "guides": [
+        "compare"
+      ],
+      "schemas": [],
+      "guide_calls": 1,
+      "schema_calls": 0,
+      "cli_nonzero": 1,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 4,
+      "rep": 4,
+      "arm": "A",
+      "tools": 6,
+      "shell": 15,
+      "cli": 8,
+      "fresh": 29725,
+      "cached": 195712,
+      "output": 3947,
+      "seconds": 80.55763292312622,
+      "guides": [
+        "compare"
+      ],
+      "schemas": [],
+      "guide_calls": 1,
+      "schema_calls": 0,
+      "cli_nonzero": 1,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 5,
+      "rep": 4,
+      "arm": "B",
+      "tools": 5,
+      "shell": 14,
+      "cli": 9,
+      "fresh": 37006,
+      "cached": 174592,
+      "output": 3490,
+      "seconds": 65.50565385818481,
+      "guides": [
+        "reports"
+      ],
+      "schemas": [
+        "workspace"
+      ],
+      "guide_calls": 1,
+      "schema_calls": 1,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 5,
+      "rep": 4,
+      "arm": "A",
+      "tools": 7,
+      "shell": 18,
+      "cli": 10,
+      "fresh": 65372,
+      "cached": 259840,
+      "output": 4207,
+      "seconds": 82.74849581718445,
+      "guides": [
+        "reports",
+        "compare"
+      ],
+      "schemas": [
+        "workspace"
+      ],
+      "guide_calls": 2,
+      "schema_calls": 1,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 6,
+      "rep": 4,
+      "arm": "B",
+      "tools": 3,
+      "shell": 11,
+      "cli": 11,
+      "fresh": 25217,
+      "cached": 92416,
+      "output": 2479,
+      "seconds": 49.382529973983765,
+      "guides": [
+        "selection"
+      ],
+      "schemas": [],
+      "guide_calls": 1,
+      "schema_calls": 0,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 6,
+      "rep": 4,
+      "arm": "A",
+      "tools": 4,
+      "shell": 10,
+      "cli": 11,
+      "fresh": 24025,
+      "cached": 124928,
+      "output": 2359,
+      "seconds": 52.40795421600342,
+      "guides": [
+        "selection"
+      ],
+      "schemas": [],
+      "guide_calls": 1,
+      "schema_calls": 0,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 7,
+      "rep": 4,
+      "arm": "B",
+      "tools": 4,
+      "shell": 17,
+      "cli": 17,
+      "fresh": 40581,
+      "cached": 135296,
+      "output": 3155,
+      "seconds": 63.594242095947266,
+      "guides": [
+        "reports",
+        "configure",
+        "compare",
+        "selection",
+        "compare"
+      ],
+      "schemas": [
+        "config",
+        "user-config",
+        "config",
+        "report",
+        "workspace",
+        "comparison",
+        "explanation"
+      ],
+      "guide_calls": 5,
+      "schema_calls": 7,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 7,
+      "rep": 4,
+      "arm": "A",
+      "tools": 6,
+      "shell": 16,
+      "cli": 16,
+      "fresh": 55011,
+      "cached": 208128,
+      "output": 3536,
+      "seconds": 80.99012875556946,
+      "guides": [
+        "configure",
+        "compare",
+        "selection",
+        "reports",
+        "reports"
+      ],
+      "schemas": [
+        "workspace",
+        "user-config",
+        "report",
+        "explanation",
+        "comparison",
+        "config"
+      ],
+      "guide_calls": 5,
+      "schema_calls": 6,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 9,
+      "rep": 4,
+      "arm": "B",
+      "tools": 5,
+      "shell": 6,
+      "cli": 3,
+      "fresh": 19242,
+      "cached": 147840,
+      "output": 2416,
+      "seconds": 49.355863094329834,
+      "guides": [],
+      "schemas": [],
+      "guide_calls": 0,
+      "schema_calls": 0,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 9,
+      "rep": 4,
+      "arm": "A",
+      "tools": 8,
+      "shell": 12,
+      "cli": 6,
+      "fresh": 32164,
+      "cached": 283520,
+      "output": 4164,
+      "seconds": 90.96545672416687,
+      "guides": [
+        "configure"
+      ],
+      "schemas": [
+        "config"
+      ],
+      "guide_calls": 1,
+      "schema_calls": 1,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 10,
+      "rep": 4,
+      "arm": "B",
+      "tools": 7,
+      "shell": 15,
+      "cli": 9,
+      "fresh": 33147,
+      "cached": 235136,
+      "output": 3819,
+      "seconds": 73.61884999275208,
+      "guides": [
+        "reports",
+        "selection"
+      ],
+      "schemas": [],
+      "guide_calls": 2,
+      "schema_calls": 0,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 10,
+      "rep": 4,
+      "arm": "A",
+      "tools": 8,
+      "shell": 16,
+      "cli": 9,
+      "fresh": 34132,
+      "cached": 268416,
+      "output": 4315,
+      "seconds": 83.70126414299011,
+      "guides": [
+        "selection",
+        "reports"
+      ],
+      "schemas": [],
+      "guide_calls": 2,
+      "schema_calls": 0,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 11,
+      "rep": 4,
+      "arm": "B",
+      "tools": 9,
+      "shell": 19,
+      "cli": 18,
+      "fresh": 38231,
+      "cached": 349056,
+      "output": 7133,
+      "seconds": 126.04496884346008,
+      "guides": [
+        "configure"
+      ],
+      "schemas": [
+        "config",
+        "user-config",
+        "config",
+        "user-config",
+        "user-config"
+      ],
+      "guide_calls": 1,
+      "schema_calls": 5,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 11,
+      "rep": 4,
+      "arm": "A",
+      "tools": 7,
+      "shell": 15,
+      "cli": 20,
+      "fresh": 38914,
+      "cached": 265728,
+      "output": 5182,
+      "seconds": 103.89657497406006,
+      "guides": [
+        "configure",
+        "selection"
+      ],
+      "schemas": [
+        "user-config",
+        "config",
+        "config",
+        "user-config"
+      ],
+      "guide_calls": 2,
+      "schema_calls": 4,
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    }
+  ],
+  "review": {
+    "cases": 80,
+    "pass": 80,
+    "discovery_cases": 8,
+    "discovery_coverage_each": 13,
+    "discovery_coverage_total": 13,
+    "all_discovery_workflows_valid": true,
+    "all_discovery_semantic_families_pass": true
+  },
+  "audit": {
+    "checks": 1137,
+    "integrity_failures": 0,
+    "peak_explorer_concurrency": 3,
+    "limits": [
+      "Source revision for each prebuilt binary is operator-declared, separately from preparation source hashes.",
+      "Elapsed seconds include completion/copying overhead of 0.48\u20134.43 seconds beyond native task_complete; not exact final-message latency."
+    ]
+  }
+}

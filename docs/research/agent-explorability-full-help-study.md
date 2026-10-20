@@ -42,7 +42,32 @@ Before freezing the candidate, 91 focused help, guide, README, query, comparison
 
 ## Results
 
-The frozen campaign is running. Correctness, cost gates, independent interpretation review and the final recommendation remain pending; the implemented candidate is not yet an experimentally established efficiency improvement.
+Both conditions passed **40/40** artifact and independently reviewed final-answer checks. All eight discovery maps covered **13/13** families, supplied four valid workflows and correctly covered all four requested semantic families. The independent native-session audit completed 1,137 checks without an integrity failure. See the [portable per-run results](agent-explorability-full-help-results.json).
+
+| Task | Median calls A → B | Median uncached input A → B |
+| --- | ---: | ---: |
+| 1 | 3 → 2 | 20,802.0 → 20,714.0 |
+| 2 | 7.5 → 7 | 35,099.0 → 37,620.0 |
+| 3 | 6.5 → 6 | 32,249.0 → 31,531.5 |
+| 4 | 6.5 → 8 | 38,992.0 → 34,919.0 |
+| 5 | 7 → 6 | 60,008.0 → 37,457.5 |
+| 6 | 4 → 4 | 29,273.0 → 27,485.5 |
+| 7 | 5.5 → 5 | 50,830.5 → 47,100.0 |
+| 9 | 5.5 → 6 | 31,352.5 → 28,941.5 |
+| 10 | 7.5 → 7 | 35,114.5 → 35,127.0 |
+| 11 | 7.5 → 8 | 38,581.0 → 38,420.5 |
+
+Across all runs, agent calls fell from **242 to 235 (−2.9%)**, uncached input from **1,487,859 to 1,414,536 (−4.9%)**, and CLI invocations from **392 to 366**. These descriptive totals do not override the failed per-task guard.
+
+**The original package failed the primary cost gate on comparison:** Task 4 median calls rose from 6.5 to 8, above the allowed 7.5. Three secondary flags also remain: Task 4 cached input (196,288 → 251,840), Task 11 output including reasoning (5,121 → 6,930.5), and Task 11 elapsed seconds (103.38 → 130.58). There were no other primary failures. Do not describe this study as passing all cost gates or as a universal efficiency improvement.
+
+The comparison traces show similar executable command sequences with different batching and verification work. All four B comparison agents still read the comparison guide despite the complete help recipe. That observation suggests testing clearer execution routing; it does not establish that guide retrieval caused the call increase. The advanced-policy secondary flags remain documented; extra output and elapsed time did not accompany a primary call/token failure.
+
+Elapsed time is measured through harness completion and copying, not exact final-message latency. Native completion preceded the recorded end by 0.48–4.43 seconds. The audit reconciled usage against native counters, excluded evaluator probes, verified exact order and fresh context, and confirmed peak explorer concurrency of three.
+
+## Targeted Comparison-Routing Correction
+
+The [separate correction protocol](../../tests/fixtures/agent-explorability/compare-help-routing-study.json) fixes 32 fresh sessions before launch: Tasks 1, 4, 5 and 7, with four balanced pairs each against the original control. The candidate adds explicit optional-reference execution routing in root and comparison help while retaining the full feature inventory and recipes. The corrected candidate is `c9098e20a3dade541c61ca8ca2bc347943e672be`, native SHA-256 `882fe74a64f6df405f47deaa9cfc6f88190bbd337f4c7531183e36b926f35a05`. Its routing regression fails against the earlier help and passes with the correction; 61 focused Rust tests, formatting and Clippy pass. The same correctness and numeric cost limits apply. No original trial is replaced or pooled; the other six tasks are not remeasured by this correction. Results and final adoption remain pending.
 
 ## Replay and Evidence
 

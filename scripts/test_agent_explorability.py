@@ -114,6 +114,72 @@ class ExperimentTests(unittest.TestCase):
         spec.loader.exec_module(full)
         return full
 
+    def test_comparison_correction_protocol_preserves_gates_and_balances_four_tasks(self):
+        from collections import Counter
+        full = self.full_help_runner()
+        original = json.loads(full.PROTOCOL.read_text())
+        protocol = json.loads(full.PROTOCOL.with_name("compare-help-routing-study.json").read_text())
+        self.assertEqual(protocol["task_ids"], [1, 4, 5, 7])
+        self.assertEqual(len(protocol["pairs"]), 16)
+        self.assertEqual(protocol["maximum_sessions"], 32)
+        self.assertFalse(protocol["previous_trials_included"])
+        for key in ["control", "model", "effort", "limits", "repetitions", "concurrent_pairs"]:
+            self.assertEqual(protocol[key], original[key])
+        for key in ["correctness", "per_task_medians", "overall_all_run_totals", "secondary", "zero_comparator"]:
+            self.assertEqual(protocol["decision_rule"][key], original["decision_rule"][key])
+        for number in protocol["task_ids"]:
+            selected = [p for p in protocol["pairs"] if p["task"] == number]
+            self.assertEqual(Counter(p["order"] for p in selected), {"AB": 2, "BA": 2})
+            self.assertEqual({p["repetition"] for p in selected}, {1, 2, 3, 4})
+
+    def test_runner_rejects_unknown_protocols_or_changed_fixed_task_and_session_counts(self):
+        full = self.full_help_runner()
+        for path in [full.PROTOCOL, full.PROTOCOL.with_name("compare-help-routing-study.json")]:
+            protocol = json.loads(path.read_text())
+            full.validate_protocol(protocol)
+            for key, value in [("revision", "unrecognized-study"), ("task_ids", [1, 4]), ("maximum_sessions", 48)]:
+                with self.subTest(protocol=path.name, changed=key), self.assertRaises(ValueError):
+                    full.validate_protocol({**protocol, key: value})
+
+    def test_comparison_correction_freezes_only_four_tasks_and_stops_after_32_sessions(self):
+        full = self.full_help_runner()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            binaries = [root / arm for arm in "AB"]
+            for arm, binary in zip("AB", binaries):
+                binary.write_text(arm)
+            protocol = json.loads(full.PROTOCOL.with_name("compare-help-routing-study.json").read_text())
+            protocol["control"] = {"source_revision": "control-revision", "binary_sha256": BENCH.sha(binaries[0])}
+            protocol_path = root / "protocol.json"
+            protocol_path.write_text(json.dumps(protocol))
+            destination = root / "campaign"
+            with patch.object(full.BENCH, "REPO", BENCH.REPO), patch.object(full.BENCH, "run_agent") as run:
+                full.campaign(destination, binaries, ["control-revision", "candidate-revision"], protocol_path, prepare_only=True)
+                run.assert_not_called()
+                self.assertEqual(len(list(destination.glob("task*-rep*/manifest.json"))), 16)
+                self.assertEqual({p.name for p in (destination / "tasks").iterdir()},
+                                 {"task1.json", "task4.json", "task5.json", "task7-full-help.json"})
+                plan = json.loads((destination / "campaign.json").read_text())
+                self.assertEqual(set(plan["task_hashes"]), {"1", "4", "5", "7"})
+                frozen_protocol = destination / "protocol.json"
+                frozen_text = frozen_protocol.read_text()
+                frozen_protocol.write_text(frozen_text + " ")
+                with self.assertRaisesRegex(ValueError, "Frozen input changed"):
+                    full.run_frozen(destination)
+                run.assert_not_called()
+                self.assertFalse((destination / "started.json").exists())
+                frozen_protocol.write_text(frozen_text)
+                full.run_frozen(destination)
+                self.assertEqual(run.call_count, 32)
+                self.assertEqual(json.loads((destination / "started.json").read_text())["sessions"], 32)
+                for item in protocol["pairs"]:
+                    target = destination / f"task{item['task']}-rep{item['repetition']}"
+                    actual = [call.args[1] for call in run.call_args_list if call.args[0] == target]
+                    self.assertEqual(actual, [{"A": "run-02", "B": "run-01"}[arm] for arm in item["order"]])
+                with self.assertRaisesRegex(ValueError, "already started"):
+                    full.run_frozen(destination)
+                self.assertEqual(run.call_count, 32)
+
     def test_full_help_freezes_inputs_before_running_and_uses_only_frozen_binaries(self):
         full = self.full_help_runner()
         with tempfile.TemporaryDirectory() as tmp:
@@ -188,6 +254,7 @@ class ExperimentTests(unittest.TestCase):
                     self.assertEqual(actual, [{"A": "run-02", "B": "run-01"}[a] for a in item["order"]])
                     self.assertEqual((target / "A/target/debug/locmetry").read_text(), "A")
                 self.assertTrue((destination / "started.json").exists())
+                self.assertEqual(json.loads((destination / "started.json").read_text())["sessions"], 80)
                 with self.assertRaisesRegex(ValueError, "already started"):
                     full.run_frozen(destination)
 

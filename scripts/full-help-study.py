@@ -18,12 +18,19 @@ TASK_IDS = [1, 2, 3, 4, 5, 6, 7, 9, 10, 11]
 
 
 def validate_protocol(protocol):
-    if protocol["task_ids"] != TASK_IDS or protocol["repetitions"] != 4 or protocol["concurrent_pairs"] != 3:
-        raise ValueError("The frozen study requires ten tasks, four pairs each and at most three concurrent pairs")
+    if protocol["revision"] == "full-help-coverage-v1":
+        task_ids = TASK_IDS
+    elif protocol["revision"] == "compare-help-routing-v1":
+        task_ids = [1, 4, 5, 7]
+    else:
+        raise ValueError("Unknown study; only the fixed full-help and comparison-routing protocols are supported")
+    if protocol["task_ids"] != task_ids or protocol["repetitions"] != 4 or protocol["concurrent_pairs"] != 3:
+        raise ValueError("The fixed protocol requires its task set, four pairs each and at most three concurrent pairs")
     pairs = protocol["pairs"]
-    if len(pairs) != 40:
-        raise ValueError("The bounded study requires exactly 40 pairs (80 sessions)")
-    for task in TASK_IDS:
+    expected_pairs = len(task_ids) * 4
+    if len(pairs) != expected_pairs or protocol["maximum_sessions"] != expected_pairs * 2:
+        raise ValueError(f"The bounded study requires exactly {expected_pairs} pairs ({expected_pairs * 2} sessions)")
+    for task in task_ids:
         selected = [p for p in pairs if p["task"] == task]
         if {p["repetition"] for p in selected} != {1, 2, 3, 4} or Counter(p["order"] for p in selected) != {"AB": 2, "BA": 2}:
             raise ValueError(f"Task {task} requires AB/BA twice each")
@@ -42,7 +49,7 @@ def campaign(destination, binaries, revisions, protocol_path=PROTOCOL, *, prepar
         raise ValueError("The control revision/binary does not match the frozen control provenance")
     task_paths = {
         number: BENCH.TASK.with_name(protocol["task_files"].get(str(number), f"task{number}.json"))
-        for number in TASK_IDS
+        for number in protocol["task_ids"]
     }
     for path in task_paths.values():
         if not path.is_file():
@@ -111,7 +118,8 @@ def run_frozen(destination):
         if BENCH.sha(path) != expected:
             raise ValueError(f"Study code changed after freezing: {path.name}")
     with (destination / "started.json").open("x") as started:
-        json.dump({"started": time.time(), "sessions": 80, "protocol_sha256": plan["protocol_sha256"]}, started, indent=2)
+        json.dump({"started": time.time(), "sessions": len(plan["pairs"]) * 2,
+                   "protocol_sha256": plan["protocol_sha256"]}, started, indent=2)
         started.write("\n")
 
     def pair(item):
