@@ -219,7 +219,7 @@ A workspace adds the member as a dimension of the merged report, so repositories
 
 - `summary.members`, keyed by member name, holds each member's totals in the shape of the summary's own: `all_counted`, `source`, `by_kind_purpose`, `source_purpose`, `source_categories`, and `source_languages`. They equal what a regular run of that member reports.
 - `metadata.members` also holds each member's `coverage` counts: `selected_files`, `counted_files`, `mapped_files`, `unrecognized_files`, `unread_files`, and `parse_failed_files` (always emitted now; absent in older reports).
-- The terminal table shows repository rows in place of folder rows: total source lines, code, production, test, other, test lines per production line, and the share of the workspace's source code, with a total row.
+- The terminal table shows repository rows in place of folder rows: total source lines, code, production, test, other, Test Code divided by Production Code, and the share of the workspace's source code, with a total row.
 - The Markdown report adds a Repositories section with the same table, followed by source categories and source languages by repository, as grids with Lines and Code columns per member and corresponding total columns; rows follow `--sort`.
 - Default and verbose tables name each member with read/parse failures under `Unavailable counts:`, listing only its failure counts. `--verbose` separately lists unclaimed source by repository. Markdown retains its comprehensive combined member note. Unrecognized types appear only in the verbose table’s neutral `Unrecognized files:` note and in Markdown/JSON coverage; they are not counting failures.
 
