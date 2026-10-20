@@ -9,6 +9,7 @@ Start with the workflow or contract relevant to your task. Status tables in the 
 - [Integration and distribution](tokei-integration.md): embedded backend, packaging and release procedures.
 - [Current work](PLAN.md): open tasks, decision gates and deferred scope.
 - [Maintain these docs](documentation-maintenance.md): index ownership, status/date rules and automated checks.
+- [Design CLI help](help-design.md): what belongs in help, examples and references, with experimental rationale and evaluation criteria.
 - [Task guides](guides/README.md): configure, explain, read and compare measurements.
 - [Plans](plans/README.md): status of detailed plans and deferred designs.
 - [Proposals](proposals/README.md): designs under review and historical decisions.
