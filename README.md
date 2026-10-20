@@ -79,7 +79,7 @@ locmetry --root examples/cli-workspace/acme-orders --no-user-config --no-color -
 
 The rows cover the measured source once: a parent and its expanded children do not contribute twice. `Test/prod` is test code divided by production code; `-` means there is no production denominator. It describes code volume, not test coverage or quality.
 
-The 12-row budget allows this small tree to expand to six source rows. Use `--folders` for top-level folders or `--verbose` for classification and coverage notes. These views do not change the measurement. [Folder reporting](docs/guides/reports.md#look-inside-large-folders) explains expansion, saved tables and format limits.
+The 12-row budget allows this small tree to expand to six source rows. Use `--show-folders` for top-level folders or `--verbose` for classification and coverage notes. These views do not change the measurement. [Folder reporting](docs/guides/reports.md#look-inside-large-folders) explains expansion, saved tables and format limits.
 
 ## Common commands
 
@@ -93,13 +93,13 @@ The 12-row budget allows this small tree to expand to six source rows. Use `--fo
 | Save full JSON and print the table from one scan, as for agents | `locmetry --output ../report.json --print table` |
 | Save a Markdown report | `locmetry --format markdown --output ../report.md` |
 | Measure repositories together, each with its own policy | `locmetry workspace --root ../web --root ../api` |
-| Count production source only, with its comment density | `locmetry --purpose production` |
+| Show production source in the table, with its comment density | `locmetry --format table --table-purpose production` |
 | Inspect the configuration contract | `locmetry --schema config` |
 | Read full JSON on stdout | `locmetry --root service --format json --files` |
 | Measure selected source, including ignored files, except vendor | `locmetry --root service --subfolder src --exclude 'src/vendor/**' --hidden true --respect-ignore-files false --format json` |
-| Show adaptive folder detail and production categories | `locmetry --root service --format table --folder-rows 30 --purpose production --categories --bars=comments --sort name` |
-| Save a sorted Markdown tree to depth 3 | `locmetry --root service --format markdown --depth 3 --sort name --output report.md` |
-| Measure an explicit workspace definition | `locmetry workspace --file repos.toml --files --output workspace.json --print table` |
+| Show adaptive folder detail and production categories | `locmetry --root service --format table --folder-rows 30 --table-purpose production --show-categories --show-bars=comments --sort name` |
+| Save a sorted Markdown tree to depth 3 | `locmetry --root service --format markdown --markdown-depth 3 --sort name --output report.md` |
+| Measure an explicit workspace definition | `locmetry workspace --workspace-file repos.toml --files --output workspace.json --print table` |
 | Compare two saved full reports | `locmetry compare before.json after.json --format table` |
 
 `locmetry --help` includes the same commands, plus a working configuration example for maintained scripts with applicability and verification instructions. Verbose tables total data and documentation files under “Not source code”; to list them, [filter full JSON by `kind`](docs/guides/reports.md#not-source-code-which-files-are-data-or-documentation).
@@ -108,18 +108,35 @@ Without explicit options, a terminal gets a table and a pipe gets a compact JSON
 
 ### Selected options
 
+**Selection and policy** — choose the measured input and its rules.
+
 | Option | Use |
 | --- | --- |
-| `--folders` / `--folder-rows N` | Top-level / adaptive folder rows in single-root table output; adaptive rows require table format. |
-| `--no-color` | Disable terminal colors, bold and dim text, including help and diagnostics; equivalent to `NO_COLOR=1`. |
-| `--verbose` | Add diagnostic notes to tables independently of folder rows. |
-| `--bars` / `--no-bars` | Share bars per language, folder or repository row, split by purpose. A terminal shows them beside tables they fit; `--bars` also charts them below other tables and in saved tables, `--bars=comments` charts comment density instead, and `--no-bars` omits them. |
-| `--purpose LIST` | Count only these purposes' source in tables, such as `production` to drop tests; without test or production, `Comment %` replaces `Test/prod`. |
-| `--config FILE` | Replace discovery of the root's `.locmetryrc`; patterns still refer to the scan root. |
-| `--exclude GLOB` | Add an exclusion to the effective scope. |
-| `--no-user-config` | Ignore personal defaults, for example when measuring in CI. |
-| `--files` | Add per-file counts and deciding rules to full JSON. |
-| `--categories` | Show the source purpose/category breakdown in a table. |
+| `--root DIR` / `--subfolder DIR` | Select a project root, or restrict measurement within it while retaining project policy and module context. |
+| `--workspace-file FILE` | Select a workspace definition for `workspace` or `explain`. |
+| `--config FILE` / `--exclude GLOB` | Choose project configuration or add a root-relative scope exclusion. |
+| `--no-user-config` | Ignore personal defaults, for example in CI. |
+
+**Output and content** — choose formats, destinations and JSON detail.
+
+| Option | Use |
+| --- | --- |
+| `--format FORMAT` / `--output FILE` | Choose the result format and destination; `--output -` selects stdout. |
+| `--print FORMAT` | With a saved file, also print another view from the same scan. |
+| `--files` | Include per-file counts and decisions in full JSON, whether saved or printed; headlines omit them. |
+
+**Presentation** — shape views without changing measured scope.
+
+| Option | Use |
+| --- | --- |
+| `--show-folders` / `--folder-rows N` | Top-level / adaptive folder rows in a single-root table, saved or printed. |
+| `--show-categories` / `--verbose` | Add category rows / classification and coverage notes to tables. |
+| `--table-purpose LIST` | Filter table source and totals by purpose; JSON and Markdown retain the complete measurement. |
+| `--show-bars[=KIND]` / `--no-bars` | Force / suppress table charts. `KIND` is `purpose` or `comments`; selecting one table purpose uses comment density even with `=purpose`. Terminals show fitting bars automatically. |
+| `--markdown-depth N` / `--sort code\|name` | Bound Markdown Folder breakdown depth / order human rows; depth does not bound other evidence. |
+| `--no-color` | Disable terminal color, bold and dim, including help and diagnostics; equivalent to `NO_COLOR=1`. |
+
+Use the current spellings above; [the option contract](docs/PRODUCT.md#option-names-and-applicability) lists rejected former names and format-specific warning/error behavior.
 
 Run `locmetry --help` or `locmetry COMMAND --help` for all options. The positional directory is equivalent to `--root`; in scripts, prefer `--root "$directory"` so a directory named `compare` or `workspace` cannot select a command. Command options follow the command name; global `--no-color` works before or after it.
 
@@ -131,7 +148,7 @@ One call gives an agent both a readable overview and a saved report:
 locmetry --root . --output ../report.json --print table
 ```
 
-Stdout gets the table, unstyled and without share bars in a pipe; the file gets full JSON for queries or a later `locmetry compare`. Use `--print headline` for compact JSON on stdout instead, and `locmetry --schema report` for every field. `--folders` and `--verbose` extend the printed table.
+Stdout gets the table, unstyled and without share bars in a pipe; the file gets full JSON for queries or a later `locmetry compare`. Use `--print headline` for compact JSON on stdout instead, and `locmetry --schema report` for every field. `--show-folders` and `--verbose` extend the printed table.
 
 ### Compare saved measurements
 

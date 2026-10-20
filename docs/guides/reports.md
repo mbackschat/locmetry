@@ -6,26 +6,27 @@ Start with `locmetry --root . --format headline` at the intended project root. T
 
 | Task | Command |
 | --- | --- |
-| Source counts by language and folder | `locmetry --root . --format table --folders` |
+| Source counts by language and folder | `locmetry --root . --format table --show-folders` |
 | Source tables with classification, scope and coverage notes | `locmetry --root . --format table --verbose` |
-| Production source only, with its comment density | `locmetry --root . --format table --purpose production` |
+| Production source only, with its comment density | `locmetry --root . --format table --table-purpose production` |
 | Compact JSON | `locmetry --root . --format headline` |
 | Full JSON on stdout | `locmetry --root . --format json` |
 | Full JSON with per-file decisions | `locmetry --root . --files --format json` |
 | Save a full baseline outside the root | `locmetry --root service --output before.json` |
 | Save a full baseline and print the table, from one scan | `locmetry --root service --output before.json --print table` |
+| Save Markdown and print full per-file JSON | `locmetry --root service --format markdown --output report.md --print json --files` |
 | Save Markdown | `locmetry --root service --format markdown --output report.md` |
 | Page a plain text report | `locmetry --root service --format table \| less` |
 
-Without explicit options, a terminal gets a table and a pipe gets a headline. Any `--output` defaults to full JSON; explicit `--format` wins. `--output FILE` writes only that file, with empty stdout, unless `--print FORMAT` adds a view of the same measurement there; `--output -` selects stdout. Extensions do not infer formats. Files are unstyled. `--files` requires full JSON. A headline is not comparison-ready, and cannot reconstruct the omitted baseline later. Aggregate comparison needs full reports, but not per-file records.
+Without explicit options, a terminal gets a table and a pipe gets a headline. Any `--output` defaults to full JSON; explicit `--format` wins. `--output FILE` writes only that file, with empty stdout, unless `--print FORMAT` adds a view of the same measurement there; `--output -` selects stdout. Extensions do not infer formats. Files are unstyled. `--files` requires at least one full JSON view, saved or printed, and affects each full JSON view. A simultaneous headline still omits file records. A headline is not comparison-ready, and cannot reconstruct the omitted baseline later. Aggregate comparison needs full reports, but not per-file records.
 
-Default single-project tables show counted source by language, a reconciliation legend and the measurement date. Add `--folders` for the folder table; workspace repository rows remain visible by default. Default tables deliberately omit non-source totals and unrecognized-file counts, and do not prompt for classification. Use `locmetry --format table --verbose` to inspect notes such as “Unclaimed source” and “Not source code”, build inference, Git submodule hints and unused policy. To inspect or refine purpose classification, use `locmetry --guide configure`; `--files --output -` shows each file's rule. Markdown and JSON retain their existing detail. `--verbose` warns without changing the result in non-table measurement formats.
+Default single-project tables show counted source by language, a reconciliation legend and the measurement date. Add `--show-folders` for the folder table; workspace repository rows remain visible by default. Default tables deliberately omit non-source totals and unrecognized-file counts, and do not prompt for classification. Use `locmetry --format table --verbose` to inspect notes such as “Unclaimed source” and “Not source code”, build inference, Git submodule hints and unused policy. To inspect or refine purpose classification, use `locmetry --guide configure`; `--files --output -` shows each file's rule. Markdown and JSON retain their existing detail. `--verbose` warns without changing the result in non-table measurement formats.
 
 Real read/parse failures remain visible without `--verbose`: `Not counted:` summarizes only failures, workspace `Unavailable counts:` names affected members, and the backend warning, stderr path diagnostic and exit 2 remain. The report's parse-failure path list requires `--verbose`; unrecognized types use a separate neutral note there. Unclaimed source has been counted and does not itself make the report partial.
 
 Protected export destinations must be outside the scan root (every member in workspace mode), and cannot overwrite configuration or workspace files. Shell redirection and `tee` bypass those checks. `explain` is different: JSON is always complete, with no headline or `--output`; use `locmetry explain --help`. Guides and schemas are standalone queries saved by shell redirection, without measurement flags.
 
-For adaptive folder rows and saved tables, see [Look inside large folders](#look-inside-large-folders). `--folders` applies to saved table text and subfolder measurements, warns in non-table formats and is unavailable in workspace mode. `--depth N` controls Markdown depth; `--categories` adds a table view. Explicit ineffective depth/categories warn during measurement. These presentation options do not change counts. Human count tables expose total Lines before Code; Lines = Code + Comments + Blanks, while purpose columns split Code. Table and Markdown end with the measurement time in UTC, from JSON `metadata.measured_at_unix_seconds`; exported files retain this date independently of filesystem timestamps. Use `locmetry --guide selection` before changing the measurement root to explore a large folder.
+For adaptive folder rows and saved tables, see [Look inside large folders](#look-inside-large-folders). `--show-folders` applies to saved table text and subfolder measurements, warns in non-table formats and is unavailable in workspace mode. `--markdown-depth N` limits only the Folder breakdown, not deeper review paths; see the [depth and applicability contract](../PRODUCT.md#option-names-and-applicability). `--show-categories` adds a table view. Explicit ineffective depth/categories warn during measurement. These presentation options do not change counts. Human count tables expose total Lines before Code; Lines = Code + Comments + Blanks, while purpose columns split Code. Table and Markdown end with the measurement time in UTC, from JSON `metadata.measured_at_unix_seconds`; exported files retain this date independently of filesystem timestamps. Use `locmetry --guide selection` before changing the measurement root to explore a large folder.
 
 ## Interpret the Numbers
 
@@ -106,13 +107,13 @@ For field-level semantics use `locmetry --schema report`; an optional narrow que
 
 ## Look inside large folders
 
-If the table requested with `--folders` concentrates most code in a container such as `web` or `packages`, request deeper detail without changing the scan root or classification context:
+If the table requested with `--show-folders` concentrates most code in a container such as `web` or `packages`, request deeper detail without changing the scan root or classification context:
 
 ```sh
 locmetry acme-orders --folder-rows 30
 ```
 
-This enables the **Folder** table with adaptive detail, without requiring `--folders` as well. The first **Language** table stays as it is. Large folders expand into non-overlapping child rows, including direct files and scoped “other child folders” rows where needed. Every row still contributes once to the total. The budget counts Folder data rows, excluding its header, total and legends. It limits additional detail; existing top-level contributions are never merged away, so an initially wider table can exceed it. `--sort name` compares path components, keeping descendants before siblings such as `src-old`; the same comparison resolves code ties. Single-child chains collapse without using extra rows. Paths stay relative to the project root, including when combined with `--subfolder`.
+This enables the **Folder** table with adaptive detail, without requiring `--show-folders` as well. The first **Language** table stays as it is. Large folders expand into non-overlapping child rows, including direct files and scoped “other child folders” rows where needed. Every row still contributes once to the total. The budget counts Folder data rows, excluding its header, total and legends. It limits additional detail; existing top-level contributions are never merged away, so an initially wider table can exceed it. `--sort name` compares path components, keeping descendants before siblings such as `src-old`; the same comparison resolves code ties. Single-child chains collapse without using extra rows. Paths stay relative to the project root, including when combined with `--subfolder`.
 
 `--format table` is an existing option that selects human-readable text. It is optional in a terminal, where table output is the default. Pipes normally select a JSON headline, and `--output` defaults to full JSON. Explicitly request table output when saving or paging this view:
 
@@ -122,7 +123,7 @@ locmetry acme-orders --folder-rows 30 --format table --output folders.txt
 
 When the largest displayed row still has folder detail, a gray hint names the folder and suggests increasing `--folder-rows`. This also covers a largest “other child folders” remainder. Smaller expandable folders alone do not trigger it.
 
-The option changes only the table view, not measurement counts, coverage or the Unclaimed source note requested with `--verbose`. It cannot accompany JSON output; save full JSON separately when needed. The verbose note uses its existing partition of unclaimed code and can therefore show different folder boundaries. Markdown retains its recursive `--depth` view; workspace mode rejects `--folder-rows`. [Adaptive folder semantics](../PRODUCT.md#adaptive-folder-detail) defines selection, budgets and limits.
+The option changes only the table view, not measurement counts, coverage or the Unclaimed source note requested with `--verbose`. It cannot accompany JSON output; save full JSON separately when needed. The verbose note uses its existing partition of unclaimed code and can therefore show different folder boundaries. Markdown retains its recursive `--markdown-depth` view; workspace mode rejects `--folder-rows`. [Adaptive folder semantics](../PRODUCT.md#adaptive-folder-detail) defines selection, budgets and limits.
 
 ## Measure several repositories together
 
@@ -132,7 +133,7 @@ The option changes only the table view, not measurement counts, coverage or the 
 locmetry workspace --root ../web --root ../api
 ```
 
-Roots are relative to the current directory or absolute. To avoid repeating them, list them in a workspace file, where they are relative to the file itself or absolute, and name it with `--file`; `locmetry --schema workspace` describes the format:
+Roots are relative to the current directory or absolute. To avoid repeating them, list them in a workspace file, where they are relative to the file itself or absolute, and name it with `--workspace-file`; `locmetry --schema workspace` describes the format:
 
 ```toml
 version = 1
@@ -140,7 +141,7 @@ roots = ["web", "api", "/srv/shared/billing"]
 ```
 
 ```sh
-locmetry workspace --file repos.toml
+locmetry workspace --workspace-file repos.toml
 ```
 
 - **Each repository keeps its policy:** `--config`, `--exclude`, `--hidden`, and `--respect-ignore-files` are rejected, because each repository's own configuration decides them, and options must follow `workspace`.

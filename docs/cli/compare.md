@@ -159,9 +159,9 @@ locmetry compare before.json after.json --format headline --output - \
 
 ```bash
 source scripts/cli-demo-env.sh
-locmetry workspace --file workspace.toml --no-user-config --output before.json
+locmetry workspace --workspace-file workspace.toml --no-user-config --output before.json
 printf 'export const discount = 1;\n' >> acme-orders/web/src/orders/Order.ts
-locmetry workspace --file workspace.toml --no-user-config --output after.json
+locmetry workspace --workspace-file workspace.toml --no-user-config --output after.json
 locmetry compare before.json after.json --member web --no-color --format table \
   | sed -e '/^Before measured at:/d; /^After measured at:/d' -e 's/[[:blank:]]*$//' \
   | demo_wrap
@@ -232,7 +232,7 @@ The second capture deliberately selects only the service. Web leaves the measure
 
 ```bash
 source scripts/cli-demo-env.sh
-locmetry workspace --file workspace.toml --no-user-config --output before.json
+locmetry workspace --workspace-file workspace.toml --no-user-config --output before.json
 locmetry workspace --root acme-orders/service --no-user-config --output after.json
 locmetry compare before.json after.json --format json \
   | jq '{
@@ -331,6 +331,8 @@ Web source still exists.
 
 ## Respect the input contract
 
+The help excerpt includes input arguments, member selection and output options, stopping before presentation options.
+
 A headline cannot replace a full baseline. This example checks exit 1 and prints the actual diagnostic. Capture earlier states before editing; a new measurement cannot recover the past. Exit 2 instead indicates partial measured input. The comparison guide owns the full interpretation rules.
 
 ```bash
@@ -342,7 +344,7 @@ locmetry compare headline.json full.json --no-color --format json 2> diagnostic.
   status=$?
 test "$status" -eq 1
 cat diagnostic.txt | demo_wrap
-locmetry compare --no-color --help | sed -n '1,18p'
+locmetry compare --no-color --help | sed '/^Presentation:/,$d'
 ```
 
 ```output
@@ -363,8 +365,25 @@ Arguments:
           Full JSON measurement after the change
 
 Options:
+  -h, --help
+          Print help (see a summary with '-h')
+
+Selection and policy:
       --member <NAME>
           Focus on one exact workspace member name; accepts presence on either side
 
-      --no-color
+Output and content:
+      --format <FORMAT>
+          Result format [default: json with --output; otherwise table on a terminal, headline in
+          pipes]
+
+          Possible values:
+          - table:    Human-readable tables and evidence
+          - json:     Complete JSON document; measurement reports can be compared later
+          - headline: Compact JSON for agents and scripts; not a comparison-ready measurement
+          - markdown: Markdown tables and evidence to save or paste into reviews
+
+      --output <FILE>
+          Write only to FILE; - selects stdout. Defaults to full JSON; --format overrides it
+
 ```

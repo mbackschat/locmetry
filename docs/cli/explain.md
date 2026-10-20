@@ -256,11 +256,11 @@ locmetry explain service/experiments/probe.py --root acme-orders --config propos
 
 ## Use a workspace and save Markdown
 
-`--workspace` takes member-prefixed paths and applies that member's policy. Single-root policy flags cannot accompany it. Explain supports table, JSON and Markdown; redirect stdout to save it because there is no `--output` or headline option. The Markdown excerpt omits its absolute root row.
+`--workspace-file` takes member-prefixed paths and applies that member's policy. Single-root policy flags cannot accompany it. Explain supports table, JSON and Markdown; redirect stdout to save it because there is no `--output` or headline option. The Markdown excerpt omits its absolute root row.
 
 ```bash
 source scripts/cli-demo-env.sh
-locmetry explain web/src/orders/Order.test.ts --workspace workspace.toml --no-user-config \
+locmetry explain web/src/orders/Order.test.ts --workspace-file workspace.toml --no-user-config \
   --format json \
   | jq '{member, path, result}'
 locmetry explain service/scripts/check.py --root acme-orders --no-user-config --format markdown \
@@ -316,11 +316,13 @@ sed '/^| .*Root.* |/d' explanation.md
 
 ## Discover explanation syntax
 
+The help excerpt includes selection and output groups, stops before presentation options and trims trailing whitespace.
+
 These successful states exit 0. Unread or parse-failed files exit 2, and invalid paths or configuration exit 1. The synthetic fixture avoids OS-dependent permission failures; dedicated integration tests cover failures.
 
 ```bash
 source scripts/cli-demo-env.sh
-locmetry explain --no-color --help | sed -n '1,20p'
+locmetry explain --no-color --help | sed '/^Presentation:/,$d; s/[[:space:]]*$//'
 locmetry --schema explanation | jq '{title, required}'
 ```
 
@@ -332,19 +334,47 @@ Usage: locmetry explain [OPTIONS] <PATH>
 
 Arguments:
   <PATH>
-          Root-relative file, or MEMBER/PATH with --workspace
+          Root-relative file, or MEMBER/PATH with --workspace-file
 
 Options:
-      --no-color
-          Disable terminal colors, bold and dim text, including help and diagnostics
+  -h, --help
+          Print help (see a summary with '-h')
 
-      --root <ROOT>
+Selection and policy:
+      --root <DIR>
           Scan root [default: the current directory]
 
-      --config <CONFIG>
+      --config <FILE>
           TOML configuration [default: .locmetryrc in the scan root, else built-in settings]
 
       --exclude <GLOB>
+          Add a root-relative exclusion glob; repeatable
+
+      --hidden <BOOL>
+          Override whether hidden files and directories are measured
+
+          [possible values: true, false]
+
+      --respect-ignore-files <BOOL>
+          Override whether ignore files limit the selection
+
+          [possible values: true, false]
+
+      --workspace-file <FILE>
+          Workspace file; use the selected member's own policy
+
+      --no-user-config
+          Ignore personal defaults
+
+Output and content:
+      --format <FORMAT>
+          Stdout format [default: table on a terminal, json otherwise]
+
+          Possible values:
+          - table:    Human-readable tables and evidence
+          - json:     Complete JSON explanation
+          - markdown: Markdown tables and evidence
+
 {
   "title": "Explanation",
   "required": [

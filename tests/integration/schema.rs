@@ -371,7 +371,7 @@ fn report_schema_describes_workspace_reports() {
         "version = 1\nroots = [\"project\"]\n",
     )
     .unwrap();
-    let from_file = output(&["workspace", "--file", "ws.toml"]);
+    let from_file = output(&["workspace", "--workspace-file", "ws.toml"]);
     assert!(full["metadata"]["members"][0].get("config").is_some());
     assert!(from_file["metadata"].get("workspace_path").is_some());
     for document in [&full, &headline, &from_file] {

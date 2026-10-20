@@ -1,5 +1,5 @@
-//! `--purpose` narrows table views to the selected purposes' source, and
-//! `--bars=comments` charts Code against Comments (docs/PRODUCT.md, Output Routing).
+//! `--table-purpose` narrows table views to the selected purposes' source, and
+//! `--show-bars=comments` charts comment density relative to the densest row (docs/PRODUCT.md, Output Routing).
 use crate::common;
 use std::path::Path;
 
@@ -60,7 +60,13 @@ fn cells(text: &str, label: &str) -> Vec<String> {
 /// comments, other purposes leave no rows, and Comment % takes Test/prod's place.
 #[test]
 fn production_only_tables_count_production_source_and_show_comment_share() {
-    let text = table(&["--format", "table", "--folders", "--purpose", "production"]);
+    let text = table(&[
+        "--format",
+        "table",
+        "--show-folders",
+        "--table-purpose",
+        "production",
+    ]);
     let header = |label| cells(&text, label).join(" ");
     assert_eq!(
         header("Language"),
@@ -95,7 +101,7 @@ fn production_only_tables_count_production_source_and_show_comment_share() {
 /// The ratio follows the selection: Test/prod needs both of its purposes.
 #[test]
 fn selected_purposes_keep_their_columns_and_choose_the_ratio() {
-    let text = table(&["--format", "table", "--purpose", "production,test"]);
+    let text = table(&["--format", "table", "--table-purpose", "production,test"]);
     assert_eq!(
         cells(&text, "Language").join(" "),
         "Language Files Lines Code Comments Blanks Prod. Test Test/prod"
@@ -107,7 +113,7 @@ fn selected_purposes_keep_their_columns_and_choose_the_ratio() {
     assert!(text.contains("Production + Test = Code; Test/prod = Test / Production (Code)."));
     assert!(text.contains(" Purposes shown: Production and Test; Other excluded.\n"));
 
-    let text = table(&["--format", "table", "--purpose", "other,test"]);
+    let text = table(&["--format", "table", "--table-purpose", "other,test"]);
     assert_eq!(
         cells(&text, "Language").join(" "),
         "Language Files Lines Code Comments Blanks Test Other Comment %"
@@ -129,7 +135,12 @@ fn selecting_every_purpose_is_no_selection() {
         text.split("\nMeasured at:").next().unwrap().to_string()
     };
     assert_eq!(
-        body(&["--format", "table", "--purpose", "production,test,other"]),
+        body(&[
+            "--format",
+            "table",
+            "--table-purpose",
+            "production,test,other"
+        ]),
         body(&["--format", "table"])
     );
 }
@@ -139,22 +150,22 @@ fn purpose_filters_only_tables() {
     let temp = project();
     let output = run(
         &temp.path().join("project"),
-        &["--format", "json", "--purpose", "production"],
+        &["--format", "json", "--table-purpose", "production"],
         "80",
     );
     assert!(output.status.success());
     assert!(String::from_utf8(output.stderr)
         .unwrap()
-        .contains("--purpose has no effect here; it applies only to table output"));
+        .contains("--table-purpose has no effect here; it applies only to table output"));
 }
 
 /// Comment bars compare densities: the densest row fills the bar, under a
-/// titled column; a bare --bars keeps the purpose split and never swallows a directory.
+/// titled column; a bare --show-bars keeps the purpose split and never swallows a directory.
 #[test]
 fn comment_bars_compare_densities_under_a_titled_column() {
     let temp = project();
     let root = temp.path().join("project");
-    let output = run(&root, &["--format", "table", "--bars=comments"], "300");
+    let output = run(&root, &["--format", "table", "--show-bars=comments"], "300");
     let text = String::from_utf8(output.stdout).unwrap();
     let rust = text
         .lines()
@@ -175,7 +186,7 @@ fn comment_bars_compare_densities_under_a_titled_column() {
 
     let bare = run(
         temp.path(),
-        &["--format", "table", "--bars", "project"],
+        &["--format", "table", "--show-bars", "project"],
         "300",
     );
     assert!(
@@ -199,7 +210,7 @@ fn inline_comment_bars_need_room_for_their_title() {
     let table = |columns: usize| {
         let output = run(
             &root,
-            &["--format", "table", "--bars=comments"],
+            &["--format", "table", "--show-bars=comments"],
             &columns.to_string(),
         );
         String::from_utf8(output.stdout).unwrap()
@@ -226,7 +237,13 @@ fn single_purpose_bars_chart_comments() {
     let temp = project();
     let output = run(
         &temp.path().join("project"),
-        &["--format", "table", "--purpose", "production", "--bars"],
+        &[
+            "--format",
+            "table",
+            "--table-purpose",
+            "production",
+            "--show-bars",
+        ],
         "300",
     );
     let text = String::from_utf8(output.stdout).unwrap();

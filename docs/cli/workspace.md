@@ -7,12 +7,12 @@ Run each Bash block from the Locmetry repository root. [Setup and replay instruc
 
 ## Use a workspace file
 
-`--file` resolves member roots relative to the TOML file. Each member loads its own policy. The source total agrees with the combined root, but member names and configuration provenance differ. The location/time footer is omitted explicitly.
+`--workspace-file` resolves member roots relative to the TOML file. Each member loads its own policy. The source total agrees with the combined root, but member names and configuration provenance differ. The location/time footer is omitted explicitly.
 
 ```bash
 source scripts/cli-demo-env.sh
-locmetry workspace --file workspace.toml --no-user-config --no-color --no-bars --format table \
-  --verbose --categories --sort name \
+locmetry workspace --workspace-file workspace.toml --no-user-config --no-color --no-bars --format table \
+  --verbose --show-categories --sort name \
   | sed '/^Root:/d; /^Roots:/d; /^Measured at:/d' \
   | demo_wrap
 ```
@@ -62,7 +62,7 @@ locmetry workspace --file workspace.toml --no-user-config --no-color --no-bars -
 
 ## Name roots directly
 
-Repeated `--root` is an alternative to `--file`. Root folder names become member names and path prefixes. Full JSON with `--files` retains those paths; `--output` writes silently. Workspace output cannot be inside any member.
+Repeated `--root` is an alternative to `--workspace-file`. Root folder names become member names and path prefixes. Full JSON with `--files` retains those paths; `--output` writes silently. Workspace output cannot be inside any member.
 
 ```bash
 source scripts/cli-demo-env.sh
@@ -107,12 +107,12 @@ jq '{
 
 ## Select purposes and show shares
 
-`--purpose production,test` restricts table counts. `--bars` charts purpose shares; `--sort name` makes the repository order explicit. Shared presentation flags have the same meaning as in root measurement.
+`--table-purpose production,test` restricts table counts. `--show-bars` charts purpose shares; `--sort name` makes the repository order explicit. Shared presentation flags have the same meaning as in root measurement.
 
 ```bash
 source scripts/cli-demo-env.sh
-locmetry workspace --file workspace.toml --no-user-config --no-color --format table \
-  --purpose production,test --bars --sort name \
+locmetry workspace --workspace-file workspace.toml --no-user-config --no-color --format table \
+  --table-purpose production,test --show-bars --sort name \
   | sed '/^Root:/d; /^Roots:/d; /^Measured at:/d' \
   | demo_wrap
 ```
@@ -152,10 +152,10 @@ locmetry workspace --file workspace.toml --no-user-config --no-color --format ta
 
 ```bash
 source scripts/cli-demo-env.sh
-locmetry workspace --file workspace.toml --no-user-config --output workspace.json \
+locmetry workspace --workspace-file workspace.toml --no-user-config --output workspace.json \
   --print headline \
   | jq '{document_type, detail, source: .summary.source}'
-locmetry workspace --file workspace.toml --no-user-config --output - \
+locmetry workspace --workspace-file workspace.toml --no-user-config --output - \
   | jq '.summary.members | with_entries(.value = .value.source)'
 ```
 
@@ -191,11 +191,11 @@ locmetry workspace --file workspace.toml --no-user-config --output - \
 
 ## Share Markdown detail
 
-`--depth` bounds Markdown folder depth. The displayed section comes from the saved document; the saved file also includes metadata and other sections.
+`--markdown-depth` bounds only the Markdown Folder breakdown; member names occupy level 1 and their immediate folders level 2. Other evidence can still name deeper paths. The displayed section comes from the saved document; the saved file also includes metadata and other sections.
 
 ```bash
 source scripts/cli-demo-env.sh
-locmetry workspace --file workspace.toml --no-user-config --format markdown --depth 3 \
+locmetry workspace --workspace-file workspace.toml --no-user-config --format markdown --markdown-depth 3 \
   --sort name --output workspace.md
 sed -n '/^## Source purpose/,/^## Source categories/p' workspace.md
 ```
@@ -224,12 +224,12 @@ sed -n '/^## Source purpose/,/^## Source categories/p' workspace.md
 
 ## Inspect available options
 
-Workspace selection is configured per member: root-only `--config`, `--exclude`, `--hidden`, `--respect-ignore-files` and `--subfolder` are unsupported here. Use `explain --workspace` to diagnose a member path. Full command help remains the option reference.
+Workspace selection is configured per member: root-only `--config`, `--exclude`, `--hidden`, `--respect-ignore-files` and `--subfolder` are unsupported here. Use `explain --workspace-file` to diagnose a member path. The help excerpt shows selection and output groups; full command help also lists presentation options.
 
 ```bash
 source scripts/cli-demo-env.sh
-locmetry workspace --no-color --help | sed -n '1,20p'
-locmetry explain web/src/orders/Order.test.ts --workspace workspace.toml --no-user-config \
+locmetry workspace --no-color --help | sed '/^Presentation:/,$d'
+locmetry explain web/src/orders/Order.test.ts --workspace-file workspace.toml --no-user-config \
   --format json \
   | jq '{
       member, path,
@@ -245,18 +245,48 @@ pipes. --output FILE saves only to that file, defaulting to full JSON; --format 
 Usage: locmetry workspace [OPTIONS]
 
 Options:
-      --no-color
-          Disable terminal colors, bold and dim text, including help and diagnostics
+  -h, --help
+          Print help (see a summary with '-h')
 
+Selection and policy:
       --root <DIR>
           Member root; repeatable. Its folder name prefixes its paths in the report
 
-      --file <FILE>
+      --workspace-file <FILE>
           Read the member roots from a TOML workspace file instead; its roots are relative to the
           file (see --schema workspace)
 
       --no-user-config
           Ignore user defaults in ~/.config/locmetry/config.toml
+
+Output and content:
+      --output <FILE>
+          Write only to FILE, outside the scan root; - selects stdout. Defaults to full JSON;
+          --format overrides it. File extensions do not select a format. Add --print table to also
+          print the overview from the same run
+
+      --print <FORMAT>
+          With --output FILE, also print the same measurement to stdout in FORMAT, such as table for
+          an overview or headline for compact JSON
+
+          Possible values:
+          - table:    Human-readable tables and evidence
+          - json:     Complete JSON document; measurement reports can be compared later
+          - headline: Compact JSON for agents and scripts; not a comparison-ready measurement
+          - markdown: Markdown tables and evidence to save or paste into reviews
+
+      --files
+          Include per-file records in full JSON, saved or printed; headline omits them
+
+      --format <FORMAT>
+          Result format [default: json with --output; otherwise table on a terminal, headline in
+          pipes]
+
+          Possible values:
+          - table:    Human-readable tables and evidence
+          - json:     Complete JSON document; measurement reports can be compared later
+          - headline: Compact JSON for agents and scripts; not a comparison-ready measurement
+          - markdown: Markdown tables and evidence to save or paste into reviews
 
 {
   "member": "web",

@@ -289,7 +289,7 @@ fn workspace_rejects_single_root_flags() {
             &roots[..],
             &[
                 "--no-user-config",
-                "--categories",
+                "--show-categories",
                 "--sort",
                 "name",
                 "--format",
@@ -395,7 +395,7 @@ fn a_workspace_file_lists_roots_relative_to_itself() {
     let from_roots = full_report(base, &["workspace", "--root", "web", "--root", "api"]);
     let mut from_file = full_report(
         &base.join("other"),
-        &["workspace", "--file", "../defs/cg.toml"],
+        &["workspace", "--workspace-file", "../defs/cg.toml"],
     );
     assert_eq!(
         from_file["metadata"]["workspace_path"],
@@ -421,7 +421,10 @@ fn a_workspace_file_inside_a_member_is_not_measured() {
             "version = 1\nroots = [\".\", \"../api\"]\n",
         )],
     );
-    let report = full_report(temp.path(), &["workspace", "--file", "web/workspace.toml"]);
+    let report = full_report(
+        temp.path(),
+        &["workspace", "--workspace-file", "web/workspace.toml"],
+    );
     let paths: Vec<&str> = report["files"]
         .as_array()
         .unwrap()
@@ -454,17 +457,26 @@ fn invalid_workspace_files_fail_before_measuring() {
         ("extra.toml", "exclude"),
         ("missing.toml", "missing.toml"),
     ] {
-        let stderr = stderr_of(&locmetry(temp.path(), &["workspace", "--file", file]));
+        let stderr = stderr_of(&locmetry(
+            temp.path(),
+            &["workspace", "--workspace-file", file],
+        ));
         assert!(stderr.contains(message), "{file}: {stderr}");
     }
     let both = stderr_of(&locmetry(
         temp.path(),
-        &["workspace", "--file", "ok.toml", "--root", "api"],
+        &["workspace", "--workspace-file", "ok.toml", "--root", "api"],
     ));
     assert!(both.contains("--root"), "{both}");
     let overwrite = stderr_of(&locmetry(
         temp.path(),
-        &["workspace", "--file", "ok.toml", "--output", "ok.toml"],
+        &[
+            "workspace",
+            "--workspace-file",
+            "ok.toml",
+            "--output",
+            "ok.toml",
+        ],
     ));
     assert!(overwrite.contains("overwrite"), "{overwrite}");
 }
@@ -649,7 +661,7 @@ fn regular_runs_have_no_repository_dimension() {
     for folders in [false, true] {
         let mut args = vec!["--format", "table"];
         if folders {
-            args.push("--folders");
+            args.push("--show-folders");
         }
         let table = String::from_utf8(locmetry(&web, &args).stdout).unwrap();
         assert_eq!(table.contains(" Folder "), folders, "{table}");
@@ -674,7 +686,7 @@ fn workspace_bars_chart_repository_shares() {
             "api",
             "--format",
             "table",
-            "--bars",
+            "--show-bars",
         ])
         .output()
         .unwrap();
@@ -722,7 +734,7 @@ fn comment_bars_separate_their_percentage_column_after_share() {
             "api",
             "--format",
             "table",
-            "--bars=comments",
+            "--show-bars=comments",
         ])
         .output()
         .unwrap();

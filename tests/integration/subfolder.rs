@@ -250,7 +250,7 @@ fn subfolder_human_views_start_at_children_and_keep_project_paths() {
     for format in ["table", "markdown"] {
         let mut args = vec!["--subfolder", "web/src", "--format", format];
         if format == "table" {
-            args.push("--folders");
+            args.push("--show-folders");
         }
         let out = run(root, &args);
         assert!(out.status.success());

@@ -33,13 +33,13 @@ fn rejects_unrelated_inputs(flag: &str, topic: &str) {
         vec!["--respect-ignore-files", "false"],
         vec!["--no-user-config"],
         vec!["--sort", "code"],
-        vec!["--depth", "2"],
-        vec!["--categories"],
+        vec!["--markdown-depth", "2"],
+        vec!["--show-categories"],
         vec!["--verbose"],
         vec!["--files"],
         vec!["--format", "json"],
         vec!["--folder-rows", "3"],
-        vec!["--folders"],
+        vec!["--show-folders"],
         vec!["--output", "saved.json"],
     ] {
         for first in [true, false] {
@@ -101,7 +101,10 @@ fn schemas_ignore_configuration_and_implicit_defaults_but_keep_help_early_exits(
         assert!(doc.get("$schema").is_some());
     }
     for help in ["--help", "-h", "--version"] {
-        let out = run(root.path(), &["--schema", "config", "--depth", "2", help]);
+        let out = run(
+            root.path(),
+            &["--schema", "config", "--markdown-depth", "2", help],
+        );
         assert_eq!(out.status.code(), Some(0));
         assert!(out.stderr.is_empty());
     }

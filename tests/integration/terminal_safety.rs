@@ -13,7 +13,7 @@ fn no_color_is_global_and_compatible_with_reference_queries() {
         .unwrap();
     assert!(baseline.status.success());
     for args in [
-        vec!["service", "--format", "table", "--bars"],
+        vec!["service", "--format", "table", "--show-bars"],
         vec!["workspace", "--root", "service", "--format", "table"],
         vec!["compare", "before.json", "before.json", "--format", "table"],
         vec![
@@ -39,7 +39,7 @@ fn no_color_is_global_and_compatible_with_reference_queries() {
             );
             assert!(!output.stdout.contains(&0x1b), "{flagged:?}");
             assert!(!output.stderr.contains(&0x1b), "{flagged:?}");
-            if args.contains(&"--bars") {
+            if args.contains(&"--show-bars") {
                 assert!(String::from_utf8_lossy(&output.stdout).contains("Code share"));
             }
         }
@@ -54,7 +54,7 @@ fn table_and_unclaimed_note_flatten_path_controls_without_changing_json() {
         fs::create_dir(root.path().join(name)).unwrap();
         fs::write(root.path().join(name).join("item.rs"), "fn item() {}\n").unwrap();
     }
-    for extra in [vec!["--folders"], vec!["--folder-rows", "10"]] {
+    for extra in [vec!["--show-folders"], vec!["--folder-rows", "10"]] {
         let output = common::locmetry()
             .args([
                 "--root",

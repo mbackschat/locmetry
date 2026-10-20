@@ -6,6 +6,7 @@
 mod common;
 
 mod cli;
+mod cli_options;
 mod compare;
 mod config;
 mod contracts;

@@ -30,9 +30,9 @@ fn folders_are_opt_in_for_root_subfolder_and_saved_tables_independently_of_notes
         for verbose in [false, true] {
             for extra in [
                 vec![],
-                vec!["--folders"],
+                vec!["--show-folders"],
                 vec!["--folder-rows", "8"],
-                vec!["--folders", "--folder-rows", "8"],
+                vec!["--show-folders", "--folder-rows", "8"],
             ] {
                 let expected = !extra.is_empty();
                 let mut args = vec!["project", "--format", "table"];
@@ -75,11 +75,14 @@ fn folders_warn_without_changing_non_table_measurements() {
     let temp = fixture();
     for format in ["markdown", "json", "headline"] {
         let original = run(temp.path(), &["project", "--format", format]);
-        let requested = run(temp.path(), &["project", "--format", format, "--folders"]);
+        let requested = run(
+            temp.path(),
+            &["project", "--format", format, "--show-folders"],
+        );
         assert!(original.status.success());
         assert!(requested.status.success());
         assert!(String::from_utf8_lossy(&requested.stderr)
-            .contains("--folders has no effect here; it applies only to table output"));
+            .contains("--show-folders has no effect here; it applies only to table output"));
         if format == "markdown" {
             let original = String::from_utf8(original.stdout).unwrap();
             let requested = String::from_utf8(requested.stdout).unwrap();
@@ -96,10 +99,10 @@ fn folders_warn_without_changing_non_table_measurements() {
             assert_eq!(original, requested);
         }
     }
-    let output = run(temp.path(), &["project", "--folders"]);
+    let output = run(temp.path(), &["project", "--show-folders"]);
     assert!(output.status.success());
     assert!(serde_json::from_slice::<Value>(&output.stdout).is_ok());
-    assert!(String::from_utf8_lossy(&output.stderr).contains("--folders has no effect here"));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("--show-folders has no effect here"));
 }
 
 #[test]
@@ -114,17 +117,17 @@ fn workspace_keeps_repository_rows_and_folders_is_a_root_measurement_option() {
     assert!(has_table(&text, "Repository"));
     assert!(!has_table(&text, "Folder"));
     for args in [
-        vec!["workspace", "--root", "project", "--folders"],
-        vec!["--folders", "workspace", "--root", "project"],
-        vec!["--schema", "report", "--folders"],
-        vec!["--guide", "reports", "--folders"],
+        vec!["workspace", "--root", "project", "--show-folders"],
+        vec!["--show-folders", "workspace", "--root", "project"],
+        vec!["--schema", "report", "--show-folders"],
+        vec!["--guide", "reports", "--show-folders"],
     ] {
         let output = run(temp.path(), &args);
         assert_eq!(output.status.code(), Some(1), "{args:?}");
         assert!(output.stdout.is_empty());
     }
     let help = run(temp.path(), &["--help"]);
-    assert!(String::from_utf8_lossy(&help.stdout).contains("--folders"));
+    assert!(String::from_utf8_lossy(&help.stdout).contains("--show-folders"));
 }
 
 #[test]
@@ -134,7 +137,7 @@ fn failures_stay_visible_with_or_without_folder_rows() {
     for folders in [false, true] {
         let mut args = vec!["project", "--format", "table"];
         if folders {
-            args.push("--folders");
+            args.push("--show-folders");
         }
         let output = run(temp.path(), &args);
         assert_eq!(output.status.code(), Some(2));

@@ -48,7 +48,7 @@ The source total is 25 code lines: 17 production, 7 test and 1 other. Data and d
 
 ```sh
 locmetry --root acme-orders --no-user-config --no-color --no-bars --format table --folder-rows 12
-locmetry --root acme-orders --subfolder web/src --no-user-config --no-color --no-bars --format table --folders
+locmetry --root acme-orders --subfolder web/src --no-user-config --no-color --no-bars --format table --show-folders
 ```
 
 Adaptive rows cover the source once, separating direct files from expanded descendants. `--subfolder` retains the combined root's policy and module context; changing the root would change that context. [Folder reporting](guides/reports.md#look-inside-large-folders) owns the expansion rules.
@@ -83,7 +83,7 @@ The result contains Go 4 and TypeScript 3. Full reports contain additive breakdo
 ## Share a report and follow changes
 
 ```sh
-locmetry --root acme-orders --no-user-config --format markdown --depth 3 --output acme-orders-report.md
+locmetry --root acme-orders --no-user-config --format markdown --markdown-depth 3 --output acme-orders-report.md
 printf 'export const discount = 1;\n' >> acme-orders/web/src/orders/Order.ts
 locmetry --root acme-orders --no-user-config --output acme-orders-after.json
 locmetry compare acme-orders-report.json acme-orders-after.json --format json
@@ -94,7 +94,7 @@ Source code increases by one line, from 25 to 26. This is net change between mea
 ## Measure the members together
 
 ```sh
-locmetry workspace --file workspace.toml --no-user-config --no-color --no-bars --format table
+locmetry workspace --workspace-file workspace.toml --no-user-config --no-color --no-bars --format table
 ```
 
 The workspace file names `service` and `web`. Their own policies give the same source total as the combined root at the same state; paths and provenance reflect separate members. The [recorded workspace guide](cli/workspace.md) explains the distinction and demonstrates workspace report options. Delete your temporary copy when finished; the checked-in source remains unchanged.

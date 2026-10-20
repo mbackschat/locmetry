@@ -24,20 +24,20 @@ Each row routes an option to its primary explanation. The workspace guide exerci
 | Command | Options or arguments | Example |
 | --- | --- | --- |
 | Root | `--root`, positional directory, `--no-user-config`, `--format`, `--no-color`, `--no-bars` | [Whole tree](root.md#measure-the-whole-tree) |
-| Root | `--folder-rows`, `--sort`, `--categories`, `--verbose` | [Folders and decisions](root.md#explore-folders-and-decisions) |
-| Root | `--subfolder`, `--folders`, `--purpose`, `--bars=comments` | [Production subtree](root.md#focus-on-production-in-a-subtree) |
+| Root | `--folder-rows`, `--sort`, `--show-categories`, `--verbose` | [Folders and decisions](root.md#explore-folders-and-decisions) |
+| Root | `--subfolder`, `--show-folders`, `--table-purpose`, `--show-bars=comments` | [Production subtree](root.md#focus-on-production-in-a-subtree) |
 | Root | `--config`, `--hidden`, `--respect-ignore-files`, `--exclude` | [Selection overrides](root.md#override-selection) |
-| Root | `--files`, `--output`, `--print`, `--bars` | [Export and overview](root.md#save-full-evidence-and-print-an-overview) |
-| Root | `--depth`, Markdown and headline formats | [Output choices](root.md#choose-markdown-or-headline-output) |
+| Root | `--files`, `--output`, `--print`, `--show-bars` | [Export and overview](root.md#save-full-evidence-and-print-an-overview) |
+| Root | `--markdown-depth`, Markdown and headline formats | [Output choices](root.md#choose-markdown-or-headline-output) |
 | Root | `--help`, `--version`, `--schema`, `--guide` | [Discovery](root.md#discover-syntax-and-contracts) |
-| Workspace | `--file`, `--root` | [Workspace file](workspace.md#use-a-workspace-file), [explicit roots](workspace.md#name-roots-directly) |
-| Workspace | `--no-user-config`, `--no-color`, `--no-bars`, `--verbose`, `--categories`, `--sort`, `--format` | [Member policy and reports](workspace.md#use-a-workspace-file) |
-| Workspace | `--purpose`, `--bars`, `--files`, `--output`, `--print`, `--depth`, `--help` | [Shares](workspace.md#select-purposes-and-show-shares), [exports](workspace.md#export-and-print-together), [Markdown](workspace.md#share-markdown-detail), [discovery](workspace.md#inspect-available-options) |
+| Workspace | `--workspace-file`, `--root` | [Workspace file](workspace.md#use-a-workspace-file), [explicit roots](workspace.md#name-roots-directly) |
+| Workspace | `--no-user-config`, `--no-color`, `--no-bars`, `--verbose`, `--show-categories`, `--sort`, `--format` | [Member policy and reports](workspace.md#use-a-workspace-file) |
+| Workspace | `--table-purpose`, `--show-bars`, `--files`, `--output`, `--print`, `--markdown-depth`, `--help` | [Shares](workspace.md#select-purposes-and-show-shares), [exports](workspace.md#export-and-print-together), [Markdown](workspace.md#share-markdown-detail), [discovery](workspace.md#inspect-available-options) |
 | Compare | `BEFORE`, `AFTER`, `--format`, `--no-color`, `--output` | [Known change](compare.md#capture-and-explain-a-known-change), [exports](compare.md#save-the-comparison) |
 | Compare | `--member`, `--help` | [Member selection](compare.md#focus-on-a-workspace-member), [input contract](compare.md#respect-the-input-contract) |
 | Explain | `PATH`, `--root`, `--no-user-config`, `--format`, `--no-color` | [Deciding rule](explain.md#trace-the-deciding-rule) |
 | Explain | `--hidden`, `--respect-ignore-files`, `--exclude`, `--config` | [Selection overrides](explain.md#try-selection-overrides), [proposed policy](explain.md#compare-a-proposed-policy) |
-| Explain | `--workspace`, `--help` | [Workspace and Markdown](explain.md#use-a-workspace-and-save-markdown), [syntax](explain.md#discover-explanation-syntax) |
+| Explain | `--workspace-file`, `--help` | [Workspace and Markdown](explain.md#use-a-workspace-and-save-markdown), [syntax](explain.md#discover-explanation-syntax) |
 
 ## Verify and regenerate
 

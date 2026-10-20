@@ -72,13 +72,13 @@ fn every_visible_option_has_a_workflow_in_the_inventory() {
         "--print",
         "--files",
         "--format",
-        "--categories",
+        "--show-categories",
         "--verbose",
-        "--bars",
+        "--show-bars",
         "--no-bars",
-        "--purpose",
+        "--table-purpose",
         "--sort",
-        "--depth",
+        "--markdown-depth",
         "--help",
     ];
     let policy = [
@@ -96,7 +96,7 @@ fn every_visible_option_has_a_workflow_in_the_inventory() {
                 policy.as_slice(),
                 &[
                     "--subfolder",
-                    "--folders",
+                    "--show-folders",
                     "--folder-rows",
                     "--schema",
                     "--guide",
@@ -107,7 +107,7 @@ fn every_visible_option_has_a_workflow_in_the_inventory() {
         ),
         (
             "workspace",
-            [shared.as_slice(), &["--root", "--file"]].concat(),
+            [shared.as_slice(), &["--root", "--workspace-file"]].concat(),
         ),
         (
             "compare",
@@ -119,7 +119,7 @@ fn every_visible_option_has_a_workflow_in_the_inventory() {
                 policy.as_slice(),
                 &[
                     "--no-color",
-                    "--workspace",
+                    "--workspace-file",
                     "--no-user-config",
                     "--format",
                     "--help",
@@ -159,7 +159,7 @@ fn root_help_exposes_result_automation_and_policy_boundaries() {
         "overrides precede test/build conventions",
         "language mappings",
         "--schema user-config",
-        "--purpose filters tables, not JSON",
+        "--table-purpose filters tables, not JSON",
         "Build modules infer conventional layouts",
     ] {
         assert!(text.contains(fact), "missing task interpretation: {fact}");

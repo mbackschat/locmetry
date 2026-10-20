@@ -160,7 +160,7 @@ fn workspace_queries_use_member_policy_and_qualified_paths() {
             .args([
                 "explain",
                 path,
-                "--workspace",
+                "--workspace-file",
                 root.join("repos.toml").to_str().unwrap(),
                 "--no-user-config",
             ])
@@ -358,7 +358,7 @@ fn schema_examples_are_valid_and_workspace_only_loads_the_queried_policy() {
             .args([
                 "explain",
                 "api/src/main.js",
-                "--workspace",
+                "--workspace-file",
                 root.join("repos.toml").to_str().unwrap(),
                 "--no-user-config",
             ])
@@ -420,7 +420,7 @@ fn aliases_and_directory_queries_fail_instead_of_claiming_filtering() {
         .args([
             "explain",
             "src",
-            "--workspace",
+            "--workspace-file",
             root.join("repos.toml").to_str().unwrap(),
             "--no-user-config",
         ])

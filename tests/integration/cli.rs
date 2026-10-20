@@ -216,7 +216,7 @@ fn table_format_splits_source_code_by_language_and_purpose() {
     ]);
     let output = run(
         &temp.path().join("project"),
-        &["--verbose", "--folders", "--format", "table"],
+        &["--verbose", "--show-folders", "--format", "table"],
     );
     assert!(output.status.success());
     let expected = " ────────────────────────────────────────────────────────────────────────────────
@@ -323,7 +323,7 @@ fn bars_follow_language_and_folder_tables_within_the_terminal_width() {
     let output = locmetry()
         .current_dir(&root)
         .env("COLUMNS", "40")
-        .args(["--format", "table", "--folders", "--bars"])
+        .args(["--format", "table", "--show-folders", "--show-bars"])
         .output()
         .unwrap();
     assert!(output.status.success());
@@ -341,12 +341,12 @@ fn bars_follow_language_and_folder_tables_within_the_terminal_width() {
     assert!(text.contains("\n tests  25.0%  ▓▓▓▓▓▓▓▓\n"), "{text}");
     let json = locmetry()
         .current_dir(&root)
-        .args(["--format", "json", "--bars"])
+        .args(["--format", "json", "--show-bars"])
         .output()
         .unwrap();
     assert!(String::from_utf8(json.stderr)
         .unwrap()
-        .contains("--bars has no effect here; it applies only to table output"));
+        .contains("--show-bars has no effect here; it applies only to table output"));
 }
 
 /// With room for the minimum inline bar beside a table, its rows carry their
@@ -363,7 +363,7 @@ fn bars_join_each_table_when_the_terminal_leaves_room_beside_it() {
         let output = locmetry()
             .current_dir(&root)
             .env("COLUMNS", columns.to_string())
-            .args(["--format", "table", "--folders", "--bars"])
+            .args(["--format", "table", "--show-folders", "--show-bars"])
             .output()
             .unwrap();
         assert!(output.status.success());
@@ -467,7 +467,7 @@ fn bars_are_never_automatic_in_pipes_and_cannot_be_both_forced_and_refused() {
         .unwrap();
     let text = String::from_utf8(output.stdout).unwrap();
     assert!(!text.contains("Share") && !text.contains('█'), "{text}");
-    let both = run(&root, &["--format", "table", "--bars", "--no-bars"]);
+    let both = run(&root, &["--format", "table", "--show-bars", "--no-bars"]);
     assert_eq!(both.status.code(), Some(1));
     let json = run(&root, &["--format", "json", "--no-bars"]);
     assert!(String::from_utf8(json.stderr)
@@ -494,7 +494,7 @@ fn print_shows_a_second_view_of_the_saved_measurement() {
             saved_arg,
             "--print",
             "table",
-            "--folders",
+            "--show-folders",
             "--verbose",
         ],
     );
@@ -550,12 +550,12 @@ fn human_tables_sort_by_code_or_by_name() {
     ]);
     let root = temp.path().join("project");
     let stdout = |args: &[&str]| String::from_utf8(run(&root, args).stdout).unwrap();
-    let table = stdout(&["--folders", "--format", "table"]);
+    let table = stdout(&["--show-folders", "--format", "table"]);
     assert!(is_ascending(&positions(
         &table,
         &["\n Rust", "\n Python", "\n z ", "\n a "]
     )));
-    let table = stdout(&["--folders", "--format", "table", "--sort", "name"]);
+    let table = stdout(&["--show-folders", "--format", "table", "--sort", "name"]);
     assert!(is_ascending(&positions(
         &table,
         &["\n Python", "\n Rust", "\n a ", "\n z "]
@@ -812,7 +812,7 @@ fn categories_table_is_shown_on_request() {
     let plain = String::from_utf8(run(&root, &["--format", "table"]).stdout).unwrap();
     assert!(!plain.contains("Category"), "{plain}");
     let table =
-        String::from_utf8(run(&root, &["--format", "table", "--categories"]).stdout).unwrap();
+        String::from_utf8(run(&root, &["--format", "table", "--show-categories"]).stdout).unwrap();
     let expected = "
  Category            Files  Lines  Code
  ──────────────────────────────────────
@@ -1741,7 +1741,7 @@ fn markdown_folder_depth_is_configurable_while_json_keeps_every_folder() {
         markdown[start..end].to_string()
     };
     assert!(!folder_table(&[]).contains("| a/b/c |"));
-    assert!(folder_table(&["--depth", "3"]).contains("| a/b/c |"));
+    assert!(folder_table(&["--markdown-depth", "3"]).contains("| a/b/c |"));
     let (_, document, _) = report(&root, &[]);
     assert_eq!(document["breakdown"][0]["folder"], "a/b/c");
 }
@@ -1855,7 +1855,7 @@ fn human_formats_group_thousands_and_json_keeps_plain_integers() {
     ]);
     let root = temp.path().join("project");
     let table =
-        String::from_utf8(run(&root, &["--verbose", "--folders", "--format", "table"]).stdout)
+        String::from_utf8(run(&root, &["--verbose", "--show-folders", "--format", "table"]).stdout)
             .unwrap();
     for expected in [
         " TypeScript      2  1,235  1,235 │",

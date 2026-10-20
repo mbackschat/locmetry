@@ -325,7 +325,11 @@ fn invalid_options_fail_before_writing_with_format_remedy() {
         vec!["--folder-rows", "10", "--schema", "report"],
         vec!["--folder-rows", "10", "--output", "-"],
     ] {
-        let out = run(temp.path(), &args);
+        let out = common::locmetry()
+            .current_dir(temp.path())
+            .args(args)
+            .output()
+            .unwrap();
         assert_eq!(out.status.code(), Some(1));
         assert!(out.stdout.is_empty());
         assert!(String::from_utf8_lossy(&out.stderr).contains("--folder-rows"));

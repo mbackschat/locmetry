@@ -64,7 +64,7 @@ impl PurposeArg {
 enum BarArg {
     /// Each row's Code split by purpose, scaled to the largest row.
     Purpose,
-    /// Each row's Code against its Comments, across the full bar.
+    /// Comment density, scaled so the densest row fills the bar.
     Comments,
 }
 
@@ -97,7 +97,7 @@ enum Schema {
     Comparison,
     /// Selection, parser and classification evidence for one path.
     Explanation,
-    /// A workspace file for `locmetry workspace --file`.
+    /// A workspace file for `locmetry workspace --workspace-file`.
     Workspace,
 }
 
@@ -116,7 +116,7 @@ fn default_format(stdout_is_terminal: bool, output_given: bool) -> Format {
 // A macro rather than a const because `concat!` accepts only literals.
 macro_rules! root_after_help {
     () => {
-        "Run locmetry for source counts by language. Add --folders for the folder table, or --verbose to inspect classification, scope and coverage notes. For optional project configuration, use locmetry --guide configure.\n\nCommand names are reserved. To measure a directory named compare, use ./compare or --root compare."
+        "Run locmetry for source counts by language. Add --show-folders for the folder table, or --verbose to inspect classification, scope and coverage notes. For optional project configuration, use locmetry --guide configure.\n\nCommand names are reserved. To measure a directory named compare, use ./compare or --root compare."
     };
 }
 
@@ -145,8 +145,8 @@ macro_rules! root_after_help {
     locmetry --format markdown --output ../report.md
   Measure repositories together, each with its own policy:
     locmetry workspace --root ../web --root ../api
-  Count production source only, with its comment density:
-    locmetry --purpose production
+  Show production source in the table, with its comment density:
+    locmetry --format table --table-purpose production
   Inspect the configuration contract:
     locmetry --schema config
   Read full JSON on stdout:
@@ -154,11 +154,11 @@ macro_rules! root_after_help {
   Measure selected source, including ignored files, except vendor:
     locmetry --root service --subfolder src --exclude 'src/vendor/**' --hidden true --respect-ignore-files false --format json
   Show adaptive folder detail and production categories:
-    locmetry --root service --format table --folder-rows 30 --purpose production --categories --bars=comments --sort name
+    locmetry --root service --format table --folder-rows 30 --table-purpose production --show-categories --show-bars=comments --sort name
   Save a sorted Markdown tree to depth 3:
-    locmetry --root service --format markdown --depth 3 --sort name --output report.md
+    locmetry --root service --format markdown --markdown-depth 3 --sort name --output report.md
   Measure an explicit workspace definition:
-    locmetry workspace --file repos.toml --files --output workspace.json --print table
+    locmetry workspace --workspace-file repos.toml --files --output workspace.json --print table
   Compare two saved full reports:
     locmetry compare before.json after.json --format table
 
@@ -193,9 +193,10 @@ Read results:
 Choose scope and views:
   --subfolder retains the root's policy and module context; --root on that folder
   starts a different measurement. Configuration is not discovered in ancestors.
-  Quote root-relative exclusion globs. --purpose filters tables, not JSON.
-  --folder-rows requires --format table; its budget retains all top-level folders.
-  Markdown --depth limits displayed nesting; parent rows include descendants.
+  Quote root-relative exclusion globs. --table-purpose filters tables, not JSON.
+  --folder-rows needs --format table or --print table; its budget retains all top-level folders.
+  --markdown-depth limits only Markdown's Folder breakdown; other evidence can name deeper paths.
+  Folder parent rows include descendants.
   --no-bars removes charts; --no-color or NO_COLOR disables styling; COLUMNS controls width.
 
 Broader policy:
@@ -223,36 +224,41 @@ detail beyond these examples; topic names are listed under --guide."
     )
 )]
 struct Cli {
-    #[command(flatten)]
-    styling: Styling,
     #[command(subcommand)]
     command: Option<Command>,
     /// Directory to measure, instead of --root [default: the current directory].
     #[arg(value_name = "DIR", conflicts_with = "root")]
     directory: Option<PathBuf>,
     /// Measure this root-relative folder and descendants, retaining project configuration and module context.
-    #[arg(long, value_name = "DIR")]
+    #[arg(long, value_name = "DIR", help_heading = "Selection and policy")]
     subfolder: Option<PathBuf>,
-    /// Add the folder table to single-root table output.
-    #[arg(long)]
-    folders: bool,
-    /// Show the folder table and split the largest folders within an N-row budget; no top-level folder's code is merged away. Table format only.
-    #[arg(long, value_name = "N", allow_negative_numbers = true)]
-    folder_rows: Option<std::num::NonZeroUsize>,
     #[command(flatten)]
     root: RootArgs,
     #[command(flatten)]
     shared: SharedArgs,
+    /// Add the folder table to single-root table output.
+    #[arg(long = "show-folders", help_heading = "Presentation")]
+    folders: bool,
+    /// Show the folder table and split the largest folders within an N-row budget; no top-level folder's code is merged away. Table format only.
+    #[arg(
+        long,
+        value_name = "N",
+        allow_negative_numbers = true,
+        help_heading = "Presentation"
+    )]
+    folder_rows: Option<std::num::NonZeroUsize>,
     /// Print a JSON Schema and exit: of a configuration file, which explains
     /// every setting and the classification order, of the JSON report, or of
     /// a workspace file, a net-change comparison, or a path explanation.
     /// This is a standalone query; do not combine it with measurement options.
-    #[arg(long, value_enum)]
+    #[arg(long, value_enum, value_name = "TOPIC", help_heading = "Reference")]
     schema: Option<Schema>,
     /// Read a task guide. Use --help for syntax, --guide for workflows and
     /// caveats, and --schema for machine-readable contracts. Standalone query.
-    #[arg(long, value_enum)]
+    #[arg(long, value_enum, value_name = "TOPIC", help_heading = "Reference")]
     guide: Option<Guide>,
+    #[command(flatten)]
+    styling: Styling,
 }
 
 #[derive(Subcommand)]
@@ -267,17 +273,17 @@ enum Command {
   Measure roots directly, keeping each member's policy:
     locmetry workspace --root web --root api --files --output workspace.json --print table
   Measure a workspace file:
-    locmetry workspace --file repos.toml --files --output workspace.json --print table
+    locmetry workspace --workspace-file repos.toml --files --output workspace.json --print table
   Export repository, category and language detail:
-    locmetry workspace --file repos.toml --format markdown --depth 3 --sort name --output workspace.md
+    locmetry workspace --workspace-file repos.toml --format markdown --markdown-depth 3 --sort name --output workspace.md
   Explain a member file:
-    locmetry explain web/src/index.ts --workspace repos.toml --format json
+    locmetry explain web/src/index.ts --workspace-file repos.toml --format json
 
 repos.toml:
   version = 1
   roots = [\"web\", \"api\"]
 
-Paths are relative to the workspace file; it is used only when --file names it.
+Paths are relative to the workspace file; it is used only when --workspace-file names it.
 Members need unique folder names and non-overlapping roots. Each scan uses
 its own policy: each member's .locmetryrc and the personal defaults unless
 --no-user-config is given. Set exclusions and overrides in member configuration;
@@ -316,9 +322,9 @@ Examples:
   Save a Markdown comparison:
     locmetry compare before.json after.json --format markdown --output change.md
   Capture a workspace baseline instead:
-    locmetry workspace --file repos.toml --output before.json
+    locmetry workspace --workspace-file repos.toml --output before.json
   Capture the workspace after the intended change:
-    locmetry workspace --file repos.toml --output after.json
+    locmetry workspace --workspace-file repos.toml --output after.json
   Inspect one workspace member and its immediate subfolders:
     locmetry compare before.json after.json --member api --format table
 
@@ -358,7 +364,7 @@ Use locmetry --schema comparison for fields or locmetry --guide compare for deta
   Read a complete JSON explanation:
     locmetry explain src/main.rs --root service --format json
   Diagnose a member file:
-    locmetry explain web/src/index.ts --workspace repos.toml --format json
+    locmetry explain web/src/index.ts --workspace-file repos.toml --format json
   Check an exclusion under a proposed scope:
     locmetry explain src/main.rs --root service --exclude 'src/**' --format json
 
@@ -382,18 +388,23 @@ for broader diagnosis. --schema and --guide are root-level standalone queries."
 
 #[derive(clap::Args)]
 struct ExplainArgs {
-    /// Root-relative file, or MEMBER/PATH with --workspace.
+    /// Root-relative file, or MEMBER/PATH with --workspace-file.
     path: PathBuf,
     #[command(flatten)]
     root: RootArgs,
     /// Workspace file; use the selected member's own policy.
-    #[arg(long, value_name = "FILE", conflicts_with_all = ["root", "config", "exclude", "hidden", "respect_ignore_files"])]
+    #[arg(long = "workspace-file", value_name = "FILE", conflicts_with_all = ["root", "config", "exclude", "hidden", "respect_ignore_files"], help_heading = "Selection and policy")]
     workspace: Option<PathBuf>,
     /// Ignore personal defaults.
-    #[arg(long)]
+    #[arg(long, help_heading = "Selection and policy")]
     no_user_config: bool,
     /// Stdout format [default: table on a terminal, json otherwise].
-    #[arg(long, value_enum)]
+    #[arg(
+        long,
+        value_enum,
+        value_name = "FORMAT",
+        help_heading = "Output and content"
+    )]
     format: Option<ExplainFormat>,
 }
 
@@ -404,13 +415,18 @@ struct CompareArgs {
     /// Full JSON measurement after the change.
     after: PathBuf,
     /// Focus on one exact workspace member name; accepts presence on either side.
-    #[arg(long, value_name = "NAME")]
+    #[arg(long, value_name = "NAME", help_heading = "Selection and policy")]
     member: Option<String>,
     /// Result format [default: json with --output; otherwise table on a terminal, headline in pipes].
-    #[arg(long, value_enum)]
+    #[arg(
+        long,
+        value_enum,
+        value_name = "FORMAT",
+        help_heading = "Output and content"
+    )]
     format: Option<Format>,
     /// Write only to FILE; - selects stdout. Defaults to full JSON; --format overrides it.
-    #[arg(long, value_name = "FILE")]
+    #[arg(long, value_name = "FILE", help_heading = "Output and content")]
     output: Option<PathBuf>,
 }
 
@@ -419,19 +435,19 @@ struct CompareArgs {
 #[derive(clap::Args)]
 struct RootArgs {
     /// Scan root [default: the current directory].
-    #[arg(long)]
+    #[arg(long, value_name = "DIR", help_heading = "Selection and policy")]
     root: Option<PathBuf>,
     /// TOML configuration [default: .locmetryrc in the scan root, else built-in settings].
-    #[arg(long)]
+    #[arg(long, value_name = "FILE", help_heading = "Selection and policy")]
     config: Option<PathBuf>,
     /// Add a root-relative exclusion glob; repeatable.
-    #[arg(long, value_name = "GLOB")]
+    #[arg(long, value_name = "GLOB", help_heading = "Selection and policy")]
     exclude: Vec<String>,
     /// Override whether hidden files and directories are measured.
-    #[arg(long, value_name = "BOOL")]
+    #[arg(long, value_name = "BOOL", help_heading = "Selection and policy")]
     hidden: Option<bool>,
     /// Override whether ignore files limit the selection.
-    #[arg(long, value_name = "BOOL")]
+    #[arg(long, value_name = "BOOL", help_heading = "Selection and policy")]
     respect_ignore_files: Option<bool>,
 }
 
@@ -448,11 +464,21 @@ impl RootArgs {
 #[derive(clap::Args)]
 struct WorkspaceArgs {
     /// Member root; repeatable. Its folder name prefixes its paths in the report.
-    #[arg(long = "root", value_name = "DIR", required_unless_present = "file")]
+    #[arg(
+        long = "root",
+        value_name = "DIR",
+        required_unless_present = "file",
+        help_heading = "Selection and policy"
+    )]
     roots: Vec<PathBuf>,
     /// Read the member roots from a TOML workspace file instead; its roots are
     /// relative to the file (see --schema workspace).
-    #[arg(long, value_name = "FILE", conflicts_with = "roots")]
+    #[arg(
+        long = "workspace-file",
+        value_name = "FILE",
+        conflicts_with = "roots",
+        help_heading = "Selection and policy"
+    )]
     file: Option<PathBuf>,
     #[command(flatten)]
     shared: SharedArgs,
@@ -462,55 +488,83 @@ struct WorkspaceArgs {
 #[derive(clap::Args)]
 struct SharedArgs {
     /// Ignore user defaults in ~/.config/locmetry/config.toml.
-    #[arg(long)]
+    #[arg(long, help_heading = "Selection and policy")]
     no_user_config: bool,
     /// Write only to FILE, outside the scan root; - selects stdout.
     /// Defaults to full JSON; --format overrides it. File extensions do not select a format.
     /// Add --print table to also print the overview from the same run.
-    #[arg(long, value_name = "FILE")]
+    #[arg(long, value_name = "FILE", help_heading = "Output and content")]
     output: Option<PathBuf>,
     /// With --output FILE, also print the same measurement to stdout in FORMAT,
     /// such as table for an overview or headline for compact JSON.
-    #[arg(long, value_enum, value_name = "FORMAT")]
-    print: Option<Format>,
-    /// Include per-file records; requires full JSON (--format json or --output FILE).
-    #[arg(long)]
-    files: bool,
-    /// Add a table of source code per purpose and category to the terminal table.
-    #[arg(long)]
-    categories: bool,
-    /// Include classification, scope and coverage notes in table output.
-    #[arg(long)]
-    verbose: bool,
-    /// Chart each table row beside the table when the width leaves room,
-    /// otherwise below it: its share of Code by purpose, or with --bars=comments
-    /// its Code against Comments. A terminal shows purpose bars automatically
-    /// where they fit; COLUMNS overrides its width. Table format only.
     #[arg(
         long,
+        value_enum,
+        value_name = "FORMAT",
+        help_heading = "Output and content"
+    )]
+    print: Option<Format>,
+    /// Include per-file records in full JSON, saved or printed; headline omits them.
+    #[arg(long, help_heading = "Output and content")]
+    files: bool,
+    /// Add a source purpose/category table to saved or printed table output.
+    #[arg(long = "show-categories", help_heading = "Presentation")]
+    categories: bool,
+    /// Include classification, scope and coverage notes in table output.
+    #[arg(long, help_heading = "Presentation")]
+    verbose: bool,
+    /// Add charts to saved or printed tables, beside them when they fit, otherwise below.
+    /// Chart code share by purpose or comment density; selecting one table purpose
+    /// uses comment density even with =purpose. Terminals show fitting bars automatically;
+    /// COLUMNS overrides the width. Table format only.
+    #[arg(
+        long = "show-bars",
         value_enum,
         value_name = "KIND",
         num_args = 0..=1,
         require_equals = true,
-        default_missing_value = "purpose"
+        default_missing_value = "purpose",
+        help_heading = "Presentation"
     )]
     bars: Option<BarArg>,
     /// Omit the share bars a terminal shows automatically.
-    #[arg(long, conflicts_with = "bars")]
+    #[arg(long, conflicts_with = "bars", help_heading = "Presentation")]
     no_bars: bool,
-    /// Count only these purposes' source in tables, such as production to drop
-    /// tests; comma-separated. Table format only.
-    #[arg(long, value_enum, value_delimiter = ',', value_name = "PURPOSES")]
+    /// Show only these purposes' source in tables; comma-separated.
+    /// JSON and Markdown keep the complete measurement. Table format only.
+    #[arg(
+        long = "table-purpose",
+        value_enum,
+        value_delimiter = ',',
+        value_name = "PURPOSES",
+        help_heading = "Presentation"
+    )]
     purpose: Vec<PurposeArg>,
     /// Result format [default: json with --output; otherwise table on a terminal, headline in pipes].
-    #[arg(long, value_enum)]
+    #[arg(
+        long,
+        value_enum,
+        value_name = "FORMAT",
+        help_heading = "Output and content"
+    )]
     format: Option<Format>,
     /// Row order of table and Markdown output; the Markdown folder table keeps
     /// its path hierarchy, and the review list stays largest first.
-    #[arg(long, value_enum, default_value = "code")]
+    #[arg(
+        long,
+        value_enum,
+        default_value = "code",
+        help_heading = "Presentation"
+    )]
     sort: Sort,
-    /// Deepest Markdown folder level, relative to --subfolder when selected; JSON lists all.
-    #[arg(long, default_value_t = 2, value_name = "N")]
+    /// Folder-breakdown depth in Markdown; 0 leaves no data rows. Relative to --subfolder;
+    /// workspace members occupy level 1. Other evidence and JSON retain deeper paths.
+    #[arg(
+        long = "markdown-depth",
+        default_value_t = 2,
+        value_name = "N",
+        help_heading = "Presentation"
+    )]
     depth: usize,
     #[arg(skip)]
     depth_explicit: bool,
@@ -528,7 +582,7 @@ fn emphasis(stdout_is_terminal: bool, no_color: Option<String>, term: Option<Str
 #[derive(Clone, Copy, clap::Args)]
 struct Styling {
     /// Disable terminal colors, bold and dim text, including help and diagnostics.
-    #[arg(long, global = true)]
+    #[arg(long, global = true, help_heading = "Presentation")]
     no_color: bool,
 }
 
@@ -683,14 +737,15 @@ struct Destination<'a> {
 fn destination(shared: &SharedArgs) -> Result<Destination<'_>> {
     let mut destination = output_destination(&shared.output, shared.format);
     anyhow::ensure!(
-        !shared.files || destination.format == Format::Json,
-        "--files adds per-file records only to full JSON; use --format json (or --output FILE without a conflicting --format)"
-    );
-    anyhow::ensure!(
         shared.print.is_none() || destination.path.is_some(),
         "--print requires --output FILE; without a saved file, stdout already receives the result"
     );
     destination.print = shared.print;
+    anyhow::ensure!(
+        !shared.files || destination.shows(Format::Json),
+        "--files adds per-file records only to full JSON; {}",
+        destination.format_remedy(Format::Json)
+    );
     Ok(destination)
 }
 
@@ -712,6 +767,19 @@ impl Destination<'_> {
     /// options shaping that format take effect.
     fn shows(&self, format: Format) -> bool {
         self.format == format || self.print == Some(format)
+    }
+
+    fn format_remedy(&self, format: Format) -> String {
+        let name = match format {
+            Format::Table => "table",
+            Format::Json => "json",
+            Format::Headline => "headline",
+            Format::Markdown => "markdown",
+        };
+        match self.path {
+            Some(_) => format!("use --print {name} or --format {name}"),
+            None => format!("use --format {name}"),
+        }
     }
 
     fn write(&self, text: &str) -> Result<()> {
@@ -742,15 +810,18 @@ fn warn_ineffective_options(shared: &SharedArgs, destination: &Destination, styl
     if !destination.shows(Format::Table) {
         for (given, option) in [
             (shared.verbose, "--verbose"),
-            (shared.bars.is_some(), "--bars"),
-            (!shared.purpose.is_empty(), "--purpose"),
+            (shared.bars.is_some(), "--show-bars"),
+            (!shared.purpose.is_empty(), "--table-purpose"),
             (shared.no_bars, "--no-bars"),
-            (shared.categories, "--categories"),
+            (shared.categories, "--show-categories"),
         ] {
             if given {
                 styling.stderr_message(
                     Role::Warning,
-                    format_args!("{option} has no effect here; it applies only to table output"),
+                    format_args!(
+                        "{option} has no effect here; it applies only to table output; {}",
+                        destination.format_remedy(Format::Table)
+                    ),
                 );
             }
         }
@@ -758,7 +829,10 @@ fn warn_ineffective_options(shared: &SharedArgs, destination: &Destination, styl
     if shared.depth_explicit && !destination.shows(Format::Markdown) {
         styling.stderr_message(
             Role::Warning,
-            "--depth has no effect here; it applies only to Markdown output",
+            format_args!(
+                "--markdown-depth has no effect here; it applies only to Markdown output; {}",
+                destination.format_remedy(Format::Markdown)
+            ),
         );
     }
 }
@@ -934,7 +1008,8 @@ fn run_root(
     if folder_rows.is_some() {
         anyhow::ensure!(
             destination.shows(Format::Table),
-            "--folder-rows requires table output; add --format table or --print table"
+            "--folder-rows requires table output; {}",
+            destination.format_remedy(Format::Table)
         );
     }
     destination.folders = folders;
@@ -942,7 +1017,10 @@ fn run_root(
     if folders && !destination.shows(Format::Table) {
         styling.stderr_message(
             Role::Warning,
-            "--folders has no effect here; it applies only to table output",
+            format_args!(
+                "--show-folders has no effect here; it applies only to table output; {}",
+                destination.format_remedy(Format::Table)
+            ),
         );
     }
     warn_ineffective_options(shared, &destination, styling);
@@ -1237,7 +1315,7 @@ enum Location {
     },
 }
 
-/// Bars: forced by `--bars`, refused by `--no-bars`, and otherwise purpose
+/// Bars: forced by `--show-bars`, refused by `--no-bars`, and otherwise purpose
 /// bars only on a terminal and only where they fit, so files and pipes stay stable.
 fn bar_mode(bars: Option<BarKind>, no_bars: bool, terminal: bool, columns: usize) -> Bars {
     match (bars, no_bars, terminal) {

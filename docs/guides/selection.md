@@ -53,7 +53,7 @@ locmetry explain src/main.rs --root ./service --format markdown
 For a workspace member, prefix the path with its member name:
 
 ```sh
-locmetry explain api/src/main.rs --workspace repos.toml
+locmetry explain api/src/main.rs --workspace-file repos.toml
 ```
 
 Discover the complete explanation contract:
@@ -69,12 +69,12 @@ locmetry --schema explanation
 | Explain a file from another working directory | `locmetry explain src/main.rs --root /path/to/repository` |
 | Try a replacement project configuration | `locmetry explain src/main.rs --root /path/to/repository --config trial.toml` |
 | Remove personal defaults from the experiment | `locmetry explain src/main.rs --no-user-config` |
-| Check a workspace member | `locmetry explain api/src/main.rs --workspace repos.toml` |
+| Check a workspace member | `locmetry explain api/src/main.rs --workspace-file repos.toml` |
 | Check whether an additional exclusion applies | `locmetry explain vendor/lib.py --exclude 'vendor/**'` |
 
 The target must use the exact directory-entry spelling, including case and Unicode form, even on a filesystem that accepts aliases. An alias fails with exit 1 rather than being diagnosed as filtered. The target is relative to `--root`, which defaults to the working directory. An explicit `--config` is relative to the working directory and replaces discovery of the root's `.locmetryrc`. Personal defaults still apply unless disabled. All ordinary single-root scope flags are accepted. Use the same settings as the measurement you are investigating.
 
-With `--workspace`, the target starts with the member's folder name; roots in the workspace file are relative to that file. Only the queried member's policy is loaded, while normal membership checks still reject duplicate names or nested roots. `--root`, `--config`, `--exclude`, `--hidden` and `--respect-ignore-files` cannot be combined with `--workspace`. Paths in the result are member-prefixed, but matching globs remain relative to that member's own root.
+With `--workspace-file`, the target starts with the member's folder name; roots in the workspace file are relative to that file. Only the queried member's policy is loaded, while normal membership checks still reject duplicate names or nested roots. `--root`, `--config`, `--exclude`, `--hidden` and `--respect-ignore-files` cannot be combined with `--workspace-file`. Paths in the result are member-prefixed, but matching globs remain relative to that member's own root.
 
 For a report made with `--subfolder`, keep the project root and use the file's project-relative path in `explain`; no subfolder option is accepted or needed. A successful explanation does not establish inclusion in an earlier restricted report. Subfolder selection errors may suggest changing ignore/hidden settings, but those overrides also change module context across the project. See [subfolder measurement](../PRODUCT.md#subfolder-measurement) and the [diagnostic recipes below](#common-issues-and-useful-queries).
 
@@ -106,10 +106,10 @@ These diagnostic examples use the [README sample project](../../README.md#what-y
 `locmetry acme-orders/web/src` treats `src` as an independent root. It does not discover the repository's `.locmetryrc` or the parent `web/package.json`. Supplying `--config` alone does not restore the project's path base or ancestor module evidence. Keep the project root and restrict the measurement explicitly:
 
 ```sh
-locmetry acme-orders --no-user-config --subfolder web/src --format table --folders
+locmetry acme-orders --no-user-config --subfolder web/src --format table --show-folders
 ```
 
-This retains project-relative rules and module context while counting only the selected folder. `--folders` adds rows for its children. A target excluded, ignored or hidden by policy fails clearly instead of reporting an empty measurement. [Subfolder semantics](../PRODUCT.md#subfolder-measurement) explains context traversal, coverage, diagnostics and comparison compatibility. Ancestor configuration discovery is not automatic.
+This retains project-relative rules and module context while counting only the selected folder. `--show-folders` adds rows for its children. A target excluded, ignored or hidden by policy fails clearly instead of reporting an empty measurement. [Subfolder semantics](../PRODUCT.md#subfolder-measurement) explains context traversal, coverage, diagnostics and comparison compatibility. Ancestor configuration discovery is not automatic.
 
 ### A counted file has an unexpected purpose
 

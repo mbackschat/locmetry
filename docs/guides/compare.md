@@ -53,9 +53,9 @@ The compact comparison headline includes presence counts; full JSON includes eve
 The same command compares workspace exports, even when their root lists differ:
 
 ```sh
-locmetry workspace --file repos.toml --no-user-config --output before-workspace.json
+locmetry workspace --workspace-file repos.toml --no-user-config --output before-workspace.json
 # After changing code or the workspace root list:
-locmetry workspace --file repos.toml --no-user-config --output after-workspace.json
+locmetry workspace --workspace-file repos.toml --no-user-config --output after-workspace.json
 locmetry compare before-workspace.json after-workspace.json --format markdown
 ```
 

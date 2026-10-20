@@ -35,12 +35,12 @@ locmetry --root acme-orders --no-user-config --no-color --no-bars --format table
 
 ## Explore folders and decisions
 
-`--folder-rows` expands folders within a row budget; `--sort name` changes presentation order. `--categories` and `--verbose` expose classification and coverage, including the unclaimed experiment and unrecognized files. The positional directory selects the same root.
+`--folder-rows` expands folders within a row budget; `--sort name` changes presentation order. `--show-categories` and `--verbose` expose classification and coverage, including the unclaimed experiment and unrecognized files. The positional directory selects the same root.
 
 ```bash
 source scripts/cli-demo-env.sh
 locmetry acme-orders --no-user-config --no-color --no-bars --format table --folder-rows 12 \
-  --sort name --categories --verbose \
+  --sort name --show-categories --verbose \
   | sed '/^Root:/d; /^Roots:/d; /^Measured at:/d' \
   | demo_wrap
 ```
@@ -94,12 +94,12 @@ locmetry acme-orders --no-user-config --no-color --no-bars --format table --fold
 
 ## Focus on production in a subtree
 
-`--subfolder` keeps the original policy and module context. `--folders` adds top-level rows; `--purpose production` filters table counts and replaces Test/prod with comment density. `--bars=comments` charts code versus comments. The purpose option also accepts a comma-separated list.
+`--subfolder` keeps the original policy and module context. `--show-folders` adds top-level rows; `--table-purpose production` filters table counts and replaces Test/prod with comment density, leaving JSON and Markdown totals complete. `--show-bars=comments` charts comment density relative to the densest row. Selecting just one table purpose also uses comment-density bars with bare `--show-bars` or explicit `=purpose`. The purpose option accepts a comma-separated list.
 
 ```bash
 source scripts/cli-demo-env.sh
 locmetry --root acme-orders --subfolder web/src --no-user-config --no-color --format table \
-  --folders --purpose production --bars=comments \
+  --show-folders --table-purpose production --show-bars=comments \
   | sed '/^Root:/d; /^Roots:/d; /^Measured at:/d' \
   | demo_wrap
 ```
@@ -157,12 +157,12 @@ locmetry --root acme-orders --config acme-orders/.locmetryrc --hidden true \
 
 ## Save full evidence and print an overview
 
-`--output` defaults to full JSON regardless of extension. `--files` adds physical-file detail; `--print table` prints the same measurement while saving it. `--bars` explicitly adds purpose bars to the printed table. The following query demonstrates the schema-3 envelope and optional file inventory.
+`--output` defaults to full JSON regardless of extension. `--files` adds physical-file detail; `--print table` prints the same measurement while saving it. `--show-bars` explicitly adds purpose bars to the printed table. The following query demonstrates the schema-3 envelope and optional file inventory.
 
 ```bash
 source scripts/cli-demo-env.sh
 locmetry --root acme-orders --no-user-config --no-color --files --output report.json \
-  --print table --bars \
+  --print table --show-bars \
   | sed '/^Root:/d; /^Roots:/d; /^Measured at:/d' \
   | demo_wrap
 jq '{
@@ -213,18 +213,24 @@ jq '{
 
 ## Choose Markdown or headline output
 
-`--depth` limits Markdown folder depth; it does not trim JSON data. The Markdown excerpt selects its folder section. Headline output is compact and cannot serve as a comparison baseline. File exports are silent; `--output -` selects stdout.
+`--markdown-depth` limits only the Markdown Folder breakdown; other evidence can still name deeper paths. The first command saves Markdown and prints full JSON with per-file records from the same scan: `--files` applies to that printed JSON. The query selects stable counts, and the Markdown excerpt selects its folder section. Headline output is compact and cannot serve as a comparison baseline. File exports are silent unless `--print` is supplied; `--output -` selects stdout.
 
 ```bash
 source scripts/cli-demo-env.sh
-locmetry --root acme-orders --no-user-config --format markdown --depth 3 --sort name \
-  --output report.md
+locmetry --root acme-orders --no-user-config --format markdown --markdown-depth 3 --sort name \
+  --output report.md --print json --files \
+  | jq '{detail, source_code: .summary.source.code, files: (.files | length)}'
 sed -n '/^## Folder breakdown/,/^## Build modules/p' report.md | demo_wrap
 locmetry --root acme-orders --no-user-config --format headline \
   | jq '{document_type, schema_version, detail, source: .summary.source}'
 ```
 
 ```output
+{
+  "detail": "full",
+  "source_code": 25,
+  "files": 11
+}
 ## Folder breakdown
 
 *Recursive source code totals to depth 3. Parent rows include their children; do not sum all displayed rows. The report

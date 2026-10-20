@@ -567,9 +567,9 @@ impl UserDefaults {
     }
 }
 
-/// Locmetry workspace: TOML naming the repositories that `locmetry workspace --file` measures as one virtual monorepo.
+/// Locmetry workspace: TOML naming the repositories that `locmetry workspace --workspace-file` measures as one virtual monorepo.
 ///
-/// Each root is measured with its own `.locmetryrc` and becomes a top-level folder of the report, named after the root's folder. The file is read only when `--file` names it, never discovered, and a member that contains it does not measure it.
+/// Each root is measured with its own `.locmetryrc` and becomes a top-level folder of the report, named after the root's folder. The file is read only when `--workspace-file` names it, never discovered, and a member that contains it does not measure it.
 #[derive(Debug, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 #[schemars(rename = "Workspace")]

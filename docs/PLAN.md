@@ -18,15 +18,17 @@
 
 - [Conditional measurement/comparison capabilities](plans/measurement-quality-and-net-change.md#conditional-follow-ups-and-preserved-rationales): consumer-driven candidates and their triggers, including [per-file comparison](plans/measurement-quality-and-net-change.md#per-file-comparison), generated/minified evidence and duplicate evidence. Ancestor discovery remains outside accepted scope.
 - JSON finding grammar, such as “1 unrecognized files”, remains an optional separate cleanup. The comparison-readability changes intentionally preserved JSON message text.
-- [Ineffective-option compatibility policy](proposals/cli-option-clarity.md#deferred-compatibility-decision): blanket rejection is excluded from the CLI clarity proposal. Reopen only with a separate compatibility assessment of reusable option sets, terminal-to-pipe transitions and existing script expectations.
+- [Ineffective-option compatibility policy](proposals/archive/cli-option-clarity.md#deferred-compatibility-decision): blanket rejection remains deferred. Reopen only with a separate compatibility assessment of reusable option sets, terminal-to-pipe transitions and existing script expectations.
+
+- [File-detail option naming](proposals/archive/cli-option-clarity.md#optional-and-excluded-scope): retain `--files`; revisit `--include-files` only if task evidence shows recurring confusion with input selection.
 
 ## Proposals — Under Discussion
 
-- [CLI option clarity and applicability](proposals/cli-option-clarity.md): revised draft covering additive canonical names, bounded help corrections and file detail across output views, while preserving existing warning/success behavior. Implementation is not yet approved.
-
-The [proposal index](proposals/README.md) distinguishes active designs from historical decisions.
+None. The [proposal index](proposals/README.md) distinguishes active designs from historical decisions.
 
 ## Historical Evidence
+
+- [CLI option clarity and applicability](proposals/archive/cli-option-clarity.md): reviewed naming and output-view contract, owner amendment and verification.
 
 - [Complete CLI help coverage](plans/archive/full-help-coverage.md): implementation scope and experiment evidence; [help design](help-design.md) owns the current feature inventory and contributor guidance.
 - [Default report output decision](proposals/archive/default-report-output-proposal-redacted.md): reviewed design and acceptance evidence.

@@ -54,13 +54,18 @@ fn a_single_measurement_table_omits_its_title_even_with_empty_optional_tables() 
     for extra in [
         vec![],
         vec!["--verbose"],
-        vec!["--purpose", "production", "--folders", "--categories"],
         vec![
-            "--purpose",
+            "--table-purpose",
+            "production",
+            "--show-folders",
+            "--show-categories",
+        ],
+        vec![
+            "--table-purpose",
             "production",
             "--folder-rows",
             "5",
-            "--categories",
+            "--show-categories",
         ],
     ] {
         let mut args = vec!["service", "--format", "table", "--no-bars"];
@@ -81,7 +86,7 @@ fn a_single_table_top_rule_spans_inline_bars_but_not_a_separate_chart() {
     for width in [40, 160] {
         let out = common::locmetry()
             .current_dir(dir.path())
-            .args(["service", "--format", "table", "--bars"])
+            .args(["service", "--format", "table", "--show-bars"])
             .env("COLUMNS", width.to_string())
             .output()
             .unwrap();
@@ -98,8 +103,8 @@ fn a_single_table_top_rule_spans_inline_bars_but_not_a_separate_chart() {
 fn measurement_tables_use_attached_top_rules_instead_of_redundant_titles() {
     let dir = fixture();
     for (args, labels) in [
-        (vec!["service", "--folders"], vec!["Folder"]),
-        (vec!["service", "--categories"], vec!["Category"]),
+        (vec!["service", "--show-folders"], vec!["Folder"]),
+        (vec!["service", "--show-categories"], vec!["Category"]),
         (vec!["service", "--folder-rows", "5"], vec!["Folder"]),
         (
             vec![
@@ -108,32 +113,37 @@ fn measurement_tables_use_attached_top_rules_instead_of_redundant_titles() {
                 "src",
                 "--folder-rows",
                 "5",
-                "--categories",
+                "--show-categories",
             ],
             vec!["Folder", "Category"],
         ),
         (
-            vec!["service", "--purpose", "other", "--folders"],
+            vec!["service", "--table-purpose", "other", "--show-folders"],
             vec!["Folder"],
         ),
         (
-            vec!["service", "--folders", "--categories"],
+            vec!["service", "--show-folders", "--show-categories"],
             vec!["Folder", "Category"],
         ),
         (
-            vec!["workspace", "--file", "workspace.toml"],
+            vec!["workspace", "--workspace-file", "workspace.toml"],
             vec!["Repository"],
         ),
         (
-            vec!["workspace", "--file", "workspace.toml", "--categories"],
+            vec![
+                "workspace",
+                "--workspace-file",
+                "workspace.toml",
+                "--show-categories",
+            ],
             vec!["Repository", "Category"],
         ),
     ] {
         for (bars, width) in [
             ("--no-bars", "80"),
-            ("--bars", "40"),
-            ("--bars", "200"),
-            ("--bars=comments", "200"),
+            ("--show-bars", "40"),
+            ("--show-bars", "200"),
+            ("--show-bars=comments", "200"),
         ] {
             let out = common::locmetry()
                 .current_dir(dir.path())
@@ -171,7 +181,7 @@ fn file_output_is_silent_and_defaults_to_a_comparable_full_report_in_both_modes(
     let dir = fixture();
     for args in [
         vec!["service"],
-        vec!["workspace", "--file", "workspace.toml"],
+        vec!["workspace", "--workspace-file", "workspace.toml"],
     ] {
         let mut save = args.clone();
         save.extend(["--output", "saved.json"]);
@@ -199,7 +209,7 @@ fn explicit_json_is_full_and_headline_is_compact_in_measurement_and_compare() {
     baseline(dir.path());
     for args in [
         vec!["service"],
-        vec!["workspace", "--file", "workspace.toml"],
+        vec!["workspace", "--workspace-file", "workspace.toml"],
         vec!["compare", "before.json", "before.json"],
     ] {
         let mut full_args = args.clone();
@@ -225,7 +235,7 @@ fn explicit_formats_control_files_and_stdout_for_all_exporting_commands() {
     baseline(dir.path());
     for args in [
         vec!["service"],
-        vec!["workspace", "--file", "workspace.toml"],
+        vec!["workspace", "--workspace-file", "workspace.toml"],
         vec!["compare", "before.json", "before.json"],
     ] {
         for format in ["table", "markdown", "json", "headline"] {
@@ -349,7 +359,7 @@ fn partial_measurement_and_comparison_write_only_the_file_and_preserve_exit_two(
         vec!["service", "--output", "partial.json"],
         vec![
             "workspace",
-            "--file",
+            "--workspace-file",
             "workspace.toml",
             "--output",
             "workspace-partial.json",
@@ -381,7 +391,7 @@ fn ineffective_presentation_options_warn_only_when_explicit_in_both_modes() {
     let dir = fixture();
     for args in [
         vec!["service"],
-        vec!["workspace", "--file", "workspace.toml"],
+        vec!["workspace", "--workspace-file", "workspace.toml"],
     ] {
         let mut base = args.clone();
         base.extend(["--format", "json"]);
@@ -389,8 +399,8 @@ fn ineffective_presentation_options_warn_only_when_explicit_in_both_modes() {
         success(&original);
         assert!(original.stderr.is_empty());
         for option in [
-            vec!["--depth", "2"],
-            vec!["--categories"],
+            vec!["--markdown-depth", "2"],
+            vec!["--show-categories"],
             vec!["--verbose"],
         ] {
             let mut changed = base.clone();
@@ -404,13 +414,13 @@ fn ineffective_presentation_options_warn_only_when_explicit_in_both_modes() {
             );
         }
         for (format, option) in [
-            ("table", "--categories"),
+            ("table", "--show-categories"),
             ("table", "--verbose"),
-            ("markdown", "--depth"),
+            ("markdown", "--markdown-depth"),
         ] {
             let mut effective = args.clone();
             effective.extend(["--format", format, option]);
-            if option == "--depth" {
+            if option == "--markdown-depth" {
                 effective.push("2");
             }
             let out = run(dir.path(), &effective);
@@ -558,11 +568,11 @@ fn human_exports_protect_configuration_workspace_and_aliased_comparison_inputs()
         for (mut args, path) in [
             (vec!["service", "--config", "config.toml"], "config.toml"),
             (
-                vec!["workspace", "--file", "workspace.toml"],
+                vec!["workspace", "--workspace-file", "workspace.toml"],
                 "workspace.toml",
             ),
             (
-                vec!["workspace", "--file", "workspace.toml"],
+                vec!["workspace", "--workspace-file", "workspace.toml"],
                 "service/src/deep/main.py",
             ),
             (

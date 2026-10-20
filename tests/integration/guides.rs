@@ -75,7 +75,7 @@ fn help_supplies_the_starting_instruction_and_root_level_next_commands() {
             .collect::<Vec<_>>()
             .join(" ");
         assert!(
-            help.contains("Run locmetry for source counts by language. Add --folders for the folder table, or --verbose to inspect classification, scope and coverage notes. For optional project configuration, use locmetry --guide configure."),
+            help.contains("Run locmetry for source counts by language. Add --show-folders for the folder table, or --verbose to inspect classification, scope and coverage notes. For optional project configuration, use locmetry --guide configure."),
             "{args:?}: {help}"
         );
         if args != ["-h"] {
@@ -143,7 +143,7 @@ fn guide_errors_are_actionable_and_queries_are_exclusive() {
     for early in ["--help", "-h", "--version"] {
         assert!(run(
             root.path(),
-            &["--guide", "configure", "--depth", "2", early]
+            &["--guide", "configure", "--markdown-depth", "2", early]
         )
         .status
         .success());
@@ -281,6 +281,29 @@ fn report_example_distinguishes_unavailable_counts_from_zero() {
     );
     let projection = json!({"backend_inaccurate":value["metadata"]["backend_inaccurate"], "selected_files":value["metadata"]["coverage"]["selected_files"], "counted_files":value["metadata"]["coverage"]["counted_files"], "parse_failures":value["metadata"]["coverage"]["parse_failures"].as_array().unwrap().iter().map(|f|json!({"path":f["path"],"reason":f["reason"]})).collect::<Vec<_>>(), "files":value["files"].as_array().unwrap().iter().map(|f|json!({"path":f["path"],"code":f["counts"]["code"]})).collect::<Vec<_>>()});
     assert_eq!(projection, expected("reports", "coverage-result"));
+}
+
+#[test]
+fn report_guide_saves_markdown_and_prints_full_file_evidence_from_one_measurement() {
+    let temp = tempfile::tempdir().unwrap();
+    write(temp.path(), "service/src/main.rs", "fn a() {}\nfn b() {}\n");
+    let guide = source("reports");
+    let row = guide
+        .lines()
+        .find(|line| line.starts_with("| Save Markdown and print full per-file JSON |"))
+        .unwrap();
+    let command = row.split('`').nth(1).unwrap();
+    let args: Vec<_> = command.split_whitespace().skip(1).collect();
+    let output = run(temp.path(), &args);
+    let value = common::json(&output, 0);
+    assert!(output.stderr.is_empty());
+    assert_eq!(value["detail"], "full");
+    assert_eq!(value["summary"]["source"]["code"], 2);
+    assert_eq!(value["files"][0]["path"], "src/main.rs");
+    assert_eq!(value["files"][0]["counts"]["code"], 2);
+    let markdown = fs::read_to_string(temp.path().join("report.md")).unwrap();
+    assert!(markdown.contains("## Folder breakdown"));
+    assert!(markdown.contains("| src | 2 | 2 |"));
 }
 
 #[test]

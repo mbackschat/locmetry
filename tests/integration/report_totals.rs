@@ -31,8 +31,8 @@ fn human_count_tables_expose_lines_before_code() {
         "[package]\nname = 'example'\n",
     )
     .unwrap();
-    for extra in [vec!["--folders"], vec!["--folder-rows", "8"]] {
-        let mut args = vec!["--format", "table", "--categories"];
+    for extra in [vec!["--show-folders"], vec!["--folder-rows", "8"]] {
+        let mut args = vec!["--format", "table", "--show-categories"];
         args.extend(extra);
         let table = run(root.path(), &args);
         for heading in ["Language", "Folder", "Category"] {
