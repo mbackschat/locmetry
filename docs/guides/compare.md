@@ -101,7 +101,7 @@ locmetry --root service --files --output before.json --print table --verbose
 locmetry --root service --files --output after.json --print table --verbose
 ```
 
-The helper is a standalone script supplied in the Locmetry source checkout, not installed with the executable. It requires Bash, `jq` and `locmetry` on `PATH`; set `LOCMETRY_BIN` to an executable path to select a local build. Run it from the checkout as below, or copy the script elsewhere and pass any two report paths. Quote paths containing spaces. No script edits are needed:
+The helper is optional development tooling supplied in the Locmetry source checkout. Release archives and Homebrew installations contain no helper and need no `jq`; native measurement and aggregate comparison work independently. Running the helper requires Bash, `jq` and `locmetry` on `PATH`; set `LOCMETRY_BIN` to an executable path to select a local build. Run it from the checkout as below, or copy the script elsewhere and pass any two report paths. Quote paths containing spaces. No script edits are needed:
 
 ```sh
 bash scripts/compare-file-transitions.sh before.json after.json > transitions.json
