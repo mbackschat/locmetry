@@ -16,7 +16,7 @@
 
 ## Agent Explorability — Evidence and Follow-up
 
-- The completed [routing cost replication](research/agent-explorability-routing-replication.md#finding) supports narrow adoption of the tested example plus conditional execution-first routing. Production adoption is a separate scope decision; no further experiment is scheduled. The reusable [benchmark](plans/agent-explorability-benchmark.md#current-state-and-next-session) remains deferred for separately scoped variants or new use cases.
+- Future help changes follow the [help-design guidelines](help-design.md). The tested configuration example and conditional execution-first routing are adopted; the [replication](research/agent-explorability-routing-replication.md#finding) preserves their evidence. No further experiment is scheduled. The reusable [benchmark](plans/agent-explorability-benchmark.md#current-state-and-next-session) remains deferred for separately scoped variants or new use cases.
 
 ## Ideas — Not Scheduled
 

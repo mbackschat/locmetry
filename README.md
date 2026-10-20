@@ -113,7 +113,7 @@ The 30-row budget limits additional detail; existing top-level rows are retained
 | Count production source only, with its comment density | `locmetry --purpose production` |
 | Inspect the configuration contract | `locmetry --schema config` |
 
-`locmetry --help` ends with the same examples. Verbose tables total data and documentation files under “Not source code”; to list them, [filter full JSON by `kind`](docs/guides/reports.md#not-source-code-which-files-are-data-or-documentation).
+`locmetry --help` includes the same commands, plus a working configuration example for maintained scripts with applicability and verification instructions. Verbose tables total data and documentation files under “Not source code”; to list them, [filter full JSON by `kind`](docs/guides/reports.md#not-source-code-which-files-are-data-or-documentation).
 
 Without explicit options, a terminal gets a table and a pipe gets a compact JSON headline. `--output` defaults to full JSON; choose `--format table` or `--format markdown` explicitly for those exports. File exports are silent on stdout, and the extension does not select the format. [Output routing and reports](docs/guides/reports.md#choose-content-and-destination) explains the choices and protected destinations.
 
@@ -209,7 +209,7 @@ This removes `third_party/` from scope and classifies `scripts/` as production t
 
 The [configuration guide](docs/guides/configure.md) covers overrides, custom categories, language mappings and evidence-based review. [Personal defaults](docs/PRODUCT.md#user-defaults) can supply exclusions and language mappings across projects; they cannot assign purposes or categories.
 
-For a coding agent, start with: “Create or evaluate a locmetry configuration for this repository. Read `locmetry --guide configure` and `locmetry --schema config` first; report the evidence for decisions and leave unresolved questions explicit.” Guides and schemas are available from the installed binary without a network connection.
+For a production-rule change covered by the example in `locmetry --help`, inspect existing configuration and measure current decisions, adapt the paths and category, then run the displayed verification command. Reading a guide or schema first is optional for that route. Use `locmetry --guide configure` or `locmetry --schema config` for exclusions, overrides, intentional Other, or semantics not shown there. Verify per-file decisions and unresolved review items before concluding. Guides and schemas are available from the installed binary without a network connection.
 
 ## Compared with related tools
 

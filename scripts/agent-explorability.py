@@ -82,6 +82,8 @@ def with_help_recipe(source, routing=False):
 
 
 def prepare(destination, task_path=TASK, binaries=None, treatment="without-guides"):
+    if "Classify maintained scripts in service/.locmetryrc" in (REPO / "src/main.rs").read_text():
+        raise ValueError("Historical treatments require pre-adoption source; use the study's recorded source revision in a separate checkout, or define a new study for the current interface")
     conditions = ["A", "B", "C"] if treatment == "help-routing" else ["A", "B"]
     if binaries and len(binaries) != len(conditions):
         raise ValueError("One binary is required per treatment condition")

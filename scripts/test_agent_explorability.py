@@ -3,6 +3,7 @@
 import importlib.util
 import json
 from pathlib import Path
+import shutil
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -16,6 +17,33 @@ SCORE_SPEC.loader.exec_module(SCORING)
 
 
 class ExperimentTests(unittest.TestCase):
+    def setUp(self):
+        fixture = tempfile.TemporaryDirectory()
+        self.addCleanup(fixture.cleanup)
+        source = Path(fixture.name)
+        for name in ["src", "docs/guides", "scripts"]:
+            shutil.copytree(BENCH.REPO / name, source / name)
+        for name in ["Cargo.toml", "Cargo.lock"]:
+            shutil.copy2(BENCH.REPO / name, source / name)
+        # Historical treatments need pre-adoption help; tests/integration/guides.rs guards the adopted wording.
+        main = source / "src/main.rs"
+        addition = "".join((BENCH.TASK.parent / name).read_text() for name in ["help-routing.txt", "help-recipe.txt"])
+        escaped = addition.replace('\\', '\\\\').replace('"', '\\"')
+        main.write_text(main.read_text().replace(escaped, ""))
+        for mock in [patch.object(BENCH, "REPO", source),
+                     patch.object(BENCH.subprocess, "check_output", return_value="synthetic-pre-adoption-fixture\n")]:
+            mock.start()
+            self.addCleanup(mock.stop)
+
+    def test_historical_treatments_reject_help_that_already_contains_the_candidate(self):
+        BENCH.with_help_recipe(BENCH.REPO, routing=True)
+        for treatment in ["without-guides", "help-recipe", "help-routing"]:
+            with self.subTest(treatment=treatment):
+                destination = BENCH.REPO / treatment
+                with self.assertRaisesRegex(ValueError, "pre-adoption"):
+                    BENCH.prepare(destination, treatment=treatment)
+                self.assertFalse(destination.exists())
+
     def test_an_unfinished_last_telemetry_record_does_not_hide_earlier_events(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "events.jsonl"

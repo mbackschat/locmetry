@@ -2,6 +2,8 @@
 
 Started 2026-10-20. The owner asked to finish the uncertainty left by the [routing study](agent-explorability-help-routing-study.md). Its four broader-task repetitions failed the practical cost guard, but that did not establish a repeatable penalty. The assistant's earlier “isn't ready to ship” wording was too categorical. This replication fixes the sample and decision rule before execution, keeps the candidate unchanged, and ends with a bounded recommendation rather than extending trials until a favorable result appears.
 
+Subsequent adoption, authorized 2026-10-20: the tested wording is now in production root long help, with contributor rationale in the [help-design guidelines](../help-design.md). The study's recommendation-only scope and results below remain historical evidence. Follow the [pre-adoption replay instructions](../plans/agent-explorability-benchmark.md#replaying-pre-adoption-studies) when reproducing these treatments.
+
 ## Finding
 
 Recommend adopting the unchanged example plus conditional execution-first routing in root help. Both preregistered stages passed correctness and every cost guard: 54 new sessions, all correct, with no excluded or replacement trials. The earlier broader-task cost increase and report cached-input threshold breach did not recur in these larger, balanced samples. This settles the bounded adoption recommendation; no further repetition or wording revision is scheduled.

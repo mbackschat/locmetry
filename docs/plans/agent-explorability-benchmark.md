@@ -4,12 +4,12 @@
 {
   "status": "deferred",
   "date": "2026-10-20",
-  "summary": "Completed studies support narrow routing adoption; retain the benchmark for separately scoped variants.",
+  "summary": "Tested help routing adopted; retain the benchmark for separately scoped variants.",
   "evidence": "[Routing replication](../research/agent-explorability-routing-replication.md)"
 }
 -->
 
-This is the working specification and continuation record for an experiment-driven assessment of Locmetry's agent-facing interface. It preserves the discussion and exploratory evidence from 2026-10-19 and the subsequent experiments from 2026-10-20. After the first pilot, the owner delegated experiment design, recording, and evaluation. The [six-task study](../research/agent-explorability-six-task-study.md) owns the frozen campaign definitions, results, separate discovery track, and recommendation. The draft prompts below preserve design context; use the linked executable task definitions to replay the measured campaign. No production guide removal, new guide navigation, or other product-interface change was made.
+This is the working specification and continuation record for an experiment-driven assessment of Locmetry's agent-facing interface. It preserves the discussion and exploratory evidence from 2026-10-19 and the subsequent experiments from 2026-10-20. After the first pilot, the owner delegated experiment design, recording, and evaluation. The [six-task study](../research/agent-explorability-six-task-study.md) owns the frozen campaign definitions, results, separate discovery track, and recommendation. The draft prompts below preserve design context; use the linked executable task definitions to replay the measured campaign. The experiments used temporary binaries; the owner subsequently authorized production adoption of the tested help routing, as recorded below.
 
 [PLAN](../PLAN.md) owns the open-work index. [PRODUCT](../PRODUCT.md) owns supported behavior; this document owns the experiment, not a competing product contract. The earlier [embedded-guidance checkpoint](archive/measurement-quality-and-net-change.md#embedded-guidance-implementation--2026-10-16) preserves prior implementation evidence.
 
@@ -37,7 +37,7 @@ The owner subsequently authorized the [configuration-recipe experiment](../resea
 
 The authorized [execution-first routing study](../research/agent-explorability-help-routing-study.md) completed 36 fresh sessions with all answers correct. Explicit routing eliminated both reference lookups in all four covered-task C runs and reduced median calls and uncached input against both controls. Its broader-task and secondary cost guards failed, prompting the unchanged-candidate replication below. The original study owns those historical results, limits and replay instructions.
 
-The [bounded routing-cost replication](../research/agent-explorability-routing-replication.md) completed both frozen stages: 36 broader-configuration sessions and 18 report-understanding sessions, all correct and all cost guards passing. The earlier penalties did not recur. Recommend narrow adoption of the unchanged example plus conditional execution-first routing; retain guides and existing navigation. Production installation was explicitly outside this protocol. No further experiment is scheduled; this reusable benchmark is deferred until a separately scoped variant or use case is chosen. Do not pool the historical samples or treat the adverse-guard replication as a new covered-task benefit test.
+The [bounded routing-cost replication](../research/agent-explorability-routing-replication.md) completed both frozen stages: 36 broader-configuration sessions and 18 report-understanding sessions, all correct and all cost guards passing. The earlier penalties did not recur. Its narrow adoption recommendation was subsequently authorized by the owner on 2026-10-20: root long help now includes the exact tested example plus conditional execution-first routing, with guides and navigation retained. The [help-design guidelines](../help-design.md) preserve the rationale for future work. No further experiment is scheduled; this reusable benchmark is deferred until a separately scoped variant or use case is chosen. Do not pool the historical samples or treat the adverse-guard replication as a new covered-task benefit test.
 
 For a later session:
 
@@ -47,7 +47,11 @@ For a later session:
 4. Add an independent fixture variant when testing generalization, and give each changed prompt, fixture, oracle, or treatment a new revision. Keep old outcomes and all-run costs available.
 5. Treat personal-policy interactions, extended scope cases, and long-session reuse as separate future cases, not as already verified behavior of the benchmark.
 
-The owner authorized autonomous experimental design on 2026-10-20. The configuration-recipe follow-up is explicitly authorized; no production modification is authorized by this continuation record.
+The owner authorized autonomous experimental design on 2026-10-20 and separately authorized the guidelines and tested help improvement after the bounded replication. Future product changes require their own task scope; this reusable benchmark does not authorize them.
+
+## Replaying Pre-Adoption Studies
+
+Historical treatments assume help without the adopted example and routing. Replay from each study's recorded source revision and harness in a separate checkout, using its frozen task/protocol and binary hashes; the campaign and per-run manifests are linked from the study results. Running those treatments against current production help would duplicate the example or leave new guide references in a guide-removal arm. The current harness rejects that setup before creating trial directories. Its regression tests use an isolated pre-adoption help fixture; they do not reinterpret current help as an old control. A benchmark of today's interface needs a separately defined control and treatment, as described in [revising or adding a use case](#revising-or-adding-a-use-case).
 
 ## Proposed Experiment
 

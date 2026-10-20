@@ -360,3 +360,94 @@ fn comparison_example_and_scope_refusal_match_documented_evidence() {
     assert!(String::from_utf8_lossy(&out.stderr).contains("subfolder"));
     assert!(!root.path().join("refused.json").exists());
 }
+
+#[test]
+fn long_help_offers_the_tested_configuration_route_without_changing_short_help() {
+    let root = tempfile::tempdir().unwrap();
+    let addition = concat!(
+        include_str!("../fixtures/agent-explorability/help-routing.txt"),
+        include_str!("../fixtures/agent-explorability/help-recipe.txt")
+    );
+    for args in [vec!["--help"], vec!["help"]] {
+        let output = run(root.path(), &args);
+        let help = String::from_utf8(output.stdout).unwrap();
+        assert_eq!(help.matches(addition).count(), 1);
+    }
+    for args in [
+        vec!["-h"],
+        vec!["workspace", "--help"],
+        vec!["compare", "--help"],
+        vec!["explain", "--help"],
+    ] {
+        let output = run(root.path(), &args);
+        assert!(!String::from_utf8(output.stdout)
+            .unwrap()
+            .contains("Classify maintained scripts"));
+    }
+}
+
+#[test]
+fn configuration_example_from_help_preserves_conventions_and_unresolved_review() {
+    let root = tempfile::tempdir().unwrap();
+    let output = run(root.path(), &["--help"]);
+    let help = String::from_utf8(output.stdout).unwrap();
+    let example = help
+        .split_once("  Classify maintained scripts in service/.locmetryrc (TOML):\n")
+        .expect("help supplies an executable configuration example")
+        .1;
+    let configuration = example
+        .lines()
+        .take_while(|line| line.is_empty() || line.starts_with("    "))
+        .map(|line| line.strip_prefix("    ").unwrap_or(line))
+        .collect::<Vec<_>>()
+        .join("\n");
+    write(root.path(), "service/.locmetryrc", &configuration);
+    write(
+        root.path(),
+        "service/scripts/release.py",
+        "print('release')\n",
+    );
+    write(
+        root.path(),
+        "service/scripts/release_test.py",
+        "assert True\n",
+    );
+    write(root.path(), "service/scripts/build.gradle", "plugins {}\n");
+    write(
+        root.path(),
+        "service/scratch/probe.py",
+        "print('undecided')\n",
+    );
+    let command = example
+        .split_once(
+            "  Verify the policy with per-file decisions and a human overview:\n    locmetry ",
+        )
+        .unwrap()
+        .1
+        .lines()
+        .next()
+        .unwrap();
+    let output = run(root.path(), &command.split_whitespace().collect::<Vec<_>>());
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(String::from_utf8(output.stdout).unwrap().contains("Code"));
+    let report: Value =
+        serde_json::from_str(&fs::read_to_string(root.path().join("report.json")).unwrap())
+            .unwrap();
+    let files = report["files"].as_array().unwrap();
+    for (path, purpose, category) in [
+        ("scripts/release.py", "production", "tooling"),
+        ("scripts/release_test.py", "test", "test"),
+        ("scripts/build.gradle", "production", "build-tooling"),
+        ("scratch/probe.py", "other", "unclaimed"),
+    ] {
+        let file = files.iter().find(|file| file["path"] == path).unwrap();
+        assert_eq!(file["purpose"], purpose, "{path}");
+        assert_eq!(file["category"], category, "{path}");
+    }
+    assert_eq!(report["review"].as_array().unwrap().len(), 1);
+    assert_eq!(report["review"][0]["path"], "scratch/probe.py");
+}

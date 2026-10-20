@@ -150,6 +150,25 @@ macro_rules! root_after_help {
   Inspect the configuration contract:
     locmetry --schema config
 
+  For a production-rule change covered by the example below, inspect existing
+  configuration and measure current decisions, then adapt the paths and category
+  and run the verification command. Reading a guide or schema first is optional
+  for this route. Use --guide configure or --schema config for exclusions,
+  overrides, intentional Other, or semantics not shown here. Verify the reported
+  per-file decisions and unresolved review items before concluding.
+
+  Classify maintained scripts in service/.locmetryrc (TOML):
+    version = 1
+
+    [[rules]]
+    id = \"maintained-scripts\"
+    match = [\"scripts/**\"]
+    purpose = \"production\"
+    category = \"tooling\"
+  Rule patterns are root-relative; built-in test/build classification precedes rules.
+  Verify the policy with per-file decisions and a human overview:
+    locmetry --root service --files --output report.json --print table --verbose
+
 For workflows and saved-report recipes, use locmetry --guide TOPIC with a topic listed under --guide."
     )
 )]
