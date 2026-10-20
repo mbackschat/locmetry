@@ -4,7 +4,7 @@
 
 ## Version 3
 
-Current measurements require `document_type: "measurement"`, `schema_version: "3"` and `detail: "full"` or `"headline"`. This identifies the document and its projection before loading nested data into SQL or dataframes. Full reports require their aggregate detail and policy evidence; headline reports must omit it. Optional `files` still means file detail was requested, not whether the measurement was empty. The schema and internal semantic validator enforce that projection agreement. The obsolete measurement `report` pointer is rejected.
+Locmetry 0.6.0 introduces measurement schema 3. Current measurements require `document_type: "measurement"`, `schema_version: "3"` and `detail: "full"` or `"headline"`. This identifies the document and its projection before loading nested data into SQL or dataframes. Full reports require their aggregate detail and policy evidence; headline reports must omit it. Optional `files` still means file detail was requested, not whether the measurement was empty. The schema and internal semantic validator enforce that projection agreement. The obsolete measurement `report` pointer is rejected.
 
 Measurements with schema 1 or 2 must be recaptured with the current executable; `compare` names the old version and asks for a new measurement. No automatic migration can recover an earlier source state. Report formats may change before 1.0; retain producer identity and inspect the executable's schema. Comparisons and explanations retain their independent schema version 2. The [analytics research](research/report-analytics.md) records why the envelope is tool-neutral; the [DuckDB](duckdb-cookbook.md) and [dataframe](dataframe-cookbook.md) recipes consume it.
 
