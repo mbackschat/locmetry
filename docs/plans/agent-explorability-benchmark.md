@@ -2,9 +2,9 @@
 
 <!-- doc-status
 {
-  "status": "active",
+  "status": "deferred",
   "date": "2026-10-20",
-  "summary": "Evaluate full-feature help coverage with a frozen ten-task campaign.",
+  "summary": "Reusable benchmark; completed help studies retained for future feature or model changes.",
   "evidence": "[Full-help study](../research/agent-explorability-full-help-study.md)"
 }
 -->
@@ -37,7 +37,9 @@ The owner subsequently authorized the [configuration-recipe experiment](../resea
 
 The authorized [execution-first routing study](../research/agent-explorability-help-routing-study.md) completed 36 fresh sessions with all answers correct. Explicit routing eliminated both reference lookups in all four covered-task C runs and reduced median calls and uncached input against both controls. Its broader-task and secondary cost guards failed, prompting the unchanged-candidate replication below. The original study owns those historical results, limits and replay instructions.
 
-The [bounded routing-cost replication](../research/agent-explorability-routing-replication.md) completed both frozen stages: 36 broader-configuration sessions and 18 report-understanding sessions, all correct and all cost guards passing. The earlier penalties did not recur. Its narrow adoption recommendation was subsequently authorized by the owner on 2026-10-20: root long help now includes the exact tested example plus conditional execution-first routing, with guides and navigation retained. The [help-design guidelines](../help-design.md) preserve the rationale for future work. The owner subsequently clarified that completion requires every supported feature/use case. The [full-help study](../research/agent-explorability-full-help-study.md) now evaluates the combined interface across ten tasks, including new scope/views and personal-policy cases. Do not pool the historical samples or treat the adverse-guard replication as a new covered-task benefit test.
+The [bounded routing-cost replication](../research/agent-explorability-routing-replication.md) completed both frozen stages: 36 broader-configuration sessions and 18 report-understanding sessions, all correct and all cost guards passing. The earlier penalties did not recur. Its narrow adoption recommendation was subsequently authorized by the owner on 2026-10-20: root long help now includes the exact tested example plus conditional execution-first routing, with guides and navigation retained. The [help-design guidelines](../help-design.md) preserve the rationale for future work.
+
+The owner subsequently clarified that completion requires every supported feature/use case. The [full-help study](../research/agent-explorability-full-help-study.md) completed the combined interface evaluation across ten tasks, including scope/views and personal-policy cases, then a separate bounded comparison-routing correction. Its final adoption decision closes the current help task; retain the original cost failure and correction limits. The benchmark is deferred for future feature/model changes, with no further trial scheduled. Do not pool the historical samples or treat the adverse-guard replication as a new covered-task benefit test.
 
 For a later session:
 

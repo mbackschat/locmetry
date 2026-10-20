@@ -2,14 +2,17 @@
 
 <!-- doc-status
 {
-  "status": "active",
+  "status": "completed",
   "date": "2026-10-20",
-  "summary": "Inventory all supported workflows, implement actionable help, and evaluate the combined interface.",
-  "evidence": "[Help design](../help-design.md)"
+  "summary": "Complete feature help coverage with executable recipes and bounded MEDIUM-agent evaluation.",
+  "evidence": "[Full-help study](../../research/agent-explorability-full-help-study.md)"
 }
 -->
 
-The owner clarified that the task is the complete agent-facing help experience, not one configuration example. The [earlier adoption](../research/agent-explorability-routing-replication.md) is one measured improvement within this scope. Continue autonomously through inventory, implementation, executable guards and fresh MEDIUM-agent evaluation. Do not equate a passing example with completion of the feature set or claim literal perfection from a finite sample.
+Archived on 2026-10-20 after implementation and evaluation. The checkpoint below preserves its earlier pending state; the [study adoption decision](../../research/agent-explorability-full-help-study.md#adoption-decision) records completion. Maintain current feature coverage in [help design](../../help-design.md#current-feature-inventory); this plan is historical evidence.
+
+
+The owner clarified that the task is the complete agent-facing help experience, not one configuration example. The [earlier adoption](../../research/agent-explorability-routing-replication.md) is one measured improvement within this scope. Continue autonomously through inventory, implementation, executable guards and fresh MEDIUM-agent evaluation. Do not equate a passing example with completion of the feature set or claim literal perfection from a finite sample.
 
 ## Feature and Use-Case Inventory
 
@@ -45,4 +48,4 @@ Every user-facing option must map to one of these tasks. Root help must expose t
 
 ## Evidence Checkpoint
 
-The [full-help study](../research/agent-explorability-full-help-study.md) completed 80 fresh sessions with all artifact and independent answer checks passing, including full discovery coverage. Aggregate calls and uncached input decreased, but Task 4 missed its primary call guard. Preserve that result. A [separate 32-session correction](../../tests/fixtures/agent-explorability/compare-help-routing-study.json) tests explicit comparison execution routing against the original control, with unchanged numeric gates and no pooling. Completion and the final recommendation await that bounded check; the current feature inventory is maintained in [help design](../help-design.md#current-feature-inventory).
+The [full-help study](../../research/agent-explorability-full-help-study.md) completed 80 fresh sessions with all artifact and independent answer checks passing, including full discovery coverage. Aggregate calls and uncached input decreased, but Task 4 missed its primary call guard. Preserve that result. A [separate 32-session correction](../../../tests/fixtures/agent-explorability/compare-help-routing-study.json) tests explicit comparison execution routing against the original control, with unchanged numeric gates and no pooling. Completion and the final recommendation await that bounded check; the current feature inventory is maintained in [help design](../../help-design.md#current-feature-inventory).

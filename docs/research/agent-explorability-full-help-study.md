@@ -1,6 +1,6 @@
 # Full-Feature Help Study
 
-The owner clarified that the desired result is a complete agent-facing help experience across supported features, rather than one successful configuration example. This study evaluates the combined interface against the adopted configuration-route baseline. It follows the [feature inventory](../plans/full-help-coverage.md#feature-and-use-case-inventory), [help-design guidelines](../help-design.md) and reusable [benchmark](../plans/agent-explorability-benchmark.md).
+The owner clarified that the desired result is a complete agent-facing help experience across supported features, rather than one successful configuration example. This study evaluates the combined interface against the adopted configuration-route baseline. It follows the [feature inventory](../help-design.md#current-feature-inventory), [help-design guidelines](../help-design.md) and reusable [benchmark](../plans/agent-explorability-benchmark.md).
 
 ## Design Fixed Before Trials
 
@@ -67,10 +67,33 @@ Elapsed time is measured through harness completion and copying, not exact final
 
 ## Targeted Comparison-Routing Correction
 
-The [separate correction protocol](../../tests/fixtures/agent-explorability/compare-help-routing-study.json) fixes 32 fresh sessions before launch: Tasks 1, 4, 5 and 7, with four balanced pairs each against the original control. The candidate adds explicit optional-reference execution routing in root and comparison help while retaining the full feature inventory and recipes. The corrected candidate is `c9098e20a3dade541c61ca8ca2bc347943e672be`, native SHA-256 `882fe74a64f6df405f47deaa9cfc6f88190bbd337f4c7531183e36b926f35a05`. Its routing regression fails against the earlier help and passes with the correction; 61 focused Rust tests, formatting and Clippy pass. The same correctness and numeric cost limits apply. No original trial is replaced or pooled; the other six tasks are not remeasured by this correction. Results and final adoption remain pending.
+The [separate correction protocol](../../tests/fixtures/agent-explorability/compare-help-routing-study.json) fixes 32 fresh sessions before launch: Tasks 1, 4, 5 and 7, with four balanced pairs each against the original control. The candidate adds explicit optional-reference execution routing in root and comparison help while retaining the full feature inventory and recipes.
+
+The corrected candidate is `c9098e20a3dade541c61ca8ca2bc347943e672be`, native SHA-256 `882fe74a64f6df405f47deaa9cfc6f88190bbd337f4c7531183e36b926f35a05`. Its routing regression fails against the earlier help and passes with the correction; 61 focused Rust tests, formatting and Clippy pass.
+
+The same correctness and numeric cost limits apply. No original trial is replaced or pooled; the other six tasks are not remeasured by this correction.
+
+Independent answer review passed **16/16 candidate runs and 15/16 control runs**, with no critical error. All 32 artifact checks passed. All eight discovery maps covered 13/13 capability families and supplied valid workflow commands; one control answer omitted that unrecognized files have unavailable counts. Every candidate answer covered all four required semantic families. The independent audit completed 484 checks without an integrity failure; all primary cost gates pass with no secondary flags. See the [portable correction results](agent-explorability-compare-routing-results.json).
+
+| Task | Median calls A → B | Median uncached input A → B |
+| --- | ---: | ---: |
+| 1: report interpretation | 2 → 2 | 20,067.5 → 20,805 |
+| 4: comparison | 7.5 → 7 | 44,296 → 34,253 |
+| 5: workspace | 5.5 → 6 | 41,947.5 → 39,573.5 |
+| 7: discovery | 5.5 → 5 | 43,706 → 47,773.5 |
+
+Across these 32 fresh sessions, calls changed from **83 to 81 (−2.4%)**, uncached input from **639,668 to 602,414 (−5.8%)**, and CLI invocations from **154 to 135**. Discovery used more uncached input in all four candidate pairs; its median increase was 9.3%, within the predeclared 10% limit. Workspace median calls increased by 0.5. These results support bounded nonregression, not a claim that every task became cheaper. All four candidate comparison agents used the help recipes without a guide or schema; the combined-package comparison cannot isolate the causal effect of that choice.
+
+The original 80-session failure and secondary flags remain unchanged. The six tasks outside this correction retain their original evidence; this study does not remeasure the final wording across all ten tasks. Elapsed time again includes harness overhead, here 0.49–5.09 seconds after native completion.
+
+## Adoption Decision
+
+Adopt the full-feature help with the comparison-routing correction. The 16-family inventory now has actionable routes and executable guards; the broad 80-session study establishes coverage across ten tasks, and the separate correction passes its frozen correctness and cost gates. Keep root help task-oriented, put workspace/compare/explain recipes in command help, and retain guides and schemas as optional deeper references. The [help-design guidelines](../help-design.md) own future additions, placement rationales and the current inventory. The [completed implementation record](../plans/archive/full-help-coverage.md) closes this scope.
+
+This is a complete feature-coverage change with bounded experimental support, not proof of perfect help or a universal speedup. There is no unresolved correctness or discovery defect in the candidate sample. The original cost failure, advanced-policy secondary flags, discovery token increase and six-task remeasurement boundary remain part of the evidence. Do not repeat unchanged trials to improve the headline result; future feature or model changes need a new frozen campaign.
 
 ## Replay and Evidence
 
 Use the committed [runner](../../scripts/full-help-study.py), [artifact grader](../../scripts/score_full_help.py), task definitions and protocol. Build exact source revisions into separate scratch directories without changing the working tree, or supply the recorded native binaries. Freeze with `--prepare-only`, inspect the manifests, then launch with `--run-frozen`. The runner refuses a second launch of a started campaign. Source declarations for prebuilt arms are separate from preparation-repository hashes; neither is presented as a source tree copied from the other arm.
 
-Raw sessions, account/framework context, delivered artifacts, blinded review packets and telemetry audits belong only in ignored `docs/research/local/agent-explorability/2026-10-20-full-help-v1/`. Public summaries must contain only portable synthetic results and provenance. Final cumulative usage is checked against native session/events; output already includes reasoning and must not be added twice. Evaluator probes are excluded by the recorded explorer-completion boundary.
+Raw sessions, account/framework context, delivered artifacts, blinded review packets and telemetry audits are retained only in ignored `docs/research/local/agent-explorability/2026-10-20-full-help-v1/` and `docs/research/local/agent-explorability/2026-10-20-compare-help-routing-v1/`. Public summaries must contain only portable synthetic results and provenance. Final cumulative usage is checked against native session/events; output already includes reasoning and must not be added twice. Evaluator probes are excluded by the recorded explorer-completion boundary.

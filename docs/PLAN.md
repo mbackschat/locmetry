@@ -14,10 +14,6 @@
 
 - Folder-partition convergence remains deferred: adaptive folder detail and JSON `unclassified_folders` intentionally use different policies. Revisit only if a workflow demonstrates confusing divergence, with explicit compatibility review. The [adaptive-folder decision](proposals/archive/adaptive-folder-detail.md#existing-partition-and-feasibility) owns the rationale.
 
-## Agent Explorability — Evidence and Follow-up
-
-- [ ] Complete [full CLI help coverage](plans/full-help-coverage.md): inventory all features/use cases, implement actionable root and command help, and validate the combined interface with executable examples and fresh MEDIUM-agent experiments. The earlier configuration example is one component, not completion of this scope. [Help-design guidelines](help-design.md) and the reusable [benchmark](plans/agent-explorability-benchmark.md) supply the criteria.
-
 ## Ideas — Not Scheduled
 
 - [Conditional measurement/comparison capabilities](plans/measurement-quality-and-net-change.md#conditional-follow-ups-and-preserved-rationales): consumer-driven candidates and their triggers, including [per-file comparison](plans/measurement-quality-and-net-change.md#per-file-comparison), generated/minified evidence and duplicate evidence. Ancestor discovery remains outside accepted scope.
@@ -29,6 +25,7 @@ None. The [proposal index](proposals/README.md) distinguishes active designs fro
 
 ## Historical Evidence
 
+- [Complete CLI help coverage](plans/archive/full-help-coverage.md): implementation scope and experiment evidence; [help design](help-design.md) owns the current feature inventory and contributor guidance.
 - [Default report output decision](proposals/archive/default-report-output-proposal-redacted.md): reviewed design and acceptance evidence.
 - [Development and release snapshot through 2026-10-16](plans/archive/development-plan-2026-10-16.md): completed work, published releases and their verification links.
 - [Measurement quality and subsequent implementation checkpoints](plans/archive/measurement-quality-and-net-change.md): S1–S5, reviews, accepted decisions and completion evidence.

@@ -20,4 +20,4 @@ The [archived implementation record](../plans/archive/measurement-quality-and-ne
 
 Sensitive project analyses, candidate rules, raw measurements, and breakdowns belong exclusively in `docs/research/local/`. That directory is Git-ignored and is not part of the shared documentation.
 
-- [Full-feature help study](agent-explorability-full-help-study.md): frozen ten-task comparison of the complete help candidate, with correctness and resource gates.
+- [Full-feature help study](agent-explorability-full-help-study.md): ten-task evaluation, bounded comparison-routing correction, adoption decision and retained resource tradeoffs.

@@ -16,7 +16,7 @@ These placement rules are design judgments informed by the evidence below, not s
 
 ## Covering the Feature Set
 
-Maintain a task inventory before declaring the help experience complete. The inventory below maps each supported workflow to its help destination and verification; it owns the current coverage map. The [full-help coverage plan](plans/full-help-coverage.md) records the implementation scope. Check newly added options against that inventory and the executable option guard in [help tests](../tests/integration/help.rs). A new feature needs a discoverable capability, a valid next action, its consequential boundary and observable verification; it does not automatically need another root example.
+Maintain a task inventory before declaring the help experience complete. The inventory below maps each supported workflow to its help destination and verification; it owns the current coverage map. The [completed full-help coverage plan](plans/archive/full-help-coverage.md) records the implementation scope. Check newly added options against that inventory and the executable option guard in [help tests](../tests/integration/help.rs). A new feature needs a discoverable capability, a valid next action, its consequential boundary and observable verification; it does not automatically need another root example.
 
 Use command help for workspace, comparison and explanation workflows. Root help owns measurement, output routing, scope, views and enough interpretation to avoid common false conclusions. Keep complete policy syntax in the schema and detailed alternatives in guides. Run the displayed recipes after terminal-width wrapping; a test that silently drops continuation lines can validate a different command from the one readers see.
 
@@ -57,6 +57,8 @@ The [guide-removal study](research/agent-explorability-six-task-study.md) found 
 The [configuration-example study](research/agent-explorability-help-recipe-study.md) did not show that an example alone reduced reference retrieval or task cost. This is evidence about that example and those tasks, not a rejection of usage examples generally.
 
 The [routing study](research/agent-explorability-help-routing-study.md) found that the same example plus explicit conditional execution-first guidance reduced calls and uncached input on its covered task, with all four candidate agents skipping the configuration guide and schema. The [bounded replication](research/agent-explorability-routing-replication.md) then passed correctness and cost guards on broader configuration and unrelated report understanding across 54 fresh sessions. Together these support adopting the tested combination, retaining guides and leaving navigation unchanged. They do not isolate individual sentences, establish general equivalence, or newly replicate the original four-run covered-task benefit.
+
+The [full-feature study](research/agent-explorability-full-help-study.md) extended this approach across the inventory above. Its 80-session campaign passed all correctness checks but missed the comparison call guard; the recorded correction then passed correctness and cost gates in 32 fresh sessions. Adopt the complete help package with that correction, without erasing the original failure or claiming uniform savings. Discovery required more input tokens, and the correction did not remeasure six of the original ten tasks. These results support actionable coverage plus bounded execution routing; they do not show that adding more examples indefinitely improves exploration.
 
 ## Evaluating Future Additions
 

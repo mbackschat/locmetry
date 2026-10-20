@@ -7,6 +7,7 @@ These records preserve implementation evidence and decisions at retirement. Thei
 | Document | Status | Date | Summary |
 | --- | --- | --- | --- |
 | [Development Plan](development-plan-2026-10-16.md) | historical | 2026-10-16 | Retired development snapshot; live work is in PLAN. |
+| [Complete CLI Help Coverage](full-help-coverage.md) | completed | 2026-10-20 | Complete feature help coverage with executable recipes and bounded MEDIUM-agent evaluation. |
 | [Measurement Quality and Net Change Work Plan](measurement-quality-and-net-change.md) | historical | 2026-10-16 | Retired implementation and review record; remaining designs have separate owners. |
 | [Deferred Test-to-Production Ratio Presentation](test-production-ratios.md) | completed | 2026-10-18 | Neutral language Test/prod ratios implemented; reviewed design and research preserved. |
 
