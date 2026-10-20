@@ -1,0 +1,60 @@
+{
+  "revision": "task11-policy-defaults-v1",
+  "files": {
+    "projects/worker/.locmetryrc": "version = 1\n[scope]\nexclude = [\"vendor/**\"]\n[categories]\noperations = \"Maintained operations and runbooks\"\nautomation = \"Maintained source checks\"\n[[rules]]\nid = \"maintained-operations\"\nmatch = [\"ops/**\", \"scripts/**\"]\npurpose = \"production\"\ncategory = \"operations\"\n[[rules]]\nid = \"source-checks\"\nmatch = [\"src/*_test.py\"]\npurpose = \"production\"\ncategory = \"automation\"\n",
+    "projects/worker/Cargo.toml": "[package]\nname = \"grove-worker\"\nversion = \"0.1.0\"\nedition = \"2024\"\n",
+    "projects/worker/local/private.rs": "pub const LOCAL: bool = true;\n",
+    "projects/worker/ops/rotate.sh": "# maintained operations\nprintf 'rotate\\n'\nprintf 'verify\\n'\n",
+    "projects/worker/scratch/probe.rs": "pub const PROBE: bool = true;\n",
+    "projects/worker/scripts/job.runbook": "# runbook\nprintf 'ready\\n'\n",
+    "projects/worker/src/active_test.py": "assert True\nassert 1 == 1\n",
+    "projects/worker/src/extra.fragment": "// fragment\npub const EXTRA: bool = true;\n",
+    "projects/worker/src/lib.rs": "// application\npub const READY: bool = true;\n",
+    "projects/worker/src/replay_test.py": "# historical example\nassert True\n",
+    "projects/worker/vendor/bundle.rs": "pub const VENDOR: bool = true;\n"
+  },
+  "user_defaults": "version = 1\n[scope]\nexclude = [\"local/**\"]\n[[languages.mappings]]\nid = \"personal-fragments\"\nmatch = [\"**/*.fragment\"]\nlanguage = \"Python\"\n[[languages.mappings]]\nid = \"personal-runbooks\"\nmatch = [\"**/*.runbook\"]\nlanguage = \"BASH\"\n",
+  "prompt": "You have ./bin/locmetry and synthetic inputs in this scratch directory. Work only here. The executable and its built-in discovery material are your only product documentation; do not read other directories, implementation files, telemetry, or the launcher, and do not use the internet or other agents. You may inspect synthetic inputs and use ordinary shell/Python tools. Isolated personal defaults are already active: inspect their effects through the binary, not by reading their file outside this directory. Do not modify those defaults. You may edit only projects/worker/.locmetryrc and create files outside measured roots; leave all supplied source and data unchanged.\n\nPreserve the project's supplied exclusions, category meanings, ordinary rules and built-in/module settings. Configure src/replay_test.py as intentionally Other, category historical, with a reason explaining that it is archived evidence rather than a maintained test. Keep src/active_test.py classified as Test and src/lib.rs inferred Production. Add a project language mapping that counts src/*.fragment using the Rust parser. Leave scratch/ unresolved and counted. Save full per-file verification reports with the active defaults as outputs/configured.json and with personal defaults disabled as outputs/no-user.json.\n\nReport source Files/Lines/Code and Code by purpose for both runs, remaining unclaimed source, and any selected file without a parser. Explain why the supplied ordinary production rule does not decide either *_test.py file, which stage decides each, why intentional Other keeps its counts, which mapping wins for extra.fragment, and the personal scope/language effects exposed by the second run. State where personal defaults are recorded and whether they may classify purpose/category. Include supporting commands and unresolved results in a final answer of at most 250 words. Create the requested artifacts, but no assessment document or logging harness.\n",
+  "oracle": {
+    "root": "projects/worker",
+    "with_user_defaults": {
+      "selected_paths": ["Cargo.toml", "ops/rotate.sh", "scratch/probe.rs", "scripts/job.runbook", "src/active_test.py", "src/extra.fragment", "src/lib.rs", "src/replay_test.py"],
+      "source": {"files": 7, "code": 9, "comments": 5, "blanks": 0, "lines": 14},
+      "all_counted": {"files": 8, "code": 13, "comments": 5, "blanks": 0, "lines": 18},
+      "purpose_code": {"production": 5, "test": 2, "other": 2},
+      "coverage": {"selected_files": 8, "counted_files": 8, "mapped_files": 2, "unrecognized_files": 0, "unread": [], "parse_failures": []},
+      "review": ["scratch/probe.rs"],
+      "unrecognized": [],
+      "excluded": ["local/private.rs", "vendor/bundle.rs"]
+    },
+    "without_user_defaults": {
+      "selected_paths": ["Cargo.toml", "local/private.rs", "ops/rotate.sh", "scratch/probe.rs", "scripts/job.runbook", "src/active_test.py", "src/extra.fragment", "src/lib.rs", "src/replay_test.py"],
+      "source": {"files": 7, "code": 9, "comments": 4, "blanks": 0, "lines": 13},
+      "all_counted": {"files": 8, "code": 13, "comments": 4, "blanks": 0, "lines": 17},
+      "purpose_code": {"production": 4, "test": 2, "other": 3},
+      "coverage": {"selected_files": 9, "counted_files": 8, "mapped_files": 1, "unrecognized_files": 1, "unread": [], "parse_failures": []},
+      "review": ["local/private.rs", "scratch/probe.rs"],
+      "unrecognized": ["scripts/job.runbook"],
+      "excluded": ["vendor/bundle.rs"]
+    },
+    "decisions": {
+      "Cargo.toml": {"language": "TOML", "kind": "data", "purpose": "other", "category": "unclaimed", "rule": "fallback", "stage": "fallback", "counts": {"code": 4, "comments": 0, "blanks": 0, "lines": 4}},
+      "local/private.rs": {"language": "Rust", "kind": "source", "purpose": "other", "category": "unclaimed", "rule": "fallback", "stage": "fallback", "counts": {"code": 1, "comments": 0, "blanks": 0, "lines": 1}},
+      "ops/rotate.sh": {"language": "Shell", "kind": "source", "purpose": "production", "category": "operations", "rule": "maintained-operations", "stage": "rule", "counts": {"code": 2, "comments": 1, "blanks": 0, "lines": 3}},
+      "scratch/probe.rs": {"language": "Rust", "kind": "source", "purpose": "other", "category": "unclaimed", "rule": "fallback", "stage": "fallback", "counts": {"code": 1, "comments": 0, "blanks": 0, "lines": 1}},
+      "scripts/job.runbook": {"language": "BASH", "language_mapping": "personal-runbooks", "kind": "source", "purpose": "production", "category": "operations", "rule": "maintained-operations", "stage": "rule", "counts": {"code": 1, "comments": 1, "blanks": 0, "lines": 2}},
+      "src/active_test.py": {"language": "Python", "kind": "source", "purpose": "test", "category": "test", "rule": "builtin:python-test-file", "stage": "convention", "counts": {"code": 2, "comments": 0, "blanks": 0, "lines": 2}},
+      "src/extra.fragment": {"language": "Rust", "language_mapping": "project-defined", "kind": "source", "purpose": "production", "category": "implementation", "rule": "builtin:cargo-module", "stage": "module", "counts": {"code": 1, "comments": 1, "blanks": 0, "lines": 2}},
+      "src/lib.rs": {"language": "Rust", "kind": "source", "purpose": "production", "category": "implementation", "rule": "builtin:cargo-module", "stage": "module", "counts": {"code": 1, "comments": 1, "blanks": 0, "lines": 2}},
+      "src/replay_test.py": {"language": "Python", "kind": "source", "purpose": "other", "category": "historical", "rule": "project-defined", "stage": "override", "reason_required": true, "counts": {"code": 1, "comments": 1, "blanks": 0, "lines": 2}}
+    },
+    "unused_entries": ["source-checks"],
+    "preserved_rules": ["maintained-operations", "source-checks"],
+    "personal_defaults_contract": {"recorded_path": "metadata.user_config_path", "location": "$XDG_CONFIG_HOME/locmetry/config.toml, else ~/.config/locmetry/config.toml", "allowed": ["scope.exclude", "languages.mappings"], "purpose_category": false, "project_mapping_precedes_personal": true},
+    "artifacts": ["projects/worker/.locmetryrc", "outputs/configured.json", "outputs/no-user.json"]
+  },
+  "limits": {"wall_seconds": 600, "cli_invocations": 60, "agent_tool_calls": 40, "uncached_input_tokens": 100000},
+  "grading": "Recovered mistakes may pass; record recovery cost. Inspect supporting calls, project-policy preservation and fixture integrity. Project-defined rule/mapping IDs are arbitrary: validate their effective override or mapping and provenance rather than the literal placeholder. Missing artifacts or requested conclusions are incomplete. Wrong delivered counts, discarded intentional Other counts, an ordinary rule claimed to beat a convention, lost Cargo inference, a personal mapping claimed to beat the project mapping, unrecognized treated as known zero, or purpose/category policy attributed to personal defaults are critical failures. Hand-calculated physical file counts and explicit policy precedence define this oracle, not documentation figures or generated report contents.",
+  "mutable": ["projects/worker/.locmetryrc"],
+  "generated": []
+}

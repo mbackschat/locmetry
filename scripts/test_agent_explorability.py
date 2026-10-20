@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 import shutil
 import tempfile
+import threading
+import time
 import unittest
 from unittest.mock import patch
 
@@ -43,6 +45,161 @@ class ExperimentTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "pre-adoption"):
                     BENCH.prepare(destination, treatment=treatment)
                 self.assertFalse(destination.exists())
+
+    def test_supplied_binaries_keep_repository_snapshot_separate_from_arm_sources(self):
+        BENCH.with_help_recipe(BENCH.REPO, routing=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            binaries = [root / arm for arm in "AB"]
+            for arm, binary in zip("AB", binaries):
+                binary.write_text(arm)
+            task = json.loads(BENCH.TASK.read_text())
+            task["user_defaults"] = 'version = 1\n[scope]\nexclude = ["private/**"]\n'
+            task_path = root / "task.json"
+            task_path.write_text(json.dumps(task))
+            pair = root / "pair"
+            provenance = {arm: {"source_revision": f"source-{arm}"} for arm in "AB"}
+            with patch.object(BENCH, "without_guides") as remove, patch.object(BENCH, "with_help_recipe") as recipe:
+                BENCH.prepare(pair, task_path, binaries, "supplied-binaries", arm_provenance=provenance)
+            remove.assert_not_called()
+            recipe.assert_not_called()
+            manifest = json.loads((pair / "manifest.json").read_text())
+            self.assertNotIn("source_revision", manifest)
+            self.assertNotIn("source_hashes", manifest)
+            self.assertEqual(manifest["repository_snapshot"]["revision"], "synthetic-pre-adoption-fixture")
+            self.assertEqual(manifest["arms"], {
+                arm: {**provenance[arm], "binary_sha256": BENCH.sha(binary)}
+                for arm, binary in zip("AB", binaries)
+            })
+            for arm in "AB":
+                self.assertEqual((pair / arm / "target/debug/locmetry").read_text(), arm)
+                self.assertFalse((pair / arm / "src").exists())
+            for run in ["run-01", "run-02"]:
+                self.assertEqual((pair / "user-config" / run / "locmetry/config.toml").read_text(), task["user_defaults"])
+                self.assertFalse((pair / run / "user-config").exists())
+
+    def test_supplied_mode_requires_exactly_two_existing_binaries_before_creating_output(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            binary = root / "binary"
+            binary.write_text("binary")
+            for index, binaries in enumerate([None, [binary], [binary] * 3, [binary, root / "missing"]]):
+                pair = root / f"pair-{index}"
+                with self.subTest(binaries=binaries), self.assertRaises((ValueError, FileNotFoundError)):
+                    BENCH.prepare(pair, binaries=binaries, treatment="supplied-binaries")
+                self.assertFalse(pair.exists())
+
+    def test_full_help_protocol_balances_each_task_and_keeps_discovery_rubrics_separate(self):
+        full = self.full_help_runner()
+        protocol = json.loads(full.PROTOCOL.read_text())
+        from collections import Counter
+        self.assertEqual(protocol["task_ids"], [1, 2, 3, 4, 5, 6, 7, 9, 10, 11])
+        self.assertEqual(len(protocol["pairs"]), 40)
+        self.assertEqual(protocol["concurrent_pairs"], 3)
+        for number in protocol["task_ids"]:
+            selected = [p for p in protocol["pairs"] if p["task"] == number]
+            self.assertEqual(Counter(p["order"] for p in selected), {"AB": 2, "BA": 2})
+            self.assertEqual({p["repetition"] for p in selected}, {1, 2, 3, 4})
+        old = json.loads(BENCH.TASK.with_name("task7.json").read_text())
+        new = json.loads(BENCH.TASK.with_name("task7-full-help.json").read_text())
+        self.assertEqual(new["oracle"]["shared_capabilities"], old["oracle"]["shared_capabilities"])
+        self.assertEqual(new["oracle"]["coverage_rubric"], old["oracle"]["coverage_rubric"])
+        self.assertIn("supplemental_semantics", new["oracle"])
+        for phrase in ["all-counted", "Code", "zero", "0, 1, and 2"]:
+            self.assertIn(phrase, new["prompt"])
+
+    def full_help_runner(self):
+        spec = importlib.util.spec_from_file_location("full_help", Path(__file__).with_name("full-help-study.py"))
+        full = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(full)
+        return full
+
+    def test_full_help_freezes_inputs_before_running_and_uses_only_frozen_binaries(self):
+        full = self.full_help_runner()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            fixtures = root / "fixtures"
+            shutil.copytree(BENCH.TASK.parent, fixtures)
+            for number in [10, 11]:
+                if not (fixtures / f"task{number}.json").exists():
+                    shutil.copyfile(fixtures / "task1.json", fixtures / f"task{number}.json")
+            binaries = [root / arm for arm in "AB"]
+            for arm, binary in zip("AB", binaries):
+                binary.write_text(arm)
+            protocol = json.loads(full.PROTOCOL.read_text())
+            protocol["control"] = {"source_revision": "control-revision", "binary_sha256": BENCH.sha(binaries[0])}
+            protocol_path = root / "protocol.json"
+            protocol_path.write_text(json.dumps(protocol))
+            destination = root / "campaign"
+            with patch.object(full.BENCH, "REPO", BENCH.REPO), patch.object(full.BENCH, "TASK", fixtures / "task1.json"), patch.object(full.BENCH, "run_agent") as run:
+                full.campaign(destination, binaries, ["control-revision", "candidate-revision"], protocol_path, prepare_only=True)
+                run.assert_not_called()
+                plan = json.loads((destination / "campaign.json").read_text())
+                self.assertEqual(plan["arms"]["A"]["source_revision"], "control-revision")
+                self.assertEqual(plan["arms"]["B"]["source_revision"], "candidate-revision")
+                grader = BENCH.REPO / "scripts/score_full_help.py"
+                self.assertEqual(plan["full_help_grader_sha256"], BENCH.sha(grader))
+                self.assertEqual((destination / "scripts/score_full_help.py").read_bytes(), grader.read_bytes())
+                self.assertEqual(len(list(destination.glob("task*-rep*/manifest.json"))), 40)
+                frozen = destination / "tasks/task7-full-help.json"
+                original = frozen.read_text()
+                frozen.write_text("changed frozen task")
+                with self.assertRaisesRegex(ValueError, "Frozen input changed"):
+                    full.run_frozen(destination)
+                run.assert_not_called()
+                self.assertFalse((destination / "started.json").exists())
+                frozen.write_text(original)
+                original_grader = grader.read_text()
+                grader.write_text(original_grader + "\n")
+                with self.assertRaisesRegex(ValueError, "Study code changed after freezing: score_full_help.py"):
+                    full.run_frozen(destination)
+                run.assert_not_called()
+                self.assertFalse((destination / "started.json").exists())
+                grader.write_text(original_grader)
+                manifest = destination / "campaign.json"
+                original_manifest = manifest.read_text()
+                manifest.write_text(original_manifest + " ")
+                with self.assertRaisesRegex(ValueError, "manifest changed"):
+                    full.run_frozen(destination)
+                manifest.write_text(original_manifest)
+                binaries[0].write_text("changed after freeze")
+                protocol_path.write_text("changed after freeze")
+                lock = threading.Lock()
+                active = set()
+                peak = 0
+
+                def observed_run(target, run, model, effort):
+                    nonlocal peak
+                    with lock:
+                        self.assertNotIn(target, active, "Arms of a pair must run sequentially")
+                        active.add(target)
+                        peak = max(peak, len(active))
+                    time.sleep(0.005)
+                    with lock:
+                        active.remove(target)
+
+                run.side_effect = observed_run
+                full.run_frozen(destination)
+                self.assertEqual(run.call_count, 80)
+                self.assertLessEqual(peak, 3)
+                for item in protocol["pairs"]:
+                    target = destination / f"task{item['task']}-rep{item['repetition']}"
+                    actual = [call.args[1] for call in run.call_args_list if call.args[0] == target]
+                    self.assertEqual(actual, [{"A": "run-02", "B": "run-01"}[a] for a in item["order"]])
+                    self.assertEqual((target / "A/target/debug/locmetry").read_text(), "A")
+                self.assertTrue((destination / "started.json").exists())
+                with self.assertRaisesRegex(ValueError, "already started"):
+                    full.run_frozen(destination)
+
+    def test_full_help_rejects_wrong_control_before_creating_output(self):
+        full = self.full_help_runner()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            binary = root / "binary"
+            binary.write_text("binary")
+            with self.assertRaisesRegex(ValueError, "control"):
+                full.campaign(root / "campaign", [binary] * 2, ["wrong", "candidate"], prepare_only=True)
+            self.assertFalse((root / "campaign").exists())
 
     def test_an_unfinished_last_telemetry_record_does_not_hide_earlier_events(self):
         with tempfile.TemporaryDirectory() as tmp:

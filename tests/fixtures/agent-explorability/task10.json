@@ -1,0 +1,99 @@
+{
+  "revision": "task10-scope-views-v1",
+  "files": {
+    "projects/grove/.ignore": "src/ignored/**\n",
+    "projects/grove/.locmetryrc": "version = 1\n[scope]\nhidden = false\nrespect_ignore_files = true\nexclude = [\"src/vendor/**\"]\n[categories]\nautomation = \"Maintained project tools\"\n[[rules]]\nid = \"maintained-tools\"\nmatch = [\"src/tools/**\"]\npurpose = \"production\"\ncategory = \"automation\"\n",
+    "projects/grove/package.json": "{\"name\":\"grove\"}\n",
+    "projects/grove/src/.hidden/secret.js": "export const secret = 1;\n",
+    "projects/grove/src/aux/side.js": "export const side = 1;\n",
+    "projects/grove/src/core/app.js": "// application\nexport const first = 1;\nexport const second = 2;\n",
+    "projects/grove/src/core/nested/leaf/deep.js": "export const deep = 1;\n",
+    "projects/grove/src/hold/future.js": "export const future = 1;\n",
+    "projects/grove/src/ignored/cache.js": "export const cached = 1;\n",
+    "projects/grove/src/scratch/temp.js": "export const temporary = 1;\n",
+    "projects/grove/src/tests/check.test.js": "assert(true);\nassert(1 === 1);\n",
+    "projects/grove/src/tools/run.py": "# maintained tool\nprint(\"prepare\")\nprint(\"run\")\n",
+    "projects/grove/src/vendor/bundle.js": "const vendor = 1;\n"
+  },
+  "prompt": "You have ./bin/locmetry and synthetic inputs in this scratch directory. Work only here. The executable and its built-in discovery material are your only product documentation; do not read other directories, implementation files, telemetry, or the launcher, and do not use the internet or other agents. You may inspect synthetic inputs and use ordinary shell/Python tools. Do not modify project files or their supplied configuration.\n\nMeasure only projects/grove's src/ subtree while retaining the grove root's policy, module context and path identities. Add two command-line exclusions, for src/scratch/** and src/hold/**, in every subtree measurement. First preserve the configured hidden/ignore settings and save complete per-file JSON as outputs/default.json. Then enable hidden content and disable ignore-file filtering, retaining all explicit exclusions, and save complete per-file JSON as outputs/open.json. For this second selection, save a separate human table as outputs/open-table.txt: Production source only, source categories, comment-density bars, name sorting, and adaptive folder detail with a two-row budget. Save an unfiltered Markdown report of the same selection as outputs/open.md, name-sorted with folder depth two. Finally save outputs/subroot-app.json: the complete machine explanation of core/app.js when projects/grove/src itself is the root, without supplying a configuration.\n\nReport source Files/Lines/Code and Code by purpose for both selections. Explain the table versus JSON purpose totals, whether its folder-row budget is a strict cap, why the Markdown folder rows cannot all be added, and what the direct-root app explanation establishes about retained context. Include commands and any unresolved result in a final answer of at most 250 words. Create the requested artifacts, but no assessment document or logging harness.\n",
+  "oracle": {
+    "root": "projects/grove",
+    "subfolder": "src",
+    "default": {
+      "selected_paths": [
+        "src/aux/side.js",
+        "src/core/app.js",
+        "src/core/nested/leaf/deep.js",
+        "src/tests/check.test.js",
+        "src/tools/run.py"
+      ],
+      "source": {"files": 5, "code": 8, "comments": 2, "blanks": 0, "lines": 10},
+      "all_counted": {"files": 5, "code": 8, "comments": 2, "blanks": 0, "lines": 10},
+      "purpose_code": {"production": 6, "test": 2, "other": 0},
+      "coverage": {"selected_files": 5, "counted_files": 5, "mapped_files": 0, "unrecognized_files": 0, "unread": [], "parse_failures": []}
+    },
+    "open": {
+      "selected_paths": [
+        "src/.hidden/secret.js",
+        "src/aux/side.js",
+        "src/core/app.js",
+        "src/core/nested/leaf/deep.js",
+        "src/ignored/cache.js",
+        "src/tests/check.test.js",
+        "src/tools/run.py"
+      ],
+      "source": {"files": 7, "code": 10, "comments": 2, "blanks": 0, "lines": 12},
+      "all_counted": {"files": 7, "code": 10, "comments": 2, "blanks": 0, "lines": 12},
+      "purpose_code": {"production": 8, "test": 2, "other": 0},
+      "coverage": {"selected_files": 7, "counted_files": 7, "mapped_files": 0, "unrecognized_files": 0, "unread": [], "parse_failures": []}
+    },
+    "decisions": {
+      "src/.hidden/secret.js": {"language": "JavaScript", "kind": "source", "purpose": "production", "category": "implementation", "rule": "builtin:npm-module", "counts": {"code": 1, "comments": 0, "blanks": 0, "lines": 1}},
+      "src/aux/side.js": {"language": "JavaScript", "kind": "source", "purpose": "production", "category": "implementation", "rule": "builtin:npm-module", "counts": {"code": 1, "comments": 0, "blanks": 0, "lines": 1}},
+      "src/core/app.js": {"language": "JavaScript", "kind": "source", "purpose": "production", "category": "implementation", "rule": "builtin:npm-module", "counts": {"code": 2, "comments": 1, "blanks": 0, "lines": 3}},
+      "src/core/nested/leaf/deep.js": {"language": "JavaScript", "kind": "source", "purpose": "production", "category": "implementation", "rule": "builtin:npm-module", "counts": {"code": 1, "comments": 0, "blanks": 0, "lines": 1}},
+      "src/ignored/cache.js": {"language": "JavaScript", "kind": "source", "purpose": "production", "category": "implementation", "rule": "builtin:npm-module", "counts": {"code": 1, "comments": 0, "blanks": 0, "lines": 1}},
+      "src/tests/check.test.js": {"language": "JavaScript", "kind": "source", "purpose": "test", "category": "test", "rule": "builtin:test-directory", "counts": {"code": 2, "comments": 0, "blanks": 0, "lines": 2}},
+      "src/tools/run.py": {"language": "Python", "kind": "source", "purpose": "production", "category": "automation", "rule": "maintained-tools", "counts": {"code": 2, "comments": 1, "blanks": 0, "lines": 3}}
+    },
+    "explicitly_excluded": ["src/hold/future.js", "src/scratch/temp.js", "src/vendor/bundle.js"],
+    "review": [],
+    "table": {
+      "purpose": ["production"],
+      "source": {"files": 6, "code": 8, "comments": 2, "blanks": 0, "lines": 10},
+      "folder_budget": 2,
+      "folder_rows": [
+        {"folder": "src/.hidden", "code": 1, "lines": 1},
+        {"folder": "src/aux", "code": 1, "lines": 1},
+        {"folder": "src/core", "code": 3, "lines": 4},
+        {"folder": "src/ignored", "code": 1, "lines": 1},
+        {"folder": "src/tools", "code": 2, "lines": 3}
+      ],
+      "category_code": {"production:automation": 2, "production:implementation": 6},
+      "bars": "comments",
+      "sort": "name"
+    },
+    "markdown": {
+      "depth": 2,
+      "sort": "name",
+      "recursive_folders": [
+        {"folder": "src/.hidden", "code": 1, "lines": 1},
+        {"folder": "src/aux", "code": 1, "lines": 1},
+        {"folder": "src/core", "code": 3, "lines": 4},
+        {"folder": "src/core/nested", "code": 1, "lines": 1},
+        {"folder": "src/ignored", "code": 1, "lines": 1},
+        {"folder": "src/tests", "code": 2, "lines": 2},
+        {"folder": "src/tools", "code": 2, "lines": 3}
+      ],
+      "all_folder_rows_code_sum": 11,
+      "source_code": 10,
+      "not_shown": ["src/core/nested/leaf"]
+    },
+    "subroot_app": {"state": "counted", "path": "core/app.js", "language": "JavaScript", "purpose": "other", "category": "unclaimed", "rule": "fallback", "stage": "fallback", "counts": {"code": 2, "comments": 1, "blanks": 0, "lines": 3}},
+    "artifacts": ["outputs/default.json", "outputs/open.json", "outputs/open-table.txt", "outputs/open.md", "outputs/subroot-app.json"]
+  },
+  "limits": {"wall_seconds": 600, "cli_invocations": 60, "agent_tool_calls": 40, "uncached_input_tokens": 100000},
+  "grading": "Recovered mistakes may pass; record recovery cost. Inspect supporting calls and fixture integrity. Missing artifacts, selection checks or requested conclusions are incomplete. Incorrect selected paths/counts, claims that table purpose filtering changes saved JSON, a strict folder-row cap, additive recursive Markdown, ancestor config discovery or invented retained module evidence are critical failures. Oracle counts are hand-calculated from the simple physical files; rendered examples or documentation figures are not the oracle.",
+  "mutable": [],
+  "generated": []
+}

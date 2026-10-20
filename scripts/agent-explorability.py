@@ -81,21 +81,33 @@ def with_help_recipe(source, routing=False):
     (source.parent / "treatment.patch").write_text("".join(patch))
 
 
-def prepare(destination, task_path=TASK, binaries=None, treatment="without-guides"):
-    if "Classify maintained scripts in service/.locmetryrc" in (REPO / "src/main.rs").read_text():
+def prepare(destination, task_path=TASK, binaries=None, treatment="without-guides", *, arm_provenance=None):
+    supplied = treatment == "supplied-binaries"
+    if treatment not in ["without-guides", "help-recipe", "help-routing", "supplied-binaries"]:
+        raise ValueError(f"Unknown treatment: {treatment}")
+    if not supplied and "Classify maintained scripts in service/.locmetryrc" in (REPO / "src/main.rs").read_text():
         raise ValueError("Historical treatments require pre-adoption source; use the study's recorded source revision in a separate checkout, or define a new study for the current interface")
     conditions = ["A", "B", "C"] if treatment == "help-routing" else ["A", "B"]
+    if supplied and (not binaries or len(binaries) != 2):
+        raise ValueError("Supplied-binaries mode requires exactly two binaries")
     if binaries and len(binaries) != len(conditions):
         raise ValueError("One binary is required per treatment condition")
+    if supplied:
+        for binary in binaries:
+            if not binary.is_file():
+                raise FileNotFoundError(binary)
+        if arm_provenance is not None and set(arm_provenance) != set(conditions):
+            raise ValueError("Source provenance must identify both supplied arms")
     destination.mkdir(parents=True, exist_ok=False)
     files = [REPO / "Cargo.toml", REPO / "Cargo.lock"]
     files += list((REPO / "src").rglob("*.rs"))
     files += list((REPO / "docs/guides").glob("*.md"))
-    for condition in conditions:
-        for path in files:
-            target = destination / condition / path.relative_to(REPO)
-            target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(path, target)
+    if not supplied:
+        for condition in conditions:
+            for path in files:
+                target = destination / condition / path.relative_to(REPO)
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(path, target)
     if treatment == "without-guides":
         without_guides(destination / "B")
     elif treatment == "help-recipe":
@@ -105,8 +117,6 @@ def prepare(destination, task_path=TASK, binaries=None, treatment="without-guide
         (destination / "treatment.patch").rename(destination / "B.patch")
         with_help_recipe(destination / "C", routing=True)
         (destination / "treatment.patch").rename(destination / "C.patch")
-    else:
-        raise ValueError(f"Unknown treatment: {treatment}")
     if binaries:
         for condition, binary in zip(conditions, binaries):
             target = destination / condition / "target/debug/locmetry"
@@ -116,15 +126,23 @@ def prepare(destination, task_path=TASK, binaries=None, treatment="without-guide
     manifest = {
         "revision": task["revision"],
         "treatment": treatment,
-        "source_revision": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=REPO, text=True).strip(),
         "task_sha256": sha(task_path),
         "task": task,
         "harness_sha256": sha(Path(__file__)),
-        "source_hashes": {str(p.relative_to(REPO)): sha(p) for p in files},
         "limits": task["limits"],
         "order": {"run-01": "B", "run-02": "A"},
         "environment": {"COLUMNS": "100", "NO_COLOR": "1", "LC_ALL": "C", "stdout_tty": False},
     }
+    revision = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=REPO, text=True).strip()
+    source_hashes = {str(p.relative_to(REPO)): sha(p) for p in files}
+    if supplied:
+        manifest["repository_snapshot"] = {"revision": revision, "source_hashes": source_hashes}
+        manifest["arms"] = {
+            arm: {**(arm_provenance or {}).get(arm, {}), "binary_sha256": sha(binary)}
+            for arm, binary in zip(conditions, binaries)
+        }
+    else:
+        manifest.update(source_revision=revision, source_hashes=source_hashes)
     if treatment == "help-routing":
         manifest["order"]["run-03"] = "C"
     for run, condition in manifest["order"].items():
@@ -135,6 +153,10 @@ def prepare(destination, task_path=TASK, binaries=None, treatment="without-guide
         logs.mkdir(parents=True)
         config = destination / "user-config" / run
         config.mkdir(parents=True)
+        if "user_defaults" in task:
+            defaults = config / "locmetry/config.toml"
+            defaults.parent.mkdir()
+            defaults.write_text(task["user_defaults"])
         executable = destination / condition / "target/debug/locmetry"
         wrapper = '''#!/usr/bin/env python3
 import json, os, pathlib, subprocess, sys, time, uuid
@@ -370,7 +392,7 @@ def main():
     prep = sub.add_parser("prepare")
     prep.add_argument("destination", type=Path)
     prep.add_argument("--task", type=Path, default=TASK)
-    prep.add_argument("--treatment", choices=["without-guides", "help-recipe", "help-routing"], default="without-guides")
+    prep.add_argument("--treatment", choices=["without-guides", "help-recipe", "help-routing", "supplied-binaries"], default="without-guides")
     prep.add_argument("--binaries", type=Path, nargs="+", metavar="BINARY")
     check = sub.add_parser("verify")
     check.add_argument("current", type=Path)

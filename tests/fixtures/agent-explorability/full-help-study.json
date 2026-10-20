@@ -1,0 +1,295 @@
+{
+  "revision": "full-help-coverage-v1",
+  "model": "gpt-6.1-sol",
+  "effort": "xhigh",
+  "conditions": {
+    "A": "Current full interface plus shared workspace ratio factual correction",
+    "B": "Combined task-oriented full-feature help candidate, retaining guides and the adopted configuration route"
+  },
+  "control": {
+    "source_revision": "c17fece1c4415f3b871ff9694ef6c30d70ae0074",
+    "binary_sha256": "79f8d3db22667ab429457d834e1ec036fdf8d18575c8e927fab38af13e490eac",
+    "shared_correction": "Workspace Test/prod documentation uses Code in both arms"
+  },
+  "task_ids": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    9,
+    10,
+    11
+  ],
+  "task_files": {
+    "7": "task7-full-help.json"
+  },
+  "repetitions": 4,
+  "concurrent_pairs": 3,
+  "pairs": [
+    {
+      "task": 1,
+      "repetition": 1,
+      "order": "AB"
+    },
+    {
+      "task": 2,
+      "repetition": 1,
+      "order": "BA"
+    },
+    {
+      "task": 3,
+      "repetition": 1,
+      "order": "AB"
+    },
+    {
+      "task": 4,
+      "repetition": 1,
+      "order": "BA"
+    },
+    {
+      "task": 5,
+      "repetition": 1,
+      "order": "AB"
+    },
+    {
+      "task": 6,
+      "repetition": 1,
+      "order": "BA"
+    },
+    {
+      "task": 7,
+      "repetition": 1,
+      "order": "AB"
+    },
+    {
+      "task": 9,
+      "repetition": 1,
+      "order": "BA"
+    },
+    {
+      "task": 10,
+      "repetition": 1,
+      "order": "AB"
+    },
+    {
+      "task": 11,
+      "repetition": 1,
+      "order": "BA"
+    },
+    {
+      "task": 1,
+      "repetition": 2,
+      "order": "BA"
+    },
+    {
+      "task": 2,
+      "repetition": 2,
+      "order": "AB"
+    },
+    {
+      "task": 3,
+      "repetition": 2,
+      "order": "BA"
+    },
+    {
+      "task": 4,
+      "repetition": 2,
+      "order": "AB"
+    },
+    {
+      "task": 5,
+      "repetition": 2,
+      "order": "BA"
+    },
+    {
+      "task": 6,
+      "repetition": 2,
+      "order": "AB"
+    },
+    {
+      "task": 7,
+      "repetition": 2,
+      "order": "BA"
+    },
+    {
+      "task": 9,
+      "repetition": 2,
+      "order": "AB"
+    },
+    {
+      "task": 10,
+      "repetition": 2,
+      "order": "BA"
+    },
+    {
+      "task": 11,
+      "repetition": 2,
+      "order": "AB"
+    },
+    {
+      "task": 1,
+      "repetition": 3,
+      "order": "AB"
+    },
+    {
+      "task": 2,
+      "repetition": 3,
+      "order": "BA"
+    },
+    {
+      "task": 3,
+      "repetition": 3,
+      "order": "AB"
+    },
+    {
+      "task": 4,
+      "repetition": 3,
+      "order": "BA"
+    },
+    {
+      "task": 5,
+      "repetition": 3,
+      "order": "AB"
+    },
+    {
+      "task": 6,
+      "repetition": 3,
+      "order": "BA"
+    },
+    {
+      "task": 7,
+      "repetition": 3,
+      "order": "AB"
+    },
+    {
+      "task": 9,
+      "repetition": 3,
+      "order": "BA"
+    },
+    {
+      "task": 10,
+      "repetition": 3,
+      "order": "AB"
+    },
+    {
+      "task": 11,
+      "repetition": 3,
+      "order": "BA"
+    },
+    {
+      "task": 1,
+      "repetition": 4,
+      "order": "BA"
+    },
+    {
+      "task": 2,
+      "repetition": 4,
+      "order": "AB"
+    },
+    {
+      "task": 3,
+      "repetition": 4,
+      "order": "BA"
+    },
+    {
+      "task": 4,
+      "repetition": 4,
+      "order": "AB"
+    },
+    {
+      "task": 5,
+      "repetition": 4,
+      "order": "BA"
+    },
+    {
+      "task": 6,
+      "repetition": 4,
+      "order": "AB"
+    },
+    {
+      "task": 7,
+      "repetition": 4,
+      "order": "BA"
+    },
+    {
+      "task": 9,
+      "repetition": 4,
+      "order": "AB"
+    },
+    {
+      "task": 10,
+      "repetition": 4,
+      "order": "BA"
+    },
+    {
+      "task": 11,
+      "repetition": 4,
+      "order": "AB"
+    }
+  ],
+  "previous_trials_included": false,
+  "maximum_sessions": 80,
+  "limits": {
+    "wall_seconds": 600,
+    "cli_invocations": 60,
+    "agent_tool_calls": 40,
+    "uncached_input_tokens": 100000
+  },
+  "decision_rule": {
+    "correctness": {
+      "all_candidate_runs_must_pass": true,
+      "candidate_pass_count_no_lower_per_task": true,
+      "critical_errors_allowed": 0,
+      "discovery": {
+        "shared_coverage_required": 13,
+        "shared_coverage_total": 13,
+        "valid_minimal_workflows": [
+          "measure",
+          "workspace",
+          "compare",
+          "explain"
+        ],
+        "supplemental_semantic_families_required": 4
+      }
+    },
+    "per_task_medians": {
+      "agent_tool_calls": {
+        "maximum_absolute_increase": 1
+      },
+      "uncached_input_tokens": {
+        "maximum_ratio": 1.1
+      }
+    },
+    "overall_all_run_totals": {
+      "agent_tool_calls": {
+        "maximum_ratio": 1.0
+      },
+      "uncached_input_tokens": {
+        "maximum_ratio": 1.05
+      }
+    },
+    "secondary": {
+      "maximum_median_ratio": 1.2,
+      "metrics": [
+        "cached_input_tokens",
+        "output_tokens_including_reasoning",
+        "shell_executions",
+        "cli_invocations",
+        "guide_invocations",
+        "schema_invocations",
+        "final_delivery_seconds"
+      ],
+      "application": "Compare each per-task candidate median against control. A strictly greater ratio flags a regression; candidate positive against control zero flags without division. Flags prevent blanket efficiency claims and require route analysis. They do not automatically discard improved functional coverage."
+    },
+    "zero_comparator": "For primary ratio gates, both zero passes; positive candidate against zero control fails.",
+    "interpretation": "Correctness precedes cost. Retain each valid failure, incomplete run, recovery and exhausted budget in all-run totals. Report per-task medians/ranges, paired directions and totals. These practical diagnostic gates do not establish statistical equivalence. Passing nonregression limits alone is not a speedup. Treat this as a combined help package; do not attribute effects to individual sentences.",
+    "stopping": "Run only the first frozen 80 sessions. Never pool prior trials, replace valid failures or add repetitions. A correction requires a new candidate and frozen protocol before further trials. Invalid context, unsupported actual model/effort, missing/corrupt telemetry or fixture/instrumentation failures make affected evidence inadmissible; do not silently substitute trials."
+  },
+  "integrity": "Freeze exact protocol, schedule, tasks, expected artifacts/interpretations, native binary hashes and each arm source provenance before launching any explorer. Keep preparation repository snapshot provenance separate from prebuilt-binary source declarations. At most three pairs run concurrently and arms run sequentially inside each pair. Preserve identical inputs, locale, terminal/width behavior, isolated personal defaults and budgets across arms. Independent fresh MEDIUM agents receive no repository documentation, prior answers, telemetry or outside-scratch access.",
+  "review": "Independently grade artifacts and final answers with condition/resource labels concealed; audit actual model/effort, initial context, final cumulative counters, isolation, order, hashes and fixture integrity. Missing required work is incomplete; corrected mistakes may pass but retain recovery cost. Do not silently repair artifacts.",
+  "telemetry": "Record agent-facing calls, shell executions, CLI invocations, uncached input (input minus cached), cached input, output including reasoning without double counting, guide/schema retrievals and final-delivery duration separately. Evaluator/reviewer work is excluded.",
+  "evidence": "Retain raw sessions and account/framework context only in Git-ignored docs/research/local/agent-explorability. Public results contain portable synthetic summaries and provenance, never raw session/account content."
+}
