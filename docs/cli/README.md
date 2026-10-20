@@ -41,7 +41,7 @@ Each row routes an option to its primary explanation. The workspace guide exerci
 
 ## Verify and regenerate
 
-After changing the executable, fixture or recorded guides, build once and replay:
+After changing the executable, fixture or recorded guides, build once and replay. A completed `cargo test --locked` already provides the debug CLI; the standalone build below is needed only when that test build has not run for the current source. No release build is required:
 
 ```sh
 cargo build --locked
@@ -50,7 +50,11 @@ uv run --no-project --python 3.11 \
   python scripts/check-recorded-guides.py
 ```
 
-The same replay runs in the Linux documentation CI job on every pull request and push to `main`. The script checks option coverage, then verifies all four command guides and the analytics demo. Changed output or a failed command fails the check. Verification never rewrites the checked-in files. Unit/integration tests remain responsible for semantic correctness and edge cases; a replay match proves reproducibility, not that the output is correct.
+The same replay runs in the Linux documentation CI job on every pull request and push to `main`. The script checks option coverage, then verifies all four command guides and the analytics demo. It reports each document's result and elapsed time, followed by the total. Changed output or a failed command fails the check; remaining documents still run so one CI attempt collects all failures. CI reuses the debug executable built by its preceding Cargo tests.
+
+Each document is replayed once with a separate candidate destination. Successful candidates are discarded; failed candidates and diagnostic logs remain in a temporary evidence directory, whose path is printed on failure. Use `--artifacts-dir /absolute/path/outside/checkout` to choose that directory. Validation errors and timeouts may leave no complete candidate; inspect the log before using one. CI uploads the logs, summary and available failed candidates as `showboat-failure-evidence`, retained for seven days. No generated candidate is automatically accepted or committed.
+
+The verifier compares Git state before and after replay and fails on changed tracked content, staged changes or newly created untracked paths. Existing local edits are allowed if replay leaves them unchanged; ignored scratch/build files are outside this check. A mutation failure retains `git-before.txt` and `git-after.txt` for inspection and does not revert files automatically. Verification itself never rewrites the checked-in guides. Unit/integration tests remain responsible for semantic correctness and edge cases; a replay match proves reproducibility, not that the output is correct.
 
 For an intentional change, generate a candidate with updated output, inspect its diff, and replace the guide only after review:
 
