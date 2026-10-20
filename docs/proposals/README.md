@@ -6,7 +6,9 @@ Active designs live directly in this directory. Retired records live in `archive
 
 <!-- doc-index:start -->
 
-No documents in this directory.
+| Document | Status | Date | Summary |
+| --- | --- | --- | --- |
+| [CLI Option Clarity and Applicability](cli-option-clarity.md) | draft | 2026-10-20 | Distinguish measurement selection, report content and presentation; make option applicability consistent across output views. |
 
 <!-- doc-index:end -->
 

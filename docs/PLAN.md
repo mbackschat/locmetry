@@ -21,7 +21,9 @@
 
 ## Proposals — Under Discussion
 
-None. The [proposal index](proposals/README.md) distinguishes active designs from historical decisions.
+- [CLI option clarity and applicability](proposals/cli-option-clarity.md): draft for external review covering selection versus presentation names, complete CLI surface consistency, output-view applicability and agent discovery cost. Implementation is not yet approved.
+
+The [proposal index](proposals/README.md) distinguishes active designs from historical decisions.
 
 ## Historical Evidence
 
