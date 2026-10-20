@@ -261,24 +261,9 @@ fn help(flag: &str) -> String {
 #[test]
 fn readme_common_commands_mirror_long_help_examples() {
     let long = help("--help");
-    let examples: Vec<(&str, &str)> = long
-        .split_once("\nExamples:\n")
-        .expect("long help ends with examples")
-        .1
-        .split("\n\n")
-        .next()
-        .unwrap()
-        .lines()
-        .collect::<Vec<_>>()
-        .chunks(2)
-        .map(|pair| {
-            let task = pair[0].strip_prefix("  ").unwrap();
-            let command = pair[1].strip_prefix("    ").unwrap();
-            (task.strip_suffix(':').unwrap(), command)
-        })
-        .collect();
+    let examples = common::help_examples(&long);
     let readme = fs::read_to_string("README.md").unwrap();
-    let table: Vec<(&str, &str)> = readme
+    let table: Vec<(String, String)> = readme
         .split_once("## Common commands\n\n| Task | Command |\n| --- | --- |\n")
         .unwrap()
         .1
@@ -290,7 +275,7 @@ fn readme_common_commands_mirror_long_help_examples() {
                 .and_then(|row| row.strip_suffix(" |"))
                 .and_then(|row| row.split_once(" | "))
                 .unwrap();
-            (task, command.trim_matches('`'))
+            (task.to_owned(), command.trim_matches('`').to_owned())
         })
         .collect();
     assert!(!examples.is_empty());

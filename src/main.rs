@@ -149,6 +149,18 @@ macro_rules! root_after_help {
     locmetry --purpose production
   Inspect the configuration contract:
     locmetry --schema config
+  Read full JSON on stdout:
+    locmetry --root service --format json --files
+  Measure selected source, including ignored files, except vendor:
+    locmetry --root service --subfolder src --exclude 'src/vendor/**' --hidden true --respect-ignore-files false --format json
+  Show adaptive folder detail and production categories:
+    locmetry --root service --format table --folder-rows 30 --purpose production --categories --bars=comments --sort name
+  Save a sorted Markdown tree to depth 3:
+    locmetry --root service --format markdown --depth 3 --sort name --output report.md
+  Measure an explicit workspace definition:
+    locmetry workspace --file repos.toml --files --output workspace.json --print table
+  Compare two saved full reports:
+    locmetry compare before.json after.json --format table
 
   For a production-rule change covered by the example below, inspect existing
   configuration and measure current decisions, then adapt the paths and category
@@ -168,6 +180,40 @@ macro_rules! root_after_help {
   Rule patterns are root-relative; built-in test/build classification precedes rules.
   Verify the policy with per-file decisions and a human overview:
     locmetry --root service --files --output report.json --print table --verbose
+
+Read results:
+  Lines = Code + Comments + Blanks. Default tables describe source; JSON
+  summary.source and summary.all_counted distinguish source from data/documentation.
+  Test/prod = Test Code / Production Code, excluding Other; it is not test coverage.
+  Other remains counted. Unclaimed source appears in review; a clear review list
+  does not prove correct classification. Unavailable counts are not zero.
+  Use --verbose for coverage, inferred build modules, submodule hints and unused
+  policy. Full JSON has breakdown, review and metadata.coverage; --files adds files.
+
+Choose scope and views:
+  --subfolder retains the root's policy and module context; --root on that folder
+  starts a different measurement. Configuration is not discovered in ancestors.
+  Quote root-relative exclusion globs. --purpose filters tables, not JSON.
+  --folder-rows requires --format table; its budget retains all top-level folders.
+  Markdown --depth limits displayed nesting; parent rows include descendants.
+  --no-bars removes charts; NO_COLOR disables styling; COLUMNS controls width.
+
+Broader policy:
+  Project overrides precede test/build conventions; ordinary rules follow them.
+  Use exclusions for scope, intentional Other for counted historical material,
+  and language mappings for unrecognized extensions. Build modules infer conventional
+  layouts from descriptor names without executing builds; submodule hints are not
+  ownership decisions. --schema config gives precedence, conventions and settings.
+  Personal defaults only add scope exclusions and language mappings. Inspect
+  --schema user-config; use --no-user-config for reproducible runs without them.
+
+Automation:
+  --output FILE saves full JSON by default; --files adds per-file decisions and
+  --print table displays that same scan. Save outside every measured root.
+  Exit 0 means completed, not necessarily complete language recognition.
+  Exit 2 writes a partial report with unavailable/inaccurate counts; retain that
+  status. Exit 1 is a command failure, with no usable report promised. Diagnostics
+  go to stderr. Preserve status before querying JSON or running a pipeline.
 
 For workflows and saved-report recipes, use locmetry --guide TOPIC with a topic listed under --guide."
     )
@@ -210,18 +256,103 @@ enum Command {
     /// Defaults to a table on a terminal, a JSON headline in pipes.
     /// --output FILE saves only to that file, defaulting to full JSON; --format overrides the format.
     #[command(
-        after_help = "Add --verbose to inspect classification, scope and coverage notes. For optional configuration, use locmetry --guide configure; for results, use locmetry --guide reports."
+        after_help = "Add --verbose to inspect classification, scope and coverage notes. For optional configuration, use locmetry --guide configure; for results, use locmetry --guide reports.",
+        after_long_help = "Examples:
+  Measure roots directly, keeping each member's policy:
+    locmetry workspace --root web --root api --files --output workspace.json --print table
+  Measure a workspace file:
+    locmetry workspace --file repos.toml --files --output workspace.json --print table
+  Export repository, category and language detail:
+    locmetry workspace --file repos.toml --format markdown --depth 3 --sort name --output workspace.md
+  Explain a member file:
+    locmetry explain web/src/index.ts --workspace repos.toml --format json
+
+repos.toml:
+  version = 1
+  roots = [\"web\", \"api\"]
+
+Paths are relative to the workspace file; it is used only when --file names it.
+Members need unique folder names and non-overlapping roots. Each scan uses
+its own policy: each member's .locmetryrc and the personal defaults unless
+--no-user-config is given. Set exclusions and overrides in member configuration;
+workspace-wide --config/--exclude/--hidden/--respect-ignore-files are unsupported.
+Save outputs outside every member. JSON paths are member-prefixed; summary.members
+holds per-repository totals. Workspace Test/prod is sum(Test Code) / sum(Production Code),
+not an average of member ratios. --verbose exposes member coverage and policy findings.
+
+Save before.json and after.json using the same workspace command around a change,
+then run locmetry compare before.json after.json --format table. Member names match
+snapshots; an absent member means it left the measured workspace, not that its files
+were deleted. See locmetry compare --help for full comparison recipes and limitations.
+Use locmetry --schema workspace for the file contract, locmetry --guide configure
+for broader policy, and locmetry --guide reports for interpretation."
     )]
     Workspace(WorkspaceArgs),
     /// Compare two saved full reports: net change is after minus before.
     /// Defaults to a table on a terminal, a JSON headline in pipes.
     /// --output FILE saves only to that file, defaulting to full JSON; --format overrides the format.
-    #[command(after_help = "For baselines and interpretation, use locmetry --guide compare.")]
+    #[command(
+        after_help = "For baselines and interpretation, use locmetry --guide compare.",
+        after_long_help = "Examples:
+  Capture a full baseline before changing files or policy:
+    locmetry --root service --output before.json
+  Capture the new state after the intended change:
+    locmetry --root service --output after.json
+  Inspect net change as a table:
+    locmetry compare before.json after.json --format table
+  Save the complete comparison:
+    locmetry compare before.json after.json --output change.json
+  Save a Markdown comparison:
+    locmetry compare before.json after.json --format markdown --output change.md
+  Capture a workspace baseline instead:
+    locmetry workspace --file repos.toml --output before.json
+
+Inputs must be full measurement JSON; headlines cannot be baselines. --files is
+optional for aggregate comparison. Capture both inputs before comparing; rescanning
+now cannot recover an earlier state. Compare two single roots or two workspaces,
+with matching subfolder restrictions; use the same workspace form for after.json.
+Measurement outputs must stay outside their roots. Comparison output must not
+replace either input. --output is silent; use --format json for full JSON on stdout.
+There is no --print option for compare.
+
+Read summary.source/all_counted for counts; full JSON also has members, folders,
+packages and findings. Human grids omit unchanged rows but totals include them.
+Net change is after minus before, not Git additions/deletions, churn or per-file diff.
+A departing workspace member does not prove source deletion. Recursive folder totals
+include descendants. Inspect findings for changed policy, coverage and presence;
+changed counts alone do not prove source-only growth. Exit 2 retains partial input
+counts, exit 1 rejects invalid input, and exit 0 does not prove identical settings.
+Use locmetry --schema comparison for fields or locmetry --guide compare for detail."
+    )]
     Compare(CompareArgs),
     /// Explain selection and classification of one existing root-relative file.
     /// JSON prints the complete explanation; there is no separate headline.
     #[command(
-        after_help = "For selection and classification diagnosis, use locmetry --guide selection."
+        after_help = "For selection and classification diagnosis, use locmetry --guide selection.",
+        after_long_help = "Examples:
+  Inspect a project-relative file:
+    locmetry explain src/main.rs --root service
+  Read a complete JSON explanation:
+    locmetry explain src/main.rs --root service --format json
+  Diagnose a member file:
+    locmetry explain web/src/index.ts --workspace repos.toml --format json
+  Check an exclusion under a proposed scope:
+    locmetry explain src/main.rs --root service --exclude 'src/**' --format json
+
+PATH names an existing, exact-spelling root-relative file; workspace paths use
+MEMBER/PATH while policy patterns remain relative to that member. Workspace mode
+uses the member's own configuration and rejects single-root policy flags.
+This inspects the current filesystem, not a saved report or missing/deleted file.
+Redirect stdout to save JSON; explain has no --output option and no headline format.
+
+Read result.state first: counted includes file counts and decision stage/patterns;
+excluded names a scope exclusion; not_selected names an established ignore/hidden
+cause or an unknown cause; unrecognized has no parser or counts. unread and
+parse_failed mean unavailable counts (exit 2). symlink stops without following it.
+Counted Other/unclaimed source is still counted. Zero is meaningful only with known
+counts. Other successful states exit 0; invalid paths/configuration fail with exit 1.
+Use locmetry --schema explanation for the tagged result, or locmetry --guide selection
+for broader diagnosis. --schema and --guide are root-level standalone queries."
     )]
     Explain(ExplainArgs),
 }

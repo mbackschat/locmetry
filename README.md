@@ -112,6 +112,12 @@ The 30-row budget limits additional detail; existing top-level rows are retained
 | Measure repositories together, each with its own policy | `locmetry workspace --root ../web --root ../api` |
 | Count production source only, with its comment density | `locmetry --purpose production` |
 | Inspect the configuration contract | `locmetry --schema config` |
+| Read full JSON on stdout | `locmetry --root service --format json --files` |
+| Measure selected source, including ignored files, except vendor | `locmetry --root service --subfolder src --exclude 'src/vendor/**' --hidden true --respect-ignore-files false --format json` |
+| Show adaptive folder detail and production categories | `locmetry --root service --format table --folder-rows 30 --purpose production --categories --bars=comments --sort name` |
+| Save a sorted Markdown tree to depth 3 | `locmetry --root service --format markdown --depth 3 --sort name --output report.md` |
+| Measure an explicit workspace definition | `locmetry workspace --file repos.toml --files --output workspace.json --print table` |
+| Compare two saved full reports | `locmetry compare before.json after.json --format table` |
 
 `locmetry --help` includes the same commands, plus a working configuration example for maintained scripts with applicability and verification instructions. Verbose tables total data and documentation files under “Not source code”; to list them, [filter full JSON by `kind`](docs/guides/reports.md#not-source-code-which-files-are-data-or-documentation).
 

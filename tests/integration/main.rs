@@ -13,6 +13,7 @@ mod explain;
 mod folder_rows;
 mod folders;
 mod guides;
+mod help;
 mod measurement;
 mod notebooks;
 mod output_contract;

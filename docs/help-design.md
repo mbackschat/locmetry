@@ -14,6 +14,12 @@ Help should let a person or agent discover a task, choose a valid route and veri
 
 These placement rules are design judgments informed by the evidence below, not separately measured claims about every surface.
 
+## Covering the Feature Set
+
+Maintain a task inventory before declaring the help experience complete. The [full-help coverage plan](plans/full-help-coverage.md#feature-and-use-case-inventory) maps each supported workflow to its help destination and verification. Check newly added options against that inventory and the executable option guard in [help tests](../tests/integration/help.rs). A new feature needs a discoverable capability, a valid next action, its consequential boundary and observable verification; it does not automatically need another root example.
+
+Use command help for workspace, comparison and explanation workflows. Root help owns measurement, output routing, scope, views and enough interpretation to avoid common false conclusions. Keep complete policy syntax in the schema and detailed alternatives in guides. Run the displayed recipes after terminal-width wrapping; a test that silently drops continuation lines can validate a different command from the one readers see.
+
 ## Adding an Example
 
 - Start from a concrete user task and a missing decision or action. Add information that resolves that gap; do not add prose solely because the feature exists.

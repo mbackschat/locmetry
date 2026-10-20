@@ -16,7 +16,7 @@
 
 ## Agent Explorability — Evidence and Follow-up
 
-- Future help changes follow the [help-design guidelines](help-design.md). The tested configuration example and conditional execution-first routing are adopted; the [replication](research/agent-explorability-routing-replication.md#finding) preserves their evidence. No further experiment is scheduled. The reusable [benchmark](plans/agent-explorability-benchmark.md#current-state-and-next-session) remains deferred for separately scoped variants or new use cases.
+- [ ] Complete [full CLI help coverage](plans/full-help-coverage.md): inventory all features/use cases, implement actionable root and command help, and validate the combined interface with executable examples and fresh MEDIUM-agent experiments. The earlier configuration example is one component, not completion of this scope. [Help-design guidelines](help-design.md) and the reusable [benchmark](plans/agent-explorability-benchmark.md) supply the criteria.
 
 ## Ideas — Not Scheduled
 

@@ -1,0 +1,322 @@
+use crate::common::{self, write};
+use serde_json::Value;
+use std::{collections::BTreeSet, fs, path::Path, process::Output};
+
+fn help(command: &str) -> String {
+    let mut cmd = common::locmetry();
+    if !command.is_empty() {
+        cmd.arg(command);
+    }
+    let out = cmd.arg("--help").output().unwrap();
+    assert!(out.status.success());
+    String::from_utf8(out.stdout).unwrap()
+}
+
+fn example(text: &str, task: &str) -> Vec<String> {
+    common::help_examples(text)
+        .into_iter()
+        .find(|(label, _)| label == task)
+        .unwrap_or_else(|| panic!("missing executable help task: {task}"))
+        .1
+        .strip_prefix("locmetry ")
+        .unwrap()
+        .split_whitespace()
+        .map(|s| s.trim_matches('\'').to_owned())
+        .collect()
+}
+
+fn execute(root: &Path, text: &str, task: &str) -> Output {
+    let out = common::locmetry()
+        .current_dir(root)
+        .args(example(text, task))
+        .env("NO_COLOR", "1")
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "{task}: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    out
+}
+
+fn fixture(root: &Path) {
+    for project in ["service", "api"] {
+        write(
+            root,
+            &format!("{project}/Cargo.toml"),
+            "[package]\nname = 'demo'\nversion = '0.1.0'\n",
+        );
+        write(root, &format!("{project}/src/main.rs"), "fn main() {}\n");
+        write(
+            root,
+            &format!("{project}/tests/smoke.rs"),
+            "#[test]\nfn smoke() {}\n",
+        );
+    }
+    write(root, "web/package.json", "{}\n");
+    write(root, "web/src/index.ts", "export const a = 1;\n");
+    write(root, "repos.toml", "version = 1\nroots = ['web', 'api']\n");
+}
+
+fn saved(root: &Path, name: &str) -> Value {
+    serde_json::from_str(&fs::read_to_string(root.join(name)).unwrap()).unwrap()
+}
+
+#[test]
+fn every_visible_option_has_a_workflow_in_the_inventory() {
+    let shared = [
+        "--no-user-config",
+        "--output",
+        "--print",
+        "--files",
+        "--format",
+        "--categories",
+        "--verbose",
+        "--bars",
+        "--no-bars",
+        "--purpose",
+        "--sort",
+        "--depth",
+        "--help",
+    ];
+    let policy = [
+        "--root",
+        "--config",
+        "--exclude",
+        "--hidden",
+        "--respect-ignore-files",
+    ];
+    for (command, expected) in [
+        (
+            "",
+            [
+                shared.as_slice(),
+                policy.as_slice(),
+                &[
+                    "--subfolder",
+                    "--folders",
+                    "--folder-rows",
+                    "--schema",
+                    "--guide",
+                    "--version",
+                ],
+            ]
+            .concat(),
+        ),
+        (
+            "workspace",
+            [shared.as_slice(), &["--root", "--file"]].concat(),
+        ),
+        ("compare", vec!["--format", "--output", "--help"]),
+        (
+            "explain",
+            [
+                policy.as_slice(),
+                &["--workspace", "--no-user-config", "--format", "--help"],
+            ]
+            .concat(),
+        ),
+    ] {
+        let text = help(command);
+        let actual: BTreeSet<_> = text
+            .lines()
+            .filter(|line| {
+                line.starts_with("      --")
+                    || line.starts_with("  -h, --")
+                    || line.starts_with("  -V, --")
+            })
+            .filter_map(|line| line.split_whitespace().find(|word| word.starts_with("--")))
+            .map(|word| word.split(['[', '=', ',']).next().unwrap())
+            .collect();
+        assert_eq!(
+            actual,
+            expected.into_iter().collect(),
+            "assign any new option to a documented workflow: {command}"
+        );
+    }
+}
+
+#[test]
+fn root_help_exposes_result_automation_and_policy_boundaries() {
+    let text = help("").split_whitespace().collect::<Vec<_>>().join(" ");
+    for fact in [
+        "Lines = Code + Comments + Blanks",
+        "Test/prod = Test Code / Production Code",
+        "summary.all_counted",
+        "Unavailable counts are not zero",
+        "Exit 2 writes a partial report",
+        "overrides precede test/build conventions",
+        "language mappings",
+        "--schema user-config",
+        "--purpose filters tables, not JSON",
+        "Build modules infer conventional layouts",
+    ] {
+        assert!(text.contains(fact), "missing task interpretation: {fact}");
+    }
+}
+
+#[test]
+fn root_scope_and_view_examples_execute_the_displayed_commands() {
+    let root = tempfile::tempdir().unwrap();
+    fixture(root.path());
+    write(
+        root.path(),
+        "service/src/vendor/copied.rs",
+        "fn copied() {}\n",
+    );
+    let text = help("");
+    let selected = common::json(
+        &execute(
+            root.path(),
+            &text,
+            "Measure selected source, including ignored files, except vendor",
+        ),
+        0,
+    );
+    assert_eq!(selected["summary"]["source"]["code"], 1);
+    assert_eq!(selected["metadata"]["scope"]["subfolder"], "src");
+    let full = common::json(&execute(root.path(), &text, "Read full JSON on stdout"), 0);
+    assert_eq!(full["summary"]["source"]["code"], 4);
+    assert!(full["files"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|f| f["purpose"] == "test"));
+    let table = execute(
+        root.path(),
+        &text,
+        "Show adaptive folder detail and production categories",
+    );
+    assert!(String::from_utf8(table.stdout)
+        .unwrap()
+        .contains("Comment %"));
+    execute(root.path(), &text, "Save a sorted Markdown tree to depth 3");
+    assert!(fs::read_to_string(root.path().join("report.md"))
+        .unwrap()
+        .contains("Source"));
+}
+
+#[test]
+fn compare_help_captures_full_inputs_and_exports_net_change() {
+    let root = tempfile::tempdir().unwrap();
+    fixture(root.path());
+    let text = help("compare");
+    execute(
+        root.path(),
+        &text,
+        "Capture a full baseline before changing files or policy",
+    );
+    write(
+        root.path(),
+        "service/src/main.rs",
+        "fn main() {}\nfn added() {}\n",
+    );
+    execute(
+        root.path(),
+        &text,
+        "Capture the new state after the intended change",
+    );
+    assert!(
+        String::from_utf8(execute(root.path(), &text, "Inspect net change as a table").stdout)
+            .unwrap()
+            .contains("+1")
+    );
+    execute(root.path(), &text, "Save the complete comparison");
+    assert_eq!(
+        saved(root.path(), "change.json")["summary"]["source"]["delta"]["code"],
+        1
+    );
+    execute(root.path(), &text, "Save a Markdown comparison");
+    assert!(fs::read_to_string(root.path().join("change.md"))
+        .unwrap()
+        .contains("+1"));
+    execute(root.path(), &text, "Capture a workspace baseline instead");
+    assert!(saved(root.path(), "before.json")["metadata"]["members"].is_array());
+    let flat = text.split_whitespace().collect::<Vec<_>>().join(" ");
+    for fact in [
+        "not Git additions/deletions",
+        "headlines cannot be baselines",
+        "matching subfolder restrictions",
+        "does not prove source deletion",
+        "--schema comparison",
+    ] {
+        assert!(flat.contains(fact), "{fact}");
+    }
+}
+
+#[test]
+fn workspace_help_measures_both_forms_and_explains_member_identity() {
+    let root = tempfile::tempdir().unwrap();
+    fixture(root.path());
+    let text = help("workspace");
+    execute(
+        root.path(),
+        &text,
+        "Measure roots directly, keeping each member's policy",
+    );
+    let direct = saved(root.path(), "workspace.json");
+    execute(root.path(), &text, "Measure a workspace file");
+    let file = saved(root.path(), "workspace.json");
+    assert_eq!(direct["summary"], file["summary"]);
+    assert_eq!(file["summary"]["members"]["api"]["source"]["code"], 3);
+    assert_eq!(file["summary"]["members"]["web"]["source"]["code"], 1);
+    execute(
+        root.path(),
+        &text,
+        "Export repository, category and language detail",
+    );
+    assert!(fs::read_to_string(root.path().join("workspace.md"))
+        .unwrap()
+        .contains("Repositories"));
+    let explanation = common::json(&execute(root.path(), &text, "Explain a member file"), 0);
+    assert_eq!(explanation["member"], "web");
+    let flat = text.split_whitespace().collect::<Vec<_>>().join(" ");
+    for fact in [
+        "relative to the workspace file",
+        "summary.members",
+        "sum(Test Code) / sum(Production Code)",
+        "each member's .locmetryrc",
+        "unique",
+        "non-overlapping",
+    ] {
+        assert!(flat.contains(fact), "{fact}");
+    }
+}
+
+#[test]
+fn explain_help_executes_root_workspace_and_exclusion_recipes() {
+    let root = tempfile::tempdir().unwrap();
+    fixture(root.path());
+    let text = help("explain");
+    let counted = common::json(
+        &execute(root.path(), &text, "Read a complete JSON explanation"),
+        0,
+    );
+    assert_eq!(counted["result"]["state"], "counted");
+    assert_eq!(counted["result"]["decision"]["stage"], "module");
+    let member = common::json(&execute(root.path(), &text, "Diagnose a member file"), 0);
+    assert_eq!(member["path"], "web/src/index.ts");
+    let excluded = common::json(
+        &execute(
+            root.path(),
+            &text,
+            "Check an exclusion under a proposed scope",
+        ),
+        0,
+    );
+    assert_eq!(excluded["result"]["state"], "excluded");
+    let flat = text.split_whitespace().collect::<Vec<_>>().join(" ");
+    for fact in [
+        "not_selected",
+        "unrecognized",
+        "unread",
+        "parse_failed",
+        "symlink",
+        "no --output option",
+        "root-relative",
+        "--schema explanation",
+    ] {
+        assert!(flat.contains(fact), "{fact}");
+    }
+}

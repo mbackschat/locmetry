@@ -50,3 +50,27 @@ pub fn unstyled(text: &str) -> String {
     }
     plain + rest
 }
+
+/// Recover displayed commands across Clap's terminal-width wrapping.
+pub fn help_examples(help: &str) -> Vec<(String, String)> {
+    let block = help
+        .split_once("\nExamples:\n")
+        .unwrap()
+        .1
+        .split("\n\n")
+        .next()
+        .unwrap();
+    let mut examples: Vec<(String, String)> = Vec::new();
+    for line in block.lines() {
+        if let Some(command) = line.strip_prefix("    ") {
+            let last = examples.last_mut().unwrap();
+            if !last.1.is_empty() {
+                last.1.push(' ');
+            }
+            last.1.push_str(command);
+        } else {
+            examples.push((line.trim().trim_end_matches(':').to_owned(), String::new()));
+        }
+    }
+    examples
+}
