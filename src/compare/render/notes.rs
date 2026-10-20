@@ -67,7 +67,10 @@ pub(super) fn measurement_notes(c: &Comparison) -> Vec<(Role, String)> {
     let a = &before.coverage;
     let b = &after.coverage;
     let sides = [("before", before), ("after", after)];
-    let mut notes = Vec::new();
+    let mut notes = vec![
+        (Role::Muted, "Net change = after − before, from the two saved reports.".into()),
+        (Role::Muted, "Unreadable files count as 0; a folder seen in only one report may be newly visible, not newly created.".into()),
+    ];
     let inaccurate: Vec<_> = sides
         .iter()
         .filter_map(|(side, m)| m.backend_inaccurate.then_some(*side))

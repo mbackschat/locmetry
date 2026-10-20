@@ -278,13 +278,6 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
         .unwrap();
         writeln!(out, "Input metadata, measurement notes, report-level findings and partial status cover the whole workspace inputs.").unwrap();
     }
-    out.push('\n');
-    for note in [
-        "Net change = after − before, from the two saved reports.",
-        "Unreadable files count as 0; a folder seen in only one report may be newly visible, not newly created.",
-    ] {
-        writeln!(out, "{}", theme.paint(Role::Muted, note)).unwrap();
-    }
     let dimensions = &c.summary.dimensions;
     let source_total = || Some(Row::source_total(&dimensions.source));
     let changed = |change: &CountChange| change.delta.code != 0 || change.delta.lines != 0;
@@ -475,20 +468,17 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
     } else if c.members.is_some() && counts_unchanged(c) {
         writeln!(out, "\nNo recorded count or presence changes.").unwrap();
     }
-    let notes = notes::measurement_notes(c);
-    if !notes.is_empty() {
-        match markdown {
-            true => writeln!(out, "\n## Measurement notes\n"),
-            false => write!(
-                out,
-                "\n{}",
-                output::section_title("Measurement notes", theme)
-            ),
-        }
-        .unwrap();
-        for (role, note) in notes {
-            writeln!(out, "- {}", theme.paint(role, &label(&note, markdown))).unwrap();
-        }
+    match markdown {
+        true => writeln!(out, "\n## Measurement notes\n"),
+        false => write!(
+            out,
+            "\n{}",
+            output::section_title("Measurement notes", theme)
+        ),
+    }
+    .unwrap();
+    for (role, note) in notes::measurement_notes(c) {
+        writeln!(out, "- {}", theme.paint(role, &label(&note, markdown))).unwrap();
     }
     let findings: Vec<_> = c
         .findings

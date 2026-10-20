@@ -1410,7 +1410,37 @@ fn human_comparisons_show_line_changes_and_original_measurement_dates() {
     }
 }
 
-/// Locks the plain wording that replaced internal terms: the header caveats,
+#[test]
+fn human_comparisons_group_interpretation_caveats_under_measurement_notes() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("project");
+    write(&root, "src/main.py", "a = 1\n");
+    let before = save(temp.path(), "before.json", &measure(&root));
+    write(&root, "src/extra/more.py", "b = 2\n");
+    let after = save(temp.path(), "after.json", &measure(&root));
+    for after in [&before, &after] {
+        for text in human_comparisons(&before, after, 0) {
+            let (results, notes) = text
+                .split_once("Measurement notes")
+                .unwrap_or_else(|| panic!("missing Measurement notes:\n{text}"));
+            assert!(results.contains("All counted"), "{text}");
+            let notes = notes.split("Findings").next().unwrap();
+            for caveat in [
+                "Net change = after − before, from the two saved reports.",
+                "Unreadable files count as 0; a folder seen in only one report may be newly visible, not newly created.",
+            ] {
+                assert!(!results.contains(caveat), "{text}");
+                assert_eq!(text.matches(caveat).count(), 1, "{text}");
+                assert!(
+                    notes.lines().any(|line| line.starts_with("- ") && line.contains(caveat)),
+                    "{text}"
+                );
+            }
+        }
+    }
+}
+
+/// Locks the plain wording that replaced internal terms: the measurement caveats,
 /// presence counts in words without zero or non-workspace parts, and findings
 /// that name the folder instead of an "Entity".
 #[test]
