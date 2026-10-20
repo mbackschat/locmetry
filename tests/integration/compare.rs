@@ -1717,6 +1717,35 @@ fn member_selection_scopes_every_count_and_detail_without_rescanning() {
         .unwrap()
         .validate(&headline)
         .unwrap();
+    let report: locmetry::compare::Comparison = serde_json::from_value(selected).unwrap();
+    let styled =
+        locmetry::compare::render_table_with_theme(&report, locmetry::style::Theme::TERMINAL);
+    let title = styled.lines().next().unwrap();
+    let provenance = styled
+        .lines()
+        .find(|line| line.starts_with("Input metadata,"))
+        .unwrap();
+    assert!(title.starts_with("Net change:"), "{title}");
+    assert!(
+        !title.contains('\x1b') && !provenance.contains('\x1b'),
+        "{styled}"
+    );
+    let full: locmetry::compare::Comparison = serde_json::from_value(all).unwrap();
+    let full_styled =
+        locmetry::compare::render_table_with_theme(&full, locmetry::style::Theme::TERMINAL);
+    assert!(
+        full_styled.starts_with("\x1b[1mNet change:"),
+        "{full_styled}"
+    );
+    assert!(
+        styled.contains("\x1b[1mMember: api (both)\x1b[0m"),
+        "{styled}"
+    );
+    assert_eq!(
+        common::unstyled(&styled),
+        locmetry::compare::render_table_with_theme(&report, locmetry::style::Theme::PLAIN)
+    );
+    assert!(locmetry::compare::render_markdown(&report).contains("**Member: api (both)**"));
     for format in ["table", "markdown"] {
         let output = compare(&before, &after, &["--member", "api", "--format", format]);
         assert!(output.status.success());

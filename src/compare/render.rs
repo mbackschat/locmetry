@@ -242,6 +242,7 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
     );
     match markdown {
         true => writeln!(out, "# {title}"),
+        false if c.member.is_some() => writeln!(out, "{title}"),
         false => writeln!(out, "{}", theme.paint(Role::Heading, &title)),
     }
     .unwrap();
@@ -268,8 +269,11 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
             .unwrap_or("not recorded");
         writeln!(
             out,
-            "Member: {} ({presence}); counts and detail cover this member only.",
-            label(member, markdown)
+            "{}; counts and detail cover this member only.",
+            theme.strong(
+                Role::Information,
+                &format!("Member: {} ({presence})", label(member, markdown))
+            )
         )
         .unwrap();
         writeln!(out, "Input metadata, measurement notes, report-level findings and partial status cover the whole workspace inputs.").unwrap();
