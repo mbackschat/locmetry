@@ -13,6 +13,8 @@ locmetry --root . --format headline
 
 Read the compact headline first: effective scope, loaded configuration paths, coverage, `summary.submodules`, `summary.unclaimed_folders` and unused-policy findings. `.locmetryrc` is discovered only at the scan root, not in ancestors. `--config FILE` replaces project discovery; its patterns still use the scan root as their base. Personal defaults can affect selection and language recognition; inspect them rather than silently disabling them for a real project.
 
+Inspect `summary.unused_entries` and `summary.unused_exclusions` when present; omission means no such findings in that report.
+
 To review what a configuration edit changes, save a full baseline with `--files` before editing; the [configuration-transition recipe](compare.md#inspect-configuration-transitions) provides capture and comparison commands. A headline alone cannot recover earlier per-file decisions.
 
 Decide whether submodules, vendored dependencies and reference material belong in the intended measurement. Exclude out-of-scope trees through scope policy; keep maintained project code measured and classify it from evidence. A submodule hint does not establish ownership. Report uncertain scope to the owner instead of assuming that all external-looking code should be excluded.
@@ -57,6 +59,8 @@ id = "node-launcher"
 match = ["bin/launch"]
 language = "JavaScript"
 ```
+
+If the existing `[languages]` table declares `mappings = []`, remove that assignment before adding `[[languages.mappings]]`, or replace the array value with the intended entries. TOML cannot define the same array both ways. Preserve other language settings and existing mappings, and keep mapping IDs unique.
 
 Mappings apply only when backend recognition fails. After adding one, remeasure and explain the affected file using the same root and policy:
 
@@ -161,6 +165,8 @@ The synthetic commands disable personal defaults for reproducibility. For a real
 Measure the unrestricted project again, without `--subfolder`. Inspect unused entries and exclusions: they may be shadowed, mistyped or unused in the current checkout. Subtree-only findings do not justify deleting project policy. Review coverage too: unavailable counts are not zero, and a successful config load does not establish completeness. Exit 1 means a command/configuration failure; exit 2 means partial counts, not an unresolved purpose decision.
 
 Compare against the saved baseline to check expected transfers, recognition changes and unchanged totals where applicable, including affected data/documentation records. A rule assigning intentional `other` keeps those files counted; a scope exclusion removes them from measurement before classification.
+
+Review the configuration diff separately from the measured transitions. Inspect newly added or broadened `match` globs, changed `kind` restrictions, exclusions and entries moved into `overrides`: they can affect future files that neither capture contains. Facts about named files justify those paths; they do not by themselves justify a pattern such as `components/*/src/helper*.ts`. Use broader matching only when evidence establishes a directory or naming convention's role, and record that basis in `reason`. Correct current totals do not establish that future matching scope is justified.
 
 Finish with resolved decisions and their evidence, intentional `other` entries and reasons, remaining unclaimed questions, coverage limitations and unused-policy findings. Open questions do not prevent delivering a review, but do prevent claiming that all policy is settled. Configuration edits should remain reviewable; preserve unrelated settings.
 

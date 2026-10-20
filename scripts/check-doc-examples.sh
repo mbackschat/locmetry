@@ -116,6 +116,19 @@ TOML
         (cd "$work" && locmetry --root project --config "$policy.toml" --no-user-config --files --output "$policy.json")
         diff -r "$work/unchanged-input" "$work/project"
     done
+    local helper="$repository/scripts/compare-file-transitions.sh"
+    cp "$work/baseline.json" "$work/old capture.json"
+    cp "$work/classified.json" "$work/new capture.json"
+    bash "$helper" "$work/old capture.json" "$work/new capture.json" > "$work/standalone.json"
+    jq -e --arg before "$work/old capture.json" --arg after "$work/new capture.json" '
+      .before.input == $before and .after.input == $after
+      and any(.findings[]; .code == "policy_changed")
+      and (.changes | length) == 4
+    ' "$work/standalone.json" > /dev/null
+    cmp "$work/baseline.json" "$work/old capture.json"
+    cmp "$work/classified.json" "$work/new capture.json"
+    mkdir "$work/scripts"
+    ln -s "$helper" "$work/scripts/compare-file-transitions.sh"
     extract_blocks 'Inspect configuration transitions' "$work/transitions.sh" 2 0 "$repository/docs/guides/compare.md"
     cp "$work/baseline.json" "$work/before.json"
     cp "$work/classified.json" "$work/after.json"
@@ -171,6 +184,44 @@ TOML
     fi
     grep -Fq 'single-root full reports with --files' "$work/err"
     [[ ! -s "$work/transitions.json" ]]
+
+    # Synthetic historical evidence avoids relying on platform-specific unreadable-file permissions.
+    jq '.metadata.backend_inaccurate = true
+        | .metadata.coverage.unread = ["unread.py"]
+        | .metadata.coverage.selected_files += 1' "$work/classified.json" > "$work/unread.json"
+    for direction in forward reverse; do
+        local before="$work/classified.json" after="$work/unread.json"
+        if [[ $direction == reverse ]]; then
+            before="$work/unread.json"; after="$work/classified.json"
+        fi
+        status=0
+        bash "$helper" "$before" "$after" > "$work/unread-transition.json" 2> "$work/err" || status=$?
+        [[ $status == 2 ]]
+        jq -e --arg direction "$direction" '
+          .changes | length == 1 and (.[0] |
+            .path == "unread.py" and .code_delta == null
+            and .before.counts == null and .after.counts == null
+            and (if $direction == "forward"
+                 then .before.state == "not_recorded" and .after.state == "unread"
+                 else .before.state == "unread" and .after.state == "not_recorded" end))
+        ' "$work/unread-transition.json" > /dev/null
+    done
+    jq 'del(.metadata.coverage.parse_failures)' "$work/classified.json" > "$work/historical.json"
+    bash "$helper" "$work/historical.json" "$work/classified.json" > "$work/historical-transition.json"
+    jq -e '(.before.metadata.coverage | has("parse_failures") | not) and .changes == []' "$work/historical-transition.json" > /dev/null
+    printf 'not json\n' > "$work/invalid.json"
+    status=0
+    bash "$helper" "$work/invalid.json" "$work/classified.json" > "$work/out" 2> "$work/err" || status=$?
+    [[ $status == 1 && ! -s "$work/out" ]]
+    status=0
+    bash "$helper" "$work/classified.json" > "$work/out" 2> "$work/err" || status=$?
+    [[ $status == 1 && ! -s "$work/out" ]]
+    grep -Fq 'BEFORE.json AFTER.json' "$work/err"
+    (cd "$work" && locmetry workspace --root project --no-user-config --files --output workspace.json)
+    status=0
+    bash "$helper" "$work/workspace.json" "$work/workspace.json" > "$work/out" 2> "$work/err" || status=$?
+    [[ $status == 1 && ! -s "$work/out" ]]
+    grep -Fq 'single-root full reports with --files' "$work/err"
 }
 check_configuration_transitions
 

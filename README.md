@@ -171,6 +171,8 @@ Check `Member: service` and its `Source total`; the folder table shows changes i
 
 The [comparison guide](docs/guides/compare.md) covers changed scope, producer versions, partial inputs and workspace changes. Reports describe measured working copies, not Git commits. For automated policies, use the [CI recipe](docs/guides/reports.md#continuous-integration), which preserves measurement failure and partial-result status before querying JSON.
 
+For file-level recognition and classification transitions, the source-checkout [helper](scripts/compare-file-transitions.sh) accepts two full `--files` reports without editing a query. The [transition workflow](docs/guides/compare.md#inspect-configuration-transitions) covers invocation, Bash/`jq` requirements and evidence limits.
+
 ## Analyze saved measurements
 
 Full schema-3 reports support external analytics without adding runtime dependencies to Locmetry. Capture reports with the current executable; older schema-1/2 measurements must be recaptured.

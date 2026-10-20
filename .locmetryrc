@@ -5,18 +5,18 @@ version = 1
 exclude = ["examples/cli-workspace/**"]
 
 [categories]
-tooling = "Commands that maintain the repository and prepare releases"
+tooling = "Commands that maintain the repository, prepare releases and review measurements"
 distribution = "Packaging, installation and third-party notice generation"
 test-infrastructure = "Execution, preparation and evaluation of verification workflows"
 example = "Maintained analytics recipes outside implementation and verification totals"
 
 [[rules]]
 id = "repository-tooling"
-match = ["scripts/doc-indexes.py", "scripts/release.py"]
+match = ["scripts/doc-indexes.py", "scripts/release.py", "scripts/compare-file-transitions.sh"]
 kind = ["source"]
 purpose = "production"
 category = "tooling"
-reason = "These commands maintain documentation indexes and prepare releases; see [documentation maintenance](docs/documentation-maintenance.md) and [distribution](docs/tokei-integration.md)"
+reason = "These commands maintain documentation, prepare releases or review saved measurements; see [documentation maintenance](docs/documentation-maintenance.md), [distribution](docs/tokei-integration.md) and [comparison](docs/guides/compare.md)"
 
 [[rules]]
 id = "distribution"
