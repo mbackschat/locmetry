@@ -171,7 +171,7 @@ Check `Member: service` and its `Source total`; the folder table shows changes i
 
 The [comparison guide](docs/guides/compare.md) covers changed scope, producer versions, partial inputs and workspace changes. Reports describe measured working copies, not Git commits. For automated policies, use the [CI recipe](docs/guides/reports.md#continuous-integration), which preserves measurement failure and partial-result status before querying JSON.
 
-For file-level recognition and classification transitions, an optional development [helper](scripts/compare-file-transitions.sh) in the source checkout accepts two full `--files` reports without editing a query. Its Bash/`jq` prerequisites apply only to running the helper; release and Homebrew installations do not include it or require `jq`. The [transition workflow](docs/guides/compare.md#inspect-configuration-transitions) covers invocation and evidence limits.
+For file-level recognition and classification changes, run `compare-locmetry-files.sh before.json after.json`. This optional Bash [helper](scripts/compare-locmetry-files.sh) accepts two full `--files` reports and ships in release archives and Homebrew installations starting with 0.7.3. Only the helper requires `jq`; install it separately if needed. Locmetry's native commands remain independent of `jq`. See the [transition workflow](docs/guides/compare.md#inspect-configuration-transitions) for setup, output and evidence limits.
 
 ## Analyze saved measurements
 

@@ -93,7 +93,7 @@ Full JSON and headline retain `member: "service"`. Summary dimensions, compositi
 
 ## Inspect configuration transitions
 
-Use the maintained [file-transition helper](../../scripts/compare-file-transitions.sh) when the question is which files changed classification or became countable. It handles two full single-root captures with `--files`; native `compare` continues to provide aggregate comparison without file detail. Preserve the intended personal defaults and selection settings for both captures. Save reports outside the measured root, using fresh output names:
+Use the maintained [file-transition helper](../../scripts/compare-locmetry-files.sh) when the question is which files changed classification or became countable. It handles two full single-root captures with `--files`; native `compare` continues to provide aggregate comparison without file detail. Preserve the intended personal defaults and selection settings for both captures. Save reports outside the measured root, using fresh output names:
 
 ```sh
 locmetry --root service --files --output before.json --print table --verbose
@@ -101,11 +101,13 @@ locmetry --root service --files --output before.json --print table --verbose
 locmetry --root service --files --output after.json --print table --verbose
 ```
 
-The helper is optional development tooling supplied in the Locmetry source checkout. Release archives and Homebrew installations contain no helper and need no `jq`; native measurement and aggregate comparison work independently. Running the helper requires Bash, `jq` and `locmetry` on `PATH`; set `LOCMETRY_BIN` to an executable path to select a local build. Run it from the checkout as below, or copy the script elsewhere and pass any two report paths. Quote paths containing spaces. No script edits are needed:
+Starting with 0.7.3, release archives and Homebrew installations include the optional Bash executable `compare-locmetry-files.sh`. Running it requires Bash, `jq` and `locmetry` on `PATH`; set `LOCMETRY_BIN` to an executable path to select a local build. Homebrew does not install `jq` for Locmetry: if it is missing, the helper exits with an installation hint. Native measurement and aggregate comparison work independently of `jq`. Use `compare-locmetry-files.sh --help` for usage. Quote paths containing spaces:
 
 ```sh
-bash scripts/compare-file-transitions.sh before.json after.json > transitions.json
+compare-locmetry-files.sh before.json after.json > transitions.json
 ```
+
+From a source checkout, invoke `bash scripts/compare-locmetry-files.sh` with the same arguments. `cargo install` installs only the native executable; [installation instructions](../tokei-integration.md#installation) explain how to install the helper separately.
 
 The helper validates the captures through native `compare` and emits JSON containing `changes`, both captures' complete `metadata`, their input paths, and native comparison `findings`. It reads saved reports without scanning source directories or loading current policy. Exit 0 means complete inputs; exit 2 retains usable JSON for partial inputs; exit 1 means invalid input or execution failure and produces no JSON. Preserve the exit status before inspecting the output. Use a fresh output filename: shell redirection can truncate an input before the helper starts. Keep both original captures.
 

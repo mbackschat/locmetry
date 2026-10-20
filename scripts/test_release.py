@@ -1,9 +1,13 @@
 """Release preparation and publication guards, without network or Cargo builds."""
 
 import importlib.util
+import os
 from pathlib import Path
+import shutil
 import subprocess
+import tarfile
 import tempfile
+import textwrap
 import unittest
 from unittest.mock import patch
 
@@ -163,6 +167,39 @@ class ReleaseTests(unittest.TestCase):
             release.execute(self.root, "0.4.1", publish=True)
             verify.assert_not_called()
         self.assertEqual(head, self.git("rev-parse", "HEAD"))
+
+
+class PackageTests(unittest.TestCase):
+    def test_release_archive_contains_an_executable_helper_with_optional_jq(self):
+        repository = Path(__file__).resolve().parents[1]
+        workflow = (repository / ".github/workflows/release.yml").read_text()
+        package = workflow.split("      - name: Package\n        run: |\n", 1)[1].split("      - name:", 1)[0]
+        package = textwrap.dedent(package).replace("${{ matrix.target }}", "test-target")
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            binary = root / "target/test-target/release/locmetry"
+            binary.parent.mkdir(parents=True)
+            binary.write_text("synthetic package payload\n")
+            for name in ("README.md", "LICENSE", "THIRD-PARTY-NOTICES.md"):
+                (root / name).write_text(name)
+            (root / "scripts").mkdir()
+            shutil.copy2(repository / "scripts/compare-locmetry-files.sh", root / "scripts")
+            env = dict(os.environ, GITHUB_REF_NAME="v0.0.0", GITHUB_ENV=str(root / "github-env"))
+            subprocess.run(["bash", "-eu", "-c", package], cwd=root, env=env, check=True, capture_output=True)
+            name = "locmetry-v0.0.0-test-target"
+            with tarfile.open(root / f"{name}.tar.gz") as archive:
+                helper = archive.getmember(f"{name}/compare-locmetry-files.sh")
+                self.assertTrue(helper.mode & 0o111)
+                self.assertEqual(archive.extractfile(helper).read(),
+                                 (repository / "scripts/compare-locmetry-files.sh").read_bytes())
+            result = subprocess.run(
+                ["/bin/bash", str(root / name / "compare-locmetry-files.sh"), "before.json", "after.json"],
+                env=dict(os.environ, PATH=""), text=True, capture_output=True,
+            )
+            self.assertEqual(result.returncode, 1)
+            self.assertEqual(result.stdout, "")
+            self.assertIn("brew install jq", result.stderr)
+            self.assertIn("package manager", result.stderr)
 
 
 if __name__ == "__main__":

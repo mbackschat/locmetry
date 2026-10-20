@@ -38,10 +38,31 @@ jobs:
           name="locmetry-${GITHUB_REF_NAME}-${{ matrix.target }}"
           mkdir "$name"
           cp "target/${{ matrix.target }}/release/locmetry" README.md LICENSE THIRD-PARTY-NOTICES.md "$name/"
+          install -m 755 scripts/compare-locmetry-files.sh "$name/compare-locmetry-files.sh"
           tar -czf "$name.tar.gz" "$name"
           echo "BINARY=$PWD/$name/locmetry" >> "$GITHUB_ENV"
       - name: Measure with an empty environment
         run: env -i "$BINARY" --root src > /dev/null
+      - name: Verify the packaged helper
+        run: |
+          if ! command -v jq >/dev/null; then
+            if [ "$RUNNER_OS" = macOS ]; then brew install jq; else sudo apt-get update && sudo apt-get install --yes jq; fi
+          fi
+          smoke=$(mktemp -d)
+          trap 'rm -rf "$smoke"' EXIT
+          mkdir "$smoke/project"
+          printf 'print(1)\n' > "$smoke/project/main.py"
+          "$BINARY" --root "$smoke/project" --no-user-config --files --output "$smoke/before.json"
+          printf 'print(2)\n' >> "$smoke/project/main.py"
+          "$BINARY" --root "$smoke/project" --no-user-config --files --output "$smoke/after.json"
+          helper="$(dirname "$BINARY")/compare-locmetry-files.sh"
+          LOCMETRY_BIN="$BINARY" "$helper" "$smoke/before.json" "$smoke/after.json" > "$smoke/changes.json"
+          jq -e '.source_identity == "not established by reports" and (.changes | length) == 1 and .changes[0].code_delta == 1' "$smoke/changes.json"
+          status=0
+          PATH="" /bin/bash "$helper" "$smoke/before.json" "$smoke/after.json" > "$smoke/out" 2> "$smoke/err" || status=$?
+          test "$status" = 1
+          test ! -s "$smoke/out"
+          grep -q 'brew install jq' "$smoke/err"
       - name: Require static linkage
         if: runner.os == 'Linux'
         run: file "$BINARY" | grep -E 'statically linked|static-pie linked'

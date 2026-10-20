@@ -12,7 +12,7 @@ example = "Maintained analytics recipes outside implementation and verification 
 
 [[rules]]
 id = "repository-tooling"
-match = ["scripts/doc-indexes.py", "scripts/release.py", "scripts/compare-file-transitions.sh"]
+match = ["scripts/doc-indexes.py", "scripts/release.py", "scripts/compare-locmetry-files.sh"]
 kind = ["source"]
 purpose = "production"
 category = "tooling"

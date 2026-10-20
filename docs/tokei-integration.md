@@ -37,7 +37,10 @@ target=aarch64-apple-darwin
 curl -fsSL "https://github.com/mbackschat/locmetry/releases/download/v$version/locmetry-v$version-$target.tar.gz" | tar -xz
 mkdir -p ~/.local/bin
 install "locmetry-v$version-$target/locmetry" ~/.local/bin/
+install "locmetry-v$version-$target/compare-locmetry-files.sh" ~/.local/bin/
 ```
+
+Archives and Homebrew installations starting with 0.7.3 also supply `compare-locmetry-files.sh`, an optional executable Bash script for [reviewing file-level changes](guides/compare.md#inspect-configuration-transitions). Only this helper needs `jq`; install it separately with `brew install jq` on macOS or your system package manager on Linux. If it is missing, the helper prints that remedy and exits 1. Homebrew installs the helper without declaring a `jq` dependency.
 
 With a Rust toolchain, build a specific release from source by replacing `VERSION` in `cargo install --locked --git https://github.com/mbackschat/locmetry --tag vVERSION`. To build or install the current local checkout:
 
@@ -47,13 +50,15 @@ cargo install --locked --path .
 locmetry --version
 ```
 
+`cargo install` installs only the native binary. To install the helper from the checkout, run `install -m 755 scripts/compare-locmetry-files.sh ~/.cargo/bin/compare-locmetry-files.sh` (adjust the destination if you use a custom Cargo installation directory).
+
 Checkout documentation describes that checkout; `locmetry --guide configure` and the other embedded guides describe the installed executable. Installing a checkout does not publish a release.
 
 On Linux distributions with an older toolchain, such as Ubuntu 22.04, Homebrew also installs its own gcc and glibc for this formula; Locmetry itself is a static binary and uses neither.
 
 ## Distribution
 
-Releases target macOS arm64 and Linux x86_64 and aarch64, licensed MIT. The installed executable depends only on operating-system libraries; Cargo dependencies are compiled code, not separate runtime packages.
+Releases target macOS arm64 and Linux x86_64 and aarch64, licensed MIT. The native executable depends only on operating-system libraries; Cargo dependencies are compiled code, not separate runtime packages. Each archive also carries the optional Bash helper, covered by the archive checksum. Release verification exercises it with the packaged binary and checks its missing-`jq` diagnostic.
 
 Use `python3 scripts/release.py VERSION --publish` from a clean `main` checkout to prepare and request a release, for example `python3 scripts/release.py 0.4.1 --publish`. The [release command](../scripts/release.py) updates the crate and lockfile versions without editing README, runs the release checks sequentially, commits the version update, creates an annotated tag and atomically pushes both `main` and the tag. It requires the existing development tools (Python 3, Cargo, Bash and jq), GitHub access, the project origin and `mbackschat@mail.de` as the Git email. It refuses unrelated edits, conflicting tags, downgrades and a remote main that has not been integrated locally. Omitting `--publish` prepares and checks locally without committing or pushing; publication then repeats the checks.
 

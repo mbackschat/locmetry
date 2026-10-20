@@ -3,7 +3,7 @@ set -euo pipefail
 
 usage() {
     cat <<'HELP'
-Usage: bash compare-file-transitions.sh BEFORE.json AFTER.json
+Usage: compare-locmetry-files.sh BEFORE.json AFTER.json
 
 Compare two full single-root Locmetry reports captured with --files.
 Writes changed file records, both captures' metadata and native comparison
@@ -24,7 +24,7 @@ if [[ $# != 2 ]]; then
     exit 1
 fi
 if ! command -v jq >/dev/null; then
-    printf '%s\n' 'This helper requires jq.' >&2
+    printf '%s\n' 'This optional helper requires jq. Install it with `brew install jq` on macOS, or your system package manager on Linux. Locmetry itself does not require jq.' >&2
     exit 1
 fi
 

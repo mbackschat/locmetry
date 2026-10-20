@@ -18,6 +18,8 @@ The product rests on three pillars:
 
 Locmetry is a Rust executable with the Tokei library embedded. The installed executable must not require Python, Git, a separate Tokei executable, or a separately installed Rust runtime; the Homebrew formula installs the prebuilt release executable without runtime formula dependencies, needing Rust only to build `--HEAD`. [Tokei integration and distribution](tokei-integration.md) records the backend boundary and packaging.
 
+Release archives and Homebrew installations also include the optional `compare-locmetry-files.sh` Bash helper. It requires separately available `jq` and Locmetry, reports a missing `jq` with an installation hint, and does not add dependencies to native commands. Its file-level review workflow and output limits belong in the [comparison guide](guides/compare.md#inspect-configuration-transitions).
+
 ## Measurement Model
 
 | Concept | Meaning |

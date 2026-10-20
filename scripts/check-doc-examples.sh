@@ -116,10 +116,11 @@ TOML
         (cd "$work" && locmetry --root project --config "$policy.toml" --no-user-config --files --output "$policy.json")
         diff -r "$work/unchanged-input" "$work/project"
     done
-    local helper="$repository/scripts/compare-file-transitions.sh"
+    local helper="$temporary/bin/compare-locmetry-files.sh"
+    install -m 755 "$repository/scripts/compare-locmetry-files.sh" "$helper"
     cp "$work/baseline.json" "$work/old capture.json"
     cp "$work/classified.json" "$work/new capture.json"
-    bash "$helper" "$work/old capture.json" "$work/new capture.json" > "$work/standalone.json"
+    "$helper" "$work/old capture.json" "$work/new capture.json" > "$work/standalone.json"
     jq -e --arg before "$work/old capture.json" --arg after "$work/new capture.json" '
       .before.input == $before and .after.input == $after
       and any(.findings[]; .code == "policy_changed")
@@ -127,8 +128,6 @@ TOML
     ' "$work/standalone.json" > /dev/null
     cmp "$work/baseline.json" "$work/old capture.json"
     cmp "$work/classified.json" "$work/new capture.json"
-    mkdir "$work/scripts"
-    ln -s "$helper" "$work/scripts/compare-file-transitions.sh"
     extract_blocks 'Inspect configuration transitions' "$work/transitions.sh" 2 0 "$repository/docs/guides/compare.md"
     cp "$work/baseline.json" "$work/before.json"
     cp "$work/classified.json" "$work/after.json"

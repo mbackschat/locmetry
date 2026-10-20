@@ -32,8 +32,9 @@ class Locmetry < Formula
   def install
     if build.head?
       system "cargo", "install", *std_cargo_args
+      bin.install "scripts/compare-locmetry-files.sh"
     else
-      bin.install "locmetry"
+      bin.install "locmetry", "compare-locmetry-files.sh"
       prefix.install "THIRD-PARTY-NOTICES.md"
     end
   end
@@ -56,5 +57,10 @@ class Locmetry < Formula
     assert_equal 3, purposes["production"]["code"]
     assert_equal 4, purposes["test"]["code"]
     refute purposes.key?("other")
+    assert_match "Usage: compare-locmetry-files.sh", shell_output("#{bin}/compare-locmetry-files.sh --help")
+    error = with_env(PATH: "") do
+      shell_output("/bin/bash #{bin}/compare-locmetry-files.sh before.json after.json 2>&1", 1)
+    end
+    assert_match "brew install jq", error
   end
 end
