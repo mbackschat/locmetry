@@ -2,9 +2,9 @@
 
 <!-- doc-status
 {
-  "status": "active",
+  "status": "deferred",
   "date": "2026-10-20",
-  "summary": "Replicate routing cost guards with fixed samples and a bounded stopping rule.",
+  "summary": "Completed studies support narrow routing adoption; retain the benchmark for separately scoped variants.",
   "evidence": "[Routing replication](../research/agent-explorability-routing-replication.md)"
 }
 -->
@@ -33,17 +33,17 @@ The recommended target, still subject to review, is successful ordinary use with
 
 The [first Task 1 pilot](../research/agent-explorability-task1-pilot.md) established isolation and telemetry. The subsequent [study](../research/agent-explorability-six-task-study.md) completed 36 new task runs, excluded the earlier pair, and added a separate six-run capability-discovery track. The six-task sample passed 18/18 with guides and 17/18 without; resource totals were close, with 4.9% more uncached input after guide removal. Retain guides as optional reference and leave navigation unchanged; the study records the interpretation failure and task-specific tradeoffs. This is a tested recommendation, not evidence that guides are indispensable.
 
-The owner subsequently authorized the [configuration-recipe experiment](../research/agent-explorability-help-recipe-study.md), revisiting their original usage-example proposal. Its primary 24 fresh sessions all passed, but the example failed the frozen efficiency gate on both configuration fixtures. The study separately records an eight-session simple-rule probe. Keep the tested production interface; this benchmark remains a reusable specification, with the next separately frozen campaign described below.
+The owner subsequently authorized the [configuration-recipe experiment](../research/agent-explorability-help-recipe-study.md), revisiting their original usage-example proposal. Its primary 24 fresh sessions all passed, but the example failed the frozen efficiency gate on both configuration fixtures. The study separately records an eight-session simple-rule probe. That outcome motivated the separately frozen routing campaign below; it did not justify adopting the example alone.
 
-The authorized [execution-first routing study](../research/agent-explorability-help-routing-study.md) completed 36 fresh sessions with all answers correct. Explicit routing eliminated both reference lookups in all four covered-task C runs and reduced median calls and uncached input against both controls. Broader configuration failed its cost guard, so the complete candidate did not earn adoption. Keep current help and retain this supported direction for a separately frozen revision; further execution is deferred. The study owns detailed results, limits and replay instructions.
+The authorized [execution-first routing study](../research/agent-explorability-help-routing-study.md) completed 36 fresh sessions with all answers correct. Explicit routing eliminated both reference lookups in all four covered-task C runs and reduced median calls and uncached input against both controls. Its broader-task and secondary cost guards failed, prompting the unchanged-candidate replication below. The original study owns those historical results, limits and replay instructions.
 
-The owner authorized the [bounded routing-cost replication](../research/agent-explorability-routing-replication.md) to resolve the remaining decision. It preserves the candidate and previous results, freezes both stages in advance, and stops after a failed guard or the conditional report check. This is the active work; do not revise wording or add repetitions based on its outcomes.
+The [bounded routing-cost replication](../research/agent-explorability-routing-replication.md) completed both frozen stages: 36 broader-configuration sessions and 18 report-understanding sessions, all correct and all cost guards passing. The earlier penalties did not recur. Recommend narrow adoption of the unchanged example plus conditional execution-first routing; retain guides and existing navigation. Production installation was explicitly outside this protocol. No further experiment is scheduled; this reusable benchmark is deferred until a separately scoped variant or use case is chosen. Do not pool the historical samples or treat the adverse-guard replication as a new covered-task benefit test.
 
 For a later session:
 
 1. Read the study's conclusions, limitations, and per-run results before proposing interface changes. Do not repeat the original pilot or pool sequential historical runs with fresh-task results.
 2. Use the frozen task files and runner for replay. Resolve MEDIUM from the owner's active CLI mapping and record the actual model/effort; a changed model is a new campaign.
-3. If testing another improvement, preserve the current interface as control and keep guides available. The tested additive help recipe did not earn adoption; do not repeat it unchanged or treat the result as a rejection of examples generally. Define one new variable, a task-specific oracle, and a practical cost gate before execution. Explicit conditional routing now has a demonstrated covered-task benefit; the remaining question is retaining that gain without the broader-task cost seen in its trial. Other information placement or retrieval changes remain new hypotheses.
+3. If testing another improvement, record the then-current interface as control and keep guides available. The example alone did not earn adoption; its combination with conditional routing now has a narrow adoption recommendation after the cost replication. Define one new variable, a task-specific oracle, and a practical cost gate before execution. Other information placement or retrieval changes remain new hypotheses; there is no outstanding requirement to repeat the completed guard checks.
 4. Add an independent fixture variant when testing generalization, and give each changed prompt, fixture, oracle, or treatment a new revision. Keep old outcomes and all-run costs available.
 5. Treat personal-policy interactions, extended scope cases, and long-session reuse as separate future cases, not as already verified behavior of the benchmark.
 

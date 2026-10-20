@@ -2,6 +2,14 @@
 
 Started 2026-10-20. The owner asked to finish the uncertainty left by the [routing study](agent-explorability-help-routing-study.md). Its four broader-task repetitions failed the practical cost guard, but that did not establish a repeatable penalty. The assistant's earlier “isn't ready to ship” wording was too categorical. This replication fixes the sample and decision rule before execution, keeps the candidate unchanged, and ends with a bounded recommendation rather than extending trials until a favorable result appears.
 
+## Finding
+
+Recommend adopting the unchanged example plus conditional execution-first routing in root help. Both preregistered stages passed correctness and every cost guard: 54 new sessions, all correct, with no excluded or replacement trials. The earlier broader-task cost increase and report cached-input threshold breach did not recur in these larger, balanced samples. This settles the bounded adoption recommendation; no further repetition or wording revision is scheduled.
+
+Broader configuration used 6.5 median agent calls versus 7 with current help, and 32,801.5 median uncached input tokens versus 35,070.5, a 6.5% reduction. C used more calls in five of twelve pairs and more uncached input in three, so the fresh sample did not meet the frozen criterion for a consistent penalty. Report understanding used 2.5 median calls versus 3, with similar uncached input; C's cached-input median was only 0.8% above the example-only control, within the 20% guard.
+
+The positive reason to adopt still comes from the [original covered-task result](agent-explorability-help-routing-study.md#finding): explicit routing reduced reference retrievals and cost when the example was sufficient. This replication checks the adverse guards; it does not newly replicate that benefit or justify removing guides. Keep guides available and navigation unchanged. Production help remains unchanged because the frozen protocol ends at a recommendation, not automatic installation.
+
 ## Frozen Decision Process
 
 The three arms remain A current help, B the previous example alone, and C that example plus conditional execution-first routing. Reuse the exact native binary hashes from the prior study after verifying unchanged product source inputs. All prompts, task fixtures, oracles, guide/schema content, model/effort (`gpt-6.1-sol` / `xhigh`) and per-run budgets remain unchanged. No prior sessions are pooled with the new sample.
@@ -49,4 +57,96 @@ The runner requires an authenticated Codex CLI with the specified actual model/e
 
 ## Results
 
-Pending fixed-sample execution, independent grading and telemetry audit. Both protocols and the stopping rule remain frozen.
+### Stage 1: Broader configuration
+
+36 fresh sessions completed; independent artifact-plus-interpretation passes A/B/C: 12/12 / 12/12 / 12/12. No valid trial was excluded or replaced.
+
+| Median resource | A: current help | B: example | C: example + routing |
+| --- | ---: | ---: | ---: |
+| Agent-facing calls | 7 | 7 | 6.5 |
+| Uncached input | 35,070.5 | 33,413 | 32,801.5 |
+| Cached input | 257,152 | 249,984 | 229,760 |
+| Output including reasoning | 3,727.5 | 4,062.5 | 3,995.5 |
+| Shell executions | 16 | 14.5 | 12 |
+| CLI invocations | 10 | 9.5 | 6.5 |
+| Guide calls | 2 | 2 | 1 |
+| Schema calls | 1 | 1 | 1 |
+| Duration, seconds | 72.4 | 79.3 | 74.9 |
+
+| Guard | Result |
+| --- | --- |
+| Correctness | Pass |
+| Primary cost | Pass |
+| Secondary cost | Pass |
+| Entire stage | Pass |
+
+| Comparator | Calls: C higher / tied / lower | Uncached input: C higher / tied / lower |
+| --- | --- | --- |
+| A | 5 / 0 / 7 | 3 / 0 / 9 |
+| B | 3 / 2 / 7 | 5 / 0 / 7 |
+
+Neither primary metric failed its guard. Neither had at least nine strict C>A pairs; there is no consistent primary penalty under the frozen diagnostic rule.
+
+| Total resource | A | B | C |
+| --- | ---: | ---: | ---: |
+| Agent-facing calls | 84 | 84 | 77 |
+| Uncached input | 438,127 | 412,109 | 393,136 |
+| Cached input | 3,058,688 | 3,066,240 | 2,806,016 |
+| Output including reasoning | 48,424 | 48,900 | 49,663 |
+| Shell executions | 187 | 175 | 147 |
+| CLI invocations | 123 | 112 | 86 |
+| Guide calls | 23 | 26 | 16 |
+| Schema calls | 13 | 17 | 12 |
+| Duration, seconds | 909.6 | 965.9 | 935.5 |
+
+### Stage 2: Report understanding
+
+18 fresh sessions completed; independent artifact-plus-interpretation passes A/B/C: 6/6 / 6/6 / 6/6. No valid trial was excluded or replaced.
+
+| Median resource | A: current help | B: example | C: example + routing |
+| --- | ---: | ---: | ---: |
+| Agent-facing calls | 3 | 2.5 | 2.5 |
+| Uncached input | 20,809.5 | 20,760.5 | 20,589.5 |
+| Cached input | 91,136 | 75,200 | 75,776 |
+| Output including reasoning | 1,077.5 | 990 | 1,040.5 |
+| Shell executions | 5.5 | 5 | 4.5 |
+| CLI invocations | 4 | 3.5 | 3.5 |
+| Guide calls | 1 | 1 | 1 |
+| Schema calls | 0 | 0 | 0 |
+| Duration, seconds | 25.2 | 24.2 | 24.7 |
+
+| Guard | Result |
+| --- | --- |
+| Correctness | Pass |
+| Primary cost | Pass |
+| Secondary cost | Pass |
+| Entire stage | Pass |
+
+| Comparator | Calls: C higher / tied / lower | Uncached input: C higher / tied / lower |
+| --- | --- | --- |
+| A | 1 / 3 / 2 | 3 / 0 / 3 |
+| B | 1 / 4 / 1 | 3 / 0 / 3 |
+
+| Total resource | A | B | C |
+| --- | ---: | ---: | ---: |
+| Agent-facing calls | 16 | 15 | 15 |
+| Uncached input | 123,519 | 144,456 | 123,191 |
+| Cached input | 488,448 | 431,488 | 458,368 |
+| Output including reasoning | 6,554 | 5,848 | 6,277 |
+| Shell executions | 32 | 28 | 28 |
+| CLI invocations | 22 | 21 | 21 |
+| Guide calls | 6 | 6 | 6 |
+| Schema calls | 0 | 0 | 0 |
+| Duration, seconds | 167.3 | 141 | 147 |
+
+The [machine-readable results](agent-explorability-routing-replication-results.json) preserve all per-run costs, paired differences, medians, totals, ranges, reference retrievals, outcomes, frozen manifests and gate decisions. Agent calls, shell executions and CLI invocations are distinct units. Uncached input is input minus cached input; output includes reasoning and must not have reasoning added again. Time runs through final delivery, not first verified success. Evaluator/reviewer work is excluded.
+
+## Evidence and Limits
+
+Five fresh MEDIUM reviewers independently graded shuffled answer packets with condition/resource labels concealed: three packets of twelve broader-task answers and two of nine report answers. All passed. A separate reviewer reconciled raw session counters, completion boundaries, actual model/effort, isolation, budgets, fixture integrity, binary/source/guide hashes, scheduled order and peak concurrency of three. It independently recomputed all per-run metrics, totals, medians, ranges, paired directions and gate decisions. Stage 1's successful audit and grades preceded Stage 2's activation. Changing scratch paths were normalized when comparing context; substantive global instructions were identical and no repository instructions or previous answers were present.
+
+The protocol-selection runner change passed eleven Python regressions with its failing-first result retained. Documentation indexes, local links/fragments and diff whitespace checks passed for the final records. Production Rust inputs were unchanged, so the existing native parity and oracle checks were reused without another Rust build or suite run.
+
+Raw evidence is retained under Git-ignored `docs/research/local/agent-explorability/2026-10-20-routing-replication-v1/`, including frozen protocols/tasks/harnesses, manifests, CLI streams, sessions, answers, artifacts, independent reviews, telemetry audits and analysis scripts. Raw sessions can contain framework/account context and are not published. Public records are portable; copy the ignored archive separately for complete provenance on another machine.
+
+This is a fixed diagnostic sample for one model/effort and the existing synthetic fixtures. It neither proves harm nor establishes general equivalence or absence of regression. The conditional second stage cannot retroactively alter the first stage or the original study. The prior simple-task benefit is not newly replicated here. Cache behavior, agent variability and the practical threshold choices remain relevant to interpretation. No monetary forecast or statistical significance is inferred.

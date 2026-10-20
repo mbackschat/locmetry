@@ -16,7 +16,7 @@
 
 ## Agent Explorability — Evidence and Follow-up
 
-- [ ] Complete the bounded [routing cost replication](research/agent-explorability-routing-replication.md): twelve broader-task triads, then six report triads only if all Stage 1 gates pass. Preserve wording and earlier evidence; stop according to the frozen rule.
+- The completed [routing cost replication](research/agent-explorability-routing-replication.md#finding) supports narrow adoption of the tested example plus conditional execution-first routing. Production adoption is a separate scope decision; no further experiment is scheduled. The reusable [benchmark](plans/agent-explorability-benchmark.md#current-state-and-next-session) remains deferred for separately scoped variants or new use cases.
 
 ## Ideas — Not Scheduled
 

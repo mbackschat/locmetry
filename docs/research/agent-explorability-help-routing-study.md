@@ -4,6 +4,8 @@ Study started 2026-10-20 after the owner authorized testing whether help can mak
 
 ## Finding
 
+Follow-up: the [bounded replication](agent-explorability-routing-replication.md#finding) subsequently passed both adverse cost checks and supports narrow adoption of this unchanged candidate. The original results and recommendation below remain historical evidence.
+
 Explicit conditional routing improved the covered task: all four C agents skipped both configuration references, compared with none in either control, while delivering correct results. Median agent calls fell from 7.5 in current help and 6.5 with the example alone to 5; median uncached input fell by 37.4% and 34.7%, respectively. All 36 sessions passed artifact checks and independent interpretation review.
 
 Keep this direction as a supported candidate, but do not adopt this exact root-help treatment yet. Broader configuration needed one more median call and 8.0% more median uncached input than current help, failing the frozen guard. Unrelated report understanding passed its main guard, but its cached-input median exceeded the example-only control by 21.2%, also crossing the secondary threshold. Aggregate savings do not erase these per-task failures.

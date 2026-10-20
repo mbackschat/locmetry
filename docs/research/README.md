@@ -12,7 +12,7 @@ The [archived implementation record](../plans/archive/measurement-quality-and-ne
 - [Trials on real projects](real-project-trials.md): blind agent configuration trials, their scores, and what they changed.
 - [First agent-explorability pilot](agent-explorability-task1-pilot.md): paired MEDIUM report-understanding runs with and without guides, verified outcomes, token/tool metrics, and replay instructions.
 - [Six-task guide-removal study](agent-explorability-six-task-study.md): repeated MEDIUM trials across six workflows plus initial capability discovery, with correctness, token/tool costs, and a guide-retention recommendation.
-- [Routing cost replication](agent-explorability-routing-replication.md): bounded replication of broader-task cost, with a conditional balanced report check.
+- [Routing cost replication](agent-explorability-routing-replication.md): both balanced cost checks pass across 54 fresh sessions, supporting narrow adoption of the unchanged candidate.
 - [Execution-first help routing](agent-explorability-help-routing-study.md): three-condition results: direct routing reduces covered-task reference reading and cost, but broader-task guard fails.
 - [Configuration recipe in help](agent-explorability-help-recipe-study.md): results of the owner's usage-example proposal: two configuration layouts, unrelated-task cost, and a separate simple-rule probe.
 - [Integration and distribution](../tokei-integration.md): embedded Rust backend and minimal dependency model.
