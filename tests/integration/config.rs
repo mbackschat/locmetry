@@ -261,6 +261,56 @@ fn scanned(root: &std::path::Path, policy: &Policy) -> Vec<String> {
 }
 
 #[test]
+fn repository_policy_excludes_the_demo_without_affecting_direct_demo_scans() {
+    let root = tempfile::tempdir().unwrap();
+    let config =
+        fs::read_to_string(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(".locmetryrc"))
+            .unwrap();
+    write_all(
+        root.path(),
+        &[
+            (".locmetryrc", &config),
+            ("main.py", "print(1)\n"),
+            ("examples/cli-workspace/demo/package.json", "{}\n"),
+            ("examples/cli-workspace/demo/src/app.js", "app();\n"),
+            ("examples/cli-workspace/demo/image.asset", "synthetic\n"),
+            (
+                "examples/cli-workspace/demo/.locmetryrc",
+                "version = 1\n[[rules]]\nid = \"fixture-policy\"\nmatch = [\"src/**\"]\npurpose = \"production\"\n",
+            ),
+        ],
+    );
+    let measure = |path: &std::path::Path| {
+        common::json(
+            &common::locmetry()
+                .current_dir(path)
+                .args(["--no-user-config", "--files", "--output", "-"])
+                .output()
+                .unwrap(),
+            0,
+        )
+    };
+    let outer = measure(root.path());
+    assert_eq!(outer["files"].as_array().unwrap().len(), 1);
+    assert_eq!(outer["files"][0]["path"], "main.py");
+    assert!(outer["metadata"]["modules"].as_array().unwrap().is_empty());
+    assert!(outer["metadata"]["coverage"]["unrecognized"]
+        .as_array()
+        .unwrap()
+        .is_empty());
+
+    let inner = measure(&root.path().join("examples/cli-workspace/demo"));
+    let app = inner["files"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|file| file["path"] == "src/app.js")
+        .unwrap();
+    assert_eq!(app["rule"], "fixture-policy");
+    assert_eq!(app["purpose"], "production");
+}
+
+#[test]
 fn default_and_configured_exclusions_are_additive() {
     let temp = tree(&[
         "src/a.ts",

@@ -1,0 +1,53 @@
+version = 1
+
+[scope]
+# The synthetic application is measurement input; see [self-measurement design](docs/self-measurement.md).
+exclude = ["examples/cli-workspace/**"]
+
+[categories]
+tooling = "Commands that maintain the repository and prepare releases"
+distribution = "Packaging, installation and third-party notice generation"
+test-infrastructure = "Execution, preparation and evaluation of verification workflows"
+example = "Maintained analytics recipes outside implementation and verification totals"
+
+[[rules]]
+id = "repository-tooling"
+match = ["scripts/doc-indexes.py", "scripts/release.py"]
+kind = ["source"]
+purpose = "production"
+category = "tooling"
+reason = "These commands maintain documentation indexes and prepare releases; see [documentation maintenance](docs/documentation-maintenance.md) and [distribution](docs/tokei-integration.md)"
+
+[[rules]]
+id = "distribution"
+match = ["packaging/**"]
+kind = ["source"]
+purpose = "production"
+category = "distribution"
+reason = "Maintained packaging and notice-generation source supports installation and distribution; see [distribution](docs/tokei-integration.md)"
+
+[[rules]]
+id = "verification-infrastructure"
+match = [
+    "scripts/check-doc-examples.sh",
+    "scripts/check-recorded-guides.py",
+    "scripts/cli-demo-env.sh",
+    "scripts/agent-explorability.py",
+    "scripts/agent-routing-study.py",
+    "scripts/full-help-study.py",
+    "scripts/score_agent_explorability.py",
+    "scripts/score_full_help.py",
+    "scripts/verify_help_recipe.py",
+]
+kind = ["source"]
+purpose = "test"
+category = "test-infrastructure"
+reason = "These scripts prepare, execute or assess documentation and agent-workflow checks; see [self-measurement design](docs/self-measurement.md)"
+
+[[rules]]
+id = "analytics-examples"
+match = ["examples/analytics/**"]
+kind = ["source"]
+purpose = "other"
+category = "example"
+reason = "User-facing analytics recipes remain counted without contributing to implementation or test totals; see the [DuckDB](docs/duckdb-cookbook.md) and [dataframe](docs/dataframe-cookbook.md) cookbooks"

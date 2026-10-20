@@ -233,6 +233,8 @@ This removes `service/third_party/` from scope and classifies `service/scripts/`
 
 The [configuration guide](docs/guides/configure.md) covers overrides, custom categories, language mappings and evidence-based review. [Personal defaults](docs/PRODUCT.md#user-defaults) can supply exclusions and language mappings across projects; they cannot assign purposes or categories.
 
+Locmetry's own [.locmetryrc](.locmetryrc) is a maintained example: it excludes the synthetic demonstration workspace and distinguishes operational tooling, verification infrastructure and analytics examples. [Self-measurement design](docs/self-measurement.md) explains the decisions and how to verify them.
+
 For a production-rule change covered by the example in `locmetry --help`, inspect existing configuration and measure current decisions, adapt the paths and category, then run the displayed verification command. Reading a guide or schema first is optional for that route. Use `locmetry --guide configure` or `locmetry --schema config` for exclusions, overrides, intentional Other, or semantics not shown there. Verify per-file decisions and unresolved review items before concluding. Guides and schemas are available from the installed binary without a network connection.
 
 ## Guides and reference
