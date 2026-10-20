@@ -765,15 +765,22 @@ struct InlineBars {
     bars: Vec<String>,
 }
 
+/// Rows whose primary deltas repeat the source total, independent of label or numeric equality.
+#[derive(Clone, Copy, Default)]
+pub(crate) struct SourceTotalRows {
+    pub body: Option<usize>,
+    pub total: bool,
+}
+
 pub(crate) fn table_with_top_rule(
     columns: &Columns,
     body: &[Vec<String>],
     total: Option<&[String]>,
-    emphasized_changes: Option<usize>,
+    source_totals: SourceTotalRows,
     theme: Theme,
 ) -> String {
     let mut table = PlainTable::new(columns, body, total);
-    table.emphasized_changes = emphasized_changes;
+    table.source_totals = source_totals;
     let table = table.render(None, theme);
     table.top_rule(theme) + &table.text
 }
@@ -800,7 +807,7 @@ struct PlainTable {
     body: Vec<Vec<String>>,
     total: Option<Vec<String>>,
     widths: Vec<usize>,
-    emphasized_changes: Option<usize>,
+    source_totals: SourceTotalRows,
 }
 
 impl PlainTable {
@@ -832,7 +839,7 @@ impl PlainTable {
             body,
             total,
             widths,
-            emphasized_changes: None,
+            source_totals: SourceTotalRows::default(),
         };
         for (start, end) in table.spans() {
             let needed = table.group(start).chars().count();
@@ -921,12 +928,7 @@ impl PlainTable {
     }
 
     fn render(&self, inline: Option<&InlineBars>, theme: Theme) -> RenderedTable {
-        // Hue identifies a column: cyan for Code, one hue per purpose. Rows
-        // differ by weight, so headings and totals keep their column's hue.
-        let line = |row: &[String],
-                    kind: RowKind,
-                    emphasize_changes: bool,
-                    trailer: Option<&str>| {
+        let line = |row: &[String], kind: RowKind, source_total: bool, trailer: Option<&str>| {
             let mut text = String::from(" ");
             for (index, (value, width)) in row.iter().zip(&self.widths).enumerate() {
                 if index > 0 {
@@ -937,8 +939,6 @@ impl PlainTable {
                     ColumnRole::Label => format!("{value:<width$}"),
                     _ => format!("{value:>width$}"),
                 };
-                // Headings and totals emphasize the hue a column already has;
-                // headings of uncolored columns are plain headings.
                 let emphasized = !matches!(kind, RowKind::Body);
                 let zero = matches!(value.as_str(), "-" | "0" | "0.00" | "0.0%");
                 let (role, strong) = match (column, kind) {
@@ -948,11 +948,13 @@ impl PlainTable {
                     (ColumnRole::Code, _) => (Some(Role::Code), false),
                     (_, RowKind::Header) => (Some(Role::Heading), false),
                     (ColumnRole::Change, _) => {
-                        let direction = match value.starts_with('-') {
-                            true => Role::Decrease,
-                            false => Role::Increase,
+                        let direction = match (source_total, value.starts_with('-')) {
+                            (true, true) => Role::SourceTotalDecrease,
+                            (true, false) => Role::SourceTotalIncrease,
+                            (false, true) => Role::Decrease,
+                            (false, false) => Role::Increase,
                         };
-                        (Some(direction), emphasized || emphasize_changes)
+                        (Some(direction), emphasized || source_total)
                     }
                     (ColumnRole::SecondaryChange, _) => {
                         let direction = match value.starts_with('-') {
@@ -1005,13 +1007,13 @@ impl PlainTable {
             output += &line(
                 row,
                 RowKind::Body,
-                self.emphasized_changes == Some(index),
+                self.source_totals.body == Some(index),
                 bar.map(String::as_str),
             );
         }
         if let Some(total) = &self.total {
             output += &rule;
-            output += &line(total, RowKind::Total, false, None);
+            output += &line(total, RowKind::Total, self.source_totals.total, None);
         }
         RenderedTable {
             text: output,
@@ -1834,7 +1836,8 @@ pub fn render_table_with_options(
         if !body.is_empty() {
             output += "\n";
             let columns = Columns::of(&count_columns("Category")[..4]);
-            output += &table_with_top_rule(&columns, &body, None, None, theme);
+            output +=
+                &table_with_top_rule(&columns, &body, None, SourceTotalRows::default(), theme);
             output += &format!(" {}\n", theme.paint(Role::Muted, CATEGORY_LEGEND));
         }
     }

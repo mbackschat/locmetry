@@ -1569,35 +1569,69 @@ fn secondary_changes_keep_dim_direction_and_source_changes_match_totals() {
     for (a, b, sign) in [(&before, &after, "+"), (&after, &before, "-")] {
         let report: locmetry::compare::Comparison =
             serde_json::from_value(json(&compare(a, b, &["--format", "json"]), 0)).unwrap();
-        let colored = locmetry::compare::render_table_with_theme(&report, Theme::TERMINAL);
-        let source = colored
-            .lines()
-            .find(|line| line.contains("mSource "))
-            .unwrap();
-        let hue = if sign == "+" { "32" } else { "31" };
-        assert_eq!(
-            source.matches(&format!("\x1b[1;{hue}m")).count(),
-            2,
-            "{source}"
-        );
-        for line in colored.lines().filter(|line| line.contains("Source total")) {
-            assert_eq!(line.matches(&format!("\x1b[1;{hue}m")).count(), 2, "{line}");
-        }
-        for (style, value) in [
-            (format!("2;{hue}"), format!("{sign}1")),
-            (
-                format!("2;{}", if sign == "+" { "31" } else { "32" }),
-                format!("{}1", if sign == "+" { "-" } else { "+" }),
-            ),
-        ] {
-            assert!(
-                source.split("\x1b[").any(|cell| cell
-                    .strip_prefix(&format!("{style}m"))
-                    .is_some_and(|cell| cell.trim() == value)),
+        for report in [report.clone(), report.select_member("service").unwrap()] {
+            let colored = locmetry::compare::render_table_with_theme(&report, Theme::TERMINAL);
+            let plain = locmetry::compare::render_table_with_theme(&report, Theme::PLAIN);
+            assert_eq!(common::unstyled(&colored), plain);
+            let source = colored
+                .lines()
+                .find(|line| line.contains("mSource "))
+                .unwrap();
+            let hue = if sign == "+" { "32" } else { "31" };
+            let accent = if sign == "+" { "38;5;43" } else { "38;5;203" };
+            assert_eq!(
+                source.matches(&format!("\x1b[1;{accent}m")).count(),
+                2,
                 "{source}"
             );
+            for line in colored.lines().filter(|line| line.contains("Source total")) {
+                assert_eq!(
+                    line.matches(&format!("\x1b[1;{accent}m")).count(),
+                    2,
+                    "{line}"
+                );
+            }
+            for label in ["All counted", "Python"] {
+                let row = colored.lines().find(|line| line.contains(label)).unwrap();
+                assert!(
+                    !row.contains("38;5;"),
+                    "ordinary row with equal deltas: {row}"
+                );
+                assert!(
+                    row.contains(&format!(";{hue}m")) || row.contains(&format!("[{hue}m")),
+                    "{row}"
+                );
+            }
+            for (style, value) in [
+                (format!("2;{hue}"), format!("{sign}1")),
+                (
+                    format!("2;{}", if sign == "+" { "31" } else { "32" }),
+                    format!("{}1", if sign == "+" { "-" } else { "+" }),
+                ),
+            ] {
+                assert!(
+                    source.split("\x1b[").any(|cell| cell
+                        .strip_prefix(&format!("{style}m"))
+                        .is_some_and(|cell| cell.trim() == value)),
+                    "{source}"
+                );
+            }
         }
     }
+    let unchanged: locmetry::compare::Comparison =
+        serde_json::from_value(json(&compare(&before, &before, &["--format", "json"]), 0)).unwrap();
+    let colored = locmetry::compare::render_table_with_theme(&unchanged, Theme::TERMINAL);
+    assert!(!colored.contains("38;5;"), "{colored}");
+    let source = colored
+        .lines()
+        .find(|line| line.contains("mSource "))
+        .unwrap();
+    assert!(
+        source.split("\x1b[").any(|cell| cell
+            .strip_prefix("90m")
+            .is_some_and(|cell| cell.trim() == "0")),
+        "{source}"
+    );
 }
 
 #[test]

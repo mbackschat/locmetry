@@ -74,7 +74,7 @@ struct Row {
     label: String,
     before: Counts,
     after: Counts,
-    emphasize_changes: bool,
+    source_total: bool,
 }
 
 impl Row {
@@ -83,7 +83,14 @@ impl Row {
             label: label.into(),
             before: change.before,
             after: change.after,
-            emphasize_changes: false,
+            source_total: false,
+        }
+    }
+
+    fn source_total(change: &CountChange) -> Self {
+        Self {
+            source_total: true,
+            ..Self::new("Source total", change)
         }
     }
 }
@@ -136,7 +143,10 @@ impl Grid {
                 &columns,
                 &body,
                 total.as_deref(),
-                self.rows.iter().position(|row| row.emphasize_changes),
+                output::SourceTotalRows {
+                    body: self.rows.iter().position(|row| row.source_total),
+                    total: self.total.as_ref().is_some_and(|row| row.source_total),
+                },
                 theme,
             )
         } else {
@@ -178,7 +188,7 @@ fn kind_rows(dimensions: &Dimensions) -> Vec<Row> {
                 label: output::kind_title(kind).to_string(),
                 before: sum(|change| change.before),
                 after: sum(|change| change.after),
-                emphasize_changes: kind == Kind::Source,
+                source_total: kind == Kind::Source,
             })
         })
         .collect()
@@ -272,7 +282,7 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
         writeln!(out, "{}", theme.paint(Role::Muted, note)).unwrap();
     }
     let dimensions = &c.summary.dimensions;
-    let source_total = || Some(Row::new("Source total", &dimensions.source));
+    let source_total = || Some(Row::source_total(&dimensions.source));
     let changed = |change: &CountChange| change.delta.code != 0 || change.delta.lines != 0;
     let mut grids = vec![
         Grid {
@@ -335,7 +345,7 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
         let total = folders
             .get(root)
             .filter(|_| !markdown)
-            .map(|root| Row::new("Source total", &root.recursive.source));
+            .map(|root| Row::source_total(&root.recursive.source));
         let mut folders: Vec<_> = folders.iter().collect();
         folders.sort_by(|(a, _), (b, _)| a.split('/').cmp(b.split('/')));
         let rows: Vec<_> = folders

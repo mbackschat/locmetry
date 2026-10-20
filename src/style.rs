@@ -6,7 +6,7 @@
 //! changes no renderer.
 
 use crate::Purpose;
-use clap::builder::styling::{AnsiColor, Style as CliStyle, Styles};
+use clap::builder::styling::{Ansi256Color, AnsiColor, Color, Style as CliStyle, Styles};
 
 /// Flatten control characters before adding terminal layout or styling.
 pub fn plain(value: &str) -> String {
@@ -29,6 +29,9 @@ pub enum Role {
     /// A net change between two reports; direction, not a judgement.
     Increase,
     Decrease,
+    /// Repeated source-total deltas identify the same measure across comparison grids.
+    SourceTotalIncrease,
+    SourceTotalDecrease,
     /// Secondary net changes retain direction while receding beside Lines and Code.
     SecondaryIncrease,
     SecondaryDecrease,
@@ -40,8 +43,8 @@ pub enum Role {
     Purpose(Purpose),
 }
 
-/// Colors a palette may use: the 16-color ANSI set, which terminals map to
-/// their own light or dark scheme.
+/// Base ANSI hues follow the terminal scheme; source-total accents use the
+/// 256-color palette to distinguish their hue from ordinary green/red changes.
 #[derive(Clone, Copy)]
 pub enum Hue {
     Red,
@@ -51,6 +54,8 @@ pub enum Hue {
     Magenta,
     Cyan,
     Gray,
+    Teal,
+    Coral,
 }
 
 impl Hue {
@@ -63,18 +68,22 @@ impl Hue {
             Hue::Magenta => "35",
             Hue::Cyan => "36",
             Hue::Gray => "90",
+            Hue::Teal => "38;5;43",
+            Hue::Coral => "38;5;203",
         }
     }
 
-    const fn ansi(self) -> AnsiColor {
+    const fn ansi(self) -> Color {
         match self {
-            Hue::Red => AnsiColor::Red,
-            Hue::Green => AnsiColor::Green,
-            Hue::Yellow => AnsiColor::Yellow,
-            Hue::Blue => AnsiColor::Blue,
-            Hue::Magenta => AnsiColor::Magenta,
-            Hue::Cyan => AnsiColor::Cyan,
-            Hue::Gray => AnsiColor::BrightBlack,
+            Hue::Red => Color::Ansi(AnsiColor::Red),
+            Hue::Green => Color::Ansi(AnsiColor::Green),
+            Hue::Yellow => Color::Ansi(AnsiColor::Yellow),
+            Hue::Blue => Color::Ansi(AnsiColor::Blue),
+            Hue::Magenta => Color::Ansi(AnsiColor::Magenta),
+            Hue::Cyan => Color::Ansi(AnsiColor::Cyan),
+            Hue::Gray => Color::Ansi(AnsiColor::BrightBlack),
+            Hue::Teal => Color::Ansi256(Ansi256Color(43)),
+            Hue::Coral => Color::Ansi256(Ansi256Color(203)),
         }
     }
 }
@@ -128,7 +137,7 @@ impl Ink {
     }
 
     fn cli(self) -> CliStyle {
-        let style = CliStyle::new().fg_color(self.hue.map(|hue| hue.ansi().into()));
+        let style = CliStyle::new().fg_color(self.hue.map(Hue::ansi));
         let style = if self.bold { style.bold() } else { style };
         if self.dim {
             style.dimmed()
@@ -147,6 +156,8 @@ pub struct Palette {
     muted: Ink,
     increase: Ink,
     decrease: Ink,
+    source_total_increase: Ink,
+    source_total_decrease: Ink,
     information: Ink,
     warning: Ink,
     error: Ink,
@@ -155,7 +166,7 @@ pub struct Palette {
 }
 
 impl Palette {
-    /// The 16 ANSI colors; terminals map them to their light or dark scheme.
+    /// Base ANSI colors with fixed teal-green and coral-red source-total accents.
     /// Every hue has one meaning, except green and red: purposes never appear
     /// in comparison tables, so changes follow the diff convention there.
     pub const ANSI: Self = Self {
@@ -165,6 +176,8 @@ impl Palette {
         muted: Ink::hue(Hue::Gray),
         increase: Ink::hue(Hue::Green),
         decrease: Ink::hue(Hue::Red),
+        source_total_increase: Ink::hue(Hue::Teal),
+        source_total_decrease: Ink::hue(Hue::Coral),
         information: Ink::PLAIN.bold(),
         warning: Ink::hue(Hue::Yellow),
         error: Ink::hue(Hue::Red).bold(),
@@ -183,6 +196,8 @@ impl Palette {
             Role::Muted => self.muted,
             Role::Increase => self.increase,
             Role::Decrease => self.decrease,
+            Role::SourceTotalIncrease => self.source_total_increase,
+            Role::SourceTotalDecrease => self.source_total_decrease,
             Role::SecondaryIncrease => self.increase.dim(),
             Role::SecondaryDecrease => self.decrease.dim(),
             Role::Information => self.information,
@@ -276,6 +291,8 @@ mod tests {
             ("muted", Role::Muted),
             ("increase", Role::Increase),
             ("decrease", Role::Decrease),
+            ("source_total_increase", Role::SourceTotalIncrease),
+            ("source_total_decrease", Role::SourceTotalDecrease),
             ("secondary_increase", Role::SecondaryIncrease),
             ("secondary_decrease", Role::SecondaryDecrease),
             ("information", Role::Information),
@@ -310,5 +327,37 @@ mod tests {
         assert_eq!(theme.strong(Role::Code, "9"), theme.paint(Role::Code, "9"));
         assert_eq!(Theme::PLAIN.strong(Role::Decrease, "-1"), "-1");
         assert_eq!(Theme::MARKDOWN.strong(Role::Decrease, "-1"), "**-1**");
+    }
+
+    #[test]
+    fn source_total_accents_belong_to_the_palette_and_plain_formats_drop_hues() {
+        let alternate = Theme::Terminal(Palette {
+            source_total_increase: Ink::hue(Hue::Blue),
+            source_total_decrease: Ink::hue(Hue::Magenta),
+            ..Palette::ANSI
+        });
+        for (role, value, default, replacement) in [
+            (Role::SourceTotalIncrease, "+2", "38;5;43", "34"),
+            (Role::SourceTotalDecrease, "-2", "38;5;203", "35"),
+        ] {
+            assert_eq!(
+                Theme::TERMINAL.strong(role, value),
+                format!("\x1b[1;{default}m{value}\x1b[0m")
+            );
+            assert_eq!(
+                alternate.strong(role, value),
+                format!("\x1b[1;{replacement}m{value}\x1b[0m")
+            );
+            assert_eq!(Theme::PLAIN.strong(role, value), value);
+            assert_eq!(Theme::MARKDOWN.strong(role, value), format!("**{value}**"));
+        }
+        assert_eq!(
+            alternate.strong(Role::Increase, "+2"),
+            "\x1b[1;32m+2\x1b[0m"
+        );
+        assert_eq!(
+            alternate.strong(Role::Decrease, "-2"),
+            "\x1b[1;31m-2\x1b[0m"
+        );
     }
 }
