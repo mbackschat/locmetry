@@ -133,6 +133,7 @@ Without explicit options, a terminal gets a table and a pipe gets a compact JSON
 | Option | Use |
 | --- | --- |
 | `--folders` / `--folder-rows N` | Top-level / adaptive folder rows in single-root table output; adaptive rows require table format. |
+| `--no-color` | Disable terminal colors, bold and dim text, including help and diagnostics; equivalent to `NO_COLOR=1`. |
 | `--verbose` | Add diagnostic notes to tables independently of folder rows. |
 | `--bars` / `--no-bars` | Share bars per language, folder or repository row, split by purpose. A terminal shows them beside tables they fit; `--bars` also charts them below other tables and in saved tables, `--bars=comments` charts comment density instead, and `--no-bars` omits them. |
 | `--purpose LIST` | Count only these purposes' source in tables, such as `production` to drop tests; without test or production, `Comment %` replaces `Test/prod`. |
@@ -142,7 +143,7 @@ Without explicit options, a terminal gets a table and a pipe gets a compact JSON
 | `--files` | Add per-file counts and deciding rules to full JSON. |
 | `--categories` | Show the source purpose/category breakdown in a table. |
 
-Run `locmetry --help` or `locmetry COMMAND --help` for all options. The positional directory is equivalent to `--root`; in scripts, prefer `--root "$directory"` so a directory named `compare` or `workspace` cannot select a command. Command options follow the command name.
+Run `locmetry --help` or `locmetry COMMAND --help` for all options. The positional directory is equivalent to `--root`; in scripts, prefer `--root "$directory"` so a directory named `compare` or `workspace` cannot select a command. Command options follow the command name; global `--no-color` works before or after it.
 
 ### For agents
 

@@ -196,7 +196,7 @@ Choose scope and views:
   Quote root-relative exclusion globs. --purpose filters tables, not JSON.
   --folder-rows requires --format table; its budget retains all top-level folders.
   Markdown --depth limits displayed nesting; parent rows include descendants.
-  --no-bars removes charts; NO_COLOR disables styling; COLUMNS controls width.
+  --no-bars removes charts; --no-color or NO_COLOR disables styling; COLUMNS controls width.
 
 Broader policy:
   Project overrides precede test/build conventions; ordinary rules follow them.
@@ -223,6 +223,8 @@ detail beyond these examples; topic names are listed under --guide."
     )
 )]
 struct Cli {
+    #[command(flatten)]
+    styling: Styling,
     #[command(subcommand)]
     command: Option<Command>,
     /// Directory to measure, instead of --root [default: the current directory].
@@ -523,12 +525,33 @@ fn emphasis(stdout_is_terminal: bool, no_color: Option<String>, term: Option<Str
         && term.as_deref() != Some("dumb")
 }
 
-fn terminal_theme(is_terminal: bool) -> Theme {
-    Theme::terminal(emphasis(
-        is_terminal,
-        std::env::var("NO_COLOR").ok(),
-        std::env::var("TERM").ok(),
-    ))
+#[derive(Clone, Copy, clap::Args)]
+struct Styling {
+    /// Disable terminal colors, bold and dim text, including help and diagnostics.
+    #[arg(long, global = true)]
+    no_color: bool,
+}
+
+impl Styling {
+    fn theme(self, is_terminal: bool) -> Theme {
+        Theme::terminal(
+            !self.no_color
+                && emphasis(
+                    is_terminal,
+                    std::env::var("NO_COLOR").ok(),
+                    std::env::var("TERM").ok(),
+                ),
+        )
+    }
+
+    fn stderr_message(self, role: Role, message: impl std::fmt::Display) {
+        eprintln!(
+            "{} {}",
+            self.theme(io::stderr().is_terminal())
+                .paint(role, "locmetry:"),
+            plain(&message.to_string())
+        );
+    }
 }
 
 /// Result of a run that produced a report.
@@ -685,10 +708,6 @@ fn output_destination(output: &Option<PathBuf>, format: Option<Format>) -> Desti
 }
 
 impl Destination<'_> {
-    fn theme(&self) -> Theme {
-        terminal_theme(self.path.is_none() && io::stdout().is_terminal())
-    }
-
     /// Whether the saved result or the printed view uses `format`, so the
     /// options shaping that format take effect.
     fn shows(&self, format: Format) -> bool {
@@ -719,7 +738,7 @@ fn bar_columns(stdout: bool) -> usize {
         .unwrap_or(80)
 }
 
-fn warn_ineffective_options(shared: &SharedArgs, destination: &Destination) {
+fn warn_ineffective_options(shared: &SharedArgs, destination: &Destination, styling: Styling) {
     if !destination.shows(Format::Table) {
         for (given, option) in [
             (shared.verbose, "--verbose"),
@@ -729,7 +748,7 @@ fn warn_ineffective_options(shared: &SharedArgs, destination: &Destination) {
             (shared.categories, "--categories"),
         ] {
             if given {
-                stderr_message(
+                styling.stderr_message(
                     Role::Warning,
                     format_args!("{option} has no effect here; it applies only to table output"),
                 );
@@ -737,7 +756,7 @@ fn warn_ineffective_options(shared: &SharedArgs, destination: &Destination) {
         }
     }
     if shared.depth_explicit && !destination.shows(Format::Markdown) {
-        stderr_message(
+        styling.stderr_message(
             Role::Warning,
             "--depth has no effect here; it applies only to Markdown output",
         );
@@ -749,6 +768,7 @@ fn user_defaults(no_user_config: bool) -> Option<PathBuf> {
 }
 
 fn run(cli: Cli) -> Result<Outcome> {
+    let styling = cli.styling;
     if let Some(guide) = cli.guide {
         let (path, text) = guide.document();
         let mut stdout = io::stdout().lock();
@@ -773,9 +793,9 @@ fn run(cli: Cli) -> Result<Outcome> {
         return Ok(Outcome::Complete);
     }
     match cli.command {
-        Some(Command::Workspace(workspace)) => run_workspace(&workspace),
-        Some(Command::Compare(args)) => run_compare(&args),
-        Some(Command::Explain(args)) => run_explain(&args),
+        Some(Command::Workspace(workspace)) => run_workspace(&workspace, styling),
+        Some(Command::Compare(args)) => run_compare(&args, styling),
+        Some(Command::Explain(args)) => run_explain(&args, styling),
         None => {
             let mut root = cli.root;
             root.root = root.root.or(cli.directory);
@@ -785,12 +805,13 @@ fn run(cli: Cli) -> Result<Outcome> {
                 cli.subfolder.as_deref(),
                 cli.folders,
                 cli.folder_rows.map(|n| n.get()),
+                styling,
             )
         }
     }
 }
 
-fn run_explain(args: &ExplainArgs) -> Result<Outcome> {
+fn run_explain(args: &ExplainArgs, styling: Styling) -> Result<Outcome> {
     let user_path = user_defaults(args.no_user_config);
     let workspace = args
         .workspace
@@ -852,7 +873,7 @@ fn run_explain(args: &ExplainArgs) -> Result<Outcome> {
         ExplainFormat::Json => println!("{}", serde_json::to_string_pretty(&explanation)?),
         ExplainFormat::Table => print!(
             "{}",
-            explanation.render_with_theme(false, terminal_theme(io::stdout().is_terminal()))
+            explanation.render_with_theme(false, styling.theme(io::stdout().is_terminal()))
         ),
         ExplainFormat::Markdown => print!("{}", explanation.render(true)),
     }
@@ -863,7 +884,7 @@ fn run_explain(args: &ExplainArgs) -> Result<Outcome> {
     })
 }
 
-fn run_compare(args: &CompareArgs) -> Result<Outcome> {
+fn run_compare(args: &CompareArgs, styling: Styling) -> Result<Outcome> {
     let destination = output_destination(&args.output, args.format);
     let before = locmetry::compare::read_input(&args.before)?;
     let after = locmetry::compare::read_input(&args.after)?;
@@ -884,7 +905,10 @@ fn run_compare(args: &CompareArgs) -> Result<Outcome> {
     let text = match destination.format {
         Format::Json => report_text(&serde_json::to_value(&result)?)?,
         Format::Headline => format!("{}\n", serde_json::to_string(&result.headline())?),
-        Format::Table => locmetry::compare::render_table_with_theme(&result, destination.theme()),
+        Format::Table => locmetry::compare::render_table_with_theme(
+            &result,
+            styling.theme(destination.path.is_none() && io::stdout().is_terminal()),
+        ),
         Format::Markdown => locmetry::compare::render_markdown(&result),
     };
     destination.write(&text)?;
@@ -903,6 +927,7 @@ fn run_root(
     subfolder: Option<&Path>,
     folders: bool,
     folder_rows: Option<usize>,
+    styling: Styling,
 ) -> Result<Outcome> {
     let root = args.root.as_deref().unwrap_or(Path::new("."));
     let mut destination = destination(shared)?;
@@ -915,12 +940,12 @@ fn run_root(
     destination.folders = folders;
     destination.folder_rows = folder_rows;
     if folders && !destination.shows(Format::Table) {
-        stderr_message(
+        styling.stderr_message(
             Role::Warning,
             "--folders has no effect here; it applies only to table output",
         );
     }
-    warn_ineffective_options(shared, &destination);
+    warn_ineffective_options(shared, &destination, styling);
     let user_path = user_defaults(shared.no_user_config);
     let overrides = args.overrides();
     let measured_at = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
@@ -952,7 +977,7 @@ fn run_root(
                 .as_ref()
                 .map(std::fs::canonicalize)
                 .transpose()?;
-            stderr_message(Role::Warning, format_args!(
+            styling.stderr_message(Role::Warning, format_args!(
                 "{} is inactive; project configuration: {}. --subfolder retains project policy.",
                 inactive.display(),
                 project_config.as_ref().map(|p| p.display().to_string()).unwrap_or_else(|| "none (built-in settings)".into())
@@ -982,7 +1007,14 @@ fn run_root(
         rows: measurement.rows,
         members: Vec::new(),
     };
-    report(shared, &destination, results, location, measured_at)
+    report(
+        shared,
+        &destination,
+        results,
+        location,
+        measured_at,
+        styling,
+    )
 }
 
 /// Canonical member roots sorted by name, after the checks that make a merge
@@ -1035,10 +1067,10 @@ fn workspace_members(roots: &[PathBuf]) -> Result<Vec<(String, PathBuf)>> {
     }
     Ok(members)
 }
-fn run_workspace(args: &WorkspaceArgs) -> Result<Outcome> {
+fn run_workspace(args: &WorkspaceArgs, styling: Styling) -> Result<Outcome> {
     let shared = &args.shared;
     let destination = destination(shared)?;
-    warn_ineffective_options(shared, &destination);
+    warn_ineffective_options(shared, &destination, styling);
     let workspace_path = args
         .file
         .as_deref()
@@ -1180,7 +1212,14 @@ fn run_workspace(args: &WorkspaceArgs) -> Result<Outcome> {
         workspace_path,
         user_path,
     };
-    report(shared, &destination, results, location, measured_at)
+    report(
+        shared,
+        &destination,
+        results,
+        location,
+        measured_at,
+        styling,
+    )
 }
 
 enum Location {
@@ -1252,6 +1291,7 @@ fn report(
     results: Results,
     location: Location,
     measured_at: u64,
+    styling: Styling,
 ) -> Result<Outcome> {
     // Workspace members record their own unused entries; only a single root
     // reports them in the summary.
@@ -1301,7 +1341,7 @@ fn report(
                     folders: destination.folders,
                     verbose: shared.verbose,
                     order,
-                    theme: terminal_theme(terminal),
+                    theme: styling.theme(terminal),
                     folder_rows: destination.folder_rows,
                     bars: bar_mode(
                         shared.bars.map(BarArg::kind),
@@ -1320,7 +1360,7 @@ fn report(
         if inaccurate {
             let theme = match format {
                 Format::Markdown => Theme::MARKDOWN,
-                _ => terminal_theme(terminal),
+                _ => styling.theme(terminal),
             };
             human.push_str(&format!(
                 "\n{}; inspect the JSON metadata.\n",
@@ -1511,6 +1551,7 @@ fn validate_query(
         .get_arguments()
         .find(|arg| {
             arg.get_id().as_str() != query
+                && !arg.is_global_set()
                 && matches.value_source(arg.get_id().as_str())
                     == Some(clap::parser::ValueSource::CommandLine)
         })
@@ -1527,9 +1568,25 @@ fn validate_query(
     Ok(())
 }
 
-fn parse_cli() -> clap::error::Result<Cli> {
+fn cli_command(args: &[std::ffi::OsString]) -> clap::Command {
     let mut command = Cli::command().styles(locmetry::style::Palette::ANSI.cli_styles());
-    let matches = command.try_get_matches_from_mut(std::env::args_os())?;
+    // Clap exits on help and parse errors before producing Cli, so apply the
+    // global presentation switch first. `--` makes subsequent tokens positional.
+    if args
+        .iter()
+        .skip(1)
+        .take_while(|arg| *arg != "--")
+        .any(|arg| arg == "--no-color")
+    {
+        command = command.color(clap::ColorChoice::Never);
+    }
+    command
+}
+
+fn parse_cli() -> clap::error::Result<Cli> {
+    let args: Vec<_> = std::env::args_os().collect();
+    let mut command = cli_command(&args);
+    let matches = command.try_get_matches_from_mut(args)?;
     for query in ["schema", "guide"] {
         if matches.value_source(query) == Some(clap::parser::ValueSource::CommandLine) {
             validate_query(&mut command, &matches, query)?;
@@ -1545,7 +1602,11 @@ fn parse_cli() -> clap::error::Result<Cli> {
                 "--folder-rows is only available for single-root measurement, not subcommands",
             ));
         }
-        if matches.args_present() {
+        if command.get_arguments().any(|arg| {
+            !arg.is_global_set()
+                && matches.value_source(arg.get_id().as_str())
+                    == Some(clap::parser::ValueSource::CommandLine)
+        }) {
             return Err(command.error(
                 clap::error::ErrorKind::ArgumentConflict,
                 format!("Root measurement arguments cannot be combined with the '{name}' subcommand; put that command's options after its name"),
@@ -1570,14 +1631,6 @@ fn parse_cli() -> clap::error::Result<Cli> {
     Ok(cli)
 }
 
-fn stderr_message(role: Role, message: impl std::fmt::Display) {
-    eprintln!(
-        "{} {}",
-        terminal_theme(io::stderr().is_terminal()).paint(role, "locmetry:"),
-        plain(&message.to_string())
-    );
-}
-
 fn main() -> ExitCode {
     // clap exits usage errors with 2, which is reserved for partial reports.
     let cli = match parse_cli() {
@@ -1591,14 +1644,15 @@ fn main() -> ExitCode {
             };
         }
     };
+    let styling = cli.styling;
     match run(cli) {
         Ok(Outcome::Complete) => ExitCode::SUCCESS,
         Ok(Outcome::Partial(message)) => {
-            stderr_message(Role::Warning, message);
+            styling.stderr_message(Role::Warning, message);
             ExitCode::from(2)
         }
         Err(error) => {
-            stderr_message(Role::Error, format_args!("{error:#}"));
+            styling.stderr_message(Role::Error, format_args!("{error:#}"));
             ExitCode::FAILURE
         }
     }
@@ -1607,6 +1661,29 @@ fn main() -> ExitCode {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn no_color_disables_every_terminal_style() {
+        let theme = Styling { no_color: true }.theme(true);
+        assert_eq!(theme.paint(Role::Error, "error"), "error");
+        assert_eq!(theme.strong(Role::Warning, "warning"), "warning");
+    }
+
+    #[test]
+    fn no_color_disables_clap_styling_before_help_and_error_exits() {
+        for args in [
+            vec!["locmetry", "--no-color", "--help"],
+            vec!["locmetry", "compare", "--help", "--no-color"],
+            vec!["locmetry", "--format", "invalid", "--no-color"],
+        ] {
+            let args: Vec<_> = args.into_iter().map(std::ffi::OsString::from).collect();
+            let mut command = cli_command(&args);
+            assert_eq!(command.get_color(), clap::ColorChoice::Never);
+            assert!(command.try_get_matches_from_mut(args).is_err());
+        }
+        let args = ["locmetry", "--", "--no-color"].map(std::ffi::OsString::from);
+        assert_eq!(cli_command(&args).get_color(), clap::ColorChoice::Auto);
+    }
 
     /// Usage errors follow the palette: clap's own green for valid values
     /// would give green a third meaning beside Production and increases.
@@ -1665,8 +1742,6 @@ mod tests {
         }
     }
 
-    /// Bold is for people at a terminal: redirected output stays plain
-    /// text, and `NO_COLOR` (no-color.org) or `TERM=dumb` turns it off.
     #[test]
     fn bars_are_automatic_only_on_a_terminal_unless_requested_or_refused() {
         let comments = Some(BarKind::Comments);

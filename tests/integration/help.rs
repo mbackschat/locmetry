@@ -66,6 +66,7 @@ fn saved(root: &Path, name: &str) -> Value {
 #[test]
 fn every_visible_option_has_a_workflow_in_the_inventory() {
     let shared = [
+        "--no-color",
         "--no-user-config",
         "--output",
         "--print",
@@ -110,13 +111,19 @@ fn every_visible_option_has_a_workflow_in_the_inventory() {
         ),
         (
             "compare",
-            vec!["--member", "--format", "--output", "--help"],
+            vec!["--no-color", "--member", "--format", "--output", "--help"],
         ),
         (
             "explain",
             [
                 policy.as_slice(),
-                &["--workspace", "--no-user-config", "--format", "--help"],
+                &[
+                    "--no-color",
+                    "--workspace",
+                    "--no-user-config",
+                    "--format",
+                    "--help",
+                ],
             ]
             .concat(),
         ),

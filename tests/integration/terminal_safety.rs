@@ -3,6 +3,50 @@ use serde_json::Value;
 use std::fs;
 
 #[test]
+fn no_color_is_global_and_compatible_with_reference_queries() {
+    let root = tempfile::tempdir().unwrap();
+    common::write(root.path(), "service/main.rs", "fn main() {}\n");
+    let baseline = common::locmetry()
+        .current_dir(root.path())
+        .args(["service", "--output", "before.json"])
+        .output()
+        .unwrap();
+    assert!(baseline.status.success());
+    for args in [
+        vec!["service", "--format", "table", "--bars"],
+        vec!["workspace", "--root", "service", "--format", "table"],
+        vec!["compare", "before.json", "before.json", "--format", "table"],
+        vec![
+            "explain", "main.rs", "--root", "service", "--format", "table",
+        ],
+        vec!["--schema", "report"],
+        vec!["--guide", "reports"],
+    ] {
+        for first in [true, false] {
+            let mut flagged = args.clone();
+            flagged.insert(if first { 0 } else { flagged.len() }, "--no-color");
+            let output = common::locmetry()
+                .current_dir(root.path())
+                .args(&flagged)
+                .env_remove("NO_COLOR")
+                .env("TERM", "xterm-256color")
+                .output()
+                .unwrap();
+            assert!(
+                output.status.success(),
+                "{flagged:?}: {}",
+                String::from_utf8_lossy(&output.stderr)
+            );
+            assert!(!output.stdout.contains(&0x1b), "{flagged:?}");
+            assert!(!output.stderr.contains(&0x1b), "{flagged:?}");
+            if args.contains(&"--bars") {
+                assert!(String::from_utf8_lossy(&output.stdout).contains("Code share"));
+            }
+        }
+    }
+}
+
+#[test]
 fn table_and_unclaimed_note_flatten_path_controls_without_changing_json() {
     let root = tempfile::tempdir().unwrap();
     let names = ["a\x1b[31mred", "b\tcolumn", "c\nrow", "d\rreturn"];
