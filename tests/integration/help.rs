@@ -320,3 +320,21 @@ fn explain_help_executes_root_workspace_and_exclusion_recipes() {
         assert!(flat.contains(fact), "{fact}");
     }
 }
+
+#[test]
+fn routine_comparison_recipes_make_extra_reference_reading_optional() {
+    let root = help("").split_whitespace().collect::<Vec<_>>().join(" ");
+    assert!(
+        root.contains("For routine capture-and-compare tasks, start with locmetry compare --help")
+    );
+    assert!(root.contains("Extra guide/schema reading is optional for that route"));
+    let compare = help("compare")
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ");
+    assert!(compare.contains(
+        "For two full reports of the same mode and subfolder scope, execute the recipes below"
+    ));
+    assert!(compare.contains("Inspect summary and findings before drawing conclusions"));
+    assert!(compare.contains("Additional guide/schema reading is optional for this route"));
+}

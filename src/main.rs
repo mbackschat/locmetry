@@ -215,7 +215,11 @@ Automation:
   status. Exit 1 is a command failure, with no usable report promised. Diagnostics
   go to stderr. Preserve status before querying JSON or running a pipeline.
 
-For workflows and saved-report recipes, use locmetry --guide TOPIC with a topic listed under --guide."
+For routine capture-and-compare tasks, start with locmetry compare --help and execute
+its recipes. Extra guide/schema reading is optional for that route; inspect summary
+and findings before drawing conclusions.
+For workflows and saved-report recipes, use locmetry --guide TOPIC when you need
+detail beyond these examples; topic names are listed under --guide."
     )
 )]
 struct Cli {
@@ -293,7 +297,11 @@ for broader policy, and locmetry --guide reports for interpretation."
     /// --output FILE saves only to that file, defaulting to full JSON; --format overrides the format.
     #[command(
         after_help = "For baselines and interpretation, use locmetry --guide compare.",
-        after_long_help = "Examples:
+        after_long_help = "For two full reports of the same mode and subfolder scope, execute the recipes below.
+Inspect summary and findings before drawing conclusions. Additional guide/schema
+reading is optional for this route; use the references below for uncovered semantics.
+
+Examples:
   Capture a full baseline before changing files or policy:
     locmetry --root service --output before.json
   Capture the new state after the intended change:
