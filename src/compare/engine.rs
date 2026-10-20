@@ -302,6 +302,7 @@ pub fn compare(
             dimensions: dimensions(&before.summary.totals, &after.summary.totals)?,
             composition: None,
         },
+        member: None,
         members: None,
         folders: None,
         packages: None,
@@ -654,4 +655,76 @@ fn settings_findings(
         }
     }
     Ok(findings)
+}
+
+impl Comparison {
+    /// Focus a full workspace comparison on one exact member name, retaining input provenance.
+    ///
+    /// Report-level findings and partial status still describe the complete input measurements;
+    /// selecting an unaffected member cannot certify a partially measured workspace.
+    pub fn select_member(mut self, name: &str) -> Result<Self> {
+        let members = self
+            .members
+            .as_mut()
+            .context("--member requires two workspace reports")?;
+        let selected = members.get(name).with_context(|| {
+            format!(
+                "Unknown workspace member {name:?}; available: {}",
+                members.keys().cloned().collect::<Vec<_>>().join(", ")
+            )
+        })?;
+        let contribution = |counts: &CountChange| {
+            let mut value = Contribution {
+                matched: SignedCounts::default(),
+                entering: Counts::default(),
+                leaving: Counts::default(),
+            };
+            match selected.presence {
+                Presence::Both => value.matched = counts.delta,
+                Presence::BeforeOnly => value.leaving = counts.before,
+                Presence::AfterOnly => value.entering = counts.after,
+            }
+            value
+        };
+        self.summary = Summary {
+            dimensions: selected.dimensions.clone(),
+            composition: Some(Composition {
+                source: contribution(&selected.dimensions.source),
+                all_counted: contribution(&selected.dimensions.all_counted),
+            }),
+        };
+        let mut presence = PresenceSummary::default();
+        count_presence(&mut presence.members, selected.presence);
+        members.retain(|member, _| member == name);
+        let folders = self
+            .folders
+            .as_mut()
+            .context("Member selection requires full folder evidence")?;
+        folders.retain(|path, _| crate::paths::within(path, name));
+        for folder in folders.values() {
+            count_presence(&mut presence.folders, folder.presence);
+        }
+        let packages = self
+            .packages
+            .as_mut()
+            .context("Member selection requires full package evidence")?;
+        packages.retain(|package| crate::paths::within(&package.folder, name));
+        for package in packages {
+            count_presence(&mut presence.packages, package.presence);
+        }
+        self.breakdown
+            .as_mut()
+            .context("Member selection requires full breakdown evidence")?
+            .retain(|row| crate::paths::within(&row.folder, name));
+        self.findings.retain(|finding| {
+            finding
+                .context()
+                .member
+                .as_deref()
+                .is_none_or(|member| member == name)
+        });
+        self.presence_summary = presence;
+        self.member = Some(name.to_string());
+        Ok(self)
+    }
 }

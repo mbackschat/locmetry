@@ -587,6 +587,8 @@ pub(crate) enum ColumnRole {
     Share,
     /// A signed net change between two reports.
     Change,
+    /// A signed change beside the primary Lines and Code changes.
+    SecondaryChange,
 }
 
 /// One column of a measurement table.
@@ -767,9 +769,12 @@ pub(crate) fn table_with_top_rule(
     columns: &Columns,
     body: &[Vec<String>],
     total: Option<&[String]>,
+    emphasized_changes: Option<usize>,
     theme: Theme,
 ) -> String {
-    let table = PlainTable::new(columns, body, total).render(None, theme);
+    let mut table = PlainTable::new(columns, body, total);
+    table.emphasized_changes = emphasized_changes;
+    let table = table.render(None, theme);
     table.top_rule(theme) + &table.text
 }
 
@@ -795,6 +800,7 @@ struct PlainTable {
     body: Vec<Vec<String>>,
     total: Option<Vec<String>>,
     widths: Vec<usize>,
+    emphasized_changes: Option<usize>,
 }
 
 impl PlainTable {
@@ -826,6 +832,7 @@ impl PlainTable {
             body,
             total,
             widths,
+            emphasized_changes: None,
         };
         for (start, end) in table.spans() {
             let needed = table.group(start).chars().count();
@@ -916,7 +923,10 @@ impl PlainTable {
     fn render(&self, inline: Option<&InlineBars>, theme: Theme) -> RenderedTable {
         // Hue identifies a column: cyan for Code, one hue per purpose. Rows
         // differ by weight, so headings and totals keep their column's hue.
-        let line = |row: &[String], kind: RowKind, trailer: Option<&str>| {
+        let line = |row: &[String],
+                    kind: RowKind,
+                    emphasize_changes: bool,
+                    trailer: Option<&str>| {
             let mut text = String::from(" ");
             for (index, (value, width)) in row.iter().zip(&self.widths).enumerate() {
                 if index > 0 {
@@ -942,7 +952,14 @@ impl PlainTable {
                             true => Role::Decrease,
                             false => Role::Increase,
                         };
-                        (Some(direction), emphasized)
+                        (Some(direction), emphasized || emphasize_changes)
+                    }
+                    (ColumnRole::SecondaryChange, _) => {
+                        let direction = match value.starts_with('-') {
+                            true => Role::SecondaryDecrease,
+                            false => Role::SecondaryIncrease,
+                        };
+                        (Some(direction), false)
                     }
                     (ColumnRole::Secondary | ColumnRole::Ratio(_) | ColumnRole::Share, _) => {
                         (Some(Role::Secondary), false)
@@ -979,17 +996,22 @@ impl PlainTable {
         rule += "\n";
         let rule = theme.paint(Role::Muted, &rule);
         let mut output = self.group_line(theme).unwrap_or_default()
-            + &line(&self.header, RowKind::Header, title.as_deref())
+            + &line(&self.header, RowKind::Header, false, title.as_deref())
             + &rule;
         for (index, row) in self.body.iter().enumerate() {
             let bar = inline
                 .and_then(|bars| bars.bars.get(index))
                 .filter(|bar| !bar.is_empty());
-            output += &line(row, RowKind::Body, bar.map(String::as_str));
+            output += &line(
+                row,
+                RowKind::Body,
+                self.emphasized_changes == Some(index),
+                bar.map(String::as_str),
+            );
         }
         if let Some(total) = &self.total {
             output += &rule;
-            output += &line(total, RowKind::Total, None);
+            output += &line(total, RowKind::Total, false, None);
         }
         RenderedTable {
             text: output,
@@ -1812,7 +1834,7 @@ pub fn render_table_with_options(
         if !body.is_empty() {
             output += "\n";
             let columns = Columns::of(&count_columns("Category")[..4]);
-            output += &table_with_top_rule(&columns, &body, None, theme);
+            output += &table_with_top_rule(&columns, &body, None, None, theme);
             output += &format!(" {}\n", theme.paint(Role::Muted, CATEGORY_LEGEND));
         }
     }

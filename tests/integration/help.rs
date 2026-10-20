@@ -108,7 +108,10 @@ fn every_visible_option_has_a_workflow_in_the_inventory() {
             "workspace",
             [shared.as_slice(), &["--root", "--file"]].concat(),
         ),
-        ("compare", vec!["--format", "--output", "--help"]),
+        (
+            "compare",
+            vec!["--member", "--format", "--output", "--help"],
+        ),
         (
             "explain",
             [
@@ -337,4 +340,64 @@ fn routine_comparison_recipes_make_extra_reference_reading_optional() {
     ));
     assert!(compare.contains("Inspect summary and findings before drawing conclusions"));
     assert!(compare.contains("Additional guide/schema reading is optional for this route"));
+}
+
+#[test]
+fn compare_help_drills_into_a_workspace_member_with_scoped_folder_totals() {
+    let root = tempfile::tempdir().unwrap();
+    fixture(root.path());
+    let text = help("compare");
+    execute(root.path(), &text, "Capture a workspace baseline instead");
+    write(
+        root.path(),
+        "api/src/main.rs",
+        "fn main() {}\nfn added() {}\n",
+    );
+    write(
+        root.path(),
+        "web/src/index.ts",
+        "export const a = 1;\nexport const b = 2;\nexport const c = 3;\n",
+    );
+    execute(
+        root.path(),
+        &text,
+        "Capture the workspace after the intended change",
+    );
+    let output = execute(
+        root.path(),
+        &text,
+        "Inspect one workspace member and its immediate subfolders",
+    );
+    let text = String::from_utf8(output.stdout).unwrap();
+    assert!(text.contains("Member: api (both)"), "{text}");
+    let folder = text
+        .lines()
+        .find(|line| line.contains("src (both)"))
+        .unwrap();
+    assert_eq!(
+        folder.split_whitespace().collect::<Vec<_>>(),
+        ["src", "(both)", "1", "2", "+1", "│", "1", "2", "+1"]
+    );
+    let total = text
+        .lines()
+        .find(|line| line.starts_with(" Source total"))
+        .unwrap();
+    assert_eq!(
+        total.split_whitespace().collect::<Vec<_>>(),
+        ["Source", "total", "3", "4", "+1", "│", "3", "4", "+1"]
+    );
+    let flat = help("compare")
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ");
+    for fact in [
+        "exact member name",
+        "either report",
+        "unknown names",
+        "Member: NAME",
+        "Source total",
+        "whole workspace inputs",
+    ] {
+        assert!(flat.contains(fact), "{fact}");
+    }
 }

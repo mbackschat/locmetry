@@ -29,6 +29,9 @@ pub enum Role {
     /// A net change between two reports; direction, not a judgement.
     Increase,
     Decrease,
+    /// Secondary net changes retain direction while receding beside Lines and Code.
+    SecondaryIncrease,
+    SecondaryDecrease,
     /// Labels of neutral notes and findings.
     Information,
     Warning,
@@ -180,6 +183,8 @@ impl Palette {
             Role::Muted => self.muted,
             Role::Increase => self.increase,
             Role::Decrease => self.decrease,
+            Role::SecondaryIncrease => self.increase.dim(),
+            Role::SecondaryDecrease => self.decrease.dim(),
             Role::Information => self.information,
             Role::Warning => self.warning,
             Role::Error => self.error,
@@ -271,6 +276,8 @@ mod tests {
             ("muted", Role::Muted),
             ("increase", Role::Increase),
             ("decrease", Role::Decrease),
+            ("secondary_increase", Role::SecondaryIncrease),
+            ("secondary_decrease", Role::SecondaryDecrease),
             ("information", Role::Information),
             ("warning", Role::Warning),
             ("error", Role::Error),
@@ -287,8 +294,8 @@ mod tests {
         }
         for (hue, names) in meanings {
             let allowed = match hue {
-                "32" => vec!["increase", "production"],
-                "31" => vec!["decrease", "error"],
+                "32" => vec!["increase", "secondary_increase", "production"],
+                "31" => vec!["decrease", "secondary_decrease", "error"],
                 _ => vec![names[0]],
             };
             assert_eq!(names, allowed, "hue {hue}");

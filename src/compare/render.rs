@@ -51,21 +51,20 @@ const CHANGE_COLUMNS: [(Column, Cell); 6] = [
         |row| change(row.before.code, row.after.code),
     ),
 ];
-/// Changes beside the Totals figures, muted as the measurement table mutes
-/// Comments, Blanks and Files.
+/// Secondary deltas retain direction, unlike the unsigned measurement figures.
 const SECONDARY_CHANGE_COLUMNS: [(Column, Cell); 3] = [
     (
-        Column::new("Comments change", ColumnRole::Secondary)
+        Column::new("Comments change", ColumnRole::SecondaryChange)
             .under("Change", "Comments")
             .separated(),
         |row| change(row.before.comments, row.after.comments),
     ),
     (
-        Column::new("Blanks change", ColumnRole::Secondary).under("Change", "Blanks"),
+        Column::new("Blanks change", ColumnRole::SecondaryChange).under("Change", "Blanks"),
         |row| change(row.before.blanks, row.after.blanks),
     ),
     (
-        Column::new("Files change", ColumnRole::Secondary).under("Change", "Files"),
+        Column::new("Files change", ColumnRole::SecondaryChange).under("Change", "Files"),
         |row| change(row.before.files, row.after.files),
     ),
 ];
@@ -75,6 +74,7 @@ struct Row {
     label: String,
     before: Counts,
     after: Counts,
+    emphasize_changes: bool,
 }
 
 impl Row {
@@ -83,6 +83,7 @@ impl Row {
             label: label.into(),
             before: change.before,
             after: change.after,
+            emphasize_changes: false,
         }
     }
 }
@@ -131,7 +132,13 @@ impl Grid {
         .unwrap();
         let columns = Columns::of(&columns);
         output.push_str(&if !markdown {
-            output::table_with_top_rule(&columns, &body, total.as_deref(), theme)
+            output::table_with_top_rule(
+                &columns,
+                &body,
+                total.as_deref(),
+                self.rows.iter().position(|row| row.emphasize_changes),
+                theme,
+            )
         } else {
             output::shared_table(&columns, &body, total.as_deref(), markdown, theme)
         });
@@ -171,6 +178,7 @@ fn kind_rows(dimensions: &Dimensions) -> Vec<Row> {
                 label: output::kind_title(kind).to_string(),
                 before: sum(|change| change.before),
                 after: sum(|change| change.after),
+                emphasize_changes: kind == Kind::Source,
             })
         })
         .collect()
@@ -241,6 +249,21 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
         )
         .unwrap();
     }
+    if let Some(member) = &c.member {
+        let presence = c
+            .members
+            .as_ref()
+            .and_then(|members| members.get(member))
+            .map(|member| presence_name(member.presence))
+            .unwrap_or("not recorded");
+        writeln!(
+            out,
+            "Member: {} ({presence}); counts and detail cover this member only.",
+            label(member, markdown)
+        )
+        .unwrap();
+        writeln!(out, "Input metadata, measurement notes, report-level findings and partial status cover the whole workspace inputs.").unwrap();
+    }
     out.push('\n');
     for note in [
         "Net change = after − before, from the two saved reports.",
@@ -287,7 +310,7 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
             legend: None,
         },
     ];
-    if let Some(members) = &c.members {
+    if let Some(members) = c.members.as_ref().filter(|_| c.member.is_none()) {
         grids.push(Grid {
             title: "Workspace members",
             label: "Member",
@@ -307,10 +330,10 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
         });
     }
     let folder_grid = c.folders.as_ref().map(|folders| {
-        // The table lists top-level folders only, so the recursive root is
-        // their source total; Markdown keeps the root in place within the hierarchy.
+        // The selected root bounds the table total; Markdown retains its full hierarchy.
+        let root = c.member.as_deref().unwrap_or(".");
         let total = folders
-            .get(".")
+            .get(root)
             .filter(|_| !markdown)
             .map(|root| Row::new("Source total", &root.recursive.source));
         let mut folders: Vec<_> = folders.iter().collect();
@@ -318,12 +341,21 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
         let rows: Vec<_> = folders
             .into_iter()
             .filter(|(path, v)| {
-                (markdown || (c.members.is_none() && path.as_str() != "." && !path.contains('/')))
+                (markdown
+                    || ((c.members.is_none() || c.member.is_some())
+                        && path.as_str() != root
+                        && crate::paths::below(path, root)
+                            .is_some_and(|relative| !relative.contains('/'))))
                     && (v.presence != Presence::Both || changed(&v.recursive.source))
             })
             .map(|(k, v)| {
+                let path = if !markdown {
+                    crate::paths::below(k, root).unwrap_or(k)
+                } else {
+                    k
+                };
                 Row::new(
-                    format!("{k} ({})", presence_name(v.presence)),
+                    format!("{path} ({})", presence_name(v.presence)),
                     &v.recursive.source,
                 )
             })
@@ -353,6 +385,11 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
                     || part.leaving.code != 0
             })
     }) {
+        let scope = if c.member.is_some() {
+            "Member"
+        } else {
+            "Workspace"
+        };
         let theme = if markdown { Theme::PLAIN } else { theme };
         let signed = |value: i128| {
             let role = match value.cmp(&0) {
@@ -368,7 +405,7 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
         };
         writeln!(
             out,
-            "\nWorkspace source lines: matched {}, entering {}, leaving {}; total {}.",
+            "\n{scope} source lines: matched {}, entering {}, leaving {}; total {}.",
             signed(composition.source.matched.lines.into()),
             signed(composition.source.entering.lines.into()),
             leaving(composition.source.leaving.lines),
@@ -377,7 +414,7 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
         .unwrap();
         writeln!(
             out,
-            "Workspace all-counted lines: matched {}, entering {}, leaving {}; total {}.",
+            "{scope} all-counted lines: matched {}, entering {}, leaving {}; total {}.",
             signed(composition.all_counted.matched.lines.into()),
             signed(composition.all_counted.entering.lines.into()),
             leaving(composition.all_counted.leaving.lines),
@@ -386,7 +423,7 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
         .unwrap();
         writeln!(
             out,
-            "\nWorkspace source code: matched {}, entering {}, leaving {}; total {}.",
+            "\n{scope} source code: matched {}, entering {}, leaving {}; total {}.",
             signed(composition.source.matched.code.into()),
             signed(composition.source.entering.code.into()),
             leaving(composition.source.leaving.code),
@@ -395,7 +432,7 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
         .unwrap();
         writeln!(
             out,
-            "Workspace all-counted code: matched {}, entering {}, leaving {}; total {}.",
+            "{scope} all-counted code: matched {}, entering {}, leaving {}; total {}.",
             signed(composition.all_counted.matched.code.into()),
             signed(composition.all_counted.entering.code.into()),
             leaving(composition.all_counted.leaving.code),

@@ -160,6 +160,14 @@ locmetry --root ./service --output ./after.json
 locmetry compare before.json after.json
 ```
 
+For two saved workspace reports, drill into one root by its exact member name:
+
+```sh
+locmetry compare before-workspace.json after-workspace.json --member service --format table
+```
+
+Check `Member: service` and its `Source total`; the folder table shows changes in immediate subfolders. The name must occur in either report. Totals and detail cover that member; input metadata and partial status still cover the whole workspace inputs. See [workspace capture and member selection](docs/guides/compare.md#inspect-one-workspace-member) for baseline commands and JSON scope.
+
 The [comparison guide](docs/guides/compare.md) covers changed scope, producer versions, partial inputs and workspace changes. Reports describe measured working copies, not Git commits. For automated policies, use the [CI recipe](docs/guides/reports.md#continuous-integration), which preserves measurement failure and partial-result status before querying JSON.
 
 ## How classification works

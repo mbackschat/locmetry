@@ -303,6 +303,10 @@ pub struct Comparison {
     pub schema_version: Version,
     pub before: Input,
     pub after: Input,
+    /// Selected workspace member; absent means the complete comparison. Counts and detail
+    /// are scoped; input metadata, report-level findings and partial status retain whole-input evidence.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub member: Option<String>,
     pub summary: Summary,
     /// Workspace only, keyed by member name, including zero-count arrivals/departures.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -372,6 +376,7 @@ fn comparison_example() -> Comparison {
             dimensions: engine::dimensions(&zero, &zero).expect("zero differences fit"),
             composition: None,
         },
+        member: None,
         members: None,
         folders: None,
         packages: None,

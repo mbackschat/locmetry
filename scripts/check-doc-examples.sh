@@ -103,6 +103,14 @@ extract_blocks 'Compare saved measurements' "$temporary/workspace-compare.sh" 2 
 grep -Eq '^\| Source \| [0-9,]+ \| [0-9,]+ \| [^|]+ \| 3 \| 4 \| \+1 \|' "$temporary/workspace-change.md"
 grep -Fxq '| service (both) | 2 | 3 | +1 | 2 | 3 | +1 |' "$temporary/workspace-change.md"
 
+extract_blocks 'Compare saved measurements' "$temporary/readme-member.sh" 2 0
+(cd "$temporary/workflows" && bash "$temporary/readme-member.sh") > "$temporary/readme-member.txt"
+grep -Fq 'Member: service (both)' "$temporary/readme-member.txt"
+extract_blocks 'Inspect one workspace member' "$temporary/member-compare.sh" 0 0 "$repository/docs/guides/compare.md"
+(cd "$temporary/workflows" && bash "$temporary/member-compare.sh") > "$temporary/member-change.txt"
+grep -Eq '^ src \(both\) +2 +3 +\+1' "$temporary/member-change.txt"
+jq -e '.member == "service" and .summary.source.before.code == 2 and .summary.source.after.code == 3 and .summary.source.delta.code == 1 and .folders["service"].recursive.source == .summary.source and (.members | keys) == ["service"]' "$temporary/workflows/member-change.json" > /dev/null
+
 # The agent recipe prints the table and saves full JSON from one scan.
 extract_blocks 'For agents' "$temporary/agents.sh" 1 0
 (cd "$temporary/workflows/service" && bash "$temporary/agents.sh") > "$temporary/agents.stdout"

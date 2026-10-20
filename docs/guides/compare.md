@@ -74,3 +74,19 @@ case "$status" in
 esac
 exit "$status"
 ```
+
+
+## Inspect one workspace member
+
+After capturing `before-workspace.json` and `after-workspace.json` with the workspace recipe above, select one root by its exact, case-sensitive member name:
+
+```sh
+locmetry compare before-workspace.json after-workspace.json --member service --format table
+locmetry compare before-workspace.json after-workspace.json --member service --output member-change.json
+```
+
+Check `Member: service` and its presence (`both`, `before only`, or `after only`), then the `Source total` and folder deltas. Kind, Purpose, Language, Test/prod and folder totals now cover only this member. The terminal folder table shows changed immediate subfolders with recursive counts, including unchanged descendants; deeper folders remain in Markdown and full JSON. Source totals include unchanged rows and files directly in the member root, so the visible subfolder rows need not sum to the total. Recursive parents and descendants must not be added together.
+
+`--member` requires two full workspace reports and a name present in at least one. Unknown names and single-root reports fail without writing output. A member missing on one side contributes zero on that side because it was absent from the measurement. The selector cannot name an arbitrary nested folder, and it never rescans the source roots.
+
+Full JSON and headline retain `member: "service"`. Summary dimensions, composition and presence counts cover that member; full folders, packages, breakdown and member-specific findings are filtered to it. JSON paths keep their member prefixes. Original input metadata and report-level findings remain whole-input provenance, and partial status still reflects either complete workspace input, including failures in other members. The human scope note names this boundary. Inspect `member`, `summary.source`, `folders["service"].recursive.source` and findings in `member-change.json` to verify scope, counts and limitations.

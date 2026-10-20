@@ -287,7 +287,8 @@ not an average of member ratios. --verbose exposes member coverage and policy fi
 Save before.json and after.json using the same workspace command around a change,
 then run locmetry compare before.json after.json --format table. Member names match
 snapshots; an absent member means it left the measured workspace, not that its files
-were deleted. See locmetry compare --help for full comparison recipes and limitations.
+were deleted. Use compare --member NAME to inspect one member and its subfolder changes.
+See locmetry compare --help for full comparison recipes and limitations.
 Use locmetry --schema workspace for the file contract, locmetry --guide configure
 for broader policy, and locmetry --guide reports for interpretation."
     )]
@@ -314,6 +315,18 @@ Examples:
     locmetry compare before.json after.json --format markdown --output change.md
   Capture a workspace baseline instead:
     locmetry workspace --file repos.toml --output before.json
+  Capture the workspace after the intended change:
+    locmetry workspace --file repos.toml --output after.json
+  Inspect one workspace member and its immediate subfolders:
+    locmetry compare before.json after.json --member api --format table
+
+For --member, use two workspace reports and an exact member name present in either report.
+The example assumes repos.toml includes api; unknown names and single-root inputs fail.
+Check Member: NAME and Source total: grids and Test/prod cover only that member.
+The folder table shows changed immediate subfolders; Markdown/JSON retain deeper detail.
+JSON retains the member selector and member-prefixed paths. Input metadata, report-level
+findings and partial status still cover the whole workspace inputs. Nested-folder
+selection is unsupported. Nothing is rescanned.
 
 Inputs must be full measurement JSON; headlines cannot be baselines. --files is
 optional for aggregate comparison. Capture both inputs before comparing; rescanning
@@ -388,6 +401,9 @@ struct CompareArgs {
     before: PathBuf,
     /// Full JSON measurement after the change.
     after: PathBuf,
+    /// Focus on one exact workspace member name; accepts presence on either side.
+    #[arg(long, value_name = "NAME")]
+    member: Option<String>,
     /// Result format [default: json with --output; otherwise table on a terminal, headline in pipes].
     #[arg(long, value_enum)]
     format: Option<Format>,
@@ -860,6 +876,10 @@ fn run_compare(args: &CompareArgs) -> Result<Outcome> {
         args.before.to_string_lossy().into(),
         args.after.to_string_lossy().into(),
     )?;
+    let result = match &args.member {
+        Some(member) => result.select_member(member)?,
+        None => result,
+    };
     let partial = result.partial();
     let text = match destination.format {
         Format::Json => report_text(&serde_json::to_value(&result)?)?,
