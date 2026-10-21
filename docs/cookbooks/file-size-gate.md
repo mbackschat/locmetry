@@ -63,6 +63,6 @@ Lower a ceiling in the same change that shrinks its file, and remove it once the
 
 ## Locmetry's own gate
 
-Locmetry gates its repository with a Python version of the second recipe that also reports stale ceilings; [self-measurement](../self-measurement.md#file-sizes) records its limits and the files that predate them.
+Locmetry gates its repository with a Python version of the second recipe that also reports stale ceilings; [self-measurement](../self-measurement.md#file-sizes) records its limits and ceiling policy.
 
 [CI executes both recipes](../../scripts/check-doc-examples.sh) against synthetic projects: within limits, over a limit, a larger test file under the test limit, a soft-limit warning, a ceiling that holds and one that is exceeded, and a partial measurement.

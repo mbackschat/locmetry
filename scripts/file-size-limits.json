@@ -3,7 +3,5 @@
     "production": {"soft": 600, "hard": 1000},
     "test": {"soft": 1000, "hard": 2000}
   },
-  "ceilings": {
-    "src/main.rs": 1866
-  }
+  "ceilings": {}
 }
