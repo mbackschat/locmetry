@@ -250,7 +250,7 @@ Locmetry's full JSON reports are data you can query. Load several of them into a
 - 🐼 **[pandas and Polars cookbook](docs/dataframe-cookbook.md)**: the same reports as Python dataframes, covering components, comment density and change between releases, with identical results in both libraries.
 - ▶️ **[Analytics demo](docs/analytics-demo.md)**: one Python script over workspace captures of both releases, the shape of a scheduled job or notebook.
 
-The tools are optional; Locmetry itself has no analytics dependency. Capture reports with the current executable; older schema-1/2 measurements must be recaptured.
+The tools are optional; Locmetry itself has no analytics dependency. Capture reports with the current executable; reports of earlier schema versions must be recaptured.
 
 ## How classification works
 

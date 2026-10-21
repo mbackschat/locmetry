@@ -14,8 +14,9 @@ pub enum DocumentType {
 
 #[derive(Serialize, JsonSchema)]
 pub enum Version {
-    #[serde(rename = "2")]
-    V2,
+    /// One version shared with measurement and comparison documents.
+    #[serde(rename = "3")]
+    V3,
 }
 
 /// One path's selection, parser and classification evidence. Exit 2 means the target's counts are unavailable; exit 0 includes counted, excluded, unrecognized, filtered and symlink paths. This is not a saved measurement input for compare.
@@ -261,7 +262,7 @@ pub fn schema() -> serde_json::Value {
 fn example() -> Explanation {
     Explanation {
         document_type: DocumentType::Explanation,
-        schema_version: Version::V2,
+        schema_version: Version::V3,
         root: "/synthetic/project".into(),
         path: "unknown.custom".into(),
         member: None,

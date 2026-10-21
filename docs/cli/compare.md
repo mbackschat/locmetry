@@ -90,7 +90,7 @@ locmetry compare before.json after.json --format headline --output - \
 ```output
 {
   "document_type": "comparison",
-  "schema_version": "2",
+  "schema_version": "3",
   "source": {
     "before": {
       "files": 11,

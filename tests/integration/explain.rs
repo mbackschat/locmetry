@@ -488,6 +488,7 @@ fn several_paths_print_one_explanation_per_line_in_argument_order() {
         run(&["tests/test_main.py", "main.py"], &["--format", "json"]),
         0,
     );
+    assert!(explained.iter().all(|e| e["schema_version"] == "3"));
     let summary: Vec<_> = explained
         .iter()
         .map(|e| (e["path"].clone(), e["result"]["file"]["purpose"].clone()))

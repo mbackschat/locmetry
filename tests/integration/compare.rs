@@ -93,7 +93,7 @@ fn compare_reports_net_change_without_reading_the_source_checkout() {
     fs::remove_dir_all(root).unwrap();
     let full = json(&compare(&before, &after, &["--output", "-"]), 0);
     assert_eq!(full["document_type"], "comparison");
-    assert_eq!(full["schema_version"], "2");
+    assert_eq!(full["schema_version"], "3");
     change(&full["summary"]["source"], 3, 4, 1);
     assert_eq!(
         full["summary"]["source"]["delta"],
@@ -494,27 +494,6 @@ fn folder_grid_keeps_its_total_when_code_only_moves_between_folders() {
         ["Source", "total", "3", "3", "0", "3", "3", "0"]
     );
     assert!(!folders.contains(" . ("), "{text}");
-}
-
-/// The version alone decides: pre-schema-3 reports are refused with the
-/// remedy before any other field is read.
-#[test]
-fn reports_before_schema_three_are_refused_with_a_remedy() {
-    let temp = tempfile::tempdir().unwrap();
-    for version in ["1", "2"] {
-        let path = temp.path().join(format!("v{version}.json"));
-        fs::write(&path, format!(r#"{{"schema_version":"{version}"}}"#)).unwrap();
-        let output = compare(&path, &path, &[]);
-        assert_eq!(output.status.code(), Some(1));
-        assert!(output.stdout.is_empty());
-        assert!(
-            String::from_utf8_lossy(&output.stderr).contains(&format!(
-                "has report schema version {version}; measure again"
-            )),
-            "{}",
-            String::from_utf8_lossy(&output.stderr)
-        );
-    }
 }
 
 #[cfg(unix)]
@@ -1574,8 +1553,9 @@ fn totals_split_all_counted_by_kind_and_grids_end_in_their_source_total() {
     assert!(markdown.contains("| . (both) |"), "{markdown}");
 }
 
+/// Only schema 3 is read; an earlier report fails as invalid, naming its version.
 #[test]
-fn older_measurement_schemas_are_rejected_with_a_remedy() {
+fn older_measurement_schemas_are_invalid() {
     let temp = tempfile::tempdir().unwrap();
     let root = temp.path().join("project");
     write(&root, "main.py", "a = 1\n");
@@ -1590,10 +1570,9 @@ fn older_measurement_schemas_are_rejected_with_a_remedy() {
         assert_eq!(output.status.code(), Some(1));
         let error = String::from_utf8_lossy(&output.stderr);
         assert!(
-            error.contains(&format!("schema version {version}")),
+            error.contains(&format!("unknown variant `{version}`, expected `3`")),
             "{error}"
         );
-        assert!(error.contains("measure again"), "{error}");
     }
 }
 

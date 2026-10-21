@@ -4,22 +4,9 @@ use anyhow::{ensure, Context};
 use std::{collections::BTreeSet, fs, path::Path};
 
 pub fn read_input(path: &Path) -> Result<MeasurementReport> {
-    /// Only the version: recognizing an old report skips every other field
-    /// instead of building a document tree of a possibly large report.
-    #[derive(serde::Deserialize)]
-    struct Probe {
-        schema_version: Option<String>,
-    }
     let bytes = fs::read(path).with_context(|| format!("Cannot read {}", path.display()))?;
-    let invalid = || format!("Invalid measurement report {}", path.display());
-    let probe: Probe = serde_json::from_slice(&bytes).with_context(invalid)?;
-    if let Some(version @ ("1" | "2")) = probe.schema_version.as_deref() {
-        anyhow::bail!(
-            "{} has report schema version {version}; measure again with this version to compare schema-3 measurements",
-            path.display()
-        );
-    }
-    serde_json::from_slice(&bytes).with_context(invalid)
+    serde_json::from_slice(&bytes)
+        .with_context(|| format!("Invalid measurement report {}", path.display()))
 }
 
 pub fn validate_destination(path: &Path, inputs: [&Path; 2]) -> Result<()> {
@@ -286,7 +273,7 @@ pub fn compare(
     normalize_metadata(&mut after.metadata);
     let mut result = Comparison {
         document_type: DocumentType::Comparison,
-        schema_version: Version::V2,
+        schema_version: Version::V3,
         before: Input {
             filename: before_name,
             project: before.project.clone(),

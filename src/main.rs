@@ -983,7 +983,7 @@ fn explain_path(
     let (path, result) = locmetry::explain::inspect(&prepared.root, &target, &mut prepared.policy)?;
     let mut explanation = locmetry::explain::Explanation {
         document_type: locmetry::explain::DocumentType::Explanation,
-        schema_version: locmetry::explain::Version::V2,
+        schema_version: locmetry::explain::Version::V3,
         root: prepared.root.to_string_lossy().into(),
         path,
         member: None,

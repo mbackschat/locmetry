@@ -20,9 +20,9 @@ pub enum DocumentType {
 }
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 pub enum Version {
-    /// Since 0.5: purposes `production`, `test`, `other`.
-    #[serde(rename = "2")]
-    V2,
+    /// One version shared with measurement and explanation documents.
+    #[serde(rename = "3")]
+    V3,
 }
 
 /// Signed net change, after minus before. Each value must fit i64; overflow fails.
@@ -361,7 +361,7 @@ fn comparison_example() -> Comparison {
     let zero = crate::Summary::default();
     Comparison {
         document_type: DocumentType::Comparison,
-        schema_version: Version::V2,
+        schema_version: Version::V3,
         before: Input {
             filename: "before.json".into(),
             project: report.project.clone(),
