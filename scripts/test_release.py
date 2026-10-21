@@ -227,7 +227,8 @@ class PackageTests(unittest.TestCase):
                 (root / name).write_text(name)
             (root / "scripts").mkdir()
             shutil.copy2(repository / "scripts/compare-locmetry-files.sh", root / "scripts")
-            env = dict(os.environ, GITHUB_REF_NAME="v0.0.0", GITHUB_ENV=str(root / "github-env"))
+            env = dict(os.environ, GITHUB_REF_NAME="v0.0.0", GITHUB_EVENT_NAME="push", RUNNER_OS="Linux",
+                       GITHUB_ENV=str(root / "github-env"))
             subprocess.run(["bash", "-eu", "-c", package], cwd=root, env=env, check=True, capture_output=True)
             name = "locmetry-v0.0.0-test-target"
             with tarfile.open(root / f"{name}.tar.gz") as archive:

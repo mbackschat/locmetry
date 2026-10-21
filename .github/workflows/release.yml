@@ -3,6 +3,10 @@ name: Release
 on:
   push:
     tags: ["v*"]
+  # A change to this workflow builds and verifies every archive without
+  # publishing, so a new target is exercised before its first release.
+  pull_request:
+    paths: [.github/workflows/release.yml]
 
 permissions:
   contents: write
@@ -20,10 +24,17 @@ jobs:
             target: x86_64-unknown-linux-musl
           - os: ubuntu-24.04-arm
             target: aarch64-unknown-linux-musl
+          # .cargo/config.toml links the C runtime statically.
+          - os: windows-2025
+            target: x86_64-pc-windows-msvc
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
       - name: Require the tag to match the crate version
+        if: github.event_name == 'push'
         run: test "${GITHUB_REF_NAME#v}" = "$(cargo pkgid | sed 's/.*[#@]//')"
       - run: rustup toolchain install stable --profile minimal --target ${{ matrix.target }} && rustup default stable
       - run: cargo test --locked
@@ -35,18 +46,26 @@ jobs:
         run: cargo about generate --locked -c packaging/licenses/about.toml packaging/licenses/notices.hbs -o THIRD-PARTY-NOTICES.md
       - name: Package
         run: |
-          name="locmetry-${GITHUB_REF_NAME}-${{ matrix.target }}"
+          version="${GITHUB_REF_NAME}"
+          [ "$GITHUB_EVENT_NAME" = push ] || version=dry-run
+          name="locmetry-${version}-${{ matrix.target }}"
+          executable=locmetry
+          [ "$RUNNER_OS" = Windows ] && executable=locmetry.exe
           mkdir "$name"
-          cp "target/${{ matrix.target }}/release/locmetry" README.md LICENSE THIRD-PARTY-NOTICES.md "$name/"
+          cp "target/${{ matrix.target }}/release/$executable" README.md LICENSE THIRD-PARTY-NOTICES.md "$name/"
           install -m 755 scripts/compare-locmetry-files.sh "$name/compare-locmetry-files.sh"
-          tar -czf "$name.tar.gz" "$name"
-          echo "BINARY=$PWD/$name/locmetry" >> "$GITHUB_ENV"
+          if [ "$RUNNER_OS" = Windows ]; then 7z a -tzip "$name.zip" "$name" > /dev/null; else tar -czf "$name.tar.gz" "$name"; fi
+          echo "BINARY=$PWD/$name/$executable" >> "$GITHUB_ENV"
       - name: Measure with an empty environment
         run: env -i "$BINARY" --root src > /dev/null
       - name: Verify the packaged helper
         run: |
           if ! command -v jq >/dev/null; then
-            if [ "$RUNNER_OS" = macOS ]; then brew install jq; else sudo apt-get update && sudo apt-get install --yes jq; fi
+            case "$RUNNER_OS" in
+              macOS) brew install jq ;;
+              Linux) sudo apt-get update && sudo apt-get install --yes jq ;;
+              Windows) choco install jq --yes --no-progress ;;
+            esac
           fi
           smoke=$(mktemp -d)
           trap 'rm -rf "$smoke"' EXIT
@@ -66,19 +85,27 @@ jobs:
       - name: Require static linkage
         if: runner.os == 'Linux'
         run: file "$BINARY" | grep -E 'statically linked|static-pie linked'
+      # A dynamically linked C runtime appears as an imported DLL name.
+      - name: Require the static C runtime
+        if: runner.os == 'Windows'
+        run: |
+          ! grep -qiaE 'vcruntime[0-9]*\.dll|msvcp[0-9]*\.dll|api-ms-win-crt-' "$BINARY"
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.target }}
-          path: locmetry-*.tar.gz
+          path: |
+            locmetry-*.tar.gz
+            locmetry-*.zip
 
   publish:
     needs: build
+    if: github.event_name == 'push'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/download-artifact@v4
         with:
           merge-multiple: true
-      - run: sha256sum locmetry-*.tar.gz > SHA256SUMS
-      - run: gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --generate-notes locmetry-*.tar.gz SHA256SUMS
+      - run: sha256sum locmetry-*.tar.gz locmetry-*.zip > SHA256SUMS
+      - run: gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --generate-notes locmetry-*.tar.gz locmetry-*.zip SHA256SUMS
         env:
           GH_TOKEN: ${{ github.token }}

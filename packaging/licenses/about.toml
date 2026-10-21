@@ -14,7 +14,12 @@ accepted = [
     "MPL-2.0",
 ]
 # The release targets; crates used only on other platforms do not ship.
-targets = ["aarch64-apple-darwin", "x86_64-unknown-linux-musl", "aarch64-unknown-linux-musl"]
+targets = [
+    "aarch64-apple-darwin",
+    "x86_64-unknown-linux-musl",
+    "aarch64-unknown-linux-musl",
+    "x86_64-pc-windows-msvc",
+]
 # Build scripts and test helpers run during compilation but are not part of the binary.
 ignore-build-dependencies = true
 ignore-dev-dependencies = true

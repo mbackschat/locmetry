@@ -1,0 +1,5 @@
+# Link the C runtime statically, so locmetry.exe runs without the Visual C++
+# redistributable, as the static musl builds do on Linux
+# (https://doc.rust-lang.org/reference/linkage.html#static-and-dynamic-c-runtimes).
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]
