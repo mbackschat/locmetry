@@ -306,6 +306,13 @@ Locmetry recognizes build modules by their descriptors and counts each one's con
 | Swift | `Package.swift` | `Sources/**` |
 | Dart and Flutter | `pubspec.yaml` | `lib/**`, `bin/**` |
 
+On Immich, `cd immich && locmetry --verbose` reports what the modules contributed:
+
+<!-- showcase-modules -->
+```text
+ Production from build modules: npm 107,922 code lines in 12 modules, dart 58,827 code lines in 2 modules, gradle 4,102 code lines in 2 modules, python 3,037 code lines in 1 module.
+```
+
 Tests inside these trees stay tests, and nested modules decide for themselves. Detection reads file names only and never runs a build, so custom layouts need configuration; [module detection](docs/PRODUCT.md#module-detection) has the details.
 
 ### Configuration

@@ -120,6 +120,12 @@ def tools_table():
     return "\n".join(lines) + "\n"
 
 
+def module_production(text):
+    """The verbose note on the production build modules classified."""
+    prefix = " Production from build modules:"
+    return next(line.rstrip() for line in text.splitlines() if line.startswith(prefix)) + "\n"
+
+
 def replace_text(readme, marker, content, language="text"):
     prefix = f"<!-- {marker} -->\n```{language}\n"
     start = readme.index(prefix) + len(prefix)
@@ -144,7 +150,9 @@ def main():
     comparison = showcase("""locmetry --root v3.2.0/immich --output v3.2.0.json
 locmetry --root v3.3.4/immich --output v3.3.4.json
 locmetry compare v3.2.0.json v3.3.4.json --format table --no-color""")
+    verbose = showcase("cd immich && COLUMNS=120 locmetry --format table --no-color --no-bars --verbose")
     readme = replace_text(readme, "showcase-language", grid(measurement, "Language"))
+    readme = replace_text(readme, "showcase-modules", module_production(verbose))
     readme = replace_text(readme, "showcase-workspace", grid(workspace, "Repository"))
     readme = replace_text(readme, "showcase-compare", grid(comparison, "Purpose"))
     readme = replace_table(readme, "showcase-policy", policy_table())
