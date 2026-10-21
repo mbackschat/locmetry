@@ -6,7 +6,13 @@ import re
 import subprocess
 import sys
 
-VERSION_FILES = ("Cargo.toml", "Cargo.lock")
+# The root command guide records `--version` and guide-source output, which
+# name the executable version; the CI replay rejects it after any bump.
+RECORDING = "docs/cli/root.md"
+VERSION_FILES = ("Cargo.toml", "Cargo.lock", RECORDING)
+# The pinned replay of the command guides, as the CI documentation job runs it.
+REPLAY = ("uv", "run", "--no-project", "--python", "3.11", "--with", "showboat==0.6.1", "--with", "duckdb==1.5.6",
+          "python", "scripts/check-recorded-guides.py", "--set", "reference")
 ORIGINS = ("https://github.com/mbackschat/locmetry.git", "git@github.com:mbackschat/locmetry.git")
 VERSION = r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)"
 
@@ -47,6 +53,11 @@ def release_files(original, version):
     if original["Cargo.lock"].count(lock_marker) != 1:
         raise ReleaseError("Cargo.lock does not match the crate version.")
     updated["Cargo.lock"] = original["Cargo.lock"].replace(lock_marker, f'name = "locmetry"\nversion = "{version}"')
+    # A recorded version is a whole output line or a guide source's `; locmetry X` tail.
+    recorded = re.compile(rf"(?m)^((?:Source: .*; )?locmetry ){re.escape(current)}$")
+    updated[RECORDING], count = recorded.subn(rf"\g<1>{version}", original[RECORDING])
+    if not count:
+        raise ReleaseError(f"{RECORDING} records no locmetry {current} output to update.")
     return updated
 
 
@@ -109,6 +120,7 @@ def verify(root, version):
         (sys.executable, "scripts/doc-indexes.py", "check"),
         ("cargo", "fmt", "--all", "--check"),
         ("cargo", "test", "--locked"),
+        REPLAY,
         ("cargo", "clippy", "--locked", "--all-targets", "--", "-D", "warnings"),
         ("cargo", "build", "--release", "--locked"),
         ("bash", "scripts/check-doc-examples.sh"),

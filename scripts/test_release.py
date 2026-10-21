@@ -16,6 +16,22 @@ release = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(release)
 
 
+# The recorded root guide prints the executable version; its other text,
+# including a version-like example, must survive a release unchanged.
+RECORDING = """```bash
+locmetry --version
+locmetry guide --source
+```
+
+```output
+locmetry {version}
+Source: docs/guides/configure.md; locmetry {version}
+```
+
+Reports from locmetry 0.4.0 or later compare.
+"""
+
+
 class ReleaseTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -28,6 +44,8 @@ class ReleaseTests(unittest.TestCase):
         self.write("Cargo.toml", '[package]\nname = "locmetry"\nversion = "0.4.0"\n')
         self.write("Cargo.lock", '[[package]]\nname = "locmetry"\nversion = "0.4.0"\n\n[[package]]\nname = "other"\nversion = "0.4.0"\n')
         self.write("README.md", '# Locmetry\n\nInstall from the latest release.\n\nIllustrative producer: 0.1.6.\n')
+        (self.root / "docs/cli").mkdir(parents=True)
+        self.write("docs/cli/root.md", RECORDING.format(version="0.4.0"))
         self.git("add", ".")
         self.git("commit", "-qm", "Initial fixture")
 
@@ -45,7 +63,9 @@ class ReleaseTests(unittest.TestCase):
         self.assertEqual(first, {name: (self.root / name).read_text() for name in first})
         self.assertIn('name = "other"\nversion = "0.4.0"', first["Cargo.lock"])
         self.assertEqual(readme, (self.root / "README.md").read_bytes())
-        self.assertEqual({"Cargo.toml", "Cargo.lock"}, set(self.git("diff", "--name-only").splitlines()))
+        self.assertEqual(set(release.VERSION_FILES), set(self.git("diff", "--name-only").splitlines()))
+        self.assertEqual(RECORDING.format(version="0.4.1").replace("from locmetry 0.4.1", "from locmetry 0.4.0"),
+                         first["docs/cli/root.md"])
         self.assertEqual("0.4.1", release.crate_version(first["Cargo.toml"]))
         self.assertIn('name = "locmetry"\nversion = "0.4.1"', first["Cargo.lock"])
 
@@ -55,6 +75,29 @@ class ReleaseTests(unittest.TestCase):
         with self.assertRaises(release.ReleaseError):
             release.prepare(self.root, "0.4.1")
         self.assertEqual(before, (self.root / "Cargo.toml").read_text())
+
+    def test_recording_without_version_output_fails_before_any_write(self):
+        self.write("docs/cli/root.md", "No recorded version here.\n")
+        before = (self.root / "Cargo.toml").read_text()
+        with self.assertRaises(release.ReleaseError):
+            release.prepare(self.root, "0.4.1")
+        self.assertEqual(before, (self.root / "Cargo.toml").read_text())
+
+    def test_checks_replay_command_guides_with_the_ci_pins_after_building_them(self):
+        with patch.object(release, "run", return_value="locmetry 0.4.1") as run:
+            release.verify(self.root, "0.4.1")
+        commands = [call.args[1:] for call in run.call_args_list]
+        replay = next(command for command in commands if "scripts/check-recorded-guides.py" in command)
+        self.assertIn("--set", replay)
+        self.assertEqual("reference", replay[replay.index("--set") + 1])
+        self.assertLess(commands.index(("cargo", "test", "--locked")), commands.index(replay))
+        repository = Path(__file__).resolve().parents[1]
+        workflow = (repository / ".github/workflows/ci.yml").read_text()
+        step = workflow.split("      - name: Replay command guides\n", 1)[1].split("      - name:", 1)[0]
+        pins = [replay[index + 1] for index, part in enumerate(replay) if part == "--with"]
+        self.assertTrue(pins)
+        for pin in pins:
+            self.assertIn(f"--with {pin}", step)
 
     def test_invalid_versions_and_downgrades_are_rejected(self):
         for version in ("v0.4.1", "0.4.1;echo bad", "0.4", "00.4.1", "0.3.9"):
