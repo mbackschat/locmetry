@@ -23,26 +23,17 @@ pub fn read_input(path: &Path) -> Result<MeasurementReport> {
         .with_context(|| format!("Invalid measurement report {}", path.display()))
 }
 
+/// Refuses an output that is an input under another name. File identity,
+/// rather than path comparison, also catches symbolic and hard links, on
+/// Windows through the volume serial and file index.
 pub fn validate_destination(path: &Path, inputs: [&Path; 2]) -> Result<()> {
     if path.exists() {
-        let target = path.canonicalize()?;
         for input in inputs {
             ensure!(
-                target != input.canonicalize()?,
+                !same_file::is_same_file(path, input)?,
                 "Comparison output must not overwrite input {}",
                 input.display()
             );
-            #[cfg(unix)]
-            {
-                use std::os::unix::fs::MetadataExt;
-                let a = fs::metadata(path)?;
-                let b = fs::metadata(input)?;
-                ensure!(
-                    a.dev() != b.dev() || a.ino() != b.ino(),
-                    "Comparison output must not overwrite a hard-link alias of input {}",
-                    input.display()
-                );
-            }
         }
     }
     Ok(())
