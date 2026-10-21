@@ -24,7 +24,7 @@ if [[ $# != 2 ]]; then
     exit 1
 fi
 if ! command -v jq >/dev/null; then
-    printf '%s\n' 'This optional helper requires jq. Install it with `brew install jq` on macOS, or your system package manager on Linux. Locmetry itself does not require jq.' >&2
+    printf '%s\n' 'This optional helper requires jq. Install it with `brew install jq` on macOS, your system package manager on Linux, or `winget install jqlang.jq` on Windows. Locmetry itself does not require jq.' >&2
     exit 1
 fi
 
