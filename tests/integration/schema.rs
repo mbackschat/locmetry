@@ -199,7 +199,7 @@ fn config_schema_states_order_layers_and_a_valid_example() {
         "source a build module would claim",
         "`*` also matches names that start with a dot",
         "`docs/**`",
-        "nothing reports it as unclaimed",
+        "`summary.largest_module_files`",
     ] {
         assert!(root.contains(statement), "{statement:?} missing in: {root}");
     }

@@ -881,6 +881,89 @@ fn reports_name_the_build_modules_that_decided_production() {
     assert!(!markdown.contains("## Build modules"), "{markdown}");
 }
 
+/// Module layouts claim production without review, so the largest files they
+/// claimed are named where generated or vendored code would hide; a file an
+/// entry or convention decided is not listed.
+#[test]
+fn reports_name_the_largest_files_build_modules_claimed() {
+    const POLICY: &str = "version = 1\n[[overrides]]\nid = \"generated\"\nmatch = [\"web/src/gen.ts\"]\npurpose = \"other\"\ncategory = \"generated\"\nreason = \"generator header\"\n";
+    let lines = |count: usize| "let a = 1;\n".repeat(count);
+    let temp = project(&[
+        (".locmetryrc", POLICY),
+        ("backend/build.gradle.kts", "plugins { kotlin(\"jvm\") }\n"),
+        ("backend/src/main/kotlin/A.kt", "fun a() = 1\nfun b() = 2\n"),
+        ("web/package.json", "{}\n"),
+        ("web/src/client.ts", &lines(7)),
+        ("web/src/gen.ts", &lines(9)),
+        ("web/src/a.test.ts", &lines(8)),
+        ("web/src/a.ts", &lines(1)),
+        ("web/src/b.ts", &lines(1)),
+        ("web/src/c.ts", &lines(1)),
+        ("web/src/d.ts", &lines(1)),
+    ]);
+    let root = temp.path().join("project");
+    let (success, document, stderr) = headline(&root, &[]);
+    assert!(success, "{stderr}");
+    // Each fixture line is code, so lines equal code.
+    let file = |path: &str, code: u64, module: &str, detector: &str| {
+        json!({
+            "path": path,
+            "lines": code,
+            "code": code,
+            "module": module,
+            "detector": detector
+        })
+    };
+    assert_eq!(
+        document["summary"]["largest_module_files"],
+        json!([
+            file("web/src/client.ts", 7, "web", "npm"),
+            file("backend/src/main/kotlin/A.kt", 2, "backend", "gradle"),
+            file("web/src/a.ts", 1, "web", "npm"),
+            file("web/src/b.ts", 1, "web", "npm"),
+            file("web/src/c.ts", 1, "web", "npm"),
+        ])
+    );
+    let table = String::from_utf8(run(&root, &["--verbose", "--format", "table"]).stdout).unwrap();
+    assert!(
+        table.contains(
+            " Largest module-claimed production; generated or vendored code here needs an entry:\n   web/src/client.ts             7 code lines  npm web\n   backend/src/main/kotlin/A.kt  2 code lines  gradle backend\n"
+        ),
+        "{table}"
+    );
+    let markdown = String::from_utf8(run(&root, &["--format", "markdown"]).stdout).unwrap();
+    let section = &markdown[markdown.find("## Build modules").expect(&markdown)..];
+    assert!(
+        section.contains("| web/src/client.ts | 7 | 7 | web | npm |"),
+        "{section}"
+    );
+    // Saved reports carrying file records must list exactly these files.
+    let (_, full, _) = report(&root, &[]);
+    let validate = |document: Value| {
+        serde_json::from_value::<locmetry::contract::MeasurementReport>(document)
+            .unwrap()
+            .validate()
+    };
+    validate(full.clone()).unwrap();
+    let mut forged = full;
+    forged["summary"]["largest_module_files"][0]["path"] = json!("web/src/gen.ts");
+    let error = validate(forged).unwrap_err().to_string();
+    assert!(
+        error.contains("largest_module_files conflicts with measured files"),
+        "{error}"
+    );
+
+    fs::write(
+        root.join(".locmetryrc"),
+        "version = 1\n[classification]\nbuiltin_modules = false\n",
+    )
+    .unwrap();
+    let (_, document, _) = headline(&root, &[]);
+    assert!(document["summary"].get("largest_module_files").is_none());
+    let table = String::from_utf8(run(&root, &["--verbose", "--format", "table"]).stdout).unwrap();
+    assert!(!table.contains("module-claimed"), "{table}");
+}
+
 /// A folder holding most of the unclaimed code splits even when many
 /// top-level folders already fill the list, so the bulk is located precisely.
 #[test]

@@ -55,6 +55,12 @@ locmetry workspace --workspace-file workspace.toml --no-user-config --no-color -
 
  Not source code: 2 data files (2 lines), 1 documentation file (3 lines); --files --output - lists each file's kind.
  Production from build modules: go 4 code lines in 1 module, npm 12 code lines in 1 module.
+ Largest module-claimed production; generated or vendored code here needs an entry:
+   web/src/index.html              5 code lines  npm web
+   service/src/main.go             4 code lines  go service
+   web/src/orders/Order.ts         3 code lines  npm web
+   web/src/orders/OrderView.tsx    3 code lines  npm web
+   web/src/orders/receipt.acmetpl  1 code line   npm web
  Unclaimed source: 1 code line in 1 file, here:
    service/experiments  1 code line  1 file
  To inspect or refine purpose classification, use locmetry --guide configure; --files --output - shows each file's rule.

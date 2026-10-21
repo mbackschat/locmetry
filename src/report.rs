@@ -487,6 +487,46 @@ pub fn module_shares(modules: &[Module], rows: &[FileRecord]) -> Vec<ModuleShare
     shares
 }
 
+/// A source file that a build module's layout classified as production.
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct ModuleFile {
+    pub path: String,
+    pub lines: u64,
+    pub code: u64,
+    /// Folder of the module whose layout claimed the file; `.` is the scan root.
+    pub module: String,
+    pub detector: String,
+}
+
+/// Files [`largest_module_files`] lists: enough to expose a generated or
+/// vendored file, which dwarfs hand-written ones, in one glance.
+pub(crate) const MODULE_FILES: usize = 5;
+
+/// The largest source files module layouts claimed, by code and then path.
+/// No other finding lists them, because a layout decides production without
+/// review; generated or vendored code inside a module surfaces here.
+pub fn largest_module_files(modules: &[Module], rows: &[FileRecord]) -> Vec<ModuleFile> {
+    let owners = ModuleOwners::new(modules.iter().map(|m| (m.path.as_str(), m.detector)));
+    let mut files: Vec<ModuleFile> = rows
+        .iter()
+        .filter(|row| row.kind == Kind::Source)
+        .filter_map(|row| {
+            let module = &modules[owners.owner(&row.path, &row.classification.rule)?];
+            Some(ModuleFile {
+                path: row.path.clone(),
+                lines: row.counts.lines,
+                code: row.counts.code,
+                module: module.path.clone(),
+                detector: module.detector.into(),
+            })
+        })
+        .collect();
+    files.sort_by(|a, b| b.code.cmp(&a.code).then_with(|| a.path.cmp(&b.path)));
+    files.truncate(MODULE_FILES);
+    files
+}
+
 /// Modules and classified source code of one build system.
 #[derive(Clone, Debug, Default, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]

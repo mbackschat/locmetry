@@ -251,6 +251,7 @@ fn unreadable_counts_and_member_failures_are_separate_from_optional_findings() {
         subfolder: None,
         coverage: &coverage,
         modules: &[],
+        module_files: &[],
         submodules: &[],
         unused_entries: &[],
         unused_exclusions: &[],

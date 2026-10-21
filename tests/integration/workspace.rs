@@ -137,6 +137,13 @@ fn workspace_merges_members_as_prefixed_top_level_folders() {
         json!([{"path": "api", "detector": "cargo"}, {"path": "web", "detector": "npm"}])
     );
     assert_eq!(
+        merged["summary"]["largest_module_files"],
+        json!([
+            {"path": "web/src/index.ts", "lines": 2, "code": 2, "module": "web", "detector": "npm"},
+            {"path": "api/src/lib.rs", "lines": 1, "code": 1, "module": "api", "detector": "cargo"},
+        ])
+    );
+    assert_eq!(
         merged["summary"]["unclaimed_folders"],
         json!([
             {"folder": "api/vendor/proto", "files": 1, "code": 1},

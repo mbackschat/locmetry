@@ -6,12 +6,12 @@ use guides::Guide;
 use locmetry::contract::{self, MeasurementReport};
 use locmetry::style::{plain, Role, Theme};
 use locmetry::{
-    breakdown, build_report, build_systems, git_submodules, module_shares, render_markdown,
-    render_table_with_options, report_text, review, scan, scope_policy, submodule_shares,
-    unclaimed_folders, unused_entries, user_defaults_file, validate_output, write_report, BarKind,
-    Bars, Coverage, FileRecord, Findings, MemberView, Module, ModuleShare, Policy, Purpose,
-    RowOrder, ScopeOverrides, SubmoduleShare, TableOptions, BACKEND, CONFIG_FILE, DATA_LANGUAGES,
-    DOCUMENTATION_LANGUAGES,
+    breakdown, build_report, build_systems, git_submodules, largest_module_files, module_shares,
+    render_markdown, render_table_with_options, report_text, review, scan, scope_policy,
+    submodule_shares, unclaimed_folders, unused_entries, user_defaults_file, validate_output,
+    write_report, BarKind, Bars, Coverage, FileRecord, Findings, MemberView, Module, ModuleShare,
+    Policy, Purpose, RowOrder, ScopeOverrides, SubmoduleShare, TableOptions, BACKEND, CONFIG_FILE,
+    DATA_LANGUAGES, DOCUMENTATION_LANGUAGES,
 };
 use std::collections::BTreeMap;
 use std::{
@@ -1524,6 +1524,7 @@ fn report(
     } = results;
     let format = destination.format;
     let summary = build_report(&rows);
+    let module_files = largest_module_files(&modules, &rows);
     let subfolder = match &location {
         Location::Root { scope, .. } => scope.subfolder.as_deref(),
         Location::Workspace { .. } => None,
@@ -1532,6 +1533,7 @@ fn report(
         subfolder,
         coverage: &coverage,
         modules: &module_shares,
+        module_files: &module_files,
         submodules: &submodules,
         unused_entries: &unused_entries,
         unused_exclusions: &unused_exclusions,
@@ -1625,6 +1627,7 @@ fn report(
                 .map(|(k, v)| (k.into(), v))
                 .collect(),
             submodules,
+            largest_module_files: module_files.clone(),
             unused_entries: if summary_findings {
                 unused_entries
             } else {

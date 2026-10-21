@@ -364,6 +364,9 @@ pub struct ReportSummary {
     pub build_modules: BTreeMap<String, crate::BuildSystemShare>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub submodules: Vec<crate::SubmoduleShare>,
+    /// The five largest source files that build-module layouts classified as production, by code and then path. Nothing else reviews module-claimed code; a generated or vendored file here needs an entry. Absent when no layout claimed source.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub largest_module_files: Vec<crate::ModuleFile>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     /// Entries deciding no measured file; with subfolder selection, or in a workspace of project folders, this says nothing about use elsewhere. Policy cleanup requires an unrestricted measurement. Absent in a workspace of independent roots, whose members report their own.
     pub unused_entries: Vec<String>,

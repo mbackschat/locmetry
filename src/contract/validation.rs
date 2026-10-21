@@ -433,6 +433,50 @@ impl MeasurementReport {
                 .map(|f| &f.folder),
             "unclaimed_folders",
         )?;
+        unique(
+            self.summary.largest_module_files.iter().map(|f| &f.path),
+            "largest_module_files",
+        )?;
+        for file in &self.summary.largest_module_files {
+            path(&file.path, Root::Rejected)?;
+            path(&file.module, Root::Allowed)?;
+        }
+        if let (Some(files), Some(modules)) = (&self.files, &m.modules) {
+            let owners = crate::modules::ModuleOwners::new(
+                modules
+                    .iter()
+                    .map(|m| (m.path.as_str(), m.detector.as_str())),
+            );
+            let mut largest: Vec<(u64, u64, &str, &str, &str)> = files
+                .iter()
+                .filter(|f| f.kind == Kind::Source)
+                .filter_map(|f| {
+                    let owner = &modules[owners.owner(&f.path, &f.rule)?];
+                    Some((
+                        f.counts.code,
+                        f.counts.lines,
+                        &*f.path,
+                        &*owner.path,
+                        &*owner.detector,
+                    ))
+                })
+                .collect();
+            largest.sort_by(|a, b| b.0.cmp(&a.0).then_with(|| a.2.cmp(b.2)));
+            largest.truncate(crate::report::MODULE_FILES);
+            let recorded = self.summary.largest_module_files.iter().map(|f| {
+                (
+                    f.code,
+                    f.lines,
+                    f.path.as_str(),
+                    f.module.as_str(),
+                    f.detector.as_str(),
+                )
+            });
+            ensure!(
+                largest.into_iter().eq(recorded),
+                "largest_module_files conflicts with measured files"
+            );
+        }
         if let Some(review) = &self.review {
             unique(review.iter().map(|r| &r.path), "review")?;
             for row in review {

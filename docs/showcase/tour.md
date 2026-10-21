@@ -23,6 +23,12 @@ locmetry --root immich --config builtin-only.toml --format table --verbose --no-
 file's kind.
  Production from build modules: npm 127,205 code lines in 12 modules, dart 59,170 code lines in 2 modules, gradle 4,102
 code lines in 2 modules, python 3,037 code lines in 1 module.
+ Largest module-claimed production; generated or vendored code here needs an entry:
+   packages/sdk/src/fetch-client.ts                                6,466 code lines  npm packages/sdk
+   server/src/queries/search.repository.sql                        1,856 code lines  npm server
+   server/src/queries/person.repository.sql                        1,344 code lines  npm server
+   server/src/schema/migrations/1752267649968-StandardizeNames.ts  1,193 code lines  npm server
+   server/src/repositories/asset.repository.ts                     1,161 code lines  npm server
  Unclaimed source: 5,623 code lines in 102 files, here:
    mobile/ios/Runner           2,272 code lines  21 files
    mobile/ios/WidgetExtension    830 code lines   7 files
@@ -39,11 +45,11 @@ are not zero.
 
 ```
 
-Data and documentation are already separate, and four build systems claim most production source. The unclaimed list is the first review queue: the iOS app has no build descriptor Locmetry reads, and smaller folders hold configuration and scripts. Module-claimed production is not reviewed by anything, so it needs a separate look.
+Data and documentation are already separate, and four build systems claim most production source. A module layout makes everything in it production without review, so the note lists the largest files the layouts claimed: the SDK client and two SQL query snapshots dwarf the hand-written code around them. The unclaimed list is the other review queue: the iOS app has no build descriptor Locmetry reads, and smaller folders hold configuration and scripts.
 
 ## Look for generated code
 
-Generators usually leave a header. Searching for common markers finds candidates inside module-claimed production.
+Generators usually leave a header. Searching for common markers checks those suspects and finds the rest of their kind.
 
 ```bash
 source scripts/showcase-env.sh

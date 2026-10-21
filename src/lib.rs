@@ -29,9 +29,10 @@ pub use output::{
 };
 pub use paths::{folder_relative, qualify};
 pub use report::{
-    breakdown, build_report, build_systems, module_shares, review, submodule_shares,
-    unclaimed_folders, unused_entries, BreakdownRow, BuildSystemShare, Counts, FileRecord,
-    FolderShare, Kind, ModuleShare, ReportSummary, ReviewEntry, SubmoduleShare, Summary,
+    breakdown, build_report, build_systems, largest_module_files, module_shares, review,
+    submodule_shares, unclaimed_folders, unused_entries, BreakdownRow, BuildSystemShare, Counts,
+    FileRecord, FolderShare, Kind, ModuleFile, ModuleShare, ReportSummary, ReviewEntry,
+    SubmoduleShare, Summary,
 };
 pub use report_schema::report_schema;
 

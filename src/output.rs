@@ -4,7 +4,7 @@ use crate::report::Summary;
 use crate::style::{Role, Theme};
 use crate::{
     build_systems, review, unclaimed_folders, Counts, Coverage, FileRecord, FolderShare, Kind,
-    ModuleShare, Purpose, ReportSummary, SubmoduleShare,
+    ModuleFile, ModuleShare, Purpose, ReportSummary, SubmoduleShare,
 };
 use anyhow::{ensure, Context, Result};
 use serde_json::Value;
@@ -74,6 +74,8 @@ pub struct Findings<'a> {
     pub subfolder: Option<&'a str>,
     pub coverage: &'a Coverage,
     pub modules: &'a [ModuleShare],
+    /// The largest files module layouts claimed, by code.
+    pub module_files: &'a [ModuleFile],
     pub submodules: &'a [SubmoduleShare],
     pub unused_entries: &'a [String],
     pub unused_exclusions: &'a [String],
@@ -411,7 +413,7 @@ pub fn render_markdown(
         )
         .unwrap();
     }
-    render_build_modules(&mut output, findings.modules, order);
+    render_build_modules(&mut output, findings.modules, findings.module_files, order);
     let unknown = review(rows);
     writeln!(
         output,
@@ -458,7 +460,12 @@ pub fn render_markdown(
 
 /// Build systems and every module, so a reader can see which build files
 /// decided production and spot a module whose layout claimed nothing.
-fn render_build_modules(output: &mut String, modules: &[ModuleShare], order: RowOrder) {
+fn render_build_modules(
+    output: &mut String,
+    modules: &[ModuleShare],
+    files: &[ModuleFile],
+    order: RowOrder,
+) {
     if modules.is_empty() {
         return;
     }
@@ -485,17 +492,29 @@ fn render_build_modules(output: &mut String, modules: &[ModuleShare], order: Row
     }
     output.push_str("\n| Module | Build system | Lines | Code |\n| --- | --- | ---: | ---: |\n");
     for module in modules {
-        let path = match module.path.as_str() {
-            "." => "(scan root)",
-            path => path,
-        };
         writeln!(
             output,
             "| {} | {} | {} | {} |",
-            cell(path),
+            cell(module_label(&module.path)),
             module.detector,
             grouped(module.lines),
             grouped(module.code)
+        )
+        .unwrap();
+    }
+    if files.is_empty() {
+        return;
+    }
+    output.push_str("\nLargest module-claimed files; nothing else reviews them, so generated or vendored code here needs an entry.\n\n| Path | Lines | Code | Module | Build system |\n| --- | ---: | ---: | --- | --- |\n");
+    for file in files {
+        writeln!(
+            output,
+            "| {} | {} | {} | {} | {} |",
+            cell(&file.path),
+            grouped(file.lines),
+            grouped(file.code),
+            cell(module_label(&file.module)),
+            cell(&file.detector)
         )
         .unwrap();
     }
@@ -1603,6 +1622,52 @@ fn unclaimed_note(folders: &[FolderShare], theme: Theme) -> String {
     note + "\n To inspect or refine purpose classification, use locmetry --guide configure; --files --output - shows each file's rule."
 }
 
+/// The largest module-claimed files as an aligned list; like the unclaimed
+/// list, it owns its line breaks and sanitizes paths before padding.
+fn module_files_note(files: &[ModuleFile]) -> String {
+    let rows: Vec<[String; 4]> = files
+        .iter()
+        .map(|file| {
+            [
+                plain(&file.path),
+                grouped(file.code),
+                plural(file.code, "code line"),
+                format!(
+                    "{} {}",
+                    plain(&file.detector),
+                    plain(module_label(&file.module))
+                ),
+            ]
+        })
+        .collect();
+    let width = |column: usize| {
+        rows.iter()
+            .map(|row| row[column].chars().count())
+            .max()
+            .unwrap_or(0)
+    };
+    let (path, code, unit) = (width(0), width(1), width(2));
+    let mut note = String::from(
+        "Largest module-claimed production; generated or vendored code here needs an entry:",
+    );
+    for [file, lines, lines_unit, module] in &rows {
+        write!(
+            note,
+            "\n   {file:<path$}  {lines:>code$} {lines_unit:<unit$}  {module}"
+        )
+        .unwrap();
+    }
+    note
+}
+
+/// Label of a module folder; `.` is the scan root.
+fn module_label(path: &str) -> &str {
+    match path {
+        "." => "(scan root)",
+        path => path,
+    }
+}
+
 /// Folders listed in the terminal note; the JSON headline lists all of them.
 const FOLDER_LINES: usize = 8;
 
@@ -1865,6 +1930,9 @@ pub fn render_table_with_options(
             )));
         }
         notes.extend(build_modules_note(findings.modules, order).map(TerminalNote::Text));
+        if !findings.module_files.is_empty() {
+            notes.push(TerminalNote::ModuleFiles(findings.module_files.to_vec()));
+        }
         notes.extend(submodules_note(findings.submodules).map(TerminalNote::Text));
         let folders = unclaimed_folders(rows);
         if !folders.is_empty() {
@@ -1934,6 +2002,7 @@ pub fn render_table_with_options(
 enum TerminalNote {
     Text(String),
     Unclaimed(Vec<FolderShare>),
+    ModuleFiles(Vec<ModuleFile>),
     CoverageGap(String),
     Unrecognized(String),
 }
@@ -1944,6 +2013,7 @@ impl TerminalNote {
             Self::Text(text) => plain(&text),
             // This list owns its line breaks and sanitizes labels before padding.
             Self::Unclaimed(folders) => unclaimed_note(&folders, theme),
+            Self::ModuleFiles(files) => module_files_note(&files),
             Self::Unrecognized(text) => theme.paint(
                 Role::Muted,
                 &format!("Unrecognized files: {}", plain(&text)),
@@ -2254,6 +2324,7 @@ mod tests {
                 subfolder: None,
                 coverage: &coverage,
                 modules: &[],
+                module_files: &[],
                 submodules: &[],
                 unused_entries: &[],
                 unused_exclusions: &[],

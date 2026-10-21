@@ -385,6 +385,7 @@ fn adaptive_styling_preserves_plain_alignment_and_mutes_the_legend() {
         subfolder: None,
         coverage: &scan.coverage,
         modules: &[],
+        module_files: &[],
         submodules: &[],
         unused_entries: &[],
         unused_exclusions: &[],
