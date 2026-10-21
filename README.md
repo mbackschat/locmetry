@@ -19,7 +19,15 @@ With Homebrew on macOS arm64 or Linux x86_64 and aarch64:
 brew install mbackschat/tap/locmetry
 ```
 
-Or download a binary from the [latest release](https://github.com/mbackschat/locmetry/releases/latest). Locmetry is a self-contained executable with no separately installed runtime or counter. Linux binaries are static; macOS uses operating-system libraries. See [manual installation and source builds](docs/tokei-integration.md#installation) for alternatives.
+Or download a binary from the [latest release](https://github.com/mbackschat/locmetry/releases/latest); releases after 0.7.6 also include a zip for Windows x86_64. Locmetry is a self-contained executable with no separately installed runtime or counter. Linux binaries are static, the Windows binary needs no Visual C++ runtime, and macOS uses operating-system libraries. See [manual installation and source builds](docs/tokei-integration.md#installation) for alternatives.
+
+### Windows and PowerShell
+
+Run Locmetry from PowerShell; the [common commands](#common-commands) work there as written, including globs in single quotes such as `--exclude 'vendor/**'`.
+
+- Save reports with `--output FILE` rather than `>`. Windows PowerShell 5.1 redirects as UTF-16; `locmetry compare` reads that, but other tools may not.
+- Personal defaults live in `%APPDATA%\locmetry\config.toml`.
+- The optional `compare-locmetry-files.sh` helper is a Bash script and needs Bash, for example from Git for Windows, and `jq` (`winget install jqlang.jq`).
 
 ## What you see
 
