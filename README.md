@@ -385,6 +385,7 @@ For a production-rule change covered by the example in `locmetry --help`, inspec
 | Capture baselines and interpret net change | `locmetry --guide compare` | [Compare](docs/guides/compare.md) |
 | Gate source file sizes by purpose in CI | — | [File-size gate cookbook](docs/cookbooks/file-size-gate.md) |
 
+- [Changelog](CHANGELOG.md): user-visible changes per release, with breaking changes marked.
 - [Product contract](docs/PRODUCT.md): supported settings, fields and guarantees.
 - [Measurement limits](docs/measurement.md): selection and counting boundaries.
 - [Documentation index](docs/README.md): architecture, research and current work.

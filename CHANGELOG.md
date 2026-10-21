@@ -1,0 +1,73 @@
+# Changelog
+
+User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format. Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html); before 1.0, a minor release may break commands, reports or configuration, and such entries are marked **Breaking**. [PRODUCT](docs/PRODUCT.md) owns the current contract. Releases before 0.7.0 are listed only as [tags](https://github.com/mbackschat/locmetry/tags).
+
+## [Unreleased]
+
+### Added
+
+- Windows x86_64 support: releases include a zip with `locmetry.exe`, which needs no Visual C++ runtime, for use from PowerShell. Personal defaults live in `%APPDATA%\locmetry\config.toml`, roots show as ordinary drive paths, and colors work in the Windows PowerShell console or fall back to plain text. See [Windows and PowerShell](README.md#windows-and-powershell).
+- `compare` reads reports saved with a UTF-8 or UTF-16 byte-order mark, as Windows PowerShell 5.1 writes them with `>`.
+- `--tables-only` prints the tables without legends, notes or footer, for transcripts and scripts.
+- Table and Markdown views count language variants, such as TSX, JSX and C++ headers, within their family's row, and a `Folded:` line names each fold. `--split-languages` shows them separately; JSON keeps every backend language.
+- Reports name Rust `#[cfg(test)]` code inside production files as `inline_tests`, per file and per purpose, without moving it out of production. `--verbose` tables and Markdown reports add a note.
+- The `--verbose` note on files that are not source code adds the code lines in their embedded snippets, such as fenced code in Markdown.
+- A [cookbook](docs/cookbooks/file-size-gate.md) shows how to gate source file sizes by purpose with Locmetry's own measurement.
+
+### Changed
+
+- **Breaking:** table filter notes name only what they leave out, as `Not shown (purposes): …` and `Not shown (languages): …`, with the excluded code. Table footers no longer end with `; purposes: …` or `; languages: …`.
+- The built-in `rust-test-module` convention classifies Rust `tests.rs` modules as tests. Comparisons with earlier reports may show these files reclassified.
+
+### Fixed
+
+- Comparison table group headers no longer end with trailing blanks.
+
+## [0.7.6] - 2026-10-21
+
+### Added
+
+- Category rows in tables carry share bars, like language and folder rows.
+
+### Removed
+
+- The analytics cookbooks. Their [recreation design](docs/plans/analytics-cookbooks.md) names the commit that restores them.
+
+## [0.7.5] - 2026-10-21
+
+### Added
+
+- `--table-language` filters tables by language, like `--table-purpose`. Each filter's note states the code it excludes, so the shown total plus the exclusions equals the measurement; JSON and Markdown stay complete.
+
+## [0.7.4] - 2026-10-21
+
+### Added
+
+- Workspace files can name folders of one project with `project` and `folders`. Each folder is measured as `--subfolder` would measure it, under the project's single policy.
+- Full reports name the five largest files that build-module layouts classified as production, as `summary.largest_module_files`, in the `--verbose` note and in Markdown, so generated or vendored code inside a module becomes visible.
+- `explain` accepts several paths and prints one JSON line per path; a single path keeps its document.
+- Dart packages (`pubspec.yaml`) are detected as build modules, and `*.e2e-spec.*` suites are classified as tests. Comparisons with earlier reports may show these files reclassified.
+
+### Changed
+
+- **Breaking:** measurement, comparison and explanation documents share `schema_version` `"3"`; comparison and explanation documents previously carried `"2"`. Schema-1 and schema-2 measurements are rejected as invalid reports.
+
+## [0.7.3] - 2026-10-20
+
+### Added
+
+- Release archives and Homebrew install `compare-locmetry-files.sh`, an optional Bash helper that lists file-level changes between two full reports. It needs `jq`; Locmetry itself does not.
+
+## [0.7.0] - 2026-10-20
+
+### Changed
+
+- **Breaking:** presentation options are named for what they show: `--folders`, `--categories`, `--bars`, `--purpose` and `--depth` became `--show-folders`, `--show-categories`, `--show-bars`, `--table-purpose` and `--markdown-depth`. `workspace --file` and `explain --workspace` became `--workspace-file`. The former spellings are rejected.
+- `--files` adds per-file records to every full JSON view, whether saved or printed.
+
+[Unreleased]: https://github.com/mbackschat/locmetry/compare/v0.7.6...HEAD
+[0.7.6]: https://github.com/mbackschat/locmetry/compare/v0.7.5...v0.7.6
+[0.7.5]: https://github.com/mbackschat/locmetry/compare/v0.7.4...v0.7.5
+[0.7.4]: https://github.com/mbackschat/locmetry/compare/v0.7.3...v0.7.4
+[0.7.3]: https://github.com/mbackschat/locmetry/compare/v0.7.0...v0.7.3
+[0.7.0]: https://github.com/mbackschat/locmetry/compare/v0.6.0...v0.7.0
