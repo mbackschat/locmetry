@@ -496,14 +496,24 @@ fn folder_grid_keeps_its_total_when_code_only_moves_between_folders() {
     assert!(!folders.contains(" . ("), "{text}");
 }
 
+/// The version alone decides: pre-schema-3 reports are refused with the
+/// remedy before any other field is read.
 #[test]
-fn released_version_one_reports_are_refused_with_a_remedy() {
-    for n in 0..=6 {
-        let path = PathBuf::from(format!("tests/fixtures/reports/v0.1.{n}-root.json"));
+fn reports_before_schema_three_are_refused_with_a_remedy() {
+    let temp = tempfile::tempdir().unwrap();
+    for version in ["1", "2"] {
+        let path = temp.path().join(format!("v{version}.json"));
+        fs::write(&path, format!(r#"{{"schema_version":"{version}"}}"#)).unwrap();
         let output = compare(&path, &path, &[]);
         assert_eq!(output.status.code(), Some(1));
         assert!(output.stdout.is_empty());
-        assert!(String::from_utf8_lossy(&output.stderr).contains("measure again"));
+        assert!(
+            String::from_utf8_lossy(&output.stderr).contains(&format!(
+                "has report schema version {version}; measure again"
+            )),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
     }
 }
 

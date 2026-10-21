@@ -74,26 +74,6 @@ fn measurement_envelope_identifies_full_and_headline_projections() {
     }
 }
 
-/// Locks the 0.5 clean break: every released version-1 report is refused by
-/// the typed reader, because its purpose names no longer exist.
-#[test]
-fn version_one_release_reports_are_refused() {
-    let names = (0..=6)
-        .map(|minor| format!("v0.1.{minor}-root"))
-        .chain((4..=6).map(|minor| format!("v0.1.{minor}-workspace")));
-    for name in names {
-        let value: Value = serde_json::from_str(
-            &std::fs::read_to_string(format!("tests/fixtures/reports/{name}.json")).unwrap(),
-        )
-        .unwrap();
-        assert_eq!(value["schema_version"], "1", "{name}");
-        assert!(
-            serde_json::from_value::<MeasurementReport>(value).is_err(),
-            "{name}"
-        );
-    }
-}
-
 /// Schema 3 grows within its version before 1.0, so a field the current
 /// producer adds must not invalidate reports of the latest release: absence
 /// means "not recorded" (the v0.7.3 fixtures predate `largest_module_files`).

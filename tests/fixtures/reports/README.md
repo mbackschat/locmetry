@@ -1,9 +1,5 @@
-# Synthetic release compatibility fixtures
-
-These full reports with file detail were generated on 2026-10-15 by building each tagged source archive (`v0.1.0` through `v0.1.6`) offline with its locked dependencies. No worktrees or reference repositories were used. Paths were normalized to `/synthetic` and timestamps to zero; counts and policy receipts were not edited. Workspace variants begin at v0.1.4, the first release with that mode.
-
-The input was one synthetic root with a `package.json`, a JavaScript source file, a Python test, Markdown with an embedded Python example, an unrecognized extension, a Git-submodule declaration and its Python source. Its `.locmetryrc` contains an unused rule and exclusion so releases that report them expose those fields. The fixtures describe what the tagged binaries emitted, not an assumed latest-schema shape. Since report schema version 2 (locmetry 0.5), [contract](../../integration/contracts.rs) and [comparison](../../integration/compare.rs) tests use them to verify that version-1 reports are refused; validation tests measure current synthetic reports instead. Runtime public tests read these JSON files; they do not invoke Git or historical executables.
-
-[Report compatibility](../../../docs/report-compatibility.md) inventories field introductions and separates schema validity from comparison eligibility. S1-era behavior is exercised by current synthetic CLI and notebook tests, including empty and populated `parse_failures`, rather than giving unreleased code a fictitious release tag.
+# Release compatibility fixtures
 
 `v0.7.3-root.json` and `v0.7.3-workspace.json` were generated on 2026-10-21 by the released 0.7.3 Homebrew executable with `--no-user-config --files`, on a synthetic npm package with a JavaScript source and test and a Cargo crate, measured alone and as a two-member workspace. Paths were normalized to `/synthetic` and timestamps to zero. They lock that the current reader accepts and compares schema-3 reports of the latest release, whose summary predates later optional fields.
+
+[Report compatibility](../../../docs/report-compatibility.md) describes how schema 3 grows and what readers must accept. Reports before schema 3 need no fixture: `compare` refuses them by their version alone.
