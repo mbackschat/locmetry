@@ -9,6 +9,8 @@
 
 Locmetry counts code, comments and blank lines, classifies files as production, test or other, and records the rule behind each classification. Reports separate source code from data and documentation and show results by language and folder.
 
+It needs no configuration to start: Locmetry recognizes the [build modules](#build-modules) of npm, Gradle, Maven, Cargo, Go, Python, Lake, Swift and Dart projects, counts their conventional source layouts as production and finds tests by built-in conventions, so even a multi-language monorepo gets a production/test split on the first run.
+
 ## Install
 
 With Homebrew on macOS arm64 or Linux x86_64 and aarch64:
@@ -86,7 +88,7 @@ Line counters are good at counting, and Locmetry counts with Tokei too. Their to
 
 ### A reviewed policy answers "what does this project consist of"
 
-Built-in conventions already recognize the npm, Gradle, Python and Dart modules and the conventional unit, integration and end-to-end tests. A policy adds what only the project knows, with a recorded reason for each decision: generated code, end-to-end support code, the iOS app, deployment files and developer tooling.
+Built-in conventions already recognize the npm, Gradle, Python and Dart [build modules](#build-modules) and the conventional unit, integration and end-to-end tests. A policy adds what only the project knows, with a recorded reason for each decision: generated code, end-to-end support code, the iOS app, deployment files and developer tooling.
 
 <!-- showcase-policy -->
 | Source code | Built-in conventions | Reviewed policy |
@@ -259,7 +261,7 @@ The tools are optional; Locmetry itself has no analytics dependency. Capture rep
 
 Locmetry embeds Tokei for counting and applies project policy to each file. Purpose (`production`, `test`, `other`), category (such as `implementation` or `tooling`) and content kind (source, data, documentation or unknown) are separate dimensions. `other` means neither production nor test; code no stage claimed is `other` with category `unclaimed`.
 
-- **Module context:** selected npm, Gradle, Maven, Cargo, Go, Python, Lake, Swift and Dart descriptors identify conventional source layouts. The innermost module supplies context, so nested projects do not inherit an outer project's layout blindly.
+- **Module context:** selected npm, Gradle, Maven, Cargo, Go, Python, Lake, Swift and Dart descriptors identify conventional source layouts, as [build modules](#build-modules) describes. The innermost module supplies context, so nested projects do not inherit an outer project's layout blindly.
 - **Ordered decisions:** explicit overrides precede test and build conventions, ordinary project rules, module inference and fallback. Tests inside production source trees remain tests; overrides can express exceptions. Every counted file records the deciding rule.
 - **Scope and coverage:** exclusions and ignore rules determine what is selected. Unrecognized files and unavailable counts remain distinguishable from zero. Read/parse failures produce a partial report and exit 2; unresolved classification alone does not make counts partial.
 
@@ -286,7 +288,25 @@ The explanation identifies the deciding stage, the matching pattern and the reas
 
 Built-in wrapper patterns cover `gradlew`, `gradlew.bat`, `mvnw`, `mvnw.cmd`, and files under `gradle/wrapper/` or `.mvn/wrapper/` at any depth. The enabled convention classifies them as `other` / `third-party-wrapper` unless an override or earlier convention wins; [wrapper details and precedence](docs/PRODUCT.md#matching-and-precedence) define the conditions.
 
-Module inference examines filenames and conventional layouts, not build-file contents, and never executes a build. Custom layouts need configuration. Classification applies to whole files, so inline tests cannot receive a separate purpose. [Module detection](docs/PRODUCT.md#module-detection) and [measurement limits](docs/measurement.md) define these boundaries.
+Classification applies to whole files, so inline tests cannot receive a separate purpose. [Measurement limits](docs/measurement.md) define this and other boundaries.
+
+### Build modules
+
+Locmetry recognizes build modules by their descriptors and counts each one's conventional source layout as production, with no configuration and across any mix of build systems in one tree:
+
+| Build system | Descriptor | Production source |
+| --- | --- | --- |
+| npm | `package.json` | `src/**` |
+| Gradle | `build.gradle`, `build.gradle.kts` | `src/main/**`, Kotlin Multiplatform `src/*Main/**` |
+| Maven | `pom.xml` | `src/main/**` |
+| Cargo | `Cargo.toml` | `src/**` |
+| Go | `go.mod` | every `*.go` file |
+| Python | `pyproject.toml`, `setup.py`, `setup.cfg` | `src/**` and top-level packages |
+| Lake (Lean) | `lakefile.lean`, `lakefile.toml` | every `*.lean` file |
+| Swift | `Package.swift` | `Sources/**` |
+| Dart and Flutter | `pubspec.yaml` | `lib/**`, `bin/**` |
+
+Tests inside these trees stay tests, and nested modules decide for themselves. Detection reads file names only and never runs a build, so custom layouts need configuration; [module detection](docs/PRODUCT.md#module-detection) has the details.
 
 ### Configuration
 
