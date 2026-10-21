@@ -69,7 +69,12 @@ pub(crate) enum Sort {
 pub(crate) enum Schema {
     /// The project configuration, `.locmetryrc`.
     Config,
-    /// Personal defaults in ~/.config/locmetry/config.toml.
+    // The file differs on Windows (src/config/user.rs); help names the local one.
+    #[cfg_attr(
+        not(windows),
+        doc = "Personal defaults in ~/.config/locmetry/config.toml."
+    )]
+    #[cfg_attr(windows, doc = r"Personal defaults in %APPDATA%\locmetry\config.toml.")]
     UserConfig,
     /// The JSON headline and full report.
     Report,
@@ -511,7 +516,14 @@ pub(crate) struct WorkspaceArgs {
 /// Settings that both modes accept: user defaults and the report's form.
 #[derive(clap::Args)]
 pub(crate) struct SharedArgs {
-    /// Ignore user defaults in ~/.config/locmetry/config.toml.
+    #[cfg_attr(
+        not(windows),
+        doc = "Ignore user defaults in ~/.config/locmetry/config.toml."
+    )]
+    #[cfg_attr(
+        windows,
+        doc = r"Ignore user defaults in %APPDATA%\locmetry\config.toml."
+    )]
     #[arg(long, help_heading = "Selection and policy")]
     pub(crate) no_user_config: bool,
     /// Write only to FILE, outside the scan root; - selects stdout.

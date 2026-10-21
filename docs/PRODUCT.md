@@ -118,7 +118,7 @@ Comparison requires identical recorded subfolder values, including presence vers
 
 ### User Defaults
 
-Personal defaults live in `$XDG_CONFIG_HOME/locmetry/config.toml`, or in `~/.config/locmetry/config.toml` when `XDG_CONFIG_HOME` is unset, on every platform. They may only narrow scope and teach languages, never assign purpose or category. Personal mappings can nevertheless change recognition and content kind, so reproducibility requires the same effective personal settings or `--no-user-config`:
+Personal defaults live in `$XDG_CONFIG_HOME/locmetry/config.toml` when `XDG_CONFIG_HOME` is an absolute path. Otherwise they live in `~/.config/locmetry/config.toml` on macOS and Linux, and in `%APPDATA%\locmetry\config.toml` on Windows, where Tokei, cloc and uv also keep user configuration. They may only narrow scope and teach languages, never assign purpose or category. Personal mappings can nevertheless change recognition and content kind, so reproducibility requires the same effective personal settings or `--no-user-config`:
 
 ```toml
 version = 1

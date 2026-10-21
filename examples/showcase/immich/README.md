@@ -27,7 +27,7 @@ locmetry --root "$showcase/v3.3.4/immich"
 locmetry workspace --workspace-file "$showcase/v3.3.4/immich/workspace.toml"
 ```
 
-Personal defaults in `~/.config/locmetry/config.toml` can add exclusions or language mappings; add `--no-user-config` if your numbers differ from the published ones.
+Personal defaults in `~/.config/locmetry/config.toml` (on Windows `%APPDATA%\locmetry\config.toml`) can add exclusions or language mappings; add `--no-user-config` if your numbers differ from the published ones.
 
 ## Review the policy
 

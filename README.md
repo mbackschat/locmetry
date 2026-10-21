@@ -71,7 +71,7 @@ cd immich && locmetry
  Share = Code / total Code. Bars: █ Production  ▓ Test  ░ Other; the largest row fills the bar.
 ```
 
-Code is split by purpose; comments and blanks stay separate. Data and documentation do not inflate source totals. Language variants count within their family's row, here TSX within TypeScript, and the `Folded:` line names each fold; `--split-languages` shows them separately, and JSON keeps every backend language. `Test/prod` divides test code by production code; it describes volume, not coverage. If your numbers differ from these, personal defaults in `~/.config/locmetry/config.toml` may apply; `--no-user-config` ignores them.
+Code is split by purpose; comments and blanks stay separate. Data and documentation do not inflate source totals. Language variants count within their family's row, here TSX within TypeScript, and the `Folded:` line names each fold; `--split-languages` shows them separately, and JSON keeps every backend language. `Test/prod` divides test code by production code; it describes volume, not coverage. If your numbers differ from these, personal defaults in `~/.config/locmetry/config.toml` (on Windows `%APPDATA%\locmetry\config.toml`) may apply; `--no-user-config` ignores them.
 
 #### Compared with a line counter: "how much text, per language"
 
