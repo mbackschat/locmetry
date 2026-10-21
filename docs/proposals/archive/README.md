@@ -13,5 +13,6 @@ These records preserve the reviewed designs and their outcomes. Dates record the
 | [Immich Reference Showcase](immich-showcase.md) | implemented | 2026-10-21 | Immich at pinned release tags became the public showcase; Acme stays the exact test reference. |
 | [Net Change Between Measurement Reports](net-change.md) | implemented | 2026-10-15 | Aggregate and topology comparison; per-file comparison remains deferred. |
 | [Subtree Measurement with Project Context](subtree-measurement.md) | implemented | 2026-10-16 | Project-aware subfolder measurement. |
+| [Windows Support](windows-support.md) | implemented | 2026-10-21 | Windows x86_64 release and CI target, used from PowerShell; Scoop and tab completion remain follow-ups. |
 
 <!-- doc-index:end -->

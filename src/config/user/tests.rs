@@ -26,7 +26,7 @@ fn an_absolute_xdg_config_home_wins_on_every_platform() {
 }
 
 /// Windows has no `HOME` by default; Tokei, cloc and uv keep user
-/// configuration in `%APPDATA%` there (docs/proposals/windows-support.md).
+/// configuration in `%APPDATA%` there (docs/proposals/archive/windows-support.md).
 #[test]
 fn without_xdg_config_home_the_platform_config_folder_applies() {
     let (home, appdata) = (absolute("home"), absolute("appdata"));
