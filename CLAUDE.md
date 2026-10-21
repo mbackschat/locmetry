@@ -37,7 +37,7 @@ Follow the [proposal retirement procedure](docs/proposals/README.md#retirement-p
 
 ### Documentation ownership and checks
 
-For help changes, follow the [CLI help design guidelines](docs/help-design.md): scope examples, make reference routing conditional, include verification and evaluate reading cost as well as correctness. Keep experimental evidence distinct from general design judgments.
+For help changes, follow the [CLI help design guidelines](docs/help-design.md): scope examples, make reference routing conditional, include verification and evaluate reading cost as well as correctness. Before a release whose help, guides, flags, defaults or report fields changed since the last checked version, run an [agent regression check](docs/agent-regression-checks.md) at the level its findings justify and record it in the ledger. Keep experimental evidence distinct from general design judgments.
 
 Follow the [documentation maintenance rules](docs/documentation-maintenance.md) for folder READMEs and authoritative status/date metadata. Update managed tables with `python3 scripts/doc-indexes.py update`; run `python3 scripts/doc-indexes.py check` after documentation changes. Keep status transitions, evidenced dates and regenerated indexes in the same commit. The checker and its regression suite run in CI; archived bodies remain frozen.
 
@@ -71,7 +71,7 @@ Choose verification from the changed behavior before implementation; combine row
 | Counting, selection, classification, schemas, dependencies or cross-cutting behavior | Full `cargo test --locked`, formatting and Clippy; add the private regression for measurement changes and affected executable documentation checks. |
 | Embedded guide source or guide discovery | Guides tests plus affected query/explanation tests; formatting and Clippy for Rust changes. Run documentation recipes when their commands, expected results or behavior change. |
 | Documentation-only instructions, plans, links or prose outside embedded guides | Check changed links/fragments, preserved history when moving records, and `git diff --check`; do not run unrelated Rust tests or builds. |
-| Release preparation | Full public suite, formatting, Clippy, executable documentation examples and release build; follow the distribution checks for the release scope. |
+| Release preparation | Full public suite, formatting, Clippy, executable documentation examples and release build; follow the distribution checks for the release scope, and an [agent regression check](docs/agent-regression-checks.md) when the CLI surface changed since the last checked version. |
 
 Run Cargo commands sharing a target directory sequentially to avoid build-lock contention. Reuse passing checks for unchanged relevant inputs; repeat or broaden them only after relevant changes, failures or unresolved concerns. CI retains the full platform matrix. In the handback, state the checks actually run and any material unverified boundary, without a routine list of unrelated skipped checks.
 

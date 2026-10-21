@@ -11,6 +11,7 @@ Start with the workflow or contract relevant to your task. Status tables in the 
 - [Current work](PLAN.md): open tasks, decision gates and deferred scope.
 - [Maintain these docs](documentation-maintenance.md): index ownership, status/date rules and automated checks.
 - [Design CLI help](help-design.md): what belongs in help, examples and references, with experimental rationale and evaluation criteria.
+- [Check agent use for regressions](agent-regression-checks.md): when and how to verify that interface changes keep agents correct and efficient, with a ledger of checks.
 - [Task guides](guides/README.md): configure, explain, read and compare measurements.
 - [Cookbooks](cookbooks/README.md): tested recipes that combine reports with other tools, such as a file-size gate for CI.
 - [Plans](plans/README.md): status of detailed plans and deferred designs.

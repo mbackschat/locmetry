@@ -41,7 +41,7 @@ The [bounded routing-cost replication](../research/agent-explorability-routing-r
 
 The owner subsequently clarified that completion requires every supported feature/use case. The [full-help study](../research/agent-explorability-full-help-study.md) completed the combined interface evaluation across ten tasks, including scope/views and personal-policy cases, then a separate bounded comparison-routing correction. Its final adoption decision closes the current help task; retain the original cost failure and correction limits. The benchmark is deferred for future feature/model changes, with no further trial scheduled. Do not pool the historical samples or treat the adverse-guard replication as a new covered-task benefit test.
 
-For a later session:
+On-demand regression checks of later interface changes follow the [agent regression checks](../agent-regression-checks.md), which reuse this contract and keep a ledger of checked versions. For a later session:
 
 1. Read the study's conclusions, limitations, and per-run results before proposing interface changes. Do not repeat the original pilot or pool sequential historical runs with fresh-task results.
 2. Use the frozen task files and runner for replay. Resolve MEDIUM from the owner's active CLI mapping and record the actual model/effort; a changed model is a new campaign.
