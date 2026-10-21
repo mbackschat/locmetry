@@ -1,24 +1,14 @@
 use crate::common;
-use common::write_all;
+use common::{stdout, write_all};
 use std::{fs, path::Path, process::Output};
 
 fn run(root: &Path, args: &[&str]) -> Output {
     common::locmetry()
         .current_dir(root)
-        .env("XDG_CONFIG_HOME", root.join("absent-user-config"))
         .env("COLUMNS", "200")
         .args(args)
         .output()
         .unwrap()
-}
-
-fn stdout(output: Output) -> String {
-    assert!(
-        output.status.success(),
-        "{}",
-        String::from_utf8_lossy(&output.stderr)
-    );
-    String::from_utf8(output.stdout).unwrap()
 }
 
 fn project(root: &Path) {

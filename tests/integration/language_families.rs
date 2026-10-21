@@ -1,24 +1,14 @@
 use crate::common;
-use common::write_all;
+use common::{stdout, write_all};
 use serde_json::Value;
 use std::{path::Path, process::Output};
 
 fn run(root: &Path, args: &[&str]) -> Output {
     common::locmetry()
         .current_dir(root)
-        .env("XDG_CONFIG_HOME", root.join("absent-user-config"))
         .args(args)
         .output()
         .unwrap()
-}
-
-fn stdout(output: Output) -> String {
-    assert!(
-        output.status.success(),
-        "{}",
-        String::from_utf8_lossy(&output.stderr)
-    );
-    String::from_utf8(output.stdout).unwrap()
 }
 
 /// Two code lines per variant file and one per base file, so each folded
@@ -39,12 +29,17 @@ fn project(root: &Path) {
     );
 }
 
-/// The `Language` cells of a table row: label, Files, Lines, Code.
-fn row<'t>(text: &'t str, label: &str) -> Option<Vec<&'t str>> {
-    text.lines()
-        .map(|line| line.split_whitespace().collect::<Vec<_>>())
-        .find(|cells| cells.first() == Some(&label))
-        .map(|cells| cells[..4].to_vec())
+/// Files, Lines and Code of the `label` row.
+fn figures(text: &str, label: &str) -> Vec<String> {
+    let skip = label.split_whitespace().count();
+    common::cells(text, label)[skip..skip + 3].to_vec()
+}
+
+fn has_row(text: &str, label: &str) -> bool {
+    text.contains(&format!(
+        "
+ {label} "
+    ))
 }
 
 #[test]
@@ -53,18 +48,12 @@ fn tables_fold_variants_into_their_family_and_name_each_fold() {
     project(temp.path());
     let table = ["--format", "table", "--no-color", "--no-bars"];
     let folded = stdout(run(temp.path(), &table));
-    assert_eq!(
-        row(&folded, "TypeScript").unwrap(),
-        ["TypeScript", "2", "3", "3"]
-    );
-    assert_eq!(
-        row(&folded, "JavaScript").unwrap(),
-        ["JavaScript", "2", "3", "3"]
-    );
-    assert_eq!(row(&folded, "C++").unwrap(), ["C++", "2", "3", "3"]);
-    assert_eq!(row(&folded, "C").unwrap(), ["C", "Header", "1", "1"]);
+    assert_eq!(figures(&folded, "TypeScript"), ["2", "3", "3"]);
+    assert_eq!(figures(&folded, "JavaScript"), ["2", "3", "3"]);
+    assert_eq!(figures(&folded, "C++"), ["2", "3", "3"]);
+    assert_eq!(figures(&folded, "C Header"), ["1", "1", "1"]);
     for variant in ["TSX", "JSX"] {
-        assert!(row(&folded, variant).is_none(), "{folded}");
+        assert!(!has_row(&folded, variant), "{folded}");
     }
     assert!(
         folded.contains("\n Folded: C++ Header → C++, JSX → JavaScript, TSX → TypeScript.\n"),
@@ -75,11 +64,8 @@ fn tables_fold_variants_into_their_family_and_name_each_fold() {
         temp.path(),
         &[&table[..], &["--split-languages"]].concat(),
     ));
-    assert_eq!(
-        row(&split, "TypeScript").unwrap(),
-        ["TypeScript", "1", "1", "1"]
-    );
-    assert_eq!(row(&split, "TSX").unwrap(), ["TSX", "1", "2", "2"]);
+    assert_eq!(figures(&split, "TypeScript"), ["1", "1", "1"]);
+    assert_eq!(figures(&split, "TSX"), ["1", "2", "2"]);
     assert!(!split.contains("Folded:"), "{split}");
 }
 
@@ -95,10 +81,7 @@ fn language_selection_matches_the_shown_rows() {
         temp.path(),
         &[&table[..], &["--table-language", "tsx"]].concat(),
     ));
-    assert_eq!(
-        row(&folded, "TypeScript").unwrap(),
-        ["TypeScript", "2", "3", "3"]
-    );
+    assert_eq!(figures(&folded, "TypeScript"), ["2", "3", "3"]);
     assert!(
         folded.contains("\n Folded: TSX → TypeScript.\n"),
         "{folded}"
@@ -116,8 +99,8 @@ fn language_selection_matches_the_shown_rows() {
         ]
         .concat(),
     ));
-    assert_eq!(row(&split, "TSX").unwrap(), ["TSX", "1", "2", "2"]);
-    assert!(row(&split, "TypeScript").is_none(), "{split}");
+    assert_eq!(figures(&split, "TSX"), ["1", "2", "2"]);
+    assert!(!has_row(&split, "TypeScript"), "{split}");
     assert!(!split.contains("Folded:"), "{split}");
 }
 

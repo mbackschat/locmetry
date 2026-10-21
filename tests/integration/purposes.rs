@@ -1,7 +1,7 @@
 //! `--table-purpose` and `--table-language` narrow table views to the selected
 //! source and name what they leave out, and
 //! `--show-bars=comments` charts comment density relative to the densest row (docs/PRODUCT.md, Output Routing).
-use crate::common;
+use crate::common::{self, cells};
 use std::path::Path;
 
 fn project() -> tempfile::TempDir {
@@ -45,20 +45,6 @@ fn table(args: &[&str]) -> String {
     String::from_utf8(output.stdout).unwrap()
 }
 
-/// Cells of the first line starting with `label`, without separators or commas.
-fn cells(text: &str, label: &str) -> Vec<String> {
-    let line = text
-        .lines()
-        .find(|line| line.starts_with(&format!(" {label} ")))
-        .unwrap_or_else(|| panic!("no {label} row in:\n{text}"));
-    line.replace('│', " ")
-        .split_whitespace()
-        .map(String::from)
-        .collect()
-}
-
-/// Selecting production counts only production source: Comments become its
-/// comments, other purposes leave no rows, and Comment % takes Test/prod's place.
 /// The notes under the language table name what a filter leaves out; the
 /// footer keeps only location and time, so the selection is not repeated.
 fn unfiltered_footer(text: &str) -> bool {
@@ -66,6 +52,8 @@ fn unfiltered_footer(text: &str) -> bool {
         .any(|line| line.starts_with("Root: ") && !line.contains(';'))
 }
 
+/// Selecting production counts only production source: Comments become its
+/// comments, other purposes leave no rows, and Comment % takes Test/prod's place.
 #[test]
 fn production_only_tables_count_production_source_and_show_comment_share() {
     let text = table(&[

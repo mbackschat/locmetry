@@ -40,6 +40,28 @@ pub fn json(output: &Output, status: i32) -> Value {
     serde_json::from_slice(&output.stdout).unwrap()
 }
 
+/// Stdout of a successful run; stderr explains a failure.
+pub fn stdout(output: Output) -> String {
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    String::from_utf8(output.stdout).unwrap()
+}
+
+/// Cells of the first line starting with `label`, without separators or commas.
+pub fn cells(text: &str, label: &str) -> Vec<String> {
+    let line = text
+        .lines()
+        .find(|line| line.starts_with(&format!(" {label} ")))
+        .unwrap_or_else(|| panic!("no {label} row in:\n{text}"));
+    line.replace('│', " ")
+        .split_whitespace()
+        .map(String::from)
+        .collect()
+}
+
 /// `text` without SGR sequences, whatever the palette emits.
 pub fn unstyled(text: &str) -> String {
     let mut plain = String::new();

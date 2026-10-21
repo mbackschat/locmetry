@@ -12,6 +12,12 @@ export PATH="$temporary/bin:$PATH"
 export XDG_CONFIG_HOME="$temporary/no-user-config"
 
 # Execute the documentation sources themselves, so edited flags or policy logic cannot evade the guard.
+# Writes `text` on `count` lines, for projects of a known size.
+repeat_line() {
+    local count=$1 text=$2 line
+    for ((line = 0; line < count; line++)); do printf '%s\n' "$text"; done
+}
+
 extract_blocks() {
     local heading=$1 destination=$2 wanted=${3:-0} change_source=${4:-0}
     local source=${5:-"$repository/README.md"}
@@ -251,7 +257,7 @@ printf 'version = 1\n[classification]\nfallback = "production"\n' > "$temporary/
 printf 'print(1)\n' > "$temporary/healthy/main.py"
 printf '{}\n' > "$temporary/partial/broken.ipynb"
 printf 'not valid toml\n' > "$temporary/invalid/.locmetryrc"
-for ((line = 0; line < 51; line++)); do printf 'print(1)\n'; done > "$temporary/unclaimed/main.py"
+repeat_line 51 'print(1)' > "$temporary/unclaimed/main.py"
 
 check_recipe empty 0 'test/production: n/a (no production code)' ''
 check_recipe healthy 0 'test/production: 0%' ''
@@ -264,8 +270,8 @@ check_recipe unclaimed 1 'false' ''
 extract_blocks 'Limit file sizes by purpose' "$temporary/recipe.sh" 1 0 "$repository/docs/cookbooks/file-size-gate.md"
 mkdir -p "$temporary/oversized" "$temporary/large-tests/tests"
 cp "$temporary/healthy/.locmetryrc" "$temporary/oversized/.locmetryrc"
-for ((line = 0; line < 1001; line++)); do printf 'print(1)\n'; done > "$temporary/oversized/main.py"
-for ((line = 0; line < 1500; line++)); do printf 'assert True\n'; done > "$temporary/large-tests/tests/test_main.py"
+repeat_line 1001 'print(1)' > "$temporary/oversized/main.py"
+repeat_line 1500 'assert True' > "$temporary/large-tests/tests/test_main.py"
 check_recipe healthy 0 'true' ''
 check_recipe large-tests 0 'true' ''
 check_recipe oversized 1 '' 'main.py: 1001 code lines over the production limit of 1000'
@@ -281,10 +287,10 @@ for scenario in frozen grown partial; do
 done
 for scenario in frozen grown; do
     cp "$temporary/healthy/.locmetryrc" "$temporary/$scenario/.locmetryrc"
-    for ((line = 0; line < 7; line++)); do printf 'print(1)\n'; done > "$temporary/$scenario/mid.py"
+    repeat_line 7 'print(1)' > "$temporary/$scenario/mid.py"
 done
-for ((line = 0; line < 20; line++)); do printf 'print(1)\n'; done > "$temporary/frozen/legacy.py"
-for ((line = 0; line < 21; line++)); do printf 'print(1)\n'; done > "$temporary/grown/legacy.py"
+repeat_line 20 'print(1)' > "$temporary/frozen/legacy.py"
+repeat_line 21 'print(1)' > "$temporary/grown/legacy.py"
 check_recipe frozen 0 'mid.py: 7 code lines over the production soft limit of 5' ''
 check_recipe grown 1 'mid.py: 7 code lines over the production soft limit of 5' 'legacy.py: 21 code lines over 20'
 check_recipe partial 2 '' 'invalid_notebook'

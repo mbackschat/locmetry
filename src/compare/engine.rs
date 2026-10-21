@@ -37,7 +37,7 @@ pub fn validate_destination(path: &Path, inputs: [&Path; 2]) -> Result<()> {
 fn keys<K: Ord + Clone, V, W>(a: &BTreeMap<K, V>, b: &BTreeMap<K, W>) -> BTreeSet<K> {
     a.keys().chain(b.keys()).cloned().collect()
 }
-fn changed_map<K: Ord + Clone>(
+pub(super) fn changed_map<K: Ord + Clone>(
     a: &BTreeMap<K, Counts>,
     b: &BTreeMap<K, Counts>,
 ) -> Result<BTreeMap<K, CountChange>> {
