@@ -22,7 +22,7 @@ locmetry compare v3.2.0.json v3.3.4.json --format table --no-color \
 Net change: immich → immich
 
  ──────────────────────────────────────────────────────────────────────────────────────────────
-                          Lines           │           Code            │         Change         
+                          Lines           │           Code            │         Change
  Kind            before    after   change │  before    after   change │ Comments  Blanks  Files
  ─────────────────────────────────────────┼───────────────────────────┼────────────────────────
  Source         322,106  333,360  +11,254 │ 273,566  282,770   +9,204 │     +416  +1,634    +12
@@ -32,7 +32,7 @@ Net change: immich → immich
  All counted    565,431  591,835  +26,404 │ 498,824  522,776  +23,952 │     +570  +1,882    +18
 
  ──────────────────────────────────────────────────────────────────
-                         Lines           │           Code          
+                         Lines           │           Code
  Purpose        before    after   change │  before    after  change
  ────────────────────────────────────────┼─────────────────────────
  Production    208,180  210,881   +2,701 │ 177,605  179,704  +2,099
@@ -43,7 +43,7 @@ Net change: immich → immich
  Test/prod (Code): 0.46 → 0.48 (before → after)
 
  ──────────────────────────────────────────────────────────────────
-                         Lines           │           Code          
+                         Lines           │           Code
  Language       before    after   change │  before    after  change
  ────────────────────────────────────────┼─────────────────────────
  BASH               39       40       +1 │      29       30      +1
@@ -65,7 +65,7 @@ Net change: immich → immich
  Source total  322,106  333,360  +11,254 │ 273,566  282,770  +9,204
 
  ─────────────────────────────────────────────────────────────────────────────
-                                    Lines           │           Code          
+                                    Lines           │           Code
  Folder                    before    after   change │  before    after  change
  ───────────────────────────────────────────────────┼─────────────────────────
  deployment (both)            264      262       -2 │     227      225      -2
@@ -171,7 +171,7 @@ Member: mobile (both); counts and detail cover this member only.
 Input metadata, measurement notes, report-level findings and partial status cover the whole workspace inputs.
 
  ──────────────────────────────────────────────────────────────────────────────────────────────
-                          Lines           │           Code            │         Change         
+                          Lines           │           Code            │         Change
  Kind            before    after   change │  before    after   change │ Comments  Blanks  Files
  ─────────────────────────────────────────┼───────────────────────────┼────────────────────────
  Source          98,994  100,142   +1,148 │  82,656   83,220     +564 │     +236    +348     -6
@@ -181,7 +181,7 @@ Input metadata, measurement notes, report-level findings and partial status cove
  All counted    132,255  144,277  +12,022 │ 115,109  126,543  +11,434 │     +238    +350     -3
 
  ──────────────────────────────────────────────────────────────
-                        Lines          │          Code         
+                        Lines          │          Code
  Purpose       before    after  change │ before   after  change
  ──────────────────────────────────────┼───────────────────────
  Production    81,060   79,872  -1,188 │ 68,216  66,989  -1,227
@@ -191,7 +191,7 @@ Input metadata, measurement notes, report-level findings and partial status cove
  Test/prod (Code): 0.21 → 0.24 (before → after)
 
  ──────────────────────────────────────────────────────────────
-                        Lines          │          Code         
+                        Lines          │          Code
  Language      before    after  change │ before   after  change
  ──────────────────────────────────────┼───────────────────────
  Dart          89,812   90,871  +1,059 │ 75,239  75,726    +487
@@ -208,7 +208,7 @@ Member source code: matched +564, entering +0, leaving -0; total +564.
 Member all-counted code: matched +11434, entering +0, leaving -0; total +11434.
 
  ─────────────────────────────────────────────────────────────────────────
-                                   Lines          │          Code         
+                                   Lines          │          Code
  Folder                   before    after  change │ before   after  change
  ─────────────────────────────────────────────────┼───────────────────────
  android (both)            5,171    5,228     +57 │  4,236   4,287     +51
