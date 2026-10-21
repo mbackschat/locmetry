@@ -14,7 +14,7 @@ from unittest.mock import patch
 SPEC = importlib.util.spec_from_file_location("benchmark", Path(__file__).with_name("agent-explorability.py"))
 BENCH = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(BENCH)
-STUDY_LAYOUT = "d338670"
+STUDY_LAYOUT = "a63b71f"
 SCORE_SPEC = importlib.util.spec_from_file_location("scoring", Path(__file__).with_name("score_agent_explorability.py"))
 SCORING = importlib.util.module_from_spec(SCORE_SPEC)
 SCORE_SPEC.loader.exec_module(SCORING)
@@ -26,7 +26,7 @@ class ExperimentTests(unittest.TestCase):
         self.addCleanup(fixture.cleanup)
         source = Path(fixture.name)
         # The treatments patch the study-era CLI, whose help lived in src/main.rs;
-        # d338670 is the last revision with that layout, so later refactors of
+        # a63b71f is the last revision with that layout, so later refactors of
         # the current tree cannot invalidate these checks.
         archive = subprocess.run(
             ["git", "archive", STUDY_LAYOUT, "src", "docs/guides", "Cargo.toml", "Cargo.lock"],
