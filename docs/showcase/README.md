@@ -4,7 +4,7 @@ These executable demonstrations measure [Immich](https://github.com/immich-app/i
 
 - [Tour: build a policy for Immich](tour.md): built-in conventions, review, a draft policy from evidence and the resulting transitions.
 - [Measure Immich](measure.md): built-in conventions alone, the evidence behind a decision, the reviewed policy, explanations and folder detail.
-- [Measure Immich as a workspace](workspace.md): six application components, each with its own configuration.
+- [Measure Immich as a workspace](workspace.md): six application components measured under the project's one policy.
 - [Compare two Immich releases](compare.md): `v3.2.0 → v3.3.4` for the whole repository and for one member.
 - [Capture and analyze two releases](../analytics-demo.md): DuckDB queries over the same reports.
 

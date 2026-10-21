@@ -225,11 +225,17 @@ impl MeasurementReport {
                     "metadata: root/workspace fields cannot be mixed"
                 );
                 unique(members.iter().map(|m| &m.name), "members")?;
+                // Folder members all measure folders of one project; mixing
+                // them with independent roots has no producer.
+                let folders = members
+                    .iter()
+                    .filter(|m| m.scope.subfolder.is_some())
+                    .count();
+                ensure!(
+                    folders == 0 || folders == members.len(),
+                    "workspace members mix project folders with independent roots"
+                );
                 for member in members {
-                    ensure!(
-                        member.scope.subfolder.is_none(),
-                        "subfolder restriction is unsupported in workspace members"
-                    );
                     ensure!(!member.name.contains('/'), "invalid member name");
                     path(&member.name, Root::Rejected)?;
                 }

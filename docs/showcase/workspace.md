@@ -1,9 +1,9 @@
 # Measure Immich as a Workspace
 
-*2026-10-21T02:18:32Z by Showboat 0.6.1*
-<!-- showboat-id: 5b94adde-5464-4dc9-993b-f812c857e11b -->
+*2026-10-21T03:17:22Z by Showboat 0.6.1*
+<!-- showboat-id: 84efac68-5dbe-4a98-9f39-dbd87e4303ea -->
 
-Run each Bash block from the Locmetry repository root after `cargo build --locked` and `bash scripts/fetch-showcase.sh`; the [showcase index](README.md) explains the environment. Immich's application components live side by side in one repository. A [workspace file](../../examples/showcase/immich/overlay/workspace.toml) names six of them; each member is measured with its own `.locmetryrc`, which states the same decisions as the root policy relative to that member.
+Run each Bash block from the Locmetry repository root after `cargo build --locked` and `bash scripts/fetch-showcase.sh`; the [showcase index](README.md) explains the environment. Immich's application components live side by side in one repository. A [workspace file](../../examples/showcase/immich/overlay/workspace.toml) names six of them as folders of the project, so each is measured as `--subfolder` would measure it, under the checkout's single `.locmetryrc`.
 
 ## Measure the components together
 
@@ -12,7 +12,7 @@ The workspace report keeps the regular shape and adds one row per repository. Fo
 ```bash
 source scripts/showcase-env.sh
 locmetry workspace --workspace-file v3.3.4/immich/workspace.toml --format table --no-color --no-bars \
-  | sed '/^Root:/d; /^Roots:/d; /^Measured at:/d'
+  | sed '/^Root:/d; /^Roots:/d; /^Project:/d; /^Measured at:/d'
 ```
 
 ```output
@@ -65,11 +65,11 @@ The rows show each component's character at a glance: the server's Test/prod rat
 
 ## Measure one member on its own
 
-A member's own configuration makes it measurable directly. Its totals match its workspace row because the same policy decides every file.
+A folder member is the project's `--subfolder` run of that folder, so measuring the folder directly reproduces its workspace row.
 
 ```bash
 source scripts/showcase-env.sh
-locmetry --root immich/mobile --format json \
+locmetry --root immich --subfolder mobile --format json \
   | jq '.summary.source_purpose | map_values(.code)'
 ```
 

@@ -1,0 +1,4 @@
+version = 1
+# Both members measured under acme-orders/.locmetryrc, as --subfolder would.
+project = "acme-orders"
+folders = ["service", "web"]

@@ -203,7 +203,7 @@ pub(crate) fn present<'de, D: Deserializer<'de>, T: Deserialize<'de>>(
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct Selection {
-    /// Optional literal project-relative measured directory, without a trailing slash. Absence means no subfolder restriction. Module context remains project-wide; counts and coverage concern only this folder and descendants. Unsupported in workspace members.
+    /// Optional literal project-relative measured directory, without a trailing slash. Absence means no subfolder restriction. Module context remains project-wide; counts and coverage concern only this folder and descendants. In a workspace member, the project folder the member measures; the member's `root` is then the project.
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
@@ -306,9 +306,9 @@ pub struct Member {
     pub root: String,
     pub config_path: Option<String>,
     pub scope: Selection,
-    /// Entries deciding no measured file; with subfolder selection this says nothing about use elsewhere. Policy cleanup requires an unrestricted measurement.
+    /// Entries of this member's own policy deciding no measured file. Empty for folder members, whose shared project policy reports its findings once in `summary.unused_entries`.
     pub unused_entries: Vec<String>,
-    /// Exclusions leaving out no observed candidate in the measured selection. With subfolder selection, matches elsewhere do not count as use; policy cleanup requires an unrestricted measurement.
+    /// Exclusions of this member's own policy leaving out no observed candidate. Empty for folder members, whose shared project policy reports them once in `summary.unused_exclusions`.
     pub unused_exclusions: Vec<String>,
     pub coverage: MemberCoverage,
     /// Full report only: this member's independently loaded policy.
@@ -365,10 +365,10 @@ pub struct ReportSummary {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub submodules: Vec<crate::SubmoduleShare>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    /// Entries deciding no measured file; with subfolder selection this says nothing about use elsewhere. Policy cleanup requires an unrestricted measurement.
+    /// Entries deciding no measured file; with subfolder selection, or in a workspace of project folders, this says nothing about use elsewhere. Policy cleanup requires an unrestricted measurement. Absent in a workspace of independent roots, whose members report their own.
     pub unused_entries: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    /// Exclusions leaving out no observed candidate in the measured selection. With subfolder selection, matches elsewhere do not count as use; policy cleanup requires an unrestricted measurement.
+    /// Exclusions leaving out no observed candidate in the measured selection. With subfolder selection, or in a workspace of project folders, matches elsewhere do not count as use; policy cleanup requires an unrestricted measurement. Absent in a workspace of independent roots.
     pub unused_exclusions: Vec<String>,
 }
 

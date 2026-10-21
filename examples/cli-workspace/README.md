@@ -5,7 +5,8 @@ This is the source for the [recorded command guides](../../docs/cli/README.md) a
 - `acme-orders/service`: Go production and test source, a Makefile, maintained Python tooling, an unresolved experiment, excluded vendor code, hidden source and ignored scratch work.
 - `acme-orders/web`: TypeScript/TSX production and tests, a generated API client, HTML with embedded JavaScript, a template counted as HTML through a language mapping, data, documentation and an unrecognized `.asset` file.
 - `acme-orders/.locmetryrc`: policy for measuring the combined tree, in the recommended shape: declared categories, entries restricted to source and a reason on each. Member configurations express equivalent policy relative to their own roots for workspace measurement.
-- [workspace.toml](workspace.toml): names the two member roots relative to this file; member names are `service` and `web`.
+- [workspace.toml](workspace.toml): names the two member roots relative to this file; member names are `service` and `web`, each measured with its own configuration.
+- [folders.toml](folders.toml): names the same two folders of `acme-orders` instead, measured under its single `.locmetryrc`.
 
 The ignored and hidden files deliberately remain in Git. `.ignore` affects Locmetry's selection, not Git's inventory. The scope explicitly disables hidden files; `--hidden true` demonstrates an override. The experiment remains unclaimed and the asset remains unrecognized, without making successfully counted files partial. Each classification stage has one example: an override makes the generated client Other despite the npm module layout, the Makefile is build tooling by convention, the tooling rule claims the check script, module layouts claim the rest of production, and the template shows a language mapping.
 

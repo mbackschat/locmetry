@@ -1,7 +1,7 @@
 # Capture and Analyze Two Immich Releases
 
-*2026-10-21T02:18:36Z by Showboat 0.6.1*
-<!-- showboat-id: 98e24a92-51f2-4fbd-83a0-b8d9d6294782 -->
+*2026-10-21T03:17:10Z by Showboat 0.6.1*
+<!-- showboat-id: 7b492f65-86fd-47c1-bcb5-be4e7adb4ce3 -->
 
 This demonstration analyzes the two pinned Immich releases of the [showcase](showcase/README.md) with the [DuckDB cookbook's typed views](duckdb-cookbook.md#load-typed-views). The [pandas/Polars cookbook](dataframe-cookbook.md) demonstrates the same report structure in dataframes.
 

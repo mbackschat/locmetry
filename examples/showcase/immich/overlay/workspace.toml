@@ -1,4 +1,6 @@
 version = 1
-# The application components of Immich; root-only folders such as docs/ and
+# The application components of Immich, each measured under the checkout's
+# .locmetryrc as --subfolder would; root-only folders such as docs/ and
 # deployment/ stay in the root measurement.
-roots = ["server", "web", "mobile", "machine-learning", "e2e", "packages"]
+project = "."
+folders = ["server", "web", "mobile", "machine-learning", "e2e", "packages"]

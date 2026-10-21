@@ -1,7 +1,7 @@
 # Compare Two Immich Releases
 
-*2026-10-21T02:19:05Z by Showboat 0.6.1*
-<!-- showboat-id: b3e7e2c6-2b4a-46c4-9106-cb1405586c23 -->
+*2026-10-21T03:17:02Z by Showboat 0.6.1*
+<!-- showboat-id: 0b1f7748-841c-441a-b682-63cf1a407f87 -->
 
 Run each Bash block from the Locmetry repository root after `cargo build --locked` and `bash scripts/fetch-showcase.sh`; the [showcase index](README.md) explains the environment. The comparison spans one minor release line of real development, from `v3.2.0` to `v3.3.4`, both measured with the same reviewed policy.
 
@@ -26,10 +26,10 @@ Net change: immich → immich
  Kind            before    after   change │  before    after   change │ Comments  Blanks  Files
  ─────────────────────────────────────────┼───────────────────────────┼────────────────────────
  Source         322,106  333,360  +11,254 │ 273,566  282,770   +9,204 │     +416  +1,634    +12
- Data           231,041  245,952  +14,911 │ 224,464  239,212  +14,748 │       +4    +159     +3
+ Data           231,043  245,954  +14,911 │ 224,465  239,213  +14,748 │       +4    +159     +3
  Documentation   12,282   12,521     +239 │     793      793        0 │     +150     +89     +3
  ─────────────────────────────────────────┼───────────────────────────┼────────────────────────
- All counted    565,429  591,833  +26,404 │ 498,823  522,775  +23,952 │     +570  +1,882    +18
+ All counted    565,431  591,835  +26,404 │ 498,824  522,776  +23,952 │     +570  +1,882    +18
 
  ──────────────────────────────────────────────────────────────────
                          Lines           │           Code          
@@ -85,7 +85,7 @@ Only in one report: 2 folders only before; 16 folders only after.
 
 - Net change = after − before, from the two saved reports.
 - Unreadable files count as 0; a folder seen in only one report may be newly visible, not newly created.
-- Unrecognized files: same 442 paths in both reports; not counted on either side.
+- Unrecognized files: same 436 paths in both reports; not counted on either side.
 - Folder totals containing these files cover counted files only; per-folder detail is in JSON findings[].folder.
 
 ▸ Findings

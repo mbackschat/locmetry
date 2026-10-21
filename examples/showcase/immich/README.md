@@ -4,7 +4,7 @@ Locmetry's public showcase measures [Immich](https://github.com/immich-app/immic
 
 - [pins.tsv](pins.tsv): the showcase release and the comparison baseline, each as tag and commit.
 - [overlay/.locmetryrc](overlay/.locmetryrc): Locmetry's reviewed policy for the whole checkout.
-- [overlay/workspace.toml](overlay/workspace.toml) and one `.locmetryrc` per member: the same decisions relative to the six application components, for workspace measurement.
+- [overlay/workspace.toml](overlay/workspace.toml): the six application components as folders of the checkout, measured under that same policy.
 
 ## Fetch the checkouts
 
@@ -31,7 +31,7 @@ Personal defaults in `~/.config/locmetry/config.toml` can add exclusions or lang
 
 ## Review the policy
 
-Every entry restricts itself to source and records the evidence behind it, such as a generator header or a package's declared entry point. Measure without the overlay to see what built-in conventions decide alone; `locmetry explain PATH --root CHECKOUT` shows the deciding rule of any file. A policy change must leave no unused entries or exclusions and no unclaimed source without a recorded reason, on both pinned tags. Workspace and root measurement must classify every member file identically.
+Every entry restricts itself to source and records the evidence behind it, such as a generator header or a package's declared entry point. Measure without the overlay to see what built-in conventions decide alone; `locmetry explain PATH --root CHECKOUT` shows the deciding rule of any file. A policy change must leave no unused entries or exclusions and no unclaimed source without a recorded reason, on both pinned tags.
 
 ## Move the pin
 

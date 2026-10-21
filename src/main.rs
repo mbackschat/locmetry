@@ -288,6 +288,8 @@ Members need unique folder names and non-overlapping roots. Each scan uses
 its own policy: each member's .locmetryrc and the personal defaults unless
 --no-user-config is given. Set exclusions and overrides in member configuration;
 workspace-wide --config/--exclude/--hidden/--respect-ignore-files are unsupported.
+For one repository's components, a file can name project and folders instead of
+roots: each folder is measured like --subfolder under the project's .locmetryrc.
 Save outputs outside every member. JSON paths are member-prefixed; summary.members
 holds per-repository totals. Workspace Test/prod is sum(Test Code) / sum(Production Code),
 not an average of member ratios. --verbose exposes member coverage and policy findings.
@@ -895,7 +897,7 @@ fn run_explain(args: &ExplainArgs, styling: Styling) -> Result<Outcome> {
         .context("Cannot read workspace file")?;
     let (root, target, member) = match &workspace {
         Some(file) => {
-            let members = workspace_members(&locmetry::workspace_roots(file)?)?;
+            let members = workspace_members(locmetry::workspace_definition(file)?)?;
             let mut components = args.path.components();
             let name = match components.next() {
                 Some(std::path::Component::Normal(name)) => {
@@ -903,11 +905,15 @@ fn run_explain(args: &ExplainArgs, styling: Styling) -> Result<Outcome> {
                 }
                 _ => anyhow::bail!("Workspace query must be MEMBER/PATH"),
             };
-            let (_, root) = members
+            let member = members
                 .into_iter()
-                .find(|(member, _)| member == name)
+                .find(|member| member.name == name)
                 .context("Unknown workspace member")?;
-            (root, components.as_path().to_owned(), Some(name.to_owned()))
+            let target = match &member.folder {
+                Some(folder) => Path::new(folder).join(components.as_path()),
+                None => components.as_path().to_owned(),
+            };
+            (member.root, target, Some((member.name, member.folder)))
         }
         None => (
             args.root.root.clone().unwrap_or_else(|| PathBuf::from(".")),
@@ -935,8 +941,8 @@ fn run_explain(args: &ExplainArgs, styling: Styling) -> Result<Outcome> {
         scope: scope_policy(&prepared.policy),
         result,
     };
-    if let Some(member) = member {
-        explanation.qualify(member);
+    if let Some((member, folder)) = member {
+        explanation.qualify(member, folder.as_deref());
     }
     match args
         .format
@@ -1097,54 +1103,95 @@ fn run_root(
 
 /// Canonical member roots sorted by name, after the checks that make a merge
 /// well defined: unique names, no root twice, and no member inside another.
-fn workspace_members(roots: &[PathBuf]) -> Result<Vec<(String, PathBuf)>> {
-    let mut members = roots
-        .iter()
-        .map(|given| {
-            let root = given.canonicalize().with_context(|| {
-                format!("Workspace member {}: root does not exist", given.display())
+/// A workspace member: an independent root measured with its own policy, or
+/// a `folder` of a project root measured with the project's policy, as
+/// `--subfolder` measures it.
+struct WorkspaceMember {
+    name: String,
+    root: PathBuf,
+    folder: Option<String>,
+}
+
+fn workspace_members(definition: locmetry::WorkspaceDefinition) -> Result<Vec<WorkspaceMember>> {
+    let mut members = match definition {
+        locmetry::WorkspaceDefinition::Roots(roots) => roots
+            .iter()
+            .map(|given| {
+                let root = given.canonicalize().with_context(|| {
+                    format!("Workspace member {}: root does not exist", given.display())
+                })?;
+                let name = root
+                    .file_name()
+                    .and_then(|name| name.to_str())
+                    .with_context(|| {
+                        format!("Workspace member {} has no folder name", given.display())
+                    })?
+                    .to_owned();
+                Ok(WorkspaceMember {
+                    name,
+                    root,
+                    folder: None,
+                })
+            })
+            .collect::<Result<Vec<_>>>()?,
+        locmetry::WorkspaceDefinition::Folders { project, folders } => {
+            let root = project.canonicalize().with_context(|| {
+                format!("Workspace project {} does not exist", project.display())
             })?;
-            let name = root
-                .file_name()
-                .and_then(|name| name.to_str())
-                .with_context(|| {
-                    format!("Workspace member {} has no folder name", given.display())
-                })?
-                .to_owned();
-            Ok((name, root))
-        })
-        .collect::<Result<Vec<_>>>()?;
-    members.sort();
+            folders
+                .iter()
+                .map(|given| {
+                    let folder = locmetry::subfolder_path(&root, Path::new(given))
+                        .with_context(|| format!("Workspace folder {given}"))?
+                        .with_context(|| {
+                            format!("Workspace folder {given} names the project root, not a folder")
+                        })?;
+                    let name = folder.rsplit('/').next().unwrap_or(&folder).to_owned();
+                    Ok(WorkspaceMember {
+                        name,
+                        root: root.clone(),
+                        folder: Some(folder),
+                    })
+                })
+                .collect::<Result<Vec<_>>>()?
+        }
+    };
+    members.sort_by(|a, b| (&a.name, &a.root, &a.folder).cmp(&(&b.name, &b.root, &b.folder)));
+    let location = |member: &WorkspaceMember| match &member.folder {
+        Some(folder) => member.root.join(folder),
+        None => member.root.clone(),
+    };
     for pair in members.windows(2) {
-        let [(name, root), (other_name, other)] = pair else {
+        let [member, other] = pair else {
             unreachable!("windows of two")
         };
         anyhow::ensure!(
-            root != other,
+            location(member) != location(other),
             "Workspace root {} is given twice",
-            root.display()
+            location(member).display()
         );
         anyhow::ensure!(
-            name != other_name,
-            "Workspace members {} and {} share the name {name}",
-            root.display(),
-            other.display()
+            member.name != other.name,
+            "Workspace members {} and {} share the name {}",
+            location(member).display(),
+            location(other).display(),
+            member.name
         );
     }
-    for (_, root) in &members {
-        if let Some((_, outer)) = members
-            .iter()
-            .find(|(_, outer)| outer != root && root.starts_with(outer))
-        {
+    for member in &members {
+        if let Some(outer) = members.iter().find(|outer| {
+            location(outer) != location(member) && location(member).starts_with(location(outer))
+        }) {
             anyhow::bail!(
                 "Workspace member {} lies inside member {}",
-                root.display(),
-                outer.display()
+                location(member).display(),
+                location(outer).display()
             );
         }
     }
     Ok(members)
 }
+
 fn run_workspace(args: &WorkspaceArgs, styling: Styling) -> Result<Outcome> {
     let shared = &args.shared;
     let destination = destination(shared)?;
@@ -1157,14 +1204,17 @@ fn run_workspace(args: &WorkspaceArgs, styling: Styling) -> Result<Outcome> {
                 .with_context(|| format!("Cannot read workspace file {}", file.display()))
         })
         .transpose()?;
-    let roots = match &workspace_path {
-        Some(file) => locmetry::workspace_roots(file)?,
-        None => args.roots.clone(),
+    let definition = match &workspace_path {
+        Some(file) => locmetry::workspace_definition(file)?,
+        None => locmetry::WorkspaceDefinition::Roots(args.roots.clone()),
     };
-    let members = workspace_members(&roots)?;
+    let members = workspace_members(definition)?;
+    // Folder members share their project's policy, so its findings are the
+    // workspace's own rather than one member's.
+    let shared_policy = members.iter().all(|member| member.folder.is_some());
     if let Some(path) = destination.path {
-        for (_, root) in &members {
-            validate_output(path, root, workspace_path.as_deref())?;
+        for member in &members {
+            validate_output(path, &member.root, workspace_path.as_deref())?;
         }
     }
     let user_path = user_defaults(shared.no_user_config);
@@ -1174,16 +1224,16 @@ fn run_workspace(args: &WorkspaceArgs, styling: Styling) -> Result<Outcome> {
     let measurements = std::thread::scope(|threads| {
         let handles: Vec<_> = members
             .iter()
-            .map(|(name, root)| {
+            .map(|member| {
                 let (user_path, workspace_path) = (user_path.as_deref(), workspace_path.as_deref());
                 let handle = threads.spawn(move || {
                     let overrides = ScopeOverrides::default();
                     measure(
-                        prepare(root, None, user_path, workspace_path, &overrides)?,
-                        None,
+                        prepare(&member.root, None, user_path, workspace_path, &overrides)?,
+                        member.folder.as_deref(),
                     )
                 });
-                (name, handle)
+                (&member.name, handle)
             })
             .collect();
         handles
@@ -1199,7 +1249,7 @@ fn run_workspace(args: &WorkspaceArgs, styling: Styling) -> Result<Outcome> {
     let mut results = Results {
         project: members
             .iter()
-            .map(|(name, _)| name.as_str())
+            .map(|member| member.name.as_str())
             .collect::<Vec<_>>()
             .join(" + "),
         rows: Vec::new(),
@@ -1213,9 +1263,44 @@ fn run_workspace(args: &WorkspaceArgs, styling: Styling) -> Result<Outcome> {
         members: Vec::new(),
     };
     let mut records = Vec::new();
-    for measurement in measurements {
-        let name = &measurement.name;
-        let prefixed = |path: &str| locmetry::qualify(name, path);
+    // Unused in every member folder means unused by the shared policy.
+    let mut shared_unused: Option<(Vec<String>, Vec<String>)> = None;
+    for (member, measurement) in members.iter().zip(measurements) {
+        let name = &member.name;
+        let folder = member.folder.as_deref();
+        let prefixed = |path: &str| {
+            locmetry::qualify(
+                name,
+                folder.map_or(path, |folder| locmetry::folder_relative(folder, path)),
+            )
+        };
+        let mut scope = scope_policy(&measurement.policy);
+        scope.subfolder = member.folder.clone();
+        let (unused_entries, unused_exclusions) = match shared_policy {
+            true => {
+                shared_unused = Some(match shared_unused.take() {
+                    None => (
+                        measurement.unused_entries.clone(),
+                        measurement.unused_exclusions.clone(),
+                    ),
+                    Some((entries, exclusions)) => (
+                        entries
+                            .into_iter()
+                            .filter(|id| measurement.unused_entries.contains(id))
+                            .collect(),
+                        exclusions
+                            .into_iter()
+                            .filter(|pattern| measurement.unused_exclusions.contains(pattern))
+                            .collect(),
+                    ),
+                });
+                (Vec::new(), Vec::new())
+            }
+            false => (
+                measurement.unused_entries.clone(),
+                measurement.unused_exclusions.clone(),
+            ),
+        };
         records.push(contract::Member {
             name: name.clone(),
             root: measurement.root.to_string_lossy().into(),
@@ -1223,9 +1308,9 @@ fn run_workspace(args: &WorkspaceArgs, styling: Styling) -> Result<Outcome> {
                 .config_path
                 .as_ref()
                 .map(|p| p.to_string_lossy().into()),
-            scope: scope_policy(&measurement.policy),
-            unused_entries: measurement.unused_entries.clone(),
-            unused_exclusions: measurement.unused_exclusions.clone(),
+            scope,
+            unused_entries,
+            unused_exclusions,
             coverage: (&measurement.coverage).into(),
             config: Some(measurement.policy.snapshot().clone()),
         });
@@ -1245,12 +1330,30 @@ fn run_workspace(args: &WorkspaceArgs, styling: Styling) -> Result<Outcome> {
             }));
         results.coverage.merge(&measurement.coverage, prefixed);
         results.inaccurate |= measurement.inaccurate;
-        results
-            .modules
-            .extend(measurement.policy.modules().iter().map(|module| Module {
-                path: prefixed(&module.path),
-                ..module.clone()
-            }));
+        // A folder member keeps the modules inside it, and enclosing project
+        // modules only where they classified its files.
+        let relevant = |module: &Module| match folder {
+            None => true,
+            Some(folder) => {
+                locmetry::folder_relative(folder, &module.path) != "."
+                    || module.path == folder
+                    || measurement
+                        .modules
+                        .iter()
+                        .any(|share| share.path == module.path)
+            }
+        };
+        results.modules.extend(
+            measurement
+                .policy
+                .modules()
+                .iter()
+                .filter(|module| relevant(module))
+                .map(|module| Module {
+                    path: prefixed(&module.path),
+                    ..module.clone()
+                }),
+        );
         results
             .module_shares
             .extend(measurement.modules.into_iter().map(|mut share| {
@@ -1263,18 +1366,24 @@ fn run_workspace(args: &WorkspaceArgs, styling: Styling) -> Result<Outcome> {
                 share.path = prefixed(&share.path);
                 share
             }));
-        results.unused_entries.extend(
-            measurement
-                .unused_entries
-                .iter()
-                .map(|id| format!("{id} ({name})")),
-        );
-        results.unused_exclusions.extend(
-            measurement
-                .unused_exclusions
-                .iter()
-                .map(|pattern| format!("{pattern} ({name})")),
-        );
+        if !shared_policy {
+            results.unused_entries.extend(
+                measurement
+                    .unused_entries
+                    .iter()
+                    .map(|id| format!("{id} ({name})")),
+            );
+            results.unused_exclusions.extend(
+                measurement
+                    .unused_exclusions
+                    .iter()
+                    .map(|pattern| format!("{pattern} ({name})")),
+            );
+        }
+    }
+    if let Some((entries, exclusions)) = shared_unused {
+        results.unused_entries = entries;
+        results.unused_exclusions = exclusions;
     }
     // Prefixes keep each member's records together but can reorder them
     // against plain path order (`a-b/` sorts before `a/`), so sort once more.
@@ -1289,6 +1398,7 @@ fn run_workspace(args: &WorkspaceArgs, styling: Styling) -> Result<Outcome> {
         members: records,
         workspace_path,
         user_path,
+        shared_policy,
     };
     report(
         shared,
@@ -1312,6 +1422,9 @@ enum Location {
         members: Vec<contract::Member>,
         workspace_path: Option<PathBuf>,
         user_path: Option<PathBuf>,
+        /// Folder members of one project, whose shared policy's findings
+        /// belong in the summary.
+        shared_policy: bool,
     },
 }
 
@@ -1350,6 +1463,22 @@ fn measured_roots(location: &Location, markdown: bool) -> String {
                 None => format!("Root: {root}"),
             }
         }
+        Location::Workspace {
+            members,
+            shared_policy: true,
+            ..
+        } => {
+            let folders: Vec<_> = members
+                .iter()
+                .filter_map(|member| member.scope.subfolder.as_deref())
+                .map(path)
+                .collect();
+            format!(
+                "Project: {}, folders {}",
+                path(&members[0].root),
+                folders.join(", ")
+            )
+        }
         Location::Workspace { members, .. } => {
             let roots: Vec<_> = members.iter().map(|member| path(&member.root)).collect();
             format!("Roots: {}", roots.join(", "))
@@ -1371,9 +1500,16 @@ fn report(
     measured_at: u64,
     styling: Styling,
 ) -> Result<Outcome> {
-    // Workspace members record their own unused entries; only a single root
-    // reports them in the summary.
-    let summary_findings = matches!(location, Location::Root { .. });
+    // Independent workspace members record their own unused entries; a single
+    // root or a shared project policy reports them in the summary.
+    let summary_findings = matches!(
+        location,
+        Location::Root { .. }
+            | Location::Workspace {
+                shared_policy: true,
+                ..
+            }
+    );
     let Results {
         project,
         rows,
@@ -1550,6 +1686,7 @@ fn report(
                 members,
                 workspace_path,
                 user_path,
+                ..
             } => {
                 metadata.members = Some(members);
                 metadata.workspace_path = workspace_path.map(|p| p.to_string_lossy().into());

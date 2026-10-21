@@ -774,3 +774,192 @@ fn workspace_print_shows_the_table_beside_the_saved_report() {
     assert!(printed.contains("\n Repository "), "{printed}");
     assert!(fs::read_to_string(saved).unwrap().contains("\"members\""));
 }
+
+const MONOREPO_CONFIG: &str = "version = 1
+[scope]
+exclude = [\"web/third_party/**\", \"gone/**\"]
+[[rules]]
+id = \"web-tooling\"
+match = [\"web/scripts/**\"]
+purpose = \"production\"
+category = \"tooling\"
+[[rules]]
+id = \"api-legacy\"
+match = [\"api/legacy/**\"]
+purpose = \"other\"
+category = \"legacy\"
+[[rules]]
+id = \"docs-tooling\"
+match = [\"docs/tools/**\"]
+purpose = \"production\"
+category = \"tooling\"
+";
+
+/// One repository, one policy, two component folders and a folder outside
+/// both; the workspace file names the components.
+fn monorepo() -> tempfile::TempDir {
+    let temp = tempfile::tempdir().unwrap();
+    write_all(
+        &temp.path().join("mono"),
+        &[
+            (".locmetryrc", MONOREPO_CONFIG),
+            (
+                "workspace.toml",
+                "version = 1\nproject = \".\"\nfolders = [\"web\", \"api\"]\n",
+            ),
+            ("web/package.json", "{}\n"),
+            ("web/src/a.ts", "export const a = 1;\n"),
+            ("web/src/a.test.ts", "test('a', () => {});\n"),
+            ("web/scripts/r.ts", "let r = 1;\n"),
+            ("web/third_party/x.ts", "let x = 1;\n"),
+            ("api/Cargo.toml", "[package]\nname = \"api\"\n"),
+            ("api/src/lib.rs", "pub fn a() {}\n"),
+            ("api/legacy/old.rs", "fn old() {}\n"),
+            ("docs/tools/gen.ts", "let g = 1;\n"),
+        ],
+    );
+    temp
+}
+
+/// Folder members are the project's own `--subfolder` runs: same policy, same
+/// module context and the same project-relative paths, so those runs are the
+/// oracle for every file and every member total.
+#[test]
+fn folder_members_share_the_project_policy_and_match_subfolder_runs() {
+    let temp = monorepo();
+    let project = temp.path().join("mono");
+    let report = full_report(
+        temp.path(),
+        &["workspace", "--workspace-file", "mono/workspace.toml"],
+    );
+    let mut expected_files = Vec::new();
+    for member in ["api", "web"] {
+        let run = full_report(temp.path(), &["--root", "mono", "--subfolder", member]);
+        expected_files.extend(run["files"].as_array().unwrap().iter().cloned());
+        for key in MEMBER_TOTALS {
+            assert_eq!(
+                report["summary"]["members"][member][key], run["summary"][key],
+                "{member} {key}"
+            );
+        }
+    }
+    expected_files.sort_by_key(|file| file["path"].as_str().unwrap().to_string());
+    assert_eq!(report["files"], json!(expected_files));
+    let members = report["metadata"]["members"].as_array().unwrap();
+    let project = project.canonicalize().unwrap();
+    for (member, folder) in members.iter().zip(["api", "web"]) {
+        assert_eq!(member["name"], folder);
+        assert_eq!(member["root"], json!(project));
+        assert_eq!(member["scope"]["subfolder"], folder);
+        assert_eq!(member["config_path"], json!(project.join(".locmetryrc")));
+    }
+}
+
+/// One policy means one set of findings: an entry is unused only when no
+/// member folder used it, judged against the measured folders.
+#[test]
+fn folder_members_report_unused_policy_once_for_the_workspace() {
+    let temp = monorepo();
+    let report = full_report(
+        temp.path(),
+        &["workspace", "--workspace-file", "mono/workspace.toml"],
+    );
+    assert_eq!(report["summary"]["unused_entries"], json!(["docs-tooling"]));
+    assert_eq!(report["summary"]["unused_exclusions"], json!(["gone/**"]));
+    for member in report["metadata"]["members"].as_array().unwrap() {
+        assert_eq!(member["unused_entries"], json!([]), "{member}");
+        assert_eq!(member["unused_exclusions"], json!([]), "{member}");
+    }
+    let verbose = String::from_utf8(
+        locmetry(
+            temp.path(),
+            &[
+                "workspace",
+                "--workspace-file",
+                "mono/workspace.toml",
+                "--format",
+                "table",
+                "--verbose",
+                "--no-color",
+            ],
+        )
+        .stdout,
+    )
+    .unwrap();
+    assert!(verbose.contains("docs-tooling"), "{verbose}");
+    assert!(!verbose.contains("docs-tooling ("), "{verbose}");
+    assert!(verbose.contains("Project: "), "{verbose}");
+    assert!(verbose.contains("folders api, web"), "{verbose}");
+}
+
+#[test]
+fn folder_members_explain_member_paths_with_the_project_policy() {
+    let temp = monorepo();
+    let explanation = json(
+        &locmetry(
+            temp.path(),
+            &[
+                "explain",
+                "web/scripts/r.ts",
+                "--workspace-file",
+                "mono/workspace.toml",
+                "--format",
+                "json",
+            ],
+        ),
+        0,
+    );
+    assert_eq!(explanation["path"], "web/scripts/r.ts");
+    assert_eq!(explanation["member"], "web");
+    assert_eq!(explanation["result"]["file"]["path"], "web/scripts/r.ts");
+    assert_eq!(explanation["result"]["file"]["rule"], "web-tooling");
+}
+
+#[test]
+fn invalid_folder_workspaces_fail_before_measuring() {
+    let temp = monorepo();
+    write_all(
+        &temp.path().join("mono"),
+        &[
+            (
+                "both.toml",
+                "version = 1\nroots = [\"web\"]\nproject = \".\"\nfolders = [\"web\"]\n",
+            ),
+            ("bare.toml", "version = 1\nproject = \".\"\n"),
+            ("orphan.toml", "version = 1\nfolders = [\"web\"]\n"),
+            (
+                "whole.toml",
+                "version = 1\nproject = \".\"\nfolders = [\".\"]\n",
+            ),
+            (
+                "nested.toml",
+                "version = 1\nproject = \".\"\nfolders = [\"web\", \"web/src\"]\n",
+            ),
+            (
+                "twins.toml",
+                "version = 1\nproject = \".\"\nfolders = [\"web/src\", \"api/src\"]\n",
+            ),
+            (
+                "absent.toml",
+                "version = 1\nproject = \".\"\nfolders = [\"mobile\"]\n",
+            ),
+            ("empty.toml", "version = 1\nproject = \".\"\nfolders = []\n"),
+        ],
+    );
+    for (file, message) in [
+        ("both.toml", "roots"),
+        ("bare.toml", "folders"),
+        ("orphan.toml", "project"),
+        ("whole.toml", "project root"),
+        ("nested.toml", "inside"),
+        ("twins.toml", "share the name src"),
+        ("absent.toml", "mobile"),
+        ("empty.toml", "folders"),
+    ] {
+        let stderr = stderr_of(&locmetry(
+            temp.path(),
+            &["workspace", "--workspace-file", &format!("mono/{file}")],
+        ));
+        assert!(stderr.contains(message), "{file}: {stderr}");
+    }
+}

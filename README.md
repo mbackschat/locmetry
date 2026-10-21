@@ -32,9 +32,9 @@ These excerpts measure [Immich](https://github.com/immich-app/immich) `v3.3.4`, 
 <!-- showcase-tools -->
 | Tool | Reported code | of which JSON | Production / test split |
 | --- | ---: | ---: | --- |
-| Tokei 15.0.0 | 518,919 | 209,607 (40%) | none |
-| cloc 2.10 | 530,429 | 209,931 (40%) | none |
-| scc 4.1.0 | 510,074 | 209,867 (41%) | none |
+| Tokei 15.0.0 | 518,920 | 209,607 (40%) | none |
+| cloc 2.10 | 530,430 | 209,931 (40%) | none |
+| scc 4.1.0 | 510,075 | 209,867 (41%) | none |
 
 Line counters are good at counting. Locmetry counts with Tokei too, but asks a different question: almost half of Immich's "code" is data, such as database schemas, the OpenAPI specification and translations.
 
@@ -98,14 +98,16 @@ Built-in conventions already recognize the npm, Gradle, Python and Dart modules 
 
 ### Workspaces and comparisons answer "where, and what changed"
 
-Measure the application components together, each with its own configuration. The workspace file names the member folders:
+Measure the application components together under the same policy. The workspace file names them as folders of the project:
 
 <!-- showcase-workspace-file -->
 ```toml
 version = 1
-# The application components of Immich; root-only folders such as docs/ and
+# The application components of Immich, each measured under the checkout's
+# .locmetryrc as --subfolder would; root-only folders such as docs/ and
 # deployment/ stay in the root measurement.
-roots = ["server", "web", "mobile", "machine-learning", "e2e", "packages"]
+project = "."
+folders = ["server", "web", "mobile", "machine-learning", "e2e", "packages"]
 ```
 
 ```sh

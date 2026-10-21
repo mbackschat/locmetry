@@ -304,3 +304,34 @@ Output and content:
   }
 }
 ```
+
+## Measure folders of one project
+
+When the members are components of one repository, a workspace file can name them as folders of that project instead of roots. [folders.toml](../../examples/cli-workspace/folders.toml) names `service` and `web` under `acme-orders`. Each folder is measured as `--subfolder` measures it, under the combined root's single `.locmetryrc`, so the member configurations are not used. The totals equal the root-based workspace above; the member records name the project as root and the folder as subfolder.
+
+```bash
+source scripts/cli-demo-env.sh
+locmetry workspace --workspace-file folders.toml --no-user-config --format json \
+  | jq "{source: .summary.source.code,
+         members: [.metadata.members[]
+           | {name, subfolder: .scope.subfolder, config: (.config_path | split(\"/\") | .[-2:] | join(\"/\"))}]}"
+
+```
+
+```output
+{
+  "source": 29,
+  "members": [
+    {
+      "name": "service",
+      "subfolder": "service",
+      "config": "acme-orders/.locmetryrc"
+    },
+    {
+      "name": "web",
+      "subfolder": "web",
+      "config": "acme-orders/.locmetryrc"
+    }
+  ]
+}
+```

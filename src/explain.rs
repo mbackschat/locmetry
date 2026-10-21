@@ -118,8 +118,13 @@ impl Explanation {
         )
     }
 
-    pub fn qualify(&mut self, member: String) {
-        let prefix = |path: &str| crate::paths::qualify(&member, path);
+    /// Names paths as a workspace report does; a folder member's paths are
+    /// relative to its project `folder`.
+    pub fn qualify(&mut self, member: String, folder: Option<&str>) {
+        let prefix = |path: &str| {
+            let path = folder.map_or(path, |folder| crate::paths::folder_relative(folder, path));
+            crate::paths::qualify(&member, path)
+        };
         self.path = prefix(&self.path);
         match &mut self.result {
             PathResult::Counted { file, decision } => {

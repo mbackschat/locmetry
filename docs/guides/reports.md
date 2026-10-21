@@ -150,6 +150,16 @@ locmetry workspace --workspace-file repos.toml
 - **Findings stay with their repository:** `metadata.members` lists each repository's root, configuration path, scope, coverage counts, unused entries, and unused exclusions; verbose table notes name the repository, as in `ghost (web)`, and list unclaimed source by repository. Default and verbose tables name members with read/parse failures under `Unavailable counts:`; Markdown retains comprehensive member findings.
 - **All or nothing, always the same:** if one repository fails, for example with an invalid configuration, the run fails and names it; the order of the roots never changes the report.
 
+For the components of one repository, name folders of that project instead of roots. Every folder is measured as `--subfolder` measures it, under the project's single `.locmetryrc`, so no member needs a configuration of its own:
+
+```toml
+version = 1
+project = "."
+folders = ["server", "web", "mobile"]
+```
+
+The members are named after the folders' last segments, and files outside every folder are not measured. The shared policy's unused entries and exclusions are those unused in every folder; they appear once in `summary.unused_entries` and `summary.unused_exclusions` and in verbose notes without a member name.
+
 ## Query a Saved Report
 
 Save full JSON outside the measured root. These queries require `jq` and use the same sample as the interactive queries above; a headline cannot supply the full `breakdown` and `review` sections.

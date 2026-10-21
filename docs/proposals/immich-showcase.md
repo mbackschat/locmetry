@@ -65,6 +65,9 @@ Locmetry-owned files live under `examples/showcase/immich/`: a `.locmetryrc` for
 
 Documentation states that the policy is Locmetry's, not upstream's. The policy is written from inspection evidence, not from expected numbers.
 
+
+Update 2026-10-21: workspace files gained [project folders](../PRODUCT.md#workspace-mode), which measure members under the project's single policy. The overlay now holds only the root `.locmetryrc` and a `workspace.toml` naming the six folders; the six member policies, which repeated the root policy's decisions, were removed.
+
 ## Showcase Narrative
 
 The README tells one story in three steps, each answering a question the previous step cannot. Every number below was measured on `v3.3.4` on 2026-10-21 without personal defaults, using Locmetry 0.7.3 with the Dart and `*.e2e-spec` conventions described below, Tokei 15.0.0, cloc 2.10 and scc 4.1.0, all with default options; the showcase regenerates them rather than copying these values.

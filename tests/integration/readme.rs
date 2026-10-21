@@ -77,7 +77,8 @@ fn sample_workspace_records_real_classification_and_embedded_counts() {
 }
 
 /// The fixture README promises that member configurations express the root
-/// policy relative to each member, so every file must get the same decision.
+/// policy relative to each member, so every file must get the same decision,
+/// as it must when the members are folders under the root's own policy.
 #[test]
 fn sample_workspace_members_decide_like_the_combined_root() {
     let measure = |args: &[&str]| {
@@ -108,12 +109,18 @@ fn sample_workspace_members_decide_like_the_combined_root() {
         .into_iter()
         .filter(|(path, ..)| !path.ends_with(".locmetryrc"))
         .collect();
-    let workspace_file = "examples/cli-workspace/workspace.toml";
-    let members: Vec<_> = measure(&["workspace", "--workspace-file", workspace_file])
-        .into_iter()
-        .filter(|(path, ..)| !path.ends_with(".locmetryrc"))
-        .collect();
-    assert_eq!(members, combined);
+    // Independent roots with their own policies, and the same folders under
+    // the combined root's single policy.
+    for workspace_file in [
+        "examples/cli-workspace/workspace.toml",
+        "examples/cli-workspace/folders.toml",
+    ] {
+        let members: Vec<_> = measure(&["workspace", "--workspace-file", workspace_file])
+            .into_iter()
+            .filter(|(path, ..)| !path.ends_with(".locmetryrc"))
+            .collect();
+        assert_eq!(members, combined, "{workspace_file}");
+    }
 }
 
 fn help(flag: &str) -> String {

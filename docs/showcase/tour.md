@@ -1,7 +1,7 @@
 # Tour: Build a Policy for Immich
 
-*2026-10-21T02:26:41Z by Showboat 0.6.1*
-<!-- showboat-id: 88f18c82-4a04-4ed3-9b2a-8868558b5778 -->
+*2026-10-21T03:19:50Z by Showboat 0.6.1*
+<!-- showboat-id: 6e44268b-01d8-47f4-8396-719e682e3925 -->
 
 This tour builds a Locmetry policy for [Immich](https://github.com/immich-app/immich) `v3.3.4` the way a maintainer or an agent would: measure with built-in conventions, review what they cannot know, record evidence-based entries and check what changed. Run each Bash block from the Locmetry repository root after `cargo build --locked` and `bash scripts/fetch-showcase.sh`; the [showcase index](README.md) explains the environment. `--config` with a file containing only `version = 1` hides the checkout's reviewed `.locmetryrc`, so the tour starts from built-in conventions alone.
 
@@ -13,13 +13,13 @@ This tour builds a Locmetry policy for [Immich](https://github.com/immich-app/im
 source scripts/showcase-env.sh
 printf 'version = 1\n' > builtin-only.toml
 locmetry --root immich --config builtin-only.toml --format table --verbose --no-color --no-bars \
-  | sed '/^Root:/d; /^Roots:/d; /^Measured at:/d' \
+  | sed '/^Root:/d; /^Roots:/d; /^Project:/d; /^Measured at:/d' \
   | sed -n '/^ Not source code/,$p' \
   | demo_wrap
 ```
 
 ```output
- Not source code: 296 data files (245,952 lines), 210 documentation files (12,521 lines); --files --output - lists each
+ Not source code: 296 data files (245,954 lines), 210 documentation files (12,521 lines); --files --output - lists each
 file's kind.
  Production from build modules: npm 127,205 code lines in 12 modules, dart 59,170 code lines in 2 modules, gradle 4,102
 code lines in 2 modules, python 3,037 code lines in 1 module.
@@ -34,7 +34,7 @@ code lines in 2 modules, python 3,037 code lines in 1 module.
    docs                          232 code lines   4 files
    and 11 more folders (727 code lines)
  To inspect or refine purpose classification, use locmetry --guide configure; --files --output - shows each file's rule.
- Unrecognized files: 443 unrecognized files (png: 165, webp: 146, no extension: 68, ttf: 19, lock: 10); missing lines
+ Unrecognized files: 437 unrecognized files (png: 165, webp: 146, no extension: 62, ttf: 19, lock: 10); missing lines
 are not zero.
 
 ```
@@ -102,7 +102,7 @@ category = "native"
 reason = "Swift code of the iOS app; no Package.swift declares it"
 TOML
 locmetry --root immich --config draft.toml --format table --verbose --no-color --no-bars \
-  | sed '/^Root:/d; /^Roots:/d; /^Measured at:/d' \
+  | sed '/^Root:/d; /^Roots:/d; /^Project:/d; /^Measured at:/d' \
   | sed -n '/^ Unclaimed source/,/^ To inspect/p' \
   | demo_wrap
 ```

@@ -18,15 +18,16 @@ pub use backend::{
     DOCUMENTATION_LANGUAGES,
 };
 pub use config::{
-    config_schema, user_config_schema, user_defaults_file, workspace_roots, workspace_schema,
-    Classification, EffectiveConfig, Policy, Purpose, Scope, ScopeOverrides, CONFIG_FILE,
+    config_schema, user_config_schema, user_defaults_file, workspace_definition, workspace_schema,
+    Classification, EffectiveConfig, Policy, Purpose, Scope, ScopeOverrides, WorkspaceDefinition,
+    CONFIG_FILE,
 };
 pub use modules::{detect as detect_modules, Module};
 pub use output::{
     measurement_time, render_markdown, render_table_with_options, report_text, validate_output,
     write_report, BarKind, Bars, Findings, MemberView, RowOrder, TableOptions,
 };
-pub use paths::qualify;
+pub use paths::{folder_relative, qualify};
 pub use report::{
     breakdown, build_report, build_systems, module_shares, review, submodule_shares,
     unclaimed_folders, unused_entries, BreakdownRow, BuildSystemShare, Counts, FileRecord,

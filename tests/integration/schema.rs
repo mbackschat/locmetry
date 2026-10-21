@@ -44,7 +44,8 @@ fn description<'a>(schema: &'a Value, pointer: &str) -> &'a str {
 }
 
 /// Every documented TOML example must load: workspace files, recognized by
-/// their `roots`, against the workspace schema, all others as configurations.
+/// their `roots` or `project`, against the workspace schema, all others as
+/// configurations.
 #[test]
 fn documented_examples_satisfy_their_schemas() {
     let schema = schema("config");
@@ -60,7 +61,11 @@ fn documented_examples_satisfy_their_schemas() {
     ]
     .iter()
     .flat_map(|path| toml_blocks(path))
-    .partition(|block| block.lines().any(|line| line.starts_with("roots")));
+    .partition(|block| {
+        block
+            .lines()
+            .any(|line| line.starts_with("roots") || line.starts_with("project ="))
+    });
     assert!(blocks.len() >= 3);
     // TOML has no null, so a schema allowing it would mislead editors and agents.
     assert!(!schema.to_string().contains("\"null\""));
@@ -106,10 +111,7 @@ fn showcase_policies_satisfy_their_schemas() {
             }
         }
     }
-    assert_eq!(
-        checked, 8,
-        "root and six member policies plus the workspace file"
-    );
+    assert_eq!(checked, 2, "the root policy and the workspace file");
 }
 
 #[test]
@@ -442,6 +444,20 @@ fn workspace_schema_describes_the_member_file() {
     assert!(!is_valid(&schema, "version = 1"));
     let roots = description(&schema, "/properties/roots");
     assert!(roots.contains("relative to"), "{roots}");
+    // Folders of one project are the alternative to independent roots.
+    assert!(is_valid(
+        &schema,
+        "version = 1\nproject = \".\"\nfolders = [\"web\", \"api\"]"
+    ));
+    for mixed in [
+        "version = 1\nroots = [\"web\"]\nproject = \".\"\nfolders = [\"web\"]",
+        "version = 1\nproject = \".\"",
+        "version = 1\nfolders = [\"web\"]",
+    ] {
+        assert!(!is_valid(&schema, mixed), "{mixed}");
+    }
+    let folders = description(&schema, "/properties/folders");
+    assert!(folders.contains("--subfolder"), "{folders}");
 }
 
 #[test]

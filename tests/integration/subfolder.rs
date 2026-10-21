@@ -492,19 +492,15 @@ fn subfolder_zero_code_modules_aliases_literal_names_and_explanation_are_consist
 }
 
 #[test]
-fn workspace_report_cannot_claim_a_subfolder_restriction() {
+fn workspace_report_cannot_mix_project_folders_with_roots() {
     let temp = tempfile::tempdir().unwrap();
-    let root = temp.path().join("project");
-    fixture(&root);
+    let (web, api) = (temp.path().join("web"), temp.path().join("api"));
+    fixture(&web);
+    fixture(&api);
     let out = common::locmetry()
-        .args([
-            "workspace",
-            "--root",
-            root.to_str().unwrap(),
-            "--no-user-config",
-            "--output",
-            "-",
-        ])
+        .args(["workspace", "--root", web.to_str().unwrap()])
+        .args(["--root", api.to_str().unwrap(), "--no-user-config"])
+        .args(["--output", "-"])
         .output()
         .unwrap();
     assert!(out.status.success());
@@ -515,7 +511,7 @@ fn workspace_report_cannot_claim_a_subfolder_restriction() {
         .validate()
         .unwrap_err()
         .to_string()
-        .contains("workspace members"));
+        .contains("mix project folders"));
 }
 
 #[cfg(unix)]

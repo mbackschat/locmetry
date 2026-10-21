@@ -39,6 +39,13 @@ pub(crate) fn member_of(path: &str) -> &str {
     path.split('/').next().unwrap_or(path)
 }
 
+/// Project-relative `path` as the workspace member measuring project folder
+/// `folder` names it. The folder itself and anything enclosing it, such as a
+/// build module around the member, become the member's [`ROOT`].
+pub fn folder_relative<'p>(folder: &str, path: &'p str) -> &'p str {
+    below(path, folder).unwrap_or(ROOT)
+}
+
 /// `path` of `member` as a workspace report names it; the member's root is
 /// the member itself.
 pub fn qualify(member: &str, path: &str) -> String {
@@ -51,6 +58,16 @@ pub fn qualify(member: &str, path: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn folder_members_rebase_paths_and_map_enclosing_folders_to_their_root() {
+        assert_eq!(folder_relative("web", "web/src/a.ts"), "src/a.ts");
+        assert_eq!(folder_relative("apps/web", "apps/web/src"), "src");
+        for enclosing in ["web", "apps", ROOT] {
+            assert_eq!(folder_relative("web", enclosing), ROOT, "{enclosing}");
+        }
+        assert_eq!(folder_relative("web", "website/a.ts"), ROOT);
+    }
 
     #[test]
     fn ancestors_walk_up_to_the_root() {

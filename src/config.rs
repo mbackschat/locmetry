@@ -2,7 +2,7 @@
 //!
 //! The input is the version-1 TOML contract in docs/PRODUCT.md.
 use crate::{backend::relative_path, modules::Module, Kind};
-use anyhow::{anyhow, ensure, Context, Result};
+use anyhow::{anyhow, bail, ensure, Context, Result};
 use globset::{Glob, GlobBuilder, GlobSet, GlobSetBuilder};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -581,23 +581,42 @@ impl UserDefaults {
     }
 }
 
-/// Locmetry workspace: TOML naming the repositories that `locmetry workspace --workspace-file` measures as one virtual monorepo.
+/// Locmetry workspace: TOML naming what `locmetry workspace --workspace-file` measures as one virtual monorepo.
 ///
-/// Each root is measured with its own `.locmetryrc` and becomes a top-level folder of the report, named after the root's folder. The file is read only when `--workspace-file` names it, never discovered, and a member that contains it does not measure it.
+/// Name either independent repositories with `roots`, each measured with its own `.locmetryrc`, or folders of one repository with `project` and `folders`, all measured with the project's `.locmetryrc` as `--subfolder` would measure them. Each member becomes a top-level folder of the report, named after its root's or folder's last segment. The file is read only when `--workspace-file` names it, never discovered, and a member that contains it does not measure it.
 #[derive(Debug, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
-#[schemars(rename = "Workspace")]
+#[schemars(
+    rename = "Workspace",
+    extend("oneOf" = [{"required": ["roots"]}, {"required": ["project", "folders"]}])
+)]
 pub(crate) struct WorkspaceFile {
     /// Contract version; must be `1`.
     #[schemars(extend("const" = 1))]
     version: u32,
-    /// Member roots, each relative to the folder of this file or absolute; folder names must be unique, and no root may lie inside another.
+    /// Independent member roots, each relative to the folder of this file or absolute; folder names must be unique, and no root may lie inside another. Excludes `project` and `folders`.
     #[schemars(length(min = 1), extend("items" = {"type": "string"}))]
-    roots: Vec<PathBuf>,
+    roots: Option<Vec<PathBuf>>,
+    /// One repository whose `.locmetryrc` decides every member, relative to the folder of this file or absolute. Requires `folders`.
+    #[schemars(extend("type" = "string"))]
+    project: Option<PathBuf>,
+    /// Literal project-relative member folders, measured as `--subfolder` would measure them; their last segments must be unique, and no folder may lie inside another. Files outside them are not measured. Requires `project`.
+    #[schemars(length(min = 1))]
+    folders: Option<Vec<String>>,
 }
 
-/// The member roots a workspace file lists, resolved against its folder.
-pub fn workspace_roots(path: &Path) -> Result<Vec<PathBuf>> {
+/// What a workspace file names: independent roots, or folders of one project.
+#[derive(Debug, PartialEq, Eq)]
+pub enum WorkspaceDefinition {
+    Roots(Vec<PathBuf>),
+    Folders {
+        project: PathBuf,
+        folders: Vec<String>,
+    },
+}
+
+/// The members a workspace file names, with paths resolved against its folder.
+pub fn workspace_definition(path: &Path) -> Result<WorkspaceDefinition> {
     let input = std::fs::read_to_string(path)
         .with_context(|| format!("Cannot read workspace file {}", path.display()))?;
     let file: WorkspaceFile =
@@ -608,13 +627,42 @@ pub fn workspace_roots(path: &Path) -> Result<Vec<PathBuf>> {
         file.version,
         path.display()
     );
-    ensure!(
-        !file.roots.is_empty(),
-        "Workspace file {} lists no roots",
-        path.display()
-    );
     let folder = path.parent().unwrap_or(Path::new("."));
-    Ok(file.roots.iter().map(|root| folder.join(root)).collect())
+    match (file.roots, file.project, file.folders) {
+        (Some(roots), None, None) => {
+            ensure!(
+                !roots.is_empty(),
+                "Workspace file {} lists no roots",
+                path.display()
+            );
+            Ok(WorkspaceDefinition::Roots(
+                roots.iter().map(|root| folder.join(root)).collect(),
+            ))
+        }
+        (None, Some(project), Some(folders)) => {
+            ensure!(
+                !folders.is_empty(),
+                "Workspace file {} lists no folders",
+                path.display()
+            );
+            Ok(WorkspaceDefinition::Folders {
+                project: folder.join(project),
+                folders,
+            })
+        }
+        (Some(_), _, _) => bail!(
+            "Workspace file {} combines roots with project or folders; name either independent roots or one project's folders",
+            path.display()
+        ),
+        (None, Some(_), None) => bail!(
+            "Workspace file {} names a project but no folders",
+            path.display()
+        ),
+        (None, None, _) => bail!(
+            "Workspace file {} needs roots, or a project with folders",
+            path.display()
+        ),
+    }
 }
 
 /// The user defaults file: `$XDG_CONFIG_HOME/locmetry/config.toml`, else

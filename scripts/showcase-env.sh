@@ -9,7 +9,10 @@ showcase_tag=$(awk -F'\t' '$1 == "showcase" { print $2 }' "$repository/examples/
 for checkout in "$showcase"/*/immich; do
     [[ -d $checkout/.git ]] || continue
     # The overlay is Locmetry's policy; anything else changed in the checkout
-    # would make the recorded numbers describe a different tree.
+    # would make the recorded numbers describe a different tree. Untracked
+    # files can only be earlier overlay copies, which a removed overlay file
+    # would otherwise leave behind.
+    git -C "$checkout" clean -fdq
     cp -R "$overlay/." "$checkout/"
     actual=$(git -C "$checkout" status --porcelain=v1 --untracked-files=all | LC_ALL=C sort)
     if [[ $actual != "$expected" ]]; then

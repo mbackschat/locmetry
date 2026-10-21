@@ -1,7 +1,7 @@
 # Measure Immich
 
-*2026-10-21T02:18:28Z by Showboat 0.6.1*
-<!-- showboat-id: c5916792-451e-48d4-acb5-8696e7293326 -->
+*2026-10-21T03:19:57Z by Showboat 0.6.1*
+<!-- showboat-id: c6f79590-fe17-40b8-86ab-c5ea0d8918d1 -->
 
 Run each Bash block from the Locmetry repository root after `cargo build --locked` and `bash scripts/fetch-showcase.sh`. `source scripts/showcase-env.sh` links the pinned [Immich](https://github.com/immich-app/immich) checkouts into a fresh temporary directory, with `immich` as the `v3.3.4` showcase release, applies Locmetry's [reviewed policy](../../examples/showcase/immich/README.md) and isolates personal defaults. The [showcase index](README.md) explains replay and projections.
 
@@ -23,7 +23,7 @@ locmetry --root immich --config builtin-only.toml --format json \
 
 ```output
 {
-  "all_counted": 522775,
+  "all_counted": 522776,
   "source": 282770,
   "purposes": {
     "production": 193662,
@@ -94,7 +94,7 @@ Without `--config`, the checkout's `.locmetryrc` applies. Its entries record wha
 ```bash
 source scripts/showcase-env.sh
 locmetry --root immich --format table --show-categories --no-color --no-bars \
-  | sed '/^Root:/d; /^Roots:/d; /^Measured at:/d'
+  | sed '/^Root:/d; /^Roots:/d; /^Project:/d; /^Measured at:/d'
 ```
 
 ```output
@@ -181,7 +181,7 @@ Adaptive folder detail expands the largest folders within a row budget and cover
 ```bash
 source scripts/showcase-env.sh
 locmetry --root immich --format table --folder-rows 16 --no-color --no-bars \
-  | sed '/^Root:/d; /^Roots:/d; /^Measured at:/d' \
+  | sed '/^Root:/d; /^Roots:/d; /^Project:/d; /^Measured at:/d' \
   | sed -n '/Folder/,$p'
 ```
 
