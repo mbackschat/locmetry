@@ -19,12 +19,13 @@ Before implementation, scan PLAN for relevant open work, then read only the appl
 - `cargo fmt --all --check`: verify Rust formatting.
 - `cargo clippy --locked --all-targets -- -D warnings`: lint every target.
 - `cargo run --locked -- --help`: inspect CLI usage.
+- `python3 scripts/check-file-sizes.py`: gate source file sizes with the built executable.
 
 Keep [Cargo.lock](Cargo.lock) with the application. Tokei is embedded with its default CLI feature disabled; do not add Python, Git, or Tokei executable requirements. Homebrew Rust dependencies are build-only, and Linux release binaries are static musl builds. Use `git status --short` and `git diff --check` before submission.
 
 ## Coding Style & Naming Conventions
 
-Use rustfmt, four-space indentation, `snake_case` functions/modules, and `PascalCase` types. Prefer enums and `match` for finite alternatives. Keep changes focused and avoid speculative adapter frameworks. Write Markdown with one paragraph per physical line and regular links to other documents.
+Use rustfmt, four-space indentation, `snake_case` functions/modules, and `PascalCase` types. Keep source files within the [file-size limits](docs/self-measurement.md#file-sizes) that CI enforces with `python3 scripts/check-file-sizes.py`: split a file instead of raising its limit, and lower or remove a ceiling in the same commit that shrinks its file. Prefer enums and `match` for finite alternatives. Keep changes focused and avoid speculative adapter frameworks. Write Markdown with one paragraph per physical line and regular links to other documents.
 
 Update the owner of an affected public guarantee and any user-facing entry point made inaccurate by the change. Do not edit every documentation file for each checkpoint. Update PLAN or a detailed plan only when scope, status, a material decision, acceptance criteria or remaining work changes; keep routine small-fix verification in the commit handback. Keep current behavior in README and PRODUCT and decision/verification evidence in the existing archives; do not maintain release notes or a changelog. Change CLAUDE.md only when contributor instructions change. Keep proposed behavior distinct from supported guarantees. Breaking changes to commands, reports and configuration are acceptable before 1.0, decided 2026-10-21 by the owner; record each in the owning contract.
 

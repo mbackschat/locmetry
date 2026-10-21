@@ -259,6 +259,36 @@ check_recipe partial 2 '' 'invalid_notebook'
 check_recipe invalid 1 '' 'Invalid configuration'
 check_recipe unclaimed 1 'false' ''
 
+# The file-size gate limits each purpose separately: a production file over 1,000 code lines fails,
+# a test file of 1,500 passes, and a partial measurement keeps Locmetry's exit status.
+extract_blocks 'Limit file sizes by purpose' "$temporary/recipe.sh" 1 0 "$repository/docs/cookbooks/file-size-gate.md"
+mkdir -p "$temporary/oversized" "$temporary/large-tests/tests"
+cp "$temporary/healthy/.locmetryrc" "$temporary/oversized/.locmetryrc"
+for ((line = 0; line < 1001; line++)); do printf 'print(1)\n'; done > "$temporary/oversized/main.py"
+for ((line = 0; line < 1500; line++)); do printf 'assert True\n'; done > "$temporary/large-tests/tests/test_main.py"
+check_recipe healthy 0 'true' ''
+check_recipe large-tests 0 'true' ''
+check_recipe oversized 1 '' 'main.py: 1001 code lines over the production limit of 1000'
+check_recipe partial 2 '' 'invalid_notebook'
+
+# Soft limits warn without failing, a ceiling holds a predating file at its size, and growth past it fails.
+extract_blocks 'Warn before failing and freeze existing large files' "$temporary/recipe.sh" 1 0 \
+    "$repository/docs/cookbooks/file-size-gate.md"
+mkdir -p "$temporary/frozen" "$temporary/grown"
+for scenario in frozen grown partial; do
+    printf '{"limits": {"production": {"soft": 5, "hard": 10}}, "ceilings": {"legacy.py": 20}}\n' \
+        > "$temporary/$scenario/file-size-limits.json"
+done
+for scenario in frozen grown; do
+    cp "$temporary/healthy/.locmetryrc" "$temporary/$scenario/.locmetryrc"
+    for ((line = 0; line < 7; line++)); do printf 'print(1)\n'; done > "$temporary/$scenario/mid.py"
+done
+for ((line = 0; line < 20; line++)); do printf 'print(1)\n'; done > "$temporary/frozen/legacy.py"
+for ((line = 0; line < 21; line++)); do printf 'print(1)\n'; done > "$temporary/grown/legacy.py"
+check_recipe frozen 0 'mid.py: 7 code lines over the production soft limit of 5' ''
+check_recipe grown 1 'mid.py: 7 code lines over the production soft limit of 5' 'legacy.py: 21 code lines over 20'
+check_recipe partial 2 '' 'invalid_notebook'
+
 mkdir -p "$temporary/workflows/src" "$temporary/workflows/service/src" "$temporary/workflows/api/src"
 for project in '' service/ api/; do
     printf 'fn main() {}\n' > "$temporary/workflows/${project}src/main.rs"
@@ -358,4 +388,4 @@ extract_blocks 'Query a Saved Report' "$temporary/saved-queries.sh" 0 0 "$reposi
 (cd "$temporary/issues" && bash "$temporary/saved-queries.sh") > "$temporary/saved-query-results"
 jq -s -e '.[0] == [{language: "TypeScript", code: 2}] and .[1] == [{purpose: "production", code: 1}, {purpose: "test", code: 2}] and .[2].path == "prototypes/pricing_experiment.py"' "$temporary/saved-query-results" > /dev/null
 
-echo 'README and guide examples pass: silent file exports, Markdown content, policy outcomes, configuration transitions, compare, workspace compare, explain, partial coverage, troubleshooting queries, and adaptive folder detail.'
+echo 'README and guide examples pass: silent file exports, Markdown content, policy outcomes, configuration transitions, compare, workspace compare, explain, partial coverage, troubleshooting queries, adaptive folder detail, and file-size gates.'

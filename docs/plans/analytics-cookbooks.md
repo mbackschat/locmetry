@@ -17,7 +17,7 @@ The owner decides. Until then, no cookbook, loader, pinned analytics package or 
 
 ## Recovery source
 
-Commit [`8272abd`](https://github.com/mbackschat/locmetry/tree/8272abd21e21eb0a373c5f3ff77aa8f2d93c56b8) holds the last complete version, recorded on Immich `v3.2.0` and `v3.3.4` and passing CI. Restore a file with `git show 8272abd:PATH > PATH`, then edit it as described below.
+Commit [`8272abd`](https://github.com/mbackschat/locmetry/tree/8272abd21e21eb0a373c5f3ff77aa8f2d93c56b8) holds the last complete version, recorded on Immich `v3.2.0` and `v3.3.4` and passing CI. Restore a file with `git show 8272abd:PATH > PATH`, then edit it as described below. Recreated cookbooks belong in [`docs/cookbooks/`](../cookbooks/README.md), decided 2026-10-21 by the owner, not in `docs/` where they used to be.
 
 | Path at `8272abd` | Role |
 | --- | --- |

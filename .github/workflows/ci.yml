@@ -28,7 +28,11 @@ jobs:
           python3 scripts/test_release.py
           python3 scripts/test_doc_indexes.py
           python3 scripts/test_recorded_guides.py
+          python3 scripts/test_file_sizes.py
           python3 scripts/doc-indexes.py check
+      - name: Gate source file sizes with Locmetry's own measurement
+        if: matrix.os == 'ubuntu-24.04'
+        run: python3 scripts/check-file-sizes.py
       - name: Execute README CI recipes
         if: matrix.os == 'ubuntu-24.04'
         run: |

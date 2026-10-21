@@ -424,7 +424,7 @@ Workspace result paths, including module and failure paths, are member-prefixed;
 
 ## Command Outcomes
 
-Diagnostics go to stderr; successful or partial documents use the selected stdout format. Exit status describes execution and known count availability, not whether a policy, purpose or source change is desirable.
+Diagnostics go to stderr; successful or partial documents use the selected stdout format. Exit status describes execution and known count availability, not whether a policy, purpose or source change is desirable. Locmetry enforces no limits; CI gates query per-file records instead, as the [file-size gate cookbook](cookbooks/file-size-gate.md) shows for size limits by purpose.
 
 | Command | Exit 0 | Exit 2 |
 | --- | --- | --- |

@@ -1,0 +1,11 @@
+{
+  "limits": {
+    "production": {"soft": 600, "hard": 1000},
+    "test": {"soft": 1000, "hard": 2000}
+  },
+  "ceilings": {
+    "src/config.rs": 1056,
+    "src/main.rs": 1881,
+    "src/output.rs": 2699
+  }
+}
