@@ -110,7 +110,7 @@ A draft policy of two overrides and six rules, each with a recorded reason, was 
 
 Every entry was used, and 216 lines remain unclaimed for review. Folder detail, `explain` on a generated file, the workspace summary across members and the `v3.2.0 → v3.3.4` comparison (+9,204 unconfigured source code lines with Locmetry 0.7.3) complete the story; `explain` shows the rule and reason behind each decision.
 
-The README shows these three steps; the [sample-project tour](../sample-project-tour.md) becomes the longer Immich walkthrough. The [DuckDB cookbook](../duckdb-cookbook.md) capture stays self-contained so readers can run it without a download.
+The README shows these three steps; the former Acme sample-project tour becomes the [Immich policy tour](../showcase/tour.md). The [DuckDB cookbook](../duckdb-cookbook.md) capture stays self-contained so readers can run it without a download.
 
 The spike first ran Locmetry 0.7.3, which had no Dart module detector and no `*.e2e-spec` convention: 56,893 lines of Flutter code were unclaimed, `mobile` reported an implausible test/prod ratio of 3.69, and all 13,003 `e2e/src` lines counted as production. Both conventions were added before recording the showcase, so it demonstrates shipped behavior; the draft policy then needed two fewer rules for the same configured result.
 
@@ -122,7 +122,7 @@ Showcase commands omit `--no-user-config`, so readers do not mistake it for a re
 
 Showcase recordings live apart from the option-coverage guides. A separate environment script links the pinned checkouts into a temporary directory under their tag folder names, applies the overlay and writes reports outside every measured root; it never copies the checkout. Outputs stay reviewable after counting changes: bounded `--folder-rows`, jq projections of stable fields and the existing footer filters.
 
-A refresh script regenerates the README's marked Immich excerpts from the pinned checkout; release preparation runs it. The existing `readme::` table guard over Acme retires with those tables; the Common commands guard is unaffected.
+A refresh script regenerates the README's marked Immich excerpts from the pinned checkout. Contributors run it after a pin move or a measurement or presentation change that affects them; release verification does not, because it must not change its inputs or depend on the checkouts. The existing `readme::` table guard over Acme retires with those tables; the Common commands guard is unaffected.
 
 ## Acme Reference Improvements
 

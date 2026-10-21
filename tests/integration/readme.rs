@@ -1,49 +1,7 @@
 use crate::common;
-use std::{fs, path::Path};
+use std::fs;
 
 const SAMPLE: &str = "examples/cli-workspace/acme-orders";
-
-fn block<'a>(readme: &'a str, marker: &str) -> &'a str {
-    readme
-        .split_once(&format!("<!-- {marker} -->\n```text\n"))
-        .unwrap()
-        .1
-        .split_once("```\n")
-        .unwrap()
-        .0
-}
-
-fn tables() -> [(String, String); 2] {
-    let output = common::locmetry()
-        .args([
-            "--root",
-            SAMPLE,
-            "--no-user-config",
-            "--no-color",
-            "--no-bars",
-            "--format",
-            "table",
-            "--folder-rows",
-            "12",
-        ])
-        .output()
-        .unwrap();
-    assert!(
-        output.status.success(),
-        "{}",
-        String::from_utf8_lossy(&output.stderr)
-    );
-    let text = String::from_utf8(output.stdout).unwrap();
-    let grids: Vec<_> = text
-        .split("\n\n")
-        .filter(|part| part.starts_with(" ─"))
-        .collect();
-    assert!(grids.len() >= 2, "{text}");
-    [
-        ("readme-language".into(), format!("{}\n", grids[0])),
-        ("readme-folders".into(), format!("{}\n", grids[1])),
-    ]
-}
 
 #[test]
 fn sample_workspace_records_real_classification_and_embedded_counts() {
@@ -82,32 +40,6 @@ fn sample_workspace_records_real_classification_and_embedded_counts() {
         .iter()
         .any(|row| row["language"] == "JavaScript" && row["files"] == 0 && row["code"] == 1));
     assert_eq!(report["summary"]["source"]["code"], 25);
-}
-
-#[test]
-fn readme_tables_match_actual_sample_measurement() {
-    let readme = fs::read_to_string("README.md").unwrap();
-    for (marker, rendered) in tables() {
-        assert_eq!(
-            block(&readme, &marker),
-            rendered,
-            "refresh with the ignored refresh_readme_tables test"
-        );
-    }
-}
-
-#[test]
-#[ignore = "explicit maintenance command: rewrites the two marked README tables"]
-fn refresh_readme_tables() {
-    let path = Path::new("README.md");
-    let mut readme = fs::read_to_string(path).unwrap();
-    for (marker, rendered) in tables() {
-        let prefix = format!("<!-- {marker} -->\n```text\n");
-        let start = readme.find(&prefix).unwrap() + prefix.len();
-        let end = start + readme[start..].find("```\n").unwrap();
-        readme.replace_range(start..end, &rendered);
-    }
-    fs::write(path, readme).unwrap();
 }
 
 fn help(flag: &str) -> String {

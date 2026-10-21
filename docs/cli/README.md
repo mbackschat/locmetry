@@ -1,6 +1,6 @@
 # Recorded CLI Guides
 
-These guides are executable demonstrations made with [Showboat](https://github.com/simonw/showboat), following its command-and-captured-output workflow. They all use the checked-in [Acme Orders workspace](../../examples/cli-workspace/README.md), also used by the [sample tour](../sample-project-tour.md) and root README. No application build or fixture dependency installation is needed.
+These guides are executable demonstrations made with [Showboat](https://github.com/simonw/showboat), following its command-and-captured-output workflow. They all use the checked-in [Acme Orders workspace](../../examples/cli-workspace/README.md); the [Immich showcase](../showcase/README.md) demonstrates the same commands on a real project. No application build or fixture dependency installation is needed.
 
 - [Measure a project](root.md): root selection, classification, folder views, reporting and discovery.
 - [Measure a workspace](workspace.md): member policy, combined reports and export choices.
@@ -66,4 +66,4 @@ diff -u docs/cli/root.md /tmp/locmetry-root-candidate.md
 
 A mismatch returns a nonzero status while producing the candidate; inspect the diagnostic to distinguish output drift from execution failure. Edit explanatory prose or commands when needed, then regenerate output by executing them. Do not hand-edit captured output. To recreate a document through Showboat's authoring commands, use `showboat extract docs/cli/root.md --filename /tmp/locmetry-root-recreated.md` and execute the emitted commands from the repository root. Showboat may refresh its document creation timestamp.
 
-If a measurement change affects the sample counts, also refresh the README tables using the fixture's [maintenance instructions](../../examples/cli-workspace/README.md), update the tour's explanation and run `bash scripts/check-doc-examples.sh`. Analytics recipe checks and their optional tool versions are documented in the [DuckDB cookbook](../duckdb-cookbook.md#verification).
+If a measurement change affects the fixture's counts, update the [fixture's](../../examples/cli-workspace/README.md) independently known totals and run `bash scripts/check-doc-examples.sh`. If it affects Immich, replay the [showcase recordings](../showcase/README.md) and refresh the README excerpts with `python3 scripts/refresh-readme-showcase.py`. Analytics recipe checks and their optional tool versions are documented in the [DuckDB cookbook](../duckdb-cookbook.md#verification).

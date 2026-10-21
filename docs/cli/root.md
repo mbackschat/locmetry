@@ -3,7 +3,7 @@
 *2026-10-20T12:56:35Z by Showboat 0.6.1*
 <!-- showboat-id: f949f865-6391-4e04-bcf2-5a1eae54dc23 -->
 
-Run each Bash block from the Locmetry repository root. [Setup and replay instructions](README.md) describe the fresh temporary copy created by `source scripts/cli-demo-env.sh`, external tools and output projections. The [sample tour](../sample-project-tour.md) introduces the shared source tree.
+Run each Bash block from the Locmetry repository root. [Setup and replay instructions](README.md) describe the fresh temporary copy created by `source scripts/cli-demo-env.sh`, external tools and output projections. The [fixture README](../../examples/cli-workspace/README.md) introduces the shared source tree.
 
 ## Measure the whole tree
 

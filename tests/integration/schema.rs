@@ -54,7 +54,6 @@ fn documented_examples_satisfy_their_schemas() {
     );
     let (workspaces, blocks): (Vec<String>, Vec<String>) = [
         "README.md",
-        "docs/sample-project-tour.md",
         "docs/PRODUCT.md",
         "docs/guides/configure.md",
         "docs/guides/reports.md",
@@ -77,6 +76,40 @@ fn documented_examples_satisfy_their_schemas() {
     for block in workspaces {
         assert!(is_valid(&workspace, &block), "invalid per schema:\n{block}");
     }
+}
+
+/// The Immich showcase policies are measured only against an external
+/// checkout, so this offline guard is what catches an invalid edit before
+/// the showcase replay (examples/showcase/immich/README.md).
+#[test]
+fn showcase_policies_satisfy_their_schemas() {
+    let (config, workspace) = (schema("config"), schema("workspace"));
+    let overlay = std::path::Path::new("examples/showcase/immich/overlay");
+    let mut pending = vec![overlay.to_path_buf()];
+    let mut checked = 0;
+    while let Some(directory) = pending.pop() {
+        for entry in std::fs::read_dir(&directory).unwrap() {
+            let path = entry.unwrap().path();
+            let text = || std::fs::read_to_string(&path).unwrap();
+            match path.file_name().and_then(|name| name.to_str()) {
+                _ if path.is_dir() => pending.push(path),
+                Some(".locmetryrc") => {
+                    assert!(is_valid(&config, &text()), "{}", path.display());
+                    locmetry::Policy::from_toml(&text()).unwrap();
+                    checked += 1;
+                }
+                Some("workspace.toml") => {
+                    assert!(is_valid(&workspace, &text()), "{}", path.display());
+                    checked += 1;
+                }
+                other => panic!("unexpected overlay file {other:?}"),
+            }
+        }
+    }
+    assert_eq!(
+        checked, 8,
+        "root and six member policies plus the workspace file"
+    );
 }
 
 #[test]

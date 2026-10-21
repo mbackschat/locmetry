@@ -358,28 +358,4 @@ extract_blocks 'Query a Saved Report' "$temporary/saved-queries.sh" 0 0 "$reposi
 (cd "$temporary/issues" && bash "$temporary/saved-queries.sh") > "$temporary/saved-query-results"
 jq -s -e '.[0] == [{language: "TypeScript", code: 2}] and .[1] == [{purpose: "production", code: 1}, {purpose: "test", code: 2}] and .[2].path == "prototypes/pricing_experiment.py"' "$temporary/saved-query-results" > /dev/null
 
-# Execute the tour against the same checked-in source used by its recorded guides.
-mkdir "$temporary/tour"
-cp -R "$repository/examples/cli-workspace/." "$temporary/tour/"
-tour="$repository/docs/sample-project-tour.md"
-for heading in 'Read the first measurement' 'Find where the code resides' 'Review what remains unresolved'; do
-    extract_blocks "$heading" "$temporary/tour-view.sh" 0 0 "$tour"
-    (cd "$temporary/tour" && bash "$temporary/tour-view.sh") > "$temporary/tour-view.txt"
-    grep -Eq '^Root: .*/acme-orders$' "$temporary/tour-view.txt"
-done
-extract_blocks 'Trace a classification decision' "$temporary/tour-explain.sh" 0 0 "$tour"
-(cd "$temporary/tour" && bash "$temporary/tour-explain.sh") > "$temporary/tour-explanation.json"
-jq -e '.result.file.purpose == "test" and .result.file.rule == "builtin:js-test-file"' "$temporary/tour-explanation.json" > /dev/null
-extract_blocks 'Save the evidence and ask a narrower question' "$temporary/tour-save.sh" 0 0 "$tour"
-(cd "$temporary/tour" && bash "$temporary/tour-save.sh") > "$temporary/tour-query.json"
-jq -e '. == [{language: "Go", code: 4}, {language: "TypeScript", code: 3}]' "$temporary/tour-query.json" > /dev/null
-extract_blocks 'Share a report and follow changes' "$temporary/tour-share.sh" 0 0 "$tour"
-(cd "$temporary/tour" && bash "$temporary/tour-share.sh") > "$temporary/tour-comparison.json"
-grep -Fq '## Source categories' "$temporary/tour/acme-orders-report.md"
-jq -e '.document_type == "comparison" and .summary.source.delta.code == 1' "$temporary/tour-comparison.json" > /dev/null
-extract_blocks 'Measure the members together' "$temporary/tour-workspace.sh" 0 0 "$tour"
-(cd "$temporary/tour" && bash "$temporary/tour-workspace.sh") > "$temporary/tour-workspace.txt"
-grep -q 'service' "$temporary/tour-workspace.txt"
-
-# Measured README table excerpts are checked by cargo test --locked --test integration readme::.
-echo 'README and guide examples pass: silent file exports, Markdown content, policy outcomes, configuration transitions, compare, workspace compare, explain, partial coverage, troubleshooting queries, adaptive folder detail, and the sample-project tour.'
+echo 'README and guide examples pass: silent file exports, Markdown content, policy outcomes, configuration transitions, compare, workspace compare, explain, partial coverage, troubleshooting queries, and adaptive folder detail.'

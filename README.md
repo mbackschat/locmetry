@@ -21,65 +21,130 @@ Or download a binary from the [latest release](https://github.com/mbackschat/loc
 
 ## What you see
 
-Run `locmetry` in a project. These table excerpts come from the checked-in [synthetic Acme Orders workspace](examples/cli-workspace/README.md): a tiny Go service and TypeScript/TSX web client, with Python tooling and an unresolved experiment. Tests run the CLI against its actual source files and check the published tables.
+These excerpts measure [Immich](https://github.com/immich-app/immich) `v3.3.4`, a popular self-hosted photo platform with a TypeScript server, a Svelte web client, a Flutter app and a Python machine-learning service. Locmetry measures it with a short [reviewed policy](examples/showcase/immich/README.md) kept in this repository; the [refresh script](scripts/refresh-readme-showcase.py) regenerates every excerpt from the pinned checkout.
 
-**[Take the sample-project tour](docs/sample-project-tour.md)** to follow configuration, classification decisions, folder exploration and saved reports.
+**[Take the tour](docs/showcase/tour.md)** to build that policy step by step, from the first measurement to reviewed decisions.
 
-▶️ **The [recorded command guides](docs/cli/README.md) illustrate the commands and their options.**
+▶️ **The [showcase recordings](docs/showcase/README.md) replay measurement, workspace and comparison on Immich; the [command guides](docs/cli/README.md) cover every option on a small fixture.**
 
-From this repository's root:
+### A line counter answers "how much text, per language"
+
+<!-- showcase-tools -->
+| Tool | Reported code | of which JSON | Production / test split |
+| --- | ---: | ---: | --- |
+| Tokei 15.0.0 | 518,919 | 209,607 (40%) | none |
+| cloc 2.10 | 530,429 | 209,931 (40%) | none |
+| scc 4.1.0 | 510,074 | 209,867 (41%) | none |
+
+Line counters are good at counting. Locmetry counts with Tokei too, but asks a different question: almost half of Immich's "code" is data, such as database schemas, the OpenAPI specification and translations.
+
+### Locmetry answers "how much source, and how much of it is tests"
 
 ```sh
-locmetry --root examples/cli-workspace/acme-orders --no-user-config --no-color --no-bars --format table
+locmetry --root immich
 ```
 
-The excerpts omit the root-location and measurement-time footer.
-
-<!-- readme-language -->
+<!-- showcase-language -->
 ```text
- ──────────────────────────────────────────────────────────────────────────────────
- Language    Files  Lines  Code │ Comments  Blanks │ Prod.  Test  Other │ Test/prod
- ───────────────────────────────┼──────────────────┼────────────────────┼──────────
- Go              2     11     8 │        1       2 │     4     4      0 │      1.00
- TypeScript      2      8     6 │        2       0 │     3     3      0 │      1.00
- HTML            1      4     4 │        0       0 │     4     0      0 │      0.00
- Python          2      5     3 │        2       0 │     2     0      1 │      0.00
- TSX             1      3     3 │        0       0 │     3     0      0 │      0.00
- JavaScript      0      1     1 │        0       0 │     1     0      0 │      0.00
- ───────────────────────────────┼──────────────────┼────────────────────┼──────────
- Total           8     32    25 │        5       2 │    17     7      1 │      0.41
+ ────────────────────────────────────────────────────────────────────────────────────────────
+ Language    Files    Lines     Code │ Comments  Blanks │   Prod.    Test   Other │ Test/prod
+ ────────────────────────────────────┼──────────────────┼─────────────────────────┼──────────
+ TypeScript  1,074  171,359  145,427 │    4,624  21,308 │  70,455  68,506   6,466 │      0.97
+ Dart          823   90,871   75,726 │    2,779  12,366 │  59,495  16,231       0 │      0.27
+ JavaScript     17   23,273   19,746 │      427   3,100 │  19,684      62       0 │      0.00
+ Svelte        412   19,014   17,442 │      200   1,372 │  17,420      22       0 │      0.00
+ SQL            37   10,534    9,699 │      436     399 │       0       0   9,699 │         -
+ Python         39    6,184    4,888 │       79   1,217 │   2,818   2,070       0 │      0.73
+ Kotlin         35    4,604    3,810 │      177     617 │   3,810       0       0 │      0.00
+ Swift          28    3,874    3,103 │      232     539 │   3,103       0       0 │      0.00
+ CSS             2      818      691 │       26     101 │     691       0       0 │      0.00
+ TSX            11      597      516 │        9      72 │     516       0       0 │      0.00
+ Shell          17      525      371 │       67      87 │     371       0       0 │      0.00
+ Dockerfile      4      369      267 │       12      90 │     257      10       0 │      0.04
+ C++             1      295      251 │       11      33 │     251       0       0 │      0.00
+ HCL            16      262      225 │        4      33 │     225       0       0 │      0.00
+ C               2      225      168 │       30      27 │     168       0       0 │      0.00
+ Groovy          3      173      139 │        7      27 │     139       0       0 │      0.00
+ Java            1      166      124 │       25      17 │     124       0       0 │      0.00
+ HTML            1       74       66 │        2       6 │      66       0       0 │      0.00
+ Prolog          1       47       37 │        0      10 │      37       0       0 │      0.00
+ BASH            2       40       30 │        2       8 │      30       0       0 │      0.00
+ PostCSS         0       31       28 │        0       3 │      28       0       0 │      0.00
+ CMake           1       13        9 │        0       4 │       9       0       0 │      0.00
+ Templ           1       11        6 │        0       5 │       6       0       0 │      0.00
+ C Header        1        1        1 │        0       0 │       1       0       0 │      0.00
+ ────────────────────────────────────┼──────────────────┼─────────────────────────┼──────────
+ Total       2,529  333,360  282,770 │    9,149  41,441 │ 179,704  86,901  16,165 │      0.48
  Lines = Code + Comments + Blanks; Production + Test + Other = Code; Test/prod = Test / Production (Code).
  Tests written in another language than the code they test skew per-language Test/prod.
 ```
 
-Code is split by purpose; comments and blanks stay separate. JSON and Markdown files do not inflate source totals. The HTML file contributes both HTML and JavaScript; its embedded JavaScript row adds code with zero additional physical files. The experiment remains Other/unclaimed. TSX has no test code in the same language, illustrating why a per-language ratio is not test coverage.
+Code is split by purpose; comments and blanks stay separate. Data and documentation do not inflate source totals. `Test/prod` divides test code by production code; it describes volume, not coverage. If your numbers differ from these, personal defaults in `~/.config/locmetry/config.toml` may apply; `--no-user-config` ignores them.
 
-To see where the code resides, add adaptive folder detail:
+### A reviewed policy answers "what does this project consist of"
+
+Built-in conventions already recognize the npm, Gradle, Python and Dart modules and the conventional unit, integration and end-to-end tests. A policy adds what only the project knows, with a recorded reason for each decision: generated code, end-to-end support code, the iOS app, deployment files and developer tooling.
+
+<!-- showcase-policy -->
+| Source code | Built-in conventions | Reviewed policy |
+| --- | ---: | ---: |
+| Production | 193,662 | 179,704 |
+| Test | 83,485 | 86,901 |
+| Other: generated | 0 | 16,165 |
+| Other: unclaimed | 5,623 | 0 |
+| Test/prod | 0.43 | 0.48 |
+
+`locmetry explain FILE` names the rule behind any decision; for the generated SDK client, it reports the override and the reason recorded with it.
+
+### Workspaces and comparisons answer "where, and what changed"
+
+Measure the application components together, each with its own configuration. The workspace file names the member folders:
+
+<!-- showcase-workspace-file -->
+```toml
+version = 1
+# The application components of Immich; root-only folders such as docs/ and
+# deployment/ stay in the root measurement.
+roots = ["server", "web", "mobile", "machine-learning", "e2e", "packages"]
+```
 
 ```sh
-locmetry --root examples/cli-workspace/acme-orders --no-user-config --no-color --no-bars --format table --folder-rows 12
+locmetry workspace --workspace-file immich/workspace.toml
 ```
 
-<!-- readme-folders -->
+<!-- showcase-workspace -->
 ```text
- ────────────────────────────────────────────────────────────────────
- Folder                  Lines  Code │ Prod.  Test  Other │ Test/prod
- ────────────────────────────────────┼────────────────────┼──────────
- web/src/orders             11     9 │     6     3      0 │      0.50
- web/src (direct files)      5     5 │     5     0      0 │      0.00
- service/src                 6     4 │     4     0      0 │      0.00
- service/tests               5     4 │     0     4      0 │         -
- service/scripts             3     2 │     2     0      0 │      0.00
- service/experiments         2     1 │     0     0      1 │         -
- ────────────────────────────────────┼────────────────────┼──────────
- Total                      32    25 │    17     7      1 │      0.41
- Production + Test + Other = Code; Test/prod = Test / Production (Code).
- Adaptive folder detail; rows cover measured source once.
+ ─────────────────────────────────────────────────────────────────────────────────
+ Repository          Lines     Code │   Prod.    Test   Other │ Test/prod │  Share
+ ───────────────────────────────────┼─────────────────────────┼───────────┼───────
+ server            129,296  111,950 │  53,296  48,955   9,699 │      0.92 │  39.7%
+ mobile            100,142   83,220 │  66,989  16,231       0 │      0.24 │  29.5%
+ web                67,833   58,255 │  52,867   5,388       0 │      0.10 │  20.7%
+ e2e                15,491   13,174 │     171  13,003       0 │     76.04 │   4.7%
+ packages           12,893   10,065 │   2,345   1,254   6,466 │      0.53 │   3.6%
+ machine-learning    6,698    5,291 │   3,221   2,070       0 │      0.64 │   1.9%
+ ───────────────────────────────────┼─────────────────────────┼───────────┼───────
+ Total             332,353  281,955 │ 178,889  86,901  16,165 │      0.49 │ 100.0%
+ Production + Test + Other = Code; Test/prod = Test / Production (Code); Share = Code / workspace Code.
 ```
 
-The rows cover the measured source once: a parent and its expanded children do not contribute twice. `Test/prod` is test code divided by production code; `-` means there is no production denominator. It describes code volume, not test coverage or quality.
+Compare saved reports of two releases, `v3.2.0` and `v3.3.4`:
 
-The 12-row budget allows this small tree to expand to six source rows. Use `--show-folders` for top-level folders or `--verbose` for classification and coverage notes. These views do not change the measurement. [Folder reporting](docs/guides/reports.md#look-inside-large-folders) explains expansion, saved tables and format limits.
+<!-- showcase-compare -->
+```text
+ ──────────────────────────────────────────────────────────────────
+                         Lines           │           Code
+ Purpose        before    after   change │  before    after  change
+ ────────────────────────────────────────┼─────────────────────────
+ Production    208,180  210,881   +2,701 │ 177,605  179,704  +2,099
+ Test           96,101  103,306   +7,205 │  81,051   86,901  +5,850
+ Other          17,825   19,173   +1,348 │  14,910   16,165  +1,255
+ ────────────────────────────────────────┼─────────────────────────
+ Source total  322,106  333,360  +11,254 │ 273,566  282,770  +9,204
+ Test/prod (Code): 0.46 → 0.48 (before → after)
+```
+
+Most of the change is test code. [Folder reporting](docs/guides/reports.md#look-inside-large-folders) and [comparison](docs/guides/compare.md) explain the remaining views.
 
 ## Common commands
 
@@ -185,27 +250,30 @@ Full schema-3 reports support external analytics without adding runtime dependen
 
 Locmetry embeds Tokei for counting and applies project policy to each file. Purpose (`production`, `test`, `other`), category (such as `implementation` or `tooling`) and content kind (source, data, documentation or unknown) are separate dimensions. `other` means neither production nor test; code no stage claimed is `other` with category `unclaimed`.
 
-- **Module context:** selected npm, Gradle, Maven, Cargo, Go, Python, Lake and Swift descriptors identify conventional source layouts. The innermost module supplies context, so nested projects do not inherit an outer project's layout blindly.
+- **Module context:** selected npm, Gradle, Maven, Cargo, Go, Python, Lake, Swift and Dart descriptors identify conventional source layouts. The innermost module supplies context, so nested projects do not inherit an outer project's layout blindly.
 - **Ordered decisions:** explicit overrides precede test and build conventions, ordinary project rules, module inference and fallback. Tests inside production source trees remain tests; overrides can express exceptions. Every counted file records the deciding rule.
 - **Scope and coverage:** exclusions and ignore rules determine what is selected. Unrecognized files and unavailable counts remain distinguishable from zero. Read/parse failures produce a partial report and exit 2; unresolved classification alone does not make counts partial.
 
-These example paths illustrate how the rules apply in a project with the corresponding module descriptors and [configuration](#configuration):
+These Immich files show each kind of decision, from module layout and test conventions to project entries:
 
+<!-- showcase-examples -->
 | File | Purpose / category | Deciding rule |
 | --- | --- | --- |
-| `service/src/main.go` | production / implementation | `builtin:go-module` |
-| `web/src/orders/Order.test.ts` | test / test | `builtin:js-test-file` |
-| `service/scripts/check.py` | production / tooling | `tooling` (project rule) |
-| `service/experiments/probe.py` | other / unclaimed | `fallback` |
+| `server/src/services/asset.service.ts` | production / implementation | `builtin:npm-module` |
+| `mobile/lib/main.dart` | production / implementation | `builtin:dart-module` |
+| `server/src/services/asset.service.spec.ts` | test / test | `builtin:js-test-file` |
+| `e2e/src/specs/web/album.e2e-spec.ts` | test / test | `builtin:js-e2e-spec-file` |
+| `e2e/src/utils.ts` | test / end-to-end | `end-to-end-suites` (project entry) |
+| `mobile/ios/Runner/AppDelegate.swift` | production / native | `ios-app` (project entry) |
+| `packages/sdk/src/fetch-client.ts` | other / generated | `generated-sdk-client` (project entry) |
 
 Inspect the evidence for one file:
 
 ```sh
-locmetry explain web/src/orders/Order.test.ts \
-  --root examples/cli-workspace/acme-orders --no-user-config
+locmetry explain packages/sdk/src/fetch-client.ts --root immich
 ```
 
-The explanation identifies `builtin:js-test-file`, the matching pattern and the convention stage. It also reports parser, counts and module evidence where applicable. The [selection guide](docs/guides/selection.md) explains other states and how to investigate a missing file.
+The explanation identifies the deciding stage, the matching pattern and the reason recorded with a project entry. It also reports parser, counts and module evidence where applicable. The [selection guide](docs/guides/selection.md) explains other states and how to investigate a missing file.
 
 Built-in wrapper patterns cover `gradlew`, `gradlew.bat`, `mvnw`, `mvnw.cmd`, and files under `gradle/wrapper/` or `.mvn/wrapper/` at any depth. The enabled convention classifies them as `other` / `third-party-wrapper` unless an override or earlier convention wins; [wrapper details and precedence](docs/PRODUCT.md#matching-and-precedence) define the conditions.
 
@@ -215,23 +283,30 @@ Module inference examines filenames and conventional layouts, not build-file con
 
 No configuration is required to start. Add `.locmetryrc` when conventions cannot know local intent: which code is vendored, which scripts are maintained tooling, or which experiments should explicitly count as `other`. Locmetry does not automatically recognize vendored or generated code.
 
-For the combined Acme Orders root:
+Two entries of the Immich policy show the shape: an override that beats the npm module layout for generated code, and a rule for code no build descriptor declares. Each restricts itself to source and records its evidence:
 
+<!-- showcase-config -->
 ```toml
 version = 1
 
-[scope]
-hidden = false
-exclude = ["service/third_party/**"]
+[[overrides]]
+id = "generated-sdk-client"
+match = ["packages/sdk/src/fetch-client.ts"]
+kind = ["source"]
+purpose = "other"
+category = "generated"
+reason = "Header: DO NOT MODIFY, generated using oazapfts from the OpenAPI specification"
 
 [[rules]]
-id = "tooling"
-match = ["service/scripts/**"]
+id = "ios-app"
+match = ["mobile/ios/**"]
+kind = ["source"]
 purpose = "production"
-category = "tooling"
+category = "native"
+reason = "Swift code of the iOS runner and widget extension; no Package.swift declares it"
 ```
 
-This removes `service/third_party/` from scope and classifies `service/scripts/` as production tooling. Tests still win over ordinary rules. The experiment remains in the review list; assigning them an explicit category such as `prototype` with purpose `other` would retain their counts but remove them from that list. A clean review list alone does not establish correct classification.
+Tests still win over ordinary rules; an override is needed only to beat a convention. Entries without evidence belong in the review list as unclaimed source, not in the policy. A clean review list alone does not establish correct classification.
 
 The [configuration guide](docs/guides/configure.md) covers overrides, custom categories, language mappings and evidence-based review. [Personal defaults](docs/PRODUCT.md#user-defaults) can supply exclusions and language mappings across projects; they cannot assign purposes or categories.
 
