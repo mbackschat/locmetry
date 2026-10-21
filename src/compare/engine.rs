@@ -10,7 +10,7 @@ use folders::*;
 
 /// Reads a saved report. A byte-order mark selects UTF-8 or UTF-16, because
 /// Windows PowerShell 5.1 writes UTF-16LE for `>` and a UTF-8 mark for
-/// `Out-File -Encoding utf8` (docs/proposals/windows-support.md); without a
+/// `Out-File -Encoding utf8` (docs/proposals/archive/windows-support.md); without a
 /// mark, the bytes pass through unchanged as UTF-8.
 pub fn read_input(path: &Path) -> Result<MeasurementReport> {
     let bytes = fs::read(path).with_context(|| format!("Cannot read {}", path.display()))?;

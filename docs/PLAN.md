@@ -2,9 +2,11 @@
 
 [PRODUCT](PRODUCT.md) owns supported requirements. This file indexes open work and decision gates; it is not a checkpoint log. Read the relevant linked design only when working on that item. Deferred items do not authorize implementation.
 
-## Windows Support — Accepted
+## Windows Support — Follow-up
 
-- [ ] Implement and verify the [Windows support design](proposals/windows-support.md), accepted 2026-10-21 by the owner: an x86_64 release zip used from PowerShell, personal defaults in `%APPDATA%`, `compare` input with byte-order marks, then a Scoop manifest. PowerShell tab completion follows later; Windows on ARM stays excluded.
+- [ ] Publish a Scoop manifest, updated per release like the Homebrew tap, once a release ships the Windows zip.
+- [ ] Generate PowerShell tab completion, together with the other shells; deferred by the owner on 2026-10-21.
+- Accept UTF-16 configuration and workspace files, and add PowerShell equivalents of the `jq` recipes, only when Windows users ask for them. Windows on ARM stays excluded while x86_64 emulation serves it. The [Windows support record](proposals/archive/windows-support.md) owns the rationale.
 
 ## CI Maintenance — Follow-up
 
@@ -30,11 +32,12 @@
 
 ## Proposals — Under Discussion
 
-None beyond the accepted [Windows support](#windows-support--accepted). The [proposal index](proposals/README.md) distinguishes active designs from historical decisions.
+None. The [proposal index](proposals/README.md) distinguishes active designs from historical decisions.
 
 ## Historical Evidence
 
 - [CLI option clarity and applicability](proposals/archive/cli-option-clarity.md): reviewed naming and output-view contract, owner amendment and verification.
+- [Windows support](proposals/archive/windows-support.md): reviewed platform contract and its verification.
 
 - [Complete CLI help coverage](plans/archive/full-help-coverage.md): implementation scope and experiment evidence; [help design](help-design.md) owns the current feature inventory and contributor guidance.
 - [Default report output decision](proposals/archive/default-report-output-proposal-redacted.md): reviewed design and acceptance evidence.

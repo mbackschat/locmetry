@@ -2,16 +2,22 @@
 
 <!-- doc-status
 {
-  "status": "accepted",
+  "status": "implemented",
   "date": "2026-10-21",
-  "summary": "Windows x86_64 release and CI target, used from PowerShell.",
-  "evidence": "[Owner decision in PLAN](../PLAN.md#windows-support--accepted)"
+  "summary": "Windows x86_64 release and CI target, used from PowerShell; Scoop and tab completion remain follow-ups.",
+  "evidence": "[Distribution](../../tokei-integration.md#distribution), [pull request #1](https://github.com/mbackschat/locmetry/pull/1)"
 }
 -->
 
+Status: historical decision record — implemented. The owner accepted the design on 2026-10-21, and its required scope was implemented and verified the same day in [pull request #1](https://github.com/mbackschat/locmetry/pull/1): the Windows CI job passes the public suite, and the release workflow's dry run built and verified the Windows zip, including its static C runtime, without publishing. No release had shipped the zip yet. Archived on 2026-10-21 under the [retirement procedure](../README.md#retirement-procedure). [PRODUCT](../../PRODUCT.md), the [README](../../../README.md#windows-and-powershell) and [distribution](../../tokei-integration.md#distribution) own the current behavior.
+
+Verification added three measures beyond the design below: a `.gitattributes` keeps text checkouts on LF, because CRLF checkouts broke documentation tests and would have shipped CRLF guides; subfolder paths in messages are rebuilt with the platform separator; and a pull request that changes the release workflow builds every archive without publishing. The optional scope moved to [PLAN](../../PLAN.md#windows-support--follow-up).
+
+The sections below preserve the reviewed design and acceptance criteria. Their imperative wording, examples and stated limitations are historical evidence, not current guarantees. Do not update this body to track behavior; this record carries no live scope.
+
 ## Problem
 
-Locmetry releases only macOS arm64 and Linux binaries, while the line counters it is compared with all run on Windows: Tokei ships Windows binaries and Scoop/winget packages, scc's release configuration builds Windows, and cloc ships a Windows executable ([tool comparison](../research/tool-capability-comparison.md)). Windows users can run the Linux binary under WSL, but not natively from PowerShell.
+Locmetry releases only macOS arm64 and Linux binaries, while the line counters it is compared with all run on Windows: Tokei ships Windows binaries and Scoop/winget packages, scc's release configuration builds Windows, and cloc ships a Windows executable ([tool comparison](../../research/tool-capability-comparison.md)). Windows users can run the Linux binary under WSL, but not natively from PowerShell.
 
 ## Contract
 

@@ -86,7 +86,7 @@ pub fn user_defaults_file() -> Option<PathBuf> {
 /// A relative `XDG_CONFIG_HOME` is ignored, as the XDG Base Directory
 /// specification requires. Windows sets no `HOME` by default, and Tokei, cloc
 /// and uv keep user configuration in `%APPDATA%` there
-/// (docs/proposals/windows-support.md).
+/// (docs/proposals/archive/windows-support.md).
 fn defaults_file(var: impl Fn(&str) -> Option<std::ffi::OsString>) -> Option<PathBuf> {
     let absolute = |name: &str| {
         var(name)
