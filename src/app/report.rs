@@ -36,6 +36,22 @@ pub(crate) enum Location {
     },
 }
 
+impl Location {
+    /// Whether configuration findings belong in the summary: for a single
+    /// root or a shared project policy, while independent workspace members
+    /// record their own.
+    fn summary_findings(&self) -> bool {
+        matches!(
+            self,
+            Location::Root { .. }
+                | Location::Workspace {
+                    shared_policy: true,
+                    ..
+                }
+        )
+    }
+}
+
 /// Bars: forced by `--show-bars`, refused by `--no-bars`, and otherwise purpose
 /// bars only on a terminal and only where they fit, so files and pipes stay stable.
 pub(crate) fn bar_mode(
@@ -113,97 +129,98 @@ pub(crate) fn report(
     measured_at: u64,
     styling: Styling,
 ) -> Result<Outcome> {
-    // Independent workspace members record their own unused entries; a single
-    // root or a shared project policy reports them in the summary.
-    let summary_findings = matches!(
-        location,
-        Location::Root { .. }
-            | Location::Workspace {
-                shared_policy: true,
-                ..
-            }
-    );
-    let Results {
-        project,
-        rows,
-        coverage,
-        inaccurate,
-        modules,
-        module_shares,
-        submodules,
-        unused_entries,
-        unused_exclusions,
-        members,
-    } = results;
-    let format = destination.format;
-    let summary = build_report(&rows);
-    let module_files = largest_module_files(&modules, &rows);
-    let subfolder = match &location {
-        Location::Root { scope, .. } => scope.subfolder.as_deref(),
-        Location::Workspace { .. } => None,
-    };
-    let findings = Findings {
-        subfolder,
-        coverage: &coverage,
-        modules: &module_shares,
+    let summary = build_report(&results.rows);
+    let module_files = largest_module_files(&results.modules, &results.rows);
+    let human = HumanView {
+        shared,
+        destination,
+        styling,
+        results: &results,
+        summary: &summary,
         module_files: &module_files,
-        submodules: &submodules,
-        unused_entries: &unused_entries,
-        unused_exclusions: &unused_exclusions,
-        members: &members,
+        location: &location,
+        measured_at,
     };
-    let order = match shared.sort {
-        Sort::Code => RowOrder::Code,
-        Sort::Name => RowOrder::Name,
+    let saved_human = human.render(destination.format, destination.path.is_none());
+    let printed = destination
+        .print
+        .map(|print| (print, human.render(print, true)));
+    let partial = results
+        .inaccurate
+        .then(|| partial_counts(&results.coverage));
+    // The document is built only for JSON views; a headline omits the review,
+    // breakdown and file records, so only full JSON derives them.
+    let shows = |format| destination.shows(format);
+    let document = (shows(Format::Json) || shows(Format::Headline)).then(|| {
+        let detail = match shows(Format::Json) {
+            true => contract::Detail::Full,
+            false => contract::Detail::Headline,
+        };
+        measurement_document(
+            results,
+            summary,
+            module_files,
+            location,
+            measured_at,
+            detail,
+            shared.files,
+        )
+    });
+    let text = |format: Format, human: String| -> Result<String> {
+        let document = || document.as_ref().expect("built for JSON views");
+        Ok(match format {
+            Format::Json => report_text(&serde_json::to_value(document())?)?,
+            Format::Headline => format!("{}\n", serde_json::to_string(&document().headline())?),
+            Format::Table | Format::Markdown => human,
+        })
     };
-    let purposes = selected_purposes(&shared.purpose);
-    let variants = shared.view.variants();
-    // Table and Markdown views; `stdout` decides styling and automatic bars.
-    let human = |format: Format, stdout: bool| {
+    destination.write(&text(destination.format, saved_human)?)?;
+    if let Some((print, human)) = printed {
+        io::stdout()
+            .lock()
+            .write_all(text(print, human)?.as_bytes())?;
+    }
+    Ok(partial.map_or(Outcome::Complete, Outcome::Partial))
+}
+
+/// Everything the table and Markdown views of one measurement read.
+struct HumanView<'a> {
+    shared: &'a SharedArgs,
+    destination: &'a Destination<'a>,
+    styling: Styling,
+    results: &'a Results,
+    summary: &'a locmetry::ReportSummary,
+    module_files: &'a [locmetry::ModuleFile],
+    location: &'a Location,
+    measured_at: u64,
+}
+
+impl HumanView<'_> {
+    /// The view in `format`, empty for JSON; `stdout` decides styling and
+    /// automatic bars.
+    fn render(&self, format: Format, stdout: bool) -> String {
         let terminal = stdout && io::stdout().is_terminal();
         let mut human = match format {
-            Format::Table => render_table_with_options(
-                &summary,
-                &rows,
-                &findings,
-                TableOptions {
-                    categories: shared.categories,
-                    folders: destination.folders,
-                    verbose: shared.verbose,
-                    order,
-                    theme: styling.theme(terminal),
-                    folder_rows: destination.folder_rows,
-                    bars: bar_mode(
-                        shared.bars.map(BarArg::kind),
-                        shared.no_bars,
-                        terminal,
-                        bar_columns(stdout),
-                    ),
-                    purposes: purposes.clone(),
-                    languages: shared.languages.iter().map(|l| l.to_string()).collect(),
-                    tables_only: shared.view.tables_only,
-                    variants,
-                },
-            ),
+            Format::Table => self.table(terminal, stdout),
             Format::Markdown => render_markdown(
-                &project,
-                &summary,
-                &rows,
-                &findings,
-                shared.depth,
-                order,
-                variants,
+                &self.results.project,
+                self.summary,
+                &self.results.rows,
+                &self.findings(),
+                self.shared.depth,
+                self.order(),
+                self.shared.view.variants(),
             ),
             Format::Json | Format::Headline => return String::new(),
         };
         // Partial counts still warn on stderr and exit 2.
-        if format == Format::Table && shared.view.tables_only {
+        if format == Format::Table && self.shared.view.tables_only {
             return human;
         }
-        if inaccurate {
+        if self.results.inaccurate {
             let theme = match format {
                 Format::Markdown => Theme::MARKDOWN,
-                _ => styling.theme(terminal),
+                _ => self.styling.theme(terminal),
             };
             human.push_str(&format!(
                 "\n{}; inspect the JSON metadata.\n",
@@ -215,165 +232,222 @@ pub(crate) fn report(
             Format::Markdown => "\n\n",
             _ => "\n",
         };
-        let context = measured_roots(&location, format == Format::Markdown);
+        let context = measured_roots(self.location, format == Format::Markdown);
         human.push_str(&format!(
             "\n{context}{separator}Measured at: {}\n",
-            locmetry::measurement_time(measured_at)
+            locmetry::measurement_time(self.measured_at)
         ));
         human
-    };
-    let saved_human = human(format, destination.path.is_none());
-    let printed = destination.print.map(|print| (print, human(print, true)));
-    // The document is built only for JSON views; a headline omits the review,
-    // breakdown and file records, so only full JSON derives them.
-    let document = |full: bool| {
-        let mut member_totals = BTreeMap::new();
-        for member in &members {
-            member_totals.insert(
-                member.name.clone(),
-                summary
-                    .folders
-                    .get(&member.name)
-                    .map(|f| f.recursive.clone())
-                    .unwrap_or_default(),
-            );
-        }
-        let summary_document = contract::ReportSummary {
-            top_folders: summary.top_folders(),
-            totals: summary.totals,
-            members: member_totals,
-            unclaimed_folders: Some(unclaimed_folders(&rows)),
-            build_modules: build_systems(&module_shares)
-                .into_iter()
-                .map(|(k, v)| (k.into(), v))
-                .collect(),
-            submodules,
-            largest_module_files: Some(module_files.clone()),
-            unused_entries: if summary_findings {
-                unused_entries
-            } else {
-                Vec::new()
+    }
+
+    fn table(&self, terminal: bool, stdout: bool) -> String {
+        let shared = self.shared;
+        render_table_with_options(
+            self.summary,
+            &self.results.rows,
+            &self.findings(),
+            TableOptions {
+                categories: shared.categories,
+                folders: self.destination.folders,
+                verbose: shared.verbose,
+                order: self.order(),
+                theme: self.styling.theme(terminal),
+                folder_rows: self.destination.folder_rows,
+                bars: bar_mode(
+                    shared.bars.map(BarArg::kind),
+                    shared.no_bars,
+                    terminal,
+                    bar_columns(stdout),
+                ),
+                purposes: selected_purposes(&shared.purpose),
+                languages: shared.languages.iter().map(|l| l.to_string()).collect(),
+                tables_only: shared.view.tables_only,
+                variants: shared.view.variants(),
             },
-            unused_exclusions: if summary_findings {
-                unused_exclusions
-            } else {
-                Vec::new()
+        )
+    }
+
+    fn findings(&self) -> Findings<'_> {
+        let results = self.results;
+        Findings {
+            subfolder: match self.location {
+                Location::Root { scope, .. } => scope.subfolder.as_deref(),
+                Location::Workspace { .. } => None,
             },
-        };
-        let mut metadata = contract::Metadata {
-            measured_at_unix_seconds: measured_at,
-            locmetry_version: env!("CARGO_PKG_VERSION").into(),
-            backend: BACKEND.into(),
-            backend_inaccurate: inaccurate,
-            backend_configuration: locmetry::BACKEND_CONFIGURATION.into(),
-            kinds: Some(contract::Kinds {
-                default: locmetry::Kind::Source,
-                data: DATA_LANGUAGES.iter().map(|l| l.name().into()).collect(),
-                documentation: DOCUMENTATION_LANGUAGES
-                    .iter()
-                    .map(|l| l.name().into())
-                    .collect(),
-            }),
-            coverage: contract::Coverage::from(&coverage),
-            modules: Some(
-                modules
-                    .iter()
-                    .map(|m| contract::Module {
-                        path: m.path.clone(),
-                        detector: m.detector.into(),
-                    })
-                    .collect(),
-            ),
-            root: None,
-            scope: None,
-            config_path: None,
-            config: None,
-            members: None,
-            workspace_path: None,
-            user_config_path: None,
-        };
-        match location {
-            Location::Root {
-                root,
-                scope,
-                config_path,
-                user_path,
-                config,
-            } => {
-                metadata.root = Some(root.to_string_lossy().into());
-                metadata.scope = Some(scope);
-                metadata.config_path = Some(config_path.map(|p| p.to_string_lossy().into()));
-                metadata.config = Some(*config);
-                metadata.user_config_path = Some(user_path.map(|p| p.to_string_lossy().into()));
-            }
-            Location::Workspace {
-                members,
-                workspace_path,
-                user_path,
-                ..
-            } => {
-                metadata.members = Some(members);
-                metadata.workspace_path = workspace_path.map(|p| p.to_string_lossy().into());
-                metadata.user_config_path = Some(user_path.map(|p| p.to_string_lossy().into()));
-            }
+            coverage: &results.coverage,
+            modules: &results.module_shares,
+            module_files: self.module_files,
+            submodules: &results.submodules,
+            unused_entries: &results.unused_entries,
+            unused_exclusions: &results.unused_exclusions,
+            members: &results.members,
         }
-        MeasurementReport {
-            document_type: contract::DocumentType::Measurement,
-            detail: if full {
-                contract::Detail::Full
-            } else {
-                contract::Detail::Headline
-            },
-            schema_version: contract::Version::V3,
-            project,
-            metadata,
-            summary: summary_document,
-            review: full.then(|| review(&rows)),
-            breakdown: full.then(|| breakdown(&rows)),
-            files: (full && shared.files).then(|| rows.iter().map(contract::File::from).collect()),
+    }
+
+    fn order(&self) -> RowOrder {
+        match self.shared.sort {
+            Sort::Code => RowOrder::Code,
+            Sort::Name => RowOrder::Name,
         }
-    };
-    let shows = |format| destination.shows(format);
-    let document =
-        (shows(Format::Json) || shows(Format::Headline)).then(|| document(shows(Format::Json)));
-    let text = |format: Format, human: String| -> Result<String> {
-        let document = || document.as_ref().expect("built for JSON views");
-        Ok(match format {
-            Format::Json => report_text(&serde_json::to_value(document())?)?,
-            Format::Headline => format!("{}\n", serde_json::to_string(&document().headline())?),
-            Format::Table | Format::Markdown => human,
+    }
+}
+
+/// The JSON report at `detail`; per-file records need `files` and full detail.
+fn measurement_document(
+    results: Results,
+    summary: locmetry::ReportSummary,
+    module_files: Vec<locmetry::ModuleFile>,
+    location: Location,
+    measured_at: u64,
+    detail: contract::Detail,
+    files: bool,
+) -> MeasurementReport {
+    let full = matches!(detail, contract::Detail::Full);
+    let rows = &results.rows;
+    let review = full.then(|| review(rows));
+    let breakdown = full.then(|| breakdown(rows));
+    let files = (full && files).then(|| rows.iter().map(contract::File::from).collect());
+    let summary = summary_document(&results, summary, module_files, location.summary_findings());
+    let metadata = metadata(&results, location, measured_at);
+    MeasurementReport {
+        document_type: contract::DocumentType::Measurement,
+        detail,
+        schema_version: contract::Version::V3,
+        project: results.project,
+        metadata,
+        summary,
+        review,
+        breakdown,
+        files,
+    }
+}
+
+/// The report summary; configuration findings enter it only when
+/// `findings` holds, as [`Location::summary_findings`] decides.
+fn summary_document(
+    results: &Results,
+    summary: locmetry::ReportSummary,
+    module_files: Vec<locmetry::ModuleFile>,
+    findings: bool,
+) -> contract::ReportSummary {
+    let members = results
+        .members
+        .iter()
+        .map(|member| {
+            let totals = summary
+                .folders
+                .get(&member.name)
+                .map(|folder| folder.recursive.clone())
+                .unwrap_or_default();
+            (member.name.clone(), totals)
         })
+        .collect();
+    let findings_if = |list: &Vec<String>| match findings {
+        true => list.clone(),
+        false => Vec::new(),
     };
-    destination.write(&text(format, saved_human)?)?;
-    if let Some((print, human)) = printed {
-        io::stdout()
-            .lock()
-            .write_all(text(print, human)?.as_bytes())?;
+    contract::ReportSummary {
+        top_folders: summary.top_folders(),
+        totals: summary.totals,
+        members,
+        unclaimed_folders: Some(unclaimed_folders(&results.rows)),
+        build_modules: build_systems(&results.module_shares)
+            .into_iter()
+            .map(|(k, v)| (k.into(), v))
+            .collect(),
+        submodules: results.submodules.clone(),
+        largest_module_files: Some(module_files),
+        unused_entries: findings_if(&results.unused_entries),
+        unused_exclusions: findings_if(&results.unused_exclusions),
     }
-    if inaccurate {
-        let mut failures: Vec<_> = coverage
-            .unread
-            .iter()
-            .map(|path| format!("{path}: unreadable"))
-            .chain(
-                coverage
-                    .parse_failures
-                    .iter()
-                    .map(|failure| failure.to_string()),
-            )
-            .take(10)
-            .collect();
-        let count = coverage.unread.len() + coverage.parse_failures.len();
-        if count > failures.len() {
-            failures.push(format!("and {} more", count - failures.len()));
+}
+
+/// Report metadata, with the keys of a single root or of a workspace.
+fn metadata(results: &Results, location: Location, measured_at: u64) -> contract::Metadata {
+    let mut metadata = contract::Metadata {
+        measured_at_unix_seconds: measured_at,
+        locmetry_version: env!("CARGO_PKG_VERSION").into(),
+        backend: BACKEND.into(),
+        backend_inaccurate: results.inaccurate,
+        backend_configuration: locmetry::BACKEND_CONFIGURATION.into(),
+        kinds: Some(contract::Kinds {
+            default: locmetry::Kind::Source,
+            data: DATA_LANGUAGES.iter().map(|l| l.name().into()).collect(),
+            documentation: DOCUMENTATION_LANGUAGES
+                .iter()
+                .map(|l| l.name().into())
+                .collect(),
+        }),
+        coverage: contract::Coverage::from(&results.coverage),
+        modules: Some(
+            results
+                .modules
+                .iter()
+                .map(|m| contract::Module {
+                    path: m.path.clone(),
+                    detector: m.detector.into(),
+                })
+                .collect(),
+        ),
+        root: None,
+        scope: None,
+        config_path: None,
+        config: None,
+        members: None,
+        workspace_path: None,
+        user_config_path: None,
+    };
+    match location {
+        Location::Root {
+            root,
+            scope,
+            config_path,
+            user_path,
+            config,
+        } => {
+            metadata.root = Some(root.to_string_lossy().into());
+            metadata.scope = Some(scope);
+            metadata.config_path = Some(config_path.map(|p| p.to_string_lossy().into()));
+            metadata.config = Some(*config);
+            metadata.user_config_path = Some(user_path.map(|p| p.to_string_lossy().into()));
         }
-        if failures.is_empty() {
-            failures.push("backend did not identify affected paths".into());
+        Location::Workspace {
+            members,
+            workspace_path,
+            user_path,
+            ..
+        } => {
+            metadata.members = Some(members);
+            metadata.workspace_path = workspace_path.map(|p| p.to_string_lossy().into());
+            metadata.user_config_path = Some(user_path.map(|p| p.to_string_lossy().into()));
         }
-        return Ok(Outcome::Partial(format!(
-            "Backend reported incomplete counts; output contains partial results. Unavailable files: {}",
-            failures.join(", ")
-        )));
     }
-    Ok(Outcome::Complete)
+    metadata
+}
+
+/// The partial-count message: up to ten unavailable files, then how many more.
+fn partial_counts(coverage: &Coverage) -> String {
+    let mut failures: Vec<_> = coverage
+        .unread
+        .iter()
+        .map(|path| format!("{path}: unreadable"))
+        .chain(
+            coverage
+                .parse_failures
+                .iter()
+                .map(|failure| failure.to_string()),
+        )
+        .take(10)
+        .collect();
+    let count = coverage.unread.len() + coverage.parse_failures.len();
+    if count > failures.len() {
+        failures.push(format!("and {} more", count - failures.len()));
+    }
+    if failures.is_empty() {
+        failures.push("backend did not identify affected paths".into());
+    }
+    format!(
+        "Backend reported incomplete counts; output contains partial results. Unavailable files: {}",
+        failures.join(", ")
+    )
 }

@@ -29,7 +29,6 @@ use locmetry::{
     Module, ModuleShare, Policy, Purpose, RowOrder, ScopeOverrides, SubmoduleShare, TableOptions,
     BACKEND, CONFIG_FILE, DATA_LANGUAGES, DOCUMENTATION_LANGUAGES,
 };
-use std::collections::BTreeMap;
 use std::{
     io::{self, IsTerminal, Write},
     path::{Path, PathBuf},
