@@ -32,42 +32,43 @@ These excerpts measure [Immich](https://github.com/immich-app/immich) `v3.3.4`, 
 ### Locmetry answers "how much source, and how much of it is tests"
 
 ```sh
-locmetry --root immich
+cd immich && locmetry
 ```
 
 <!-- showcase-language -->
 ```text
- ────────────────────────────────────────────────────────────────────────────────────────────
- Language    Files    Lines     Code │ Comments  Blanks │   Prod.    Test   Other │ Test/prod
- ────────────────────────────────────┼──────────────────┼─────────────────────────┼──────────
- TypeScript  1,074  171,359  145,427 │    4,624  21,308 │  70,455  68,506   6,466 │      0.97
- Dart          823   90,871   75,726 │    2,779  12,366 │  59,495  16,231       0 │      0.27
- JavaScript     17   23,273   19,746 │      427   3,100 │  19,684      62       0 │      0.00
- Svelte        412   19,014   17,442 │      200   1,372 │  17,420      22       0 │      0.00
- SQL            37   10,534    9,699 │      436     399 │       0       0   9,699 │         -
- Python         39    6,184    4,888 │       79   1,217 │   2,818   2,070       0 │      0.73
- Kotlin         35    4,604    3,810 │      177     617 │   3,810       0       0 │      0.00
- Swift          28    3,874    3,103 │      232     539 │   3,103       0       0 │      0.00
- CSS             2      818      691 │       26     101 │     691       0       0 │      0.00
- TSX            11      597      516 │        9      72 │     516       0       0 │      0.00
- Shell          17      525      371 │       67      87 │     371       0       0 │      0.00
- Dockerfile      4      369      267 │       12      90 │     257      10       0 │      0.04
- C++             1      295      251 │       11      33 │     251       0       0 │      0.00
- HCL            16      262      225 │        4      33 │     225       0       0 │      0.00
- C               2      225      168 │       30      27 │     168       0       0 │      0.00
- Groovy          3      173      139 │        7      27 │     139       0       0 │      0.00
- Java            1      166      124 │       25      17 │     124       0       0 │      0.00
- HTML            1       74       66 │        2       6 │      66       0       0 │      0.00
- Prolog          1       47       37 │        0      10 │      37       0       0 │      0.00
- BASH            2       40       30 │        2       8 │      30       0       0 │      0.00
- PostCSS         0       31       28 │        0       3 │      28       0       0 │      0.00
- CMake           1       13        9 │        0       4 │       9       0       0 │      0.00
- Templ           1       11        6 │        0       5 │       6       0       0 │      0.00
- C Header        1        1        1 │        0       0 │       1       0       0 │      0.00
- ────────────────────────────────────┼──────────────────┼─────────────────────────┼──────────
- Total       2,529  333,360  282,770 │    9,149  41,441 │ 179,704  86,901  16,165 │      0.48
+ ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ Language    Files    Lines     Code │ Comments  Blanks │   Prod.    Test   Other │ Test/prod │  Share  Code share
+ ────────────────────────────────────┼──────────────────┼─────────────────────────┼───────────┼─────────────────────────
+ TypeScript  1,074  171,359  145,427 │    4,624  21,308 │  70,455  68,506   6,466 │      0.97 │  51.4%  ████████▓▓▓▓▓▓▓░
+ Dart          823   90,871   75,726 │    2,779  12,366 │  59,495  16,231       0 │      0.27 │  26.8%  ██████▓▓
+ JavaScript     17   23,273   19,746 │      427   3,100 │  19,684      62       0 │      0.00 │   7.0%  ██
+ Svelte        412   19,014   17,442 │      200   1,372 │  17,420      22       0 │      0.00 │   6.2%  ██
+ SQL            37   10,534    9,699 │      436     399 │       0       0   9,699 │         - │   3.4%  ░
+ Python         39    6,184    4,888 │       79   1,217 │   2,818   2,070       0 │      0.73 │   1.7%  █
+ Kotlin         35    4,604    3,810 │      177     617 │   3,810       0       0 │      0.00 │   1.3%  ▏
+ Swift          28    3,874    3,103 │      232     539 │   3,103       0       0 │      0.00 │   1.1%  ▏
+ CSS             2      818      691 │       26     101 │     691       0       0 │      0.00 │   0.2%  ▏
+ TSX            11      597      516 │        9      72 │     516       0       0 │      0.00 │   0.2%  ▏
+ Shell          17      525      371 │       67      87 │     371       0       0 │      0.00 │   0.1%  ▏
+ Dockerfile      4      369      267 │       12      90 │     257      10       0 │      0.04 │   0.1%  ▏
+ C++             1      295      251 │       11      33 │     251       0       0 │      0.00 │   0.1%  ▏
+ HCL            16      262      225 │        4      33 │     225       0       0 │      0.00 │   0.1%  ▏
+ C               2      225      168 │       30      27 │     168       0       0 │      0.00 │   0.1%  ▏
+ Groovy          3      173      139 │        7      27 │     139       0       0 │      0.00 │   0.0%  ▏
+ Java            1      166      124 │       25      17 │     124       0       0 │      0.00 │   0.0%  ▏
+ HTML            1       74       66 │        2       6 │      66       0       0 │      0.00 │   0.0%  ▏
+ Prolog          1       47       37 │        0      10 │      37       0       0 │      0.00 │   0.0%  ▏
+ BASH            2       40       30 │        2       8 │      30       0       0 │      0.00 │   0.0%  ▏
+ PostCSS         0       31       28 │        0       3 │      28       0       0 │      0.00 │   0.0%  ▏
+ CMake           1       13        9 │        0       4 │       9       0       0 │      0.00 │   0.0%  ▏
+ Templ           1       11        6 │        0       5 │       6       0       0 │      0.00 │   0.0%  ▏
+ C Header        1        1        1 │        0       0 │       1       0       0 │      0.00 │   0.0%  ▏
+ ────────────────────────────────────┼──────────────────┼─────────────────────────┼───────────┼─────────────────────────
+ Total       2,529  333,360  282,770 │    9,149  41,441 │ 179,704  86,901  16,165 │      0.48 │ 100.0%
  Lines = Code + Comments + Blanks; Production + Test + Other = Code; Test/prod = Test / Production (Code).
  Tests written in another language than the code they test skew per-language Test/prod.
+ Share = Code / total Code. Bars: █ Production  ▓ Test  ░ Other; the largest row fills the bar.
 ```
 
 Code is split by purpose; comments and blanks stay separate. Data and documentation do not inflate source totals. `Test/prod` divides test code by production code; it describes volume, not coverage. If your numbers differ from these, personal defaults in `~/.config/locmetry/config.toml` may apply; `--no-user-config` ignores them.
@@ -273,10 +274,10 @@ These Immich files show each kind of decision, from module layout and test conve
 | `mobile/ios/Runner/AppDelegate.swift` | production / native | `ios-app` (project entry) |
 | `packages/sdk/src/fetch-client.ts` | other / generated | `generated-sdk-client` (project entry) |
 
-Inspect the evidence for one file:
+Inspect the evidence for one file, inside the Immich checkout:
 
 ```sh
-locmetry explain packages/sdk/src/fetch-client.ts --root immich
+locmetry explain packages/sdk/src/fetch-client.ts
 ```
 
 The explanation identifies the deciding stage, the matching pattern and the reason recorded with a project entry. It also reports parser, counts and module evidence where applicable. The [selection guide](docs/guides/selection.md) explains other states and how to investigate a missing file.
