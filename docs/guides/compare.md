@@ -1,6 +1,6 @@
 # Compare Saved Measurements
 
-Use `locmetry compare --help` for arguments and `locmetry --schema comparison` for structure and field meanings. Comparison reads two saved full measurements, without scanning source roots or loading their current configurations. It reports net change, **after minus before**, not Git additions/deletions, churn, effort or quality.
+Use `locmetry compare --help` for arguments and `locmetry --schema comparison` for structure and field meanings. Comparison reads two saved full measurements, without scanning source roots or loading their current configurations. Reports redirected with `>` in Windows PowerShell 5.1 are UTF-16 and still compare; `--output FILE` writes UTF-8 on every platform. It reports net change, **after minus before**, not Git additions/deletions, churn, effort or quality.
 
 ## A Small Example
 
