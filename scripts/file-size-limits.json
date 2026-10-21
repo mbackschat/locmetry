@@ -5,7 +5,7 @@
   },
   "ceilings": {
     "src/config.rs": 1056,
-    "src/main.rs": 1881,
-    "src/output.rs": 2699
+    "src/main.rs": 1866,
+    "src/output.rs": 2517
   }
 }

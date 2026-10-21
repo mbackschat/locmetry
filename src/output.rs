@@ -1,4 +1,9 @@
 mod folders;
+mod selection;
+
+pub(crate) use selection::folded_note;
+use selection::TableSelection;
+pub use selection::{Fold, LanguageVariants};
 
 use crate::report::Summary;
 use crate::style::{Role, Theme};
@@ -292,8 +297,14 @@ pub fn render_markdown(
     findings: &Findings,
     depth: usize,
     order: RowOrder,
-    folds: &[Fold],
+    variants: LanguageVariants,
 ) -> String {
+    let folds = variants.source_folds(rows, &Purpose::ALL, &[]);
+    let folded = variants.folded(rows);
+    let (summary, rows) = match &folded {
+        Some((rows, summary)) => (summary, &rows[..]),
+        None => (summary, rows),
+    };
     let project = display_project(project, findings.subfolder);
     let mut output = format!("# {}: lines of code by purpose\n\n{}\n\n## Source purpose\n\n{}\n", cell(&project), Theme::MARKDOWN.paint(Role::Muted, "Production means maintained non-test source, including separately categorized tooling. Data, configuration, and documentation are counted apart from source. Lines = Code + Comments + Blanks in every table with these columns, and the purpose rows add up to all source."), Columns::of(&count_columns("Purpose")).markdown_header());
     for purpose in Purpose::ALL {
@@ -375,7 +386,7 @@ pub fn render_markdown(
             .collect(),
     );
     let notes: Vec<String> = std::iter::once(LANGUAGE_RATIO_NOTE.to_string())
-        .chain(folded_note(folds))
+        .chain(folded_note(&folds))
         .map(|note| Theme::MARKDOWN.paint(Role::Muted, &note))
         .collect();
     writeln!(
@@ -1690,259 +1701,8 @@ pub struct TableOptions {
     pub languages: Vec<String>,
     /// Omits every line outside the tables: legends, bar keys and notes.
     pub tables_only: bool,
-    /// Variants the rows show within their family, for the note naming them.
-    pub folds: Vec<Fold>,
-}
-
-/// Measured source languages that `languages` leaves out of `rows`, largest
-/// code first, with that code; none without a selection.
-fn excluded_languages<'r>(
-    rows: impl Iterator<Item = &'r FileRecord>,
-    languages: &[String],
-) -> Vec<(String, u64)> {
-    if languages.is_empty() {
-        return Vec::new();
-    }
-    let mut excluded = BTreeMap::<&str, u64>::new();
-    for row in rows.filter(|row| row.kind == Kind::Source) {
-        for (language, counts) in &row.languages {
-            if !languages.contains(language) {
-                *excluded.entry(language).or_default() += counts.code;
-            }
-        }
-    }
-    let mut excluded: Vec<(String, u64)> = excluded
-        .into_iter()
-        .map(|(language, code)| (language.to_string(), code))
-        .collect();
-    excluded.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
-    excluded
-}
-
-fn purpose_selected(row: &FileRecord, purposes: &[Purpose]) -> bool {
-    row.kind != Kind::Source || purposes.contains(&row.classification.purpose)
-}
-
-/// `row` reduced to the selected `languages`: an embedded language keeps its
-/// own lines, and only the file's own language counts the file, as in the
-/// unfiltered language table. Source without a selected language drops out.
-fn language_selected(row: &FileRecord, languages: &[String]) -> Option<FileRecord> {
-    if row.kind != Kind::Source {
-        return Some(row.clone());
-    }
-    let kept: BTreeMap<String, Counts> = row
-        .languages
-        .iter()
-        .filter(|(language, _)| languages.contains(language))
-        .map(|(language, counts)| (language.clone(), *counts))
-        .collect();
-    if kept.is_empty() {
-        return None;
-    }
-    let mut counts = Counts::default();
-    for language in kept.values() {
-        counts.add(language);
-    }
-    counts.files = u64::from(kept.contains_key(&row.language));
-    Some(FileRecord {
-        counts,
-        languages: kept,
-        ..row.clone()
-    })
-}
-
-/// A variant shown within its family's row, such as (`TSX`, `TypeScript`).
-pub type Fold = (String, &'static str);
-
-/// How table and Markdown views show language variants such as TSX: within
-/// their family's row, such as TypeScript, or as rows of their own. Counting
-/// and JSON keep the backend's names either way.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum LanguageVariants {
-    Folded,
-    Split,
-}
-
-impl LanguageVariants {
-    /// The row a source language appears in.
-    pub fn row_name(self, language: &str) -> String {
-        match (self, crate::language_family(language)) {
-            (Self::Folded, Some(family)) => family.into(),
-            _ => language.into(),
-        }
-    }
-
-    /// `rows` as these views count them: a variant's lines join its family's
-    /// entry, and a variant file counts as a file of its family.
-    pub fn rows(self, rows: &[FileRecord]) -> std::borrow::Cow<'_, [FileRecord]> {
-        if self == Self::Split {
-            return rows.into();
-        }
-        rows.iter()
-            .map(|row| {
-                let mut languages = BTreeMap::<String, Counts>::new();
-                for (language, counts) in &row.languages {
-                    let entry = languages.entry(self.row_name(language)).or_default();
-                    entry.add(counts);
-                    // Each entry records its file once, as the backend does.
-                    entry.files = 1;
-                }
-                FileRecord {
-                    language: self.row_name(&row.language),
-                    languages,
-                    ..row.clone()
-                }
-            })
-            .collect::<Vec<_>>()
-            .into()
-    }
-
-    /// The folds among `names`, ordered by family and then variant.
-    pub fn folds<'n>(self, names: impl IntoIterator<Item = &'n str>) -> Vec<Fold> {
-        if self == Self::Split {
-            return Vec::new();
-        }
-        let folds: std::collections::BTreeSet<(&str, &str)> = names
-            .into_iter()
-            .filter_map(|name| crate::language_family(name).map(|family| (family, name)))
-            .collect();
-        folds
-            .into_iter()
-            .map(|(family, variant)| (variant.to_string(), family))
-            .collect()
-    }
-
-    /// The folds in source that `purposes` and the `languages` row names
-    /// select; an empty `languages` selects every language.
-    pub fn source_folds(
-        self,
-        rows: &[FileRecord],
-        purposes: &[Purpose],
-        languages: &[String],
-    ) -> Vec<Fold> {
-        let names = rows
-            .iter()
-            .filter(|row| {
-                row.kind == Kind::Source && purposes.contains(&row.classification.purpose)
-            })
-            .flat_map(|row| row.languages.keys())
-            .filter(|name| languages.is_empty() || languages.contains(&self.row_name(name)));
-        self.folds(names.map(String::as_str))
-    }
-}
-
-/// The muted line naming the folds a view applied; `None` without any.
-pub(crate) fn folded_note(folds: &[Fold]) -> Option<String> {
-    let folds: Vec<String> = folds
-        .iter()
-        .map(|(variant, family)| format!("{variant} → {family}"))
-        .collect();
-    (!folds.is_empty()).then(|| format!("Folded: {}.", folds.join(", ")))
-}
-
-/// The source a table selection keeps and what it leaves out. Purposes filter
-/// first and languages then, so the code both notes exclude and the shown
-/// total add up to the full measurement.
-struct TableSelection {
-    /// Selected records; `None` when the selection keeps everything.
-    rows: Option<Vec<FileRecord>>,
-    /// Source code a strict purpose subset leaves out.
-    purposes_excluded: Option<u64>,
-    languages_excluded: Vec<(String, u64)>,
-}
-
-impl TableSelection {
-    fn of(rows: &[FileRecord], purposes: &[Purpose], languages: &[String]) -> Self {
-        let source_code = |rows: &[FileRecord]| -> u64 {
-            rows.iter()
-                .filter(|row| row.kind == Kind::Source)
-                .map(|row| row.counts.code)
-                .sum()
-        };
-        let mut selected = None;
-        let mut purposes_excluded = None;
-        if purposes.len() < Purpose::ALL.len() {
-            let kept: Vec<FileRecord> = rows
-                .iter()
-                .filter(|row| purpose_selected(row, purposes))
-                .cloned()
-                .collect();
-            purposes_excluded = Some(source_code(rows) - source_code(&kept));
-            selected = Some(kept);
-        }
-        let current = selected.as_deref().unwrap_or(rows);
-        let languages_excluded = excluded_languages(current.iter(), languages);
-        if !languages_excluded.is_empty() {
-            selected = Some(
-                current
-                    .iter()
-                    .filter_map(|row| language_selected(row, languages))
-                    .collect(),
-            );
-        }
-        Self {
-            rows: selected,
-            purposes_excluded,
-            languages_excluded,
-        }
-    }
-
-    /// Names what the tables leave out, so filtered totals are not read as
-    /// complete ones. Purpose titles keep "Other" from reading as "others".
-    fn notes(&self, purposes: &[Purpose]) -> Vec<String> {
-        // The command and the table already name what is shown, so a note
-        // names only what is left out, under a subtle label.
-        let note = |names: Vec<String>, noun: &str, code: u64| {
-            format!(
-                "Not shown ({}): {} ({}).",
-                plural(names.len() as u64, noun),
-                listed(names),
-                counted(code, "code line")
-            )
-        };
-        let mut notes = Vec::new();
-        if let Some(code) = self.purposes_excluded {
-            let excluded = Purpose::ALL
-                .into_iter()
-                .filter(|purpose| !purposes.contains(purpose))
-                .map(|purpose| purpose_title(purpose).to_string())
-                .collect();
-            notes.push(note(excluded, "purpose", code));
-        }
-        if !self.languages_excluded.is_empty() {
-            // The largest name the bulk of what is missing; a long tail only
-            // needs its size, and a single remaining name is no longer than
-            // counting it.
-            const NAMED: usize = 5;
-            let excluded = self.languages_excluded.len();
-            let named = if excluded > NAMED + 1 {
-                NAMED
-            } else {
-                excluded
-            };
-            let mut names: Vec<String> = self
-                .languages_excluded
-                .iter()
-                .take(named)
-                .map(|(language, _)| language.clone())
-                .collect();
-            if excluded > named {
-                names.push(format!("{} more", excluded - named));
-            }
-            let code = self.languages_excluded.iter().map(|(_, code)| code).sum();
-            notes.push(note(names, "language", code));
-        }
-        notes
-    }
-}
-
-/// `names` as prose: `A`, `A and B`, or `A, B and C`.
-fn listed(mut names: Vec<String>) -> String {
-    match names.pop() {
-        None => String::new(),
-        Some(last) if names.is_empty() => last,
-        Some(last) => format!("{} and {last}", names.join(", ")),
-    }
+    /// How the rows show language variants; selected names follow them.
+    pub variants: LanguageVariants,
 }
 
 /// Bars for terminal tables, with the columns available to them.
@@ -2016,10 +1776,23 @@ pub fn render_table_with_options(
         folder_rows,
         bars,
         purposes,
-        languages: selected_languages,
+        languages,
         tables_only,
-        folds,
+        variants,
     } = options;
+    // Variants fold first, so a selected variant name selects its family's row.
+    let mut selected_languages: Vec<String> = Vec::new();
+    for language in languages.iter().map(|language| variants.row_name(language)) {
+        if !selected_languages.contains(&language) {
+            selected_languages.push(language);
+        }
+    }
+    let folds = variants.source_folds(rows, &purposes, &selected_languages);
+    let folded = variants.folded(rows);
+    let (summary, rows) = match &folded {
+        Some((rows, summary)) => (summary, &rows[..]),
+        None => (summary, rows),
+    };
     // A selection counts only that source, so every table, total and bar is
     // rebuilt from the selected records.
     let selection = TableSelection::of(rows, &purposes, &selected_languages);
@@ -2184,6 +1957,9 @@ pub fn render_table_with_options(
         }
     }
 
+    if tables_only {
+        return output;
+    }
     let mut notes = Vec::new();
     if verbose {
         // Per kind: its counts and the code of languages embedded in its
@@ -2283,7 +2059,7 @@ pub fn render_table_with_options(
             gaps.join(", ")
         )));
     }
-    if !notes.is_empty() && !tables_only {
+    if !notes.is_empty() {
         output += "\n";
         for note in notes {
             writeln!(output, " {}", note.render(theme)).unwrap();
@@ -2635,7 +2411,7 @@ mod tests {
                     purposes: Purpose::ALL.to_vec(),
                     languages: Vec::new(),
                     tables_only: false,
-                    folds: Vec::new(),
+                    variants: LanguageVariants::Split,
                 };
                 render_table_with_options(&summary, &rows, &findings, options)
             };

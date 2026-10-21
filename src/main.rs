@@ -437,14 +437,41 @@ struct CompareArgs {
     /// Write only to FILE; - selects stdout. Defaults to full JSON; --format overrides it.
     #[arg(long, value_name = "FILE", help_heading = "Output and content")]
     output: Option<PathBuf>,
-    /// Print only the tables, without the title, legends, notes, findings or
-    /// measurement dates. Table format only.
+    #[command(flatten)]
+    view: ViewArgs,
+}
+
+/// Views of tables and Markdown that measurement and comparison share.
+#[derive(Clone, Copy, clap::Args)]
+struct ViewArgs {
+    /// Print only the tables, without titles, legends, notes, findings or the
+    /// closing location and date lines. Table format only.
     #[arg(long = "tables-only", help_heading = "Presentation")]
     tables_only: bool,
-    /// Show language variants such as TSX and C++ Header as rows of their own
-    /// instead of within their family's row, such as TypeScript. Table and Markdown only.
+    /// Show language variants such as TSX, JSX and C++ Header as rows of their own.
+    /// By default tables and Markdown count them in their family's row, such as
+    /// TypeScript, and name each fold. JSON keeps every backend language.
     #[arg(long = "split-languages", help_heading = "Presentation")]
     split_languages: bool,
+}
+
+impl ViewArgs {
+    fn variants(self) -> LanguageVariants {
+        match self.split_languages {
+            true => LanguageVariants::Split,
+            false => LanguageVariants::Folded,
+        }
+    }
+
+    fn warn_ineffective(self, destination: &Destination, styling: Styling) {
+        if self.tables_only {
+            destination.warn_ineffective("--tables-only", &[Format::Table], styling);
+        }
+        if self.split_languages {
+            let formats = [Format::Table, Format::Markdown];
+            destination.warn_ineffective("--split-languages", &formats, styling);
+        }
+    }
 }
 
 /// Settings of a single scan root, which a workspace leaves to each member's
@@ -547,15 +574,8 @@ struct SharedArgs {
     /// Omit the share bars a terminal shows automatically.
     #[arg(long, conflicts_with = "bars", help_heading = "Presentation")]
     no_bars: bool,
-    /// Print only the tables, without legends, bar keys, notes or the closing
-    /// Root and Measured at lines. Table format only.
-    #[arg(long = "tables-only", help_heading = "Presentation")]
-    tables_only: bool,
-    /// Show language variants such as TSX, JSX and C++ Header as rows of their own.
-    /// By default tables and Markdown count them in their family's row, such as
-    /// TypeScript, and name each fold. JSON keeps every backend language.
-    #[arg(long = "split-languages", help_heading = "Presentation")]
-    split_languages: bool,
+    #[command(flatten)]
+    view: ViewArgs,
     /// Show only these purposes' source in tables; comma-separated.
     /// JSON and Markdown keep the complete measurement. Table format only.
     #[arg(
@@ -819,6 +839,31 @@ impl Destination<'_> {
         }
     }
 
+    /// Warns that `option` cannot shape this result, unless it shows one of
+    /// the `supported` formats, offering the first of them as the remedy.
+    fn warn_ineffective(&self, option: &str, supported: &[Format], styling: Styling) {
+        if supported.iter().any(|format| self.shows(*format)) {
+            return;
+        }
+        let names: Vec<&str> = supported
+            .iter()
+            .map(|format| match format {
+                Format::Table => "table",
+                Format::Json => "JSON",
+                Format::Headline => "headline",
+                Format::Markdown => "Markdown",
+            })
+            .collect();
+        styling.stderr_message(
+            Role::Warning,
+            format_args!(
+                "{option} has no effect here; it applies only to {} output; {}",
+                names.join(" and "),
+                self.format_remedy(supported[0])
+            ),
+        );
+    }
+
     fn write(&self, text: &str) -> Result<()> {
         match self.path {
             Some(path) => write_report(path, text),
@@ -844,57 +889,22 @@ fn bar_columns(stdout: bool) -> usize {
 }
 
 fn warn_ineffective_options(shared: &SharedArgs, destination: &Destination, styling: Styling) {
-    if !destination.shows(Format::Table) {
-        for (given, option) in [
-            (shared.verbose, "--verbose"),
-            (shared.bars.is_some(), "--show-bars"),
-            (!shared.purpose.is_empty(), "--table-purpose"),
-            (!shared.languages.is_empty(), "--table-language"),
-            (shared.no_bars, "--no-bars"),
-            (shared.categories, "--show-categories"),
-            (shared.tables_only, "--tables-only"),
-        ] {
-            if given {
-                styling.stderr_message(
-                    Role::Warning,
-                    format_args!(
-                        "{option} has no effect here; it applies only to table output; {}",
-                        destination.format_remedy(Format::Table)
-                    ),
-                );
-            }
+    for (given, option) in [
+        (shared.verbose, "--verbose"),
+        (shared.bars.is_some(), "--show-bars"),
+        (!shared.purpose.is_empty(), "--table-purpose"),
+        (!shared.languages.is_empty(), "--table-language"),
+        (shared.no_bars, "--no-bars"),
+        (shared.categories, "--show-categories"),
+    ] {
+        if given {
+            destination.warn_ineffective(option, &[Format::Table], styling);
         }
     }
-    if shared.depth_explicit && !destination.shows(Format::Markdown) {
-        styling.stderr_message(
-            Role::Warning,
-            format_args!(
-                "--markdown-depth has no effect here; it applies only to Markdown output; {}",
-                destination.format_remedy(Format::Markdown)
-            ),
-        );
+    if shared.depth_explicit {
+        destination.warn_ineffective("--markdown-depth", &[Format::Markdown], styling);
     }
-    warn_split_languages(shared.split_languages, destination, styling);
-}
-
-fn warn_split_languages(split: bool, destination: &Destination, styling: Styling) {
-    if split && !destination.shows(Format::Table) && !destination.shows(Format::Markdown) {
-        styling.stderr_message(
-            Role::Warning,
-            format_args!(
-                "--split-languages has no effect here; it applies only to table and Markdown \
-                 output; {}",
-                destination.format_remedy(Format::Table)
-            ),
-        );
-    }
-}
-
-fn language_variants(split: bool) -> LanguageVariants {
-    match split {
-        true => LanguageVariants::Split,
-        false => LanguageVariants::Folded,
-    }
+    shared.view.warn_ineffective(destination, styling);
 }
 
 fn user_defaults(no_user_config: bool) -> Option<PathBuf> {
@@ -1064,16 +1074,7 @@ fn explain_path(
 
 fn run_compare(args: &CompareArgs, styling: Styling) -> Result<Outcome> {
     let destination = output_destination(&args.output, args.format);
-    if args.tables_only && !destination.shows(Format::Table) {
-        styling.stderr_message(
-            Role::Warning,
-            format_args!(
-                "--tables-only has no effect here; it applies only to table output; {}",
-                destination.format_remedy(Format::Table)
-            ),
-        );
-    }
-    warn_split_languages(args.split_languages, &destination, styling);
+    args.view.warn_ineffective(&destination, styling);
     let before = locmetry::compare::read_input(&args.before)?;
     let after = locmetry::compare::read_input(&args.after)?;
     if let Some(path) = destination.path {
@@ -1090,13 +1091,13 @@ fn run_compare(args: &CompareArgs, styling: Styling) -> Result<Outcome> {
         None => result,
     };
     let partial = result.partial();
-    let variants = language_variants(args.split_languages);
+    let variants = args.view.variants();
     let text = match destination.format {
         Format::Json => report_text(&serde_json::to_value(&result)?)?,
         Format::Headline => format!("{}\n", serde_json::to_string(&result.headline())?),
         Format::Table => {
             let theme = styling.theme(destination.path.is_none() && io::stdout().is_terminal());
-            match args.tables_only {
+            match args.view.tables_only {
                 true => locmetry::compare::render_tables(&result, theme, variants),
                 false => locmetry::compare::render_table_with_theme(&result, theme, variants),
             }
@@ -1132,14 +1133,8 @@ fn run_root(
     }
     destination.folders = folders;
     destination.folder_rows = folder_rows;
-    if folders && !destination.shows(Format::Table) {
-        styling.stderr_message(
-            Role::Warning,
-            format_args!(
-                "--show-folders has no effect here; it applies only to table output; {}",
-                destination.format_remedy(Format::Table)
-            ),
-        );
+    if folders {
+        destination.warn_ineffective("--show-folders", &[Format::Table], styling);
     }
     warn_ineffective_options(shared, &destination, styling);
     let user_path = user_defaults(shared.no_user_config);
@@ -1645,25 +1640,14 @@ fn report(
         Sort::Name => RowOrder::Name,
     };
     let purposes = selected_purposes(&shared.purpose);
-    // Human views count variants within their family unless split, so a
-    // selected variant name selects the row that shows it.
-    let variants = language_variants(shared.split_languages);
-    let shown_rows = variants.rows(&rows);
-    let shown_summary = build_report(&shown_rows);
-    let mut languages: Vec<String> = Vec::new();
-    for language in &shared.languages {
-        let language = variants.row_name(language);
-        if !languages.contains(&language) {
-            languages.push(language);
-        }
-    }
+    let variants = shared.view.variants();
     // Table and Markdown views; `stdout` decides styling and automatic bars.
     let human = |format: Format, stdout: bool| {
         let terminal = stdout && io::stdout().is_terminal();
         let mut human = match format {
             Format::Table => render_table_with_options(
-                &shown_summary,
-                &shown_rows,
+                &summary,
+                &rows,
                 &findings,
                 TableOptions {
                     categories: shared.categories,
@@ -1679,24 +1663,24 @@ fn report(
                         bar_columns(stdout),
                     ),
                     purposes: purposes.clone(),
-                    languages: languages.clone(),
-                    tables_only: shared.tables_only,
-                    folds: variants.source_folds(&rows, &purposes, &languages),
+                    languages: shared.languages.iter().map(|l| l.to_string()).collect(),
+                    tables_only: shared.view.tables_only,
+                    variants,
                 },
             ),
             Format::Markdown => render_markdown(
                 &project,
-                &shown_summary,
-                &shown_rows,
+                &summary,
+                &rows,
                 &findings,
                 shared.depth,
                 order,
-                &variants.source_folds(&rows, &Purpose::ALL, &[]),
+                variants,
             ),
             Format::Json | Format::Headline => return String::new(),
         };
         // Partial counts still warn on stderr and exit 2.
-        if format == Format::Table && shared.tables_only {
+        if format == Format::Table && shared.view.tables_only {
             return human;
         }
         if inaccurate {

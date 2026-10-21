@@ -200,20 +200,15 @@ fn shown_languages(
     languages: &BTreeMap<String, CountChange>,
     variants: LanguageVariants,
 ) -> BTreeMap<String, CountChange> {
-    let mut sides = BTreeMap::<String, (Counts, Counts)>::new();
+    let mut before = BTreeMap::<String, Counts>::new();
+    let mut after = before.clone();
     for (language, change) in languages {
-        let (before, after) = sides.entry(variants.row_name(language)).or_default();
-        before.add(&change.before);
-        after.add(&change.after);
+        let row = variants.row_name(language);
+        before.entry(row.clone()).or_default().add(&change.before);
+        after.entry(row).or_default().add(&change.after);
     }
-    sides
-        .into_iter()
-        .map(|(language, (before, after))| {
-            let change = CountChange::new(before, after)
-                .expect("a family's counts are bounded by the validated source totals");
-            (language, change)
-        })
-        .collect()
+    super::engine::changed_map(&before, &after)
+        .expect("a family's counts are bounded by the validated source totals")
 }
 
 fn purpose_ratio(dimensions: &Dimensions) -> String {
@@ -597,5 +592,5 @@ pub fn render_tables(c: &Comparison, theme: Theme, variants: LanguageVariants) -
         .write(&mut out, false, theme);
     }
     // Each grid opens with the blank line that separates it from the text above.
-    out.split_off(out.find(|c| c != '\n').unwrap_or(out.len()))
+    out.trim_start_matches('\n').to_owned()
 }
