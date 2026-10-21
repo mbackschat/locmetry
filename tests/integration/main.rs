@@ -6,8 +6,14 @@
 mod common;
 
 mod cli;
+mod cli_findings;
+mod cli_modules;
 mod cli_options;
+mod cli_tables;
+mod cli_user_defaults;
 mod compare;
+mod compare_member;
+mod compare_render;
 mod config;
 mod contracts;
 mod explain;
