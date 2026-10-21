@@ -76,7 +76,7 @@ Run Cargo commands sharing a target directory sequentially to avoid build-lock c
 
 ## Sensitive Analysis
 
-Keep measured-project names, paths, profiles, counts, and reports exclusively in Git-ignored `docs/research/local/`. Use synthetic public fixtures. Never force-add local analysis files. Exception, decided 2026-10-15 by the owner: a12-rulekit and bpmn-lean-experiment may be named in public documents; their paths, profiles, and counts stay local.
+Keep measured-project names, paths, profiles, counts, and reports exclusively in Git-ignored `docs/research/local/`. Use synthetic public fixtures. Never force-add local analysis files. Exception, decided 2026-10-15 by the owner: a12-rulekit and bpmn-lean-experiment may be named in public documents; their paths, profiles, and counts stay local. Exception, decided 2026-10-21 by the owner: the public open-source project Immich, measured at pinned release tags, is the public showcase; its name, Locmetry policies, counts and reports may appear in public documents. Local checkout paths stay out of them.
 
 ## Commit & Pull Request Guidelines
 

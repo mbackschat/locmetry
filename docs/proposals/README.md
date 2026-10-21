@@ -6,7 +6,9 @@ Active designs live directly in this directory. Retired records live in `archive
 
 <!-- doc-index:start -->
 
-No documents in this directory.
+| Document | Status | Date | Summary |
+| --- | --- | --- | --- |
+| [Immich Reference Showcase](immich-showcase.md) | draft | 2026-10-21 | Showcase Locmetry on Immich pinned at a release tag, keeping Acme as the exact test reference. |
 
 <!-- doc-index:end -->
 
