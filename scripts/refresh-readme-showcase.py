@@ -137,10 +137,10 @@ def replace_table(readme, marker, content):
 def main():
     readme = README.read_text()
     # A terminal shows share bars, which grow with its width; 120 columns
-    # keeps them in the excerpt at a reproducible size.
+    # keeps them in the excerpts at a reproducible size.
     measurement = showcase("cd immich && COLUMNS=120 locmetry --format table --no-color --show-bars")
-    workspace = showcase("locmetry workspace --workspace-file immich/workspace.toml "
-                         "--format table --no-color --no-bars")
+    workspace = showcase("COLUMNS=120 locmetry workspace --workspace-file immich/workspace.toml "
+                         "--format table --no-color --show-bars")
     comparison = showcase("""locmetry --root v3.2.0/immich --output v3.2.0.json
 locmetry --root v3.3.4/immich --output v3.3.4.json
 locmetry compare v3.2.0.json v3.3.4.json --format table --no-color""")
