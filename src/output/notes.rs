@@ -224,6 +224,30 @@ pub(super) fn unused_exclusions_note(
     })
 }
 
+/// Inline Rust test code inside the table's rows, one legend line per
+/// language and purpose: it qualifies their Prod. and Test/prod figures, so
+/// it appears with the rows, and filters that hide them drop it.
+pub(super) fn inline_tests_legend(rows: &[FileRecord]) -> Vec<String> {
+    let mut found: BTreeMap<(&str, Purpose), (u64, u64)> = BTreeMap::new();
+    for row in rows.iter().filter(|row| row.inline_tests.code > 0) {
+        let (files, code) = found
+            .entry((&row.language, row.classification.purpose))
+            .or_default();
+        *files += 1;
+        *code += row.inline_tests.code;
+    }
+    found
+        .into_iter()
+        .map(|((language, purpose), (files, code))| {
+            format!(
+                "{language} {purpose} includes {} of inline #[cfg(test)] tests in {}; --files --output - names them.",
+                counted(code, "code line"),
+                counted(files, "file")
+            )
+        })
+        .collect()
+}
+
 /// Code of inline Rust test items that each purpose's source counts, with
 /// `attribute` spelled for the format; `None` without any, so a module that
 /// only declares `mod tests;` adds no note.

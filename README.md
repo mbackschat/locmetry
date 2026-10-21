@@ -313,7 +313,7 @@ The explanation identifies the deciding stage, the matching pattern and the reas
 
 Built-in wrapper patterns cover `gradlew`, `gradlew.bat`, `mvnw`, `mvnw.cmd`, and files under `gradle/wrapper/` or `.mvn/wrapper/` at any depth. The enabled convention classifies them as `other` / `third-party-wrapper` unless an override or earlier convention wins; [wrapper details and precedence](docs/PRODUCT.md#matching-and-precedence) define the conditions.
 
-Classification applies to whole files, so inline tests cannot receive a separate purpose. [Measurement limits](docs/measurement.md) define this and other boundaries.
+Classification applies to whole files, so inline tests cannot receive a separate purpose. When Rust production files contain `#[cfg(test)]` items, a line below the language table names their code, such as “Rust production includes 145 code lines of inline #[cfg(test)] tests in 3 files”, and full JSON reports them as `inline_tests`. [Measurement limits](docs/measurement.md) define this and other boundaries.
 
 ### Build modules
 

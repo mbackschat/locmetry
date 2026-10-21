@@ -117,6 +117,7 @@ pub fn render_table_with_options(
     if columns.ratio() == Ratio::TestPerProduction {
         legends.push(LANGUAGE_RATIO_NOTE.into());
     }
+    legends.extend(inline_tests_legend(rows));
     legends.extend(folded_note(&folds));
     legends.extend(selection.notes(&purposes));
     for text in legends {
@@ -258,7 +259,6 @@ pub fn render_table_with_options(
                 kinds.join(", ")
             )));
         }
-        notes.extend(inline_tests_note(&summary.totals, "#[cfg(test)]").map(TerminalNote::Text));
         notes.extend(build_modules_note(findings.modules, order).map(TerminalNote::Text));
         if !findings.module_files.is_empty() {
             notes.push(TerminalNote::ModuleFiles(findings.module_files.to_vec()));

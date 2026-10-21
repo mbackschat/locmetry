@@ -170,6 +170,7 @@ Read results:
   Lines = Code + Comments + Blanks. Default tables describe source; JSON
   summary.source and summary.all_counted distinguish source from data/documentation.
   Test/prod = Test Code / Production Code, excluding Other; it is not test coverage.
+  Files are classified whole; a legend names Rust #[cfg(test)] code in production.
   Other remains counted. Unclaimed source appears in review; a clear review list
   does not prove correct classification. Unavailable counts are not zero.
   Use --verbose for coverage, inferred build modules, submodule hints and unused

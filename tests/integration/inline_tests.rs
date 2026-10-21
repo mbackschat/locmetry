@@ -100,19 +100,28 @@ fn out_of_line_test_modules_add_no_inline_tests() {
         .is_none());
 }
 
+/// The legend qualifies the Prod. and Test/prod figures, so default tables
+/// show it with the rows it qualifies; Markdown keeps its note.
 #[test]
-fn verbose_and_markdown_reports_name_inline_test_code() {
+fn tables_and_markdown_name_inline_test_code() {
     let temp = tempfile::tempdir().unwrap();
     project(temp.path());
-    let note =
-        "Inline tests: production includes 8 code lines in Rust #[cfg(test)] items (1 file).";
-    let table = stdout(run(
-        temp.path(),
+    let legend = " Rust production includes 8 code lines of inline #[cfg(test)] tests in 1 file; --files --output - names them.\n";
+    for args in [
+        &["--format", "table", "--no-color"][..],
         &["--format", "table", "--no-color", "--verbose"],
-    ));
-    assert!(table.contains(&format!(" {note}\n")), "{table}");
-    let quiet = stdout(run(temp.path(), &["--format", "table", "--no-color"]));
-    assert!(!quiet.contains("Inline tests:"), "{quiet}");
+    ] {
+        let table = stdout(run(temp.path(), args));
+        assert_eq!(table.matches(legend).count(), 1, "{args:?}\n{table}");
+        assert!(!table.contains("Inline tests:"), "{table}");
+    }
+    for args in [
+        &["--format", "table", "--no-color", "--tables-only"][..],
+        &["--format", "table", "--no-color", "--table-purpose", "test"],
+    ] {
+        let table = stdout(run(temp.path(), args));
+        assert!(!table.contains("inline #[cfg(test)]"), "{args:?}\n{table}");
+    }
     let markdown = stdout(run(temp.path(), &["--format", "markdown"]));
     assert!(
         markdown.contains(
@@ -144,7 +153,7 @@ fn zero_inline_test_code_produces_no_note_or_field() {
         temp.path(),
         &["--format", "table", "--no-color", "--verbose"],
     ));
-    assert!(!table.contains("Inline tests:"), "{table}");
+    assert!(!table.contains("inline #[cfg(test)]"), "{table}");
     let markdown = stdout(run(temp.path(), &["--format", "markdown"]));
     assert!(!markdown.contains("Inline tests:"), "{markdown}");
 }
