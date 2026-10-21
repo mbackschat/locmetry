@@ -1,0 +1,4 @@
+# Check out text with LF on every platform: tests and the embedded guides
+# (src/guides.rs) read documentation byte for byte, and Git for Windows would
+# otherwise convert it to CRLF (core.autocrlf=true on GitHub's Windows runners).
+* text=auto eol=lf
