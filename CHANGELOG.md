@@ -4,6 +4,8 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-21
+
 ### Added
 
 - Windows x86_64 support: releases include a zip with `locmetry.exe`, which needs no Visual C++ runtime, for use from PowerShell. Personal defaults live in `%APPDATA%\locmetry\config.toml`, roots show as ordinary drive paths, and colors work in the Windows PowerShell console or fall back to plain text. See [Windows and PowerShell](README.md#windows-and-powershell).
@@ -65,7 +67,8 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 - **Breaking:** presentation options are named for what they show: `--folders`, `--categories`, `--bars`, `--purpose` and `--depth` became `--show-folders`, `--show-categories`, `--show-bars`, `--table-purpose` and `--markdown-depth`. `workspace --file` and `explain --workspace` became `--workspace-file`. The former spellings are rejected.
 - `--files` adds per-file records to every full JSON view, whether saved or printed.
 
-[Unreleased]: https://github.com/mbackschat/locmetry/compare/v0.7.6...HEAD
+[Unreleased]: https://github.com/mbackschat/locmetry/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/mbackschat/locmetry/compare/v0.7.6...v0.8.0
 [0.7.6]: https://github.com/mbackschat/locmetry/compare/v0.7.5...v0.7.6
 [0.7.5]: https://github.com/mbackschat/locmetry/compare/v0.7.4...v0.7.5
 [0.7.4]: https://github.com/mbackschat/locmetry/compare/v0.7.3...v0.7.4

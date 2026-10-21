@@ -400,11 +400,11 @@ Commands:
              defaulting to full JSON; --format overrides the format
   explain    Explain selection and classification of one existing root-relative file. JSON prints
              the complete explanation; there is no separate headline
-locmetry 0.7.6
-Source: docs/guides/configure.md; locmetry 0.7.6
-Source: docs/guides/selection.md; locmetry 0.7.6
-Source: docs/guides/reports.md; locmetry 0.7.6
-Source: docs/guides/compare.md; locmetry 0.7.6
+locmetry 0.8.0
+Source: docs/guides/configure.md; locmetry 0.8.0
+Source: docs/guides/selection.md; locmetry 0.8.0
+Source: docs/guides/reports.md; locmetry 0.8.0
+Source: docs/guides/compare.md; locmetry 0.8.0
 Configuration
 MeasurementReport
 Workspace
