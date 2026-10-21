@@ -44,7 +44,8 @@ class ReplayTests(unittest.TestCase):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
-        self.document = self.root / "guide.md"
+        self.document = self.root / "cli/guide.md"
+        self.document.parent.mkdir()
         self.document.write_text(HEADER + "```bash\ntrue\n```\n")
         self.artifacts = self.root / "evidence"
         self.artifacts.mkdir()
@@ -62,32 +63,46 @@ class ReplayTests(unittest.TestCase):
                 self.assertFalse(recorded.replay(self.document, self.artifacts))
         self.assertEqual(run.call_count, 1)
         self.assertEqual(self.document.read_bytes(), original)
-        self.assertEqual((self.artifacts / "guide.candidate.md").read_text(), "regenerated candidate")
-        self.assertIn("output drift", (self.artifacts / "guide.log").read_text())
+        self.assertEqual((self.artifacts / "cli-guide.candidate.md").read_text(), "regenerated candidate")
+        self.assertIn("output drift", (self.artifacts / "cli-guide.log").read_text())
         self.assertRegex(console.getvalue(), r"FAIL.*guide.md.*[0-9.]+s")
 
     def test_success_reports_elapsed_time_and_discards_candidate(self):
         with patch.object(recorded.subprocess, "run", side_effect=self.verify_result(0)):
             with contextlib.redirect_stdout(io.StringIO()) as console:
                 self.assertTrue(recorded.replay(self.document, self.artifacts))
-        self.assertFalse((self.artifacts / "guide.candidate.md").exists())
+        self.assertFalse((self.artifacts / "cli-guide.candidate.md").exists())
         self.assertRegex(console.getvalue(), r"PASS.*guide.md.*[0-9.]+s")
 
     def test_invalid_document_does_not_keep_a_stale_candidate(self):
         self.document.write_text("# Missing header\n")
-        (self.artifacts / "guide.candidate.md").write_text("old failure")
+        (self.artifacts / "cli-guide.candidate.md").write_text("old failure")
         with patch.object(recorded.subprocess, "run") as run, contextlib.redirect_stdout(io.StringIO()):
             self.assertFalse(recorded.replay(self.document, self.artifacts))
         run.assert_not_called()
-        self.assertFalse((self.artifacts / "guide.candidate.md").exists())
-        self.assertIn("header", (self.artifacts / "guide.log").read_text())
+        self.assertFalse((self.artifacts / "cli-guide.candidate.md").exists())
+        self.assertIn("header", (self.artifacts / "cli-guide.log").read_text())
+
+    def test_documents_sharing_a_name_keep_separate_evidence(self):
+        showcase = self.root / "showcase/guide.md"
+        showcase.parent.mkdir()
+        showcase.write_text(self.document.read_text())
+        with patch.object(recorded.subprocess, "run", side_effect=self.verify_result(1)), \
+                contextlib.redirect_stdout(io.StringIO()):
+            recorded.replay(self.document, self.artifacts)
+        with patch.object(recorded.subprocess, "run", side_effect=self.verify_result(0)), \
+                contextlib.redirect_stdout(io.StringIO()):
+            recorded.replay(showcase, self.artifacts)
+        self.assertTrue((self.artifacts / "cli-guide.candidate.md").exists())
+        self.assertIn("FAIL", (self.artifacts / "cli-guide.log").read_text())
+        self.assertIn("PASS", (self.artifacts / "showcase-guide.log").read_text())
 
     def test_timeout_retains_partial_diagnostic(self):
         failure = subprocess.TimeoutExpired("showboat", 120, output=b"partial output\n")
         with patch.object(recorded.subprocess, "run", side_effect=failure):
             with contextlib.redirect_stdout(io.StringIO()):
                 self.assertFalse(recorded.replay(self.document, self.artifacts))
-        log = (self.artifacts / "guide.log").read_text()
+        log = (self.artifacts / "cli-guide.log").read_text()
         self.assertIn("partial output", log)
         self.assertIn("120", log)
 
@@ -216,7 +231,7 @@ class DocumentSetTests(unittest.TestCase):
         self.assertEqual(visited, ["docs/cli/root.md"])
         self.assertIn("FAIL docs/showcase/measure.md", console)
         self.assertIn("fetch-showcase.sh", console)
-        self.assertIn("fetch-showcase.sh", (self.artifacts / "measure.log").read_text())
+        self.assertIn("fetch-showcase.sh", (self.artifacts / "showcase-measure.log").read_text())
 
 
 if __name__ == "__main__":

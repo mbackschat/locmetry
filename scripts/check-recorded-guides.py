@@ -53,9 +53,14 @@ def showcase_unavailable():
     return result.stderr or "Showcase checkouts are unavailable" if result.returncode else None
 
 
+def evidence(path, artifacts, suffix):
+    """Name evidence after the document's folder too: docs/cli and docs/showcase share file names."""
+    return artifacts / f"{path.parent.name}-{path.stem}{suffix}"
+
+
 def unavailable(path, artifacts, diagnostic):
     status = f"FAIL {path} (not replayed)"
-    (artifacts / f"{path.stem}.log").write_text(status + "\n" + diagnostic)
+    evidence(path, artifacts, ".log").write_text(status + "\n" + diagnostic)
     print(status, flush=True)
     print(diagnostic, end="" if diagnostic.endswith("\n") else "\n", flush=True)
     return False
@@ -63,8 +68,8 @@ def unavailable(path, artifacts, diagnostic):
 
 def replay(path, artifacts, command=None):
     started = time.perf_counter()
-    candidate = artifacts / f"{path.stem}.candidate.md"
-    log = artifacts / f"{path.stem}.log"
+    candidate = evidence(path, artifacts, ".candidate.md")
+    log = evidence(path, artifacts, ".log")
     candidate.unlink(missing_ok=True)
     print(f"Verifying {path}", flush=True)
     try:
