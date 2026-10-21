@@ -29,17 +29,6 @@ These excerpts measure [Immich](https://github.com/immich-app/immich) `v3.3.4`, 
 
 📊 **Ask your own questions of the reports:** the 🦆 [DuckDB cookbook](docs/duckdb-cookbook.md) and the 🐼 [pandas and Polars cookbook](docs/dataframe-cookbook.md) analyze two Immich releases step by step, with real output.
 
-### A line counter answers "how much text, per language"
-
-<!-- showcase-tools -->
-| Tool | Reported code | of which JSON | Production / test split |
-| --- | ---: | ---: | --- |
-| Tokei 15.0.0 | 518,920 | 209,607 (40%) | none |
-| cloc 2.10 | 530,430 | 209,931 (40%) | none |
-| scc 4.1.0 | 510,075 | 209,867 (41%) | none |
-
-Line counters are good at counting. Locmetry counts with Tokei too, but asks a different question: almost half of Immich's "code" is data, such as database schemas, the OpenAPI specification and translations.
-
 ### Locmetry answers "how much source, and how much of it is tests"
 
 ```sh
@@ -82,6 +71,17 @@ locmetry --root immich
 ```
 
 Code is split by purpose; comments and blanks stay separate. Data and documentation do not inflate source totals. `Test/prod` divides test code by production code; it describes volume, not coverage. If your numbers differ from these, personal defaults in `~/.config/locmetry/config.toml` may apply; `--no-user-config` ignores them.
+
+#### Compared with a line counter: "how much text, per language"
+
+Line counters are good at counting, and Locmetry counts with Tokei too. Their totals for the same checkout run to almost twice the code above, because they count data as code: about 40% is JSON alone, such as database schemas, the OpenAPI specification and translations.
+
+<!-- showcase-tools -->
+| Tool | Reported code | of which JSON | Production / test split |
+| --- | ---: | ---: | --- |
+| Tokei 15.0.0 | 518,920 | 209,607 (40%) | none |
+| cloc 2.10 | 530,430 | 209,931 (40%) | none |
+| scc 4.1.0 | 510,075 | 209,867 (41%) | none |
 
 ### A reviewed policy answers "what does this project consist of"
 
