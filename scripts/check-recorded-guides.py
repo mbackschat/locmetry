@@ -13,7 +13,7 @@ BINARY = Path(os.environ.get("LOCMETRY_BIN", REPOSITORY / "target/debug/locmetry
 GUIDES = {"root": [], "workspace": ["workspace"], "compare": ["compare"], "explain": ["explain"]}
 # Recordings of the pinned Immich checkouts (examples/showcase/immich/README.md).
 SHOWCASE = ["docs/showcase/tour.md", "docs/showcase/measure.md", "docs/showcase/workspace.md", "docs/showcase/compare.md",
-            "docs/analytics-demo.md"]
+            "docs/duckdb-cookbook.md", "docs/dataframe-cookbook.md", "docs/analytics-demo.md"]
 SELECTIONS = ["reference", "showcase", "all"]
 
 

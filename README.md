@@ -27,6 +27,8 @@ These excerpts measure [Immich](https://github.com/immich-app/immich) `v3.3.4`, 
 
 ▶️ **The [showcase recordings](docs/showcase/README.md) replay measurement, workspace and comparison on Immich; the [command guides](docs/cli/README.md) cover every option on a small fixture.**
 
+📊 **Ask your own questions of the reports:** the 🦆 [DuckDB cookbook](docs/duckdb-cookbook.md) and the 🐼 [pandas and Polars cookbook](docs/dataframe-cookbook.md) analyze two Immich releases step by step, with real output.
+
 ### A line counter answers "how much text, per language"
 
 <!-- showcase-tools -->
@@ -242,11 +244,13 @@ For file-level recognition and classification changes, run `compare-locmetry-fil
 
 ## Analyze saved measurements
 
-Full schema-3 reports support external analytics without adding runtime dependencies to Locmetry. Capture reports with the current executable; older schema-1/2 measurements must be recaptured.
+Locmetry's full JSON reports are data you can query. Load several of them into an analysis tool and ask what one report cannot answer: How did the code change between releases, and where? How much of it is generated? How much code does each team own? Which new files are the largest? What exactly did a policy change move? Both cookbooks answer such questions for two [Immich](docs/showcase/README.md) releases, explain every step for newcomers and show the real output.
 
-- [DuckDB cookbook](docs/duckdb-cookbook.md): typed SQL views, portfolio totals, trends, ownership and Parquet export.
-- [pandas and Polars cookbook](docs/dataframe-cookbook.md): equivalent dataframe analysis with optional external packages.
-- [Recorded analytics demo](docs/analytics-demo.md): capture two Immich releases and query them with DuckDB.
+- 🦆 **[DuckDB cookbook](docs/duckdb-cookbook.md)**: SQL over a local database file, covering composition, generated code, components and their tests, growth between releases, ownership, new and changed files, a policy review and Parquet export.
+- 🐼 **[pandas and Polars cookbook](docs/dataframe-cookbook.md)**: the same reports as Python dataframes, covering components, comment density and change between releases, with identical results in both libraries.
+- ▶️ **[Analytics demo](docs/analytics-demo.md)**: one Python script over workspace captures of both releases, the shape of a scheduled job or notebook.
+
+The tools are optional; Locmetry itself has no analytics dependency. Capture reports with the current executable; older schema-1/2 measurements must be recaptured.
 
 ## How classification works
 

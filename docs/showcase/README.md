@@ -6,7 +6,8 @@ These executable demonstrations measure [Immich](https://github.com/immich-app/i
 - [Measure Immich](measure.md): built-in conventions alone, the evidence behind a decision, the reviewed policy, explanations and folder detail.
 - [Measure Immich as a workspace](workspace.md): six application components measured under the project's one policy.
 - [Compare two Immich releases](compare.md): `v3.2.0 → v3.3.4` for the whole repository and for one member.
-- [Capture and analyze two releases](../analytics-demo.md): DuckDB queries over the same reports.
+- [Analyze reports with DuckDB](../duckdb-cookbook.md) and [with pandas and Polars](../dataframe-cookbook.md): questions across releases, components, owners and files.
+- [Capture and analyze two releases](../analytics-demo.md): one Python script over workspace captures.
 
 ## Run an example
 
@@ -22,7 +23,8 @@ Replay only these recordings with:
 cargo build --locked
 bash scripts/fetch-showcase.sh
 uv run --no-project --python 3.11 \
-  --with showboat==0.6.1 --with duckdb==1.5.6 \
+  --with showboat==0.6.1 --with duckdb==1.5.6 --with duckdb-cli==1.5.6 \
+  --with pandas==3.0.6 --with polars==2.0.0 \
   python scripts/check-recorded-guides.py --set showcase
 ```
 

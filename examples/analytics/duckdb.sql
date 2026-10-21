@@ -1,4 +1,4 @@
-CREATE OR REPLACE TEMP TABLE manifest (
+CREATE OR REPLACE TABLE manifest (
     snapshot_id VARCHAR PRIMARY KEY CHECK (snapshot_id <> ''),
     repo_id VARCHAR NOT NULL CHECK (repo_id <> ''),
     sequence UBIGINT NOT NULL,
@@ -11,7 +11,7 @@ SELECT * FROM read_csv('snapshots.csv', header = true, columns = {
     'sequence': 'UBIGINT', 'path': 'VARCHAR'
 });
 SET VARIABLE report_paths = (SELECT list(path) FROM manifest);
-CREATE OR REPLACE TEMP TABLE reports AS
+CREATE OR REPLACE TABLE reports AS
 SELECT filename, json AS doc
 FROM read_json_objects(getvariable('report_paths'), format = 'unstructured');
 
@@ -35,8 +35,10 @@ WHERE (doc->>'document_type') IS DISTINCT FROM 'measurement'
    OR json_type(doc, '$.metadata.backend_inaccurate') IS DISTINCT FROM 'BOOLEAN'
    OR json_type(doc, '$.metadata.coverage.parse_failures') IS DISTINCT FROM 'ARRAY';
 
-CREATE OR REPLACE TEMP VIEW snapshots AS
+CREATE OR REPLACE VIEW snapshots AS
 SELECT m.*, r.doc,
+    -- 1 is a repository's latest capture, 2 the one before it.
+    row_number() OVER (PARTITION BY m.repo_id ORDER BY m.sequence DESC)::UBIGINT AS recency,
     (doc->>'$.metadata.measured_at_unix_seconds')::UBIGINT AS measured_at_unix_seconds,
     (doc->>'$.metadata.backend_inaccurate')::BOOLEAN AS partial,
     json_exists(doc, '$.files') AS has_files,
@@ -47,10 +49,10 @@ SELECT m.*, r.doc,
 FROM manifest m JOIN reports r ON m.path = r.filename;
 
 -- Empty JSON arrays carry no element types; the report contract supplies them.
-CREATE OR REPLACE TEMP VIEW contributions AS
-SELECT snapshot_id, repo_id, sequence, b.*
+CREATE OR REPLACE VIEW contributions AS
+SELECT snapshot_id, repo_id, sequence, recency, b.*
 FROM (
-    SELECT snapshot_id, repo_id, sequence,
+    SELECT snapshot_id, repo_id, sequence, recency,
         unnest(from_json_strict(doc->'breakdown', '[{
             "folder":"VARCHAR", "kind":"VARCHAR", "purpose":"VARCHAR",
             "category":"VARCHAR", "language":"VARCHAR", "files":"UBIGINT",
@@ -59,11 +61,12 @@ FROM (
     FROM snapshots
 );
 
-CREATE OR REPLACE TEMP VIEW physical_files AS
-SELECT snapshot_id, f.path, f.kind, f.purpose, f.language, f.counts.code AS code
+CREATE OR REPLACE VIEW physical_files AS
+SELECT snapshot_id, repo_id, sequence, recency,
+    f.path, f.kind, f.purpose, f.category, f.language, f.counts.code AS code
 FROM (
-    SELECT snapshot_id, unnest(from_json_strict(doc->'files', '[{
-        "path":"VARCHAR", "kind":"VARCHAR", "purpose":"VARCHAR",
+    SELECT snapshot_id, repo_id, sequence, recency, unnest(from_json_strict(doc->'files', '[{
+        "path":"VARCHAR", "kind":"VARCHAR", "purpose":"VARCHAR", "category":"VARCHAR",
         "language":"VARCHAR", "counts":{"code":"UBIGINT"}
     }]')) AS f
     FROM snapshots

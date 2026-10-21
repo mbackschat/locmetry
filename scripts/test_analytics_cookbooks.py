@@ -1,4 +1,10 @@
-"""Execute the cookbook's sources against synthetic Locmetry measurements."""
+"""Execute the cookbooks' marked examples against synthetic Locmetry measurements.
+
+The cookbooks record their output on Immich, whose two healthy releases cannot
+show empty, partial or file-less captures, sibling folders sharing a prefix, or
+malformed inputs. These checks run the same query and code text on small
+reports whose counts are known independently.
+"""
 
 import contextlib
 import copy
@@ -6,6 +12,7 @@ import io
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import tempfile
 import sys
@@ -15,13 +22,66 @@ import duckdb
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 BINARY = Path(os.environ.get("LOCMETRY_BIN", REPOSITORY / "target/debug/locmetry")).resolve()
-COOKBOOK = REPOSITORY / "docs/duckdb-cookbook.md"
+DUCKDB_COOKBOOK = REPOSITORY / "docs/duckdb-cookbook.md"
+DATAFRAME_COOKBOOK = REPOSITORY / "docs/dataframe-cookbook.md"
 LOADER = REPOSITORY / "examples/analytics/duckdb.sql"
 
+# Two repositories with two captures each; the second API capture omits file records.
+CAPTURE = """
+set -eu
+mkdir -p api/src api/tests web/src web/tests
+cat > api/.locmetryrc <<'TOML'
+version = 1
+[[rules]]
+id = "maintained"
+match = ["src/**"]
+purpose = "production"
+category = "application"
+TOML
+cp api/.locmetryrc web/.locmetryrc
+printf 'print(1)\\nprint(2)\\n' > api/src/main.py
+printf 'assert True\\n' > api/tests/test_main.py
+printf 'assert True\\n' > web/tests/test_main.py
+locmetry api --no-user-config --files --output api-1.json
+locmetry web --no-user-config --files --output web-1.json
+printf 'print(3)\\n' >> api/src/main.py
+printf 'assert True\\n' >> api/tests/test_main.py
+printf 'print(1)\\nprint(2)\\n' > web/src/main.py
+printf 'assert True\\n' >> web/tests/test_main.py
+locmetry api --no-user-config --output api-2.json
+locmetry web --no-user-config --files --output web-2.json
+cat > snapshots.csv <<'CSV'
+snapshot_id,repo_id,sequence,path
+api-1,api,1,api-1.json
+api-2,api,2,api-2.json
+web-1,web,1,web-1.json
+web-2,web,2,web-2.json
+CSV
+cat > owners.csv <<'CSV'
+repo_id,prefix,owner
+api,src,api-team
+api,tests,quality
+web,src,web-team
+web,tests,quality
+CSV
+"""
 
-def block(name, language="sql", source=COOKBOOK):
+
+def marked(name, source, delimiter):
+    """The heredoc delimited by `delimiter` in the first Bash block after `<!-- name -->`."""
     text = source.read_text().split(f"<!-- {name} -->", 1)[1]
-    return text.split(f"```{language}\n", 1)[1].split("```", 1)[0]
+    bash = text.split("```bash\n", 1)[1].split("\n```", 1)[0]
+    body = re.search(rf"<<'{delimiter}'\n(.*?)\n{delimiter}$", bash, re.DOTALL | re.MULTILINE).group(1)
+    # Dot commands such as `.thousand_sep` configure the DuckDB program, not SQL.
+    return "\n".join(line for line in body.splitlines() if not line.startswith("."))
+
+
+def sql(name):
+    return marked(name, DUCKDB_COOKBOOK, "SQL")
+
+
+def python(name):
+    return marked(name, DATAFRAME_COOKBOOK, "PYTHON")
 
 
 class CookbookTests(unittest.TestCase):
@@ -36,8 +96,7 @@ class CookbookTests(unittest.TestCase):
         (self.root / "bin/locmetry").symlink_to(BINARY)
         self.env = dict(os.environ, PATH=f"{self.root / 'bin'}:{os.environ['PATH']}",
                         XDG_CONFIG_HOME=str(self.root / "no-user-config"))
-        subprocess.run(["bash", "-euc", block("capture", "sh")], env=self.env, check=True,
-                       capture_output=True, text=True)
+        subprocess.run(["bash", "-euc", CAPTURE], env=self.env, check=True, capture_output=True, text=True)
         sys.path.insert(0, str(REPOSITORY / "examples/analytics"))
         self.addCleanup(sys.path.pop, 0)
         self.db = duckdb.connect()
@@ -47,43 +106,74 @@ class CookbookTests(unittest.TestCase):
         self.db.execute(LOADER.read_text())
 
     def query(self, name):
-        return self.db.execute(block(name)).fetchall()
+        return self.db.execute(sql(name)).fetchall()
 
-    def test_documented_queries_match_independent_counts(self):
+    def test_marked_queries_match_independent_counts(self):
         self.load()
-        self.assertEqual(self.query("composition"), [("Python", "production", 2), ("Python", "test", 1)])
-        self.assertEqual(self.query("folders"), [("src", 2), ("tests", 1)])
-        self.assertEqual(self.query("portfolio"), [(5, 4, 0.8)])
-        self.assertEqual(self.query("trend"), [("api", 1, 3, None), ("api", 2, 5, 2),
-                                              ("web", 1, 1, None), ("web", 2, 4, 3)])
-        self.db.execute(block("owners"))
-        self.assertEqual(self.query("ownership"), [("api-2", "api-team", 3), ("api-2", "quality", 2)])
+        # Latest captures: API 3 production and 2 test lines, Web 2 and 2.
+        self.assertEqual(self.query("composition"), [("Python", "production", 5, 2), ("Python", "test", 4, 2)])
+        self.assertEqual(self.query("categories"), [("production", "application", 5, 55.6),
+                                                     ("test", "test", 4, 44.4)])
+        self.assertEqual(self.query("components"), [("api", "src", 3, None, None), ("api", "tests", None, 2, None),
+                                                     ("web", "src", 2, None, None), ("web", "tests", None, 2, None)])
+        self.assertEqual(self.query("trend"), [("api", "api-1", 3, None), ("api", "api-2", 5, 2),
+                                               ("web", "web-1", 1, None), ("web", "web-2", 4, 3)])
+        # Web's source folder is new, so its whole size is the change.
+        self.assertEqual(self.query("changes"), [("web", "src", "production", 2), ("api", "src", "production", 1),
+                                                 ("api", "tests", "test", 1), ("web", "tests", "test", 1)])
+        self.assertEqual(self.query("ownership"), [("quality", None, 4), ("api-team", 3, None),
+                                                   ("web-team", 2, None)])
         self.assertEqual(self.query("file-sizes"), [("api-1", 2, 1.5, 2), ("api-2", None, None, None),
                                                    ("web-1", 1, 1.0, 1), ("web-2", 2, 2.0, 2)])
-        self.db.execute(block("parquet"))
-        self.assertEqual(self.db.sql("SELECT sum(code) FROM read_parquet('contributions.parquet') WHERE kind='source'").fetchone(), (13,))
-        self.assertEqual(self.db.sql("SELECT count(*) FROM read_parquet('snapshots.parquet')").fetchone(), (4,))
+        # API's latest capture has no file records, so neither new nor changed files can be named for it.
+        self.assertEqual(self.query("new-files"), [("src/main.py", "production", 2)])
+        self.assertEqual(self.query("changed-files"), [("tests/test_main.py", 1, 2, 1)])
+        self.assertEqual(self.query("parquet"), [("api-1", 3), ("api-2", 5), ("web-1", 1), ("web-2", 4)])
 
-    def dataframe_results(self):
-        results = []
-        for engine in ["pandas", "polars"]:
-            namespace = {}
-            with contextlib.redirect_stdout(io.StringIO()):
-                exec(block(engine, "python", REPOSITORY / "docs/dataframe-cookbook.md"), namespace)
-            frame = namespace["composition"]
-            rows = frame.to_dict("records") if engine == "pandas" else frame.to_dicts()
-            results.append(sorted(tuple(row[key] for key in ["snapshot_id", "language", "purpose", "code"]) for row in rows))
-            self.assertEqual(len(namespace["snapshots"]), self.db.sql("SELECT count(*) FROM snapshots").fetchone()[0])
-        expected = self.db.sql("SELECT snapshot_id,language,purpose,sum(code) FROM contributions WHERE kind='source' GROUP BY ALL ORDER BY ALL").fetchall()
-        self.assertEqual(results, [expected, expected])
-
-    def test_dataframe_recipes_match_sql_and_keep_empty_snapshots(self):
+    def test_partial_captures_end_trends_and_changes_instead_of_bridging_them(self):
+        report = json.loads((self.root / "api-2.json").read_text())
+        report["metadata"]["backend_inaccurate"] = True
+        (self.root / "api-2.json").write_text(json.dumps(report))
         self.load()
-        self.dataframe_results()
+        self.assertEqual(self.query("trend")[1], ("api", "api-2", 5, None))
+        self.assertEqual(self.query("changes"), [("web", "src", "production", 2), ("web", "tests", "test", 1)])
+
+    def run_python(self, name):
+        namespace = {}
+        with contextlib.redirect_stdout(io.StringIO()):
+            exec(python(name), namespace)
+        return namespace
+
+    def test_dataframe_examples_match_sql(self):
+        self.load()
+        self.run_python("pandas-load")
+        components = self.run_python("pandas-components")["components"]
+        self.assertEqual(
+            sorted((repo, component, row.get("production", 0), row.get("test", 0))
+                   for (repo, component), row in components.to_dict("index").items()),
+            sorted((repo, component, production or 0, test or 0)
+                   for repo, component, production, test, _ in self.query("components")))
+        expected = self.query("changes")
+        pandas_changes = self.run_python("pandas-changes")["changes"]
+        polars_changes = self.run_python("polars-changes")["changes"]
+        columns = ["repo_id", "component", "purpose", "change"]
+        self.assertEqual([tuple(row) for row in pandas_changes[columns].itertuples(index=False)], expected)
+        self.assertEqual(polars_changes.select(columns).rows(), expected)
+        self.run_python("pandas-comments")
+
+    def test_loaders_keep_an_empty_capture(self):
         (self.root / "empty").mkdir()
-        self.replace_manifest(self.measure("empty"))
+        self.replace_manifest(self.measure("empty", "--files"))
         self.load()
-        self.dataframe_results()
+        self.assertEqual(self.db.sql("SELECT source_code, partial, has_files FROM snapshots").fetchall(),
+                         [(0, False, True)])
+        self.assertEqual(self.db.sql("SELECT count(*) FROM contributions").fetchone(), (0,))
+        self.assertEqual(self.query("file-sizes"), [("one", 0, None, None)])
+        for name in ["pandas-load", "pandas-changes", "polars-changes"]:
+            namespace = self.run_python(name)
+            self.assertEqual(len(namespace["snapshots"]), 1)
+            if "changes" in namespace:
+                self.assertEqual(len(namespace["changes"]), 0)
 
     def replace_manifest(self, report):
         (self.root / "single.json").write_text(json.dumps(report))
@@ -95,21 +185,14 @@ class CookbookTests(unittest.TestCase):
         self.assertEqual(output.returncode, status, output.stderr)
         return json.loads(output.stdout)
 
-    def test_empty_and_unavailable_snapshots_survive_empty_detail(self):
+    def test_partial_capture_stays_marked(self):
         (self.root / "empty").mkdir()
-        empty = self.measure("empty", "--files")
-        self.replace_manifest(empty)
-        self.load()
-        self.assertEqual(self.db.sql("SELECT source_code,partial,has_files FROM snapshots").fetchall(), [(0, False, True)])
-        self.assertEqual(self.db.sql("SELECT count(*) FROM contributions").fetchone(), (0,))
-        self.assertEqual(self.query("file-sizes"), [("one", 0, None, None)])
         (self.root / "empty/broken.ipynb").write_text("not a notebook")
-        partial = self.measure("empty", "--files", status=2)
-        self.replace_manifest(partial)
+        self.replace_manifest(self.measure("empty", "--files", status=2))
         self.load()
-        self.assertEqual(self.db.sql("SELECT source_code,partial FROM snapshots").fetchall(), [(0, True)])
+        self.assertEqual(self.db.sql("SELECT source_code, partial FROM snapshots").fetchall(), [(0, True)])
 
-    def test_loader_rejects_wrong_envelopes_and_duplicate_manifest_identity(self):
+    def test_loaders_reject_wrong_envelopes_and_duplicate_manifest_identity(self):
         report = json.loads((self.root / "api-1.json").read_text())
         for field, value in [("detail", "headline"), ("schema_version", "2"),
                              ("document_type", "comparison"), ("document_type", None),
@@ -144,20 +227,15 @@ class CookbookTests(unittest.TestCase):
         (self.root / "api/src-old/old.py").write_text("print(1)\n")
         self.replace_manifest(self.measure("api", "--files"))
         self.load()
-        self.assertEqual(self.db.sql("SELECT code,files FROM contributions WHERE language='JavaScript'").fetchall(), [(1, 0)])
-        self.assertEqual(self.db.sql("SELECT sum(code),sum(files) FROM contributions WHERE kind='source'").fetchone(), (10, 4))
-        self.db.execute(block("owners"))
-        self.assertEqual(self.db.sql("SELECT owner FROM owned_contributions WHERE folder='src-old'").fetchall(), [("unassigned",)])
+        self.assertEqual(self.db.sql("SELECT code, files FROM contributions WHERE language = 'JavaScript'").fetchall(),
+                         [(1, 0)])
+        self.assertEqual(self.db.sql("SELECT sum(code), sum(files) FROM contributions WHERE kind = 'source'").fetchone(),
+                         (10, 4))
+        self.query("ownership")
+        self.assertEqual(self.db.sql("SELECT owner FROM owned_contributions WHERE folder = 'src-old'").fetchall(),
+                         [("unassigned",)])
         self.assertEqual(self.query("file-sizes"), [("one", 4, 2.5, 4)])
-        self.dataframe_results()
-
-    def test_trend_marks_partial_edges_instead_of_bridging_them(self):
-        report = json.loads((self.root / "api-2.json").read_text())
-        report["metadata"]["backend_inaccurate"] = True
-        (self.root / "api-2.json").write_text(json.dumps(report))
-        self.load()
-        self.assertEqual(self.query("trend")[1], ("api", 2, 5, None))
-        self.assertEqual(self.query("portfolio"), [(2, 2, 1.0)])
+        self.run_python("pandas-load")
 
 
 if __name__ == "__main__":

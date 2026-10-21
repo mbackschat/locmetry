@@ -1,6 +1,6 @@
 # Authoring Showboat Guides
 
-Use Showboat for executable user workflows: commands, actual captured output and interpretation. The [recorded CLI guides](cli/README.md), the [Immich showcase recordings](showcase/README.md) and the [analytics demo](analytics-demo.md) are the maintained examples. This is a demonstration workflow, not a code-exploration walkthrough. [Simon Willison's introduction](https://simonwillison.net/2026/feb/10/showboat-and-rodney/) explains the approach; [Showboat's README](https://github.com/simonw/showboat) owns the tool interface.
+Use Showboat for executable user workflows: commands, actual captured output and interpretation. The [recorded CLI guides](cli/README.md), the [Immich showcase recordings](showcase/README.md), the [DuckDB](duckdb-cookbook.md) and [pandas and Polars](dataframe-cookbook.md) cookbooks and the [analytics demo](analytics-demo.md) are the maintained examples. This is a demonstration workflow, not a code-exploration walkthrough. [Simon Willison's introduction](https://simonwillison.net/2026/feb/10/showboat-and-rodney/) explains the approach; [Showboat's README](https://github.com/simonw/showboat) owns the tool interface.
 
 ## Scope and dependencies
 
