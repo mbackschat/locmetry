@@ -164,7 +164,7 @@ pub(crate) fn workspace_members(
     };
     members.sort_by(|a, b| (&a.name, &a.root, &a.folder).cmp(&(&b.name, &b.root, &b.folder)));
     let location = |member: &WorkspaceMember| match &member.folder {
-        Some(folder) => member.root.join(folder),
+        Some(folder) => locmetry::filesystem_path(&member.root, folder),
         None => member.root.clone(),
     };
     for pair in members.windows(2) {
