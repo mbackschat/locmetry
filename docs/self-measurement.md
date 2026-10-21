@@ -16,7 +16,7 @@ The synthetic workspace remains independently measurable. Configuration discover
 | --- | --- | --- |
 | Rust implementation under `src/` | Production / `implementation`, through Cargo inference | Existing module detection already expresses its role. |
 | `tests/` and conventional `scripts/test_*.py` files | Test / `test`, through built-in conventions | Preserve existing decisions without redundant rules or overrides. |
-| Documentation-index maintenance, release preparation and saved-measurement review | Production / `tooling` | These maintained commands operate the repository, prepare distribution and inspect measurement evidence. |
+| Documentation maintenance (indexes and the README's Immich excerpts), release preparation and saved-measurement review | Production / `tooling` | These maintained commands operate the repository, prepare distribution and inspect measurement evidence. |
 | Source under `packaging/` | Production / `distribution` | Formula generation, installation definitions and notice templates are maintained distribution code. |
 | Named documentation checks, demo support and agent-evaluation harnesses | Test / `test-infrastructure` | They execute, prepare or assess verification workflows. |
 | Source under `examples/analytics/` | Other / `example` | Maintained user-facing recipes stay counted and visible without entering the implementation/test ratio. |
