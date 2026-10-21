@@ -4,7 +4,6 @@
     "test": {"soft": 1000, "hard": 2000}
   },
   "ceilings": {
-    "src/main.rs": 1866,
-    "src/output.rs": 2517
+    "src/main.rs": 1866
   }
 }
