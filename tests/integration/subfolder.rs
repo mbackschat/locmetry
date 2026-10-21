@@ -193,7 +193,7 @@ fn inactive_config_warning_uses_diagnostic_prefix_and_absolute_paths() {
         );
         assert_eq!(String::from_utf8(out.stderr).unwrap(), format!(
             "locmetry: {} is inactive; project configuration: {}. --subfolder retains project policy.\n",
-            root.join("web/src/.locmetryrc").display(), root.join(".locmetryrc").display()
+            root.join("web").join("src").join(".locmetryrc").display(), root.join(".locmetryrc").display()
         ));
     }
 }

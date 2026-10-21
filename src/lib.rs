@@ -28,7 +28,7 @@ pub use output::{
     write_report, BarKind, Bars, Findings, Fold, LanguageVariants, MemberView, RowOrder,
     TableOptions,
 };
-pub use paths::{member_path, within};
+pub use paths::{filesystem_path, member_path, within};
 pub use report::{
     breakdown, build_report, build_systems, largest_module_files, module_shares, review,
     submodule_shares, unclaimed_folders, unused_entries, BreakdownRow, BuildSystemShare, Counts,

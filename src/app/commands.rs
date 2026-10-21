@@ -201,7 +201,7 @@ pub(crate) fn run_root(
         .transpose()?
         .flatten();
     if let Some(folder) = &subfolder {
-        let inactive = prepared.root.join(folder).join(CONFIG_FILE);
+        let inactive = locmetry::filesystem_path(&prepared.root, folder).join(CONFIG_FILE);
         if inactive.is_file()
             && prepared
                 .config_path

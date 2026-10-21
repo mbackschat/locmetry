@@ -34,6 +34,14 @@ pub fn within(path: &str, folder: &str) -> bool {
     path == folder || below(path, folder).is_some()
 }
 
+/// Root-relative `path` below `root` on disk, joined segment by segment so a
+/// Windows path keeps one separator; [`ROOT`] is `root` itself.
+pub fn filesystem_path(root: &std::path::Path, path: &str) -> std::path::PathBuf {
+    path.split('/')
+        .filter(|segment| *segment != ROOT)
+        .fold(root.to_path_buf(), |path, segment| path.join(segment))
+}
+
 /// The workspace member a member-prefixed path belongs to.
 pub(crate) fn member_of(path: &str) -> &str {
     path.split('/').next().unwrap_or(path)
@@ -93,6 +101,19 @@ mod tests {
         assert_eq!(below("web", "web"), None);
         assert_eq!(below("web/a.ts", ROOT), Some("web/a.ts"));
         assert!(within("web", "web") && within("web/a", "web") && !within("webx", "web"));
+    }
+
+    /// Messages show the platform's separator throughout, never a Windows
+    /// path ending in a `/`-separated report path such as `C:\p\web/src`.
+    #[test]
+    fn filesystem_paths_use_the_platform_separator() {
+        let sep = std::path::MAIN_SEPARATOR;
+        let path = filesystem_path(std::path::Path::new("base"), "web/src");
+        assert_eq!(path.display().to_string(), format!("base{sep}web{sep}src"));
+        assert_eq!(
+            filesystem_path(std::path::Path::new("base"), ROOT),
+            std::path::Path::new("base")
+        );
     }
 
     #[test]
