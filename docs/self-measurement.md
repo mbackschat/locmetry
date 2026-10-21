@@ -30,7 +30,7 @@ Production includes operational tooling even when it is not shipped in the execu
 
 Keep the default unclaimed fallback and existing language recognition. There is no catch-all production rule, no override to clear findings and no language mapping added solely to make the recognition count look complete. An unrecognized license or ignore file does not establish missing implementation source; inspect meaningful gaps before adding mappings.
 
-The test/production ratio describes whole-file classifications. Rust unit tests inline in production files under `src/` remain counted with those files, while a `tests.rs` module file is test through the built-in `rust-test-module` convention; move a large inline test module out of line rather than adding a project rule. The ratio is not a coverage or quality score. See [measurement limits](measurement.md#limits).
+The test/production ratio describes whole-file classifications. Rust unit tests inline in production files under `src/` remain counted with those files, and `--verbose` reports their code as “Inline tests”, while a `tests.rs` module file is test through the built-in `rust-test-module` convention; move a large inline test module out of line rather than adding a project rule. The ratio is not a coverage or quality score. See [measurement limits](measurement.md#limits).
 
 ## File Sizes
 

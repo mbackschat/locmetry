@@ -223,3 +223,21 @@ pub(super) fn unused_exclusions_note(
         )
     })
 }
+
+/// Code of inline Rust test items that each purpose's source counts, with
+/// `attribute` spelled for the format; `None` without any, so a module that
+/// only declares `mod tests;` adds no note.
+pub(super) fn inline_tests_note(summary: &Summary, attribute: &str) -> Option<String> {
+    let purposes: Vec<String> = summary
+        .inline_tests
+        .iter()
+        .map(|(purpose, counts)| {
+            format!(
+                "{purpose} includes {} in Rust {attribute} items ({})",
+                counted(counts.code, "code line"),
+                counted(counts.files, "file")
+            )
+        })
+        .collect();
+    (!purposes.is_empty()).then(|| format!("Inline tests: {}.", purposes.join("; ")))
+}

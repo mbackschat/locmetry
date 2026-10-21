@@ -78,6 +78,9 @@ pub struct FileRecord {
     pub counts: Counts,
     /// Runtime participation includes the host; the public contract omits redundant single-language detail.
     pub languages: BTreeMap<String, Counts>,
+    /// Lines of inline `#[cfg(test)]` items, counted with the file's own
+    /// purpose; zero in test files and in files without such items.
+    pub inline_tests: Counts,
 }
 
 impl Serialize for FileRecord {
@@ -121,6 +124,11 @@ pub struct Summary {
     #[serde(default)]
     /// Source line contributions by language; line categories add, file participation can overlap.
     pub source_languages: BTreeMap<String, Counts>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    #[serde(default)]
+    /// Inline Rust `#[cfg(test)]` items within source of each purpose except test, whose lines that purpose already counts; `files` counts files containing any. Absent when none were found, and in reports of earlier producers.
+    #[schemars(schema_with = "crate::schema::purpose_map::<Counts>")]
+    pub inline_tests: BTreeMap<Purpose, Counts>,
 }
 
 impl Summary {
@@ -145,6 +153,12 @@ impl Summary {
             add_at(&mut self.source_categories, &keys.category, &row.counts);
             for (language, counts) in &row.languages {
                 add_at(&mut self.source_languages, language, counts);
+            }
+            if row.inline_tests.lines > 0 {
+                self.inline_tests
+                    .entry(row.classification.purpose)
+                    .or_default()
+                    .add(&row.inline_tests);
             }
         }
     }

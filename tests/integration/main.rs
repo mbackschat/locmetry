@@ -21,6 +21,7 @@ mod folder_rows;
 mod folders;
 mod guides;
 mod help;
+mod inline_tests;
 mod language_families;
 mod measurement;
 mod notebooks;

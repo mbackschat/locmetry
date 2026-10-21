@@ -442,6 +442,14 @@ pub struct File {
     )]
     #[schemars(with = "BTreeMap<String, LineCounts>")]
     pub languages: Option<BTreeMap<String, LineCounts>>,
+    /// Only for source files of a purpose other than test with inline Rust `#[cfg(test)]` items: the lines those items span, which `counts` includes.
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "present"
+    )]
+    #[schemars(with = "LineCounts")]
+    pub inline_tests: Option<LineCounts>,
 }
 impl From<&crate::FileRecord> for File {
     fn from(f: &crate::FileRecord) -> Self {
@@ -460,6 +468,7 @@ impl From<&crate::FileRecord> for File {
                     .map(|(k, v)| (k.clone(), (*v).into()))
                     .collect()
             }),
+            inline_tests: (f.inline_tests.lines > 0).then(|| f.inline_tests.into()),
         }
     }
 }

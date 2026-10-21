@@ -1,4 +1,4 @@
-use crate::{modules, Counts, FileRecord, Kind, Module, Policy};
+use crate::{modules, Counts, FileRecord, Kind, Module, Policy, Purpose};
 use anyhow::{bail, ensure, Context, Result};
 use ignore::WalkBuilder;
 use rayon::prelude::*;
@@ -14,6 +14,7 @@ use tokei::LanguageType;
 use LanguageType::*;
 
 mod handlebars;
+mod inline_tests;
 mod notebook;
 mod submodules;
 
@@ -249,6 +250,8 @@ pub struct Scan {
     pub modules: Vec<Module>,
     /// Configured exclusions that left out nothing, see [`Policy::unused_exclusions`].
     pub unused_exclusions: Vec<String>,
+    /// Counts of inline `#[cfg(test)]` items per counted Rust file that has any.
+    pub inline_tests: BTreeMap<String, Counts>,
 }
 
 impl Scan {
@@ -258,6 +261,16 @@ impl Scan {
         for mut row in file_records(&self.mapped, policy)? {
             row.language_mapping = self.mappings.get(&row.path).cloned();
             rows.push(row);
+        }
+        // In a test file, inline tests are already counted as test.
+        for row in &mut rows {
+            if row.classification.purpose != Purpose::Test {
+                row.inline_tests = self
+                    .inline_tests
+                    .get(&row.path)
+                    .copied()
+                    .unwrap_or_default();
+            }
         }
         rows.sort_by(|a, b| a.path.cmp(&b.path));
         Ok(rows)
@@ -535,6 +548,7 @@ pub(crate) fn scan_selection(
     let mut inaccurate = languages.values().any(|language| language.inaccurate);
     let mut payload = serde_json::to_value(languages)?;
     let counted = normalize_reports(&mut payload, &root, policy)?;
+    let inline_tests = inline_rust_tests(&root, &paths, &counted, &config)?;
     let failed: BTreeSet<_> = coverage
         .parse_failures
         .iter()
@@ -605,9 +619,39 @@ pub(crate) fn scan_selection(
             inaccurate,
             modules,
             unused_exclusions,
+            inline_tests,
         },
         exclusion,
     ))
+}
+
+/// Inline test counts of the counted Rust files among `paths`. The text is read
+/// again because Tokei parses files itself; an unreadable file is already
+/// reported by counting, so it adds nothing here.
+fn inline_rust_tests(
+    root: &Path,
+    paths: &[PathBuf],
+    counted: &BTreeSet<String>,
+    config: &tokei::Config,
+) -> Result<BTreeMap<String, Counts>> {
+    let rust: Vec<(String, &PathBuf)> = paths
+        .iter()
+        .filter(|path| LanguageType::from_path(path, config) == Some(LanguageType::Rust))
+        .map(|path| Ok((relative_path(path.strip_prefix(root)?)?, path)))
+        .filter(|entry| {
+            entry
+                .as_ref()
+                .map_or(true, |(name, _)| counted.contains(name))
+        })
+        .collect::<Result<_>>()?;
+    Ok(rust
+        .par_iter()
+        .filter_map(|(name, path)| {
+            let text = decoded_text(path, ParseFailureReason::InvalidEncoding, "Rust").ok()?;
+            let counts = inline_tests::counts(&text, config);
+            (counts.lines > 0).then(|| (name.clone(), counts))
+        })
+        .collect())
 }
 
 fn count_selected(
@@ -858,6 +902,7 @@ pub fn file_records(payload: &Value, policy: &Policy) -> Result<Vec<FileRecord>>
                 language_mapping: None,
                 counts,
                 languages,
+                inline_tests: Counts::default(),
             });
         }
     }

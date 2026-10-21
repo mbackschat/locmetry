@@ -151,6 +151,9 @@ pub fn render_markdown(
             &summary.totals.purpose(purpose),
         );
     }
+    if let Some(note) = inline_tests_note(&summary.totals, "`#[cfg(test)]`") {
+        writeln!(output, "\n{}", Theme::MARKDOWN.paint(Role::Muted, &note)).unwrap();
+    }
     if !findings.members.is_empty() {
         let (body, _, total) = repository_rows(summary, findings.members, order, &ALL_PURPOSES);
         let escaped = |row: &Vec<String>| row.iter().map(|value| cell(value)).collect::<Vec<_>>();

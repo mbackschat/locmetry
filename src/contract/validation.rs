@@ -140,6 +140,19 @@ fn validate_totals(s: &Summary, context: &str) -> Result<()> {
         "{context}: source_categories totals conflict with source"
     );
     ensure!(same_lines(total(s.source_languages.values())?,s.source), "{context}: source_languages line totals conflict with source (file participation may overlap)");
+    for (purpose, inline) in &s.inline_tests {
+        inline.validate(context)?;
+        let source = s.purpose(*purpose);
+        ensure!(
+            *purpose != Purpose::Test
+                && inline.lines > 0
+                && inline.files <= source.files
+                && inline.code <= source.code
+                && inline.comments <= source.comments
+                && inline.blanks <= source.blanks,
+            "{context}: inline_tests must lie within non-test source of their purpose"
+        );
+    }
     for p in Purpose::ALL {
         let code = s.source_purpose.get(&p).copied().unwrap_or_default();
         ensure!(
@@ -542,6 +555,17 @@ impl MeasurementReport {
                         "file languages do not reconcile"
                     );
                 }
+                if let Some(inline) = file.inline_tests {
+                    Counts::from(inline).validate("file inline_tests")?;
+                    ensure!(
+                        file.kind == Kind::Source
+                            && file.purpose != Purpose::Test
+                            && inline.code <= file.counts.code
+                            && inline.comments <= file.counts.comments
+                            && inline.blanks <= file.counts.blanks,
+                        "file inline_tests must lie within non-test source counts"
+                    );
+                }
             }
             // Reuse measurement aggregation after checked bounds above; no second counting policy.
             let records = files
@@ -564,6 +588,7 @@ impl MeasurementReport {
                             .collect(),
                         None => BTreeMap::from([(f.language.clone(), f.counts.into())]),
                     },
+                    inline_tests: f.inline_tests.map(Counts::from).unwrap_or_default(),
                 })
                 .collect::<Vec<_>>();
             let file_counts = records.iter().map(|f| f.counts).collect::<Vec<_>>();
@@ -573,6 +598,10 @@ impl MeasurementReport {
             );
             let derived = crate::build_report(&records);
             same_totals(&self.summary.totals, &derived.totals, Files::Exact, "files")?;
+            ensure!(
+                derived.totals.inline_tests == self.summary.totals.inline_tests,
+                "files conflict with summary inline_tests"
+            );
             if let Some(rows) = &self.breakdown {
                 let expected: BTreeMap<_, _> = crate::breakdown(&records)
                     .iter()
