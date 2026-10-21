@@ -29,6 +29,31 @@ fn sample_workspace_records_real_classification_and_embedded_counts() {
         file("service/experiments/probe.py")["category"],
         "unclaimed"
     );
+    // One file per remaining classification stage: an override beating the
+    // npm module layout, a build convention and a language mapping.
+    let generated = file("web/src/api/client.ts");
+    assert_eq!(
+        (
+            &generated["purpose"],
+            &generated["category"],
+            &generated["rule"]
+        ),
+        (
+            &"other".into(),
+            &"generated".into(),
+            &"generated-client".into()
+        )
+    );
+    let makefile = file("service/Makefile");
+    assert_eq!(
+        (&makefile["category"], &makefile["rule"]),
+        (&"build-tooling".into(), &"builtin:build-script".into())
+    );
+    let template = file("web/src/orders/receipt.acmetpl");
+    assert_eq!(
+        (&template["language"], &template["purpose"]),
+        (&"HTML".into(), &"production".into())
+    );
     assert!(!files
         .iter()
         .any(|f| f["path"].as_str().unwrap().contains("third_party")
@@ -39,7 +64,56 @@ fn sample_workspace_records_real_classification_and_embedded_counts() {
         .unwrap()
         .iter()
         .any(|row| row["language"] == "JavaScript" && row["files"] == 0 && row["code"] == 1));
-    assert_eq!(report["summary"]["source"]["code"], 25);
+    // 17 production lines plus the Makefile's two and the template's one;
+    // Other adds the generated client's line to the unclaimed experiment's.
+    let purposes = &report["summary"]["source_purpose"];
+    assert_eq!(report["summary"]["source"]["code"], 29);
+    let code = |purpose: &str| purposes[purpose]["code"].as_u64();
+    assert_eq!(
+        [code("production"), code("test"), code("other")],
+        [Some(20), Some(7), Some(2)]
+    );
+    assert_eq!(report["metadata"]["coverage"]["mapped_files"], 1);
+}
+
+/// The fixture README promises that member configurations express the root
+/// policy relative to each member, so every file must get the same decision.
+#[test]
+fn sample_workspace_members_decide_like_the_combined_root() {
+    let measure = |args: &[&str]| {
+        let output = common::locmetry()
+            .args(args)
+            .args(["--no-user-config", "--format", "json", "--files"])
+            .output()
+            .unwrap();
+        let report = common::json(&output, 0);
+        let mut decisions: Vec<_> = report["files"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|f| {
+                let field = |name: &str| f[name].as_str().unwrap().to_string();
+                (
+                    field("path"),
+                    field("purpose"),
+                    field("category"),
+                    field("rule"),
+                )
+            })
+            .collect();
+        decisions.sort();
+        decisions
+    };
+    let combined: Vec<_> = measure(&["--root", SAMPLE])
+        .into_iter()
+        .filter(|(path, ..)| !path.ends_with(".locmetryrc"))
+        .collect();
+    let workspace_file = "examples/cli-workspace/workspace.toml";
+    let members: Vec<_> = measure(&["workspace", "--workspace-file", workspace_file])
+        .into_iter()
+        .filter(|(path, ..)| !path.ends_with(".locmetryrc"))
+        .collect();
+    assert_eq!(members, combined);
 }
 
 fn help(flag: &str) -> String {

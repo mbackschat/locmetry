@@ -1,9 +1,16 @@
 version = 1
+
 [scope]
 hidden = false
 exclude = ["third_party/**"]
+
+[categories]
+tooling = "Maintained developer commands"
+
 [[rules]]
 id = "tooling"
 match = ["scripts/**"]
+kind = ["source"]
 purpose = "production"
 category = "tooling"
+reason = "Maintained check script that developers run before a commit"

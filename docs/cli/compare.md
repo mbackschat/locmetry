@@ -7,7 +7,7 @@ Run each Bash block from the Locmetry repository root. [Setup and replay instruc
 
 ## Capture and explain a known change
 
-Each example starts fresh. Here one added source line changes code from 25 to 26. `compare` reads saved full measurements; optional per-file records are unnecessary. The table excerpt omits the variable input-date footer.
+Each example starts fresh. Here one added source line changes code from 29 to 30. `compare` reads saved full measurements; optional per-file records are unnecessary. The table excerpt omits the variable input-date footer.
 
 ```bash
 source scripts/cli-demo-env.sh
@@ -26,36 +26,36 @@ Net change: acme-orders → acme-orders
                         Lines         │         Code          │         Change
  Kind           before  after  change │ before  after  change │ Comments  Blanks  Files
  ─────────────────────────────────────┼───────────────────────┼────────────────────────
- Source             32     33      +1 │     25     26      +1 │        0       0      0
+ Source             37     38      +1 │     29     30      +1 │        0       0      0
  Data                2      2       0 │      2      2       0 │        0       0      0
  Documentation       3      3       0 │      0      0       0 │        0       0      0
  ─────────────────────────────────────┼───────────────────────┼────────────────────────
- All counted        37     38      +1 │     27     28      +1 │        0       0      0
+ All counted        42     43      +1 │     31     32      +1 │        0       0      0
 
  ───────────────────────────────────────────────────────────
                        Lines         │         Code
  Purpose       before  after  change │ before  after  change
  ────────────────────────────────────┼──────────────────────
- Production        21     22      +1 │     17     18      +1
+ Production        24     25      +1 │     20     21      +1
  ────────────────────────────────────┼──────────────────────
- Source total      32     33      +1 │     25     26      +1
- Test/prod (Code): 0.41 → 0.39 (before → after)
+ Source total      37     38      +1 │     29     30      +1
+ Test/prod (Code): 0.35 → 0.33 (before → after)
 
  ───────────────────────────────────────────────────────────
                        Lines         │         Code
  Language      before  after  change │ before  after  change
  ────────────────────────────────────┼──────────────────────
- TypeScript         8      9      +1 │      6      7      +1
+ TypeScript        10     11      +1 │      7      8      +1
  ────────────────────────────────────┼──────────────────────
- Source total      32     33      +1 │     25     26      +1
+ Source total      37     38      +1 │     29     30      +1
 
  ───────────────────────────────────────────────────────────
                        Lines         │         Code
  Folder        before  after  change │ before  after  change
  ────────────────────────────────────┼──────────────────────
- web (both)        16     17      +1 │     14     15      +1
+ web (both)        19     20      +1 │     16     17      +1
  ────────────────────────────────────┼──────────────────────
- Source total      32     33      +1 │     25     26      +1
+ Source total      37     38      +1 │     29     30      +1
  Folders are recursive; do not sum parents and children.
 
 ▸ Measurement notes
@@ -93,18 +93,18 @@ locmetry compare before.json after.json --format headline --output - \
   "schema_version": "2",
   "source": {
     "before": {
-      "files": 8,
-      "code": 25,
-      "comments": 5,
+      "files": 11,
+      "code": 29,
+      "comments": 6,
       "blanks": 2,
-      "lines": 32
+      "lines": 37
     },
     "after": {
-      "files": 8,
-      "code": 26,
-      "comments": 5,
+      "files": 11,
+      "code": 30,
+      "comments": 6,
       "blanks": 2,
-      "lines": 33
+      "lines": 38
     },
     "delta": {
       "files": 0,
@@ -119,28 +119,28 @@ locmetry compare before.json after.json --format headline --output - \
 
 | Purpose | Lines before | Lines after | Lines change | Code before | Code after | Code change |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Production | 21 | 22 | +1 | 17 | 18 | +1 |
-| **Source total** | **32** | **33** | **+1** | **25** | **26** | **+1** |
+| Production | 24 | 25 | +1 | 20 | 21 | +1 |
+| **Source total** | **37** | **38** | **+1** | **29** | **30** | **+1** |
 
-*Test/prod (Code): 0.41 → 0.39 (before → after)*
+*Test/prod (Code): 0.35 → 0.33 (before → after)*
 
 ## Languages
 {
   "document_type": "comparison",
   "source": {
     "before": {
-      "files": 8,
-      "code": 25,
-      "comments": 5,
+      "files": 11,
+      "code": 29,
+      "comments": 6,
       "blanks": 2,
-      "lines": 32
+      "lines": 37
     },
     "after": {
-      "files": 8,
-      "code": 26,
-      "comments": 5,
+      "files": 11,
+      "code": 30,
+      "comments": 6,
       "blanks": 2,
-      "lines": 33
+      "lines": 38
     },
     "delta": {
       "files": 0,
@@ -176,28 +176,28 @@ Input metadata, measurement notes, report-level findings and partial status cove
                         Lines         │         Code          │         Change
  Kind           before  after  change │ before  after  change │ Comments  Blanks  Files
  ─────────────────────────────────────┼───────────────────────┼────────────────────────
- Source             16     17      +1 │     14     15      +1 │        0       0      0
+ Source             19     20      +1 │     16     17      +1 │        0       0      0
  Data                2      2       0 │      2      2       0 │        0       0      0
  Documentation       3      3       0 │      0      0       0 │        0       0      0
  ─────────────────────────────────────┼───────────────────────┼────────────────────────
- All counted        21     22      +1 │     16     17      +1 │        0       0      0
+ All counted        24     25      +1 │     18     19      +1 │        0       0      0
 
  ───────────────────────────────────────────────────────────
                        Lines         │         Code
  Purpose       before  after  change │ before  after  change
  ────────────────────────────────────┼──────────────────────
- Production        12     13      +1 │     11     12      +1
+ Production        13     14      +1 │     12     13      +1
  ────────────────────────────────────┼──────────────────────
- Source total      16     17      +1 │     14     15      +1
- Test/prod (Code): 0.27 → 0.25 (before → after)
+ Source total      19     20      +1 │     16     17      +1
+ Test/prod (Code): 0.25 → 0.23 (before → after)
 
  ───────────────────────────────────────────────────────────
                        Lines         │         Code
  Language      before  after  change │ before  after  change
  ────────────────────────────────────┼──────────────────────
- TypeScript         8      9      +1 │      6      7      +1
+ TypeScript        10     11      +1 │      7      8      +1
  ────────────────────────────────────┼──────────────────────
- Source total      16     17      +1 │     14     15      +1
+ Source total      19     20      +1 │     16     17      +1
 
 Member source lines: matched +1, entering +0, leaving -0; total +1.
 Member all-counted lines: matched +1, entering +0, leaving -0; total +1.
@@ -209,9 +209,9 @@ Member all-counted code: matched +1, entering +0, leaving -0; total +1.
                        Lines         │         Code
  Folder        before  after  change │ before  after  change
  ────────────────────────────────────┼──────────────────────
- src (both)        16     17      +1 │     14     15      +1
+ src (both)        19     20      +1 │     16     17      +1
  ────────────────────────────────────┼──────────────────────
- Source total      16     17      +1 │     14     15      +1
+ Source total      19     20      +1 │     16     17      +1
  Folders are recursive; do not sum parents and children.
 
 ▸ Measurement notes
@@ -250,25 +250,25 @@ printf 'Web source still exists.\n'
 {
   "source": {
     "before": {
-      "files": 8,
-      "code": 25,
-      "comments": 5,
+      "files": 11,
+      "code": 29,
+      "comments": 6,
       "blanks": 2,
-      "lines": 32
+      "lines": 37
     },
     "after": {
-      "files": 4,
-      "code": 11,
+      "files": 5,
+      "code": 13,
       "comments": 3,
       "blanks": 2,
-      "lines": 16
+      "lines": 18
     },
     "delta": {
-      "files": -4,
-      "code": -14,
-      "comments": -2,
+      "files": -6,
+      "code": -16,
+      "comments": -3,
       "blanks": 0,
-      "lines": -16
+      "lines": -19
     }
   },
   "members": {
@@ -276,18 +276,18 @@ printf 'Web source still exists.\n'
       "presence": "both",
       "source": {
         "before": {
-          "files": 4,
-          "code": 11,
+          "files": 5,
+          "code": 13,
           "comments": 3,
           "blanks": 2,
-          "lines": 16
+          "lines": 18
         },
         "after": {
-          "files": 4,
-          "code": 11,
+          "files": 5,
+          "code": 13,
           "comments": 3,
           "blanks": 2,
-          "lines": 16
+          "lines": 18
         },
         "delta": {
           "files": 0,
@@ -302,11 +302,11 @@ printf 'Web source still exists.\n'
       "presence": "before_only",
       "source": {
         "before": {
-          "files": 4,
-          "code": 14,
-          "comments": 2,
+          "files": 6,
+          "code": 16,
+          "comments": 3,
           "blanks": 0,
-          "lines": 16
+          "lines": 19
         },
         "after": {
           "files": 0,
@@ -316,11 +316,11 @@ printf 'Web source still exists.\n'
           "lines": 0
         },
         "delta": {
-          "files": -4,
-          "code": -14,
-          "comments": -2,
+          "files": -6,
+          "code": -16,
+          "comments": -3,
           "blanks": 0,
-          "lines": -16
+          "lines": -19
         }
       }
     }

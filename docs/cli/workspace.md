@@ -22,36 +22,39 @@ locmetry workspace --workspace-file workspace.toml --no-user-config --no-color -
  Language    Files  Lines  Code │ Comments  Blanks │ Prod.  Test  Other │ Test/prod
  ───────────────────────────────┼──────────────────┼────────────────────┼──────────
  Go              2     11     8 │        1       2 │     4     4      0 │      1.00
- HTML            1      4     4 │        0       0 │     4     0      0 │      0.00
+ HTML            2      5     5 │        0       0 │     5     0      0 │      0.00
  JavaScript      0      1     1 │        0       0 │     1     0      0 │      0.00
+ Makefile        1      2     2 │        0       0 │     2     0      0 │      0.00
  Python          2      5     3 │        2       0 │     2     0      1 │      0.00
  TSX             1      3     3 │        0       0 │     3     0      0 │      0.00
- TypeScript      2      8     6 │        2       0 │     3     3      0 │      1.00
+ TypeScript      3     10     7 │        3       0 │     3     3      1 │      1.00
  ───────────────────────────────┼──────────────────┼────────────────────┼──────────
- Total           8     32    25 │        5       2 │    17     7      1 │      0.41
+ Total          11     37    29 │        6       2 │    20     7      2 │      0.35
  Lines = Code + Comments + Blanks; Production + Test + Other = Code; Test/prod = Test / Production (Code).
  Tests written in another language than the code they test skew per-language Test/prod.
 
  ─────────────────────────────────────────────────────────────────
  Repository  Lines  Code │ Prod.  Test  Other │ Test/prod │  Share
  ────────────────────────┼────────────────────┼───────────┼───────
- service        16    11 │     6     4      1 │      0.67 │  44.0%
- web            16    14 │    11     3      0 │      0.27 │  56.0%
+ service        18    13 │     8     4      1 │      0.50 │  44.8%
+ web            19    16 │    12     3      1 │      0.25 │  55.2%
  ────────────────────────┼────────────────────┼───────────┼───────
- Total          32    25 │    17     7      1 │      0.41 │ 100.0%
+ Total          37    29 │    20     7      2 │      0.35 │ 100.0%
  Production + Test + Other = Code; Test/prod = Test / Production (Code); Share = Code / workspace Code.
 
  ─────────────────────────────────────────────
  Category                   Files  Lines  Code
  ─────────────────────────────────────────────
+ other:generated                1      2     1
  other:unclaimed                1      2     1
- production:implementation      4     18    15
+ production:build-tooling       1      2     2
+ production:implementation      5     19    16
  production:tooling             1      3     2
  test:test                      2      9     7
  Rows of one purpose add up to that purpose's Code; all rows add up to the total Code.
 
  Not source code: 2 data files (2 lines), 1 documentation file (3 lines); --files --output - lists each file's kind.
- Production from build modules: go 4 code lines in 1 module, npm 11 code lines in 1 module.
+ Production from build modules: go 4 code lines in 1 module, npm 12 code lines in 1 module.
  Unclaimed source: 1 code line in 1 file, here:
    service/experiments  1 code line  1 file
  To inspect or refine purpose classification, use locmetry --guide configure; --files --output - shows each file's rule.
@@ -82,25 +85,28 @@ jq '{
   "document_type": "measurement",
   "detail": "full",
   "source": {
-    "files": 8,
-    "code": 25,
-    "comments": 5,
+    "files": 11,
+    "code": 29,
+    "comments": 6,
     "blanks": 2,
-    "lines": 32
+    "lines": 37
   },
   "members": [
     "service",
     "web"
   ],
   "source_paths": [
+    "service/Makefile",
     "service/experiments/probe.py",
     "service/scripts/check.py",
     "service/src/main.go",
     "service/tests/main_test.go",
+    "web/src/api/client.ts",
     "web/src/index.html",
     "web/src/orders/Order.test.ts",
     "web/src/orders/Order.ts",
-    "web/src/orders/OrderView.tsx"
+    "web/src/orders/OrderView.tsx",
+    "web/src/orders/receipt.acmetpl"
   ]
 }
 ```
@@ -121,14 +127,15 @@ locmetry workspace --workspace-file workspace.toml --no-user-config --no-color -
  ───────────────────────────────────────────────────────────────────────────────────────────────────
  Language    Files  Lines  Code │ Comments  Blanks │ Prod.  Test │ Test/prod │  Share  Code share
  ───────────────────────────────┼──────────────────┼─────────────┼───────────┼──────────────────────
- Go              2     11     8 │        1       2 │     4     4 │      1.00 │  33.3%  ███████▓▓▓▓▓▓
- HTML            1      4     4 │        0       0 │     4     0 │      0.00 │  16.7%  ███████
- JavaScript      0      1     1 │        0       0 │     1     0 │      0.00 │   4.2%  ██
- Python          1      3     2 │        1       0 │     2     0 │      0.00 │   8.3%  ███
- TSX             1      3     3 │        0       0 │     3     0 │      0.00 │  12.5%  █████
- TypeScript      2      8     6 │        2       0 │     3     3 │      1.00 │  25.0%  █████▓▓▓▓▓
+ Go              2     11     8 │        1       2 │     4     4 │      1.00 │  29.6%  ███████▓▓▓▓▓▓
+ HTML            2      5     5 │        0       0 │     5     0 │      0.00 │  18.5%  ████████
+ JavaScript      0      1     1 │        0       0 │     1     0 │      0.00 │   3.7%  ██
+ Makefile        1      2     2 │        0       0 │     2     0 │      0.00 │   7.4%  ███
+ Python          1      3     2 │        1       0 │     2     0 │      0.00 │   7.4%  ███
+ TSX             1      3     3 │        0       0 │     3     0 │      0.00 │  11.1%  █████
+ TypeScript      2      8     6 │        2       0 │     3     3 │      1.00 │  22.2%  █████▓▓▓▓▓
  ───────────────────────────────┼──────────────────┼─────────────┼───────────┼──────────────────────
- Total           7     30    24 │        4       2 │    17     7 │      0.41 │ 100.0%
+ Total           9     33    27 │        4       2 │    20     7 │      0.35 │ 100.0%
  Lines = Code + Comments + Blanks; Production + Test = Code; Test/prod = Test / Production (Code).
  Tests written in another language than the code they test skew per-language Test/prod.
  Purposes shown: Production and Test; Other excluded.
@@ -137,10 +144,10 @@ locmetry workspace --workspace-file workspace.toml --no-user-config --no-color -
  ───────────────────────────────────────────────────────────────────────────────────────────────────
  Repository  Lines  Code │ Prod.  Test │ Test/prod │  Share  Code share
  ────────────────────────┼─────────────┼───────────┼────────────────────────────────────────────────
- service        14    10 │     6     4 │      0.67 │  41.7%  █████████████████▓▓▓▓▓▓▓▓▓▓▓
- web            16    14 │    11     3 │      0.27 │  58.3%  ███████████████████████████████▓▓▓▓▓▓▓▓
+ service        16    12 │     8     4 │      0.50 │  44.4%  █████████████████████▓▓▓▓▓▓▓▓▓▓
+ web            17    15 │    12     3 │      0.25 │  55.6%  ███████████████████████████████▓▓▓▓▓▓▓▓
  ────────────────────────┼─────────────┼───────────┼────────────────────────────────────────────────
- Total          30    24 │    17     7 │      0.41 │ 100.0%
+ Total          33    27 │    20     7 │      0.35 │ 100.0%
  Production + Test = Code; Test/prod = Test / Production (Code); Share = Code / workspace Code.
  Bars: █ Production  ▓ Test; the largest row fills the bar.
 
@@ -164,27 +171,27 @@ locmetry workspace --workspace-file workspace.toml --no-user-config --output - \
   "document_type": "measurement",
   "detail": "headline",
   "source": {
-    "files": 8,
-    "code": 25,
-    "comments": 5,
+    "files": 11,
+    "code": 29,
+    "comments": 6,
     "blanks": 2,
-    "lines": 32
+    "lines": 37
   }
 }
 {
   "service": {
-    "files": 4,
-    "code": 11,
+    "files": 5,
+    "code": 13,
     "comments": 3,
     "blanks": 2,
-    "lines": 16
+    "lines": 18
   },
   "web": {
-    "files": 4,
-    "code": 14,
-    "comments": 2,
+    "files": 6,
+    "code": 16,
+    "comments": 3,
     "blanks": 0,
-    "lines": 16
+    "lines": 19
   }
 }
 ```
@@ -205,17 +212,17 @@ sed -n '/^## Source purpose/,/^## Source categories/p' workspace.md
 
 | Purpose | Files | Lines | **Code** | Comments | Blanks |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| production | 5 | 21 | 17 | 3 | 1 |
+| production | 7 | 24 | 20 | 3 | 1 |
 | test | 2 | 9 | 7 | 1 | 1 |
-| other | 1 | 2 | 1 | 1 | 0 |
+| other | 2 | 4 | 2 | 2 | 0 |
 
 ## Repositories
 
 | Repository | Lines | **Code** | Production | Test | Other | Test/prod | Share |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| service | 16 | 11 | 6 | 4 | 1 | 0.67 | 44.0% |
-| web | 16 | 14 | 11 | 3 | 0 | 0.27 | 56.0% |
-| **Total** | **32** | **25** | **17** | **7** | **1** | **0.41** | **100.0%** |
+| service | 18 | 13 | 8 | 4 | 1 | 0.50 | 44.8% |
+| web | 19 | 16 | 12 | 3 | 1 | 0.25 | 55.2% |
+| **Total** | **37** | **29** | **20** | **7** | **2** | **0.35** | **100.0%** |
 
 *Production + Test + Other = Code; Test/prod = Test / Production (Code); Share = Code / workspace Code.*
 

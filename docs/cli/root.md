@@ -21,13 +21,14 @@ locmetry --root acme-orders --no-user-config --no-color --no-bars --format table
  Language    Files  Lines  Code │ Comments  Blanks │ Prod.  Test  Other │ Test/prod
  ───────────────────────────────┼──────────────────┼────────────────────┼──────────
  Go              2     11     8 │        1       2 │     4     4      0 │      1.00
- TypeScript      2      8     6 │        2       0 │     3     3      0 │      1.00
- HTML            1      4     4 │        0       0 │     4     0      0 │      0.00
+ TypeScript      3     10     7 │        3       0 │     3     3      1 │      1.00
+ HTML            2      5     5 │        0       0 │     5     0      0 │      0.00
  Python          2      5     3 │        2       0 │     2     0      1 │      0.00
  TSX             1      3     3 │        0       0 │     3     0      0 │      0.00
+ Makefile        1      2     2 │        0       0 │     2     0      0 │      0.00
  JavaScript      0      1     1 │        0       0 │     1     0      0 │      0.00
  ───────────────────────────────┼──────────────────┼────────────────────┼──────────
- Total           8     32    25 │        5       2 │    17     7      1 │      0.41
+ Total          11     37    29 │        6       2 │    20     7      2 │      0.35
  Lines = Code + Comments + Blanks; Production + Test + Other = Code; Test/prod = Test / Production (Code).
  Tests written in another language than the code they test skew per-language Test/prod.
 
@@ -50,41 +51,46 @@ locmetry acme-orders --no-user-config --no-color --no-bars --format table --fold
  Language    Files  Lines  Code │ Comments  Blanks │ Prod.  Test  Other │ Test/prod
  ───────────────────────────────┼──────────────────┼────────────────────┼──────────
  Go              2     11     8 │        1       2 │     4     4      0 │      1.00
- HTML            1      4     4 │        0       0 │     4     0      0 │      0.00
+ HTML            2      5     5 │        0       0 │     5     0      0 │      0.00
  JavaScript      0      1     1 │        0       0 │     1     0      0 │      0.00
+ Makefile        1      2     2 │        0       0 │     2     0      0 │      0.00
  Python          2      5     3 │        2       0 │     2     0      1 │      0.00
  TSX             1      3     3 │        0       0 │     3     0      0 │      0.00
- TypeScript      2      8     6 │        2       0 │     3     3      0 │      1.00
+ TypeScript      3     10     7 │        3       0 │     3     3      1 │      1.00
  ───────────────────────────────┼──────────────────┼────────────────────┼──────────
- Total           8     32    25 │        5       2 │    17     7      1 │      0.41
+ Total          11     37    29 │        6       2 │    20     7      2 │      0.35
  Lines = Code + Comments + Blanks; Production + Test + Other = Code; Test/prod = Test / Production (Code).
  Tests written in another language than the code they test skew per-language Test/prod.
 
  ────────────────────────────────────────────────────────────────────
  Folder                  Lines  Code │ Prod.  Test  Other │ Test/prod
  ────────────────────────────────────┼────────────────────┼──────────
+ service (direct files)      2     2 │     2     0      0 │      0.00
  service/experiments         2     1 │     0     0      1 │         -
  service/scripts             3     2 │     2     0      0 │      0.00
  service/src                 6     4 │     4     0      0 │      0.00
  service/tests               5     4 │     0     4      0 │         -
  web/src (direct files)      5     5 │     5     0      0 │      0.00
- web/src/orders             11     9 │     6     3      0 │      0.50
+ web/src/api                 2     1 │     0     0      1 │         -
+ web/src/orders             12    10 │     7     3      0 │      0.43
  ────────────────────────────────────┼────────────────────┼──────────
- Total                      32    25 │    17     7      1 │      0.41
+ Total                      37    29 │    20     7      2 │      0.35
  Production + Test + Other = Code; Test/prod = Test / Production (Code).
  Adaptive folder detail; rows cover measured source once.
 
  ─────────────────────────────────────────────
  Category                   Files  Lines  Code
  ─────────────────────────────────────────────
+ other:generated                1      2     1
  other:unclaimed                1      2     1
- production:implementation      4     18    15
+ production:build-tooling       1      2     2
+ production:implementation      5     19    16
  production:tooling             1      3     2
  test:test                      2      9     7
  Rows of one purpose add up to that purpose's Code; all rows add up to the total Code.
 
  Not source code: 2 data files (2 lines), 1 documentation file (3 lines); --files --output - lists each file's kind.
- Production from build modules: go 4 code lines in 1 module, npm 11 code lines in 1 module.
+ Production from build modules: go 4 code lines in 1 module, npm 12 code lines in 1 module.
  Unclaimed source: 1 code line in 1 file, here:
    service/experiments  1 code line  1 file
  To inspect or refine purpose classification, use locmetry --guide configure; --files --output - shows each file's rule.
@@ -108,12 +114,12 @@ locmetry --root acme-orders --subfolder web/src --no-user-config --no-color --fo
  ───────────────────────────────────────────────────────────────────────────────────────────────────
  Language    Files  Lines  Code │ Comments  Blanks │ Comment %  Comment density
  ───────────────────────────────┼──────────────────┼────────────────────────────────────────────────
- HTML            1      4     4 │        0       0 │      0.0%
+ HTML            2      5     5 │        0       0 │      0.0%
  TSX             1      3     3 │        0       0 │      0.0%
  TypeScript      1      4     3 │        1       0 │     25.0%  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
  JavaScript      0      1     1 │        0       0 │      0.0%
  ───────────────────────────────┼──────────────────┼────────────────────────────────────────────────
- Total           3     12    11 │        1       0 │      8.3%
+ Total           4     13    12 │        1       0 │      7.7%
  Lines = Code + Comments + Blanks; Comment % = Comments / (Code + Comments).
  Purposes shown: Production; Test and Other excluded.
  Bars: ▓ Comment %; the densest row fills the bar.
@@ -121,10 +127,10 @@ locmetry --root acme-orders --subfolder web/src --no-user-config --no-color --fo
  ─────────────────────────────────────────────────────────────────────────────────────────
  Folder                  Lines  Code │ Comment %  Comment density
  ────────────────────────────────────┼────────────────────────────────────────────────────
- web/src/orders              7     6 │     14.3%  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+ web/src/orders              8     7 │     12.5%  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
  web/src (direct files)      5     5 │      0.0%
  ────────────────────────────────────┼────────────────────────────────────────────────────
- Total                      12    11 │      8.3%
+ Total                      13    12 │      7.7%
  Comment % = Comments / (Code + Comments).
  Bars: ▓ Comment %; the densest row fills the bar.
 
@@ -145,13 +151,16 @@ locmetry --root acme-orders --config acme-orders/.locmetryrc --hidden true \
 ```output
 [
   "service/.hidden.py",
+  "service/Makefile",
   "service/experiments/probe.py",
   "service/ignored.py",
   "service/scripts/check.py",
   "service/src/main.go",
+  "web/src/api/client.ts",
   "web/src/index.html",
   "web/src/orders/Order.ts",
-  "web/src/orders/OrderView.tsx"
+  "web/src/orders/OrderView.tsx",
+  "web/src/orders/receipt.acmetpl"
 ]
 ```
 
@@ -178,36 +187,38 @@ jq '{
  Language    Files  Lines  Code │ Comments  Blanks │ Prod.  Test  Other │ Test/prod
  ───────────────────────────────┼──────────────────┼────────────────────┼──────────
  Go              2     11     8 │        1       2 │     4     4      0 │      1.00
- TypeScript      2      8     6 │        2       0 │     3     3      0 │      1.00
- HTML            1      4     4 │        0       0 │     4     0      0 │      0.00
+ TypeScript      3     10     7 │        3       0 │     3     3      1 │      1.00
+ HTML            2      5     5 │        0       0 │     5     0      0 │      0.00
  Python          2      5     3 │        2       0 │     2     0      1 │      0.00
  TSX             1      3     3 │        0       0 │     3     0      0 │      0.00
+ Makefile        1      2     2 │        0       0 │     2     0      0 │      0.00
  JavaScript      0      1     1 │        0       0 │     1     0      0 │      0.00
  ───────────────────────────────┼──────────────────┼────────────────────┼──────────
- Total           8     32    25 │        5       2 │    17     7      1 │      0.41
+ Total          11     37    29 │        6       2 │    20     7      2 │      0.35
  Lines = Code + Comments + Blanks; Production + Test + Other = Code; Test/prod = Test / Production (Code).
  Tests written in another language than the code they test skew per-language Test/prod.
 
  Code share  █ Production  ▓ Test  ░ Other
- Go          32.0%  ████████████████████▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
- TypeScript  24.0%  ███████████████▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
- HTML        16.0%  ████████████████████
- Python      12.0%  ██████████░░░░░
- TSX         12.0%  ███████████████
- JavaScript   4.0%  █████
+ Go          27.6%  ████████████████████▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+ TypeScript  24.1%  ███████████████▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░
+ HTML        17.2%  █████████████████████████
+ Python      10.3%  ██████████░░░░░
+ TSX         10.3%  ███████████████
+ Makefile     6.9%  ██████████
+ JavaScript   3.4%  █████
 
 {
   "document_type": "measurement",
   "schema_version": "3",
   "detail": "full",
   "source": {
-    "files": 8,
-    "code": 25,
-    "comments": 5,
+    "files": 11,
+    "code": 29,
+    "comments": 6,
     "blanks": 2,
-    "lines": 32
+    "lines": 37
   },
-  "physical_files": 11
+  "physical_files": 14
 }
 ```
 
@@ -228,8 +239,8 @@ locmetry --root acme-orders --no-user-config --format headline \
 ```output
 {
   "detail": "full",
-  "source_code": 25,
-  "files": 11
+  "source_code": 29,
+  "files": 14
 }
 ## Folder breakdown
 
@@ -239,15 +250,16 @@ contained language. Production + Test + Other = Code; Test/prod = Test / Product
 
 | Folder | Lines | **Code** | Production | Test | Other | Test/prod |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| . | 32 | 25 | 17 | 7 | 1 | 0.41 |
-| service | 16 | 11 | 6 | 4 | 1 | 0.67 |
+| . | 37 | 29 | 20 | 7 | 2 | 0.35 |
+| service | 18 | 13 | 8 | 4 | 1 | 0.50 |
 | service/experiments | 2 | 1 | 0 | 0 | 1 | - |
 | service/scripts | 3 | 2 | 2 | 0 | 0 | 0.00 |
 | service/src | 6 | 4 | 4 | 0 | 0 | 0.00 |
 | service/tests | 5 | 4 | 0 | 4 | 0 | - |
-| web | 16 | 14 | 11 | 3 | 0 | 0.27 |
-| web/src | 16 | 14 | 11 | 3 | 0 | 0.27 |
-| web/src/orders | 11 | 9 | 6 | 3 | 0 | 0.50 |
+| web | 19 | 16 | 12 | 3 | 1 | 0.25 |
+| web/src | 19 | 16 | 12 | 3 | 1 | 0.25 |
+| web/src/api | 2 | 1 | 0 | 0 | 1 | - |
+| web/src/orders | 12 | 10 | 7 | 3 | 0 | 0.43 |
 
 ## Build modules
 {
@@ -255,11 +267,11 @@ contained language. Production + Test + Other = Code; Test/prod = Test / Product
   "schema_version": "3",
   "detail": "headline",
   "source": {
-    "files": 8,
-    "code": 25,
-    "comments": 5,
+    "files": 11,
+    "code": 29,
+    "comments": 6,
     "blanks": 2,
-    "lines": 32
+    "lines": 37
   }
 }
 ```
@@ -307,4 +319,40 @@ MeasurementReport
 Workspace
 Comparison
 Explanation
+```
+
+## Find stale configuration
+
+Entries and exclusions that match nothing are reported, so policy does not silently outlive the code it describes. This candidate keeps the vendor exclusion but adds one for a removed folder and a rule for tools that moved; `--config` measures with it instead of the fixture policy. Both findings name the unused entry; the stale entries themselves decide no file.
+
+```bash
+source scripts/cli-demo-env.sh
+cat > stale.toml <<'TOML'
+version = 1
+
+[scope]
+exclude = ["service/third_party/**", "web/vendor/**"]
+
+[[rules]]
+id = "legacy-tools"
+match = ["service/tools/**"]
+kind = ["source"]
+purpose = "production"
+category = "tooling"
+reason = "Developer commands before they moved to service/scripts"
+TOML
+locmetry --root acme-orders --no-user-config --config stale.toml --format json \
+  | jq ".summary | {unused_entries, unused_exclusions}"
+
+```
+
+```output
+{
+  "unused_entries": [
+    "legacy-tools"
+  ],
+  "unused_exclusions": [
+    "web/vendor/**"
+  ]
+}
 ```

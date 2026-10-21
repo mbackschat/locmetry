@@ -30,6 +30,7 @@ Rule: tooling
 Stage: rule
 Counts: 2 code, 1 comments, 0 blanks, 3 lines
 Matching patterns: service/scripts/**
+Reason: Maintained check script that developers run before a commit
 ```
 
 ## Inspect selection states
@@ -312,6 +313,7 @@ sed '/^| .*Root.* |/d' explanation.md
 | **Stage** | rule |
 | **Counts** | 2 code, 1 comments, 0 blanks, 3 lines |
 | **Matching patterns** | service/scripts/** |
+| **Reason** | Maintained check script that developers run before a commit |
 ```
 
 ## Discover explanation syntax

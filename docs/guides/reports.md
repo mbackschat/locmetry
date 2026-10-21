@@ -66,7 +66,7 @@ For one path, use `locmetry --guide selection`. For historical evidence and part
 
 ## Common issues and useful queries
 
-These queries use the [README sample project](../../README.md#what-you-see), from the directory containing `acme-orders`. They require the optional external `jq` tool, not a Locmetry runtime dependency. Personal defaults are disabled for the synthetic examples. These are interactive inspection pipelines; the [CI recipe](#continuous-integration) demonstrates preserving partial status.
+These queries use a small synthetic project named `acme-orders`, with a `prototypes/` folder, run from the directory containing it. They require the optional external `jq` tool, not a Locmetry runtime dependency. Personal defaults are disabled for the synthetic examples. These are interactive inspection pipelines; the [CI recipe](#continuous-integration) demonstrates preserving partial status.
 
 ### “Unclaimed source”: which files make up that folder total?
 
