@@ -155,7 +155,7 @@ class GitGuardTests(unittest.TestCase):
         docs.mkdir(parents=True)
         for name in ["first", "second"]:
             (docs / f"{name}.md").write_text(HEADER)
-        (self.root / "docs/analytics-demo.md").write_text(HEADER)
+        (self.root / "docs/showcase.md").write_text(HEADER)
         artifacts = self.root.parent / (self.root.name + "-artifacts")
         self.addCleanup(shutil.rmtree, artifacts, True)
         visited = []
@@ -169,12 +169,12 @@ class GitGuardTests(unittest.TestCase):
 
         with patch.object(recorded, "REPOSITORY", self.root), \
                 patch.object(recorded, "GUIDES", {"first": [], "second": []}), \
-                patch.object(recorded, "SHOWCASE", ["docs/analytics-demo.md"]), \
+                patch.object(recorded, "SHOWCASE", ["docs/showcase.md"]), \
                 patch.object(recorded, "showcase_unavailable", return_value=None), \
                 patch.object(recorded, "replay", side_effect=replay), \
                 contextlib.redirect_stdout(io.StringIO()) as console:
             self.assertFalse(recorded.check(artifacts))
-        self.assertEqual(visited, ["first.md", "second.md", "analytics-demo.md"])
+        self.assertEqual(visited, ["first.md", "second.md", "showcase.md"])
         self.assertIn("Git", console.getvalue())
         self.assertIn("Total", console.getvalue())
         self.assertTrue((artifacts / "git-after.txt").exists())

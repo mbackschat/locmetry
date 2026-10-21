@@ -11,7 +11,7 @@
 
 Status: historical decision record — implemented. The showcase was implemented and verified locally on 2026-10-21: all eleven recorded guides replay against the pinned checkouts and the public Cargo suite passes; the documentation CI replay had not yet run, because the commits were not pushed. Archived on 2026-10-21 under the [retirement procedure](../README.md#retirement-procedure). The [showcase index](../../showcase/README.md) and the [showcase inputs](../../../examples/showcase/immich/README.md) own the current behavior.
 
-Two outcomes differ from the design below. Project-folder workspaces replaced the six member policies, as the update note under Policy Overlay records. The owner reversed the decision that the DuckDB cookbook capture stays self-contained: on 2026-10-21 both [analytics cookbooks](../../duckdb-cookbook.md) moved to recorded Immich releases, with a synthetic test for the cases Immich cannot show.
+Two outcomes differ from the design below. Project-folder workspaces replaced the six member policies, as the update note under Policy Overlay records. The owner reversed the decision that the DuckDB cookbook capture stays self-contained: on 2026-10-21 both [analytics cookbooks](https://github.com/mbackschat/locmetry/blob/8272abd21e21eb0a373c5f3ff77aa8f2d93c56b8/docs/duckdb-cookbook.md) moved to recorded Immich releases, with a synthetic test for the cases Immich cannot show.
 
 The sections below preserve the reviewed design and acceptance criteria. Their imperative wording, examples and stated limitations are historical evidence, not current guarantees. Do not update this body to track behavior; this record carries no live scope.
 
@@ -39,7 +39,7 @@ Owner decisions taken in the design discussion:
 
 | Scope | Content |
 | --- | --- |
-| Required | Pinned Immich inputs and a fetch contract; Locmetry-owned root and member policies plus a workspace file; README showcase sections measured on Immich; recorded showcase guides for root, workspace and compare; the [analytics demo](../../analytics-demo.md) on the Immich comparison; showcase replay in documentation CI; a README refresh script; the [Acme reference improvements](#acme-reference-improvements). |
+| Required | Pinned Immich inputs and a fetch contract; Locmetry-owned root and member policies plus a workspace file; README showcase sections measured on Immich; recorded showcase guides for root, workspace and compare; the [analytics demo](https://github.com/mbackschat/locmetry/blob/8272abd21e21eb0a373c5f3ff77aa8f2d93c56b8/docs/analytics-demo.md) on the Immich comparison; showcase replay in documentation CI; a README refresh script; the [Acme reference improvements](#acme-reference-improvements). |
 | Optional | None identified. |
 | Excluded | Removing Acme or its tests; vendoring Immich files; network access from `cargo test`, Locmetry or the recordings; a per-member configuration field in the workspace contract; Acme demonstrations of Git submodule hints, notebooks or nested modules. |
 
@@ -119,7 +119,7 @@ A draft policy of two overrides and six rules, each with a recorded reason, was 
 
 Every entry was used, and 216 lines remain unclaimed for review. Folder detail, `explain` on a generated file, the workspace summary across members and the `v3.2.0 → v3.3.4` comparison (+9,204 unconfigured source code lines with Locmetry 0.7.3) complete the story; `explain` shows the rule and reason behind each decision.
 
-The README shows these three steps; the former Acme sample-project tour becomes the [Immich policy tour](../../showcase/tour.md). The [DuckDB cookbook](../../duckdb-cookbook.md) capture stays self-contained so readers can run it without a download.
+The README shows these three steps; the former Acme sample-project tour becomes the [Immich policy tour](../../showcase/tour.md). The [DuckDB cookbook](https://github.com/mbackschat/locmetry/blob/8272abd21e21eb0a373c5f3ff77aa8f2d93c56b8/docs/duckdb-cookbook.md) capture stays self-contained so readers can run it without a download.
 
 The spike first ran Locmetry 0.7.3, which had no Dart module detector and no `*.e2e-spec` convention: 56,893 lines of Flutter code were unclaimed, `mobile` reported an implausible test/prod ratio of 3.69, and all 13,003 `e2e/src` lines counted as production. Both conventions were added before recording the showcase, so it demonstrates shipped behavior; the draft policy then needed two fewer rules for the same configured result.
 
@@ -155,4 +155,4 @@ These changes land after the README tables move to Immich, as their own commit. 
 
 ## Open Decisions
 
-None. Decisions taken 2026-10-21 after the narrative spike: the README names Tokei, cloc and scc with their versions so readers can reproduce the comparison; documentation CI fetches the pinned tags, cached by commit, and replays the showcase recordings in a step separate from the Acme replay; the [analytics demo](../../analytics-demo.md) moves to the `v3.2.0 → v3.3.4` comparison.
+None. Decisions taken 2026-10-21 after the narrative spike: the README names Tokei, cloc and scc with their versions so readers can reproduce the comparison; documentation CI fetches the pinned tags, cached by commit, and replays the showcase recordings in a step separate from the Acme replay; the [analytics demo](https://github.com/mbackschat/locmetry/blob/8272abd21e21eb0a373c5f3ff77aa8f2d93c56b8/docs/analytics-demo.md) moves to the `v3.2.0 → v3.3.4` comparison.

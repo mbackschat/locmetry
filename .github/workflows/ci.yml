@@ -46,8 +46,7 @@ jobs:
         id: showboat
         if: matrix.os == 'ubuntu-24.04'
         run: |
-          uv run --no-project --python 3.11 \
-            --with showboat==0.6.1 --with duckdb==1.5.6 \
+          uv run --no-project --python 3.11 --with showboat==0.6.1 \
             python scripts/check-recorded-guides.py --set reference --artifacts-dir "$RUNNER_TEMP/showboat"
       - name: Upload Showboat failure evidence
         if: failure() && matrix.os == 'ubuntu-24.04' && steps.showboat.outcome == 'failure'
@@ -69,9 +68,7 @@ jobs:
         if: matrix.os == 'ubuntu-24.04'
         run: |
           bash scripts/fetch-showcase.sh
-          uv run --no-project --python 3.11 \
-            --with showboat==0.6.1 --with duckdb==1.5.6 --with duckdb-cli==1.5.6 \
-            --with pandas==3.0.6 --with polars==2.0.0 \
+          uv run --no-project --python 3.11 --with showboat==0.6.1 \
             python scripts/check-recorded-guides.py --set showcase --artifacts-dir "$RUNNER_TEMP/showcase"
       - name: Upload showcase failure evidence
         if: failure() && matrix.os == 'ubuntu-24.04' && steps.showcase.outcome == 'failure'
@@ -81,12 +78,6 @@ jobs:
           path: ${{ runner.temp }}/showcase
           if-no-files-found: warn
           retention-days: 7
-      - name: Check analytics recipes
-        if: matrix.os == 'ubuntu-24.04'
-        run: |
-          uv run --no-project --python 3.11 \
-            --with duckdb==1.5.6 --with pandas==3.0.6 --with polars==2.0.0 \
-            python scripts/test_analytics_cookbooks.py
 
   # Fails when a new dependency brings a licence the release may not ship.
   licenses:

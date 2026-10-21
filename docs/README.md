@@ -18,8 +18,5 @@ Start with the workflow or contract relevant to your task. Status tables in the 
 
 - [Immich showcase recordings](showcase/README.md): measure, explain, combine and compare a real multi-language project at pinned releases.
 - [Recorded CLI guides](cli/README.md): one replayable Showboat guide per command, with option coverage and regeneration instructions.
-- [DuckDB cookbook](duckdb-cookbook.md): answer questions across Immich releases, components, owners and files with SQL.
-- [pandas and Polars cookbook](dataframe-cookbook.md): the same reports in Python dataframes.
-- [Recorded analytics demo](analytics-demo.md): one Python script over workspace captures of two Immich releases.
 
 - [Author Showboat guides](showboat-authoring.md): recording, wrapping, isolation, regeneration and verification rules for contributors and agents.

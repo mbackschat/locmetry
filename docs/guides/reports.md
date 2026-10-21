@@ -209,4 +209,4 @@ printf '%s\n' "$report" | jq -r '
 
 ## Analyze saved measurements
 
-Full schema-3 measurements identify their document type and projection explicitly. Use the repository's [DuckDB cookbook](../duckdb-cookbook.md) for SQL views, release trends, component and ownership breakdowns and file-level changes, or the [pandas and Polars cookbook](../dataframe-cookbook.md) for dataframe examples. These are optional external workflows; Locmetry has no analytics runtime dependency. Both cookbooks record their queries on two [Immich](../showcase/README.md) releases; the [recorded demo](../analytics-demo.md) combines them in one Python script over workspace captures.
+Full schema-3 measurements identify their document type and projection explicitly, so any JSON tool, such as jq, DuckDB or pandas, can read them. The `breakdown` rows add up to the summary, and `--files` adds one record per file. These are optional external workflows; Locmetry has no analytics runtime dependency.

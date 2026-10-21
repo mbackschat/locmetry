@@ -11,7 +11,7 @@ import sys
 RECORDING = "docs/cli/root.md"
 VERSION_FILES = ("Cargo.toml", "Cargo.lock", RECORDING)
 # The pinned replay of the command guides, as the CI documentation job runs it.
-REPLAY = ("uv", "run", "--no-project", "--python", "3.11", "--with", "showboat==0.6.1", "--with", "duckdb==1.5.6",
+REPLAY = ("uv", "run", "--no-project", "--python", "3.11", "--with", "showboat==0.6.1",
           "python", "scripts/check-recorded-guides.py", "--set", "reference")
 ORIGINS = ("https://github.com/mbackschat/locmetry.git", "git@github.com:mbackschat/locmetry.git")
 VERSION = r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)"

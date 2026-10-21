@@ -8,7 +8,6 @@ exclude = ["examples/cli-workspace/**"]
 tooling = "Commands that maintain the repository, prepare releases and review measurements"
 distribution = "Packaging, installation and third-party notice generation"
 test-infrastructure = "Execution, preparation and evaluation of verification workflows"
-example = "Maintained analytics recipes outside implementation and verification totals"
 
 [[rules]]
 id = "repository-tooling"
@@ -39,7 +38,6 @@ match = [
     "scripts/cli-demo-env.sh",
     "scripts/fetch-showcase.sh",
     "scripts/showcase-env.sh",
-    "scripts/analytics-env.sh",
     "scripts/agent-explorability.py",
     "scripts/agent-routing-study.py",
     "scripts/full-help-study.py",
@@ -51,11 +49,3 @@ kind = ["source"]
 purpose = "test"
 category = "test-infrastructure"
 reason = "These scripts prepare, execute or assess documentation and agent-workflow checks; see [self-measurement design](docs/self-measurement.md)"
-
-[[rules]]
-id = "analytics-examples"
-match = ["examples/analytics/**"]
-kind = ["source"]
-purpose = "other"
-category = "example"
-reason = "User-facing analytics recipes remain counted without contributing to implementation or test totals; see the [DuckDB](docs/duckdb-cookbook.md) and [dataframe](docs/dataframe-cookbook.md) cookbooks"

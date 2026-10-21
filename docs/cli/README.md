@@ -15,7 +15,7 @@ Build the current executable with `cargo build --locked`. From the repository ro
 
 Commands and captured output are real. `jq` projections select meaningful JSON fields, and visible `sed` expressions omit variable location/time footers or select report sections. `demo_wrap` wraps displayed text at whitespace to 120 characters; JSON is pretty-printed with jq. The verifier enforces a 120-character limit on fenced commands and output. Complete exported files retain their original metadata. Comparison table examples also trim trailing padding. These projections are part of the recorded command, not edits to its output. Explicit formats avoid depending on whether stdout is a terminal. Styling suppression is demonstrated; the guides do not verify visual palettes.
 
-Bash and jq are needed to execute the examples. Showboat is needed only for recording or replay; the DuckDB program, its Python package, pandas and Polars only for the [analytics cookbooks](../duckdb-cookbook.md) and the [analytics demo](../analytics-demo.md), which replay with the showcase. Use the pinned commands below to obtain these optional development tools through uv's external cache. Locmetry's Rust dependencies, runtime and releases do not include them. No virtual environment, installed package, Python dependency manifest or lockfile belongs in Git.
+Bash and jq are needed to execute the examples. Showboat is needed only for recording or replay. Use the pinned commands below to obtain this optional development tool through uv's external cache. Locmetry's Rust dependencies, runtime and releases do not include them. No virtual environment, installed package, Python dependency manifest or lockfile belongs in Git.
 
 ## Option coverage
 
@@ -45,13 +45,11 @@ After changing the executable, fixture or recorded guides, build once and replay
 
 ```sh
 cargo build --locked
-uv run --no-project --python 3.11 \
-  --with showboat==0.6.1 --with duckdb==1.5.6 --with duckdb-cli==1.5.6 \
-  --with pandas==3.0.6 --with polars==2.0.0 \
+uv run --no-project --python 3.11 --with showboat==0.6.1 \
   python scripts/check-recorded-guides.py
 ```
 
-The same replay runs in the Linux documentation CI job on every pull request and push to `main`. The script checks option coverage, then verifies all four command guides, followed by the [Immich showcase recordings](../showcase/README.md), the analytics cookbooks and the analytics demo, which need the pinned checkouts from `bash scripts/fetch-showcase.sh`. `--set reference` replays only these command guides; without the checkouts, the default `--set all` fails each showcase document with the fetch command. It reports each document's result and elapsed time, followed by the total. Changed output or a failed command fails the check; remaining documents still run so one CI attempt collects all failures. CI reuses the debug executable built by its preceding Cargo tests.
+The same replay runs in the Linux documentation CI job on every pull request and push to `main`. The script checks option coverage, then verifies all four command guides, followed by the [Immich showcase recordings](../showcase/README.md), which need the pinned checkouts from `bash scripts/fetch-showcase.sh`. `--set reference` replays only these command guides; without the checkouts, the default `--set all` fails each showcase document with the fetch command. It reports each document's result and elapsed time, followed by the total. Changed output or a failed command fails the check; remaining documents still run so one CI attempt collects all failures. CI reuses the debug executable built by its preceding Cargo tests.
 
 Each document is replayed once with a separate candidate destination. Successful candidates are discarded; failed candidates and diagnostic logs remain in a temporary evidence directory, whose path is printed on failure. Use `--artifacts-dir /absolute/path/outside/checkout` to choose that directory. Validation errors and timeouts may leave no complete candidate; inspect the log before using one. CI uploads the logs, summary and available failed candidates as `showboat-failure-evidence`, retained for seven days. No generated candidate is automatically accepted or committed.
 
@@ -67,4 +65,4 @@ diff -u docs/cli/root.md /tmp/locmetry-root-candidate.md
 
 A mismatch returns a nonzero status while producing the candidate; inspect the diagnostic to distinguish output drift from execution failure. Edit explanatory prose or commands when needed, then regenerate output by executing them. Do not hand-edit captured output. To recreate a document through Showboat's authoring commands, use `showboat extract docs/cli/root.md --filename /tmp/locmetry-root-recreated.md` and execute the emitted commands from the repository root. Showboat may refresh its document creation timestamp.
 
-If a measurement change affects the fixture's counts, update the [fixture's](../../examples/cli-workspace/README.md) independently known totals and run `bash scripts/check-doc-examples.sh`. If it affects Immich, replay the [showcase recordings](../showcase/README.md) and refresh the README excerpts with `python3 scripts/refresh-readme-showcase.py`. Analytics recipe checks and their optional tool versions are documented in the [DuckDB cookbook](../duckdb-cookbook.md#verification).
+If a measurement change affects the fixture's counts, update the [fixture's](../../examples/cli-workspace/README.md) independently known totals and run `bash scripts/check-doc-examples.sh`. If it affects Immich, replay the [showcase recordings](../showcase/README.md) and refresh the README excerpts with `python3 scripts/refresh-readme-showcase.py`.

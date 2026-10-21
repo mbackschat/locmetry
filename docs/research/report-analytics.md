@@ -2,9 +2,11 @@
 
 Evaluated 2026-10-20 using synthetic Locmetry reports, DuckDB 1.5.6, Python 3.11.14, pandas 3.0.6, Polars 2.0.0 and Showboat 0.6.1. The initial spike used measurement schema 2; the published recipes and their executable checks use schema 3. Installed tools, raw reports and benchmark scratch data are local-only. This published assessment contains no private project data.
 
+Update 2026-10-21: the owner removed the cookbooks, their loaders and the demo; links below address their last version, and the [deferred cookbook design](../plans/analytics-cookbooks.md) describes their recreation.
+
 ## Recommendation
 
-Keep analytics outside Locmetry. Provide a [DuckDB cookbook](../duckdb-cookbook.md) for multi-report SQL and a smaller [pandas/Polars cookbook](../dataframe-cookbook.md) demonstrating that the report contract is tool-neutral. Use ordinary JSON exports, caller-managed snapshot identity and explicit types. No database, Python runtime or analytics dependency belongs in the executable.
+Keep analytics outside Locmetry. Provide a [DuckDB cookbook](https://github.com/mbackschat/locmetry/blob/8272abd21e21eb0a373c5f3ff77aa8f2d93c56b8/docs/duckdb-cookbook.md) for multi-report SQL and a smaller [pandas/Polars cookbook](https://github.com/mbackschat/locmetry/blob/8272abd21e21eb0a373c5f3ff77aa8f2d93c56b8/docs/dataframe-cookbook.md) demonstrating that the report contract is tool-neutral. Use ordinary JSON exports, caller-managed snapshot identity and explicit types. No database, Python runtime or analytics dependency belongs in the executable.
 
 | Tool | Useful fit | Cost or limitation observed in this spike |
 | --- | --- | --- |
@@ -23,7 +25,7 @@ The initial correctness corpus contained eight actual synthetic exports covering
 
 A bounded timing probe repeated one report into 200 documents: 20,000 breakdown rows and 7,872,800 JSON bytes. DuckDB JSON read plus grouping took roughly 38–43 ms; Python JSON loading, normalization and the first grouping took about 122 ms with pandas and 107 ms with Polars. Different import/process boundaries, repeated content, caching and a single-machine trial prevent a fair general speed ranking. These measurements establish feasibility for this small workload; they do not establish large-portfolio memory or throughput limits.
 
-The maintained [cookbook assertions](../../scripts/test_analytics_cookbooks.py) execute the published snippets against fresh synthetic captures. They check independent totals, ordered changes, folder-boundary ownership matching, empty snapshots, absent versus empty file detail, partial observations, malformed envelopes, duplicate manifest identity and embedded-language contributions. Dataframe results are compared with SQL, and aggregate sums are reconciled with snapshot summaries. This is a stronger correctness basis than keeping a timing result as a permanent expectation.
+The maintained [cookbook assertions](https://github.com/mbackschat/locmetry/blob/8272abd21e21eb0a373c5f3ff77aa8f2d93c56b8/scripts/test_analytics_cookbooks.py) execute the published snippets against fresh synthetic captures. They check independent totals, ordered changes, folder-boundary ownership matching, empty snapshots, absent versus empty file detail, partial observations, malformed envelopes, duplicate manifest identity and embedded-language contributions. Dataframe results are compared with SQL, and aggregate sums are reconciled with snapshot summaries. This is a stronger correctness basis than keeping a timing result as a permanent expectation.
 
 ## Contract findings
 
@@ -37,6 +39,6 @@ Keep repository identity, snapshot ID and sequence in a caller-owned manifest. R
 
 [Simon Willison's introduction](https://simonwillison.net/2026/feb/10/showboat-and-rodney/) describes executable demonstrations: record commands and real output, then replay them. This suits both the cookbook and the stable CLI surface. A local trial verified a CLI export and DuckDB query; changing the query caused verification to fail, confirming that replay detects output drift.
 
-The resulting [analytics demo](../analytics-demo.md) and four [command guides](../cli/README.md) use Showboat directly, rather than a code-exploration walkthrough workflow. They share the real synthetic workspace with the README and tour. Commands explicitly omit variable timestamps/absolute paths from their displayed projections; saved reports retain those fields. Fresh temporary copies make examples independent, and a separate option-coverage guard detects newly added long options. Verification runs locally after relevant changes and in Linux documentation CI. Expected-output assertions remain separate: an unchanged replay alone is not an independent oracle for correctness.
+The resulting [analytics demo](https://github.com/mbackschat/locmetry/blob/8272abd21e21eb0a373c5f3ff77aa8f2d93c56b8/docs/analytics-demo.md) and four [command guides](../cli/README.md) use Showboat directly, rather than a code-exploration walkthrough workflow. They share the real synthetic workspace with the README and tour. Commands explicitly omit variable timestamps/absolute paths from their displayed projections; saved reports retain those fields. Fresh temporary copies make examples independent, and a separate option-coverage guard detects newly added long options. Verification runs locally after relevant changes and in Linux documentation CI. Expected-output assertions remain separate: an unchanged replay alone is not an independent oracle for correctness.
 
 Showboat is an optional pinned documentation tool, installed through uv outside the repository. Its output is ordinary Markdown. No hosted service, generated image, vendored dependency or committed environment is required.

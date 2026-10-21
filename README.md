@@ -29,8 +29,6 @@ These excerpts measure [Immich](https://github.com/immich-app/immich) `v3.3.4`, 
 
 ▶️ **The [showcase recordings](docs/showcase/README.md) replay measurement, workspace and comparison on Immich; the [command guides](docs/cli/README.md) cover every option on a small fixture.**
 
-📊 **Ask your own questions of the reports:** the 🦆 [DuckDB cookbook](docs/duckdb-cookbook.md) and the 🐼 [pandas and Polars cookbook](docs/dataframe-cookbook.md) analyze two Immich releases step by step, with real output.
-
 ### Locmetry answers "how much source, and how much of it is tests"
 
 ```sh
@@ -274,16 +272,6 @@ The [comparison guide](docs/guides/compare.md) covers changed scope, producer ve
 
 For file-level recognition and classification changes, run `compare-locmetry-files.sh before.json after.json`. This optional Bash [helper](scripts/compare-locmetry-files.sh) accepts two full `--files` reports and ships in release archives and Homebrew installations starting with 0.7.3. Only the helper requires `jq`; install it separately if needed. Locmetry's native commands remain independent of `jq`. See the [transition workflow](docs/guides/compare.md#inspect-configuration-transitions) for setup, output and evidence limits.
 
-## Analyze saved measurements
-
-Locmetry's full JSON reports are data you can query. Load several of them into an analysis tool and ask what one report cannot answer: How did the code change between releases, and where? How much of it is generated? How much code does each team own? Which new files are the largest? What exactly did a policy change move? Both cookbooks answer such questions for two [Immich](docs/showcase/README.md) releases, explain every step for newcomers and show the real output.
-
-- 🦆 **[DuckDB cookbook](docs/duckdb-cookbook.md)**: SQL over a local database file, covering composition, generated code, components and their tests, growth between releases, ownership, new and changed files, a policy review and Parquet export.
-- 🐼 **[pandas and Polars cookbook](docs/dataframe-cookbook.md)**: the same reports as Python dataframes, covering components, comment density and change between releases, with identical results in both libraries.
-- ▶️ **[Analytics demo](docs/analytics-demo.md)**: one Python script over workspace captures of both releases, the shape of a scheduled job or notebook.
-
-The tools are optional; Locmetry itself has no analytics dependency. Capture reports with the current executable; reports of earlier schema versions must be recaptured.
-
 ## How classification works
 
 Locmetry embeds Tokei for counting and applies project policy to each file. Purpose (`production`, `test`, `other`), category (such as `implementation` or `tooling`) and content kind (source, data, documentation or unknown) are separate dimensions. `other` means neither production nor test; code no stage claimed is `other` with category `unclaimed`.
@@ -373,7 +361,7 @@ Tests still win over ordinary rules; an override is needed only to beat a conven
 
 The [configuration guide](docs/guides/configure.md) covers overrides, custom categories, language mappings and evidence-based review. [Personal defaults](docs/PRODUCT.md#user-defaults) can supply exclusions and language mappings across projects; they cannot assign purposes or categories.
 
-Locmetry's own [.locmetryrc](.locmetryrc) is a maintained example: it excludes the synthetic demonstration workspace and distinguishes operational tooling, verification infrastructure and analytics examples. [Self-measurement design](docs/self-measurement.md) explains the decisions and how to verify them.
+Locmetry's own [.locmetryrc](.locmetryrc) is a maintained example: it excludes the synthetic demonstration workspace and distinguishes operational tooling, distribution and verification infrastructure. [Self-measurement design](docs/self-measurement.md) explains the decisions and how to verify them.
 
 For a production-rule change covered by the example in `locmetry --help`, inspect existing configuration and measure current decisions, adapt the paths and category, then run the displayed verification command. Reading a guide or schema first is optional for that route. Use `locmetry --guide configure` or `locmetry --schema config` for exclusions, overrides, intentional Other, or semantics not shown there. Verify per-file decisions and unresolved review items before concluding. Guides and schemas are available from the installed binary without a network connection.
 

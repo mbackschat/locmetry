@@ -19,7 +19,6 @@ The synthetic workspace remains independently measurable. Configuration discover
 | Documentation maintenance (indexes and the README's Immich excerpts), release preparation and saved-measurement review | Production / `tooling` | These maintained commands operate the repository, prepare distribution and inspect measurement evidence. |
 | Source under `packaging/` | Production / `distribution` | Formula generation, installation definitions and notice templates are maintained distribution code. |
 | Named documentation checks, demo support and agent-evaluation harnesses | Test / `test-infrastructure` | They execute, prepare or assess verification workflows. |
-| Source under `examples/analytics/` | Other / `example` | Maintained user-facing recipes stay counted and visible without entering the implementation/test ratio. |
 
 The configuration owns the exact path lists and category descriptions. Script entries name known responsibilities rather than assigning every future file under `scripts/` to production or test. New unrecognized responsibilities should surface as unclaimed source and prompt a review.
 
