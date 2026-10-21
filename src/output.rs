@@ -1793,27 +1793,25 @@ impl TableSelection {
 
     /// Names what the tables leave out, so filtered totals are not read as
     /// complete ones. Purpose titles keep "Other" from reading as "others".
-    fn notes(&self, purposes: &[Purpose], languages: &[String]) -> Vec<String> {
+    fn notes(&self, purposes: &[Purpose]) -> Vec<String> {
+        // The command and the table already name what is shown, so a note
+        // names only what is left out, under a subtle label.
+        let note = |names: Vec<String>, noun: &str, code: u64| {
+            format!(
+                "Not shown ({}): {} ({}).",
+                plural(names.len() as u64, noun),
+                listed(names),
+                counted(code, "code line")
+            )
+        };
         let mut notes = Vec::new();
         if let Some(code) = self.purposes_excluded {
-            let titles = |purposes: Vec<Purpose>| {
-                listed(
-                    purposes
-                        .into_iter()
-                        .map(|p| purpose_title(p).to_string())
-                        .collect(),
-                )
-            };
             let excluded = Purpose::ALL
                 .into_iter()
                 .filter(|purpose| !purposes.contains(purpose))
+                .map(|purpose| purpose_title(purpose).to_string())
                 .collect();
-            notes.push(format!(
-                "Purposes shown: {}; {} excluded ({}).",
-                titles(purposes.to_vec()),
-                titles(excluded),
-                counted(code, "code line")
-            ));
+            notes.push(note(excluded, "purpose", code));
         }
         if !self.languages_excluded.is_empty() {
             // The largest name the bulk of what is missing; a long tail only
@@ -1835,15 +1833,8 @@ impl TableSelection {
             if excluded > named {
                 names.push(format!("{} more", excluded - named));
             }
-            notes.push(format!(
-                "Languages shown: {}; {} excluded ({}).",
-                listed(languages.to_vec()),
-                listed(names),
-                counted(
-                    self.languages_excluded.iter().map(|(_, code)| code).sum(),
-                    "code line"
-                )
-            ));
+            let code = self.languages_excluded.iter().map(|(_, code)| code).sum();
+            notes.push(note(names, "language", code));
         }
         notes
     }
@@ -1856,25 +1847,6 @@ fn listed(mut names: Vec<String>) -> String {
         Some(last) if names.is_empty() => last,
         Some(last) => format!("{} and {last}", names.join(", ")),
     }
-}
-
-/// The footer's account of a table selection that leaves source out, such as
-/// `purposes: production; languages: Rust`; `None` when tables show everything.
-pub fn table_selection(
-    rows: &[FileRecord],
-    purposes: &[Purpose],
-    languages: &[String],
-) -> Option<String> {
-    let mut parts = Vec::new();
-    if purposes.len() < Purpose::ALL.len() {
-        let names: Vec<String> = purposes.iter().map(Purpose::to_string).collect();
-        parts.push(format!("purposes: {}", names.join(", ")));
-    }
-    let kept = rows.iter().filter(|row| purpose_selected(row, purposes));
-    if !excluded_languages(kept, languages).is_empty() {
-        parts.push(format!("languages: {}", languages.join(", ")));
-    }
-    (!parts.is_empty()).then(|| parts.join("; "))
 }
 
 /// Bars for terminal tables, with the columns available to them.
@@ -2015,7 +1987,7 @@ pub fn render_table_with_options(
     if columns.ratio() == Ratio::TestPerProduction {
         legends.push(LANGUAGE_RATIO_NOTE.into());
     }
-    legends.extend(selection.notes(&purposes, &selected_languages));
+    legends.extend(selection.notes(&purposes));
     for text in legends {
         output += &legend(&text);
     }
@@ -2860,16 +2832,16 @@ mod tests {
                 .collect(),
         };
         assert_eq!(
-            selection.notes(&Purpose::ALL, &["Rust".to_string(), "Go".to_string()]),
-            ["Languages shown: Rust and Go; A, B, C, D, E and 2 more excluded (7,000 code lines)."]
+            selection.notes(&Purpose::ALL),
+            ["Not shown (languages): A, B, C, D, E and 2 more (7,000 code lines)."]
         );
         let six = TableSelection {
             languages_excluded: selection.languages_excluded[..6].to_vec(),
             ..selection
         };
         assert_eq!(
-            six.notes(&Purpose::ALL, &["Rust".to_string()]),
-            ["Languages shown: Rust; A, B, C, D, E and F excluded (6,000 code lines)."]
+            six.notes(&Purpose::ALL),
+            ["Not shown (languages): A, B, C, D, E and F (6,000 code lines)."]
         );
     }
 

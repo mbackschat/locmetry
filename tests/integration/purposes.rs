@@ -59,6 +59,13 @@ fn cells(text: &str, label: &str) -> Vec<String> {
 
 /// Selecting production counts only production source: Comments become its
 /// comments, other purposes leave no rows, and Comment % takes Test/prod's place.
+/// The notes under the language table name what a filter leaves out; the
+/// footer keeps only location and time, so the selection is not repeated.
+fn unfiltered_footer(text: &str) -> bool {
+    text.lines()
+        .any(|line| line.starts_with("Root: ") && !line.contains(';'))
+}
+
 #[test]
 fn production_only_tables_count_production_source_and_show_comment_share() {
     let text = table(&[
@@ -91,12 +98,9 @@ fn production_only_tables_count_production_source_and_show_comment_share() {
     assert!(text.contains(
         " Lines = Code + Comments + Blanks; Comment % = Comments / (Code + Comments).\n"
     ));
-    assert!(text.contains(" Purposes shown: Production; Test and Other excluded (2 code lines).\n"));
+    assert!(text.contains(" Not shown (purposes): Test and Other (2 code lines).\n"));
     assert!(!text.contains("Test/prod"), "{text}");
-    assert!(
-        text.contains("; purposes: production\nMeasured at: "),
-        "{text}"
-    );
+    assert!(unfiltered_footer(&text), "{text}");
 }
 
 /// The ratio follows the selection: Test/prod needs both of its purposes.
@@ -112,7 +116,7 @@ fn selected_purposes_keep_their_columns_and_choose_the_ratio() {
         ["Rust", "2", "5", "3", "2", "0", "2", "1", "0.50"]
     );
     assert!(text.contains("Production + Test = Code; Test/prod = Test / Production (Code)."));
-    assert!(text.contains(" Purposes shown: Production and Test; Other excluded (1 code line).\n"));
+    assert!(text.contains(" Not shown (purpose): Other (1 code line).\n"));
 
     let text = table(&["--format", "table", "--table-purpose", "other,test"]);
     assert_eq!(
@@ -166,8 +170,8 @@ fn language_selection_counts_only_those_languages_and_names_the_rest() {
         "{text}"
     );
     assert_eq!(cells(&text, "src")[1..3], ["3", "2"]);
-    assert!(text.contains(" Languages shown: Rust; Python excluded (1 code line).\n"));
-    assert!(text.contains("; languages: Rust\nMeasured at: "), "{text}");
+    assert!(text.contains(" Not shown (language): Python (1 code line).\n"));
+    assert!(unfiltered_footer(&text), "{text}");
 }
 
 /// Purposes filter first and languages then, so the two notes' excluded code
@@ -183,12 +187,9 @@ fn purpose_and_language_notes_reconcile_with_the_full_total() {
         "Python",
     ]);
     assert_eq!(cells(&text, "Total")[3], "1");
-    assert!(text.contains(" Purposes shown: Production and Other; Test excluded (1 code line).\n"));
-    assert!(text.contains(" Languages shown: Python; Rust excluded (2 code lines).\n"));
-    assert!(
-        text.contains("; purposes: production, other; languages: Python\nMeasured at: "),
-        "{text}"
-    );
+    assert!(text.contains(" Not shown (purpose): Test (1 code line).\n"));
+    assert!(text.contains(" Not shown (language): Rust (2 code lines).\n"));
+    assert!(unfiltered_footer(&text), "{text}");
 }
 
 /// An embedded language keeps only its own lines; the host file it lives in
@@ -222,7 +223,7 @@ fn embedded_language_selection_keeps_only_the_embedded_lines() {
         - 1;
     assert!(
         text.contains(&format!(
-            " Languages shown: JavaScript; HTML, Rust and Python excluded ({excluded} code lines).\n"
+            " Not shown (languages): HTML, Rust and Python ({excluded} code lines).\n"
         )),
         "{text}"
     );
