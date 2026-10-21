@@ -1,6 +1,7 @@
 """Prepare a release; --publish also commits, tags and pushes after verification."""
 
 import argparse
+import datetime
 from pathlib import Path
 import re
 import subprocess
@@ -9,7 +10,9 @@ import sys
 # The root command guide records `--version` and guide-source output, which
 # name the executable version; the CI replay rejects it after any bump.
 RECORDING = "docs/cli/root.md"
-VERSION_FILES = ("Cargo.toml", "Cargo.lock", RECORDING)
+CHANGELOG = "CHANGELOG.md"
+VERSION_FILES = ("Cargo.toml", "Cargo.lock", RECORDING, CHANGELOG)
+COMPARE = "https://github.com/mbackschat/locmetry/compare/"
 # The pinned replay of the command guides, as the CI documentation job runs it.
 REPLAY = ("uv", "run", "--no-project", "--python", "3.11", "--with", "showboat==0.6.1",
           "python", "scripts/check-recorded-guides.py", "--set", "reference")
@@ -43,7 +46,44 @@ def crate_version(text):
     return match.group(1)
 
 
-def release_files(original, version):
+def release_date(changelog, version, today):
+    """The date a preparation already recorded for `version`, else `today`."""
+    match = re.search(rf"(?m)^## \[{re.escape(version)}\] - (\d{{4}}-\d{{2}}-\d{{2}})$", changelog)
+    return match.group(1) if match else today
+
+
+def release_changelog(text, current, version, date):
+    """Moves the Unreleased entries under `version` and extends the compare links.
+
+    Keep a Changelog keeps an empty Unreleased heading and one link per version
+    (https://keepachangelog.com/en/1.1.0/). Already prepared text is unchanged.
+    """
+    if re.search(rf"(?m)^## \[{re.escape(version)}\] - ", text):
+        return text
+    heading = "## [Unreleased]\n"
+    if text.count(heading) != 1:
+        raise ReleaseError(f"{CHANGELOG} needs one '## [Unreleased]' section.")
+    unreleased = text.split(heading, 1)[1].split("\n## [", 1)[0]
+    if not re.search(r"(?m)^- ", unreleased):
+        raise ReleaseError(f"{CHANGELOG} lists no Unreleased changes for {version}.")
+    link = f"[Unreleased]: {COMPARE}v{current}...HEAD\n"
+    if text.count(link) != 1:
+        raise ReleaseError(f"{CHANGELOG} lacks the link {link.strip()}")
+    text = text.replace(heading, f"{heading}\n## [{version}] - {date}\n", 1)
+    return text.replace(link, f"[Unreleased]: {COMPARE}v{version}...HEAD\n[{version}]: {COMPARE}v{current}...v{version}\n")
+
+
+def release_notes(changelog, version):
+    """The entries of `version`, as the GitHub release text."""
+    parts = re.split(rf"(?m)^## \[{re.escape(version)}\] - .*\n", changelog)
+    if len(parts) != 2:
+        raise ReleaseError(f"{CHANGELOG} has no section for {version}.")
+    notes = re.split(r"(?m)^## \[|^\[Unreleased\]: ", parts[1])[0].strip() + "\n"
+    # A release page resolves relative links against /releases/tag/, so pin them to the tag.
+    return re.sub(r"\]\((?![a-z]+:|#)", f"](https://github.com/mbackschat/locmetry/blob/v{version}/", notes)
+
+
+def release_files(original, version, today):
     current = crate_version(original["Cargo.toml"])
     if version_number(version) < version_number(current):
         raise ReleaseError(f"Refusing downgrade from {current} to {version}.")
@@ -58,25 +98,29 @@ def release_files(original, version):
     updated[RECORDING], count = recorded.subn(rf"\g<1>{version}", original[RECORDING])
     if not count:
         raise ReleaseError(f"{RECORDING} records no locmetry {current} output to update.")
+    date = release_date(original[CHANGELOG], version, today)
+    updated[CHANGELOG] = release_changelog(original[CHANGELOG], current, version, date)
     return updated
 
 
-def prepare(root, version):
+def prepare(root, version, today=None):
     original = {name: (root / name).read_text() for name in VERSION_FILES}
-    updated = release_files(original, version)
+    updated = release_files(original, version, today or datetime.date.today().isoformat())
     for name, contents in updated.items():
         if contents != original[name]:
             (root / name).write_text(contents)
 
 
-def check_worktree(root, version):
+def check_worktree(root, version, today=None):
     changed = set(git(root, "diff", "HEAD", "--name-only").splitlines())
     untracked = git(root, "ls-files", "--others", "--exclude-standard")
     if untracked or changed - set(VERSION_FILES):
         raise ReleaseError("Commit unrelated changes before releasing; untracked files are not included.")
     if changed:
         original = {name: subprocess.check_output(["git", "show", f"HEAD:{name}"], cwd=root, text=True) for name in VERSION_FILES}
-        expected = release_files(original, version)
+        # The date comes from the prepared changelog, so a resumed release matches.
+        date = release_date((root / CHANGELOG).read_text(), version, today or datetime.date.today().isoformat())
+        expected = release_files(original, version, date)
         if git(root, "diff", "HEAD", "--summary") or any((root / name).read_text() != expected[name] for name in VERSION_FILES):
             raise ReleaseError("Dirty release files contain edits beyond the requested version update.")
 
@@ -172,10 +216,16 @@ def execute(root, version, publish):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("version", help="stable version without v, e.g. 0.4.1")
-    parser.add_argument("--publish", action="store_true", help="commit, tag and atomically push main and the tag after all checks pass")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--publish", action="store_true", help="commit, tag and atomically push main and the tag after all checks pass")
+    mode.add_argument("--notes", action="store_true", help="print the version's changelog entries, the GitHub release text, and exit")
     args = parser.parse_args()
+    root = Path(__file__).resolve().parent.parent
     try:
-        execute(Path(__file__).resolve().parent.parent, args.version, args.publish)
+        if args.notes:
+            print(release_notes((root / CHANGELOG).read_text(), args.version), end="")
+            return
+        execute(root, args.version, args.publish)
     except (ReleaseError, subprocess.CalledProcessError, OSError) as error:
         parser.exit(1, f"Release stopped: {error}\nFix the cause and rerun the same command; existing tags are never moved.\n")
 

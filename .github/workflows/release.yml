@@ -52,7 +52,7 @@ jobs:
           executable=locmetry
           [ "$RUNNER_OS" = Windows ] && executable=locmetry.exe
           mkdir "$name"
-          cp "target/${{ matrix.target }}/release/$executable" README.md LICENSE THIRD-PARTY-NOTICES.md "$name/"
+          cp "target/${{ matrix.target }}/release/$executable" README.md CHANGELOG.md LICENSE THIRD-PARTY-NOTICES.md "$name/"
           install -m 755 scripts/compare-locmetry-files.sh "$name/compare-locmetry-files.sh"
           if [ "$RUNNER_OS" = Windows ]; then 7z a -tzip "$name.zip" "$name" > /dev/null; else tar -czf "$name.tar.gz" "$name"; fi
           echo "BINARY=$PWD/$name/$executable" >> "$GITHUB_ENV"
@@ -102,10 +102,16 @@ jobs:
     if: github.event_name == 'push'
     runs-on: ubuntu-24.04
     steps:
+      - uses: actions/checkout@v4
+      # The version's CHANGELOG.md section is the release text.
+      - run: python3 scripts/release.py "${GITHUB_REF_NAME#v}" --notes > "$RUNNER_TEMP/notes.md"
       - uses: actions/download-artifact@v4
         with:
           merge-multiple: true
+          path: dist
       - run: sha256sum locmetry-*.tar.gz locmetry-*.zip > SHA256SUMS
-      - run: gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --generate-notes locmetry-*.tar.gz locmetry-*.zip SHA256SUMS
+        working-directory: dist
+      - run: gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/notes.md" locmetry-*.tar.gz locmetry-*.zip SHA256SUMS
+        working-directory: dist
         env:
           GH_TOKEN: ${{ github.token }}

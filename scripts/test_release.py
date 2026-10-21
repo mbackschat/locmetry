@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tarfile
 import tempfile
 import textwrap
@@ -31,6 +32,26 @@ Source: docs/guides/configure.md; locmetry {version}
 Reports from locmetry 0.4.0 or later compare.
 """
 
+CHANGELOG = """# Changelog
+
+User-visible changes.
+
+## [Unreleased]
+
+### Added
+
+- Something new.
+
+## [0.4.0] - 2026-10-01
+
+### Added
+
+- First release.
+
+[Unreleased]: https://github.com/mbackschat/locmetry/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/mbackschat/locmetry/compare/v0.3.0...v0.4.0
+"""
+
 
 class ReleaseTests(unittest.TestCase):
     def setUp(self):
@@ -46,6 +67,7 @@ class ReleaseTests(unittest.TestCase):
         self.write("README.md", '# Locmetry\n\nInstall from the latest release.\n\nIllustrative producer: 0.1.6.\n')
         (self.root / "docs/cli").mkdir(parents=True)
         self.write("docs/cli/root.md", RECORDING.format(version="0.4.0"))
+        self.write("CHANGELOG.md", CHANGELOG)
         self.git("add", ".")
         self.git("commit", "-qm", "Initial fixture")
 
@@ -68,6 +90,36 @@ class ReleaseTests(unittest.TestCase):
                          first["docs/cli/root.md"])
         self.assertEqual("0.4.1", release.crate_version(first["Cargo.toml"]))
         self.assertIn('name = "locmetry"\nversion = "0.4.1"', first["Cargo.lock"])
+
+    def test_prepare_releases_the_unreleased_changelog_entries(self):
+        release.prepare(self.root, "0.4.1", today="2026-10-22")
+        changelog = (self.root / "CHANGELOG.md").read_text()
+        self.assertIn("## [Unreleased]\n\n## [0.4.1] - 2026-10-22\n\n### Added\n\n- Something new.\n", changelog)
+        self.assertIn("[Unreleased]: https://github.com/mbackschat/locmetry/compare/v0.4.1...HEAD\n"
+                      "[0.4.1]: https://github.com/mbackschat/locmetry/compare/v0.4.0...v0.4.1\n"
+                      "[0.4.0]: https://github.com/mbackschat/locmetry/compare/v0.3.0...v0.4.0\n", changelog)
+        self.assertEqual(release.release_notes(changelog, "0.4.1"), "### Added\n\n- Something new.\n")
+
+    # A release page resolves relative links against /releases/tag/, not the repository.
+    def test_release_notes_pin_repository_links_to_the_release_tag(self):
+        changelog = "## [0.4.1] - 2026-10-22\n\n- See [install](README.md#install) and [docs](https://example.org).\n"
+        self.assertEqual(release.release_notes(changelog, "0.4.1"),
+                         "- See [install](https://github.com/mbackschat/locmetry/blob/v0.4.1/README.md#install)"
+                         " and [docs](https://example.org).\n")
+
+    def test_a_release_without_changelog_entries_fails_before_any_write(self):
+        self.write("CHANGELOG.md", CHANGELOG.replace("### Added\n\n- Something new.\n\n", "", 1))
+        before = (self.root / "Cargo.toml").read_text()
+        with self.assertRaises(release.ReleaseError):
+            release.prepare(self.root, "0.4.1")
+        self.assertEqual(before, (self.root / "Cargo.toml").read_text())
+
+    # A preparation resumed on a later day keeps the date it recorded.
+    def test_preparation_resumed_on_another_day_keeps_its_release_date(self):
+        release.prepare(self.root, "0.4.1", today="2026-10-22")
+        release.check_worktree(self.root, "0.4.1", today="2026-10-23")
+        release.prepare(self.root, "0.4.1", today="2026-10-23")
+        self.assertIn("## [0.4.1] - 2026-10-22\n", (self.root / "CHANGELOG.md").read_text())
 
     def test_inconsistent_lockfile_fails_before_any_write(self):
         self.write("Cargo.lock", '[[package]]\nname = "locmetry"\nversion = "0.3.9"\n')
@@ -213,6 +265,14 @@ class ReleaseTests(unittest.TestCase):
 
 
 class PackageTests(unittest.TestCase):
+    def test_release_notes_print_a_published_version_from_the_repository_changelog(self):
+        script = Path(__file__).with_name("release.py")
+        notes = subprocess.run([sys.executable, str(script), "0.7.6", "--notes"],
+                               check=True, text=True, capture_output=True).stdout
+        self.assertTrue(notes.startswith("### "), notes)
+        self.assertNotIn("## [", notes)
+
+
     def test_release_archive_contains_an_executable_helper_with_optional_jq(self):
         repository = Path(__file__).resolve().parents[1]
         workflow = (repository / ".github/workflows/release.yml").read_text()
@@ -223,7 +283,7 @@ class PackageTests(unittest.TestCase):
             binary = root / "target/test-target/release/locmetry"
             binary.parent.mkdir(parents=True)
             binary.write_text("synthetic package payload\n")
-            for name in ("README.md", "LICENSE", "THIRD-PARTY-NOTICES.md"):
+            for name in ("README.md", "CHANGELOG.md", "LICENSE", "THIRD-PARTY-NOTICES.md"):
                 (root / name).write_text(name)
             (root / "scripts").mkdir()
             shutil.copy2(repository / "scripts/compare-locmetry-files.sh", root / "scripts")
