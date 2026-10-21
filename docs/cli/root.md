@@ -127,7 +127,7 @@ locmetry --root acme-orders --subfolder web/src --no-user-config --no-color --fo
  ───────────────────────────────┼──────────────────┼────────────────────────────────────────────────
  Total           4     13    12 │        1       0 │      7.7%
  Lines = Code + Comments + Blanks; Comment % = Comments / (Code + Comments).
- Purposes shown: Production; Test and Other excluded (4 code lines).
+ Not shown (purposes): Test and Other (4 code lines).
  Bars: ▓ Comment %; the densest row fills the bar.
 
  ─────────────────────────────────────────────────────────────────────────────────────────
@@ -164,7 +164,7 @@ locmetry --root acme-orders --no-user-config --no-color --format table \
  Total           4     13    10 │        3       0 │     6     3      1 │      0.50
  Lines = Code + Comments + Blanks; Production + Test + Other = Code; Test/prod = Test / Production (Code).
  Tests written in another language than the code they test skew per-language Test/prod.
- Languages shown: TypeScript and TSX; Go, HTML, Python, Makefile and JavaScript excluded (19 code lines).
+ Not shown (languages): Go, HTML, Python, Makefile and JavaScript (19 code lines).
 
 ```
 

@@ -144,7 +144,7 @@ locmetry workspace --workspace-file workspace.toml --no-user-config --no-color -
  Total           9     33    27 │        4       2 │    20     7 │      0.35 │ 100.0%
  Lines = Code + Comments + Blanks; Production + Test = Code; Test/prod = Test / Production (Code).
  Tests written in another language than the code they test skew per-language Test/prod.
- Purposes shown: Production and Test; Other excluded (2 code lines).
+ Not shown (purpose): Other (2 code lines).
  Share = Code / total Code. Bars: █ Production  ▓ Test; the largest row fills the bar.
 
  ───────────────────────────────────────────────────────────────────────────────────────────────────
@@ -178,7 +178,7 @@ locmetry workspace --workspace-file workspace.toml --no-user-config --no-color -
  Total         2     11     8 │        1       2 │     4     4      0 │      1.00
  Lines = Code + Comments + Blanks; Production + Test + Other = Code; Test/prod = Test / Production (Code).
  Tests written in another language than the code they test skew per-language Test/prod.
- Languages shown: Go; TypeScript, HTML, Python, TSX, Makefile and JavaScript excluded (21 code lines).
+ Not shown (languages): TypeScript, HTML, Python, TSX, Makefile and JavaScript (21 code lines).
 
  ─────────────────────────────────────────────────────────────────
  Repository  Lines  Code │ Prod.  Test  Other │ Test/prod │  Share

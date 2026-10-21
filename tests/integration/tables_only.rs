@@ -75,7 +75,7 @@ fn root_tables_keep_every_table_without_legends_notes_or_footer() {
         &bare,
         &[
             "Lines = Code + Comments + Blanks",
-            "Languages shown: Rust",
+            "Not shown (language): Python",
             "Bars:",
             "Rows of one purpose",
             "Root:",

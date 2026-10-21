@@ -1666,14 +1666,7 @@ fn report(
             Format::Markdown => "\n\n",
             _ => "\n",
         };
-        let mut context = measured_roots(&location, format == Format::Markdown);
-        // Only tables filter, and only a selection that leaves source out;
-        // the footer keeps that selection visible.
-        if format == Format::Table {
-            if let Some(selection) = locmetry::table_selection(&rows, &purposes, &languages) {
-                context += &format!("; {selection}");
-            }
-        }
+        let context = measured_roots(&location, format == Format::Markdown);
         human.push_str(&format!(
             "\n{context}{separator}Measured at: {}\n",
             locmetry::measurement_time(measured_at)

@@ -64,7 +64,7 @@ fn presentation_names_do_not_change_the_saved_measurement() {
     assert!(text.contains(" Folder "));
     assert!(text.contains(" Category "));
     assert!(text.contains("Comment density"));
-    assert!(text.contains("purposes: production"));
+    assert!(text.contains("Not shown (purposes): Test and Other"));
     let full: Value =
         serde_json::from_str(&fs::read_to_string(temp.path().join("full.json")).unwrap()).unwrap();
     assert_eq!(full["summary"]["source"]["code"], 4);
@@ -253,7 +253,7 @@ fn presentation_applies_to_both_tables_but_does_not_filter_a_markdown_view() {
             } else {
                 &printed
             };
-            assert!(table.contains("purposes: production"));
+            assert!(table.contains("Not shown (purposes): Test and Other"));
             assert!(table.lines().any(|line| {
                 line.replace('│', " ")
                     .split_whitespace()
@@ -293,7 +293,7 @@ fn purpose_selection_preserves_repeatability_and_chart_kind_depends_on_selection
     );
     let text = success(&output);
     assert!(text.contains("Code share"));
-    assert!(text.contains("purposes: production, test"));
+    assert!(text.contains("Not shown (purpose): Other"));
     let only_production_data = run(
         temp.path(),
         &[
