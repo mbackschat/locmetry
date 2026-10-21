@@ -301,3 +301,35 @@ fn unreadable_counts_and_member_failures_are_separate_from_optional_findings() {
         }
     }
 }
+
+/// Snippet code stays out of source but is named in the verbose note, so a
+/// documentation-heavy project shows how much code its documents carry. The
+/// oracle is Tokei's split of the fenced block: three Rust code lines and one
+/// comment inside a ten-line Markdown file; the host's own lines are prose.
+#[test]
+fn verbose_note_counts_code_in_documentation_snippets() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("project");
+    write(
+        &root,
+        "README.md",
+        "# Doc\n\nProse line.\n\n```rust\nfn main() {\n    // hi\n    println!(\"x\");\n}\n```\n",
+    );
+    write(&root, "GUIDE.md", "# Guide\n");
+    write(&root, "src/lib.rs", "pub fn lib() {}\n");
+    for args in [vec!["project"], vec!["workspace", "--root", "project"]] {
+        let mut args = args;
+        args.extend(["--format", "table", "--verbose", "--no-color"]);
+        let output = run(temp.path(), &args);
+        assert!(output.status.success());
+        let text = String::from_utf8(output.stdout).unwrap();
+        assert!(
+            text.contains(
+                " Not source code: 2 documentation files (11 lines, including 3 code lines in \
+                 embedded snippets); --files --output - lists each file's kind.\n"
+            ),
+            "{text}"
+        );
+        assert!(text.contains("\n Total         1      1     1 │"), "{text}");
+    }
+}

@@ -19,8 +19,8 @@ locmetry --root immich --config builtin-only.toml --format table --verbose --no-
 ```
 
 ```output
- Not source code: 296 data files (245,954 lines), 210 documentation files (12,521 lines); --files --output - lists each
-file's kind.
+ Not source code: 296 data files (245,954 lines), 210 documentation files (12,521 lines, including 793 code lines in
+embedded snippets); --files --output - lists each file's kind.
  Production from build modules: npm 127,205 code lines in 12 modules, dart 59,170 code lines in 2 modules, gradle 4,102
 code lines in 2 modules, python 3,037 code lines in 1 module.
  Largest module-claimed production; generated or vendored code here needs an entry:
@@ -45,7 +45,7 @@ are not zero.
 
 ```
 
-Data and documentation are already separate, and four build systems claim most production source. A module layout makes everything in it production without review, so the note lists the largest files the layouts claimed: the SDK client and two SQL query snapshots dwarf the hand-written code around them. The unclaimed list is the other review queue: the iOS app has no build descriptor Locmetry reads, and smaller folders hold configuration and scripts.
+Data and documentation are already separate, including the code examples inside the documentation, and four build systems claim most production source. A module layout makes everything in it production without review, so the note lists the largest files the layouts claimed: the SDK client and two SQL query snapshots dwarf the hand-written code around them. The unclaimed list is the other review queue: the iOS app has no build descriptor Locmetry reads, and smaller folders hold configuration and scripts.
 
 ## Look for generated code
 

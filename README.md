@@ -275,7 +275,7 @@ For file-level recognition and classification changes, run `compare-locmetry-fil
 
 ## How classification works
 
-Locmetry embeds Tokei for counting and applies project policy to each file. Purpose (`production`, `test`, `other`), category (such as `implementation` or `tooling`) and content kind (source, data, documentation or unknown) are separate dimensions. `other` means neither production nor test; code no stage claimed is `other` with category `unclaimed`.
+Locmetry embeds Tokei for counting and applies project policy to each file. Purpose (`production`, `test`, `other`), category (such as `implementation` or `tooling`) and content kind (source, data, documentation or unknown) are separate dimensions. `other` means neither production nor test; code no stage claimed is `other` with category `unclaimed`. Kind follows the physical file, so a fenced code block in Markdown or other documentation counts as documentation, never as source; `--verbose` shows how many code lines such snippets hold. Rust doc comments, doctests included, stay comments of their file.
 
 - **Module context:** selected npm, Gradle, Maven, Cargo, Go, Python, Lake, Swift and Dart descriptors identify conventional source layouts, as [build modules](#build-modules) describes. The innermost module supplies context, so nested projects do not inherit an outer project's layout blindly.
 - **Ordered decisions:** explicit overrides precede test and build conventions, ordinary project rules, module inference and fallback. Tests inside production source trees remain tests; overrides can express exceptions. Every counted file records the deciding rule.
