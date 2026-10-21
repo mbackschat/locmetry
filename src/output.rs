@@ -914,11 +914,11 @@ impl PlainTable {
         if spans.is_empty() {
             return None;
         }
-        let mut text = String::from(" ");
+        let mut pieces: Vec<(Option<Role>, String)> = Vec::new();
         let mut column = 0;
         while column < self.widths.len() {
             if column > 0 {
-                text += &theme.paint(Role::Muted, self.gap(column));
+                pieces.push((Some(Role::Muted), self.gap(column).into()));
             }
             match spans.iter().find(|(start, _)| *start == column) {
                 Some(&(start, end)) => {
@@ -929,16 +929,31 @@ impl PlainTable {
                         " ".repeat(fill / 2),
                         " ".repeat(fill - fill / 2)
                     );
-                    text += &theme.paint(Role::Heading, &cell);
+                    pieces.push((Some(Role::Heading), cell));
                     column = end + 1;
                 }
                 None => {
-                    text += &" ".repeat(self.widths[column]);
+                    pieces.push((None, " ".repeat(self.widths[column])));
                     column += 1;
                 }
             }
         }
-        Some(text + "\n")
+        // Padding is trimmed before styling, which would otherwise enclose it.
+        while let Some((_, piece)) = pieces.last_mut() {
+            piece.truncate(piece.trim_end().len());
+            match piece.is_empty() {
+                true => pieces.pop(),
+                false => break,
+            };
+        }
+        let text: String = pieces
+            .iter()
+            .map(|(role, piece)| match role {
+                Some(role) => theme.paint(*role, piece),
+                None => piece.clone(),
+            })
+            .collect();
+        Some(format!(" {text}\n"))
     }
 
     /// Characters per line without bars, as [`PlainTable::render`] lays it out.
@@ -2719,8 +2734,7 @@ mod tests {
         let table = shared_table(&columns, &body, None, false, Theme::PLAIN);
         let lines: Vec<_> = table.lines().collect();
         assert_eq!(
-            lines[0].trim_end(),
-            "             Lines     │ Changes in files",
+            lines[0], "             Lines     │ Changes in files",
             "{table}"
         );
         assert_eq!(
@@ -2729,6 +2743,41 @@ mod tests {
         );
         assert!(shared_table(&columns, &body, None, true, Theme::MARKDOWN)
             .starts_with("| Kind | Lines before | Lines after | Files change |"));
+    }
+
+    /// Centring pads a group name on both sides, and an ungrouped column
+    /// pads to its width; neither may leave blanks after the line's last
+    /// name, styled or plain, whether a group or an ungrouped column closes it.
+    #[test]
+    fn group_lines_end_at_their_last_name() {
+        let grouped = [
+            Column::new("Kind", ColumnRole::Label),
+            Column::new("Lines before", ColumnRole::Count).under("Lines", "before"),
+            Column::new("Lines after", ColumnRole::Count).under("Lines", "after"),
+        ];
+        let ungrouped = [
+            grouped[0],
+            grouped[1],
+            grouped[2],
+            Column::new("Files", ColumnRole::Count).separated(),
+        ];
+        let body = [vec![
+            "Source".into(),
+            "1,000".into(),
+            "2,000".into(),
+            "1".into(),
+        ]];
+        for (columns, expected) in [
+            (&grouped[..], "             Lines"),
+            (&ungrouped[..], "             Lines     │"),
+        ] {
+            let body = [body[0][..columns.len()].to_vec()];
+            for theme in [Theme::PLAIN, Theme::TERMINAL] {
+                let table = shared_table(&Columns::of(columns), &body, None, false, theme);
+                let first = unstyled(table.lines().next().unwrap());
+                assert_eq!(first, expected, "{table:?}");
+            }
+        }
     }
 
     /// A short title replaces a full one only while the full title would be

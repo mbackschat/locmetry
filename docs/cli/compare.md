@@ -15,7 +15,7 @@ locmetry --root acme-orders --no-user-config --output before.json
 printf 'export const discount = 1;\n' >> acme-orders/web/src/orders/Order.ts
 locmetry --root acme-orders --no-user-config --output after.json
 locmetry compare before.json after.json --no-color --format table \
-  | sed -e '/^Before measured at:/d; /^After measured at:/d' -e 's/[[:blank:]]*$//' \
+  | sed '/^Before measured at:/d; /^After measured at:/d' \
   | demo_wrap
 ```
 
@@ -155,15 +155,14 @@ locmetry compare before.json after.json --format headline --output - \
 
 ## Print only the change tables
 
-`--tables-only` keeps the change tables and drops the title, ratio line, notes, findings and input dates. Use it when the rows are what you need; the notes above explain how to read them. `sed` trims the trailing padding of the column-group header.
+`--tables-only` keeps the change tables and drops the title, ratio line, notes, findings and input dates. Use it when the rows are what you need; the notes above explain how to read them.
 
 ```bash
 source scripts/cli-demo-env.sh
 locmetry --root acme-orders --no-user-config --output before.json
 printf 'export const discount = 1;\n' >> acme-orders/web/src/orders/Order.ts
 locmetry --root acme-orders --no-user-config --output after.json
-locmetry compare before.json after.json --no-color --format table --tables-only \
-  | sed 's/[[:blank:]]*$//'
+locmetry compare before.json after.json --no-color --format table --tables-only
 ```
 
 ```output
@@ -212,7 +211,7 @@ locmetry workspace --workspace-file workspace.toml --no-user-config --output bef
 printf 'export const discount = 1;\n' >> acme-orders/web/src/orders/Order.ts
 locmetry workspace --workspace-file workspace.toml --no-user-config --output after.json
 locmetry compare before.json after.json --member web --no-color --format table \
-  | sed -e '/^Before measured at:/d; /^After measured at:/d' -e 's/[[:blank:]]*$//' \
+  | sed '/^Before measured at:/d; /^After measured at:/d' \
   | demo_wrap
 ```
 

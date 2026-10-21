@@ -76,6 +76,30 @@ fn a_single_comparison_grid_omits_its_title_when_detail_grids_are_empty() {
     assert!(locmetry::compare::render_markdown(&report).contains("## Totals"));
 }
 
+/// Locks the convention that recorded guides need no trim filter: no
+/// comparison table line, styled or plain, ends in blanks.
+#[test]
+fn comparison_table_lines_end_at_their_last_character() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("project");
+    write(&root, "src/main.py", "print(1)\n");
+    let before = save(temp.path(), "before.json", &measure(&root));
+    write(&root, "tests/test_main.py", "assert True\n");
+    let after = save(temp.path(), "after.json", &measure(&root));
+    let full = json(&compare(&before, &after, &["--format", "json"]), 0);
+    let report: locmetry::compare::Comparison = serde_json::from_value(full).unwrap();
+    for theme in [
+        locmetry::style::Theme::PLAIN,
+        locmetry::style::Theme::TERMINAL,
+    ] {
+        let text = common::unstyled(&locmetry::compare::render_table_with_theme(&report, theme));
+        assert!(text.contains(" Lines "), "{text}");
+        for line in text.lines() {
+            assert_eq!(line, line.trim_end(), "{text}");
+        }
+    }
+}
+
 #[test]
 fn compare_reports_net_change_without_reading_the_source_checkout() {
     let temp = tempfile::tempdir().unwrap();
@@ -579,14 +603,15 @@ fn comparison_totals_fit_their_contents_and_keep_large_signed_values_aligned() {
             .collect::<Vec<_>>()
             .join("\n")
     };
-    let unchanged = totals(&report);
     let width = |line: &str| line.chars().count();
-    assert!(
-        unchanged
-            .lines()
-            .all(|line| width(line) == width(unchanged.lines().next().unwrap())),
-        "{unchanged}"
-    );
+    // The group line ends at its last name; the column headings span the table.
+    let fits = |text: &str| {
+        let (group, rows) = text.split_once('\n').unwrap();
+        let table = width(rows.lines().next().unwrap());
+        width(group) <= table && rows.lines().all(|line| width(line) == table)
+    };
+    let unchanged = totals(&report);
+    assert!(fits(&unchanged), "{unchanged}");
     let all_counted = unchanged.lines().last().unwrap();
     assert!(all_counted.starts_with(" All counted "), "{unchanged}");
     assert!(
@@ -610,10 +635,7 @@ fn comparison_totals_fit_their_contents_and_keep_large_signed_values_aligned() {
     };
     let large = totals(&report);
     let first = large.lines().next().unwrap();
-    assert!(
-        large.lines().all(|line| width(line) == width(first)),
-        "{large}"
-    );
+    assert!(fits(&large), "{large}");
     // Separators stay in one column however wide the signed values grow.
     let separators = |line: &str| {
         line.char_indices()
