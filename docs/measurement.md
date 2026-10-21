@@ -31,7 +31,7 @@ With the same filesystem and policy, subtree records equal the corresponding who
 
 - Ambient Tokei configuration is not loaded. Git is not invoked, so reports do not claim a commit revision or unchanged working tree.
 - Selected files that neither the backend nor a language mapping recognizes are listed in `metadata.coverage`, not proven zero LOC.
-- Classification is per file, so mixed production/test files are not split, and Locmetry does not establish whether a source file is handwritten.
+- Classification is per file, so mixed production/test files are not split, and Locmetry does not establish whether a source file is handwritten. Rust unit tests in an inline `#[cfg(test)] mod tests { … }` count with their file; moved to a `tests.rs` module file, they are tests through the `rust-test-module` convention.
 - Backend inaccuracy marks a measurement partial, even when the backend cannot identify affected paths. Known read and Handlebars/notebook decode/counting failures are listed separately. Failed files have no file record or measured counts; other files still contribute. [Command outcomes](PRODUCT.md#command-outcomes) owns exit-status semantics.
 
 ## Notebooks

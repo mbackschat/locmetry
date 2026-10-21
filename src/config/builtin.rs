@@ -59,6 +59,11 @@ pub(super) const BUILTIN_TESTS_V1: &[Convention] = &[
         &["**/*{Test,Tests,TestCase}.{java,kt,kts,groovy,scala}"],
     ),
     test_convention("go-test-file", &["**/*_test.go"]),
+    // Rust unit tests live in a `#[cfg(test)] mod tests` beside the code
+    // (https://doc.rust-lang.org/book/ch11-03-test-organization.html); moved
+    // out of line, that module is a `tests.rs` file inside the Cargo `src/`
+    // layout, which module detection would otherwise claim as production.
+    test_convention("rust-test-module", &["**/tests.rs"]),
     // Swift Package Manager keeps test targets in `Tests/`, and Xcode names
     // test targets `<Name>Tests`; both start with a capital T, which the
     // lowercase test-directory convention does not match.
