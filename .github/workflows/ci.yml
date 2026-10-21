@@ -13,8 +13,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # The declared release targets: macOS arm64, Linux x86_64 and aarch64.
-        os: [macos-15, ubuntu-24.04, ubuntu-24.04-arm]
+        # The declared release targets: macOS arm64, Linux x86_64 and aarch64,
+        # and Windows x86_64 (docs/proposals/windows-support.md).
+        os: [macos-15, ubuntu-24.04, ubuntu-24.04-arm, windows-2025]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4

@@ -8,10 +8,15 @@ use std::{
 };
 
 /// The binary isolated from the developer's own user defaults; a test that
-/// needs user defaults points `XDG_CONFIG_HOME` at its own directory.
+/// needs user defaults points `XDG_CONFIG_HOME` at its own directory. The
+/// directory must be absolute on every platform, or Locmetry ignores it as the
+/// XDG specification requires, and `/nonexistent` lacks a drive on Windows.
 pub fn locmetry() -> Command {
     let mut command = Command::new(env!("CARGO_BIN_EXE_locmetry"));
-    command.env("XDG_CONFIG_HOME", "/nonexistent/locmetry-tests");
+    command.env(
+        "XDG_CONFIG_HOME",
+        std::env::temp_dir().join("nonexistent-locmetry-tests"),
+    );
     command
 }
 
