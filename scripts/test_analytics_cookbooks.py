@@ -69,11 +69,13 @@ CSV
 
 def marked(name, source, delimiter):
     """The heredoc delimited by `delimiter` in the first Bash block after `<!-- name -->`."""
-    text = source.read_text().split(f"<!-- {name} -->", 1)[1]
-    bash = text.split("```bash\n", 1)[1].split("\n```", 1)[0]
+    parts = source.read_text().split(f"<!-- {name} -->")
+    if len(parts) != 2:
+        raise ValueError(f"{source.name} must mark {name} exactly once, not {len(parts) - 1} times")
+    bash = parts[1].split("```bash\n", 1)[1].split("\n```", 1)[0]
     body = re.search(rf"<<'{delimiter}'\n(.*?)\n{delimiter}$", bash, re.DOTALL | re.MULTILINE).group(1)
     # Dot commands such as `.thousand_sep` configure the DuckDB program, not SQL.
-    return "\n".join(line for line in body.splitlines() if not line.startswith("."))
+    return "\n".join(line for line in body.splitlines() if not re.match(r"\.[a-z_]+\b", line))
 
 
 def sql(name):
@@ -176,7 +178,10 @@ class CookbookTests(unittest.TestCase):
                 self.assertEqual(len(namespace["changes"]), 0)
 
     def replace_manifest(self, report):
-        (self.root / "single.json").write_text(json.dumps(report))
+        self.write_manifest(json.dumps(report))
+
+    def write_manifest(self, content):
+        (self.root / "single.json").write_text(content)
         (self.root / "snapshots.csv").write_text("snapshot_id,repo_id,sequence,path\none,api,1,single.json\n")
 
     def measure(self, directory, *args, status=0):
@@ -215,8 +220,7 @@ class CookbookTests(unittest.TestCase):
         text = (self.root / "api-1.json").read_text()
         for content in ["", text + "\n" + text]:
             with self.subTest(documents=0 if not content else 2):
-                (self.root / "single.json").write_text(content)
-                (self.root / "snapshots.csv").write_text("snapshot_id,repo_id,sequence,path\none,api,1,single.json\n")
+                self.write_manifest(content)
                 with self.assertRaises(duckdb.Error):
                     self.load()
 

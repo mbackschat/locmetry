@@ -6,10 +6,11 @@ use std::collections::BTreeMap;
 
 mod validation;
 
-/// Report contract version, independent of the executable version.
+/// Report contract version, independent of the executable version and
+/// shared by measurement, comparison and explanation documents.
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 pub enum Version {
-    /// Explicit measurement identity and full/headline projection.
+    /// Explicit document identity and full/headline projection.
     #[serde(rename = "3")]
     V3,
 }

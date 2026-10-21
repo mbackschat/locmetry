@@ -4,13 +4,13 @@
 # docs/duckdb-cookbook.md creates them, so each example runs on its own.
 # `source scripts/analytics-env.sh duckdb` also loads them into immich.duckdb.
 source scripts/showcase-env.sh
-for tag in v3.2.0 v3.3.4; do
+for tag in "$baseline_tag" "$showcase_tag"; do
     locmetry --root "$tag/immich" --files --output "$tag.json"
 done
-cat > snapshots.csv <<'CSV'
+cat > snapshots.csv <<CSV
 snapshot_id,repo_id,sequence,path
-v3.2.0,immich,1,v3.2.0.json
-v3.3.4,immich,2,v3.3.4.json
+$baseline_tag,immich,1,$baseline_tag.json
+$showcase_tag,immich,2,$showcase_tag.json
 CSV
 cp "$repository/examples/analytics/duckdb.sql" "$repository/examples/analytics/report_rows.py" .
 if [[ ${1-} == duckdb ]]; then

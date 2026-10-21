@@ -450,33 +450,22 @@ impl MeasurementReport {
                     .iter()
                     .map(|m| (m.path.as_str(), m.detector.as_str())),
             );
-            let mut largest: Vec<(u64, u64, &str, &str, &str)> = files
+            let measured = files
                 .iter()
                 .filter(|f| f.kind == Kind::Source)
                 .filter_map(|f| {
                     let owner = &modules[owners.owner(&f.path, &f.rule)?];
-                    Some((
-                        f.counts.code,
-                        f.counts.lines,
-                        &*f.path,
-                        &*owner.path,
-                        &*owner.detector,
-                    ))
+                    Some(crate::ModuleFile {
+                        path: f.path.clone(),
+                        lines: f.counts.lines,
+                        code: f.counts.code,
+                        module: owner.path.clone(),
+                        detector: owner.detector.clone(),
+                    })
                 })
                 .collect();
-            largest.sort_by(|a, b| b.0.cmp(&a.0).then_with(|| a.2.cmp(b.2)));
-            largest.truncate(crate::report::MODULE_FILES);
-            let recorded = recorded.iter().map(|f| {
-                (
-                    f.code,
-                    f.lines,
-                    f.path.as_str(),
-                    f.module.as_str(),
-                    f.detector.as_str(),
-                )
-            });
             ensure!(
-                largest.into_iter().eq(recorded),
+                crate::report::rank_module_files(measured) == *recorded,
                 "largest_module_files conflicts with measured files"
             );
         }

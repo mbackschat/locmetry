@@ -488,7 +488,7 @@ pub fn module_shares(modules: &[Module], rows: &[FileRecord]) -> Vec<ModuleShare
 }
 
 /// A source file that a build module's layout classified as production.
-#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct ModuleFile {
     pub path: String,
@@ -508,7 +508,7 @@ pub(crate) const MODULE_FILES: usize = 5;
 /// review; generated or vendored code inside a module surfaces here.
 pub fn largest_module_files(modules: &[Module], rows: &[FileRecord]) -> Vec<ModuleFile> {
     let owners = ModuleOwners::new(modules.iter().map(|m| (m.path.as_str(), m.detector)));
-    let mut files: Vec<ModuleFile> = rows
+    let files: Vec<ModuleFile> = rows
         .iter()
         .filter(|row| row.kind == Kind::Source)
         .filter_map(|row| {
@@ -522,6 +522,11 @@ pub fn largest_module_files(modules: &[Module], rows: &[FileRecord]) -> Vec<Modu
             })
         })
         .collect();
+    rank_module_files(files)
+}
+
+/// The [`MODULE_FILES`] largest of `files`, by code and then path.
+pub(crate) fn rank_module_files(mut files: Vec<ModuleFile>) -> Vec<ModuleFile> {
     files.sort_by(|a, b| b.code.cmp(&a.code).then_with(|| a.path.cmp(&b.path)));
     files.truncate(MODULE_FILES);
     files

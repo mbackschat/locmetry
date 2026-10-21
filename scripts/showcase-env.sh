@@ -1,11 +1,14 @@
 # Source from the repository root in a showcase Bash example. It extends
 # cli-demo-env.sh with the pinned Immich checkouts: `immich` is the showcase
-# release and `<tag>/immich` each pinned release, all reporting project immich.
+# release and `<tag>/immich` each pinned release, all reporting project immich;
+# `$showcase_tag` and `$baseline_tag` name the pinned releases.
 source scripts/cli-demo-env.sh
 showcase=$(bash "$repository/scripts/fetch-showcase.sh" --check)
 overlay="$repository/examples/showcase/immich/overlay"
 expected=$(cd "$overlay" && find . -type f | sed 's#^\./#?? #' | LC_ALL=C sort)
-showcase_tag=$(awk -F'\t' '$1 == "showcase" { print $2 }' "$repository/examples/showcase/immich/pins.tsv")
+showcase_pin() { awk -F'\t' -v role="$1" '$1 == role { print $2 }' "$repository/examples/showcase/immich/pins.tsv"; }
+showcase_tag=$(showcase_pin showcase)
+baseline_tag=$(showcase_pin baseline)
 for checkout in "$showcase"/*/immich; do
     [[ -d $checkout/.git ]] || continue
     # The overlay is Locmetry's policy; anything else changed in the checkout

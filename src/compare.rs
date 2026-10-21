@@ -18,12 +18,7 @@ pub enum DocumentType {
     #[serde(rename = "comparison")]
     Comparison,
 }
-#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
-pub enum Version {
-    /// One version shared with measurement and explanation documents.
-    #[serde(rename = "3")]
-    V3,
-}
+pub use crate::contract::Version;
 
 /// Signed net change, after minus before. Each value must fit i64; overflow fails.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]

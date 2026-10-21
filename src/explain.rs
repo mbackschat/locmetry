@@ -12,12 +12,7 @@ pub enum DocumentType {
     Explanation,
 }
 
-#[derive(Serialize, JsonSchema)]
-pub enum Version {
-    /// One version shared with measurement and comparison documents.
-    #[serde(rename = "3")]
-    V3,
-}
+pub use crate::contract::Version;
 
 /// One path's selection, parser and classification evidence. Exit 2 means the target's counts are unavailable; exit 0 includes counted, excluded, unrecognized, filtered and symlink paths. This is not a saved measurement input for compare.
 #[derive(Serialize, JsonSchema)]
@@ -122,10 +117,7 @@ impl Explanation {
     /// Names paths as a workspace report does; a folder member's paths are
     /// relative to its project `folder`.
     pub fn qualify(&mut self, member: String, folder: Option<&str>) {
-        let prefix = |path: &str| {
-            let path = folder.map_or(path, |folder| crate::paths::folder_relative(folder, path));
-            crate::paths::qualify(&member, path)
-        };
+        let prefix = |path: &str| crate::paths::member_path(&member, folder, path);
         self.path = prefix(&self.path);
         match &mut self.result {
             PathResult::Counted { file, decision } => {

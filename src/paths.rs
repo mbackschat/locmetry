@@ -30,7 +30,7 @@ pub(crate) fn below<'p>(path: &'p str, folder: &str) -> Option<&'p str> {
 }
 
 /// Whether `path` is `folder` or lies below it.
-pub(crate) fn within(path: &str, folder: &str) -> bool {
+pub fn within(path: &str, folder: &str) -> bool {
     path == folder || below(path, folder).is_some()
 }
 
@@ -42,17 +42,26 @@ pub(crate) fn member_of(path: &str) -> &str {
 /// Project-relative `path` as the workspace member measuring project folder
 /// `folder` names it. The folder itself and anything enclosing it, such as a
 /// build module around the member, become the member's [`ROOT`].
-pub fn folder_relative<'p>(folder: &str, path: &'p str) -> &'p str {
+pub(crate) fn folder_relative<'p>(folder: &str, path: &'p str) -> &'p str {
     below(path, folder).unwrap_or(ROOT)
 }
 
 /// `path` of `member` as a workspace report names it; the member's root is
 /// the member itself.
-pub fn qualify(member: &str, path: &str) -> String {
+pub(crate) fn qualify(member: &str, path: &str) -> String {
     match path {
         ROOT => member.to_string(),
         _ => format!("{member}/{path}"),
     }
+}
+
+/// `path` of a workspace member as reports and explanations name it: a
+/// folder member's project-relative paths are rebased onto its `folder`.
+pub fn member_path(member: &str, folder: Option<&str>, path: &str) -> String {
+    qualify(
+        member,
+        folder.map_or(path, |folder| folder_relative(folder, path)),
+    )
 }
 
 #[cfg(test)]

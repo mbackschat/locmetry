@@ -1588,13 +1588,7 @@ fn unclaimed_note(folders: &[FolderShare], theme: Theme) -> String {
             ]
         })
         .collect();
-    let width = |column: usize| {
-        rows.iter()
-            .map(|row| row[column].chars().count())
-            .max()
-            .unwrap_or(0)
-    };
-    let (label, code, unit, files) = (width(0), width(1), width(2), width(3));
+    let [label, code, unit, files, _] = column_widths(&rows);
     let mut note = format!(
         "{} {} in {}, here:",
         theme.paint(Role::Information, "Unclaimed source:"),
@@ -1640,13 +1634,7 @@ fn module_files_note(files: &[ModuleFile]) -> String {
             ]
         })
         .collect();
-    let width = |column: usize| {
-        rows.iter()
-            .map(|row| row[column].chars().count())
-            .max()
-            .unwrap_or(0)
-    };
-    let (path, code, unit) = (width(0), width(1), width(2));
+    let [path, code, unit, _] = column_widths(&rows);
     let mut note = String::from(
         "Largest module-claimed production; generated or vendored code here needs an entry:",
     );
@@ -1658,6 +1646,16 @@ fn module_files_note(files: &[ModuleFile]) -> String {
         .unwrap();
     }
     note
+}
+
+/// Widest cell of each column, in characters, for aligning note rows.
+fn column_widths<const N: usize>(rows: &[[String; N]]) -> [usize; N] {
+    std::array::from_fn(|column| {
+        rows.iter()
+            .map(|row| row[column].chars().count())
+            .max()
+            .unwrap_or(0)
+    })
 }
 
 /// Label of a module folder; `.` is the scan root.

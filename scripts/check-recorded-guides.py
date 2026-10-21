@@ -58,18 +58,22 @@ def evidence(path, artifacts, suffix):
     return artifacts / f"{path.parent.name}-{path.stem}{suffix}"
 
 
-def unavailable(path, artifacts, diagnostic):
-    status = f"FAIL {path} (not replayed)"
+def record(path, artifacts, status, diagnostic, passed):
+    """Log and print one document's outcome; a failure shows its diagnostic."""
     evidence(path, artifacts, ".log").write_text(status + "\n" + diagnostic)
     print(status, flush=True)
-    print(diagnostic, end="" if diagnostic.endswith("\n") else "\n", flush=True)
-    return False
+    if not passed and diagnostic:
+        print(diagnostic, end="" if diagnostic.endswith("\n") else "\n", flush=True)
+    return passed
+
+
+def unavailable(path, artifacts, diagnostic):
+    return record(path, artifacts, f"FAIL {path} (not replayed)", diagnostic, False)
 
 
 def replay(path, artifacts, command=None):
     started = time.perf_counter()
     candidate = evidence(path, artifacts, ".candidate.md")
-    log = evidence(path, artifacts, ".log")
     candidate.unlink(missing_ok=True)
     print(f"Verifying {path}", flush=True)
     try:
@@ -95,14 +99,10 @@ def replay(path, artifacts, command=None):
         diagnostic = f"{error}\n"
         passed = False
     elapsed = time.perf_counter() - started
-    status = f"{'PASS' if passed else 'FAIL'} {path} ({elapsed:.2f}s)"
-    log.write_text(status + "\n" + diagnostic)
-    print(status, flush=True)
     if passed:
         candidate.unlink(missing_ok=True)
-    elif diagnostic:
-        print(diagnostic, end="" if diagnostic.endswith("\n") else "\n", flush=True)
-    return passed
+    status = f"{'PASS' if passed else 'FAIL'} {path} ({elapsed:.2f}s)"
+    return record(path, artifacts, status, diagnostic, passed)
 
 
 def check(artifacts, selection="all"):
