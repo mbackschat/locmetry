@@ -232,9 +232,7 @@ fn workspace_notes_name_the_member_of_each_finding() {
     .unwrap();
     let roots: Vec<_> = ["api", "web"]
         .map(|name| {
-            temp.path()
-                .join(name)
-                .canonicalize()
+            dunce::canonicalize(temp.path().join(name))
                 .unwrap()
                 .display()
                 .to_string()
@@ -387,7 +385,7 @@ fn workspace_reports_must_be_written_outside_every_member() {
 fn a_workspace_file_lists_roots_relative_to_itself() {
     let temp = workspace();
     let base = temp.path();
-    let api = base.join("api").canonicalize().unwrap();
+    let api = dunce::canonicalize(base.join("api")).unwrap();
     let file = base.join("defs/cg.toml");
     write_all(
         base,
@@ -406,7 +404,7 @@ fn a_workspace_file_lists_roots_relative_to_itself() {
     );
     assert_eq!(
         from_file["metadata"]["workspace_path"],
-        json!(file.canonicalize().unwrap())
+        json!(dunce::canonicalize(&file).unwrap())
     );
     from_file["metadata"]
         .as_object_mut()
@@ -853,7 +851,7 @@ fn folder_members_share_the_project_policy_and_match_subfolder_runs() {
     expected_files.sort_by_key(|file| file["path"].as_str().unwrap().to_string());
     assert_eq!(report["files"], json!(expected_files));
     let members = report["metadata"]["members"].as_array().unwrap();
-    let project = project.canonicalize().unwrap();
+    let project = dunce::canonicalize(&project).unwrap();
     for (member, folder) in members.iter().zip(["api", "web"]) {
         assert_eq!(member["name"], folder);
         assert_eq!(member["root"], json!(project));

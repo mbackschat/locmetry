@@ -11,6 +11,9 @@ publish = false
 anyhow = "1"
 chrono = { version = "0.4", default-features = false, features = ["std"] }
 clap = { version = "4", features = ["derive", "wrap_help"] }
+# std::fs::canonicalize returns verbatim \\?\C:\ paths on Windows, which reports
+# would show as roots; dunce returns the ordinary form where it is equivalent.
+dunce = "1"
 encoding_rs_io = "0.1"
 globset = "0.4"
 ignore = "0.4"

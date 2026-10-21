@@ -207,7 +207,7 @@ fn raw_backend_payload_contains_only_root_relative_paths() {
         )],
     );
     let payload = scan(temp.path(), &policy("")).unwrap().payload;
-    let root = temp.path().canonicalize().unwrap();
+    let root = dunce::canonicalize(temp.path()).unwrap();
     let raw = payload.to_string();
     assert!(raw.contains("web/index.html"));
     assert!(!raw.contains(root.to_str().unwrap()), "{raw}");

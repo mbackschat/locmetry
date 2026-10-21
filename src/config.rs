@@ -479,8 +479,7 @@ impl Policy {
     /// The configuration is measurement policy, not project content. Its path
     /// is escaped so glob metacharacters in its name match only itself.
     pub fn exclude_configuration(&mut self, root: &Path, config: &Path) -> Result<()> {
-        let config = config
-            .canonicalize()
+        let config = dunce::canonicalize(config)
             .with_context(|| format!("Cannot resolve configuration {}", config.display()))?;
         let Ok(relative) = config.strip_prefix(root) else {
             return Ok(());

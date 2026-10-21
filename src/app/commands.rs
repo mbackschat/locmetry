@@ -6,7 +6,7 @@ pub(crate) fn run_explain(args: &ExplainArgs, styling: Styling) -> Result<Outcom
     let workspace = args
         .workspace
         .as_deref()
-        .map(Path::canonicalize)
+        .map(dunce::canonicalize)
         .transpose()
         .context("Cannot read workspace file")?;
     let members = workspace
@@ -206,13 +206,13 @@ pub(crate) fn run_root(
             && prepared
                 .config_path
                 .as_ref()
-                .and_then(|p| p.canonicalize().ok())
-                != inactive.canonicalize().ok()
+                .and_then(|p| dunce::canonicalize(p).ok())
+                != dunce::canonicalize(&inactive).ok()
         {
             let project_config = prepared
                 .config_path
                 .as_ref()
-                .map(std::fs::canonicalize)
+                .map(dunce::canonicalize)
                 .transpose()?;
             styling.stderr_message(Role::Warning, format_args!(
                 "{} is inactive; project configuration: {}. --subfolder retains project policy.",
@@ -262,7 +262,7 @@ pub(crate) fn run_workspace(args: &WorkspaceArgs, styling: Styling) -> Result<Ou
         .file
         .as_deref()
         .map(|file| {
-            file.canonicalize()
+            dunce::canonicalize(file)
                 .with_context(|| format!("Cannot read workspace file {}", file.display()))
         })
         .transpose()?;

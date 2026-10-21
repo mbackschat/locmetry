@@ -3,7 +3,7 @@ use super::*;
 #[test]
 fn selected_file_statistics_match_tokei_including_embedded_languages() {
     let temp = tempfile::tempdir().unwrap();
-    let root = temp.path().canonicalize().unwrap();
+    let root = dunce::canonicalize(temp.path()).unwrap();
     let mut paths = Vec::new();
     for (name, source) in [
         ("a.rs", "// comment\n\nfn main() {}\n"),
@@ -66,7 +66,7 @@ fn a_selected_file_removed_before_counting_marks_counts_unavailable() {
 fn counting_does_not_expand_a_selected_file_replaced_by_a_directory() {
     for filename in ["chosen.rs", "chosen.py"] {
         let temp = tempfile::tempdir().unwrap();
-        let root = temp.path().canonicalize().unwrap();
+        let root = dunce::canonicalize(temp.path()).unwrap();
         let path = root.join(filename);
         std::fs::write(&path, "original\n").unwrap();
         let policy = Policy::load_layers(None, None).unwrap();

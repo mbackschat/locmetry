@@ -50,7 +50,7 @@ fn table_format_splits_source_code_by_language_and_purpose() {
  To inspect or refine purpose classification, use locmetry --guide configure; --files --output - shows each file's rule.
  Unrecognized files: 1 unrecognized file (png: 1); missing lines are not zero.
 ";
-    let root = temp.path().join("project").canonicalize().unwrap();
+    let root = dunce::canonicalize(temp.path().join("project")).unwrap();
     let expected = format!("{expected}\nRoot: {}", root.display());
     assert_eq!(
         String::from_utf8(output.stdout)
@@ -277,7 +277,7 @@ fn category_rows_carry_share_bars_in_their_purpose() {
 fn human_reports_end_with_the_measured_root_before_the_time() {
     let temp = project(&[("src/lib.rs", "fn a() {}\n")]);
     let root = temp.path().join("project");
-    let canonical = root.canonicalize().unwrap();
+    let canonical = dunce::canonicalize(&root).unwrap();
     let stdout = |args: &[&str]| String::from_utf8(run(&root, args).stdout).unwrap();
     let table = stdout(&["--format", "table"]);
     assert!(table.starts_with(" ─"), "{table}");
