@@ -26,6 +26,7 @@ mod language_families;
 mod measurement;
 mod notebooks;
 mod output_contract;
+mod platform;
 mod private_regression;
 mod purposes;
 mod queries;
