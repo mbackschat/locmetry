@@ -35,6 +35,8 @@ Showcase recordings start with `source scripts/showcase-env.sh` instead. It veri
 
 Make edits visible in the recorded command, and keep exports beside the measured roots. Do not measure private projects, install fixture dependencies, or modify the checked-in fixture during replay. A comparison example should have a small change whose expected result can be explained independently.
 
+Recordings made on macOS replay on Linux in CI, so recorded output must not depend on BSD or GNU formatting. Format such output explicitly: `uniq -c` pads its counts to different widths on the two systems, so pipe it through `awk '{ printf "%4d %s\n", $1, $2 }'`.
+
 ## Wrap commands and displayed output
 
 Keep executable and output lines within 120 characters; aim for shorter command lines where natural. Use one logical argument group per continuation line, keeping an option beside its value. Break a pipeline with a trailing backslash and indent the next `|` by two spaces. Format long jq expressions across lines inside their quoted program. Use multiline SQL strings in Python rather than one long query line.

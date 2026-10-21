@@ -55,7 +55,7 @@ Generators usually leave a header. Searching for common markers checks those sus
 source scripts/showcase-env.sh
 grep -rlE 'DO NOT MODIFY|auto generated|@generated' immich/ \
   --include='*.ts' --include='*.sql' --include='*.dart' --include='*.swift' --include='*.kt' \
-  | sed 's#/[^/]*$##' | sort | uniq -c
+  | sed 's#/[^/]*$##' | sort | uniq -c | awk '{ printf "%4d %s\n", $1, $2 }'
 ```
 
 ```output
