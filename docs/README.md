@@ -16,9 +16,10 @@ Start with the workflow or contract relevant to your task. Status tables in the 
 - [Proposals](proposals/README.md): designs under review and historical decisions.
 - [Research](research/README.md): dated evidence and design implications.
 
+- [Immich showcase recordings](showcase/README.md): measure, explain, combine and compare a real multi-language project at pinned releases.
 - [Recorded CLI guides](cli/README.md): one replayable Showboat guide per command, with option coverage and regeneration instructions.
 - [DuckDB cookbook](duckdb-cookbook.md): analyze full measurements with typed SQL views.
 - [pandas and Polars cookbook](dataframe-cookbook.md): prove tool-neutral report analytics with dataframe recipes.
-- [Recorded analytics demo](analytics-demo.md): capture and query the shared synthetic workspace.
+- [Recorded analytics demo](analytics-demo.md): capture two Immich releases and query them with DuckDB.
 
 - [Author Showboat guides](showboat-authoring.md): recording, wrapping, isolation, regeneration and verification rules for contributors and agents.

@@ -26,7 +26,9 @@ fi
 
 while IFS=$'\t' read -r role tag commit; do
     [[ $role == \#* || -z $role ]] && continue
-    checkout="$showcase/immich-$tag"
+    # Both releases are folders named immich, because reports take the project
+    # name from the folder and comparison flags differing names.
+    checkout="$showcase/$tag/immich"
     if [[ -d $checkout ]]; then
         actual=$(git -C "$checkout" rev-parse HEAD 2>/dev/null || echo none)
         if [[ $actual != "$commit" ]]; then
@@ -37,7 +39,7 @@ while IFS=$'\t' read -r role tag commit; do
         echo "Missing the pinned $role checkout $checkout; run bash scripts/fetch-showcase.sh" >&2
         exit 1
     else
-        mkdir -p "$showcase"
+        mkdir -p "$showcase/$tag"
         partial="$checkout.partial"
         rm -rf "$partial"
         git -c advice.detachedHead=false clone --quiet --depth 1 --single-branch --branch "$tag" "$upstream" "$partial"

@@ -10,7 +10,7 @@ match = ["src/**"]
 kind = ["source"]
 purpose = "test"
 category = "end-to-end"
-reason = "Playwright and API suites with their fixtures, generators and utilities; the *.e2e-spec.ts files are already tests by convention"
+reason = "Playwright and API suites with their fixtures, generators and utilities"
 
 [[rules]]
 id = "developer-tooling"

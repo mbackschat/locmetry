@@ -11,6 +11,10 @@ import time
 REPOSITORY = Path(__file__).resolve().parents[1]
 BINARY = Path(os.environ.get("LOCMETRY_BIN", REPOSITORY / "target/debug/locmetry")).resolve()
 GUIDES = {"root": [], "workspace": ["workspace"], "compare": ["compare"], "explain": ["explain"]}
+# Recordings of the pinned Immich checkouts (examples/showcase/immich/README.md).
+SHOWCASE = ["docs/showcase/measure.md", "docs/showcase/workspace.md", "docs/showcase/compare.md",
+            "docs/analytics-demo.md"]
+SELECTIONS = ["reference", "showcase", "all"]
 
 
 def missing_options(help_text, document):
@@ -40,6 +44,21 @@ def git_state():
         name.encode() + b"\n" + subprocess.check_output(["git", *args])
         for name, args in commands.items()
     )
+
+
+def showcase_unavailable():
+    """Return the fetch script's diagnostic when a pinned checkout is missing or moved."""
+    result = subprocess.run(["bash", "scripts/fetch-showcase.sh", "--check"],
+                            stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
+    return result.stderr or "Showcase checkouts are unavailable" if result.returncode else None
+
+
+def unavailable(path, artifacts, diagnostic):
+    status = f"FAIL {path} (not replayed)"
+    (artifacts / f"{path.stem}.log").write_text(status + "\n" + diagnostic)
+    print(status, flush=True)
+    print(diagnostic, end="" if diagnostic.endswith("\n") else "\n", flush=True)
+    return False
 
 
 def replay(path, artifacts, command=None):
@@ -81,7 +100,7 @@ def replay(path, artifacts, command=None):
     return passed
 
 
-def check(artifacts):
+def check(artifacts, selection="all"):
     os.chdir(REPOSITORY)
     artifacts = artifacts.resolve()
     artifacts.mkdir(parents=True, exist_ok=True)
@@ -89,12 +108,18 @@ def check(artifacts):
         (artifacts / name).unlink(missing_ok=True)
     started = time.perf_counter()
     before = git_state()
-    documents = [(Path(f"docs/cli/{name}.md"), command) for name, command in GUIDES.items()]
-    documents.append((Path("docs/analytics-demo.md"), None))
+    documents = []
+    if selection != "showcase":
+        documents += [(Path(f"docs/cli/{name}.md"), command, False) for name, command in GUIDES.items()]
+    if selection != "reference":
+        documents += [(Path(path), None, True) for path in SHOWCASE]
+    missing = showcase_unavailable() if any(showcase for *_, showcase in documents) else None
     passed = True
     try:
-        for path, command in documents:
-            if not replay(path, artifacts, command):
+        for path, command, showcase in documents:
+            if showcase and missing:
+                passed = unavailable(path, artifacts, missing) and passed
+            elif not replay(path, artifacts, command):
                 passed = False
     except BaseException:
         passed = False
@@ -118,6 +143,8 @@ def check(artifacts):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--artifacts-dir", type=Path, help="Evidence directory outside the checkout; default: a new temporary directory")
+    parser.add_argument("--set", choices=SELECTIONS, default="all",
+                        help="reference: guides on the checked-in fixture; showcase: recordings of the pinned Immich checkouts")
     args = parser.parse_args()
     artifacts = args.artifacts_dir or Path(tempfile.mkdtemp(prefix="locmetry-showboat-"))
-    raise SystemExit(0 if check(artifacts) else 1)
+    raise SystemExit(0 if check(artifacts, args.set) else 1)

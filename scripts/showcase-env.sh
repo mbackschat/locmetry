@@ -1,11 +1,12 @@
 # Source from the repository root in a showcase Bash example. It extends
-# cli-demo-env.sh with links to the pinned Immich checkouts, named by tag
-# because reports take the project name from the checkout folder.
+# cli-demo-env.sh with the pinned Immich checkouts: `immich` is the showcase
+# release and `<tag>/immich` each pinned release, all reporting project immich.
 source scripts/cli-demo-env.sh
 showcase=$(bash "$repository/scripts/fetch-showcase.sh" --check)
 overlay="$repository/examples/showcase/immich/overlay"
 expected=$(cd "$overlay" && find . -type f | sed 's#^\./#?? #' | LC_ALL=C sort)
-for checkout in "$showcase"/immich-*; do
+showcase_tag=$(awk -F'\t' '$1 == "showcase" { print $2 }' "$repository/examples/showcase/immich/pins.tsv")
+for checkout in "$showcase"/*/immich; do
     [[ -d $checkout/.git ]] || continue
     # The overlay is Locmetry's policy; anything else changed in the checkout
     # would make the recorded numbers describe a different tree.
@@ -16,5 +17,8 @@ for checkout in "$showcase"/immich-*; do
         diff <(printf '%s\n' "$expected") <(printf '%s\n' "$actual") >&2 || true
         exit 1
     fi
-    ln -s "$checkout" "$demo_directory/${checkout##*/}"
+    tag=$(basename "$(dirname "$checkout")")
+    mkdir "$demo_directory/$tag"
+    ln -s "$checkout" "$demo_directory/$tag/immich"
 done
+ln -s "$showcase_tag/immich" "$demo_directory/immich"

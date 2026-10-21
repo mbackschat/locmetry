@@ -50,12 +50,12 @@ Acme keeps the integration tests, the option-coverage [recorded command guides](
 
 ## Checkout Location and Fetch Contract
 
-Location: `<showcase>/immich-<tag>` outside the repository, where `<showcase>` is `LOCMETRY_SHOWCASE_DIR` when set, otherwise the platform cache folder followed by `locmetry/showcase`: `~/Library/Caches` on macOS, `${XDG_CACHE_HOME:-$HOME/.cache}` elsewhere.
+Location: `<showcase>/<tag>/immich` outside the repository, where `<showcase>` is `LOCMETRY_SHOWCASE_DIR` when set, otherwise the platform cache folder followed by `locmetry/showcase`: `~/Library/Caches` on macOS, `${XDG_CACHE_HOME:-$HOME/.cache}` elsewhere.
 
 - It survives `cargo clean` and `git clean -fdx`, and one download serves every clone and worktree on a machine.
 - macOS excludes `~/Library/Caches` from Time Machine but includes `~/.cache`; Spotlight indexed neither (checked 2026-10-21 with `tmutil isexcluded` and `mdfind`). Each checkout occupies about 164 MB.
 - It cannot enter Locmetry's self-measurement, the Showboat Git-state check or the documentation checker.
-- The folder name supplies the report's project name: a measured symlink reports its canonical folder, so `immich-v3.3.4` appears in reports and compare titles.
+- The folder name supplies the report's project name, and a measured symlink reports its canonical folder. Every release folder is therefore named `immich`: comparison flags differing project names as an identity change, which tag-named folders triggered.
 
 A fetch script performs a shallow, single-tag clone and verifies `HEAD` against the pinned commit. An existing checkout with the right commit is reused; a commit mismatch fails rather than refetching silently. Recordings and the README refresh only check this precondition and print the fetch command when it fails; they never fetch. Git is a development tool for this script, not a Locmetry dependency.
 

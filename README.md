@@ -179,7 +179,7 @@ Full schema-3 reports support external analytics without adding runtime dependen
 
 - [DuckDB cookbook](docs/duckdb-cookbook.md): typed SQL views, portfolio totals, trends, ownership and Parquet export.
 - [pandas and Polars cookbook](docs/dataframe-cookbook.md): equivalent dataframe analysis with optional external packages.
-- [Recorded analytics demo](docs/analytics-demo.md): replay a capture and query against the shared synthetic workspace.
+- [Recorded analytics demo](docs/analytics-demo.md): capture two Immich releases and query them with DuckDB.
 
 ## How classification works
 

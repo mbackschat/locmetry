@@ -12,9 +12,9 @@ Locmetry's public showcase measures [Immich](https://github.com/immich-app/immic
 bash scripts/fetch-showcase.sh
 ```
 
-The script makes one shallow clone per pinned tag and verifies its commit. It reuses a checkout already at the pinned commit and refuses one at any other commit. Checkouts live outside the repository in `~/Library/Caches/locmetry/showcase/` on macOS, which Time Machine excludes, and in `${XDG_CACHE_HOME:-~/.cache}/locmetry/showcase/` elsewhere; set `LOCMETRY_SHOWCASE_DIR` to choose another directory. Each checkout takes about 164 MB. `--check` verifies the checkouts without network access.
+The script makes one shallow clone per pinned tag and verifies its commit. It reuses a checkout already at the pinned commit and refuses one at any other commit. Checkouts live outside the repository as `<tag>/immich` in `~/Library/Caches/locmetry/showcase/` on macOS, which Time Machine excludes, and in `${XDG_CACHE_HOME:-~/.cache}/locmetry/showcase/` elsewhere; set `LOCMETRY_SHOWCASE_DIR` to choose another directory. Each checkout takes about 164 MB. `--check` verifies the checkouts without network access.
 
-Recorded examples source [showcase-env.sh](../../../scripts/showcase-env.sh). It copies the overlay into each checkout, fails if anything else differs from the pinned commit, and links the checkouts into a temporary directory under their folder names, such as `immich-v3.3.4`. Reports take the project name from that folder.
+Recorded examples source [showcase-env.sh](../../../scripts/showcase-env.sh). It copies the overlay into each checkout, fails if anything else differs from the pinned commit, and links `immich` (the showcase release) and `<tag>/immich` for each pinned release into a temporary directory. Every checkout folder is named `immich` because reports take the project name from it, and comparison flags differing names.
 
 ## Measure by hand
 
@@ -22,9 +22,9 @@ After fetching, copy the overlay into the showcase checkout and measure it:
 
 ```sh
 showcase=$(bash scripts/fetch-showcase.sh --check)
-cp -R examples/showcase/immich/overlay/. "$showcase/immich-v3.3.4/"
-locmetry --root "$showcase/immich-v3.3.4"
-locmetry workspace --workspace-file "$showcase/immich-v3.3.4/workspace.toml"
+cp -R examples/showcase/immich/overlay/. "$showcase/v3.3.4/immich/"
+locmetry --root "$showcase/v3.3.4/immich"
+locmetry workspace --workspace-file "$showcase/v3.3.4/immich/workspace.toml"
 ```
 
 Personal defaults in `~/.config/locmetry/config.toml` can add exclusions or language mappings; add `--no-user-config` if your numbers differ from the published ones.

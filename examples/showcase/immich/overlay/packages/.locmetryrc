@@ -12,7 +12,7 @@ match = ["sdk/src/fetch-client.ts"]
 kind = ["source"]
 purpose = "other"
 category = "generated"
-reason = "Header: DO NOT MODIFY, generated using oazapfts from the OpenAPI specification; beats the npm module layout"
+reason = "Header: DO NOT MODIFY, generated using oazapfts from the OpenAPI specification"
 
 [[rules]]
 id = "end-to-end-auth-server"

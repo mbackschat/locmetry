@@ -114,6 +114,7 @@ class GitGuardTests(unittest.TestCase):
             with self.subTest(content=content):
                 self.fixture.write_text(content)
                 with patch.object(recorded, "REPOSITORY", self.root), \
+                        patch.object(recorded, "showcase_unavailable", return_value=None), \
                         patch.object(recorded, "replay", return_value=True), \
                         contextlib.redirect_stdout(io.StringIO()):
                     self.assertTrue(recorded.check(artifacts))
@@ -153,6 +154,8 @@ class GitGuardTests(unittest.TestCase):
 
         with patch.object(recorded, "REPOSITORY", self.root), \
                 patch.object(recorded, "GUIDES", {"first": [], "second": []}), \
+                patch.object(recorded, "SHOWCASE", ["docs/analytics-demo.md"]), \
+                patch.object(recorded, "showcase_unavailable", return_value=None), \
                 patch.object(recorded, "replay", side_effect=replay), \
                 contextlib.redirect_stdout(io.StringIO()) as console:
             self.assertFalse(recorded.check(artifacts))
@@ -160,6 +163,60 @@ class GitGuardTests(unittest.TestCase):
         self.assertIn("Git", console.getvalue())
         self.assertIn("Total", console.getvalue())
         self.assertTrue((artifacts / "git-after.txt").exists())
+
+
+class DocumentSetTests(unittest.TestCase):
+    """Reference guides replay from the checked-in fixture; showcase documents
+    need the pinned Immich checkouts, so CI replays them in a separate step."""
+
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        previous = Path.cwd()
+        self.addCleanup(os.chdir, previous)
+        os.chdir(self.root)
+        subprocess.run(["git", "init", "-q"], check=True)
+        subprocess.run(["git", "-c", "user.name=Test", "-c", "user.email=test@example.invalid",
+                        "commit", "-q", "--allow-empty", "-m", "empty", "--no-verify"], check=True)
+        self.artifacts = self.root.parent / (self.root.name + "-artifacts")
+        self.addCleanup(shutil.rmtree, self.artifacts, True)
+
+    def run_check(self, selection, unavailable=None):
+        visited = []
+
+        def replay(path, destination, command=None):
+            visited.append(str(path))
+            return True
+
+        with patch.object(recorded, "REPOSITORY", self.root), \
+                patch.object(recorded, "GUIDES", {"root": []}), \
+                patch.object(recorded, "SHOWCASE", ["docs/showcase/measure.md"]), \
+                patch.object(recorded, "showcase_unavailable", return_value=unavailable), \
+                patch.object(recorded, "replay", side_effect=replay), \
+                contextlib.redirect_stdout(io.StringIO()) as console:
+            passed = recorded.check(self.artifacts, selection)
+        return passed, visited, console.getvalue()
+
+    def test_sets_select_reference_and_showcase_documents(self):
+        for selection, expected in [
+            ("reference", ["docs/cli/root.md"]),
+            ("showcase", ["docs/showcase/measure.md"]),
+            ("all", ["docs/cli/root.md", "docs/showcase/measure.md"]),
+        ]:
+            with self.subTest(selection=selection):
+                passed, visited, _ = self.run_check(selection)
+                self.assertTrue(passed)
+                self.assertEqual(visited, expected)
+
+    def test_missing_checkouts_fail_showcase_documents_without_replaying_them(self):
+        diagnostic = "Missing the pinned showcase checkout; run bash scripts/fetch-showcase.sh"
+        passed, visited, console = self.run_check("all", unavailable=diagnostic)
+        self.assertFalse(passed)
+        self.assertEqual(visited, ["docs/cli/root.md"])
+        self.assertIn("FAIL docs/showcase/measure.md", console)
+        self.assertIn("fetch-showcase.sh", console)
+        self.assertIn("fetch-showcase.sh", (self.artifacts / "measure.log").read_text())
 
 
 if __name__ == "__main__":

@@ -10,7 +10,7 @@ match = ["pigeon/**"]
 kind = ["source"]
 purpose = "production"
 category = "implementation"
-reason = "Pigeon platform-channel definitions from which the Dart, Kotlin and Swift bindings are generated"
+reason = "Pigeon definitions from which the Dart, Kotlin and Swift platform bindings are generated"
 
 [[rules]]
 id = "ios-app"
@@ -26,4 +26,4 @@ match = ["android/app/proguard-rules.pro", "bin/**", "scripts/**"]
 kind = ["source"]
 purpose = "production"
 category = "tooling"
-reason = "ProGuard configuration and maintained developer commands; bin/ holds a key generator, not a shipped executable"
+reason = "ProGuard configuration and developer commands; bin/ holds a key generator, not a shipped tool"

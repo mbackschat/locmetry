@@ -48,13 +48,36 @@ jobs:
         run: |
           uv run --no-project --python 3.11 \
             --with showboat==0.6.1 --with duckdb==1.5.6 \
-            python scripts/check-recorded-guides.py --artifacts-dir "$RUNNER_TEMP/showboat"
+            python scripts/check-recorded-guides.py --set reference --artifacts-dir "$RUNNER_TEMP/showboat"
       - name: Upload Showboat failure evidence
         if: failure() && matrix.os == 'ubuntu-24.04' && steps.showboat.outcome == 'failure'
         uses: actions/upload-artifact@v7
         with:
           name: showboat-failure-evidence
           path: ${{ runner.temp }}/showboat
+          if-no-files-found: warn
+          retention-days: 7
+      # The pins file names tag and commit, so it keys the pinned Immich checkouts.
+      - name: Restore Immich showcase checkouts
+        if: matrix.os == 'ubuntu-24.04'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/locmetry/showcase
+          key: immich-showcase-${{ hashFiles('examples/showcase/immich/pins.tsv') }}
+      - name: Replay showcase recordings
+        id: showcase
+        if: matrix.os == 'ubuntu-24.04'
+        run: |
+          bash scripts/fetch-showcase.sh
+          uv run --no-project --python 3.11 \
+            --with showboat==0.6.1 --with duckdb==1.5.6 \
+            python scripts/check-recorded-guides.py --set showcase --artifacts-dir "$RUNNER_TEMP/showcase"
+      - name: Upload showcase failure evidence
+        if: failure() && matrix.os == 'ubuntu-24.04' && steps.showcase.outcome == 'failure'
+        uses: actions/upload-artifact@v7
+        with:
+          name: showcase-failure-evidence
+          path: ${{ runner.temp }}/showcase
           if-no-files-found: warn
           retention-days: 7
       - name: Check analytics recipes
