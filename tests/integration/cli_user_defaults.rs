@@ -84,10 +84,10 @@ fn user_defaults_add_exclusions_and_language_mappings() {
             ".locmetryrc"
         ])
     );
-    assert!(metadata["user_config_path"]
-        .as_str()
-        .unwrap()
-        .ends_with("locmetry/config.toml"));
+    assert!(
+        std::path::Path::new(metadata["user_config_path"].as_str().unwrap())
+            .ends_with("locmetry/config.toml")
+    );
 }
 
 /// The project knows its files best, so its mappings win over user ones.
