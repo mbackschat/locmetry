@@ -7,7 +7,7 @@
 [![Latest release](https://img.shields.io/github/v/release/mbackschat/locmetry)](https://github.com/mbackschat/locmetry/releases/latest)
 [![Licence: MIT](https://img.shields.io/github/license/mbackschat/locmetry)](LICENSE)
 
-Locmetry counts code, comments and blank lines, classifies files as production, test or other, and records the rule behind each classification. Reports separate source code from data and documentation and show results by language and folder.
+Locmetry counts code, comments and blank lines, classifies files as production, test or other and by category, such as generated code or tooling, and records the rule behind each classification. Reports separate source code from data and documentation and show results by language and folder.
 
 It needs no configuration to start: Locmetry recognizes the [build modules](#build-modules) of npm, Gradle, Maven, Cargo, Go, Python, Lake, Swift and Dart projects, counts their conventional source layouts as production and finds tests by built-in conventions, so even a multi-language monorepo gets a production/test split on the first run.
 
@@ -98,6 +98,33 @@ Built-in conventions already recognize the npm, Gradle, Python and Dart [build m
 | Other: generated | 0 | 16,165 |
 | Other: unclaimed | 5,623 | 0 |
 | Test/prod | 0.43 | 0.48 |
+
+`--show-categories` breaks each purpose down by category, which shows what the project consists of:
+
+```sh
+cd immich && locmetry --show-categories
+```
+
+<!-- showcase-categories -->
+```text
+ ────────────────────────────────────────────────────────────────────────────────────────────────────
+ Category                   Files    Lines     Code │ Share  Code share
+ ───────────────────────────────────────────────────┼────────────────────────────────────────────────
+ production:implementation  1,875  204,088  174,215 │ 61.6%  ████████████████████████████████████████
+ test:test                    496   99,255   83,485 │ 29.5%  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+ other:generated               38   19,173   16,165 │  5.7%  ░░░░
+ production:native             32    3,967    3,156 │  1.1%  █
+ test:end-to-end               23    3,719    3,118 │  1.1%  ▓
+ production:tooling            25    1,617    1,387 │  0.5%  ▏
+ production:deployment         31    1,023      798 │  0.3%  ▏
+ test:test-infrastructure       4      251      234 │  0.1%  ▏
+ production:build-tooling       4      186      148 │  0.1%  ▏
+ test:performance-test          1       81       64 │  0.0%  ▏
+ Rows of one purpose add up to that purpose's Code; all rows add up to the total Code.
+ Share = Code / total Code. Bars: █ Production  ▓ Test  ░ Other; the largest row fills the bar.
+```
+
+Categories are labels assigned by built-in conventions, such as `test` and `build-tooling`, and by the policy, such as `generated`, `native` and `tooling`; a line counter has no equivalent.
 
 `locmetry explain FILE` names the rule behind any decision; for the generated SDK client, it reports the override and the reason recorded with it.
 

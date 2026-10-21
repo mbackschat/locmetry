@@ -145,6 +145,8 @@ def main():
     # A terminal shows share bars, which grow with its width; 120 columns
     # keeps them in the excerpts at a reproducible size.
     measurement = showcase("cd immich && COLUMNS=120 locmetry --format table --no-color --show-bars")
+    categories = showcase("cd immich && COLUMNS=120 locmetry --show-categories "
+                          "--format table --no-color --show-bars")
     workspace = showcase("COLUMNS=120 locmetry workspace --workspace-file immich/workspace.toml "
                          "--format table --no-color --show-bars")
     comparison = showcase("""locmetry --root v3.2.0/immich --output v3.2.0.json
@@ -152,6 +154,7 @@ locmetry --root v3.3.4/immich --output v3.3.4.json
 locmetry compare v3.2.0.json v3.3.4.json --format table --no-color""")
     verbose = showcase("cd immich && COLUMNS=120 locmetry --format table --no-color --no-bars --verbose")
     readme = replace_text(readme, "showcase-language", grid(measurement, "Language"))
+    readme = replace_text(readme, "showcase-categories", grid(categories, "Category"))
     readme = replace_text(readme, "showcase-modules", module_production(verbose))
     readme = replace_text(readme, "showcase-workspace", grid(workspace, "Repository"))
     readme = replace_text(readme, "showcase-compare", grid(comparison, "Purpose"))
