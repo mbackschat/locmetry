@@ -85,7 +85,8 @@ def prepare(destination, task_path=TASK, binaries=None, treatment="without-guide
     supplied = treatment == "supplied-binaries"
     if treatment not in ["without-guides", "help-recipe", "help-routing", "supplied-binaries"]:
         raise ValueError(f"Unknown treatment: {treatment}")
-    if not supplied and "Classify maintained scripts in service/.locmetryrc" in (REPO / "src/main.rs").read_text():
+    help_sources = [REPO / "src/main.rs", REPO / "src/app/cli.rs"]
+    if not supplied and any(path.is_file() and "Classify maintained scripts in service/.locmetryrc" in path.read_text() for path in help_sources):
         raise ValueError("Historical treatments require pre-adoption source; use the study's recorded source revision in a separate checkout, or define a new study for the current interface")
     conditions = ["A", "B", "C"] if treatment == "help-routing" else ["A", "B"]
     if supplied and (not binaries or len(binaries) != 2):

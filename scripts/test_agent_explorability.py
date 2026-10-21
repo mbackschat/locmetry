@@ -4,6 +4,7 @@ import importlib.util
 import json
 from pathlib import Path
 import shutil
+import subprocess
 import tempfile
 import threading
 import time
@@ -13,6 +14,7 @@ from unittest.mock import patch
 SPEC = importlib.util.spec_from_file_location("benchmark", Path(__file__).with_name("agent-explorability.py"))
 BENCH = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(BENCH)
+STUDY_LAYOUT = "d338670"
 SCORE_SPEC = importlib.util.spec_from_file_location("scoring", Path(__file__).with_name("score_agent_explorability.py"))
 SCORING = importlib.util.module_from_spec(SCORE_SPEC)
 SCORE_SPEC.loader.exec_module(SCORING)
@@ -23,10 +25,14 @@ class ExperimentTests(unittest.TestCase):
         fixture = tempfile.TemporaryDirectory()
         self.addCleanup(fixture.cleanup)
         source = Path(fixture.name)
-        for name in ["src", "docs/guides", "scripts"]:
-            shutil.copytree(BENCH.REPO / name, source / name)
-        for name in ["Cargo.toml", "Cargo.lock"]:
-            shutil.copy2(BENCH.REPO / name, source / name)
+        # The treatments patch the study-era CLI, whose help lived in src/main.rs;
+        # d338670 is the last revision with that layout, so later refactors of
+        # the current tree cannot invalidate these checks.
+        archive = subprocess.run(
+            ["git", "archive", STUDY_LAYOUT, "src", "docs/guides", "Cargo.toml", "Cargo.lock"],
+            cwd=BENCH.REPO, capture_output=True, check=True).stdout
+        subprocess.run(["tar", "-x", "-C", str(source)], input=archive, check=True)
+        shutil.copytree(BENCH.REPO / "scripts", source / "scripts")
         # Historical treatments need pre-adoption help; tests/integration/guides.rs guards the adopted wording.
         main = source / "src/main.rs"
         addition = "".join((BENCH.TASK.parent / name).read_text() for name in ["help-routing.txt", "help-recipe.txt"])
