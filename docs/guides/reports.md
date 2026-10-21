@@ -97,7 +97,7 @@ locmetry acme-orders --no-user-config --output - | jq '.metadata.coverage'
 
 ### “Not source code”: which files are data or documentation?
 
-Content kind is separate from purpose: these files contribute to `all_counted`, but not source totals. List their kinds, physical line counts and paths:
+Content kind is separate from purpose: these files contribute to `all_counted`, but not source totals. Code embedded in them, such as fenced snippets in Markdown, stays documentation; the verbose note counts its code lines, and each file's `languages` splits them by language. List their kinds, physical line counts and paths:
 
 ```sh
 locmetry acme-orders --no-user-config --files --output - | jq -r '.files[] | select(.kind != "source") | [.kind, .counts.lines, .path] | @tsv'

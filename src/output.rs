@@ -2088,16 +2088,32 @@ pub fn render_table_with_options(
 
     let mut notes = Vec::new();
     if verbose {
-        let mut other_kinds = BTreeMap::<Kind, Counts>::new();
+        // Per kind: its counts and the code of languages embedded in its
+        // files, such as fenced snippets, which never reach the source tables.
+        let mut other_kinds = BTreeMap::<Kind, (Counts, u64)>::new();
         for row in rows.iter().filter(|row| row.kind != Kind::Source) {
-            other_kinds.entry(row.kind).or_default().add(&row.counts);
+            let (counts, embedded) = other_kinds.entry(row.kind).or_default();
+            counts.add(&row.counts);
+            *embedded += row
+                .languages
+                .iter()
+                .filter(|(language, _)| **language != row.language)
+                .map(|(_, counts)| counts.code)
+                .sum::<u64>();
         }
         if !other_kinds.is_empty() {
             let kinds: Vec<String> = other_kinds
                 .iter()
-                .map(|(kind, counts)| {
+                .map(|(kind, (counts, embedded))| {
+                    let snippets = match embedded {
+                        0 => String::new(),
+                        code => format!(
+                            ", including {} in embedded snippets",
+                            counted(*code, "code line")
+                        ),
+                    };
                     format!(
-                        "{} ({})",
+                        "{} ({}{snippets})",
                         counted(counts.files, &format!("{kind} file")),
                         counted(counts.lines, "line")
                     )
