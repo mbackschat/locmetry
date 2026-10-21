@@ -38,6 +38,10 @@ Use the benchmark's frozen tasks, runners ([six-task](../scripts/agent-explorabi
 
 Resolve MEDIUM through the owner's tier mapping for the CLI that runs the subjects, and record the actual model and effort. The runner drives Codex today. Results from different models are separate campaigns and are never pooled. Keep raw sessions in Git-ignored `docs/research/local/agent-explorability/` and publish a dated research note with the design, results and limits.
 
+## Help-Size Guard
+
+`cargo test --locked --test integration help::help_stays_within_its_reading_budget` fails when the root or a subcommand help text exceeds its byte budget at `COLUMNS=100`. The budgets are the measured sizes plus about 3%, so factual edits pass while real growth stops for a decision. Size is a stop, not an efficiency measure: raise a budget only after a desk review of the growth, at the level its findings justify, and lower it when help shrinks.
+
 ## Ledger
 
 One row per check, newest first. The outcome links the evidence.

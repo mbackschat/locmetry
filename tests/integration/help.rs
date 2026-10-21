@@ -433,3 +433,37 @@ fn compare_help_drills_into_a_workspace_member_with_scoped_folder_totals() {
         assert!(flat.contains(fact), "{fact}");
     }
 }
+
+/// Help sizes in bytes at `COLUMNS=100`, measured 2026-10-21 plus about 3%.
+/// Agents read help before ordinary use, so growth beyond a budget must be a
+/// reviewed decision (docs/agent-regression-checks.md#help-size-guard); size
+/// alone does not measure efficiency, so a budget is a stop, not a target.
+const HELP_BUDGETS: [(&[&str], usize); 8] = [
+    (&["-h"], 7_600),
+    (&["--help"], 14_000),
+    (&["workspace", "-h"], 4_900),
+    (&["workspace", "--help"], 6_900),
+    (&["compare", "-h"], 1_700),
+    (&["compare", "--help"], 4_900),
+    (&["explain", "-h"], 1_600),
+    (&["explain", "--help"], 3_400),
+];
+
+#[test]
+fn help_stays_within_its_reading_budget() {
+    for (args, budget) in HELP_BUDGETS {
+        let out = common::locmetry()
+            .env("COLUMNS", "100")
+            .env("NO_COLOR", "1")
+            .args(args)
+            .output()
+            .unwrap();
+        assert!(out.status.success(), "{args:?}");
+        let size = out.stdout.len();
+        assert!(
+            size <= budget,
+            "`locmetry {}` prints {size} bytes, over its budget of {budget}; run an agent regression check before raising it",
+            args.join(" ")
+        );
+    }
+}
