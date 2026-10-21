@@ -224,6 +224,8 @@ fn builtin_test_conventions_cover_common_layouts_but_not_ambiguous_fixtures() {
         ("e2e/src/specs/album.e2e-spec.ts", "js-e2e-spec-file"),
         ("core/src/main/java/ParserTests.java", "jvm-test-class"),
         ("cmd/main_test.go", "go-test-file"),
+        ("src/tests.rs", "rust-test-module"),
+        ("crates/core/src/output/tests.rs", "rust-test-module"),
         ("tool/test_cli.py", "python-test-file"),
         ("tool/conftest.py", "python-test-file"),
         (

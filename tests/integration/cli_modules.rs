@@ -38,6 +38,7 @@ fn declared_modules_make_their_source_production() {
         ("legacy/src/main/java/A.java", "class A {}\n"),
         ("crates/util/Cargo.toml", "[package]\n"),
         ("crates/util/src/lib.rs", "fn util() {}\n"),
+        ("crates/util/src/parse/tests.rs", "fn case() {}\n"),
         ("svc/go.mod", "module svc\n"),
         ("svc/main.go", "package main\n"),
         ("svc/internal/store.go", "package internal\n"),
@@ -78,6 +79,11 @@ fn declared_modules_make_their_source_production() {
                 "crates/util/src/lib.rs",
                 "production",
                 "builtin:cargo-module"
+            ),
+            triple(
+                "crates/util/src/parse/tests.rs",
+                "test",
+                "builtin:rust-test-module"
             ),
             triple("docs/probe.js", "other", "fallback"),
             triple(
