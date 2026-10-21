@@ -262,10 +262,10 @@ fn personal_defaults_explicit_config_and_path_bases_match_measurement() {
     };
     let excluded = document(command("main.py", &[]), 0);
     assert_eq!(excluded["result"]["state"], "excluded");
-    assert!(excluded["user_config_path"]
-        .as_str()
-        .unwrap()
-        .ends_with("locmetry/config.toml"));
+    assert!(
+        std::path::Path::new(excluded["user_config_path"].as_str().unwrap())
+            .ends_with("locmetry/config.toml")
+    );
     let enabled = document(command("./main.py", &["--no-user-config"]), 0);
     assert_eq!(enabled["path"], "main.py");
     assert_eq!(enabled["result"]["state"], "counted");

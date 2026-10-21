@@ -357,6 +357,7 @@ fn invalid_options_fail_before_writing_with_format_remedy() {
     }
 }
 
+#[cfg(unix)]
 #[test]
 fn empty_source_and_control_characters_do_not_corrupt_tables() {
     let temp = fixture();
@@ -555,6 +556,7 @@ fn zero_code_folders_do_not_promise_more_detail_with_a_larger_budget() {
     assert!(!table(root, 1, &[]).contains("increase --folder-rows"));
 }
 
+#[cfg(unix)]
 #[test]
 fn budget_hint_uses_code_order_ties_and_sanitizes_its_path() {
     let temp = fixture();

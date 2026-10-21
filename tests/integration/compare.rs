@@ -579,6 +579,7 @@ fn full_comparison_output_is_written_and_human_folders_keep_their_hierarchy() {
     );
 }
 
+#[cfg(unix)]
 #[test]
 fn rendering_escapes_markdown_but_preserves_plain_text_labels() {
     let temp = tempfile::tempdir().unwrap();

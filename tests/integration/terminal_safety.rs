@@ -46,6 +46,7 @@ fn no_color_is_global_and_compatible_with_reference_queries() {
     }
 }
 
+#[cfg(unix)]
 #[test]
 fn table_and_unclaimed_note_flatten_path_controls_without_changing_json() {
     let root = tempfile::tempdir().unwrap();
@@ -112,6 +113,7 @@ fn table_and_unclaimed_note_flatten_path_controls_without_changing_json() {
     }
 }
 
+#[cfg(unix)]
 #[test]
 fn coverage_notes_and_diagnostics_flatten_controls_but_preserve_json_evidence() {
     let root = tempfile::tempdir().unwrap();
