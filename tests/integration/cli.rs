@@ -235,6 +235,7 @@ fn markdown_coverage_reads_correctly_for_single_files() {
     );
 }
 
+#[cfg(unix)]
 #[test]
 fn unreadable_files_produce_partial_output_naming_them_and_fail() {
     use std::os::unix::fs::PermissionsExt;
