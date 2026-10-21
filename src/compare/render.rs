@@ -233,51 +233,10 @@ fn counts_unchanged(c: &Comparison) -> bool {
             .all(|row| row.counts.delta == SignedCounts::default())
 }
 
-fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
-    let mut out = String::new();
-    let title = format!(
-        "Net change: {} → {}",
-        label(&c.before.project, markdown),
-        label(&c.after.project, markdown)
-    );
-    match markdown {
-        true => writeln!(out, "# {title}"),
-        false if c.member.is_some() => writeln!(out, "{title}"),
-        false => writeln!(out, "{}", theme.paint(Role::Heading, &title)),
-    }
-    .unwrap();
-    if let Some(folder) = c
-        .before
-        .metadata
-        .scope
-        .as_ref()
-        .and_then(|s| s.subfolder.as_deref())
-    {
-        writeln!(
-            out,
-            "Subfolder: {} (project-relative; measured contributions only)",
-            label(folder, markdown)
-        )
-        .unwrap();
-    }
-    if let Some(member) = &c.member {
-        let presence = c
-            .members
-            .as_ref()
-            .and_then(|members| members.get(member))
-            .map(|member| presence_name(member.presence))
-            .unwrap_or("not recorded");
-        writeln!(
-            out,
-            "{}; counts and detail cover this member only.",
-            theme.strong(
-                Role::Information,
-                &format!("Member: {} ({presence})", label(member, markdown))
-            )
-        )
-        .unwrap();
-        writeln!(out, "Input metadata, measurement notes, report-level findings and partial status cover the whole workspace inputs.").unwrap();
-    }
+/// The comparison grids: Totals, Purpose, Languages and, for a workspace,
+/// its members, followed by the folder grid that the report places after the
+/// composition lines.
+fn grids(c: &Comparison, markdown: bool) -> (Vec<Grid>, Option<Grid>) {
     let dimensions = &c.summary.dimensions;
     let source_total = || Some(Row::source_total(&dimensions.source));
     let changed = |change: &CountChange| change.delta.code != 0 || change.delta.lines != 0;
@@ -377,6 +336,55 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
                 .then(|| "Folders are recursive; do not sum parents and children.".into()),
         }
     });
+    (grids, folder_grid)
+}
+
+fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
+    let mut out = String::new();
+    let title = format!(
+        "Net change: {} → {}",
+        label(&c.before.project, markdown),
+        label(&c.after.project, markdown)
+    );
+    match markdown {
+        true => writeln!(out, "# {title}"),
+        false if c.member.is_some() => writeln!(out, "{title}"),
+        false => writeln!(out, "{}", theme.paint(Role::Heading, &title)),
+    }
+    .unwrap();
+    if let Some(folder) = c
+        .before
+        .metadata
+        .scope
+        .as_ref()
+        .and_then(|s| s.subfolder.as_deref())
+    {
+        writeln!(
+            out,
+            "Subfolder: {} (project-relative; measured contributions only)",
+            label(folder, markdown)
+        )
+        .unwrap();
+    }
+    if let Some(member) = &c.member {
+        let presence = c
+            .members
+            .as_ref()
+            .and_then(|members| members.get(member))
+            .map(|member| presence_name(member.presence))
+            .unwrap_or("not recorded");
+        writeln!(
+            out,
+            "{}; counts and detail cover this member only.",
+            theme.strong(
+                Role::Information,
+                &format!("Member: {} ({presence})", label(member, markdown))
+            )
+        )
+        .unwrap();
+        writeln!(out, "Input metadata, measurement notes, report-level findings and partial status cover the whole workspace inputs.").unwrap();
+    }
+    let (grids, folder_grid) = grids(c, markdown);
     for grid in grids {
         grid.write(&mut out, markdown, theme);
     }
@@ -545,4 +553,19 @@ pub fn render_markdown(c: &Comparison) -> String {
 
 pub fn render_table_with_theme(c: &Comparison, theme: Theme) -> String {
     render(c, false, theme)
+}
+
+/// The terminal grids alone, in report order and without their legends.
+pub fn render_tables(c: &Comparison, theme: Theme) -> String {
+    let (grids, folder_grid) = grids(c, false);
+    let mut out = String::new();
+    for grid in grids.into_iter().chain(folder_grid) {
+        Grid {
+            legend: None,
+            ..grid
+        }
+        .write(&mut out, false, theme);
+    }
+    // Each grid opens with the blank line that separates it from the text above.
+    out.split_off(out.find(|c| c != '\n').unwrap_or(out.len()))
 }

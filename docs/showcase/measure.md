@@ -180,8 +180,7 @@ Adaptive folder detail expands the largest folders within a row budget and cover
 
 ```bash
 source scripts/showcase-env.sh
-locmetry --root immich --format table --folder-rows 16 --no-color --no-bars \
-  | sed '/^Root:/d; /^Roots:/d; /^Project:/d; /^Measured at:/d' \
+locmetry --root immich --format table --folder-rows 16 --no-color --no-bars --tables-only \
   | sed -n '/Folder/,$p'
 ```
 
@@ -206,8 +205,4 @@ locmetry --root immich --format table --folder-rows 16 --no-color --no-bars \
  misc/release                11        6 │       6       0       0 │      0.00
  ────────────────────────────────────────┼─────────────────────────┼──────────
  Total                  333,360  282,770 │ 179,704  86,901  16,165 │      0.48
- Production + Test + Other = Code; Test/prod = Test / Production (Code).
- Adaptive folder detail; rows cover measured source once.
- server/src has more folder detail; increase --folder-rows.
-
 ```

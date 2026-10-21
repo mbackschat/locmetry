@@ -1444,12 +1444,15 @@ struct BarRows<'a> {
     total: RowCode,
     columns: &'a PurposeColumns<'a>,
     bars: Bars,
+    /// Adds the key line that explains inline bars.
+    key: bool,
 }
 
 /// A table with bars: beside its rows when the minimum inline bar fits,
 /// adding the bar kind's percentage column unless the table has it; otherwise
 /// followed by a chart for [`Bars::Always`] and left as it is for
-/// [`Bars::Fit`]. Returns the table and what follows its legends.
+/// [`Bars::Fit`]. Returns the table and what follows its legends: the inline
+/// bar key, when requested, or the chart.
 fn bar_table(
     table_columns: &Columns,
     body: &[Vec<String>],
@@ -1462,6 +1465,7 @@ fn bar_table(
         total: total_row,
         columns: purposes,
         bars,
+        key,
     } = *bars;
     let plain_table =
         |theme| PlainTable::new(table_columns, body, total.as_deref()).render(None, theme);
@@ -1508,6 +1512,9 @@ fn bar_table(
             .map(|row| bar(kind, *row, scale, cells, theme))
             .collect(),
     };
+    if !key {
+        return (table.render(Some(&bars), theme), String::new());
+    }
     let defined = match has_percent {
         true => String::new(),
         false => format!("{}. ", kind.definition()),
@@ -1661,6 +1668,8 @@ pub struct TableOptions {
     pub purposes: Vec<Purpose>,
     /// Source languages the tables count, by display name; empty counts all.
     pub languages: Vec<String>,
+    /// Omits every line outside the tables: legends, bar keys and notes.
+    pub tables_only: bool,
 }
 
 /// Measured source languages that `languages` leaves out of `rows`, largest
@@ -1925,6 +1934,7 @@ pub fn render_table_with_options(
         bars,
         purposes,
         languages: selected_languages,
+        tables_only,
     } = options;
     // A selection counts only that source, so every table, total and bar is
     // rebuilt from the selected records.
@@ -1959,6 +1969,10 @@ pub fn render_table_with_options(
     total.extend(count_cells(&summary.totals.source));
     total.extend(columns.cells(total_code));
     let mut output = String::new();
+    let legend = |text: &str| match tables_only {
+        true => String::new(),
+        false => format!(" {}\n", theme.paint(Role::Muted, text)),
+    };
     // With bars, a table returns what follows its legends: an inline bar key
     // or the chart below it.
     let table = |table_columns: &Columns,
@@ -1970,6 +1984,7 @@ pub fn render_table_with_options(
             total: total_code,
             columns: &columns,
             bars,
+            key: !tables_only,
         };
         bar_table(table_columns, body, total, &rows, theme)
     };
@@ -1986,8 +2001,8 @@ pub fn render_table_with_options(
         legends.push(LANGUAGE_RATIO_NOTE.into());
     }
     legends.extend(selection.notes(&purposes, &selected_languages));
-    for legend in legends {
-        output += &format!(" {}\n", theme.paint(Role::Muted, &legend));
+    for text in legends {
+        output += &legend(&text);
     }
     output += &after;
 
@@ -1999,8 +2014,7 @@ pub fn render_table_with_options(
         output += "\n";
         output += &text.top_rule(theme);
         output += &text.text;
-        let legend = columns.legend(None, Some("Share = Code / workspace Code"));
-        output += &format!(" {}\n", theme.paint(Role::Muted, &legend));
+        output += &legend(&columns.legend(None, Some("Share = Code / workspace Code")));
         output += &after;
     }
     if findings.members.is_empty() && (show_folders || folder_rows.is_some()) {
@@ -2041,20 +2055,11 @@ pub fn render_table_with_options(
             output += "\n";
             output += &text.top_rule(theme);
             output += &text.text;
-            output += &format!(
-                " {}\n",
-                theme.paint(Role::Muted, &columns.legend(None, None))
-            );
+            output += &legend(&columns.legend(None, None));
             if let Some(view) = &adaptive {
-                output += &format!(
-                    " {}\n",
-                    theme.paint(
-                        Role::Muted,
-                        "Adaptive folder detail; rows cover measured source once."
-                    )
-                );
+                output += &legend("Adaptive folder detail; rows cover measured source once.");
                 if let Some(hint) = &view.budget_hint {
-                    output += &format!(" {}\n", theme.paint(Role::Muted, &plain(hint)));
+                    output += &legend(&plain(hint));
                 }
             }
             output += &after;
@@ -2089,7 +2094,7 @@ pub fn render_table_with_options(
             output += "\n";
             output += &text.top_rule(theme);
             output += &text.text;
-            output += &format!(" {}\n", theme.paint(Role::Muted, CATEGORY_LEGEND));
+            output += &legend(CATEGORY_LEGEND);
             output += &after;
         }
     }
@@ -2177,7 +2182,7 @@ pub fn render_table_with_options(
             gaps.join(", ")
         )));
     }
-    if !notes.is_empty() {
+    if !notes.is_empty() && !tables_only {
         output += "\n";
         for note in notes {
             writeln!(output, " {}", note.render(theme)).unwrap();
@@ -2528,6 +2533,7 @@ mod tests {
                     bars: Bars::Off,
                     purposes: Purpose::ALL.to_vec(),
                     languages: Vec::new(),
+                    tables_only: false,
                 };
                 render_table_with_options(&summary, &rows, &findings, options)
             };
@@ -2774,6 +2780,7 @@ mod tests {
                 total: code([12, 0, 0]),
                 columns: &ALL_PURPOSES,
                 bars,
+                key: true,
             };
             let (table, after) =
                 bar_table(&columns, &body, Some(total.clone()), &rows, Theme::PLAIN);

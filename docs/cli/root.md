@@ -168,6 +168,49 @@ locmetry --root acme-orders --no-user-config --no-color --format table \
 
 ```
 
+## Print only the tables
+
+`--tables-only` prints the tables and nothing else: no legends, notes or location/time footer, so a transcript or script needs no filter. The columns keep the meanings the legends above define. A `--table-purpose` or `--table-language` selection is no longer named in the output; the command records it.
+
+```bash
+source scripts/cli-demo-env.sh
+locmetry --root acme-orders --no-user-config --no-color --no-bars --format table \
+  --show-folders --show-categories --tables-only
+```
+
+```output
+ ──────────────────────────────────────────────────────────────────────────────────
+ Language    Files  Lines  Code │ Comments  Blanks │ Prod.  Test  Other │ Test/prod
+ ───────────────────────────────┼──────────────────┼────────────────────┼──────────
+ Go              2     11     8 │        1       2 │     4     4      0 │      1.00
+ TypeScript      3     10     7 │        3       0 │     3     3      1 │      1.00
+ HTML            2      5     5 │        0       0 │     5     0      0 │      0.00
+ Python          2      5     3 │        2       0 │     2     0      1 │      0.00
+ TSX             1      3     3 │        0       0 │     3     0      0 │      0.00
+ Makefile        1      2     2 │        0       0 │     2     0      0 │      0.00
+ JavaScript      0      1     1 │        0       0 │     1     0      0 │      0.00
+ ───────────────────────────────┼──────────────────┼────────────────────┼──────────
+ Total          11     37    29 │        6       2 │    20     7      2 │      0.35
+
+ ─────────────────────────────────────────────────────
+ Folder   Lines  Code │ Prod.  Test  Other │ Test/prod
+ ─────────────────────┼────────────────────┼──────────
+ web         19    16 │    12     3      1 │      0.25
+ service     18    13 │     8     4      1 │      0.50
+ ─────────────────────┼────────────────────┼──────────
+ Total       37    29 │    20     7      2 │      0.35
+
+ ─────────────────────────────────────────────
+ Category                   Files  Lines  Code
+ ─────────────────────────────────────────────
+ production:implementation      5     19    16
+ test:test                      2      9     7
+ production:build-tooling       1      2     2
+ production:tooling             1      3     2
+ other:generated                1      2     1
+ other:unclaimed                1      2     1
+```
+
 ## Override selection
 
 The fixture policy hides dotfiles and its ignore file excludes scratch work. These CLI settings include both, while the repeated `--exclude` flags remove vendor and test paths. `--config` replaces discovered project policy; its patterns remain relative to the scan root. JSON is projected to the resulting source paths.

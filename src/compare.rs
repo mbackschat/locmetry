@@ -11,7 +11,7 @@ use std::collections::BTreeMap;
 mod engine;
 mod render;
 pub use engine::{compare, read_input, validate_destination};
-pub use render::{render_markdown, render_table_with_theme};
+pub use render::{render_markdown, render_table_with_theme, render_tables};
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 pub enum DocumentType {

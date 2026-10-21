@@ -153,6 +153,55 @@ locmetry compare before.json after.json --format headline --output - \
 }
 ```
 
+## Print only the change tables
+
+`--tables-only` keeps the change tables and drops the title, ratio line, notes, findings and input dates. Use it when the rows are what you need; the notes above explain how to read them. `sed` trims the trailing padding of the column-group header.
+
+```bash
+source scripts/cli-demo-env.sh
+locmetry --root acme-orders --no-user-config --output before.json
+printf 'export const discount = 1;\n' >> acme-orders/web/src/orders/Order.ts
+locmetry --root acme-orders --no-user-config --output after.json
+locmetry compare before.json after.json --no-color --format table --tables-only \
+  | sed 's/[[:blank:]]*$//'
+```
+
+```output
+ ──────────────────────────────────────────────────────────────────────────────────────
+                        Lines         │         Code          │         Change
+ Kind           before  after  change │ before  after  change │ Comments  Blanks  Files
+ ─────────────────────────────────────┼───────────────────────┼────────────────────────
+ Source             37     38      +1 │     29     30      +1 │        0       0      0
+ Data                2      2       0 │      2      2       0 │        0       0      0
+ Documentation       3      3       0 │      0      0       0 │        0       0      0
+ ─────────────────────────────────────┼───────────────────────┼────────────────────────
+ All counted        42     43      +1 │     31     32      +1 │        0       0      0
+
+ ───────────────────────────────────────────────────────────
+                       Lines         │         Code
+ Purpose       before  after  change │ before  after  change
+ ────────────────────────────────────┼──────────────────────
+ Production        24     25      +1 │     20     21      +1
+ ────────────────────────────────────┼──────────────────────
+ Source total      37     38      +1 │     29     30      +1
+
+ ───────────────────────────────────────────────────────────
+                       Lines         │         Code
+ Language      before  after  change │ before  after  change
+ ────────────────────────────────────┼──────────────────────
+ TypeScript        10     11      +1 │      7      8      +1
+ ────────────────────────────────────┼──────────────────────
+ Source total      37     38      +1 │     29     30      +1
+
+ ───────────────────────────────────────────────────────────
+                       Lines         │         Code
+ Folder        before  after  change │ before  after  change
+ ────────────────────────────────────┼──────────────────────
+ web (both)        19     20      +1 │     16     17      +1
+ ────────────────────────────────────┼──────────────────────
+ Source total      37     38      +1 │     29     30      +1
+```
+
 ## Focus on a workspace member
 
 `--member web` selects the exact member name from either input. Counts and detail cover that member; input provenance and partial status still cover the workspace reports. Names identify recorded members, not Git revisions.

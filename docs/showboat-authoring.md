@@ -55,7 +55,7 @@ The [verification script](../scripts/check-recorded-guides.py) rejects long fenc
 
 ## Keep changing metadata visible in the source command
 
-Each measurement records the real time; temporary absolute paths vary by machine and invocation. Select stable JSON fields explicitly, or omit only the known volatile text lines with a visible filter. For comparison tables, remove `Before measured at:` and `After measured at:` individually. Do not strip an arbitrary remainder of the report, substitute invented dates or replace all path-like strings indiscriminately.
+Each measurement records the real time; temporary absolute paths vary by machine and invocation. Select stable JSON fields explicitly, or omit only the known volatile text lines with a visible filter. When a passage needs only the rows, `--tables-only` omits those lines together with legends and notes; keep the visible filter where the legends or notes are what the passage explains. For comparison tables, remove `Before measured at:` and `After measured at:` individually. Do not strip an arbitrary remainder of the report, substitute invented dates or replace all path-like strings indiscriminately.
 
 Explain the projection in nearby prose. Exported reports retain their complete original metadata. The creation timestamp in Showboat's header is static provenance, not CLI output, and stays in the document. Use explicit output formats, `--no-color` and deterministic row ordering where needed. Both environment scripts isolate personal defaults; showcase recordings therefore omit `--no-user-config`, so readers do not mistake it for a required flag. Fixed `COLUMNS` affects report layout; it does not promise that every explanatory sentence wraps itself.
 

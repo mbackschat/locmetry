@@ -435,6 +435,10 @@ struct CompareArgs {
     /// Write only to FILE; - selects stdout. Defaults to full JSON; --format overrides it.
     #[arg(long, value_name = "FILE", help_heading = "Output and content")]
     output: Option<PathBuf>,
+    /// Print only the tables, without the title, legends, notes, findings or
+    /// measurement dates. Table format only.
+    #[arg(long = "tables-only", help_heading = "Presentation")]
+    tables_only: bool,
 }
 
 /// Settings of a single scan root, which a workspace leaves to each member's
@@ -518,7 +522,7 @@ struct SharedArgs {
     #[arg(long = "show-categories", help_heading = "Presentation")]
     categories: bool,
     /// Include classification, scope and coverage notes in table output.
-    #[arg(long, help_heading = "Presentation")]
+    #[arg(long, conflicts_with = "tables_only", help_heading = "Presentation")]
     verbose: bool,
     /// Add charts to saved or printed tables, beside them when they fit, otherwise below.
     /// Chart code share by purpose or comment density; selecting one table purpose
@@ -537,6 +541,10 @@ struct SharedArgs {
     /// Omit the share bars a terminal shows automatically.
     #[arg(long, conflicts_with = "bars", help_heading = "Presentation")]
     no_bars: bool,
+    /// Print only the tables, without legends, bar keys, notes or the closing
+    /// Root and Measured at lines. Table format only.
+    #[arg(long = "tables-only", help_heading = "Presentation")]
+    tables_only: bool,
     /// Show only these purposes' source in tables; comma-separated.
     /// JSON and Markdown keep the complete measurement. Table format only.
     #[arg(
@@ -832,6 +840,7 @@ fn warn_ineffective_options(shared: &SharedArgs, destination: &Destination, styl
             (!shared.languages.is_empty(), "--table-language"),
             (shared.no_bars, "--no-bars"),
             (shared.categories, "--show-categories"),
+            (shared.tables_only, "--tables-only"),
         ] {
             if given {
                 styling.stderr_message(
@@ -1022,6 +1031,15 @@ fn explain_path(
 
 fn run_compare(args: &CompareArgs, styling: Styling) -> Result<Outcome> {
     let destination = output_destination(&args.output, args.format);
+    if args.tables_only && !destination.shows(Format::Table) {
+        styling.stderr_message(
+            Role::Warning,
+            format_args!(
+                "--tables-only has no effect here; it applies only to table output; {}",
+                destination.format_remedy(Format::Table)
+            ),
+        );
+    }
     let before = locmetry::compare::read_input(&args.before)?;
     let after = locmetry::compare::read_input(&args.after)?;
     if let Some(path) = destination.path {
@@ -1041,10 +1059,13 @@ fn run_compare(args: &CompareArgs, styling: Styling) -> Result<Outcome> {
     let text = match destination.format {
         Format::Json => report_text(&serde_json::to_value(&result)?)?,
         Format::Headline => format!("{}\n", serde_json::to_string(&result.headline())?),
-        Format::Table => locmetry::compare::render_table_with_theme(
-            &result,
-            styling.theme(destination.path.is_none() && io::stdout().is_terminal()),
-        ),
+        Format::Table => {
+            let theme = styling.theme(destination.path.is_none() && io::stdout().is_terminal());
+            match args.tables_only {
+                true => locmetry::compare::render_tables(&result, theme),
+                false => locmetry::compare::render_table_with_theme(&result, theme),
+            }
+        }
         Format::Markdown => locmetry::compare::render_markdown(&result),
     };
     destination.write(&text)?;
@@ -1618,6 +1639,7 @@ fn report(
                     ),
                     purposes: purposes.clone(),
                     languages: languages.clone(),
+                    tables_only: shared.tables_only,
                 },
             ),
             Format::Markdown => {
@@ -1625,6 +1647,10 @@ fn report(
             }
             Format::Json | Format::Headline => return String::new(),
         };
+        // Partial counts still warn on stderr and exit 2.
+        if format == Format::Table && shared.tables_only {
+            return human;
+        }
         if inaccurate {
             let theme = match format {
                 Format::Markdown => Theme::MARKDOWN,

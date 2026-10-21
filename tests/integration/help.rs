@@ -78,6 +78,7 @@ fn every_visible_option_has_a_workflow_in_the_inventory() {
         "--no-bars",
         "--table-purpose",
         "--table-language",
+        "--tables-only",
         "--sort",
         "--markdown-depth",
         "--help",
@@ -112,7 +113,14 @@ fn every_visible_option_has_a_workflow_in_the_inventory() {
         ),
         (
             "compare",
-            vec!["--no-color", "--member", "--format", "--output", "--help"],
+            vec![
+                "--no-color",
+                "--member",
+                "--format",
+                "--output",
+                "--tables-only",
+                "--help",
+            ],
         ),
         (
             "explain",
