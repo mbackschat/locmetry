@@ -71,8 +71,9 @@ locmetry --schema explanation
 | Remove personal defaults from the experiment | `locmetry explain src/main.rs --no-user-config` |
 | Check a workspace member | `locmetry explain api/src/main.rs --workspace-file repos.toml` |
 | Check whether an additional exclusion applies | `locmetry explain vendor/lib.py --exclude 'vendor/**'` |
+| Check several representative files in one call | `locmetry explain src/main.rs tests/main_test.rs --format json` |
 
-The target must use the exact directory-entry spelling, including case and Unicode form, even on a filesystem that accepts aliases. An alias fails with exit 1 rather than being diagnosed as filtered. The target is relative to `--root`, which defaults to the working directory. An explicit `--config` is relative to the working directory and replaces discovery of the root's `.locmetryrc`. Personal defaults still apply unless disabled. All ordinary single-root scope flags are accepted. Use the same settings as the measurement you are investigating.
+The target must use the exact directory-entry spelling, including case and Unicode form, even on a filesystem that accepts aliases. An alias fails with exit 1 rather than being diagnosed as filtered. The target is relative to `--root`, which defaults to the working directory. An explicit `--config` is relative to the working directory and replaces discovery of the root's `.locmetryrc`. Personal defaults still apply unless disabled. All ordinary single-root scope flags are accepted. Use the same settings as the measurement you are investigating. Several targets are explained in argument order under the same settings; JSON then prints JSON Lines, one complete explanation per line.
 
 With `--workspace-file`, the target starts with the member's folder name; roots in the workspace file are relative to that file. Only the queried member's policy is loaded, while normal membership checks still reject duplicate names or nested roots. `--root`, `--config`, `--exclude`, `--hidden` and `--respect-ignore-files` cannot be combined with `--workspace-file`. Paths in the result are member-prefixed, but matching globs remain relative to that member's own root.
 

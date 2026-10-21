@@ -365,6 +365,8 @@ Use locmetry --schema comparison for fields or locmetry --guide compare for deta
     locmetry explain src/main.rs --root service
   Read a complete JSON explanation:
     locmetry explain src/main.rs --root service --format json
+  Check several files, one JSON line each:
+    locmetry explain src/main.rs tests/smoke.rs --root service --format json
   Diagnose a member file:
     locmetry explain web/src/index.ts --workspace-file repos.toml --format json
   Check an exclusion under a proposed scope:
@@ -373,6 +375,8 @@ Use locmetry --schema comparison for fields or locmetry --guide compare for deta
 PATH names an existing, exact-spelling root-relative file; workspace paths use
 MEMBER/PATH while policy patterns remain relative to that member. Workspace mode
 uses the member's own configuration and rejects single-root policy flags.
+Several PATHs are explained in order; JSON then prints JSON Lines, one complete
+explanation per line, and any target with unavailable counts makes the exit 2.
 This inspects the current filesystem, not a saved report or missing/deleted file.
 Redirect stdout to save JSON; explain has no --output option and no headline format.
 
@@ -390,8 +394,9 @@ for broader diagnosis. --schema and --guide are root-level standalone queries."
 
 #[derive(clap::Args)]
 struct ExplainArgs {
-    /// Root-relative file, or MEMBER/PATH with --workspace-file.
-    path: PathBuf,
+    /// Root-relative files, or MEMBER/PATH with --workspace-file; several print JSON Lines.
+    #[arg(value_name = "PATH", required = true)]
+    paths: Vec<PathBuf>,
     #[command(flatten)]
     root: RootArgs,
     /// Workspace file; use the selected member's own policy.
@@ -895,10 +900,56 @@ fn run_explain(args: &ExplainArgs, styling: Styling) -> Result<Outcome> {
         .map(Path::canonicalize)
         .transpose()
         .context("Cannot read workspace file")?;
-    let (root, target, member) = match &workspace {
+    // Every target is inspected before printing, so a failure leaves no
+    // partial output behind.
+    let explanations = args
+        .paths
+        .iter()
+        .map(|path| explain_path(args, workspace.as_deref(), user_path.as_deref(), path))
+        .collect::<Result<Vec<_>>>()?;
+    let format = args
+        .format
+        .unwrap_or_else(|| match io::stdout().is_terminal() {
+            true => ExplainFormat::Table,
+            false => ExplainFormat::Json,
+        });
+    for (index, explanation) in explanations.iter().enumerate() {
+        let separator = if index > 0 { "\n" } else { "" };
+        match format {
+            // One path keeps the pretty document; several are JSON Lines.
+            ExplainFormat::Json if explanations.len() == 1 => {
+                println!("{}", serde_json::to_string_pretty(explanation)?)
+            }
+            ExplainFormat::Json => println!("{}", serde_json::to_string(explanation)?),
+            ExplainFormat::Table => print!(
+                "{separator}{}",
+                explanation.render_with_theme(false, styling.theme(io::stdout().is_terminal()))
+            ),
+            ExplainFormat::Markdown => print!("{separator}{}", explanation.render(true)),
+        }
+    }
+    let partial: Vec<&str> = explanations
+        .iter()
+        .filter(|explanation| explanation.partial())
+        .map(|explanation| explanation.path.as_str())
+        .collect();
+    Ok(match partial.is_empty() {
+        true => Outcome::Complete,
+        false => Outcome::Partial(format!("Counts unavailable for {}", partial.join(", "))),
+    })
+}
+
+/// One target's explanation, under its member's policy in a workspace.
+fn explain_path(
+    args: &ExplainArgs,
+    workspace: Option<&Path>,
+    user_path: Option<&Path>,
+    path: &Path,
+) -> Result<locmetry::explain::Explanation> {
+    let (root, target, member) = match workspace {
         Some(file) => {
             let members = workspace_members(locmetry::workspace_definition(file)?)?;
-            let mut components = args.path.components();
+            let mut components = path.components();
             let name = match components.next() {
                 Some(std::path::Component::Normal(name)) => {
                     name.to_str().context("Member name must be UTF-8")?
@@ -917,7 +968,7 @@ fn run_explain(args: &ExplainArgs, styling: Styling) -> Result<Outcome> {
         }
         None => (
             args.root.root.clone().unwrap_or_else(|| PathBuf::from(".")),
-            args.path.clone(),
+            path.to_owned(),
             None,
         ),
     };
@@ -925,8 +976,8 @@ fn run_explain(args: &ExplainArgs, styling: Styling) -> Result<Outcome> {
     let mut prepared = prepare(
         &root,
         args.root.config.clone(),
-        user_path.as_deref(),
-        workspace.as_deref(),
+        user_path,
+        workspace,
         &overrides,
     )?;
     let (path, result) = locmetry::explain::inspect(&prepared.root, &target, &mut prepared.policy)?;
@@ -944,24 +995,7 @@ fn run_explain(args: &ExplainArgs, styling: Styling) -> Result<Outcome> {
     if let Some((member, folder)) = member {
         explanation.qualify(member, folder.as_deref());
     }
-    match args
-        .format
-        .unwrap_or_else(|| match io::stdout().is_terminal() {
-            true => ExplainFormat::Table,
-            false => ExplainFormat::Json,
-        }) {
-        ExplainFormat::Json => println!("{}", serde_json::to_string_pretty(&explanation)?),
-        ExplainFormat::Table => print!(
-            "{}",
-            explanation.render_with_theme(false, styling.theme(io::stdout().is_terminal()))
-        ),
-        ExplainFormat::Markdown => print!("{}", explanation.render(true)),
-    }
-    Ok(if explanation.partial() {
-        Outcome::Partial(format!("Counts unavailable for {}", explanation.path))
-    } else {
-        Outcome::Complete
-    })
+    Ok(explanation)
 }
 
 fn run_compare(args: &CompareArgs, styling: Styling) -> Result<Outcome> {

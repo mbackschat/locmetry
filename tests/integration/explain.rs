@@ -18,15 +18,18 @@ fn run(root: &Path, path: &str, args: &[&str]) -> Output {
 fn document(output: Output, status: i32) -> Value {
     let value = common::json(&output, status);
     if value["document_type"] == "explanation" {
-        let schema = locmetry::explain::schema();
-        let validator = jsonschema::validator_for(&schema).unwrap();
-        assert!(
-            validator.is_valid(&value),
-            "{:?}",
-            validator.iter_errors(&value).collect::<Vec<_>>()
-        );
+        assert_valid(&value);
     }
     value
+}
+fn assert_valid(explanation: &Value) {
+    let schema = locmetry::explain::schema();
+    let validator = jsonschema::validator_for(&schema).unwrap();
+    assert!(
+        validator.is_valid(explanation),
+        "{:?}",
+        validator.iter_errors(explanation).collect::<Vec<_>>()
+    );
 }
 #[test]
 fn missing_targets_report_absence_instead_of_a_spelling_alias() {
@@ -443,4 +446,117 @@ fn command_help_describes_formats_without_promising_measurement_headlines() {
         assert!(!help.contains("Source code per language and folder"));
         assert!(help.contains("JSON"));
     }
+}
+
+/// Several targets print one unchanged explanation document per line, in
+/// argument order, so an agent checks representative files in one call and
+/// line-oriented tools and `jq` read the stream alike.
+#[test]
+fn several_paths_print_one_explanation_per_line_in_argument_order() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path();
+    write(root, "main.py", "print(1)\n");
+    write(root, "tests/test_main.py", "assert True\n");
+    write(root, "broken.ipynb", "{}");
+    let lines = |output: Output, status: i32| -> Vec<Value> {
+        assert_eq!(
+            output.status.code(),
+            Some(status),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        String::from_utf8(output.stdout)
+            .unwrap()
+            .lines()
+            .map(|line| {
+                let explanation = serde_json::from_str(line).unwrap();
+                assert_valid(&explanation);
+                explanation
+            })
+            .collect()
+    };
+    let run = |paths: &[&str], args: &[&str]| {
+        common::locmetry()
+            .arg("explain")
+            .args(paths)
+            .args(["--root", root.to_str().unwrap(), "--no-user-config"])
+            .args(args)
+            .output()
+            .unwrap()
+    };
+    let explained = lines(
+        run(&["tests/test_main.py", "main.py"], &["--format", "json"]),
+        0,
+    );
+    let summary: Vec<_> = explained
+        .iter()
+        .map(|e| (e["path"].clone(), e["result"]["file"]["purpose"].clone()))
+        .collect();
+    assert_eq!(
+        summary,
+        [
+            (json!("tests/test_main.py"), json!("test")),
+            (json!("main.py"), json!("other"))
+        ]
+    );
+    // A partial target makes the command partial without hiding the others.
+    let explained = lines(run(&["main.py", "broken.ipynb"], &["--format", "json"]), 2);
+    assert_eq!(explained[1]["result"]["state"], "parse_failed");
+    // Every target is inspected before output, so a failing one prints nothing.
+    let output = run(&["main.py", "missing.py"], &["--format", "json"]);
+    assert_eq!(output.status.code(), Some(1));
+    assert!(output.stdout.is_empty());
+    for format in ["table", "markdown"] {
+        let text = String::from_utf8(
+            run(&["main.py", "tests/test_main.py"], &["--format", format]).stdout,
+        )
+        .unwrap();
+        assert!(
+            text.find("tests/test_main.py") > text.find("main.py"),
+            "{text}"
+        );
+    }
+}
+
+#[test]
+fn several_workspace_paths_use_each_members_policy() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path();
+    write(
+        root,
+        "api/.locmetryrc",
+        "version = 1\n[classification]\nfallback = \"production\"\n",
+    );
+    write(root, "api/main.py", "print(1)\n");
+    write(root, "web/main.py", "print(1)\n");
+    write(
+        root,
+        "repos.toml",
+        "version = 1\nroots = [\"api\",\"web\"]\n",
+    );
+    let output = common::locmetry()
+        .args(["explain", "web/main.py", "api/main.py", "--workspace-file"])
+        .arg(root.join("repos.toml"))
+        .args(["--no-user-config", "--format", "json"])
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    let purposes: Vec<(String, String)> = String::from_utf8(output.stdout)
+        .unwrap()
+        .lines()
+        .map(|line| {
+            let value: Value = serde_json::from_str(line).unwrap();
+            (
+                value["member"].as_str().unwrap().into(),
+                value["result"]["file"]["purpose"].as_str().unwrap().into(),
+            )
+        })
+        .collect();
+    assert_eq!(
+        purposes,
+        [
+            ("web".into(), "other".into()),
+            ("api".into(), "production".into())
+        ]
+    );
 }

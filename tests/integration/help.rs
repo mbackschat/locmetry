@@ -305,6 +305,19 @@ fn explain_help_executes_root_workspace_and_exclusion_recipes() {
     );
     assert_eq!(counted["result"]["state"], "counted");
     assert_eq!(counted["result"]["decision"]["stage"], "module");
+    let several = execute(
+        root.path(),
+        &text,
+        "Check several files, one JSON line each",
+    );
+    let stages: Vec<Value> = String::from_utf8(several.stdout)
+        .unwrap()
+        .lines()
+        .map(|line| {
+            serde_json::from_str::<Value>(line).unwrap()["result"]["decision"]["stage"].clone()
+        })
+        .collect();
+    assert_eq!(stages, ["module", "convention"]);
     let member = common::json(&execute(root.path(), &text, "Diagnose a member file"), 0);
     assert_eq!(member["path"], "web/src/index.ts");
     let excluded = common::json(
@@ -326,6 +339,7 @@ fn explain_help_executes_root_workspace_and_exclusion_recipes() {
         "no --output option",
         "root-relative",
         "--schema explanation",
+        "JSON Lines",
     ] {
         assert!(flat.contains(fact), "{fact}");
     }

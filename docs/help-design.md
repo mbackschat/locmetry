@@ -40,7 +40,7 @@ Use command help for workspace, comparison and explanation workflows. Root help 
 | Inspect member contributions | Member-prefixed paths, `summary.members`, aggregate Code-weighted Test/prod, Markdown per-member detail | Workspace result notes | Workspace task |
 | Compare saved measurements | Capture before/after full JSON, single roots or workspaces, explicit table/JSON/Markdown, net change not churn, matching restrictions, presence versus deletion, findings and partial inputs | Compare examples and notes; root entry command | Comparison and workspace tasks |
 | Drill into a workspace comparison | Exact `--member` name present on either side, member-scoped totals/ratio and immediate subfolder deltas, unchanged input provenance and partial status, JSON selector and member-prefixed paths | Compare member recipe and scope verification; README comparison entry; compare guide | Executable help with independently changed members; selected-member, unknown-name, single-root and partial-input regressions |
-| Diagnose one file | Root-relative existing path, workspace MEMBER/PATH, counted/decision stages, excluded/not-selected/unrecognized/unread/parse-failed/symlink, format and exit behavior | Explain examples and notes | Explanation task; executable help |
+| Diagnose one file | Root-relative existing paths, several as JSON Lines, workspace MEMBER/PATH, counted/decision stages, excluded/not-selected/unrecognized/unread/parse-failed/symlink, format and exit behavior | Explain examples and notes | Explanation task; executable help |
 
 ## Adding an Example
 
