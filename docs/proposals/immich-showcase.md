@@ -2,10 +2,10 @@
 
 <!-- doc-status
 {
-  "status": "draft",
+  "status": "accepted",
   "date": "2026-10-21",
   "summary": "Showcase Locmetry on Immich pinned at a release tag, keeping Acme as the exact test reference.",
-  "evidence": ""
+  "evidence": "[Owner decisions](immich-showcase.md#decisions--2026-10-21)"
 }
 -->
 
@@ -25,6 +25,7 @@ Owner decisions taken in the design discussion:
 | Member policies | Locmetry-owned files copied into the checkout | No product change; it mirrors what a user measuring a third-party repository does. |
 | Checkout location | Platform cache folder, outside the repository | Reused across clones and worktrees, excluded from Time Machine on macOS; see [Checkout Location and Fetch Contract](#checkout-location-and-fetch-contract). |
 | Narrative | Line counters, then unconfigured Locmetry, then a reviewed policy | Shows what each step adds; see [Showcase Narrative](#showcase-narrative). |
+| Acme improvements | Recommended policy shape plus the uncovered classification stages and cleanup findings | Acme is the reference readers copy and the guides' option coverage; see [Acme Reference Improvements](#acme-reference-improvements). |
 | README verification | No test gate | The README is the showcase and need not be part of the public test harness. |
 | Public naming | Allowed | Recorded as an exception in [CLAUDE.md](../../CLAUDE.md#sensitive-analysis). |
 
@@ -32,9 +33,9 @@ Owner decisions taken in the design discussion:
 
 | Scope | Content |
 | --- | --- |
-| Required | Pinned Immich inputs and a fetch contract; Locmetry-owned root and member policies plus a workspace file; README showcase sections measured on Immich; recorded showcase guides for root, workspace and compare; the [analytics demo](../analytics-demo.md) on the Immich comparison; showcase replay in documentation CI; a README refresh script. |
+| Required | Pinned Immich inputs and a fetch contract; Locmetry-owned root and member policies plus a workspace file; README showcase sections measured on Immich; recorded showcase guides for root, workspace and compare; the [analytics demo](../analytics-demo.md) on the Immich comparison; showcase replay in documentation CI; a README refresh script; the [Acme reference improvements](#acme-reference-improvements). |
 | Optional | None identified. |
-| Excluded | Removing Acme or its tests; vendoring Immich files; network access from `cargo test`, Locmetry or the recordings; a per-member configuration field in the workspace contract; new language or module conventions motivated by Immich findings (separate decisions). |
+| Excluded | Removing Acme or its tests; vendoring Immich files; network access from `cargo test`, Locmetry or the recordings; a per-member configuration field in the workspace contract; Acme demonstrations of Git submodule hints, notebooks or nested modules. |
 
 Acme keeps the integration tests, the option-coverage [recorded command guides](../cli/README.md) and the explanation edge cases.
 
@@ -122,6 +123,20 @@ Showcase commands omit `--no-user-config`, so readers do not mistake it for a re
 Showcase recordings live apart from the option-coverage guides. A separate environment script links the pinned checkouts into a temporary directory under their tag folder names, applies the overlay and writes reports outside every measured root; it never copies the checkout. Outputs stay reviewable after counting changes: bounded `--folder-rows`, jq projections of stable fields and the existing footer filters.
 
 A refresh script regenerates the README's marked Immich excerpts from the pinned checkout; release preparation runs it. The existing `readme::` table guard over Acme retires with those tables; the Common commands guard is unaffected.
+
+## Acme Reference Improvements
+
+Acme stays small, and every addition must explain something no recording shows today. Its policies become the recommended shape, because readers copy fixture files:
+
+| Change | Demonstrates |
+| --- | --- |
+| Rewrite the combined-root and member `.locmetryrc` files with `kind = ["source"]`, a `reason` on every entry and a `[categories]` table, without changing totals | The configuration shape recommended by the configure guide and [self-measurement](../self-measurement.md); `explain` shows the reason |
+| Add a few-line generated client under `web/src/` with a "DO NOT EDIT" header, classified Other / `generated` by an `[[overrides]]` entry | An override beating the npm module convention, and intentional Other without a proposed policy |
+| Add a two-line `service/Makefile` | The `build-script` convention: Production / `build-tooling` |
+| Map one invented template extension to HTML through `languages.mappings`, while `web/docs/wireframe.asset` stays unrecognized | Mapped and unrecognized files side by side in coverage |
+| In a recording, measure with a deliberately stale `--config` variant | `unused_entries` and `unused_exclusions` findings, while the fixture's own measurement stays clean |
+
+These changes land after the README tables move to Immich, as their own commit. Acme's independently known totals then change only in the reference recordings, the integration tests that check them and the fixture README, so the change stays reviewable apart from the showcase.
 
 ## Risks
 
