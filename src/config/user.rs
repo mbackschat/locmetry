@@ -1,7 +1,7 @@
 //! Personal defaults, which widen exclusions and language mappings for every project.
 use super::*;
 
-/// Locmetry personal defaults: TOML in `$XDG_CONFIG_HOME/locmetry/config.toml`, else `~/.config/locmetry/config.toml`, applied to every project.
+/// Locmetry personal defaults: TOML in `$XDG_CONFIG_HOME/locmetry/config.toml`, else `~/.config/locmetry/config.toml`, or `%APPDATA%\locmetry\config.toml` on Windows, applied to every project.
 ///
 /// They may only narrow scope and teach languages, never classify by purpose or category. Personal mappings can still change recognition and content kind. `--no-user-config` ignores them, and reports name the file as `metadata.user_config_path`.
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -77,12 +77,31 @@ impl UserDefaults {
 }
 
 /// The user defaults file: `$XDG_CONFIG_HOME/locmetry/config.toml`, else
-/// `~/.config/locmetry/config.toml`, on every platform (docs/PRODUCT.md). A relative
-/// `XDG_CONFIG_HOME` is ignored, as the XDG Base Directory specification requires.
+/// `~/.config/locmetry/config.toml`, or `%APPDATA%\locmetry\config.toml` on
+/// Windows (docs/PRODUCT.md).
 pub fn user_defaults_file() -> Option<PathBuf> {
-    let base = std::env::var_os("XDG_CONFIG_HOME")
-        .map(PathBuf::from)
-        .filter(|path| path.is_absolute())
-        .or_else(|| std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".config")))?;
+    defaults_file(|name| std::env::var_os(name))
+}
+
+/// A relative `XDG_CONFIG_HOME` is ignored, as the XDG Base Directory
+/// specification requires. Windows sets no `HOME` by default, and Tokei, cloc
+/// and uv keep user configuration in `%APPDATA%` there
+/// (docs/proposals/windows-support.md).
+fn defaults_file(var: impl Fn(&str) -> Option<std::ffi::OsString>) -> Option<PathBuf> {
+    let absolute = |name: &str| {
+        var(name)
+            .map(PathBuf::from)
+            .filter(|path| path.is_absolute())
+    };
+    let base = absolute("XDG_CONFIG_HOME").or_else(|| {
+        if cfg!(windows) {
+            absolute("APPDATA")
+        } else {
+            var("HOME").map(|home| PathBuf::from(home).join(".config"))
+        }
+    })?;
     Some(base.join("locmetry").join("config.toml"))
 }
+
+#[cfg(test)]
+mod tests;
