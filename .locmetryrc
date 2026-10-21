@@ -32,6 +32,8 @@ match = [
     "scripts/check-doc-examples.sh",
     "scripts/check-recorded-guides.py",
     "scripts/cli-demo-env.sh",
+    "scripts/fetch-showcase.sh",
+    "scripts/showcase-env.sh",
     "scripts/agent-explorability.py",
     "scripts/agent-routing-study.py",
     "scripts/full-help-study.py",

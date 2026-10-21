@@ -1,0 +1,21 @@
+version = 1
+
+[categories]
+end-to-end = "Suites that drive a running server and web client"
+tooling = "Test-runner and lint configuration"
+
+[[rules]]
+id = "end-to-end-suites"
+match = ["src/**"]
+kind = ["source"]
+purpose = "test"
+category = "end-to-end"
+reason = "Playwright and API suites with their fixtures, generators and utilities; the *.e2e-spec.ts files are already tests by convention"
+
+[[rules]]
+id = "developer-tooling"
+match = ["*.config.{js,cjs,mjs,ts}"]
+kind = ["source"]
+purpose = "production"
+category = "tooling"
+reason = "Test-runner and lint configuration"

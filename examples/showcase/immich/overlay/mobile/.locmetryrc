@@ -1,0 +1,29 @@
+version = 1
+
+[categories]
+native = "Platform code of the iOS app"
+tooling = "Developer commands and build configuration"
+
+[[rules]]
+id = "pigeon-definitions"
+match = ["pigeon/**"]
+kind = ["source"]
+purpose = "production"
+category = "implementation"
+reason = "Pigeon platform-channel definitions from which the Dart, Kotlin and Swift bindings are generated"
+
+[[rules]]
+id = "ios-app"
+match = ["ios/**"]
+kind = ["source"]
+purpose = "production"
+category = "native"
+reason = "Swift code of the iOS runner and widget extension; no Package.swift declares it"
+
+[[rules]]
+id = "developer-tooling"
+match = ["android/app/proguard-rules.pro", "bin/**", "scripts/**"]
+kind = ["source"]
+purpose = "production"
+category = "tooling"
+reason = "ProGuard configuration and maintained developer commands; bin/ holds a key generator, not a shipped executable"

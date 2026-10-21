@@ -1,0 +1,4 @@
+version = 1
+# The application components of Immich; root-only folders such as docs/ and
+# deployment/ stay in the root measurement.
+roots = ["server", "web", "mobile", "machine-learning", "e2e", "packages"]

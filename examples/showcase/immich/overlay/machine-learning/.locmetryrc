@@ -1,0 +1,21 @@
+version = 1
+
+[categories]
+performance-test = "Load tests against a running service"
+deployment = "Container image and its support scripts"
+
+[[rules]]
+id = "load-tests"
+match = ["locustfile.py"]
+kind = ["source"]
+purpose = "test"
+category = "performance-test"
+reason = "Locust load test for the machine-learning service"
+
+[[rules]]
+id = "deployment"
+match = ["Dockerfile", "scripts/**"]
+kind = ["source"]
+purpose = "production"
+category = "deployment"
+reason = "Container image with its package-source and health-check scripts"
