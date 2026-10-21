@@ -40,7 +40,7 @@ cd immich && locmetry
  ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
  Language    Files    Lines     Code │ Comments  Blanks │   Prod.    Test   Other │ Test/prod │  Share  Code share
  ────────────────────────────────────┼──────────────────┼─────────────────────────┼───────────┼─────────────────────────
- TypeScript  1,074  171,359  145,427 │    4,624  21,308 │  70,455  68,506   6,466 │      0.97 │  51.4%  ████████▓▓▓▓▓▓▓░
+ TypeScript  1,085  171,956  145,943 │    4,633  21,380 │  70,971  68,506   6,466 │      0.97 │  51.6%  ████████▓▓▓▓▓▓▓░
  Dart          823   90,871   75,726 │    2,779  12,366 │  59,495  16,231       0 │      0.27 │  26.8%  ██████▓▓
  JavaScript     17   23,273   19,746 │      427   3,100 │  19,684      62       0 │      0.00 │   7.0%  ██
  Svelte        412   19,014   17,442 │      200   1,372 │  17,420      22       0 │      0.00 │   6.2%  ██
@@ -49,7 +49,6 @@ cd immich && locmetry
  Kotlin         35    4,604    3,810 │      177     617 │   3,810       0       0 │      0.00 │   1.3%  ▏
  Swift          28    3,874    3,103 │      232     539 │   3,103       0       0 │      0.00 │   1.1%  ▏
  CSS             2      818      691 │       26     101 │     691       0       0 │      0.00 │   0.2%  ▏
- TSX            11      597      516 │        9      72 │     516       0       0 │      0.00 │   0.2%  ▏
  Shell          17      525      371 │       67      87 │     371       0       0 │      0.00 │   0.1%  ▏
  Dockerfile      4      369      267 │       12      90 │     257      10       0 │      0.04 │   0.1%  ▏
  C++             1      295      251 │       11      33 │     251       0       0 │      0.00 │   0.1%  ▏
@@ -68,10 +67,11 @@ cd immich && locmetry
  Total       2,529  333,360  282,770 │    9,149  41,441 │ 179,704  86,901  16,165 │      0.48 │ 100.0%
  Lines = Code + Comments + Blanks; Production + Test + Other = Code; Test/prod = Test / Production (Code).
  Tests written in another language than the code they test skew per-language Test/prod.
+ Folded: TSX → TypeScript.
  Share = Code / total Code. Bars: █ Production  ▓ Test  ░ Other; the largest row fills the bar.
 ```
 
-Code is split by purpose; comments and blanks stay separate. Data and documentation do not inflate source totals. `Test/prod` divides test code by production code; it describes volume, not coverage. If your numbers differ from these, personal defaults in `~/.config/locmetry/config.toml` may apply; `--no-user-config` ignores them.
+Code is split by purpose; comments and blanks stay separate. Data and documentation do not inflate source totals. Language variants count within their family's row, here TSX within TypeScript, and the `Folded:` line names each fold; `--split-languages` shows them separately, and JSON keeps every backend language. `Test/prod` divides test code by production code; it describes volume, not coverage. If your numbers differ from these, personal defaults in `~/.config/locmetry/config.toml` may apply; `--no-user-config` ignores them.
 
 #### Compared with a line counter: "how much text, per language"
 
@@ -231,6 +231,7 @@ Without explicit options, a terminal gets a table and a pipe gets a compact JSON
 | `--show-categories` / `--verbose` | Add category rows / classification and coverage notes to tables. |
 | `--table-purpose LIST` | Filter table source and totals by purpose; JSON and Markdown retain the complete measurement. |
 | `--table-language LIST` | Filter table source and totals by language, such as `TypeScript,Svelte`; a note names the excluded languages and their code. |
+| `--split-languages` | Show language variants such as TSX, JSX and C++ Header as their own rows instead of within TypeScript, JavaScript and C++. |
 | `--show-bars[=KIND]` / `--no-bars` | Force / suppress table charts. `KIND` is `purpose` or `comments`; selecting one table purpose uses comment density even with `=purpose`. Terminals show fitting bars automatically. |
 | `--tables-only` | Print only the tables of a root, workspace or compare table report, without legends, notes or the closing location and date lines. |
 | `--markdown-depth N` / `--sort code\|name` | Bound Markdown Folder breakdown depth / order human rows; depth does not bound other evidence. |

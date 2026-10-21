@@ -13,9 +13,9 @@ mod schema;
 pub mod style;
 
 pub use backend::{
-    file_records, git_submodules, language_kind, scan, scan_subfolder, scope_policy,
-    source_language, subfolder_path, Coverage, ParseFailure, ParseFailureReason, Scan,
-    DATA_LANGUAGES, DOCUMENTATION_LANGUAGES,
+    file_records, git_submodules, language_family, language_kind, scan, scan_subfolder,
+    scope_policy, source_language, subfolder_path, Coverage, ParseFailure, ParseFailureReason,
+    Scan, DATA_LANGUAGES, DOCUMENTATION_LANGUAGES,
 };
 pub use config::{
     config_schema, user_config_schema, user_defaults_file, workspace_definition, workspace_schema,
@@ -25,7 +25,8 @@ pub use config::{
 pub use modules::{detect as detect_modules, Module};
 pub use output::{
     measurement_time, render_markdown, render_table_with_options, report_text, validate_output,
-    write_report, BarKind, Bars, Findings, MemberView, RowOrder, TableOptions,
+    write_report, BarKind, Bars, Findings, Fold, LanguageVariants, MemberView, RowOrder,
+    TableOptions,
 };
 pub use paths::{member_path, within};
 pub use report::{

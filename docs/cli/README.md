@@ -26,6 +26,7 @@ Each row routes an option to its primary explanation. The workspace guide exerci
 | Root | `--root`, positional directory, `--no-user-config`, `--format`, `--no-color`, `--no-bars` | [Whole tree](root.md#measure-the-whole-tree) |
 | Root | `--folder-rows`, `--sort`, `--show-categories`, `--verbose` | [Folders and decisions](root.md#explore-folders-and-decisions) |
 | Root | `--subfolder`, `--show-folders`, `--table-purpose`, `--show-bars=comments`, `--table-language` | [Production subtree](root.md#focus-on-production-in-a-subtree), [languages](root.md#focus-on-languages) |
+| Root | `--split-languages` | [Language variants](root.md#focus-on-languages) |
 | Root | `--tables-only` | [Tables only](root.md#print-only-the-tables) |
 | Root | `--config`, `--hidden`, `--respect-ignore-files`, `--exclude` | [Selection overrides](root.md#override-selection) |
 | Root | `--files`, `--output`, `--print`, `--show-bars` | [Export and overview](root.md#save-full-evidence-and-print-an-overview) |
@@ -33,9 +34,10 @@ Each row routes an option to its primary explanation. The workspace guide exerci
 | Root | `--help`, `--version`, `--schema`, `--guide` | [Discovery](root.md#discover-syntax-and-contracts) |
 | Workspace | `--workspace-file`, `--root` | [Workspace file](workspace.md#use-a-workspace-file), [explicit roots](workspace.md#name-roots-directly) |
 | Workspace | `--no-user-config`, `--no-color`, `--no-bars`, `--verbose`, `--show-categories`, `--sort`, `--format` | [Member policy and reports](workspace.md#use-a-workspace-file) |
-| Workspace | `--table-purpose`, `--show-bars`, `--tables-only`, `--files`, `--output`, `--print`, `--markdown-depth`, `--help` | [Shares](workspace.md#select-purposes-and-show-shares), [exports](workspace.md#export-and-print-together), [Markdown](workspace.md#share-markdown-detail), [discovery](workspace.md#inspect-available-options) |
+| Workspace | `--table-purpose`, `--show-bars`, `--split-languages`, `--tables-only`, `--files`, `--output`, `--print`, `--markdown-depth`, `--help` | [Shares](workspace.md#select-purposes-and-show-shares), [exports](workspace.md#export-and-print-together), [Markdown](workspace.md#share-markdown-detail), [discovery](workspace.md#inspect-available-options) |
 | Compare | `BEFORE`, `AFTER`, `--format`, `--no-color`, `--output` | [Known change](compare.md#capture-and-explain-a-known-change), [exports](compare.md#save-the-comparison) |
 | Compare | `--tables-only` | [Change tables](compare.md#print-only-the-change-tables) |
+| Compare | `--split-languages` | [Language variants](compare.md#keep-language-variants-apart) |
 | Compare | `--member`, `--help` | [Member selection](compare.md#focus-on-a-workspace-member), [input contract](compare.md#respect-the-input-contract) |
 | Explain | `PATH`, `--root`, `--no-user-config`, `--format`, `--no-color` | [Deciding rule](explain.md#trace-the-deciding-rule) |
 | Explain | `--hidden`, `--respect-ignore-files`, `--exclude`, `--config` | [Selection overrides](explain.md#try-selection-overrides), [proposed policy](explain.md#compare-a-proposed-policy) |

@@ -1,5 +1,5 @@
 use super::*;
-use crate::output::{self, Column, ColumnRole, Columns};
+use crate::output::{self, Column, ColumnRole, Columns, LanguageVariants};
 use crate::report::kind_purpose_key;
 use crate::style::{Role, Theme};
 use crate::{Counts, Kind, Purpose};
@@ -194,6 +194,28 @@ fn kind_rows(dimensions: &Dimensions) -> Vec<Row> {
         .collect()
 }
 
+/// Language changes as `variants` shows them: a variant's counts join its
+/// family's on both sides, and the change is taken again from the sums.
+fn shown_languages(
+    languages: &BTreeMap<String, CountChange>,
+    variants: LanguageVariants,
+) -> BTreeMap<String, CountChange> {
+    let mut sides = BTreeMap::<String, (Counts, Counts)>::new();
+    for (language, change) in languages {
+        let (before, after) = sides.entry(variants.row_name(language)).or_default();
+        before.add(&change.before);
+        after.add(&change.after);
+    }
+    sides
+        .into_iter()
+        .map(|(language, (before, after))| {
+            let change = CountChange::new(before, after)
+                .expect("a family's counts are bounded by the validated source totals");
+            (language, change)
+        })
+        .collect()
+}
+
 fn purpose_ratio(dimensions: &Dimensions) -> String {
     let ratio = |side: fn(&CountChange) -> Counts| {
         let code = |purpose| {
@@ -236,10 +258,19 @@ fn counts_unchanged(c: &Comparison) -> bool {
 /// The comparison grids: Totals, Purpose, Languages and, for a workspace,
 /// its members, followed by the folder grid that the report places after the
 /// composition lines.
-fn grids(c: &Comparison, markdown: bool) -> (Vec<Grid>, Option<Grid>) {
+fn grids(c: &Comparison, markdown: bool, variants: LanguageVariants) -> (Vec<Grid>, Option<Grid>) {
     let dimensions = &c.summary.dimensions;
     let source_total = || Some(Row::source_total(&dimensions.source));
     let changed = |change: &CountChange| change.delta.code != 0 || change.delta.lines != 0;
+    let languages = shown_languages(&dimensions.source_languages, variants);
+    // A family row shows each variant's counts, changed or not.
+    let folds = variants.folds(
+        dimensions
+            .source_languages
+            .keys()
+            .map(String::as_str)
+            .filter(|name| languages.get(&variants.row_name(name)).is_some_and(changed)),
+    );
     let mut grids = vec![
         Grid {
             title: "Totals",
@@ -265,15 +296,14 @@ fn grids(c: &Comparison, markdown: bool) -> (Vec<Grid>, Option<Grid>) {
         Grid {
             title: "Languages",
             label: "Language",
-            rows: dimensions
-                .source_languages
+            rows: languages
                 .iter()
                 .filter(|(_, v)| changed(v))
                 .map(|(k, v)| Row::new(k.as_str(), v))
                 .collect(),
             total: source_total(),
             secondary: false,
-            legend: None,
+            legend: output::folded_note(&folds),
         },
     ];
     if let Some(members) = c.members.as_ref().filter(|_| c.member.is_none()) {
@@ -339,7 +369,7 @@ fn grids(c: &Comparison, markdown: bool) -> (Vec<Grid>, Option<Grid>) {
     (grids, folder_grid)
 }
 
-fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
+fn render(c: &Comparison, markdown: bool, theme: Theme, variants: LanguageVariants) -> String {
     let mut out = String::new();
     let title = format!(
         "Net change: {} → {}",
@@ -384,7 +414,7 @@ fn render(c: &Comparison, markdown: bool, theme: Theme) -> String {
         .unwrap();
         writeln!(out, "Input metadata, measurement notes, report-level findings and partial status cover the whole workspace inputs.").unwrap();
     }
-    let (grids, folder_grid) = grids(c, markdown);
+    let (grids, folder_grid) = grids(c, markdown, variants);
     for grid in grids {
         grid.write(&mut out, markdown, theme);
     }
@@ -547,17 +577,17 @@ fn presence_name(p: Presence) -> &'static str {
         Presence::AfterOnly => "after only",
     }
 }
-pub fn render_markdown(c: &Comparison) -> String {
-    render(c, true, Theme::MARKDOWN)
+pub fn render_markdown(c: &Comparison, variants: LanguageVariants) -> String {
+    render(c, true, Theme::MARKDOWN, variants)
 }
 
-pub fn render_table_with_theme(c: &Comparison, theme: Theme) -> String {
-    render(c, false, theme)
+pub fn render_table_with_theme(c: &Comparison, theme: Theme, variants: LanguageVariants) -> String {
+    render(c, false, theme, variants)
 }
 
 /// The terminal grids alone, in report order and without their legends.
-pub fn render_tables(c: &Comparison, theme: Theme) -> String {
-    let (grids, folder_grid) = grids(c, false);
+pub fn render_tables(c: &Comparison, theme: Theme, variants: LanguageVariants) -> String {
+    let (grids, folder_grid) = grids(c, false, variants);
     let mut out = String::new();
     for grid in grids.into_iter().chain(folder_grid) {
         Grid {
