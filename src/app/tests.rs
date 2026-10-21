@@ -98,11 +98,19 @@ fn bars_are_automatic_only_on_a_terminal_unless_requested_or_refused() {
 
 #[test]
 fn emphasis_needs_a_capable_terminal() {
-    assert!(emphasis(true, None, Some("xterm-256color".into())));
-    assert!(emphasis(true, Some(String::new()), None));
-    assert!(!emphasis(false, None, None));
-    assert!(!emphasis(true, Some("1".into()), None));
-    assert!(!emphasis(true, None, Some("dumb".into())));
+    assert!(emphasis(true, None, Some("xterm-256color".into()), None));
+    assert!(emphasis(true, Some(String::new()), None, None));
+    assert!(!emphasis(false, None, None, None));
+    assert!(!emphasis(true, Some("1".into()), None, None));
+    assert!(!emphasis(true, None, Some("dumb".into()), None));
+}
+
+/// A Windows console that refuses virtual-terminal processing would print
+/// escape sequences literally, so output falls back to plain text.
+#[test]
+fn emphasis_needs_a_windows_console_that_accepts_escape_sequences() {
+    assert!(emphasis(true, None, None, Some(true)));
+    assert!(!emphasis(true, None, None, Some(false)));
 }
 
 #[test]
