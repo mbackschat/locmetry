@@ -94,6 +94,31 @@ fn version_one_release_reports_are_refused() {
     }
 }
 
+/// Schema 3 grows within its version before 1.0, so a field the current
+/// producer adds must not invalidate reports of the latest release: absence
+/// means "not recorded" (the v0.7.3 fixtures predate `largest_module_files`).
+#[test]
+fn latest_release_reports_stay_valid_and_comparable() {
+    for name in ["v0.7.3-root", "v0.7.3-workspace"] {
+        let path = format!("tests/fixtures/reports/{name}.json");
+        let value: Value = serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+        assert_eq!(value["schema_version"], "3", "{name}");
+        serde_json::from_value::<MeasurementReport>(value)
+            .unwrap()
+            .validate()
+            .unwrap_or_else(|error| panic!("{name}: {error}"));
+        let output = common::locmetry()
+            .args(["compare", &path, &path, "--format", "json"])
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{name}: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+}
+
 #[test]
 fn current_root_and_workspace_contracts_round_trip_without_shape_changes() {
     let temp = tempfile::tempdir().unwrap();

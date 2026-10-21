@@ -1661,7 +1661,7 @@ fn report(
                 .map(|(k, v)| (k.into(), v))
                 .collect(),
             submodules,
-            largest_module_files: module_files.clone(),
+            largest_module_files: Some(module_files.clone()),
             unused_entries: if summary_findings {
                 unused_entries
             } else {

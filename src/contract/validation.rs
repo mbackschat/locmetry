@@ -433,15 +433,18 @@ impl MeasurementReport {
                 .map(|f| &f.folder),
             "unclaimed_folders",
         )?;
+        let module_files = self.summary.largest_module_files.iter().flatten();
         unique(
-            self.summary.largest_module_files.iter().map(|f| &f.path),
+            module_files.clone().map(|f| &f.path),
             "largest_module_files",
         )?;
-        for file in &self.summary.largest_module_files {
+        for file in module_files {
             path(&file.path, Root::Rejected)?;
             path(&file.module, Root::Allowed)?;
         }
-        if let (Some(files), Some(modules)) = (&self.files, &m.modules) {
+        if let (Some(files), Some(modules), Some(recorded)) =
+            (&self.files, &m.modules, &self.summary.largest_module_files)
+        {
             let owners = crate::modules::ModuleOwners::new(
                 modules
                     .iter()
@@ -463,7 +466,7 @@ impl MeasurementReport {
                 .collect();
             largest.sort_by(|a, b| b.0.cmp(&a.0).then_with(|| a.2.cmp(b.2)));
             largest.truncate(crate::report::MODULE_FILES);
-            let recorded = self.summary.largest_module_files.iter().map(|f| {
+            let recorded = recorded.iter().map(|f| {
                 (
                     f.code,
                     f.lines,

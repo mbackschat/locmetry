@@ -945,6 +945,13 @@ fn reports_name_the_largest_files_build_modules_claimed() {
             .validate()
     };
     validate(full.clone()).unwrap();
+    // Producers before this field recorded no list; their reports stay valid.
+    let mut historical = full.clone();
+    historical["summary"]
+        .as_object_mut()
+        .unwrap()
+        .remove("largest_module_files");
+    validate(historical).unwrap();
     let mut forged = full;
     forged["summary"]["largest_module_files"][0]["path"] = json!("web/src/gen.ts");
     let error = validate(forged).unwrap_err().to_string();
@@ -958,8 +965,9 @@ fn reports_name_the_largest_files_build_modules_claimed() {
         "version = 1\n[classification]\nbuiltin_modules = false\n",
     )
     .unwrap();
+    // Recorded as an empty list, so absence keeps meaning "not recorded".
     let (_, document, _) = headline(&root, &[]);
-    assert!(document["summary"].get("largest_module_files").is_none());
+    assert_eq!(document["summary"]["largest_module_files"], json!([]));
     let table = String::from_utf8(run(&root, &["--verbose", "--format", "table"]).stdout).unwrap();
     assert!(!table.contains("module-claimed"), "{table}");
 }

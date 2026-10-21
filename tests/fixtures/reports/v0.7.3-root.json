@@ -1,0 +1,454 @@
+{
+  "document_type": "measurement",
+  "detail": "full",
+  "schema_version": "3",
+  "project": "web",
+  "metadata": {
+    "measured_at_unix_seconds": 0,
+    "locmetry_version": "0.7.3",
+    "backend": "tokei 15.0.0 (embedded)",
+    "backend_inaccurate": false,
+    "backend_configuration": "Explicit defaults; ambient Tokei configuration is not loaded",
+    "user_config_path": null,
+    "coverage": {
+      "selected_files": 4,
+      "counted_files": 4,
+      "mapped_files": 0,
+      "unrecognized_files": 0,
+      "unrecognized_extensions": {},
+      "unrecognized": [],
+      "unread": [],
+      "parse_failures": []
+    },
+    "kinds": {
+      "default": "source",
+      "data": [
+        "Bean",
+        ".NET Resource",
+        "Edn",
+        "FEN",
+        "Forge Config",
+        "HEX",
+        "hledger",
+        "INI",
+        "Intel HEX",
+        "JSON",
+        "MSBuild",
+        "NuGet Config",
+        "PO File",
+        "Rusty Object Notation",
+        "SVG",
+        "TOML",
+        "Unreal Plugin",
+        "Unreal Project",
+        "Ur/Web Project",
+        "Verilog Args File",
+        "Visual Studio Project",
+        "Visual Studio Solution",
+        "Xcode Config",
+        "XML",
+        "YAML"
+      ],
+      "documentation": [
+        "AsciiDoc",
+        "Djot",
+        "Markdown",
+        "MDX",
+        "Org",
+        "ReStructuredText",
+        "TeX",
+        "Plain Text",
+        "Typst",
+        "Unreal Markdown"
+      ]
+    },
+    "modules": [
+      {
+        "path": ".",
+        "detector": "npm"
+      }
+    ],
+    "root": "/synthetic/web",
+    "scope": {
+      "hidden": true,
+      "respect_ignore_files": true,
+      "ignore_files": [
+        ".gitignore (inside a Git work tree)",
+        ".ignore",
+        ".tokeignore"
+      ],
+      "symlinks": "not followed",
+      "exclude": [
+        "**/.git/**",
+        "**/node_modules/**",
+        "**/.build/**",
+        "**/.lake/**"
+      ]
+    },
+    "config_path": null,
+    "config": {
+      "version": 1,
+      "backend": "tokei",
+      "scope": {
+        "hidden": true,
+        "respect_ignore_files": true,
+        "default_excludes": true,
+        "exclude": []
+      },
+      "classification": {
+        "builtin_tests": true,
+        "builtin_build": true,
+        "builtin_modules": true,
+        "fallback": "other"
+      },
+      "languages": {
+        "builtin": true,
+        "mappings": []
+      },
+      "overrides": [],
+      "rules": [],
+      "builtin_conventions": [
+        {
+          "id": "builtin:test-directory",
+          "match": [
+            "**/{test,tests,__test__,__tests__}/**"
+          ],
+          "purpose": "test",
+          "category": "test"
+        },
+        {
+          "id": "builtin:gradle-test-source-set",
+          "match": [
+            "**/src/*Test/**",
+            "**/src/testFixtures/**"
+          ],
+          "purpose": "test",
+          "category": "test"
+        },
+        {
+          "id": "builtin:snapshot-directory",
+          "match": [
+            "**/__snapshots__/**"
+          ],
+          "purpose": "test",
+          "category": "test"
+        },
+        {
+          "id": "builtin:js-test-file",
+          "match": [
+            "**/*.{test,spec}.{js,jsx,mjs,cjs,ts,tsx,mts,cts}"
+          ],
+          "purpose": "test",
+          "category": "test"
+        },
+        {
+          "id": "builtin:jvm-test-class",
+          "match": [
+            "**/*{Test,Tests,TestCase}.{java,kt,kts,groovy,scala}"
+          ],
+          "purpose": "test",
+          "category": "test"
+        },
+        {
+          "id": "builtin:go-test-file",
+          "match": [
+            "**/*_test.go"
+          ],
+          "purpose": "test",
+          "category": "test"
+        },
+        {
+          "id": "builtin:swift-test-target",
+          "match": [
+            "**/*Tests/**/*.swift"
+          ],
+          "purpose": "test",
+          "category": "test"
+        },
+        {
+          "id": "builtin:lean-test-library",
+          "match": [
+            "**/*{Test,Tests}/**/*.lean"
+          ],
+          "purpose": "test",
+          "category": "test"
+        },
+        {
+          "id": "builtin:python-test-file",
+          "match": [
+            "**/test_*.py",
+            "**/*_test.py",
+            "**/conftest.py"
+          ],
+          "purpose": "test",
+          "category": "test"
+        },
+        {
+          "id": "builtin:build-script",
+          "match": [
+            "**/{build,settings}.gradle",
+            "**/{build,settings}.gradle.kts",
+            "**/pom.xml",
+            "**/CMakeLists.txt",
+            "**/*.cmake",
+            "**/{Makefile,makefile,GNUmakefile}",
+            "**/lakefile.lean"
+          ],
+          "purpose": "production",
+          "category": "build-tooling"
+        },
+        {
+          "id": "builtin:build-wrapper",
+          "match": [
+            "**/{gradlew,gradlew.bat,mvnw,mvnw.cmd}",
+            "**/gradle/wrapper/**",
+            "**/.mvn/wrapper/**"
+          ],
+          "purpose": "other",
+          "category": "third-party-wrapper"
+        }
+      ],
+      "builtin_language_mappings": [
+        {
+          "id": "builtin:gradle-script",
+          "match": [
+            "**/*.gradle"
+          ],
+          "language": "Groovy"
+        },
+        {
+          "id": "builtin:jsonc",
+          "match": [
+            "**/*.jsonc"
+          ],
+          "language": "JSON"
+        },
+        {
+          "id": "builtin:json-lines",
+          "match": [
+            "**/*.jsonl"
+          ],
+          "language": "JSON"
+        },
+        {
+          "id": "builtin:java-properties",
+          "match": [
+            "**/*.properties"
+          ],
+          "language": "INI"
+        }
+      ]
+    }
+  },
+  "summary": {
+    "all_counted": {
+      "files": 4,
+      "code": 4,
+      "comments": 1,
+      "blanks": 0,
+      "lines": 5
+    },
+    "source": {
+      "files": 2,
+      "code": 3,
+      "comments": 0,
+      "blanks": 0,
+      "lines": 3
+    },
+    "by_kind_purpose": {
+      "data:other": {
+        "files": 1,
+        "code": 1,
+        "comments": 0,
+        "blanks": 0,
+        "lines": 1
+      },
+      "documentation:other": {
+        "files": 1,
+        "code": 0,
+        "comments": 1,
+        "blanks": 0,
+        "lines": 1
+      },
+      "source:production": {
+        "files": 1,
+        "code": 2,
+        "comments": 0,
+        "blanks": 0,
+        "lines": 2
+      },
+      "source:test": {
+        "files": 1,
+        "code": 1,
+        "comments": 0,
+        "blanks": 0,
+        "lines": 1
+      }
+    },
+    "source_purpose": {
+      "production": {
+        "files": 1,
+        "code": 2,
+        "comments": 0,
+        "blanks": 0,
+        "lines": 2
+      },
+      "test": {
+        "files": 1,
+        "code": 1,
+        "comments": 0,
+        "blanks": 0,
+        "lines": 1
+      }
+    },
+    "source_categories": {
+      "production:implementation": {
+        "files": 1,
+        "code": 2,
+        "comments": 0,
+        "blanks": 0,
+        "lines": 2
+      },
+      "test:test": {
+        "files": 1,
+        "code": 1,
+        "comments": 0,
+        "blanks": 0,
+        "lines": 1
+      }
+    },
+    "source_languages": {
+      "JavaScript": {
+        "files": 2,
+        "code": 3,
+        "comments": 0,
+        "blanks": 0,
+        "lines": 3
+      }
+    },
+    "top_folders": {
+      "src": {
+        "production": 2
+      },
+      "tests": {
+        "test": 1
+      }
+    },
+    "unclaimed_folders": [],
+    "build_modules": {
+      "npm": {
+        "modules": 1,
+        "code": 2
+      }
+    }
+  },
+  "review": [],
+  "breakdown": [
+    {
+      "folder": ".",
+      "kind": "data",
+      "purpose": "other",
+      "category": "unclaimed",
+      "language": "JSON",
+      "files": 1,
+      "code": 1,
+      "comments": 0,
+      "blanks": 0,
+      "lines": 1
+    },
+    {
+      "folder": ".",
+      "kind": "documentation",
+      "purpose": "other",
+      "category": "unclaimed",
+      "language": "Markdown",
+      "files": 1,
+      "code": 0,
+      "comments": 1,
+      "blanks": 0,
+      "lines": 1
+    },
+    {
+      "folder": "src",
+      "kind": "source",
+      "purpose": "production",
+      "category": "implementation",
+      "language": "JavaScript",
+      "files": 1,
+      "code": 2,
+      "comments": 0,
+      "blanks": 0,
+      "lines": 2
+    },
+    {
+      "folder": "tests",
+      "kind": "source",
+      "purpose": "test",
+      "category": "test",
+      "language": "JavaScript",
+      "files": 1,
+      "code": 1,
+      "comments": 0,
+      "blanks": 0,
+      "lines": 1
+    }
+  ],
+  "files": [
+    {
+      "path": "README.md",
+      "language": "Markdown",
+      "kind": "documentation",
+      "purpose": "other",
+      "category": "unclaimed",
+      "rule": "fallback",
+      "counts": {
+        "code": 0,
+        "comments": 1,
+        "blanks": 0,
+        "lines": 1
+      }
+    },
+    {
+      "path": "package.json",
+      "language": "JSON",
+      "kind": "data",
+      "purpose": "other",
+      "category": "unclaimed",
+      "rule": "fallback",
+      "counts": {
+        "code": 1,
+        "comments": 0,
+        "blanks": 0,
+        "lines": 1
+      }
+    },
+    {
+      "path": "src/index.js",
+      "language": "JavaScript",
+      "kind": "source",
+      "purpose": "production",
+      "category": "implementation",
+      "rule": "builtin:npm-module",
+      "counts": {
+        "code": 2,
+        "comments": 0,
+        "blanks": 0,
+        "lines": 2
+      }
+    },
+    {
+      "path": "tests/index.test.js",
+      "language": "JavaScript",
+      "kind": "source",
+      "purpose": "test",
+      "category": "test",
+      "rule": "builtin:test-directory",
+      "counts": {
+        "code": 1,
+        "comments": 0,
+        "blanks": 0,
+        "lines": 1
+      }
+    }
+  ]
+}
