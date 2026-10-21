@@ -48,4 +48,5 @@ One row per check, newest first. The outcome links the evidence.
 
 | Date | Candidate | Control | Level | Outcome |
 | --- | --- | --- | --- | --- |
+| 2026-10-21 | `dc2bf33` (0.8.0 plus inline-test legend) | `v0.7.0`, itself unchecked | Desk review, `sonnet` at `xhigh` | No broken flag, example or route; help +13%, guides +27%; targeted run of tasks 3, 4 and 8 recommended; [desk review](research/agent-regression-desk-review-2026-10-21.md) |
 | 2026-10-20 | Full-feature help with comparison routing (before 0.7.0) | Adopted configuration routing `c17fece` | Full campaign, `gpt-6.1-sol` at `xhigh` | Adopted after correction; [full-help study](research/agent-explorability-full-help-study.md) |
