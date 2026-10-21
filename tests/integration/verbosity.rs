@@ -274,6 +274,7 @@ fn unreadable_counts_and_member_failures_are_separate_from_optional_findings() {
                     purposes: locmetry::Purpose::ALL.to_vec(),
                     languages: Vec::new(),
                     tables_only: false,
+                    folds: Vec::new(),
                 },
             );
             assert!(

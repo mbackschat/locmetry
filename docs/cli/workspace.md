@@ -26,12 +26,12 @@ locmetry workspace --workspace-file workspace.toml --no-user-config --no-color -
  JavaScript      0      1     1 │        0       0 │     1     0      0 │      0.00
  Makefile        1      2     2 │        0       0 │     2     0      0 │      0.00
  Python          2      5     3 │        2       0 │     2     0      1 │      0.00
- TSX             1      3     3 │        0       0 │     3     0      0 │      0.00
- TypeScript      3     10     7 │        3       0 │     3     3      1 │      1.00
+ TypeScript      4     13    10 │        3       0 │     6     3      1 │      0.50
  ───────────────────────────────┼──────────────────┼────────────────────┼──────────
  Total          11     37    29 │        6       2 │    20     7      2 │      0.35
  Lines = Code + Comments + Blanks; Production + Test + Other = Code; Test/prod = Test / Production (Code).
  Tests written in another language than the code they test skew per-language Test/prod.
+ Folded: TSX → TypeScript.
 
  ─────────────────────────────────────────────────────────────────
  Repository  Lines  Code │ Prod.  Test  Other │ Test/prod │  Share
@@ -119,12 +119,12 @@ jq '{
 
 ## Select purposes and show shares
 
-`--table-purpose production,test` restricts table counts. `--show-bars` charts purpose shares; `--sort name` makes the repository order explicit. Shared presentation flags have the same meaning as in root measurement.
+`--table-purpose production,test` restricts table counts. `--show-bars` charts purpose shares; `--sort name` makes the repository order explicit; `--split-languages` keeps TSX apart from TypeScript. Shared presentation flags have the same meaning as in root measurement.
 
 ```bash
 source scripts/cli-demo-env.sh
 locmetry workspace --workspace-file workspace.toml --no-user-config --no-color --format table \
-  --table-purpose production,test --show-bars --sort name \
+  --table-purpose production,test --show-bars --sort name --split-languages \
   | sed '/^Root:/d; /^Roots:/d; /^Measured at:/d' \
   | demo_wrap
 ```
@@ -178,7 +178,7 @@ locmetry workspace --workspace-file workspace.toml --no-user-config --no-color -
  Total         2     11     8 │        1       2 │     4     4      0 │      1.00
  Lines = Code + Comments + Blanks; Production + Test + Other = Code; Test/prod = Test / Production (Code).
  Tests written in another language than the code they test skew per-language Test/prod.
- Not shown (languages): TypeScript, HTML, Python, TSX, Makefile and JavaScript (21 code lines).
+ Not shown (languages): TypeScript, HTML, Python, Makefile and JavaScript (21 code lines).
 
  ─────────────────────────────────────────────────────────────────
  Repository  Lines  Code │ Prod.  Test  Other │ Test/prod │  Share
@@ -203,11 +203,10 @@ locmetry workspace --workspace-file workspace.toml --no-user-config --no-color -
  ──────────────────────────────────────────────────────────────────────────────────
  Language    Files  Lines  Code │ Comments  Blanks │ Prod.  Test  Other │ Test/prod
  ───────────────────────────────┼──────────────────┼────────────────────┼──────────
+ TypeScript      4     13    10 │        3       0 │     6     3      1 │      0.50
  Go              2     11     8 │        1       2 │     4     4      0 │      1.00
- TypeScript      3     10     7 │        3       0 │     3     3      1 │      1.00
  HTML            2      5     5 │        0       0 │     5     0      0 │      0.00
  Python          2      5     3 │        2       0 │     2     0      1 │      0.00
- TSX             1      3     3 │        0       0 │     3     0      0 │      0.00
  Makefile        1      2     2 │        0       0 │     2     0      0 │      0.00
  JavaScript      0      1     1 │        0       0 │     1     0      0 │      0.00
  ───────────────────────────────┼──────────────────┼────────────────────┼──────────

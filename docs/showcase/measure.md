@@ -101,7 +101,7 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  ────────────────────────────────────────────────────────────────────────────────────────────
  Language    Files    Lines     Code │ Comments  Blanks │   Prod.    Test   Other │ Test/prod
  ────────────────────────────────────┼──────────────────┼─────────────────────────┼──────────
- TypeScript  1,074  171,359  145,427 │    4,624  21,308 │  70,455  68,506   6,466 │      0.97
+ TypeScript  1,085  171,956  145,943 │    4,633  21,380 │  70,971  68,506   6,466 │      0.97
  Dart          823   90,871   75,726 │    2,779  12,366 │  59,495  16,231       0 │      0.27
  JavaScript     17   23,273   19,746 │      427   3,100 │  19,684      62       0 │      0.00
  Svelte        412   19,014   17,442 │      200   1,372 │  17,420      22       0 │      0.00
@@ -110,7 +110,6 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  Kotlin         35    4,604    3,810 │      177     617 │   3,810       0       0 │      0.00
  Swift          28    3,874    3,103 │      232     539 │   3,103       0       0 │      0.00
  CSS             2      818      691 │       26     101 │     691       0       0 │      0.00
- TSX            11      597      516 │        9      72 │     516       0       0 │      0.00
  Shell          17      525      371 │       67      87 │     371       0       0 │      0.00
  Dockerfile      4      369      267 │       12      90 │     257      10       0 │      0.04
  C++             1      295      251 │       11      33 │     251       0       0 │      0.00
@@ -129,6 +128,7 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  Total       2,529  333,360  282,770 │    9,149  41,441 │ 179,704  86,901  16,165 │      0.48
  Lines = Code + Comments + Blanks; Production + Test + Other = Code; Test/prod = Test / Production (Code).
  Tests written in another language than the code they test skew per-language Test/prod.
+ Folded: TSX → TypeScript.
 
  ──────────────────────────────────────────────────
  Category                   Files    Lines     Code

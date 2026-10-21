@@ -15,6 +15,7 @@ mod folder_rows;
 mod folders;
 mod guides;
 mod help;
+mod language_families;
 mod measurement;
 mod notebooks;
 mod output_contract;

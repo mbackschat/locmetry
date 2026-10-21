@@ -57,12 +57,20 @@ fn a_single_comparison_grid_omits_its_title_when_detail_grids_are_empty() {
         locmetry::style::Theme::PLAIN,
         locmetry::style::Theme::TERMINAL,
     ] {
-        let text = locmetry::compare::render_table_with_theme(&report, theme);
+        let text = locmetry::compare::render_table_with_theme(
+            &report,
+            theme,
+            locmetry::LanguageVariants::Split,
+        );
         assert!(!text.contains("▸ Totals"), "{text}");
         assert!(!text.contains("▸ Purpose"), "{text}");
         assert!(text.contains("All counted"), "{text}");
     }
-    let plain = locmetry::compare::render_table_with_theme(&report, locmetry::style::Theme::PLAIN);
+    let plain = locmetry::compare::render_table_with_theme(
+        &report,
+        locmetry::style::Theme::PLAIN,
+        locmetry::LanguageVariants::Split,
+    );
     let lines: Vec<_> = plain.lines().collect();
     let group = lines
         .iter()
@@ -73,7 +81,10 @@ fn a_single_comparison_grid_omits_its_title_when_detail_grids_are_empty() {
         lines[group + 2].replace('┼', "─"),
         "{plain}"
     );
-    assert!(locmetry::compare::render_markdown(&report).contains("## Totals"));
+    assert!(
+        locmetry::compare::render_markdown(&report, locmetry::LanguageVariants::Split)
+            .contains("## Totals")
+    );
 }
 
 /// Locks the convention that recorded guides need no trim filter: no
@@ -92,7 +103,11 @@ fn comparison_table_lines_end_at_their_last_character() {
         locmetry::style::Theme::PLAIN,
         locmetry::style::Theme::TERMINAL,
     ] {
-        let text = common::unstyled(&locmetry::compare::render_table_with_theme(&report, theme));
+        let text = common::unstyled(&locmetry::compare::render_table_with_theme(
+            &report,
+            theme,
+            locmetry::LanguageVariants::Split,
+        ));
         assert!(text.contains(" Lines "), "{text}");
         for line in text.lines() {
             assert_eq!(line, line.trim_end(), "{text}");
@@ -596,7 +611,7 @@ fn comparison_totals_fit_their_contents_and_keep_large_signed_values_aligned() {
     let full = json(&compare(&saved, &saved, &["--format", "json"]), 0);
     let mut report: locmetry::compare::Comparison = serde_json::from_value(full).unwrap();
     let totals = |report: &locmetry::compare::Comparison| {
-        render_table_with_theme(report, Theme::PLAIN)
+        render_table_with_theme(report, Theme::PLAIN, locmetry::LanguageVariants::Split)
             .lines()
             .skip_while(|line| !line.contains(" Lines "))
             .take_while(|line| !line.is_empty())
@@ -834,8 +849,11 @@ fn workspace_purpose_ratio_uses_aggregate_counts_including_unchanged_rows() {
     }
     let full = json(&compare(&before, &after, &["--format", "json"]), 0);
     let report = serde_json::from_value(full).unwrap();
-    let colored =
-        locmetry::compare::render_table_with_theme(&report, locmetry::style::Theme::TERMINAL);
+    let colored = locmetry::compare::render_table_with_theme(
+        &report,
+        locmetry::style::Theme::TERMINAL,
+        locmetry::LanguageVariants::Split,
+    );
     assert!(
         colored.contains("\x1b[90mTest/prod (Code): 0.60 → 1.20 (before → after)\x1b[0m"),
         "{colored}"
@@ -858,6 +876,7 @@ fn unchanged_workspace_replaces_zero_composition_with_a_no_change_message() {
     texts.push(locmetry::compare::render_table_with_theme(
         &report,
         locmetry::style::Theme::TERMINAL,
+        locmetry::LanguageVariants::Split,
     ));
     for text in texts {
         assert!(text.contains("All counted"), "{text}");
@@ -968,8 +987,11 @@ fn human_coverage_notes_summarize_paths_without_changing_json_findings() {
         );
     }
     let report: locmetry::compare::Comparison = serde_json::from_value(full).unwrap();
-    let styled =
-        locmetry::compare::render_table_with_theme(&report, locmetry::style::Theme::TERMINAL);
+    let styled = locmetry::compare::render_table_with_theme(
+        &report,
+        locmetry::style::Theme::TERMINAL,
+        locmetry::LanguageVariants::Split,
+    );
     assert!(styled.contains("\x1b[90mUnrecognized files:"), "{styled}");
     assert!(!styled.contains("\x1b[33m"), "{styled}");
     fs::rename(root.join("a.zzz"), root.join("b.zzz")).unwrap();
@@ -1049,8 +1071,11 @@ fn human_coverage_notes_keep_partial_inputs_visible_and_warn() {
     }
     let full = json(&compare(&unread, &unread, &["--format", "json"]), 2);
     let comparison: locmetry::compare::Comparison = serde_json::from_value(full).unwrap();
-    let styled =
-        locmetry::compare::render_table_with_theme(&comparison, locmetry::style::Theme::TERMINAL);
+    let styled = locmetry::compare::render_table_with_theme(
+        &comparison,
+        locmetry::style::Theme::TERMINAL,
+        locmetry::LanguageVariants::Split,
+    );
     assert!(styled.contains("\x1b[33mUnreadable files:"), "{styled}");
     assert!(styled.contains("\x1b[33mInaccurate input:"), "{styled}");
 }
@@ -1312,7 +1337,11 @@ fn workspace_composition_colors_signed_contributions_and_mutes_signed_zero() {
     ] {
         let full = json(&compare(a, b, &["--format", "json"]), 0);
         let report = serde_json::from_value(full).unwrap();
-        let colored = locmetry::compare::render_table_with_theme(&report, Theme::TERMINAL);
+        let colored = locmetry::compare::render_table_with_theme(
+            &report,
+            Theme::TERMINAL,
+            locmetry::LanguageVariants::Split,
+        );
         let expected =
             format!("matched {matched}, entering {entering}, leaving {leaving}; total {total}.");
         for label in [
@@ -1333,9 +1362,14 @@ fn workspace_composition_colors_signed_contributions_and_mutes_signed_zero() {
                 None => part,
             })
             .collect();
-        let plain = locmetry::compare::render_table_with_theme(&report, Theme::PLAIN);
+        let plain = locmetry::compare::render_table_with_theme(
+            &report,
+            Theme::PLAIN,
+            locmetry::LanguageVariants::Split,
+        );
         assert_eq!(stripped, plain);
-        let markdown = locmetry::compare::render_markdown(&report);
+        let markdown =
+            locmetry::compare::render_markdown(&report, locmetry::LanguageVariants::Split);
         for text in human_comparisons(a, b, 0).into_iter().chain([markdown]) {
             assert!(!text.contains('\x1b'), "{text}");
             for line in plain.lines().filter(|line| line.starts_with("Workspace ")) {
@@ -1358,8 +1392,16 @@ fn comparison_theme_preserves_plain_text_and_distinguishes_signed_changes() {
     let after = save(temp.path(), "after.json", &measure(&root));
     let value = json(&compare(&before, &after, &["--output", "-"]), 0);
     let report: locmetry::compare::Comparison = serde_json::from_value(value).unwrap();
-    let plain = locmetry::compare::render_table_with_theme(&report, Theme::PLAIN);
-    let colored = locmetry::compare::render_table_with_theme(&report, Theme::TERMINAL);
+    let plain = locmetry::compare::render_table_with_theme(
+        &report,
+        Theme::PLAIN,
+        locmetry::LanguageVariants::Split,
+    );
+    let colored = locmetry::compare::render_table_with_theme(
+        &report,
+        Theme::TERMINAL,
+        locmetry::LanguageVariants::Split,
+    );
     for (style, value) in [("32m", "+1"), ("31m", "-2"), ("90m", "0")] {
         assert!(
             colored.split("\x1b[").any(|cell| cell
@@ -1377,7 +1419,7 @@ fn comparison_theme_preserves_plain_text_and_distinguishes_signed_changes() {
         .collect();
     assert_eq!(stripped, plain);
     assert!(!plain.contains('\x1b'));
-    let markdown = locmetry::compare::render_markdown(&report);
+    let markdown = locmetry::compare::render_markdown(&report, locmetry::LanguageVariants::Split);
     assert!(markdown.contains("*Net change = after − before"));
     assert!(!markdown.contains('\x1b'));
     assert!(
@@ -1616,8 +1658,16 @@ fn secondary_changes_keep_dim_direction_and_source_changes_match_totals() {
         let report: locmetry::compare::Comparison =
             serde_json::from_value(json(&compare(a, b, &["--format", "json"]), 0)).unwrap();
         for report in [report.clone(), report.select_member("service").unwrap()] {
-            let colored = locmetry::compare::render_table_with_theme(&report, Theme::TERMINAL);
-            let plain = locmetry::compare::render_table_with_theme(&report, Theme::PLAIN);
+            let colored = locmetry::compare::render_table_with_theme(
+                &report,
+                Theme::TERMINAL,
+                locmetry::LanguageVariants::Split,
+            );
+            let plain = locmetry::compare::render_table_with_theme(
+                &report,
+                Theme::PLAIN,
+                locmetry::LanguageVariants::Split,
+            );
             assert_eq!(common::unstyled(&colored), plain);
             let source = colored
                 .lines()
@@ -1666,7 +1716,11 @@ fn secondary_changes_keep_dim_direction_and_source_changes_match_totals() {
     }
     let unchanged: locmetry::compare::Comparison =
         serde_json::from_value(json(&compare(&before, &before, &["--format", "json"]), 0)).unwrap();
-    let colored = locmetry::compare::render_table_with_theme(&unchanged, Theme::TERMINAL);
+    let colored = locmetry::compare::render_table_with_theme(
+        &unchanged,
+        Theme::TERMINAL,
+        locmetry::LanguageVariants::Split,
+    );
     assert!(!colored.contains("38;5;"), "{colored}");
     let source = colored
         .lines()
@@ -1764,8 +1818,11 @@ fn member_selection_scopes_every_count_and_detail_without_rescanning() {
         .validate(&headline)
         .unwrap();
     let report: locmetry::compare::Comparison = serde_json::from_value(selected).unwrap();
-    let styled =
-        locmetry::compare::render_table_with_theme(&report, locmetry::style::Theme::TERMINAL);
+    let styled = locmetry::compare::render_table_with_theme(
+        &report,
+        locmetry::style::Theme::TERMINAL,
+        locmetry::LanguageVariants::Split,
+    );
     let title = styled.lines().next().unwrap();
     let provenance = styled
         .lines()
@@ -1777,8 +1834,11 @@ fn member_selection_scopes_every_count_and_detail_without_rescanning() {
         "{styled}"
     );
     let full: locmetry::compare::Comparison = serde_json::from_value(all).unwrap();
-    let full_styled =
-        locmetry::compare::render_table_with_theme(&full, locmetry::style::Theme::TERMINAL);
+    let full_styled = locmetry::compare::render_table_with_theme(
+        &full,
+        locmetry::style::Theme::TERMINAL,
+        locmetry::LanguageVariants::Split,
+    );
     assert!(
         full_styled.starts_with("\x1b[1mNet change:"),
         "{full_styled}"
@@ -1789,9 +1849,16 @@ fn member_selection_scopes_every_count_and_detail_without_rescanning() {
     );
     assert_eq!(
         common::unstyled(&styled),
-        locmetry::compare::render_table_with_theme(&report, locmetry::style::Theme::PLAIN)
+        locmetry::compare::render_table_with_theme(
+            &report,
+            locmetry::style::Theme::PLAIN,
+            locmetry::LanguageVariants::Split
+        )
     );
-    assert!(locmetry::compare::render_markdown(&report).contains("**Member: api (both)**"));
+    assert!(
+        locmetry::compare::render_markdown(&report, locmetry::LanguageVariants::Split)
+            .contains("**Member: api (both)**")
+    );
     for format in ["table", "markdown"] {
         let output = compare(&before, &after, &["--member", "api", "--format", format]);
         assert!(output.status.success());

@@ -106,6 +106,29 @@ pub const DOCUMENTATION_LANGUAGES: &[LanguageType] = &[
     UnrealDeveloperMarkdown,
 ];
 
+/// Variants that human views show within their family's row: the same
+/// language with embedded markup, or its header and module units. C Header
+/// stays apart because Tokei assigns every `.h` to it, including C++ and
+/// Objective-C headers; Fortran has no family name Tokei knows.
+const LANGUAGE_FAMILIES: &[(LanguageType, LanguageType)] = &[
+    (Tsx, TypeScript),
+    (GlimmerTs, TypeScript),
+    (Jsx, JavaScript),
+    (GlimmerJs, JavaScript),
+    (CppHeader, Cpp),
+    (CppModule, Cpp),
+    (UnrealShaderHeader, UnrealShader),
+];
+
+/// The family a variant's display name joins, such as TypeScript for TSX;
+/// `None` for every other name.
+pub fn language_family(name: &str) -> Option<&'static str> {
+    LANGUAGE_FAMILIES
+        .iter()
+        .find(|(variant, _)| variant.name() == name)
+        .map(|(_, family)| family.name())
+}
+
 /// The display name of the source language `name` denotes, in any case.
 /// Data and documentation names are refused: tables count only source, so
 /// selecting one would leave them empty.

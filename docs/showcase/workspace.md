@@ -19,7 +19,7 @@ locmetry workspace --workspace-file v3.3.4/immich/workspace.toml --format table 
  ────────────────────────────────────────────────────────────────────────────────────────────
  Language    Files    Lines     Code │ Comments  Blanks │   Prod.    Test   Other │ Test/prod
  ────────────────────────────────────┼──────────────────┼─────────────────────────┼──────────
- TypeScript  1,074  171,359  145,427 │    4,624  21,308 │  70,455  68,506   6,466 │      0.97
+ TypeScript  1,083  171,885  145,882 │    4,633  21,370 │  70,910  68,506   6,466 │      0.97
  Dart          823   90,871   75,726 │    2,779  12,366 │  59,495  16,231       0 │      0.27
  JavaScript     11   22,954   19,487 │      382   3,085 │  19,425      62       0 │      0.00
  Svelte        412   19,014   17,442 │      200   1,372 │  17,420      22       0 │      0.00
@@ -28,7 +28,6 @@ locmetry workspace --workspace-file v3.3.4/immich/workspace.toml --format table 
  Kotlin         35    4,604    3,810 │      177     617 │   3,810       0       0 │      0.00
  Swift          28    3,874    3,103 │      232     539 │   3,103       0       0 │      0.00
  CSS             1      692      589 │       18      85 │     589       0       0 │      0.00
- TSX             9      526      455 │        9      62 │     455       0       0 │      0.00
  Dockerfile      4      369      267 │       12      90 │     257      10       0 │      0.04
  C++             1      295      251 │       11      33 │     251       0       0 │      0.00
  Shell          12      307      209 │       47      51 │     209       0       0 │      0.00
@@ -45,6 +44,7 @@ locmetry workspace --workspace-file v3.3.4/immich/workspace.toml --format table 
  Total       2,498  332,353  281,955 │    9,072  41,326 │ 178,889  86,901  16,165 │      0.49
  Lines = Code + Comments + Blanks; Production + Test + Other = Code; Test/prod = Test / Production (Code).
  Tests written in another language than the code they test skew per-language Test/prod.
+ Folded: TSX → TypeScript.
 
  ─────────────────────────────────────────────────────────────────────────────────
  Repository          Lines     Code │   Prod.    Test   Other │ Test/prod │  Share

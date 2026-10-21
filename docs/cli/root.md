@@ -20,17 +20,17 @@ locmetry --root acme-orders --no-user-config --no-color --no-bars --format table
  ──────────────────────────────────────────────────────────────────────────────────
  Language    Files  Lines  Code │ Comments  Blanks │ Prod.  Test  Other │ Test/prod
  ───────────────────────────────┼──────────────────┼────────────────────┼──────────
+ TypeScript      4     13    10 │        3       0 │     6     3      1 │      0.50
  Go              2     11     8 │        1       2 │     4     4      0 │      1.00
- TypeScript      3     10     7 │        3       0 │     3     3      1 │      1.00
  HTML            2      5     5 │        0       0 │     5     0      0 │      0.00
  Python          2      5     3 │        2       0 │     2     0      1 │      0.00
- TSX             1      3     3 │        0       0 │     3     0      0 │      0.00
  Makefile        1      2     2 │        0       0 │     2     0      0 │      0.00
  JavaScript      0      1     1 │        0       0 │     1     0      0 │      0.00
  ───────────────────────────────┼──────────────────┼────────────────────┼──────────
  Total          11     37    29 │        6       2 │    20     7      2 │      0.35
  Lines = Code + Comments + Blanks; Production + Test + Other = Code; Test/prod = Test / Production (Code).
  Tests written in another language than the code they test skew per-language Test/prod.
+ Folded: TSX → TypeScript.
 
 ```
 
@@ -55,12 +55,12 @@ locmetry acme-orders --no-user-config --no-color --no-bars --format table --fold
  JavaScript      0      1     1 │        0       0 │     1     0      0 │      0.00
  Makefile        1      2     2 │        0       0 │     2     0      0 │      0.00
  Python          2      5     3 │        2       0 │     2     0      1 │      0.00
- TSX             1      3     3 │        0       0 │     3     0      0 │      0.00
- TypeScript      3     10     7 │        3       0 │     3     3      1 │      1.00
+ TypeScript      4     13    10 │        3       0 │     6     3      1 │      0.50
  ───────────────────────────────┼──────────────────┼────────────────────┼──────────
  Total          11     37    29 │        6       2 │    20     7      2 │      0.35
  Lines = Code + Comments + Blanks; Production + Test + Other = Code; Test/prod = Test / Production (Code).
  Tests written in another language than the code they test skew per-language Test/prod.
+ Folded: TSX → TypeScript.
 
  ────────────────────────────────────────────────────────────────────
  Folder                  Lines  Code │ Prod.  Test  Other │ Test/prod
@@ -120,13 +120,13 @@ locmetry --root acme-orders --subfolder web/src --no-user-config --no-color --fo
  ───────────────────────────────────────────────────────────────────────────────────────────────────
  Language    Files  Lines  Code │ Comments  Blanks │ Comment %  Comment density
  ───────────────────────────────┼──────────────────┼────────────────────────────────────────────────
+ TypeScript      2      7     6 │        1       0 │     14.3%  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
  HTML            2      5     5 │        0       0 │      0.0%
- TSX             1      3     3 │        0       0 │      0.0%
- TypeScript      1      4     3 │        1       0 │     25.0%  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
  JavaScript      0      1     1 │        0       0 │      0.0%
  ───────────────────────────────┼──────────────────┼────────────────────────────────────────────────
  Total           4     13    12 │        1       0 │      7.7%
  Lines = Code + Comments + Blanks; Comment % = Comments / (Code + Comments).
+ Folded: TSX → TypeScript.
  Not shown (purposes): Test and Other (4 code lines).
  Bars: ▓ Comment %; the densest row fills the bar.
 
@@ -144,14 +144,36 @@ locmetry --root acme-orders --subfolder web/src --no-user-config --no-color --fo
 
 ## Focus on languages
 
-`--table-language` filters table counts to the named source languages, in any case, and composes with `--table-purpose`; JSON and Markdown totals stay complete. A note under the language table names the excluded languages and their code, so the shown total reconciles with the full measurement. Embedded languages keep only their own lines.
+`--table-language` filters table counts to the named source languages, in any case, and composes with `--table-purpose`; JSON and Markdown totals stay complete. A note under the language table names the excluded languages and their code, so the shown total reconciles with the full measurement. Embedded languages keep only their own lines. Language variants count within their family's row: TSX joins TypeScript, so `typescript` selects both, and the `Folded:` line names the fold.
 
 ```bash
 source scripts/cli-demo-env.sh
 locmetry --root acme-orders --no-user-config --no-color --format table \
-  --table-language typescript,tsx \
+  --table-language typescript \
   | sed '/^Root:/d; /^Roots:/d; /^Measured at:/d' \
   | demo_wrap
+```
+
+```output
+ ──────────────────────────────────────────────────────────────────────────────────
+ Language    Files  Lines  Code │ Comments  Blanks │ Prod.  Test  Other │ Test/prod
+ ───────────────────────────────┼──────────────────┼────────────────────┼──────────
+ TypeScript      4     13    10 │        3       0 │     6     3      1 │      0.50
+ ───────────────────────────────┼──────────────────┼────────────────────┼──────────
+ Total           4     13    10 │        3       0 │     6     3      1 │      0.50
+ Lines = Code + Comments + Blanks; Production + Test + Other = Code; Test/prod = Test / Production (Code).
+ Tests written in another language than the code they test skew per-language Test/prod.
+ Folded: TSX → TypeScript.
+ Not shown (languages): Go, HTML, Python, Makefile and JavaScript (19 code lines).
+
+```
+
+`--split-languages` shows variants as rows of their own, as JSON names them; a variant name then selects only that variant.
+
+```bash
+source scripts/cli-demo-env.sh
+locmetry --root acme-orders --no-user-config --no-color --format table \
+  --table-language typescript,tsx --split-languages --tables-only
 ```
 
 ```output
@@ -162,10 +184,6 @@ locmetry --root acme-orders --no-user-config --no-color --format table \
  TSX             1      3     3 │        0       0 │     3     0      0 │      0.00
  ───────────────────────────────┼──────────────────┼────────────────────┼──────────
  Total           4     13    10 │        3       0 │     6     3      1 │      0.50
- Lines = Code + Comments + Blanks; Production + Test + Other = Code; Test/prod = Test / Production (Code).
- Tests written in another language than the code they test skew per-language Test/prod.
- Not shown (languages): Go, HTML, Python, Makefile and JavaScript (19 code lines).
-
 ```
 
 ## Print only the tables
@@ -182,11 +200,10 @@ locmetry --root acme-orders --no-user-config --no-color --no-bars --format table
  ──────────────────────────────────────────────────────────────────────────────────
  Language    Files  Lines  Code │ Comments  Blanks │ Prod.  Test  Other │ Test/prod
  ───────────────────────────────┼──────────────────┼────────────────────┼──────────
+ TypeScript      4     13    10 │        3       0 │     6     3      1 │      0.50
  Go              2     11     8 │        1       2 │     4     4      0 │      1.00
- TypeScript      3     10     7 │        3       0 │     3     3      1 │      1.00
  HTML            2      5     5 │        0       0 │     5     0      0 │      0.00
  Python          2      5     3 │        2       0 │     2     0      1 │      0.00
- TSX             1      3     3 │        0       0 │     3     0      0 │      0.00
  Makefile        1      2     2 │        0       0 │     2     0      0 │      0.00
  JavaScript      0      1     1 │        0       0 │     1     0      0 │      0.00
  ───────────────────────────────┼──────────────────┼────────────────────┼──────────
@@ -261,26 +278,25 @@ jq '{
  ──────────────────────────────────────────────────────────────────────────────────
  Language    Files  Lines  Code │ Comments  Blanks │ Prod.  Test  Other │ Test/prod
  ───────────────────────────────┼──────────────────┼────────────────────┼──────────
+ TypeScript      4     13    10 │        3       0 │     6     3      1 │      0.50
  Go              2     11     8 │        1       2 │     4     4      0 │      1.00
- TypeScript      3     10     7 │        3       0 │     3     3      1 │      1.00
  HTML            2      5     5 │        0       0 │     5     0      0 │      0.00
  Python          2      5     3 │        2       0 │     2     0      1 │      0.00
- TSX             1      3     3 │        0       0 │     3     0      0 │      0.00
  Makefile        1      2     2 │        0       0 │     2     0      0 │      0.00
  JavaScript      0      1     1 │        0       0 │     1     0      0 │      0.00
  ───────────────────────────────┼──────────────────┼────────────────────┼──────────
  Total          11     37    29 │        6       2 │    20     7      2 │      0.35
  Lines = Code + Comments + Blanks; Production + Test + Other = Code; Test/prod = Test / Production (Code).
  Tests written in another language than the code they test skew per-language Test/prod.
+ Folded: TSX → TypeScript.
 
  Code share  █ Production  ▓ Test  ░ Other
- Go          27.6%  ████████████████████▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
- TypeScript  24.1%  ███████████████▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░
- HTML        17.2%  █████████████████████████
- Python      10.3%  ██████████░░░░░
- TSX         10.3%  ███████████████
- Makefile     6.9%  ██████████
- JavaScript   3.4%  █████
+ TypeScript  34.5%  ████████████████████████▓▓▓▓▓▓▓▓▓▓▓▓░░░░
+ Go          27.6%  ████████████████▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+ HTML        17.2%  ████████████████████
+ Python      10.3%  ████████░░░░
+ Makefile     6.9%  ████████
+ JavaScript   3.4%  ████
 
 {
   "document_type": "measurement",

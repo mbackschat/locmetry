@@ -292,6 +292,7 @@ pub fn render_markdown(
     findings: &Findings,
     depth: usize,
     order: RowOrder,
+    folds: &[Fold],
 ) -> String {
     let project = display_project(project, findings.subfolder);
     let mut output = format!("# {}: lines of code by purpose\n\n{}\n\n## Source purpose\n\n{}\n", cell(&project), Theme::MARKDOWN.paint(Role::Muted, "Production means maintained non-test source, including separately categorized tooling. Data, configuration, and documentation are counted apart from source. Lines = Code + Comments + Blanks in every table with these columns, and the purpose rows add up to all source."), Columns::of(&count_columns("Purpose")).markdown_header());
@@ -373,10 +374,14 @@ pub fn render_markdown(
             .chain([ALL_PURPOSES.ratio_column()])
             .collect(),
     );
+    let notes: Vec<String> = std::iter::once(LANGUAGE_RATIO_NOTE.to_string())
+        .chain(folded_note(folds))
+        .map(|note| Theme::MARKDOWN.paint(Role::Muted, &note))
+        .collect();
     writeln!(
         output,
         "\n## Source languages\n\n{}\n\n{}",
-        Theme::MARKDOWN.paint(Role::Muted, LANGUAGE_RATIO_NOTE),
+        notes.join("\n\n"),
         languages.markdown_header()
     )
     .unwrap();
@@ -1685,6 +1690,8 @@ pub struct TableOptions {
     pub languages: Vec<String>,
     /// Omits every line outside the tables: legends, bar keys and notes.
     pub tables_only: bool,
+    /// Variants the rows show within their family, for the note naming them.
+    pub folds: Vec<Fold>,
 }
 
 /// Measured source languages that `languages` leaves out of `rows`, largest
@@ -1742,6 +1749,95 @@ fn language_selected(row: &FileRecord, languages: &[String]) -> Option<FileRecor
         languages: kept,
         ..row.clone()
     })
+}
+
+/// A variant shown within its family's row, such as (`TSX`, `TypeScript`).
+pub type Fold = (String, &'static str);
+
+/// How table and Markdown views show language variants such as TSX: within
+/// their family's row, such as TypeScript, or as rows of their own. Counting
+/// and JSON keep the backend's names either way.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum LanguageVariants {
+    Folded,
+    Split,
+}
+
+impl LanguageVariants {
+    /// The row a source language appears in.
+    pub fn row_name(self, language: &str) -> String {
+        match (self, crate::language_family(language)) {
+            (Self::Folded, Some(family)) => family.into(),
+            _ => language.into(),
+        }
+    }
+
+    /// `rows` as these views count them: a variant's lines join its family's
+    /// entry, and a variant file counts as a file of its family.
+    pub fn rows(self, rows: &[FileRecord]) -> std::borrow::Cow<'_, [FileRecord]> {
+        if self == Self::Split {
+            return rows.into();
+        }
+        rows.iter()
+            .map(|row| {
+                let mut languages = BTreeMap::<String, Counts>::new();
+                for (language, counts) in &row.languages {
+                    let entry = languages.entry(self.row_name(language)).or_default();
+                    entry.add(counts);
+                    // Each entry records its file once, as the backend does.
+                    entry.files = 1;
+                }
+                FileRecord {
+                    language: self.row_name(&row.language),
+                    languages,
+                    ..row.clone()
+                }
+            })
+            .collect::<Vec<_>>()
+            .into()
+    }
+
+    /// The folds among `names`, ordered by family and then variant.
+    pub fn folds<'n>(self, names: impl IntoIterator<Item = &'n str>) -> Vec<Fold> {
+        if self == Self::Split {
+            return Vec::new();
+        }
+        let folds: std::collections::BTreeSet<(&str, &str)> = names
+            .into_iter()
+            .filter_map(|name| crate::language_family(name).map(|family| (family, name)))
+            .collect();
+        folds
+            .into_iter()
+            .map(|(family, variant)| (variant.to_string(), family))
+            .collect()
+    }
+
+    /// The folds in source that `purposes` and the `languages` row names
+    /// select; an empty `languages` selects every language.
+    pub fn source_folds(
+        self,
+        rows: &[FileRecord],
+        purposes: &[Purpose],
+        languages: &[String],
+    ) -> Vec<Fold> {
+        let names = rows
+            .iter()
+            .filter(|row| {
+                row.kind == Kind::Source && purposes.contains(&row.classification.purpose)
+            })
+            .flat_map(|row| row.languages.keys())
+            .filter(|name| languages.is_empty() || languages.contains(&self.row_name(name)));
+        self.folds(names.map(String::as_str))
+    }
+}
+
+/// The muted line naming the folds a view applied; `None` without any.
+pub(crate) fn folded_note(folds: &[Fold]) -> Option<String> {
+    let folds: Vec<String> = folds
+        .iter()
+        .map(|(variant, family)| format!("{variant} → {family}"))
+        .collect();
+    (!folds.is_empty()).then(|| format!("Folded: {}.", folds.join(", ")))
 }
 
 /// The source a table selection keeps and what it leaves out. Purposes filter
@@ -1922,6 +2018,7 @@ pub fn render_table_with_options(
         purposes,
         languages: selected_languages,
         tables_only,
+        folds,
     } = options;
     // A selection counts only that source, so every table, total and bar is
     // rebuilt from the selected records.
@@ -1987,6 +2084,7 @@ pub fn render_table_with_options(
     if columns.ratio() == Ratio::TestPerProduction {
         legends.push(LANGUAGE_RATIO_NOTE.into());
     }
+    legends.extend(folded_note(&folds));
     legends.extend(selection.notes(&purposes));
     for text in legends {
         output += &legend(&text);
@@ -2537,6 +2635,7 @@ mod tests {
                     purposes: Purpose::ALL.to_vec(),
                     languages: Vec::new(),
                     tables_only: false,
+                    folds: Vec::new(),
                 };
                 render_table_with_options(&summary, &rows, &findings, options)
             };

@@ -45,9 +45,10 @@ Net change: acme-orders → acme-orders
                        Lines         │         Code
  Language      before  after  change │ before  after  change
  ────────────────────────────────────┼──────────────────────
- TypeScript        10     11      +1 │      7      8      +1
+ TypeScript        13     14      +1 │     10     11      +1
  ────────────────────────────────────┼──────────────────────
  Source total      37     38      +1 │     29     30      +1
+ Folded: TSX → TypeScript.
 
  ───────────────────────────────────────────────────────────
                        Lines         │         Code
@@ -188,7 +189,7 @@ locmetry compare before.json after.json --no-color --format table --tables-only
                        Lines         │         Code
  Language      before  after  change │ before  after  change
  ────────────────────────────────────┼──────────────────────
- TypeScript        10     11      +1 │      7      8      +1
+ TypeScript        13     14      +1 │     10     11      +1
  ────────────────────────────────────┼──────────────────────
  Source total      37     38      +1 │     29     30      +1
 
@@ -197,6 +198,35 @@ locmetry compare before.json after.json --no-color --format table --tables-only
  Folder        before  after  change │ before  after  change
  ────────────────────────────────────┼──────────────────────
  web (both)        19     20      +1 │     16     17      +1
+ ────────────────────────────────────┼──────────────────────
+ Source total      37     38      +1 │     29     30      +1
+```
+
+## Keep language variants apart
+
+The Languages grid counts a variant within its family's row, so a TSX change appears under TypeScript with a `Folded:` line. `--split-languages` shows TSX as its own row, as full JSON does. `sed` keeps only the Languages grid.
+
+```bash
+source scripts/cli-demo-env.sh
+locmetry --root acme-orders --no-user-config --output before.json
+printf 'export const Badge = () => null;\n' >> acme-orders/web/src/orders/OrderView.tsx
+locmetry --root acme-orders --no-user-config --output after.json
+locmetry compare before.json after.json --no-color --format table \
+  | sed -n '/^ Language /,/^ Folded/p'
+locmetry compare before.json after.json --no-color --format table --split-languages --tables-only \
+  | sed -n '/^ Language /,/^ Source total/p'
+```
+
+```output
+ Language      before  after  change │ before  after  change
+ ────────────────────────────────────┼──────────────────────
+ TypeScript        13     14      +1 │     10     11      +1
+ ────────────────────────────────────┼──────────────────────
+ Source total      37     38      +1 │     29     30      +1
+ Folded: TSX → TypeScript.
+ Language      before  after  change │ before  after  change
+ ────────────────────────────────────┼──────────────────────
+ TSX                3      4      +1 │      3      4      +1
  ────────────────────────────────────┼──────────────────────
  Source total      37     38      +1 │     29     30      +1
 ```
@@ -243,9 +273,10 @@ Input metadata, measurement notes, report-level findings and partial status cove
                        Lines         │         Code
  Language      before  after  change │ before  after  change
  ────────────────────────────────────┼──────────────────────
- TypeScript        10     11      +1 │      7      8      +1
+ TypeScript        13     14      +1 │     10     11      +1
  ────────────────────────────────────┼──────────────────────
  Source total      19     20      +1 │     16     17      +1
+ Folded: TSX → TypeScript.
 
 Member source lines: matched +1, entering +0, leaving -0; total +1.
 Member all-counted lines: matched +1, entering +0, leaving -0; total +1.

@@ -9,9 +9,9 @@ use locmetry::{
     breakdown, build_report, build_systems, git_submodules, largest_module_files, module_shares,
     render_markdown, render_table_with_options, report_text, review, scan, scope_policy,
     submodule_shares, unclaimed_folders, unused_entries, user_defaults_file, validate_output,
-    write_report, BarKind, Bars, Coverage, FileRecord, Findings, MemberView, Module, ModuleShare,
-    Policy, Purpose, RowOrder, ScopeOverrides, SubmoduleShare, TableOptions, BACKEND, CONFIG_FILE,
-    DATA_LANGUAGES, DOCUMENTATION_LANGUAGES,
+    write_report, BarKind, Bars, Coverage, FileRecord, Findings, LanguageVariants, MemberView,
+    Module, ModuleShare, Policy, Purpose, RowOrder, ScopeOverrides, SubmoduleShare, TableOptions,
+    BACKEND, CONFIG_FILE, DATA_LANGUAGES, DOCUMENTATION_LANGUAGES,
 };
 use std::collections::BTreeMap;
 use std::{
@@ -194,6 +194,8 @@ Choose scope and views:
   --subfolder retains the root's policy and module context; --root on that folder
   starts a different measurement. Configuration is not discovered in ancestors.
   Quote root-relative exclusion globs. --table-purpose and --table-language filter tables, not JSON.
+  Tables and Markdown count language variants within their family, such as TSX within
+  TypeScript, and name each fold; --split-languages separates them. JSON keeps backend names.
   --folder-rows needs --format table or --print table; its budget retains all top-level folders.
   --markdown-depth limits only Markdown's Folder breakdown; other evidence can name deeper paths.
   Folder parent rows include descendants.
@@ -439,6 +441,10 @@ struct CompareArgs {
     /// measurement dates. Table format only.
     #[arg(long = "tables-only", help_heading = "Presentation")]
     tables_only: bool,
+    /// Show language variants such as TSX and C++ Header as rows of their own
+    /// instead of within their family's row, such as TypeScript. Table and Markdown only.
+    #[arg(long = "split-languages", help_heading = "Presentation")]
+    split_languages: bool,
 }
 
 /// Settings of a single scan root, which a workspace leaves to each member's
@@ -545,6 +551,11 @@ struct SharedArgs {
     /// Root and Measured at lines. Table format only.
     #[arg(long = "tables-only", help_heading = "Presentation")]
     tables_only: bool,
+    /// Show language variants such as TSX, JSX and C++ Header as rows of their own.
+    /// By default tables and Markdown count them in their family's row, such as
+    /// TypeScript, and name each fold. JSON keeps every backend language.
+    #[arg(long = "split-languages", help_heading = "Presentation")]
+    split_languages: bool,
     /// Show only these purposes' source in tables; comma-separated.
     /// JSON and Markdown keep the complete measurement. Table format only.
     #[arg(
@@ -556,6 +567,7 @@ struct SharedArgs {
     )]
     purpose: Vec<PurposeArg>,
     /// Show only these source languages in tables; comma-separated, in any case.
+    /// A variant such as TSX selects its family's row unless --split-languages.
     /// JSON and Markdown keep the complete measurement. Table format only.
     #[arg(
         long = "table-language",
@@ -862,6 +874,27 @@ fn warn_ineffective_options(shared: &SharedArgs, destination: &Destination, styl
             ),
         );
     }
+    warn_split_languages(shared.split_languages, destination, styling);
+}
+
+fn warn_split_languages(split: bool, destination: &Destination, styling: Styling) {
+    if split && !destination.shows(Format::Table) && !destination.shows(Format::Markdown) {
+        styling.stderr_message(
+            Role::Warning,
+            format_args!(
+                "--split-languages has no effect here; it applies only to table and Markdown \
+                 output; {}",
+                destination.format_remedy(Format::Table)
+            ),
+        );
+    }
+}
+
+fn language_variants(split: bool) -> LanguageVariants {
+    match split {
+        true => LanguageVariants::Split,
+        false => LanguageVariants::Folded,
+    }
 }
 
 fn user_defaults(no_user_config: bool) -> Option<PathBuf> {
@@ -1040,6 +1073,7 @@ fn run_compare(args: &CompareArgs, styling: Styling) -> Result<Outcome> {
             ),
         );
     }
+    warn_split_languages(args.split_languages, &destination, styling);
     let before = locmetry::compare::read_input(&args.before)?;
     let after = locmetry::compare::read_input(&args.after)?;
     if let Some(path) = destination.path {
@@ -1056,17 +1090,18 @@ fn run_compare(args: &CompareArgs, styling: Styling) -> Result<Outcome> {
         None => result,
     };
     let partial = result.partial();
+    let variants = language_variants(args.split_languages);
     let text = match destination.format {
         Format::Json => report_text(&serde_json::to_value(&result)?)?,
         Format::Headline => format!("{}\n", serde_json::to_string(&result.headline())?),
         Format::Table => {
             let theme = styling.theme(destination.path.is_none() && io::stdout().is_terminal());
             match args.tables_only {
-                true => locmetry::compare::render_tables(&result, theme),
-                false => locmetry::compare::render_table_with_theme(&result, theme),
+                true => locmetry::compare::render_tables(&result, theme, variants),
+                false => locmetry::compare::render_table_with_theme(&result, theme, variants),
             }
         }
-        Format::Markdown => locmetry::compare::render_markdown(&result),
+        Format::Markdown => locmetry::compare::render_markdown(&result, variants),
     };
     destination.write(&text)?;
     Ok(if partial {
@@ -1610,10 +1645,16 @@ fn report(
         Sort::Name => RowOrder::Name,
     };
     let purposes = selected_purposes(&shared.purpose);
+    // Human views count variants within their family unless split, so a
+    // selected variant name selects the row that shows it.
+    let variants = language_variants(shared.split_languages);
+    let shown_rows = variants.rows(&rows);
+    let shown_summary = build_report(&shown_rows);
     let mut languages: Vec<String> = Vec::new();
     for language in &shared.languages {
-        if !languages.iter().any(|known| known == language) {
-            languages.push(language.to_string());
+        let language = variants.row_name(language);
+        if !languages.contains(&language) {
+            languages.push(language);
         }
     }
     // Table and Markdown views; `stdout` decides styling and automatic bars.
@@ -1621,8 +1662,8 @@ fn report(
         let terminal = stdout && io::stdout().is_terminal();
         let mut human = match format {
             Format::Table => render_table_with_options(
-                &summary,
-                &rows,
+                &shown_summary,
+                &shown_rows,
                 &findings,
                 TableOptions {
                     categories: shared.categories,
@@ -1640,11 +1681,18 @@ fn report(
                     purposes: purposes.clone(),
                     languages: languages.clone(),
                     tables_only: shared.tables_only,
+                    folds: variants.source_folds(&rows, &purposes, &languages),
                 },
             ),
-            Format::Markdown => {
-                render_markdown(&project, &summary, &rows, &findings, shared.depth, order)
-            }
+            Format::Markdown => render_markdown(
+                &project,
+                &shown_summary,
+                &shown_rows,
+                &findings,
+                shared.depth,
+                order,
+                &variants.source_folds(&rows, &Purpose::ALL, &[]),
+            ),
             Format::Json | Format::Headline => return String::new(),
         };
         // Partial counts still warn on stderr and exit 2.
