@@ -8,6 +8,7 @@ repository = "https://github.com/mbackschat/locmetry"
 publish = false
 
 [dependencies]
+anstyle-query = "1"
 anyhow = "1"
 chrono = { version = "0.4", default-features = false, features = ["std"] }
 clap = { version = "4", features = ["derive", "wrap_help"] }

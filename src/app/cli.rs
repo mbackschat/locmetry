@@ -620,16 +620,27 @@ pub(crate) struct SharedArgs {
 }
 
 /// Whether human terminal output may use styling: only for a terminal, unless
-/// `NO_COLOR` is set to anything nonempty (https://no-color.org) or the
-/// terminal is `dumb`.
+/// `NO_COLOR` is set to anything nonempty (https://no-color.org), the
+/// terminal is `dumb`, or a Windows console refused virtual-terminal
+/// processing (`console_escapes`, which is `None` elsewhere).
 pub(crate) fn emphasis(
     stdout_is_terminal: bool,
     no_color: Option<String>,
     term: Option<String>,
+    console_escapes: Option<bool>,
 ) -> bool {
     stdout_is_terminal
         && no_color.is_none_or(|value| value.is_empty())
         && term.as_deref() != Some("dumb")
+        && console_escapes != Some(false)
+}
+
+/// Asks a Windows console once to interpret escape sequences; Windows
+/// PowerShell 5.1's console host prints them literally unless enabled
+/// (https://learn.microsoft.com/windows/console/console-virtual-terminal-sequences).
+fn console_escapes() -> Option<bool> {
+    static ENABLED: std::sync::OnceLock<Option<bool>> = std::sync::OnceLock::new();
+    *ENABLED.get_or_init(anstyle_query::windows::enable_ansi_colors)
 }
 
 #[derive(Clone, Copy, clap::Args)]
@@ -647,6 +658,7 @@ impl Styling {
                     is_terminal,
                     std::env::var("NO_COLOR").ok(),
                     std::env::var("TERM").ok(),
+                    console_escapes(),
                 ),
         )
     }
