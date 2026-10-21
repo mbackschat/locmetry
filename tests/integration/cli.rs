@@ -1432,6 +1432,62 @@ fn swift_packages_and_test_targets_are_recognized() {
     );
 }
 
+/// Dart and Flutter packages: `lib/` and `bin/` are production as the pub
+/// package layout defines them (https://dart.dev/tools/pub/package-layout),
+/// `test/` and Flutter's `integration_test/` are tests, and a local package
+/// nested in an app is its own module.
+#[test]
+fn dart_packages_and_flutter_integration_tests_are_recognized() {
+    let temp = project(&[
+        ("app/pubspec.yaml", "name: app\n"),
+        ("app/lib/main.dart", "void main() {}\n"),
+        ("app/lib/src/model.dart", "class Model {}\n"),
+        ("app/bin/seed.dart", "void main() {}\n"),
+        ("app/test/model_test.dart", "void main() {}\n"),
+        ("app/integration_test/login_test.dart", "void main() {}\n"),
+        ("app/tool/generate.dart", "void main() {}\n"),
+        ("app/packages/ui/pubspec.yaml", "name: ui\n"),
+        ("app/packages/ui/lib/button.dart", "class Button {}\n"),
+    ]);
+    let (success, document, stderr) = report(&temp.path().join("project"), &[]);
+    assert!(success, "{stderr}");
+    let source: Vec<_> = classifications(&document)
+        .into_iter()
+        .filter(|(path, _, _)| !path.ends_with("pubspec.yaml"))
+        .collect();
+    assert_eq!(
+        source,
+        [
+            triple("app/bin/seed.dart", "production", "builtin:dart-module"),
+            triple(
+                "app/integration_test/login_test.dart",
+                "test",
+                "builtin:flutter-integration-test"
+            ),
+            triple("app/lib/main.dart", "production", "builtin:dart-module"),
+            triple(
+                "app/lib/src/model.dart",
+                "production",
+                "builtin:dart-module"
+            ),
+            triple(
+                "app/packages/ui/lib/button.dart",
+                "production",
+                "builtin:dart-module"
+            ),
+            triple("app/test/model_test.dart", "test", "builtin:test-directory"),
+            triple("app/tool/generate.dart", "other", "fallback"),
+        ]
+    );
+    assert_eq!(
+        document["metadata"]["modules"],
+        json!([
+            {"path": "app", "detector": "dart"},
+            {"path": "app/packages/ui", "detector": "dart"}
+        ])
+    );
+}
+
 /// Lean 4 Lake packages keep their sources at the package root, so every
 /// `.lean` file below a lakefile is production, except the lakefile itself,
 /// test libraries named like mathlib4's `MathlibTest/`, and the `.lake/`

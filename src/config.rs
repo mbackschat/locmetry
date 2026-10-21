@@ -93,6 +93,14 @@ const BUILTIN_TESTS_V1: &[Convention] = &[
         "js-test-file",
         &["**/*.{test,spec}.{js,jsx,mjs,cjs,ts,tsx,mts,cts}"],
     ),
+    // NestJS scaffolds end-to-end suites as `*.e2e-spec.ts`, which the
+    // `.spec` suffix above misses; Immich's `e2e/` suites follow it
+    // (docs/proposals/immich-showcase.md). A bare `-spec` suffix also names
+    // specifications, so only this compound suffix is a test name.
+    test_convention(
+        "js-e2e-spec-file",
+        &["**/*.e2e-spec.{js,jsx,mjs,cjs,ts,tsx,mts,cts}"],
+    ),
     test_convention(
         "jvm-test-class",
         &["**/*{Test,Tests,TestCase}.{java,kt,kts,groovy,scala}"],
@@ -105,6 +113,12 @@ const BUILTIN_TESTS_V1: &[Convention] = &[
     // Lake test libraries are named `<Name>Test` or `<Name>Tests`, such as
     // mathlib4's `MathlibTest/` and Batteries' `BatteriesTest/`.
     test_convention("lean-test-library", &["**/*{Test,Tests}/**/*.lean"]),
+    // Flutter keeps device-driven tests in `integration_test/` beside `test/`
+    // (https://docs.flutter.dev/testing/integration-tests).
+    test_convention(
+        "flutter-integration-test",
+        &["**/integration_test/**/*.dart"],
+    ),
     test_convention(
         "python-test-file",
         &["**/test_*.py", "**/*_test.py", "**/conftest.py"],

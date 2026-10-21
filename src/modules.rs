@@ -118,8 +118,9 @@ impl ModuleDetector for Python {
 /// Built-in detectors. Layouts follow each tool's documented defaults: npm
 /// and Cargo `src/`, Maven and Gradle `src/main/` plus Kotlin Multiplatform
 /// `src/<target>Main/`, Go packages anywhere below `go.mod`, Python's `src`
-/// or flat layout, Lean sources anywhere below a Lake lakefile, and Swift
-/// Package Manager's `Sources/`. Test conventions run earlier, so test files
+/// or flat layout, Lean sources anywhere below a Lake lakefile, Swift
+/// Package Manager's `Sources/`, and the pub package layout's `lib/` and
+/// `bin/` for Dart and Flutter. Test conventions run earlier, so test files
 /// inside these trees stay tests.
 pub static DETECTORS: &[&dyn ModuleDetector] = &[
     &DefaultLayout {
@@ -159,6 +160,13 @@ pub static DETECTORS: &[&dyn ModuleDetector] = &[
         id: "swift",
         descriptors: &["Package.swift"],
         sources: &["Sources/**"],
+    },
+    // https://dart.dev/tools/pub/package-layout: libraries in `lib/`, public
+    // executables in `bin/`; `tool/`, `example/` and `benchmark/` stay open.
+    &DefaultLayout {
+        id: "dart",
+        descriptors: &["pubspec.yaml"],
+        sources: &["lib/**", "bin/**"],
     },
 ];
 

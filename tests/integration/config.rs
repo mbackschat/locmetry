@@ -221,10 +221,15 @@ fn builtin_test_conventions_cover_common_layouts_but_not_ambiguous_fixtures() {
         ),
         ("web/__snapshots__/a.ts.snap", "snapshot-directory"),
         ("web/a.spec.tsx", "js-test-file"),
+        ("e2e/src/specs/album.e2e-spec.ts", "js-e2e-spec-file"),
         ("core/src/main/java/ParserTests.java", "jvm-test-class"),
         ("cmd/main_test.go", "go-test-file"),
         ("tool/test_cli.py", "python-test-file"),
         ("tool/conftest.py", "python-test-file"),
+        (
+            "app/integration_test/login_test.dart",
+            "flutter-integration-test",
+        ),
     ] {
         assert_eq!(
             rule(&policy, path, Kind::Source),
@@ -240,6 +245,12 @@ fn builtin_test_conventions_cover_common_layouts_but_not_ambiguous_fixtures() {
         // `spec` folders also hold specifications, e.g. a reference project's
         // `.claude/skills/spec/` tooling (docs/research/loc-counting-tools.md).
         ".claude/skills/spec/scripts/emit.mjs",
+        // Only the NestJS/Angular `.e2e-spec` suffix is a test name; a bare
+        // `-spec` suffix also names specifications.
+        "src/api-spec.ts",
+        // Flutter's `integration_test/` holds Dart; other languages there are
+        // left to project entries.
+        "tools/integration_test/run.py",
     ] {
         assert_eq!(rule(&policy, path, Kind::Source), "fallback", "{path}");
     }

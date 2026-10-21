@@ -128,7 +128,13 @@ fn config_schema_explains_precedence_and_switches() {
             "{name} must advertise its configuration default"
         );
     }
-    assert!(switch("builtin_tests").contains("swift-test-target"));
+    for convention in [
+        "swift-test-target",
+        "js-e2e-spec-file",
+        "flutter-integration-test",
+    ] {
+        assert!(switch("builtin_tests").contains(convention), "{convention}");
+    }
     assert!(switch("builtin_build").contains("build-wrapper"));
     let modules = switch("builtin_modules");
     for build_file in [
@@ -136,6 +142,7 @@ fn config_schema_explains_precedence_and_switches() {
         "build.gradle.kts",
         "go.mod",
         "Package.swift",
+        "pubspec.yaml",
     ] {
         assert!(modules.contains(build_file), "{build_file} in {modules}");
     }
