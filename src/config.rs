@@ -95,7 +95,7 @@ const BUILTIN_TESTS_V1: &[Convention] = &[
     ),
     // NestJS scaffolds end-to-end suites as `*.e2e-spec.ts`, which the
     // `.spec` suffix above misses; Immich's `e2e/` suites follow it
-    // (docs/proposals/immich-showcase.md). A bare `-spec` suffix also names
+    // (docs/proposals/archive/immich-showcase.md). A bare `-spec` suffix also names
     // specifications, so only this compound suffix is a test name.
     test_convention(
         "js-e2e-spec-file",

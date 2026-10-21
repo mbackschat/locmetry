@@ -2,16 +2,22 @@
 
 <!-- doc-status
 {
-  "status": "accepted",
+  "status": "implemented",
   "date": "2026-10-21",
-  "summary": "Showcase Locmetry on Immich pinned at a release tag, keeping Acme as the exact test reference.",
-  "evidence": "[Owner decisions](immich-showcase.md#decisions--2026-10-21)"
+  "summary": "Immich at pinned release tags became the public showcase; Acme stays the exact test reference.",
+  "evidence": "[Showcase recordings](../../showcase/README.md)"
 }
 -->
 
+Status: historical decision record — implemented. The showcase was implemented and verified locally on 2026-10-21: all eleven recorded guides replay against the pinned checkouts and the public Cargo suite passes; the documentation CI replay had not yet run, because the commits were not pushed. Archived on 2026-10-21 under the [retirement procedure](../README.md#retirement-procedure). The [showcase index](../../showcase/README.md) and the [showcase inputs](../../../examples/showcase/immich/README.md) own the current behavior.
+
+Two outcomes differ from the design below. Project-folder workspaces replaced the six member policies, as the update note under Policy Overlay records. The owner reversed the decision that the DuckDB cookbook capture stays self-contained: on 2026-10-21 both [analytics cookbooks](../../duckdb-cookbook.md) moved to recorded Immich releases, with a synthetic test for the cases Immich cannot show.
+
+The sections below preserve the reviewed design and acceptance criteria. Their imperative wording, examples and stated limitations are historical evidence, not current guarantees. Do not update this body to track behavior; this record carries no live scope.
+
 ## Owner Input and Intended Outcome
 
-The synthetic [Acme Orders workspace](../../examples/cli-workspace/README.md) and the [self-measurement](../self-measurement.md) are too small to convince a reader of Locmetry's value. The owner asked to measure a popular open-source project at a fixed commit, give it a dedicated Locmetry configuration, showcase workspace measurement with it and use it consistently. The README matters most: a first-time reader should see the tool's power there.
+The synthetic [Acme Orders workspace](../../../examples/cli-workspace/README.md) and the [self-measurement](../../self-measurement.md) are too small to convince a reader of Locmetry's value. The owner asked to measure a popular open-source project at a fixed commit, give it a dedicated Locmetry configuration, showcase workspace measurement with it and use it consistently. The README matters most: a first-time reader should see the tool's power there.
 
 ## Decisions — 2026-10-21
 
@@ -27,17 +33,17 @@ Owner decisions taken in the design discussion:
 | Narrative | Line counters, then unconfigured Locmetry, then a reviewed policy | Shows what each step adds; see [Showcase Narrative](#showcase-narrative). |
 | Acme improvements | Recommended policy shape plus the uncovered classification stages and cleanup findings | Acme is the reference readers copy and the guides' option coverage; see [Acme Reference Improvements](#acme-reference-improvements). |
 | README verification | No test gate | The README is the showcase and need not be part of the public test harness. |
-| Public naming | Allowed | Recorded as an exception in [CLAUDE.md](../../CLAUDE.md#sensitive-analysis). |
+| Public naming | Allowed | Recorded as an exception in [CLAUDE.md](../../../CLAUDE.md#sensitive-analysis). |
 
 ## Scope
 
 | Scope | Content |
 | --- | --- |
-| Required | Pinned Immich inputs and a fetch contract; Locmetry-owned root and member policies plus a workspace file; README showcase sections measured on Immich; recorded showcase guides for root, workspace and compare; the [analytics demo](../analytics-demo.md) on the Immich comparison; showcase replay in documentation CI; a README refresh script; the [Acme reference improvements](#acme-reference-improvements). |
+| Required | Pinned Immich inputs and a fetch contract; Locmetry-owned root and member policies plus a workspace file; README showcase sections measured on Immich; recorded showcase guides for root, workspace and compare; the [analytics demo](../../analytics-demo.md) on the Immich comparison; showcase replay in documentation CI; a README refresh script; the [Acme reference improvements](#acme-reference-improvements). |
 | Optional | None identified. |
 | Excluded | Removing Acme or its tests; vendoring Immich files; network access from `cargo test`, Locmetry or the recordings; a per-member configuration field in the workspace contract; Acme demonstrations of Git submodule hints, notebooks or nested modules. |
 
-Acme keeps the integration tests, the option-coverage [recorded command guides](../cli/README.md) and the explanation edge cases.
+Acme keeps the integration tests, the option-coverage [recorded command guides](../../cli/README.md) and the explanation edge cases.
 
 ## Pinned Inputs
 
@@ -66,7 +72,7 @@ Locmetry-owned files live under `examples/showcase/immich/`: a `.locmetryrc` for
 Documentation states that the policy is Locmetry's, not upstream's. The policy is written from inspection evidence, not from expected numbers.
 
 
-Update 2026-10-21: workspace files gained [project folders](../PRODUCT.md#workspace-mode), which measure members under the project's single policy. The overlay now holds only the root `.locmetryrc` and a `workspace.toml` naming the six folders; the six member policies, which repeated the root policy's decisions, were removed.
+Update 2026-10-21: workspace files gained [project folders](../../PRODUCT.md#workspace-mode), which measure members under the project's single policy. The overlay now holds only the root `.locmetryrc` and a `workspace.toml` naming the six folders; the six member policies, which repeated the root policy's decisions, were removed.
 
 ## Showcase Narrative
 
@@ -113,7 +119,7 @@ A draft policy of two overrides and six rules, each with a recorded reason, was 
 
 Every entry was used, and 216 lines remain unclaimed for review. Folder detail, `explain` on a generated file, the workspace summary across members and the `v3.2.0 → v3.3.4` comparison (+9,204 unconfigured source code lines with Locmetry 0.7.3) complete the story; `explain` shows the rule and reason behind each decision.
 
-The README shows these three steps; the former Acme sample-project tour becomes the [Immich policy tour](../showcase/tour.md). The [DuckDB cookbook](../duckdb-cookbook.md) capture stays self-contained so readers can run it without a download.
+The README shows these three steps; the former Acme sample-project tour becomes the [Immich policy tour](../../showcase/tour.md). The [DuckDB cookbook](../../duckdb-cookbook.md) capture stays self-contained so readers can run it without a download.
 
 The spike first ran Locmetry 0.7.3, which had no Dart module detector and no `*.e2e-spec` convention: 56,893 lines of Flutter code were unclaimed, `mobile` reported an implausible test/prod ratio of 3.69, and all 13,003 `e2e/src` lines counted as production. Both conventions were added before recording the showcase, so it demonstrates shipped behavior; the draft policy then needed two fewer rules for the same configured result.
 
@@ -133,7 +139,7 @@ Acme stays small, and every addition must explain something no recording shows t
 
 | Change | Demonstrates |
 | --- | --- |
-| Rewrite the combined-root and member `.locmetryrc` files with `kind = ["source"]`, a `reason` on every entry and a `[categories]` table, without changing totals | The configuration shape recommended by the configure guide and [self-measurement](../self-measurement.md); `explain` shows the reason |
+| Rewrite the combined-root and member `.locmetryrc` files with `kind = ["source"]`, a `reason` on every entry and a `[categories]` table, without changing totals | The configuration shape recommended by the configure guide and [self-measurement](../../self-measurement.md); `explain` shows the reason |
 | Add a few-line generated client under `web/src/` with a "DO NOT EDIT" header, classified Other / `generated` by an `[[overrides]]` entry | An override beating the npm module convention, and intentional Other without a proposed policy |
 | Add a two-line `service/Makefile` | The `build-script` convention: Production / `build-tooling` |
 | Map one invented template extension to HTML through `languages.mappings`, while `web/docs/wireframe.asset` stays unrecognized | Mapped and unrecognized files side by side in coverage |
@@ -149,4 +155,4 @@ These changes land after the README tables move to Immich, as their own commit. 
 
 ## Open Decisions
 
-None. Decisions taken 2026-10-21 after the narrative spike: the README names Tokei, cloc and scc with their versions so readers can reproduce the comparison; documentation CI fetches the pinned tags, cached by commit, and replays the showcase recordings in a step separate from the Acme replay; the [analytics demo](../analytics-demo.md) moves to the `v3.2.0 → v3.3.4` comparison.
+None. Decisions taken 2026-10-21 after the narrative spike: the README names Tokei, cloc and scc with their versions so readers can reproduce the comparison; documentation CI fetches the pinned tags, cached by commit, and replays the showcase recordings in a step separate from the Acme replay; the [analytics demo](../../analytics-demo.md) moves to the `v3.2.0 → v3.3.4` comparison.

@@ -1,6 +1,6 @@
 # Immich Showcase Inputs
 
-Locmetry's public showcase measures [Immich](https://github.com/immich-app/immich), a popular self-hosted photo platform with a TypeScript server, a Svelte web client, a Flutter app and a Python machine-learning service. The [showcase proposal](../../../docs/proposals/immich-showcase.md) records why it was chosen and how it is used. This folder holds everything Locmetry owns about it; no upstream file is copied into this repository.
+Locmetry's public showcase measures [Immich](https://github.com/immich-app/immich), a popular self-hosted photo platform with a TypeScript server, a Svelte web client, a Flutter app and a Python machine-learning service. The [showcase proposal](../../../docs/proposals/archive/immich-showcase.md) records why it was chosen and how it is used. This folder holds everything Locmetry owns about it; no upstream file is copied into this repository.
 
 - [pins.tsv](pins.tsv): the showcase release and the comparison baseline, each as tag and commit.
 - [overlay/.locmetryrc](overlay/.locmetryrc): Locmetry's reviewed policy for the whole checkout.

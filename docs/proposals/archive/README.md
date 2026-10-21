@@ -10,6 +10,7 @@ These records preserve the reviewed designs and their outcomes. Dates record the
 | [CLI Option Clarity and Applicability](cli-option-clarity.md) | implemented | 2026-10-20 | Clean CLI renames, grouped help and README options, and full JSON file detail in either output view. |
 | [Proposal: a useful first run without a configuration audit](default-report-output-proposal-redacted.md) | implemented | 2026-10-17 | Quiet default measurement tables with opt-in findings and visible real failures. |
 | [On-demand Guides in the Locmetry Binary](embedded-guides.md) | implemented | 2026-10-16 | Embedded task guides; implementation does not imply publication. |
+| [Immich Reference Showcase](immich-showcase.md) | implemented | 2026-10-21 | Immich at pinned release tags became the public showcase; Acme stays the exact test reference. |
 | [Net Change Between Measurement Reports](net-change.md) | implemented | 2026-10-15 | Aggregate and topology comparison; per-file comparison remains deferred. |
 | [Subtree Measurement with Project Context](subtree-measurement.md) | implemented | 2026-10-16 | Project-aware subfolder measurement. |
 
