@@ -232,6 +232,7 @@ Without explicit options, a terminal gets a table and a pipe gets a compact JSON
 | `--table-purpose LIST` | Filter table source and totals by purpose; JSON and Markdown retain the complete measurement. |
 | `--table-language LIST` | Filter table source and totals by language, such as `TypeScript,Svelte`; a note names the excluded languages and their code. |
 | `--show-bars[=KIND]` / `--no-bars` | Force / suppress table charts. `KIND` is `purpose` or `comments`; selecting one table purpose uses comment density even with `=purpose`. Terminals show fitting bars automatically. |
+| `--tables-only` | Print only the tables of a root, workspace or compare table report, without legends, notes or the closing location and date lines. |
 | `--markdown-depth N` / `--sort code\|name` | Bound Markdown Folder breakdown depth / order human rows; depth does not bound other evidence. |
 | `--no-color` | Disable terminal color, bold and dim, including help and diagnostics; equivalent to `NO_COLOR=1`. |
 
