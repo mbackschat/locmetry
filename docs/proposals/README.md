@@ -6,7 +6,9 @@ Active designs live directly in this directory. Retired records live in `archive
 
 <!-- doc-index:start -->
 
-No documents in this directory.
+| Document | Status | Date | Summary |
+| --- | --- | --- | --- |
+| [Windows Support](windows-support.md) | accepted | 2026-10-21 | Windows x86_64 release and CI target, used from PowerShell. |
 
 <!-- doc-index:end -->
 

@@ -2,6 +2,10 @@
 
 [PRODUCT](PRODUCT.md) owns supported requirements. This file indexes open work and decision gates; it is not a checkpoint log. Read the relevant linked design only when working on that item. Deferred items do not authorize implementation.
 
+## Windows Support — Accepted
+
+- [ ] Implement and verify the [Windows support design](proposals/windows-support.md), accepted 2026-10-21 by the owner: an x86_64 release zip used from PowerShell, personal defaults in `%APPDATA%`, `compare` input with byte-order marks, then a Scoop manifest. PowerShell tab completion follows later; Windows on ARM stays excluded.
+
 ## CI Maintenance — Follow-up
 
 - [ ] Update the action versions behind the Node.js runtime-deprecation warnings observed in the v0.3.0 CI/release runs. Treat this as a separate tested maintenance change; the [published-release record](plans/archive/development-plan-2026-10-16.md#minor-release-v030--published) preserves the original evidence.
@@ -26,7 +30,7 @@
 
 ## Proposals — Under Discussion
 
-None. The [proposal index](proposals/README.md) distinguishes active designs from historical decisions.
+None beyond the accepted [Windows support](#windows-support--accepted). The [proposal index](proposals/README.md) distinguishes active designs from historical decisions.
 
 ## Historical Evidence
 
