@@ -40,7 +40,7 @@ pub(crate) fn prepare(
     });
     let mut policy = Policy::load_layers(config_path.as_deref(), user_path)?;
     policy.override_scope(overrides)?;
-    let root = root.canonicalize().context("Scan root does not exist")?;
+    let root = dunce::canonicalize(root).context("Scan root does not exist")?;
     for path in [config_path.as_deref(), user_path, workspace_path]
         .into_iter()
         .flatten()
@@ -120,7 +120,7 @@ pub(crate) fn workspace_members(
         locmetry::WorkspaceDefinition::Roots(roots) => roots
             .iter()
             .map(|given| {
-                let root = given.canonicalize().with_context(|| {
+                let root = dunce::canonicalize(given).with_context(|| {
                     format!("Workspace member {}: root does not exist", given.display())
                 })?;
                 let name = root
@@ -138,7 +138,7 @@ pub(crate) fn workspace_members(
             })
             .collect::<Result<Vec<_>>>()?,
         locmetry::WorkspaceDefinition::Folders { project, folders } => {
-            let root = project.canonicalize().with_context(|| {
+            let root = dunce::canonicalize(&project).with_context(|| {
                 format!("Workspace project {} does not exist", project.display())
             })?;
             folders

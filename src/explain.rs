@@ -63,7 +63,7 @@ pub enum PathResult {
 pub use crate::backend::FilterReason;
 
 pub fn inspect(root: &Path, path: &Path, policy: &mut Policy) -> Result<(String, PathResult)> {
-    let root = root.canonicalize().context("Scan root does not exist")?;
+    let root = dunce::canonicalize(root).context("Scan root does not exist")?;
     ensure!(root.is_dir(), "Scan root must be a directory");
     let root = root.as_path();
     ensure!(

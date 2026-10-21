@@ -217,7 +217,7 @@ pub(crate) fn section_title(title: &str, theme: Theme) -> String {
 
 fn resolve_destination(path: &Path) -> Result<PathBuf> {
     if fs::symlink_metadata(path).is_ok() {
-        return Ok(path.canonicalize()?);
+        return Ok(dunce::canonicalize(path)?);
     }
     let name = path.file_name().context("Invalid output path")?;
     let parent = path
@@ -230,10 +230,10 @@ fn resolve_destination(path: &Path) -> Result<PathBuf> {
 pub fn validate_output(output: &Path, root: &Path, config: Option<&Path>) -> Result<()> {
     let output = resolve_destination(output)?;
     ensure!(
-        !output.starts_with(root.canonicalize()?),
+        !output.starts_with(dunce::canonicalize(root)?),
         "Output must be outside the read-only scan root"
     );
-    let config = config.map(Path::canonicalize).transpose()?;
+    let config = config.map(dunce::canonicalize).transpose()?;
     ensure!(
         config.as_ref() != Some(&output),
         "Output would overwrite the configuration: {}",

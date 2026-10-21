@@ -201,7 +201,7 @@ pub(crate) fn scan_selection(
     policy: &Policy,
     target: Option<Target<'_>>,
 ) -> Result<(Scan, Option<Exclusion>)> {
-    let root = root.canonicalize().context("Scan root does not exist")?;
+    let root = dunce::canonicalize(root).context("Scan root does not exist")?;
     ensure!(root.is_dir(), "Scan root must be a directory");
     std::fs::read_dir(&root).context("Cannot read scan root")?;
     let Selection {

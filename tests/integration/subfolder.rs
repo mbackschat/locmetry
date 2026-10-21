@@ -172,7 +172,7 @@ fn subfolder_failure_coverage_and_unused_policy_are_local() {
 #[test]
 fn inactive_config_warning_uses_diagnostic_prefix_and_absolute_paths() {
     let temp = tempfile::tempdir().unwrap();
-    let root = temp.path().canonicalize().unwrap();
+    let root = dunce::canonicalize(temp.path()).unwrap();
     fixture(&root);
     write(&root, ".locmetryrc", "version=1\n");
     write(&root, "web/src/.locmetryrc", "invalid toml");
@@ -570,6 +570,7 @@ fn subfolder_reports_allow_ancestor_submodules_but_reject_outside_breakdown_and_
     }
 }
 
+#[cfg(unix)]
 #[test]
 fn subfolder_human_labels_flatten_controls_while_json_preserves_path_identity() {
     let temp = tempfile::tempdir().unwrap();
