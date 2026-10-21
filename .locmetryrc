@@ -34,6 +34,7 @@ reason = "Maintained packaging and notice-generation source supports installatio
 id = "verification-infrastructure"
 match = [
     "scripts/check-doc-examples.sh",
+    "scripts/check-file-sizes.py",
     "scripts/check-recorded-guides.py",
     "scripts/cli-demo-env.sh",
     "scripts/fetch-showcase.sh",

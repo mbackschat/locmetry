@@ -12,6 +12,7 @@ Start with the workflow or contract relevant to your task. Status tables in the 
 - [Maintain these docs](documentation-maintenance.md): index ownership, status/date rules and automated checks.
 - [Design CLI help](help-design.md): what belongs in help, examples and references, with experimental rationale and evaluation criteria.
 - [Task guides](guides/README.md): configure, explain, read and compare measurements.
+- [Cookbooks](cookbooks/README.md): tested recipes that combine reports with other tools, such as a file-size gate for CI.
 - [Plans](plans/README.md): status of detailed plans and deferred designs.
 - [Proposals](proposals/README.md): designs under review and historical decisions.
 - [Research](research/README.md): dated evidence and design implications.

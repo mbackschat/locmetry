@@ -203,6 +203,8 @@ printf '%s\n' "$report" | jq -r '
   end'
 ```
 
+To gate source file sizes by purpose, such as production files over 1,000 code lines, apply limits to per-file records from `--files`; the [file-size gate cookbook](../cookbooks/file-size-gate.md) has tested recipes, including soft limits and frozen sizes for existing large files.
+
 [CI executes this block and the comparison/explanation workflows](../../scripts/check-doc-examples.sh) against synthetic projects. The policy scenarios check stdout and stderr as well as status, so invalid configuration cannot masquerade as an unclaimed-code rejection. The Cargo tests separately guard its JSON and exit-code assumptions without requiring `jq`.
 
 [Command outcomes](../PRODUCT.md#command-outcomes) defines exit statuses for measurement, comparison and explanation, including backend inaccuracy without identified failure paths.

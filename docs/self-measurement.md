@@ -32,6 +32,14 @@ Keep the default unclaimed fallback and existing language recognition. There is 
 
 The test/production ratio describes whole-file classifications. Rust unit tests embedded in production files under `src/` remain counted with those files. This policy cannot separate them, and the ratio is not a coverage or quality score. See [measurement limits](measurement.md#limits).
 
+## File Sizes
+
+CI gates source file size with this measurement, as the [file-size gate cookbook](cookbooks/file-size-gate.md) describes for any project: [check-file-sizes.py](../scripts/check-file-sizes.py) runs the built executable with `--files`, and [file-size-limits.json](../scripts/file-size-limits.json) holds the limits. Limits count code lines, so explanatory comments never count against a file, and they follow the purpose this policy decides: production files warn above 600 and fail above 1,000, test files warn above 1,000 and fail above 2,000, and Other is unchecked. A large file is a navigation and review cost before it is a design problem, so the soft limit asks for a split while it is still cheap.
+
+Files that predated the limits have a ceiling at their size when the gate was introduced on 2026-10-21. A ceiling replaces the hard limit for that file and may only shrink: the gate fails when the file grows past it, asks for a lower ceiling when the file shrinks, and fails once the file fits the hard limit until the ceiling is removed. Split an oversized file rather than raising its limit.
+
+Inline Rust unit tests count with their production file. Moving them into a `tests.rs` submodule does not change that, because Cargo module inference classifies every file under `src/` as production; a project rule for such files is needed when the first one appears. Run the gate locally after `cargo build --locked` with `python3 scripts/check-file-sizes.py`; [its regression suite](../scripts/test_file_sizes.py) covers limits, ceilings and stale entries.
+
 ## Review and Verify
 
 From the repository root, use the installed executable or the current local build at `target/debug/locmetry`:
