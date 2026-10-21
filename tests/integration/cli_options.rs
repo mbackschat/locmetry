@@ -396,11 +396,15 @@ fn ineffective_preferences_keep_success_and_offer_only_valid_format_remedies() {
         ("--no-bars", "table"),
         ("--verbose", "table"),
         ("--table-purpose", "table"),
+        ("--table-language", "table"),
         ("--markdown-depth", "markdown"),
     ] {
         let mut args = vec!["--root", "project", option];
         if option == "--table-purpose" {
             args.push("production");
+        }
+        if option == "--table-language" {
+            args.push("Rust");
         }
         if option == "--markdown-depth" {
             args.push("2");

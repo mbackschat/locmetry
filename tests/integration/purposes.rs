@@ -1,4 +1,5 @@
-//! `--table-purpose` narrows table views to the selected purposes' source, and
+//! `--table-purpose` and `--table-language` narrow table views to the selected
+//! source and name what they leave out, and
 //! `--show-bars=comments` charts comment density relative to the densest row (docs/PRODUCT.md, Output Routing).
 use crate::common;
 use std::path::Path;
@@ -90,7 +91,7 @@ fn production_only_tables_count_production_source_and_show_comment_share() {
     assert!(text.contains(
         " Lines = Code + Comments + Blanks; Comment % = Comments / (Code + Comments).\n"
     ));
-    assert!(text.contains(" Purposes shown: Production; Test and Other excluded.\n"));
+    assert!(text.contains(" Purposes shown: Production; Test and Other excluded (2 code lines).\n"));
     assert!(!text.contains("Test/prod"), "{text}");
     assert!(
         text.contains("; purposes: production\nMeasured at: "),
@@ -111,7 +112,7 @@ fn selected_purposes_keep_their_columns_and_choose_the_ratio() {
         ["Rust", "2", "5", "3", "2", "0", "2", "1", "0.50"]
     );
     assert!(text.contains("Production + Test = Code; Test/prod = Test / Production (Code)."));
-    assert!(text.contains(" Purposes shown: Production and Test; Other excluded.\n"));
+    assert!(text.contains(" Purposes shown: Production and Test; Other excluded (1 code line).\n"));
 
     let text = table(&["--format", "table", "--table-purpose", "other,test"]);
     assert_eq!(
@@ -143,6 +144,124 @@ fn selecting_every_purpose_is_no_selection() {
         ]),
         body(&["--format", "table"])
     );
+}
+
+/// A language selection counts only those languages' source in every table,
+/// matches names in any case, and names each excluded language with the code
+/// it held, so the shown totals reconcile with the full measurement.
+#[test]
+fn language_selection_counts_only_those_languages_and_names_the_rest() {
+    let text = table(&[
+        "--format",
+        "table",
+        "--show-folders",
+        "--table-language",
+        "rust",
+    ]);
+    let all = ["Rust", "2", "5", "3", "2", "0", "2", "1", "0", "0.50"];
+    assert_eq!(cells(&text, "Rust"), all);
+    assert_eq!(cells(&text, "Total")[1..], all[1..]);
+    assert!(
+        !text.contains("\n Python ") && !text.contains("\n proto "),
+        "{text}"
+    );
+    assert_eq!(cells(&text, "src")[1..3], ["3", "2"]);
+    assert!(text.contains(" Languages shown: Rust; Python excluded (1 code line).\n"));
+    assert!(text.contains("; languages: Rust\nMeasured at: "), "{text}");
+}
+
+/// Purposes filter first and languages then, so the two notes' excluded code
+/// and the shown total add up to the full measurement: 1 + 1 + 2 = 4.
+#[test]
+fn purpose_and_language_notes_reconcile_with_the_full_total() {
+    let text = table(&[
+        "--format",
+        "table",
+        "--table-purpose",
+        "production,other",
+        "--table-language",
+        "Python",
+    ]);
+    assert_eq!(cells(&text, "Total")[3], "1");
+    assert!(text.contains(" Purposes shown: Production and Other; Test excluded (1 code line).\n"));
+    assert!(text.contains(" Languages shown: Python; Rust excluded (2 code lines).\n"));
+    assert!(
+        text.contains("; purposes: production, other; languages: Python\nMeasured at: "),
+        "{text}"
+    );
+}
+
+/// An embedded language keeps only its own lines; the host file it lives in
+/// counts no file for it, as in the unfiltered language table. Excluded
+/// languages are named largest first, ties by name: HTML and Rust hold 3.
+#[test]
+fn embedded_language_selection_keeps_only_the_embedded_lines() {
+    let temp = project();
+    let root = temp.path().join("project");
+    common::write(
+        &root,
+        "web/page.html",
+        "<p>Hello</p>\n<script>\nconst x = 1;\n</script>\n",
+    );
+    let full = String::from_utf8(run(&root, &["--format", "table"], "80").stdout).unwrap();
+    let text = String::from_utf8(
+        run(
+            &root,
+            &["--format", "table", "--table-language", "JavaScript"],
+            "80",
+        )
+        .stdout,
+    )
+    .unwrap();
+    assert_eq!(cells(&text, "JavaScript")[1..4], ["0", "1", "1"]);
+    assert_eq!(cells(&text, "Total")[1..4], ["0", "1", "1"]);
+    let excluded: u64 = cells(&full, "Total")[3]
+        .replace(',', "")
+        .parse::<u64>()
+        .unwrap()
+        - 1;
+    assert!(
+        text.contains(&format!(
+            " Languages shown: JavaScript; HTML, Rust and Python excluded ({excluded} code lines).\n"
+        )),
+        "{text}"
+    );
+}
+
+/// Naming every measured language selects everything, as naming every purpose does.
+#[test]
+fn selecting_every_measured_language_is_no_selection() {
+    let temp = project();
+    let root = temp.path().join("project");
+    let body = |args: &[&str]| {
+        let text = String::from_utf8(run(&root, args, "80").stdout).unwrap();
+        text.split("\nMeasured at:").next().unwrap().to_string()
+    };
+    assert_eq!(
+        body(&["--format", "table", "--table-language", "Python,Rust"]),
+        body(&["--format", "table"])
+    );
+}
+
+/// A typo or a data language would silently empty every table, so both are
+/// usage errors that name the value.
+#[test]
+fn unknown_and_non_source_languages_are_rejected() {
+    let temp = project();
+    let root = temp.path().join("project");
+    for (value, message) in [
+        ("Rusty", "unknown language \"Rusty\""),
+        ("json", "JSON is data, not source"),
+    ] {
+        let output = run(
+            &root,
+            &["--format", "table", "--table-language", value],
+            "80",
+        );
+        assert_eq!(output.status.code(), Some(1), "{value}");
+        let error = String::from_utf8_lossy(&output.stderr);
+        assert!(error.contains(message), "{error}");
+    }
 }
 
 #[test]

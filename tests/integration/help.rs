@@ -77,6 +77,7 @@ fn every_visible_option_has_a_workflow_in_the_inventory() {
         "--show-bars",
         "--no-bars",
         "--table-purpose",
+        "--table-language",
         "--sort",
         "--markdown-depth",
         "--help",
@@ -159,7 +160,7 @@ fn root_help_exposes_result_automation_and_policy_boundaries() {
         "overrides precede test/build conventions",
         "language mappings",
         "--schema user-config",
-        "--table-purpose filters tables, not JSON",
+        "--table-purpose and --table-language filter tables, not JSON",
         "Build modules infer conventional layouts",
     ] {
         assert!(text.contains(fact), "missing task interpretation: {fact}");

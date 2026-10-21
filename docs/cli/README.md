@@ -25,7 +25,7 @@ Each row routes an option to its primary explanation. The workspace guide exerci
 | --- | --- | --- |
 | Root | `--root`, positional directory, `--no-user-config`, `--format`, `--no-color`, `--no-bars` | [Whole tree](root.md#measure-the-whole-tree) |
 | Root | `--folder-rows`, `--sort`, `--show-categories`, `--verbose` | [Folders and decisions](root.md#explore-folders-and-decisions) |
-| Root | `--subfolder`, `--show-folders`, `--table-purpose`, `--show-bars=comments` | [Production subtree](root.md#focus-on-production-in-a-subtree) |
+| Root | `--subfolder`, `--show-folders`, `--table-purpose`, `--show-bars=comments`, `--table-language` | [Production subtree](root.md#focus-on-production-in-a-subtree), [languages](root.md#focus-on-languages) |
 | Root | `--config`, `--hidden`, `--respect-ignore-files`, `--exclude` | [Selection overrides](root.md#override-selection) |
 | Root | `--files`, `--output`, `--print`, `--show-bars` | [Export and overview](root.md#save-full-evidence-and-print-an-overview) |
 | Root | `--markdown-depth`, Markdown and headline formats | [Output choices](root.md#choose-markdown-or-headline-output) |

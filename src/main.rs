@@ -193,7 +193,7 @@ Read results:
 Choose scope and views:
   --subfolder retains the root's policy and module context; --root on that folder
   starts a different measurement. Configuration is not discovered in ancestors.
-  Quote root-relative exclusion globs. --table-purpose filters tables, not JSON.
+  Quote root-relative exclusion globs. --table-purpose and --table-language filter tables, not JSON.
   --folder-rows needs --format table or --print table; its budget retains all top-level folders.
   --markdown-depth limits only Markdown's Folder breakdown; other evidence can name deeper paths.
   Folder parent rows include descendants.
@@ -547,6 +547,16 @@ struct SharedArgs {
         help_heading = "Presentation"
     )]
     purpose: Vec<PurposeArg>,
+    /// Show only these source languages in tables; comma-separated, in any case.
+    /// JSON and Markdown keep the complete measurement. Table format only.
+    #[arg(
+        long = "table-language",
+        value_delimiter = ',',
+        value_name = "LANGUAGES",
+        value_parser = locmetry::source_language,
+        help_heading = "Presentation"
+    )]
+    languages: Vec<&'static str>,
     /// Result format [default: json with --output; otherwise table on a terminal, headline in pipes].
     #[arg(
         long,
@@ -819,6 +829,7 @@ fn warn_ineffective_options(shared: &SharedArgs, destination: &Destination, styl
             (shared.verbose, "--verbose"),
             (shared.bars.is_some(), "--show-bars"),
             (!shared.purpose.is_empty(), "--table-purpose"),
+            (!shared.languages.is_empty(), "--table-language"),
             (shared.no_bars, "--no-bars"),
             (shared.categories, "--show-categories"),
         ] {
@@ -1578,6 +1589,12 @@ fn report(
         Sort::Name => RowOrder::Name,
     };
     let purposes = selected_purposes(&shared.purpose);
+    let mut languages: Vec<String> = Vec::new();
+    for language in &shared.languages {
+        if !languages.iter().any(|known| known == language) {
+            languages.push(language.to_string());
+        }
+    }
     // Table and Markdown views; `stdout` decides styling and automatic bars.
     let human = |format: Format, stdout: bool| {
         let terminal = stdout && io::stdout().is_terminal();
@@ -1600,6 +1617,7 @@ fn report(
                         bar_columns(stdout),
                     ),
                     purposes: purposes.clone(),
+                    languages: languages.clone(),
                 },
             ),
             Format::Markdown => {
@@ -1623,11 +1641,12 @@ fn report(
             _ => "\n",
         };
         let mut context = measured_roots(&location, format == Format::Markdown);
-        // Only tables filter by purpose, and only a strict subset filters, as
-        // the table renderer decides; the footer keeps that selection visible.
-        if format == Format::Table && purposes.len() < Purpose::ALL.len() {
-            let names: Vec<String> = purposes.iter().map(Purpose::to_string).collect();
-            context += &format!("; purposes: {}", names.join(", "));
+        // Only tables filter, and only a selection that leaves source out;
+        // the footer keeps that selection visible.
+        if format == Format::Table {
+            if let Some(selection) = locmetry::table_selection(&rows, &purposes, &languages) {
+                context += &format!("; {selection}");
+            }
         }
         human.push_str(&format!(
             "\n{context}{separator}Measured at: {}\n",

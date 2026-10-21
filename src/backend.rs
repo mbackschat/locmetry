@@ -106,6 +106,24 @@ pub const DOCUMENTATION_LANGUAGES: &[LanguageType] = &[
     UnrealDeveloperMarkdown,
 ];
 
+/// The display name of the source language `name` denotes, in any case.
+/// Data and documentation names are refused: tables count only source, so
+/// selecting one would leave them empty.
+pub fn source_language(name: &str) -> Result<&'static str, String> {
+    let language = LanguageType::from_name(name)
+        .or_else(|| {
+            LanguageType::list()
+                .iter()
+                .map(|(language, _)| *language)
+                .find(|language| language.name().eq_ignore_ascii_case(name))
+        })
+        .ok_or_else(|| format!("unknown language {name:?}; use a name from the Language table"))?;
+    match language_kind(language.name()) {
+        Kind::Source => Ok(language.name()),
+        kind => Err(format!("{} is {kind}, not source", language.name())),
+    }
+}
+
 /// Ignore file honored in addition to the `ignore` crate's standard files.
 const TOOL_IGNORE_FILE: &str = ".tokeignore";
 

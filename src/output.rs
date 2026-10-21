@@ -1226,29 +1226,6 @@ impl PurposeColumns<'_> {
         .collect();
         format!("{}.", parts.join("; "))
     }
-
-    /// Names the selection, so filtered totals are not read as complete ones.
-    /// Column titles name the purposes, so "Other" cannot read as "others".
-    fn filter_note(&self) -> Option<String> {
-        let names = |purposes: Vec<Purpose>| {
-            purposes
-                .iter()
-                .map(|purpose| purpose_title(*purpose))
-                .collect::<Vec<_>>()
-                .join(" and ")
-        };
-        let excluded: Vec<Purpose> = Purpose::ALL
-            .into_iter()
-            .filter(|purpose| !self.shown.contains(purpose))
-            .collect();
-        (!excluded.is_empty()).then(|| {
-            format!(
-                "Purposes shown: {}; {} excluded.",
-                names(self.shown.to_vec()),
-                names(excluded)
-            )
-        })
-    }
 }
 
 /// What share bars show.
@@ -1680,6 +1657,198 @@ pub struct TableOptions {
     pub bars: Bars,
     /// Purposes whose source the tables count, in `Purpose::ALL` order.
     pub purposes: Vec<Purpose>,
+    /// Source languages the tables count, by display name; empty counts all.
+    pub languages: Vec<String>,
+}
+
+/// Measured source languages that `languages` leaves out of `rows`, largest
+/// code first, with that code; none without a selection.
+fn excluded_languages<'r>(
+    rows: impl Iterator<Item = &'r FileRecord>,
+    languages: &[String],
+) -> Vec<(String, u64)> {
+    if languages.is_empty() {
+        return Vec::new();
+    }
+    let mut excluded = BTreeMap::<&str, u64>::new();
+    for row in rows.filter(|row| row.kind == Kind::Source) {
+        for (language, counts) in &row.languages {
+            if !languages.contains(language) {
+                *excluded.entry(language).or_default() += counts.code;
+            }
+        }
+    }
+    let mut excluded: Vec<(String, u64)> = excluded
+        .into_iter()
+        .map(|(language, code)| (language.to_string(), code))
+        .collect();
+    excluded.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
+    excluded
+}
+
+fn purpose_selected(row: &FileRecord, purposes: &[Purpose]) -> bool {
+    row.kind != Kind::Source || purposes.contains(&row.classification.purpose)
+}
+
+/// `row` reduced to the selected `languages`: an embedded language keeps its
+/// own lines, and only the file's own language counts the file, as in the
+/// unfiltered language table. Source without a selected language drops out.
+fn language_selected(row: &FileRecord, languages: &[String]) -> Option<FileRecord> {
+    if row.kind != Kind::Source {
+        return Some(row.clone());
+    }
+    let kept: BTreeMap<String, Counts> = row
+        .languages
+        .iter()
+        .filter(|(language, _)| languages.contains(language))
+        .map(|(language, counts)| (language.clone(), *counts))
+        .collect();
+    if kept.is_empty() {
+        return None;
+    }
+    let mut counts = Counts::default();
+    for language in kept.values() {
+        counts.add(language);
+    }
+    counts.files = u64::from(kept.contains_key(&row.language));
+    Some(FileRecord {
+        counts,
+        languages: kept,
+        ..row.clone()
+    })
+}
+
+/// The source a table selection keeps and what it leaves out. Purposes filter
+/// first and languages then, so the code both notes exclude and the shown
+/// total add up to the full measurement.
+struct TableSelection {
+    /// Selected records; `None` when the selection keeps everything.
+    rows: Option<Vec<FileRecord>>,
+    /// Source code a strict purpose subset leaves out.
+    purposes_excluded: Option<u64>,
+    languages_excluded: Vec<(String, u64)>,
+}
+
+impl TableSelection {
+    fn of(rows: &[FileRecord], purposes: &[Purpose], languages: &[String]) -> Self {
+        let source_code = |rows: &[FileRecord]| -> u64 {
+            rows.iter()
+                .filter(|row| row.kind == Kind::Source)
+                .map(|row| row.counts.code)
+                .sum()
+        };
+        let mut selected = None;
+        let mut purposes_excluded = None;
+        if purposes.len() < Purpose::ALL.len() {
+            let kept: Vec<FileRecord> = rows
+                .iter()
+                .filter(|row| purpose_selected(row, purposes))
+                .cloned()
+                .collect();
+            purposes_excluded = Some(source_code(rows) - source_code(&kept));
+            selected = Some(kept);
+        }
+        let current = selected.as_deref().unwrap_or(rows);
+        let languages_excluded = excluded_languages(current.iter(), languages);
+        if !languages_excluded.is_empty() {
+            selected = Some(
+                current
+                    .iter()
+                    .filter_map(|row| language_selected(row, languages))
+                    .collect(),
+            );
+        }
+        Self {
+            rows: selected,
+            purposes_excluded,
+            languages_excluded,
+        }
+    }
+
+    /// Names what the tables leave out, so filtered totals are not read as
+    /// complete ones. Purpose titles keep "Other" from reading as "others".
+    fn notes(&self, purposes: &[Purpose], languages: &[String]) -> Vec<String> {
+        let mut notes = Vec::new();
+        if let Some(code) = self.purposes_excluded {
+            let titles = |purposes: Vec<Purpose>| {
+                listed(
+                    purposes
+                        .into_iter()
+                        .map(|p| purpose_title(p).to_string())
+                        .collect(),
+                )
+            };
+            let excluded = Purpose::ALL
+                .into_iter()
+                .filter(|purpose| !purposes.contains(purpose))
+                .collect();
+            notes.push(format!(
+                "Purposes shown: {}; {} excluded ({}).",
+                titles(purposes.to_vec()),
+                titles(excluded),
+                counted(code, "code line")
+            ));
+        }
+        if !self.languages_excluded.is_empty() {
+            // The largest name the bulk of what is missing; a long tail only
+            // needs its size, and a single remaining name is no longer than
+            // counting it.
+            const NAMED: usize = 5;
+            let excluded = self.languages_excluded.len();
+            let named = if excluded > NAMED + 1 {
+                NAMED
+            } else {
+                excluded
+            };
+            let mut names: Vec<String> = self
+                .languages_excluded
+                .iter()
+                .take(named)
+                .map(|(language, _)| language.clone())
+                .collect();
+            if excluded > named {
+                names.push(format!("{} more", excluded - named));
+            }
+            notes.push(format!(
+                "Languages shown: {}; {} excluded ({}).",
+                listed(languages.to_vec()),
+                listed(names),
+                counted(
+                    self.languages_excluded.iter().map(|(_, code)| code).sum(),
+                    "code line"
+                )
+            ));
+        }
+        notes
+    }
+}
+
+/// `names` as prose: `A`, `A and B`, or `A, B and C`.
+fn listed(mut names: Vec<String>) -> String {
+    match names.pop() {
+        None => String::new(),
+        Some(last) if names.is_empty() => last,
+        Some(last) => format!("{} and {last}", names.join(", ")),
+    }
+}
+
+/// The footer's account of a table selection that leaves source out, such as
+/// `purposes: production; languages: Rust`; `None` when tables show everything.
+pub fn table_selection(
+    rows: &[FileRecord],
+    purposes: &[Purpose],
+    languages: &[String],
+) -> Option<String> {
+    let mut parts = Vec::new();
+    if purposes.len() < Purpose::ALL.len() {
+        let names: Vec<String> = purposes.iter().map(Purpose::to_string).collect();
+        parts.push(format!("purposes: {}", names.join(", ")));
+    }
+    let kept = rows.iter().filter(|row| purpose_selected(row, purposes));
+    if !excluded_languages(kept, languages).is_empty() {
+        parts.push(format!("languages: {}", languages.join(", ")));
+    }
+    (!parts.is_empty()).then(|| parts.join("; "))
 }
 
 /// Bars for terminal tables, with the columns available to them.
@@ -1738,24 +1907,18 @@ pub fn render_table_with_options(
         folder_rows,
         bars,
         purposes,
+        languages: selected_languages,
     } = options;
-    // A purpose selection counts only that source, so every table, total and
-    // bar is rebuilt from the selected records.
-    let selected: Vec<FileRecord>;
+    // A selection counts only that source, so every table, total and bar is
+    // rebuilt from the selected records.
+    let selection = TableSelection::of(rows, &purposes, &selected_languages);
     let selected_summary;
-    let (summary, rows) = match purposes.len() < Purpose::ALL.len() {
-        true => {
-            selected = rows
-                .iter()
-                .filter(|row| {
-                    row.kind != Kind::Source || purposes.contains(&row.classification.purpose)
-                })
-                .cloned()
-                .collect();
-            selected_summary = crate::build_report(&selected);
+    let (summary, rows) = match &selection.rows {
+        Some(selected) => {
+            selected_summary = crate::build_report(selected);
             (&selected_summary, &selected[..])
         }
-        false => (summary, rows),
+        None => (summary, rows),
     };
     let columns = PurposeColumns { shown: &purposes };
     let languages = ordered(
@@ -1803,7 +1966,7 @@ pub fn render_table_with_options(
     if columns.ratio() == Ratio::TestPerProduction {
         legends.push(LANGUAGE_RATIO_NOTE.into());
     }
-    legends.extend(columns.filter_note());
+    legends.extend(selection.notes(&purposes, &selected_languages));
     for legend in legends {
         output += &format!(" {}\n", theme.paint(Role::Muted, &legend));
     }
@@ -2338,6 +2501,7 @@ mod tests {
                     folder_rows: None,
                     bars: Bars::Off,
                     purposes: Purpose::ALL.to_vec(),
+                    languages: Vec::new(),
                 };
                 render_table_with_options(&summary, &rows, &findings, options)
             };
@@ -2598,6 +2762,32 @@ mod tests {
         assert!(key.contains("Bars:"), "{key}");
         let (_, chart) = render(Bars::Always(30, BarKind::Purpose));
         assert!(chart.contains("Code share"), "{chart}");
+    }
+
+    /// Five excluded languages are named, largest first; a tail of two or more
+    /// is counted, and the excluded code still covers all of it.
+    #[test]
+    fn language_note_names_the_largest_exclusions_and_counts_the_rest() {
+        let selection = TableSelection {
+            rows: None,
+            purposes_excluded: None,
+            languages_excluded: ["A", "B", "C", "D", "E", "F", "G"]
+                .into_iter()
+                .map(|language| (language.to_string(), 1_000))
+                .collect(),
+        };
+        assert_eq!(
+            selection.notes(&Purpose::ALL, &["Rust".to_string(), "Go".to_string()]),
+            ["Languages shown: Rust and Go; A, B, C, D, E and 2 more excluded (7,000 code lines)."]
+        );
+        let six = TableSelection {
+            languages_excluded: selection.languages_excluded[..6].to_vec(),
+            ..selection
+        };
+        assert_eq!(
+            six.notes(&Purpose::ALL, &["Rust".to_string()]),
+            ["Languages shown: Rust; A, B, C, D, E and F excluded (6,000 code lines)."]
+        );
     }
 
     /// The largest row fills the bar; others scale to it, split by purpose into

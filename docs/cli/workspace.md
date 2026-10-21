@@ -144,7 +144,7 @@ locmetry workspace --workspace-file workspace.toml --no-user-config --no-color -
  Total           9     33    27 │        4       2 │    20     7 │      0.35 │ 100.0%
  Lines = Code + Comments + Blanks; Production + Test = Code; Test/prod = Test / Production (Code).
  Tests written in another language than the code they test skew per-language Test/prod.
- Purposes shown: Production and Test; Other excluded.
+ Purposes shown: Production and Test; Other excluded (2 code lines).
  Share = Code / total Code. Bars: █ Production  ▓ Test; the largest row fills the bar.
 
  ───────────────────────────────────────────────────────────────────────────────────────────────────
@@ -156,6 +156,38 @@ locmetry workspace --workspace-file workspace.toml --no-user-config --no-color -
  Total          33    27 │    20     7 │      0.35 │ 100.0%
  Production + Test = Code; Test/prod = Test / Production (Code); Share = Code / workspace Code.
  Bars: █ Production  ▓ Test; the largest row fills the bar.
+
+```
+
+`--table-language go` counts only Go source in every table, so the repository rows show where the Go code lives; the note under the language table names what the selection leaves out.
+
+```bash
+source scripts/cli-demo-env.sh
+locmetry workspace --workspace-file workspace.toml --no-user-config --no-color --format table \
+  --table-language go \
+  | sed '/^Root:/d; /^Roots:/d; /^Measured at:/d' \
+  | demo_wrap
+```
+
+```output
+ ────────────────────────────────────────────────────────────────────────────────
+ Language  Files  Lines  Code │ Comments  Blanks │ Prod.  Test  Other │ Test/prod
+ ─────────────────────────────┼──────────────────┼────────────────────┼──────────
+ Go            2     11     8 │        1       2 │     4     4      0 │      1.00
+ ─────────────────────────────┼──────────────────┼────────────────────┼──────────
+ Total         2     11     8 │        1       2 │     4     4      0 │      1.00
+ Lines = Code + Comments + Blanks; Production + Test + Other = Code; Test/prod = Test / Production (Code).
+ Tests written in another language than the code they test skew per-language Test/prod.
+ Languages shown: Go; TypeScript, HTML, Python, TSX, Makefile and JavaScript excluded (21 code lines).
+
+ ─────────────────────────────────────────────────────────────────
+ Repository  Lines  Code │ Prod.  Test  Other │ Test/prod │  Share
+ ────────────────────────┼────────────────────┼───────────┼───────
+ service        11     8 │     4     4      0 │      1.00 │ 100.0%
+ web             0     0 │     0     0      0 │         - │   0.0%
+ ────────────────────────┼────────────────────┼───────────┼───────
+ Total          11     8 │     4     4      0 │      1.00 │ 100.0%
+ Production + Test + Other = Code; Test/prod = Test / Production (Code); Share = Code / workspace Code.
 
 ```
 

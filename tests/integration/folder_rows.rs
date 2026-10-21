@@ -405,6 +405,7 @@ fn adaptive_styling_preserves_plain_alignment_and_mutes_the_legend() {
                 folder_rows: Some(3),
                 bars: locmetry::Bars::Off,
                 purposes: locmetry::Purpose::ALL.to_vec(),
+                languages: Vec::new(),
             },
         )
     };
