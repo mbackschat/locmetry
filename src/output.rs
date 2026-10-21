@@ -1453,7 +1453,7 @@ struct BarRows<'a> {
 fn bar_table(
     table_columns: &Columns,
     body: &[Vec<String>],
-    total: Vec<String>,
+    total: Option<Vec<String>>,
     bars: &BarRows,
     theme: Theme,
 ) -> (RenderedTable, String) {
@@ -1464,7 +1464,7 @@ fn bar_table(
         bars,
     } = *bars;
     let plain_table =
-        |theme| PlainTable::new(table_columns, body, Some(&total)).render(None, theme);
+        |theme| PlainTable::new(table_columns, body, total.as_deref()).render(None, theme);
     let (columns, chart, kind) = match bars {
         Bars::Off => return (plain_table(theme), String::new()),
         Bars::Fit(columns) => (columns, false, BarKind::Purpose),
@@ -1481,9 +1481,11 @@ fn bar_table(
         for (cells, row) in inline_body.iter_mut().zip(rows) {
             cells.push(kind.percent(*row, total_row));
         }
-        inline_total.push(kind.percent(total_row, total_row));
+        if let Some(cells) = &mut inline_total {
+            cells.push(kind.percent(total_row, total_row));
+        }
     }
-    let table = PlainTable::new(&inline_columns, &inline_body, Some(&inline_total));
+    let table = PlainTable::new(&inline_columns, &inline_body, inline_total.as_deref());
     let Some(cells) = inline_bar_width(table.width(), kind.heading(), columns) else {
         let table = plain_table(theme);
         if !chart {
@@ -1884,6 +1886,21 @@ fn source_languages(rows: &[FileRecord]) -> BTreeMap<String, (Counts, RowCode)> 
         .collect()
 }
 
+/// Source counts and code per `purpose:category` key; each key holds a single
+/// purpose, so its row's bar has one segment.
+fn source_categories(rows: &[FileRecord]) -> BTreeMap<String, (Counts, RowCode)> {
+    let mut categories = BTreeMap::<String, (Counts, RowCode)>::new();
+    for row in rows.iter().filter(|row| row.kind == Kind::Source) {
+        let purpose = row.classification.purpose;
+        let key = crate::report::category_key(purpose, &row.classification.category);
+        let (total, code) = categories.entry(key).or_default();
+        total.add(&row.counts);
+        code.purposes[purpose.index()] += row.counts.code;
+        code.comments += row.counts.comments;
+    }
+    categories
+}
+
 pub(crate) fn section_title(title: &str, theme: Theme) -> String {
     format!(
         "{}\n\n",
@@ -1944,20 +1961,22 @@ pub fn render_table_with_options(
     let mut output = String::new();
     // With bars, a table returns what follows its legends: an inline bar key
     // or the chart below it.
-    let table =
-        |table_columns: &Columns, body: &[Vec<String>], total: Vec<String>, rows: &[RowCode]| {
-            let rows = BarRows {
-                rows,
-                total: total_code,
-                columns: &columns,
-                bars,
-            };
-            bar_table(table_columns, body, total, &rows, theme)
+    let table = |table_columns: &Columns,
+                 body: &[Vec<String>],
+                 total: Option<Vec<String>>,
+                 rows: &[RowCode]| {
+        let rows = BarRows {
+            rows,
+            total: total_code,
+            columns: &columns,
+            bars,
         };
+        bar_table(table_columns, body, total, &rows, theme)
+    };
     let (language_table, after) = table(
         &Columns::with_purposes(&LANGUAGE_COLUMNS, &columns),
         &body,
-        total,
+        Some(total),
         &codes,
     );
     output += &language_table.top_rule(theme);
@@ -1976,7 +1995,7 @@ pub fn render_table_with_options(
     // which add the test ratio and share, take the folder rows' place.
     if !findings.members.is_empty() {
         let (body, codes, total) = repository_rows(summary, findings.members, order, &columns);
-        let (text, after) = table(&repository_columns(&columns), &body, total, &codes);
+        let (text, after) = table(&repository_columns(&columns), &body, Some(total), &codes);
         output += "\n";
         output += &text.top_rule(theme);
         output += &text.text;
@@ -2016,7 +2035,7 @@ pub fn render_table_with_options(
             let (text, after) = table(
                 &Columns::with_purposes(&code_columns("Folder"), &columns),
                 &body,
-                total,
+                Some(total),
                 &codes,
             );
             output += "\n";
@@ -2042,15 +2061,15 @@ pub fn render_table_with_options(
         }
     }
     if categories {
-        let rows = summary
-            .totals
-            .source_categories
-            .iter()
-            .map(|(category, counts)| (category.clone(), *counts))
-            .collect();
-        let body: Vec<Vec<String>> = ordered(rows, |counts| counts.code, order)
+        let categories = ordered(
+            source_categories(rows).into_iter().collect(),
+            |(counts, _)| counts.code,
+            order,
+        );
+        let codes: Vec<RowCode> = categories.iter().map(|(_, (_, code))| *code).collect();
+        let body: Vec<Vec<String>> = categories
             .into_iter()
-            .map(|(category, counts)| {
+            .map(|(category, (counts, _))| {
                 vec![
                     category,
                     grouped(counts.files),
@@ -2060,11 +2079,18 @@ pub fn render_table_with_options(
             })
             .collect();
         if !body.is_empty() {
+            // The language table above already totals the rows.
+            let (text, after) = table(
+                &Columns::of(&count_columns("Category")[..4]),
+                &body,
+                None,
+                &codes,
+            );
             output += "\n";
-            let columns = Columns::of(&count_columns("Category")[..4]);
-            output +=
-                &table_with_top_rule(&columns, &body, None, SourceTotalRows::default(), theme);
+            output += &text.top_rule(theme);
+            output += &text.text;
             output += &format!(" {}\n", theme.paint(Role::Muted, CATEGORY_LEGEND));
+            output += &after;
         }
     }
 
@@ -2749,7 +2775,8 @@ mod tests {
                 columns: &ALL_PURPOSES,
                 bars,
             };
-            let (table, after) = bar_table(&columns, &body, total.clone(), &rows, Theme::PLAIN);
+            let (table, after) =
+                bar_table(&columns, &body, Some(total.clone()), &rows, Theme::PLAIN);
             (table.text, after)
         };
         let plain = shared_table(&columns, &body, Some(&total), false, Theme::PLAIN);

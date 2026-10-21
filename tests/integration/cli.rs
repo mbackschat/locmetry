@@ -407,6 +407,65 @@ fn bars_join_each_table_when_the_terminal_leaves_room_beside_it() {
         .any(|line| line.starts_with(" src") && line.ends_with('█')));
 }
 
+/// Category rows take bars like language and folder rows: each row is one
+/// purpose, so its bar has that purpose's glyph, and the share is of total Code.
+#[test]
+fn category_rows_carry_share_bars_in_their_purpose() {
+    let temp = project(&[
+        (".locmetryrc", APP_RULE),
+        ("src/lib.rs", "fn a() {}\nfn b() {}\nfn c() {}\n"),
+        ("tests/it.rs", "fn t() {}\n"),
+    ]);
+    let root = temp.path().join("project");
+    let table = |columns: &str| {
+        let output = locmetry()
+            .current_dir(&root)
+            .env("COLUMNS", columns)
+            .args(["--format", "table", "--show-categories", "--show-bars"])
+            .output()
+            .unwrap();
+        assert!(output.status.success());
+        String::from_utf8(output.stdout).unwrap()
+    };
+    let wide = table("300");
+    let header = wide
+        .lines()
+        .find(|line| line.starts_with(" Category"))
+        .unwrap();
+    assert!(header.ends_with("│ Share  Code share"), "{header}");
+    let production = wide
+        .lines()
+        .find(|line| line.starts_with(" production:"))
+        .unwrap();
+    assert!(
+        production.ends_with(&format!("│ 75.0%  {}", "█".repeat(40))),
+        "{production}"
+    );
+    let test = wide
+        .lines()
+        .find(|line| line.starts_with(" test:"))
+        .unwrap();
+    assert!(
+        test.ends_with(&format!("│ 25.0%  {}", "▓".repeat(13))),
+        "{test}"
+    );
+    let legend = wide
+        .lines()
+        .skip_while(|line| !line.starts_with(" Category"))
+        .find(|line| line.contains("Bars: "))
+        .unwrap();
+    assert!(
+        legend.contains("Share = Code / total Code. Bars: █ Production  ▓ Test  ░ Other"),
+        "{legend}"
+    );
+
+    let narrow = table("40");
+    assert!(
+        narrow.contains("\n test:test              25.0%  ▓▓▓\n"),
+        "{narrow}"
+    );
+}
+
 /// Human reports start with their tables and end with the measured context:
 /// the root, any subfolder, then the measurement time as the final line.
 #[test]
