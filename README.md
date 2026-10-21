@@ -210,7 +210,7 @@ Most of the change is test code. [Folder reporting](docs/guides/reports.md#look-
 
 `locmetry --help` includes the same commands, plus a working configuration example for maintained scripts with applicability and verification instructions. Verbose tables total data and documentation files under “Not source code”; to list them, [filter full JSON by `kind`](docs/guides/reports.md#not-source-code-which-files-are-data-or-documentation).
 
-Without explicit options, a terminal gets a table and a pipe gets a compact JSON headline. `--output` defaults to full JSON; choose `--format table` or `--format markdown` explicitly for those exports. File exports are silent on stdout, and the extension does not select the format. [Output routing and reports](docs/guides/reports.md#choose-content-and-destination) explains the choices and protected destinations.
+Without explicit options, a terminal gets a table and a pipe gets a compact JSON headline. `--output` defaults to full JSON; choose `--format table` or `--format markdown` explicitly for those exports. File exports are silent on stdout, and the extension does not select the format. For tables alone, add `--tables-only`: it drops legends, notes and the closing location and date lines, as for transcripts and scripts that need only rows. [Output routing and reports](docs/guides/reports.md#choose-content-and-destination) explains the choices and protected destinations.
 
 ### Selected options
 
