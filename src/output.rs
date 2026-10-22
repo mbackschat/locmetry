@@ -190,11 +190,6 @@ pub(crate) fn single_quoted(message: &str) -> String {
     message.replace('`', "'")
 }
 
-/// A complete, quoted command, so its flags and a trailing `-` read as one unit.
-pub(crate) fn command(arguments: &str) -> String {
-    format!("'locmetry {arguments}'")
-}
-
 /// Source counts and code per purpose for each language. As in the
 /// breakdown, every language of a file adds its lines, and only the file's own
 /// language counts the file.

@@ -121,8 +121,8 @@ pub(super) fn unclaimed_note(folders: &[FolderShare], theme: Theme) -> String {
     }
     note + &format!(
         "\n To inspect or refine purpose classification, use {}. {} shows each file's rule.",
-        command("--guide configure"),
-        command("--files --output -")
+        quoted("--guide configure"),
+        quoted("--files --output -")
     )
 }
 
@@ -244,7 +244,7 @@ pub(super) fn inline_tests_legend(rows: &[FileRecord]) -> Vec<String> {
                 quoted(language),
                 counted(code, "code line"),
                 counted(files, "file"),
-                command("--files --output -")
+                quoted("--files --output -")
             )
         })
         .collect()

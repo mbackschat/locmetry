@@ -106,7 +106,7 @@ fn out_of_line_test_modules_add_no_inline_tests() {
 fn tables_and_markdown_name_inline_test_code() {
     let temp = tempfile::tempdir().unwrap();
     project(temp.path());
-    let legend = " Production in 'Rust' includes 8 code lines of inline #[cfg(test)] tests in 1 file. 'locmetry --files --output -' names them.\n";
+    let legend = " Production in 'Rust' includes 8 code lines of inline #[cfg(test)] tests in 1 file. '--files --output -' names them.\n";
     for args in [
         &["--format", "table", "--no-color"][..],
         &["--format", "table", "--no-color", "--verbose"],

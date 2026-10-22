@@ -288,6 +288,11 @@ fn violations(line: &str) -> Vec<&'static str> {
     {
         found.push("flag or command outside single quotes");
     }
+    // A quoted command looks runnable but drops the user's directory, scope
+    // and subcommand (desk review A2, 2026-10-22), so notes quote flags only.
+    if line.contains("'locmetry ") {
+        found.push("quoted 'locmetry' command: quote the flags only");
+    }
     if text.contains(".:") {
         found.push("'.:' seam: a sentence ends where a cause is appended");
     }
@@ -385,6 +390,10 @@ fn the_guard_flags_each_rule_and_spares_compliant_text() {
             "Invalid defaults 'x'. They may set only 'version'.: line 2",
             "'.:'",
         ),
+        (
+            "Each file's rule is in 'locmetry --files --output -'.",
+            "locmetry",
+        ),
     ] {
         assert!(
             violations(line).iter().any(|v| v.contains(rule)),
@@ -393,9 +402,9 @@ fn the_guard_flags_each_rule_and_spares_compliant_text() {
     }
     for line in [
         "Lines = Code + Comments + Blanks · Test/prod = Test / Production (Code)",
-        "Production in 'Rust' includes 3 code lines. 'locmetry --files --output -' names them.",
+        "Production in 'Rust' includes 3 code lines. '--files --output -' names them.",
         "Not shown (languages): Python and Rust (7 code lines).",
-        "Each file's rule is in 'locmetry --files --output -'.",
+        "Each file's rule is in '--files --output -'.",
         "Production from build modules: 12 code lines in 1 'npm' module.",
     ] {
         assert!(

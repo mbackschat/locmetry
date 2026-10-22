@@ -53,8 +53,7 @@ locmetry workspace --workspace-file workspace.toml --no-user-config --no-color -
  test:test                      2      9     7
  Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
 
- Not source code: 2 data files (2 lines), 1 documentation file (3 lines). 'locmetry --files --output -' lists each
-file's kind.
+ Not source code: 2 data files (2 lines), 1 documentation file (3 lines). '--files --output -' lists each file's kind.
  Production from build modules: 4 code lines in 1 'go' module, 12 code lines in 1 'npm' module.
  Largest files counted as Production only by a build layout. If one is generated or vendored, exclude or reclassify it
 in '.locmetryrc':
@@ -65,8 +64,7 @@ in '.locmetryrc':
    web/src/orders/receipt.acmetpl  1 code line   web (npm)
  Unclaimed source: 1 code line in 1 file, here:
    service/experiments  1 code line  1 file
- To inspect or refine purpose classification, use 'locmetry --guide configure'. 'locmetry --files --output -' shows each
-file's rule.
+ To inspect or refine purpose classification, use '--guide configure'. '--files --output -' shows each file's rule.
  Unclaimed source by repository: 'service' has 1 unclaimed file (1 code line).
  Unrecognized files: 2 (asset: 1, mod: 1). Their lines are unknown, not zero.
 

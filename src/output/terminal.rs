@@ -257,7 +257,7 @@ pub fn render_table_with_options(
             notes.push(TerminalNote::Text(format!(
                 "Not source code: {}. {} lists each file's kind.",
                 kinds.join(", "),
-                command("--files --output -")
+                quoted("--files --output -")
             )));
         }
         notes.extend(build_modules_note(findings.modules, order).map(TerminalNote::Text));

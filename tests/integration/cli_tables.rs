@@ -44,10 +44,10 @@ fn table_format_splits_source_code_by_language_and_purpose() {
  Total       6     5 │     2     2      1 │      1.00
  Production + Test + Other = Code · Test/prod = Test / Production (Code)
 
- Not source code: 1 data file (1 line), 1 documentation file (1 line). 'locmetry --files --output -' lists each file's kind.
+ Not source code: 1 data file (1 line), 1 documentation file (1 line). '--files --output -' lists each file's kind.
  Unclaimed source: 1 code line in 1 file, here:
    proto  1 code line  1 file
- To inspect or refine purpose classification, use 'locmetry --guide configure'. 'locmetry --files --output -' shows each file's rule.
+ To inspect or refine purpose classification, use '--guide configure'. '--files --output -' shows each file's rule.
  Unrecognized files: 1 (png: 1). Their lines are unknown, not zero.
 ";
     let root = dunce::canonicalize(temp.path().join("project")).unwrap();

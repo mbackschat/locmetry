@@ -75,10 +75,10 @@ These rules cover the text Locmetry prints for people: measurement, workspace an
 
 - Single-quote a literal value used inside a sentence: languages, categories, build systems, folders, members, paths, file names, finding codes and configuration keys, as in `Production in 'Rust' includes …`. Locmetry's own vocabulary is not quoted and keeps its capitalisation: Files, Lines, Code, Comments, Blanks, Production, Test, Other, Test/prod. Values listed after a label, such as `Not shown (languages): Python, Shell`, table cells and aligned lists stay unquoted.
 - Write one fact per sentence; never join facts with ";". A legend of parallel formulas separates them with ` · `.
-- Quote a command whole, starting with `locmetry`, as in `'locmetry --files --output -'`; quote a flag mentioned on its own, as in `'--folder-rows'`.
+- Quote flags and their values as one unit, as in `'--files --output -'` or `'--folder-rows'`. Do not prefix `locmetry`: a partial command looks runnable but omits the user's directory, scope and subcommand, and the desk review of 2026-10-22 (A2) found it then measures a different scope without an error.
 - Use single quotes only. Convert double quotes, backticks and Rust's `{:?}` formatting, including in messages passed on from libraries.
 - Make counts agree in number, as in `1 line`, and write zero without a sign.
 - Name a label once: `Unrecognized files: 6`, not `Unrecognized files: 6 unrecognized files`.
 - Name the input a user typed when it cannot be used, as in `Explanation target 'src/x.rs' does not exist`.
 
-`cargo test --locked --test integration wording::` runs representative commands and fails on what it can detect mechanically: ";" in prose, flags outside quotes, double quotes and backticks, plural units after `1`, signed zeros, and fixture values that open a sentence or precede a count or purpose. Add a scenario for each new note or message. Review covers what the guard cannot see, such as a value quoted in one note and bare in another.
+`cargo test --locked --test integration wording::` runs representative commands and fails on what it can detect mechanically: ";" in prose, flags outside quotes, quoted `locmetry` commands, double quotes and backticks, plural units after `1`, signed zeros, and fixture values that open a sentence or precede a count or purpose. Add a scenario for each new note or message. Review covers what the guard cannot see, such as a value quoted in one note and bare in another.

@@ -94,14 +94,14 @@ fn verbose_tables_expose_routine_findings_with_optional_classification_advice() 
         let text = String::from_utf8(output.stdout).unwrap();
         for note in [
             "Not source code:",
-            ". 'locmetry --files --output -' lists each file's kind.",
+            ". '--files --output -' lists each file's kind.",
             "Production from build modules:",
             "Git submodules:",
             "Unclaimed source:",
             "Entries that decided",
             "Exclusions that excluded",
             "Unrecognized files: 2 (no extension: 1, png: 1)",
-            "To inspect or refine purpose classification, use 'locmetry --guide configure'",
+            "To inspect or refine purpose classification, use '--guide configure'",
         ] {
             assert!(text.contains(note), "missing {note}: {text}");
         }
@@ -327,7 +327,7 @@ fn verbose_note_counts_code_in_documentation_snippets() {
         assert!(
             text.contains(
                 " Not source code: 2 documentation files (11 lines, including 3 code lines in \
-                 embedded snippets). 'locmetry --files --output -' lists each file's kind.\n"
+                 embedded snippets). '--files --output -' lists each file's kind.\n"
             ),
             "{text}"
         );

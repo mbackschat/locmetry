@@ -20,7 +20,7 @@ locmetry --root immich --config builtin-only.toml --format table --verbose --no-
 
 ```output
  Not source code: 296 data files (245,954 lines), 210 documentation files (12,521 lines, including 793 code lines in
-embedded snippets). 'locmetry --files --output -' lists each file's kind.
+embedded snippets). '--files --output -' lists each file's kind.
  Production from build modules: 127,205 code lines in 12 'npm' modules, 59,170 code lines in 2 'dart' modules, 4,102
 code lines in 2 'gradle' modules, 3,037 code lines in 1 'python' module.
  Largest files counted as Production only by a build layout. If one is generated or vendored, exclude or reclassify it
@@ -40,8 +40,7 @@ in '.locmetryrc':
    machine-learning              248 code lines   4 files
    docs                          232 code lines   4 files
    and 11 more folders (727 code lines)
- To inspect or refine purpose classification, use 'locmetry --guide configure'. 'locmetry --files --output -' shows each
-file's rule.
+ To inspect or refine purpose classification, use '--guide configure'. '--files --output -' shows each file's rule.
  Unrecognized files: 437 (png: 165, webp: 146, no extension: 62, ttf: 19, lock: 10). Their lines are unknown, not zero.
 
 ```
@@ -125,8 +124,7 @@ locmetry --root immich --config draft.toml --format table --verbose --no-color -
    deployment        225 code lines  16 files
    e2e               171 code lines   4 files
    and 4 more folders (189 code lines)
- To inspect or refine purpose classification, use 'locmetry --guide configure'. 'locmetry --files --output -' shows each
-file's rule.
+ To inspect or refine purpose classification, use '--guide configure'. '--files --output -' shows each file's rule.
 ```
 
 Four entries resolve more than half of the review list. What remains is deployment, tooling and a few single files, each needing its own evidence, such as the plugin SDK's declared `bin` entry. The [reviewed policy](../../examples/showcase/immich/overlay/.locmetryrc) finishes that work and is what the checkout's `.locmetryrc` contains.
