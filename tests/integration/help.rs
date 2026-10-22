@@ -299,11 +299,11 @@ fn workspace_help_measures_both_forms_and_explains_member_identity() {
     execute(
         root.path(),
         &text,
-        "Export repository, category and language detail",
+        "Export member, category and language detail",
     );
     assert!(fs::read_to_string(root.path().join("workspace.md"))
         .unwrap()
-        .contains("Repositories"));
+        .contains("## Members"));
     let explanation = common::json(&execute(root.path(), &text, "Explain a member file"), 0);
     assert_eq!(explanation["member"], "web");
     let flat = text.split_whitespace().collect::<Vec<_>>().join(" ");

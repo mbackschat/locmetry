@@ -142,7 +142,7 @@ fn workspace_repository_languages_fold_in_markdown() {
         &["workspace", "--root", "web", "--format", "markdown"],
     ));
     let section = markdown
-        .split("Source languages by repository")
+        .split("Source languages by member")
         .nth(1)
         .unwrap()
         .split("\n## ")

@@ -100,7 +100,7 @@ fn workspace_tables_drop_the_share_legend_and_roots_footer() {
         &bare,
         &["Share = Code / workspace Code", "Roots:", "Measured at:"],
     );
-    for row in [" Repository", " api", " web"] {
+    for row in [" Member", " api", " web"] {
         assert!(bare.contains(row), "{row:?} missing:\n{bare}");
     }
 }

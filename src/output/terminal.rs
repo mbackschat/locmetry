@@ -125,11 +125,11 @@ pub fn render_table_with_options(
     }
     output += &after;
 
-    // A workspace's top-level folders are its members, so repository rows,
+    // A workspace's top-level folders are its members, so member rows,
     // which add the test ratio and share, take the folder rows' place.
     if !findings.members.is_empty() {
-        let (body, codes, total) = repository_rows(summary, findings.members, order, &columns);
-        let (text, after) = table(&repository_columns(&columns), &body, Some(total), &codes);
+        let (body, codes, total) = member_rows(summary, findings.members, order, &columns);
+        let (text, after) = table(&member_columns(&columns), &body, Some(total), &codes);
         output += "\n";
         output += &text.top_rule(theme);
         output += &text.text;
@@ -277,13 +277,10 @@ pub fn render_table_with_options(
             unused_exclusions_note(findings.unused_exclusions, findings.subfolder)
                 .map(TerminalNote::Text),
         );
-        notes.extend(
-            repositories_note(findings.members, MemberNotes::Unclaimed).map(TerminalNote::Text),
-        );
+        notes
+            .extend(members_note(findings.members, MemberNotes::Unclaimed).map(TerminalNote::Text));
     }
-    notes.extend(
-        repositories_note(findings.members, MemberNotes::Unavailable).map(TerminalNote::Text),
-    );
+    notes.extend(members_note(findings.members, MemberNotes::Unavailable).map(TerminalNote::Text));
     let coverage = findings.coverage;
     let mut gaps = Vec::new();
     if verbose && coverage.unrecognized_files > 0 {

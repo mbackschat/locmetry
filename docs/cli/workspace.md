@@ -33,13 +33,13 @@ locmetry workspace --workspace-file workspace.toml --no-user-config --no-color -
  Tests written in another language than the code they test skew per-language Test/prod.
  Folded: TSX → TypeScript.
 
- ─────────────────────────────────────────────────────────────────
- Repository  Lines  Code │ Prod.  Test  Other │ Test/prod │  Share
- ────────────────────────┼────────────────────┼───────────┼───────
- service        18    13 │     8     4      1 │      0.50 │  44.8%
- web            19    16 │    12     3      1 │      0.25 │  55.2%
- ────────────────────────┼────────────────────┼───────────┼───────
- Total          37    29 │    20     7      2 │      0.35 │ 100.0%
+ ──────────────────────────────────────────────────────────────
+ Member   Lines  Code │ Prod.  Test  Other │ Test/prod │  Share
+ ─────────────────────┼────────────────────┼───────────┼───────
+ service     18    13 │     8     4      1 │      0.50 │  44.8%
+ web         19    16 │    12     3      1 │      0.25 │  55.2%
+ ─────────────────────┼────────────────────┼───────────┼───────
+ Total       37    29 │    20     7      2 │      0.35 │ 100.0%
  Production + Test + Other = Code · Test/prod = Test / Production (Code) · Share = Code / workspace Code
 
  ─────────────────────────────────────────────
@@ -65,7 +65,7 @@ in '.locmetryrc':
  Unclaimed source: 1 code line in 1 file, here:
    service/experiments  1 code line  1 file
  To inspect or refine purpose classification, use '--guide configure'. '--files --output -' shows each file's rule.
- Unclaimed source by repository: 'service' has 1 unclaimed file (1 code line).
+ Unclaimed source by member: 'service' has 1 unclaimed file (1 code line).
  Unrecognized files: 2 (asset: 1, mod: 1). Their lines are unknown, not zero.
 
 ```
@@ -148,13 +148,13 @@ locmetry workspace --workspace-file workspace.toml --no-user-config --no-color -
  Not shown (purpose): Other (2 code lines).
  Share = Code / total Code. Bars: █ Production  ▓ Test. The largest row fills the bar.
 
- ───────────────────────────────────────────────────────────────────────────────────────────────────
- Repository  Lines  Code │ Prod.  Test │ Test/prod │  Share  Code share
- ────────────────────────┼─────────────┼───────────┼────────────────────────────────────────────────
- service        16    12 │     8     4 │      0.50 │  44.4%  █████████████████████▓▓▓▓▓▓▓▓▓▓
- web            17    15 │    12     3 │      0.25 │  55.6%  ███████████████████████████████▓▓▓▓▓▓▓▓
- ────────────────────────┼─────────────┼───────────┼────────────────────────────────────────────────
- Total          33    27 │    20     7 │      0.35 │ 100.0%
+ ─────────────────────────────────────────────────────────────────────────────────────────────────
+ Member   Lines  Code │ Prod.  Test │ Test/prod │  Share  Code share
+ ─────────────────────┼─────────────┼───────────┼─────────────────────────────────────────────────
+ service     16    12 │     8     4 │      0.50 │  44.4%  █████████████████████▓▓▓▓▓▓▓▓▓▓▓
+ web         17    15 │    12     3 │      0.25 │  55.6%  ████████████████████████████████▓▓▓▓▓▓▓▓
+ ─────────────────────┼─────────────┼───────────┼─────────────────────────────────────────────────
+ Total       33    27 │    20     7 │      0.35 │ 100.0%
  Production + Test = Code · Test/prod = Test / Production (Code) · Share = Code / workspace Code
  Bars: █ Production  ▓ Test. The largest row fills the bar.
 
@@ -181,13 +181,13 @@ locmetry workspace --workspace-file workspace.toml --no-user-config --no-color -
  Tests written in another language than the code they test skew per-language Test/prod.
  Not shown (languages): TypeScript, HTML, Python, Makefile and JavaScript (21 code lines).
 
- ─────────────────────────────────────────────────────────────────
- Repository  Lines  Code │ Prod.  Test  Other │ Test/prod │  Share
- ────────────────────────┼────────────────────┼───────────┼───────
- service        11     8 │     4     4      0 │      1.00 │ 100.0%
- web             0     0 │     0     0      0 │         - │   0.0%
- ────────────────────────┼────────────────────┼───────────┼───────
- Total          11     8 │     4     4      0 │      1.00 │ 100.0%
+ ──────────────────────────────────────────────────────────────
+ Member   Lines  Code │ Prod.  Test  Other │ Test/prod │  Share
+ ─────────────────────┼────────────────────┼───────────┼───────
+ service     11     8 │     4     4      0 │      1.00 │ 100.0%
+ web          0     0 │     0     0      0 │         - │   0.0%
+ ─────────────────────┼────────────────────┼───────────┼───────
+ Total       11     8 │     4     4      0 │      1.00 │ 100.0%
  Production + Test + Other = Code · Test/prod = Test / Production (Code) · Share = Code / workspace Code
 
 ```
@@ -213,13 +213,13 @@ locmetry workspace --workspace-file workspace.toml --no-user-config --no-color -
  ───────────────────────────────┼──────────────────┼────────────────────┼──────────
  Total          11     37    29 │        6       2 │    20     7      2 │      0.35
 
- ─────────────────────────────────────────────────────────────────
- Repository  Lines  Code │ Prod.  Test  Other │ Test/prod │  Share
- ────────────────────────┼────────────────────┼───────────┼───────
- web            19    16 │    12     3      1 │      0.25 │  55.2%
- service        18    13 │     8     4      1 │      0.50 │  44.8%
- ────────────────────────┼────────────────────┼───────────┼───────
- Total          37    29 │    20     7      2 │      0.35 │ 100.0%
+ ──────────────────────────────────────────────────────────────
+ Member   Lines  Code │ Prod.  Test  Other │ Test/prod │  Share
+ ─────────────────────┼────────────────────┼───────────┼───────
+ web         19    16 │    12     3      1 │      0.25 │  55.2%
+ service     18    13 │     8     4      1 │      0.50 │  44.8%
+ ─────────────────────┼────────────────────┼───────────┼───────
+ Total       37    29 │    20     7      2 │      0.35 │ 100.0%
 ```
 
 ## Export and print together
@@ -285,9 +285,9 @@ sed -n '/^## Source purpose/,/^## Source categories/p' workspace.md
 | test | 2 | 9 | 7 | 1 | 1 |
 | other | 2 | 4 | 2 | 2 | 0 |
 
-## Repositories
+## Members
 
-| Repository | Lines | **Code** | Production | Test | Other | Test/prod | Share |
+| Member | Lines | **Code** | Production | Test | Other | Test/prod | Share |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | service | 18 | 13 | 8 | 4 | 1 | 0.50 | 44.8% |
 | web | 19 | 16 | 12 | 3 | 1 | 0.25 | 55.2% |
@@ -295,7 +295,7 @@ sed -n '/^## Source purpose/,/^## Source categories/p' workspace.md
 
 *Production + Test + Other = Code · Test/prod = Test / Production (Code) · Share = Code / workspace Code*
 
-## Source categories by repository
+## Source categories by member
 ```
 
 ## Inspect available options

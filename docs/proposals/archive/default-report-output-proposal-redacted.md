@@ -108,7 +108,7 @@ These references identify the scope to reconcile if the proposal is approved; so
 | [CLI help](../../../src/main.rs) | Root `after_help` becomes count-first and mentions `--verbose`; workspace help describes the same option |
 | [README](../../../README.md) | Default-output example, Git submodule/selection advice and Honest coverage example distinguish default failures from optional notes; affected examples use neutral classification advice |
 | [Reports guide](../../guides/reports.md) | Explain how to request notes before sections organised around “Unclaimed source” and “Not source code”; retain the inspection recipes |
-| [PRODUCT workspace contract](../../PRODUCT.md#per-repository-breakdown) | Replace the unconditional mixed member-note guarantee with the default failure/detail boundary; preserve comprehensive Markdown |
+| [PRODUCT workspace contract](../../PRODUCT.md#per-member-breakdown) | Replace the unconditional mixed member-note guarantee with the default failure/detail boundary; preserve comprehensive Markdown |
 | [PRODUCT reporting](../../PRODUCT.md#report-content) and [adaptive folders](../../PRODUCT.md#adaptive-folder-detail) | Document the default and verbose content contract; the unclaimed-note partition remains independent of `--folder-rows` when requested |
 | [CLI regressions](../../../tests/integration/cli.rs) and [workspace regressions](../../../tests/integration/workspace.rs) | Preserve detail assertions with explicit `--verbose`; add default, mixed-finding and per-member failure cases |
 | [Adaptive folder regressions](../../../tests/integration/folder_rows.rs) | Preserve the note-partition guards with `--verbose`; also ensure adaptive tables stay quiet by default |

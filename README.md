@@ -89,7 +89,7 @@ Line counters are good at counting, and Locmetry counts with Tokei too. Their to
 | Tool | Reported code | of which JSON | Production / test split |
 | --- | ---: | ---: | --- |
 | Tokei 15.0.0 | 518,920 | 209,607 (40%) | none |
-| cloc 2.10 | 530,430 | 209,931 (40%) | none |
+| cloc 2.10 | 529,600 | 209,931 (40%) | none |
 | scc 4.1.0 | 510,075 | 209,867 (41%) | none |
 
 ### A reviewed policy answers "what does this project consist of"
@@ -155,7 +155,7 @@ locmetry workspace --workspace-file immich/workspace.toml
 <!-- showcase-workspace -->
 ```text
  ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
- Repository          Lines     Code │   Prod.    Test   Other │ Test/prod │  Share  Code share
+ Member              Lines     Code │   Prod.    Test   Other │ Test/prod │  Share  Code share
  ───────────────────────────────────┼─────────────────────────┼───────────┼─────────────────────────────────────────────
  server            129,296  111,950 │  53,296  48,955   9,699 │      0.92 │  39.7%  █████████████████▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░
  mobile            100,142   83,220 │  66,989  16,231       0 │      0.24 │  29.5%  ██████████████████████▓▓▓▓▓

@@ -1,9 +1,9 @@
 //! The Markdown report.
 use super::*;
 
-/// Repository rows with each row's code, and the total row: source lines,
+/// Member rows with each row's code, and the total row: source lines,
 /// the purpose columns and ratio, and share of the workspace's source code.
-pub(super) fn repository_rows(
+pub(super) fn member_rows(
     summary: &ReportSummary,
     members: &[MemberView],
     order: RowOrder,
@@ -30,8 +30,8 @@ pub(super) fn repository_rows(
     (body, codes, cells("Total", &summary.totals, workspace))
 }
 
-pub(super) fn repository_columns(purposes: &PurposeColumns) -> Columns {
-    let mut columns = Columns::with_purposes(&code_columns("Repository"), purposes);
+pub(super) fn member_columns(purposes: &PurposeColumns) -> Columns {
+    let mut columns = Columns::with_purposes(&code_columns("Member"), purposes);
     columns
         .0
         .push(Column::new("Share", ColumnRole::Share).separated());
@@ -60,7 +60,7 @@ pub(super) fn member_totals<'a>(
 
 /// A Markdown grid of source lines and code per `key` and member, with totals;
 /// `of` selects the map, such as categories or languages, from a summary.
-pub(super) fn repository_grid(
+pub(super) fn member_grid(
     output: &mut String,
     title: &str,
     label: &str,
@@ -81,10 +81,7 @@ pub(super) fn repository_grid(
     writeln!(
         output,
         "\n## {title}\n\n{}\n\n| {} |\n| --- |{}",
-        Theme::MARKDOWN.paint(
-            Role::Muted,
-            "Each total is the sum of its repository columns."
-        ),
+        Theme::MARKDOWN.paint(Role::Muted, "Each total is the sum of its member columns."),
         headers.join(" | "),
         " ---: |".repeat(headers.len() - 1)
     )
@@ -155,14 +152,14 @@ pub fn render_markdown(
         writeln!(output, "\n{}", Theme::MARKDOWN.paint(Role::Muted, &note)).unwrap();
     }
     if !findings.members.is_empty() {
-        let (body, _, total) = repository_rows(summary, findings.members, order, &ALL_PURPOSES);
+        let (body, _, total) = member_rows(summary, findings.members, order, &ALL_PURPOSES);
         let escaped = |row: &Vec<String>| row.iter().map(|value| cell(value)).collect::<Vec<_>>();
         let body: Vec<_> = body.iter().map(escaped).collect();
         write!(
             output,
-            "\n## Repositories\n\n{}",
+            "\n## Members\n\n{}",
             shared_table(
-                &repository_columns(&ALL_PURPOSES),
+                &member_columns(&ALL_PURPOSES),
                 &body,
                 Some(&escaped(&total)),
                 true,
@@ -179,18 +176,18 @@ pub fn render_markdown(
             )
         )
         .unwrap();
-        repository_grid(
+        member_grid(
             &mut output,
-            "Source categories by repository",
+            "Source categories by member",
             "Category",
             summary,
             findings.members,
             |totals| &totals.source_categories,
             order,
         );
-        repository_grid(
+        member_grid(
             &mut output,
-            "Source languages by repository",
+            "Source languages by member",
             "Language",
             summary,
             findings.members,
@@ -423,7 +420,7 @@ pub(super) fn render_coverage(output: &mut String, findings: &Findings) {
             findings.unused_exclusions,
             findings.subfolder,
         ))
-        .chain(repositories_note(findings.members, MemberNotes::All))
+        .chain(members_note(findings.members, MemberNotes::All))
     {
         writeln!(output, "\n{note}").unwrap();
     }

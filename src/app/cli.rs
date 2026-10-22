@@ -263,7 +263,7 @@ pub(crate) enum Command {
     locmetry workspace --root web --root api --files --output workspace.json --print table
   Measure a workspace file:
     locmetry workspace --workspace-file repos.toml --files --output workspace.json --print table
-  Export repository, category and language detail:
+  Export member, category and language detail:
     locmetry workspace --workspace-file repos.toml --format markdown --markdown-depth 3 --sort name --output workspace.md
   Explain a member file:
     locmetry explain web/src/index.ts --workspace-file repos.toml --format json
@@ -280,7 +280,7 @@ workspace-wide --config/--exclude/--hidden/--respect-ignore-files are unsupporte
 For one repository's components, a file can name project and folders instead of
 roots: each folder is measured like --subfolder under the project's .locmetryrc.
 Save outputs outside every member. JSON paths are member-prefixed; summary.members
-holds per-repository totals. Workspace Test/prod is sum(Test Code) / sum(Production Code),
+holds per-member totals. Workspace Test/prod is sum(Test Code) / sum(Production Code),
 not an average of member ratios. --verbose exposes member coverage and policy findings.
 
 Save before.json and after.json using the same workspace command around a change,

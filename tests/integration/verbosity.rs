@@ -31,8 +31,8 @@ fn no_routine_notes(text: &str) {
         "Production from build modules:",
         "Git submodules:",
         "Unclaimed source:",
-        "Repositories to review:",
-        "Unclaimed source by repository:",
+        "Members to review:",
+        "Unclaimed source by member:",
         "Entries that decided",
         "Exclusions that excluded",
         "Unrecognized files:",
@@ -162,7 +162,7 @@ fn mixed_failures_stay_visible_without_routine_notes_or_report_path_lists() {
                 assert!(members.contains("'api' has 1 file with a parsing failure"));
                 assert!(members.contains("'web' has 1 file with a parsing failure"));
                 assert!(!members.contains("unclaimed"));
-                assert_eq!(text.contains("Unclaimed source by repository:"), verbose);
+                assert_eq!(text.contains("Unclaimed source by member:"), verbose);
             }
         }
     }
@@ -290,7 +290,7 @@ fn unreadable_counts_and_member_failures_are_separate_from_optional_findings() {
             );
             assert_eq!(
                 text.contains(
-                    "Unclaimed source by repository: 'api' has 2 unclaimed files (3 code lines)."
+                    "Unclaimed source by member: 'api' has 2 unclaimed files (3 code lines)."
                 ),
                 verbose
             );

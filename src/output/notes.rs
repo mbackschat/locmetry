@@ -7,7 +7,7 @@ pub(super) enum MemberNotes {
     Unavailable,
 }
 
-pub(super) fn repositories_note(members: &[MemberView], kind: MemberNotes) -> Option<String> {
+pub(super) fn members_note(members: &[MemberView], kind: MemberNotes) -> Option<String> {
     let parts: Vec<String> = members
         .iter()
         .filter_map(|member| {
@@ -33,8 +33,8 @@ pub(super) fn repositories_note(members: &[MemberView], kind: MemberNotes) -> Op
         })
         .collect();
     let label = match kind {
-        MemberNotes::All => "Repositories to review",
-        MemberNotes::Unclaimed => "Unclaimed source by repository",
+        MemberNotes::All => "Members to review",
+        MemberNotes::Unclaimed => "Unclaimed source by member",
         MemberNotes::Unavailable => "Unavailable counts",
     };
     (!parts.is_empty()).then(|| format!("{label}: {}.", parts.join(", ")))

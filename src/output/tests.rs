@@ -121,7 +121,7 @@ fn legends_are_muted_in_root_and_workspace_tables_without_changing_plain_output(
         assert!(styled.contains(&format!("\x1b[90m{legend}\x1b[0m")));
         if !members.is_empty() {
             assert!(!plain.contains('▸'), "{plain}");
-            assert!(plain.contains("\n Repository "), "{plain}");
+            assert!(plain.contains("\n Member "), "{plain}");
             let legend = ALL_PURPOSES.legend(None, Some("Share = Code / workspace Code"));
             assert!(styled.contains(&format!("\x1b[90m{legend}\x1b[0m")));
         }

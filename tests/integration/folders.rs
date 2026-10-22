@@ -114,7 +114,7 @@ fn workspace_keeps_repository_rows_and_folders_is_a_root_measurement_option() {
     );
     assert!(workspace.status.success());
     let text = String::from_utf8(workspace.stdout).unwrap();
-    assert!(has_table(&text, "Repository"));
+    assert!(has_table(&text, "Member"));
     assert!(!has_table(&text, "Folder"));
     for args in [
         vec!["workspace", "--root", "project", "--show-folders"],

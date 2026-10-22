@@ -102,8 +102,8 @@ pub struct Findings<'a> {
     pub members: &'a [MemberView],
 }
 
-/// A workspace member as the human formats show it: a repository row, and
-/// the findings of the per-repository note.
+/// A workspace member as the human formats show it: a member row, and
+/// the findings of the per-member note.
 pub struct MemberView {
     pub name: String,
     pub unclaimed_files: u64,

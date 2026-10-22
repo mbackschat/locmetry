@@ -225,7 +225,7 @@ fn workspace_reports_retain_total_lines_in_repository_and_language_grids() {
                 assert!(text.lines().last().unwrap().starts_with("Measured at: "));
             }
             "table" => {
-                let table = text.split("\n Repository").nth(1).unwrap();
+                let table = text.split("\n Member").nth(1).unwrap();
                 let row = table
                     .lines()
                     .find(|line| line.trim_start().starts_with("first "))

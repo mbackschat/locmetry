@@ -47,7 +47,7 @@ locmetry workspace --workspace-file v3.3.4/immich/workspace.toml --format table 
  Folded: TSX → TypeScript.
 
  ─────────────────────────────────────────────────────────────────────────────────
- Repository          Lines     Code │   Prod.    Test   Other │ Test/prod │  Share
+ Member              Lines     Code │   Prod.    Test   Other │ Test/prod │  Share
  ───────────────────────────────────┼─────────────────────────┼───────────┼───────
  server            129,296  111,950 │  53,296  48,955   9,699 │      0.92 │  39.7%
  mobile            100,142   83,220 │  66,989  16,231       0 │      0.24 │  29.5%

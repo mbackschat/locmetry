@@ -573,9 +573,9 @@ fn workspace_table_compares_repositories() {
     );
     let table = String::from_utf8(output.stdout).unwrap();
     assert_eq!(
-        table_row(&table, "Repository", "Repository"),
+        table_row(&table, "Member", "Member"),
         [
-            "Repository",
+            "Member",
             "Lines",
             "Code",
             "Prod.",
@@ -586,21 +586,21 @@ fn workspace_table_compares_repositories() {
         ]
     );
     assert_eq!(
-        table_row(&table, "Repository", "web"),
+        table_row(&table, "Member", "web"),
         ["web", "6", "6", "3", "1", "2", "0.33", "60.0%"]
     );
     assert_eq!(
-        table_row(&table, "Repository", "api"),
+        table_row(&table, "Member", "api"),
         ["api", "4", "4", "1", "2", "1", "2.00", "40.0%"]
     );
     assert_eq!(
-        table_row(&table, "Repository", "Total"),
+        table_row(&table, "Member", "Total"),
         ["Total", "10", "10", "4", "3", "3", "0.75", "100.0%"]
     );
     let row_index = |label: &str| {
         table
             .lines()
-            .skip_while(|line| !line.starts_with(" Repository"))
+            .skip_while(|line| !line.starts_with(" Member"))
             .position(|line| line.starts_with(&format!(" {label} ")))
     };
     assert!(
@@ -613,7 +613,7 @@ fn workspace_table_compares_repositories() {
         "{table}"
     );
     assert!(
-        table.contains(" Unclaimed source by repository: 'api' has 1 unclaimed file (1 code line), 'web' has 2 unclaimed files (2 code lines).\n"),
+        table.contains(" Unclaimed source by member: 'api' has 1 unclaimed file (1 code line), 'web' has 2 unclaimed files (2 code lines).\n"),
         "{table}"
     );
 }
@@ -635,21 +635,21 @@ fn workspace_markdown_breaks_categories_and_languages_down_by_repository() {
     );
     let markdown = String::from_utf8(output.stdout).unwrap();
     for expected in [
-        "## Repositories\n",
-        "| Repository | Lines | **Code** | Production | Test | Other | Test/prod | Share |\n",
+        "## Members\n",
+        "| Member | Lines | **Code** | Production | Test | Other | Test/prod | Share |\n",
         "| web | 6 | 6 | 3 | 1 | 2 | 0.33 | 60.0% |\n",
         "| **Total** | **10** | **10** | **4** | **3** | **3** | **0.75** | **100.0%** |\n",
         "Production + Test + Other = Code · Test/prod = Test / Production (Code) · Share = Code / workspace Code",
-        "Each total is the sum of its repository columns.",
-        "## Source categories by repository\n",
+        "Each total is the sum of its member columns.",
+        "## Source categories by member\n",
         "| Category | api Lines | api Code | web Lines | web Code | Total Lines | Total Code |\n",
         "| test:test | 2 | 2 | 1 | 1 | 3 | 3 |\n",
         "| production:tooling | 0 | 0 | 1 | 1 | 1 | 1 |\n",
-        "## Source languages by repository\n",
+        "## Source languages by member\n",
         "| Language | api Lines | api Code | web Lines | web Code | Total Lines | Total Code |\n",
         "| TypeScript | 0 | 0 | 6 | 6 | 6 | 6 |\n",
         "| Rust | 4 | 4 | 0 | 0 | 4 | 4 |\n",
-        "Repositories to review: 'api' has 1 unclaimed file (1 code line), 'web' has 2 unclaimed files (2 code lines).",
+        "Members to review: 'api' has 1 unclaimed file (1 code line), 'web' has 2 unclaimed files (2 code lines).",
     ] {
         assert!(markdown.contains(expected), "{expected:?} missing in:\n{markdown}");
     }
@@ -670,7 +670,7 @@ fn regular_runs_have_no_repository_dimension() {
         }
         let table = String::from_utf8(locmetry(&web, &args).stdout).unwrap();
         assert_eq!(table.contains(" Folder "), folders, "{table}");
-        assert!(!table.contains("Repositor"), "{table}");
+        assert!(!table.contains(" Member "), "{table}");
     }
 }
 
@@ -747,7 +747,7 @@ fn comment_bars_separate_their_percentage_column_after_share() {
     let table = String::from_utf8(output.stdout).unwrap();
     let header = table
         .lines()
-        .find(|line| line.starts_with(" Repository "))
+        .find(|line| line.starts_with(" Member "))
         .unwrap();
     assert!(
         header.ends_with(" Share │ Comment %  Comment density"),
@@ -776,7 +776,7 @@ fn workspace_print_shows_the_table_beside_the_saved_report() {
     );
     assert!(output.status.success());
     let printed = String::from_utf8(output.stdout).unwrap();
-    assert!(printed.contains("\n Repository "), "{printed}");
+    assert!(printed.contains("\n Member "), "{printed}");
     assert!(fs::read_to_string(saved).unwrap().contains("\"members\""));
 }
 

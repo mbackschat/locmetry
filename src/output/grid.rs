@@ -98,7 +98,7 @@ pub(super) const fn count_columns(label: &'static str) -> [Column; 6] {
 /// The language table's columns before its purpose columns.
 pub(super) const LANGUAGE_COLUMNS: [Column; 6] = count_columns("Language");
 
-/// The columns of a folder or repository table before its purpose columns.
+/// The columns of a folder or member table before its purpose columns.
 pub(super) const fn code_columns(label: &'static str) -> [Column; 3] {
     [
         Column::new(label, ColumnRole::Label),

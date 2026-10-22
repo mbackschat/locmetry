@@ -127,7 +127,7 @@ fn measurement_tables_use_attached_top_rules_instead_of_redundant_titles() {
         ),
         (
             vec!["workspace", "--workspace-file", "workspace.toml"],
-            vec!["Repository"],
+            vec!["Member"],
         ),
         (
             vec![
@@ -136,7 +136,7 @@ fn measurement_tables_use_attached_top_rules_instead_of_redundant_titles() {
                 "workspace.toml",
                 "--show-categories",
             ],
-            vec!["Repository", "Category"],
+            vec!["Member", "Category"],
         ),
     ] {
         for (bars, width) in [

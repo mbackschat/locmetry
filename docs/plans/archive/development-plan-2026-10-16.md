@@ -95,7 +95,7 @@ Decided 2026-10-15: a `workspace` subcommand with repeatable `--root` or a works
 
 ## Per-Repository Breakdown — Done
 
-Decided 2026-10-15: workspace reports break metrics down by member, as [PRODUCT.md](../../PRODUCT.md#per-repository-breakdown) defines. Done 2026-10-15: on four real sibling repositories each member's totals equal its individual run.
+Decided 2026-10-15: workspace reports break metrics down by member, as [PRODUCT.md](../../PRODUCT.md#per-member-breakdown) defines. Done 2026-10-15: on four real sibling repositories each member's totals equal its individual run.
 
 - [x] Report `summary.members` and per-member coverage counts, and extend `--schema report`.
 - [x] Show repository rows with test ratio and share in the table, and repository grids in Markdown.
