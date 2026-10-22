@@ -4,6 +4,10 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 
 ## [Unreleased]
 
+### Added
+
+- Comparison JSON names its projection with `detail: "full"` or `"headline"`, as measurement JSON already does, so scripts can tell a full comparison from a headline and treat both document types alike.
+
 ### Changed
 
 - Default tables name Rust `#[cfg(test)]` code counted with production in a legend line below the language table, such as “Rust production includes 145 code lines of inline #[cfg(test)] tests in 3 files”, so it is visible where Test/prod is read. `--verbose` no longer repeats it as an `Inline tests:` note; Markdown keeps that note.

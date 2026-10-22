@@ -74,6 +74,35 @@ fn measurement_envelope_identifies_full_and_headline_projections() {
     }
 }
 
+/// A comparison names its projection like a measurement does: agents that saw
+/// `detail` in the measured inputs looked it up in the comparison and failed
+/// (agent regression run, 2026-10-22). The schema keeps it optional because
+/// schema 3 grows by optional fields and 0.8.0 comparisons lack it.
+#[test]
+fn comparison_envelope_identifies_full_and_headline_projections() {
+    use crate::compare::{compare, measure, run, save};
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("project");
+    common::write(&root, "src/main.py", "a = 1\n");
+    let before = save(temp.path(), "before.json", &measure(&root));
+    common::write(&root, "src/main.py", "a = 1\nb = 2\n");
+    let after = save(temp.path(), "after.json", &measure(&root));
+    let full = common::json(&compare(&before, &after, &["--output", "-"]), 0);
+    let headline = common::json(&compare(&before, &after, &["--format", "headline"]), 0);
+    assert_eq!(full["detail"], "full");
+    assert_eq!(headline["detail"], "headline");
+    let schema = common::json(&run(&["--schema", "comparison"]), 0);
+    let validator = jsonschema::validator_for(&schema).unwrap();
+    let mut released = headline.clone();
+    released.as_object_mut().unwrap().remove("detail");
+    for document in [&full, &headline, &released] {
+        assert!(validator.is_valid(document), "{document}");
+    }
+    let mut invalid = full;
+    invalid["detail"] = json!("summary");
+    assert!(!validator.is_valid(&invalid));
+}
+
 /// Schema 3 grows within its version before 1.0, so a field the current
 /// producer adds must not invalidate reports of the latest release: absence
 /// means "not recorded" (the v0.7.3 fixtures predate `largest_module_files`).

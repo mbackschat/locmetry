@@ -110,6 +110,7 @@ pub fn compare(
     normalize_metadata(&mut after.metadata);
     let mut result = Comparison {
         document_type: DocumentType::Comparison,
+        detail: Some(Detail::Full),
         schema_version: Version::V3,
         before: Input {
             filename: before_name,

@@ -1,6 +1,6 @@
 //! Net change compares recorded measurement evidence without reading source checkouts.
 use crate::{
-    contract::{MeasurementReport, Metadata},
+    contract::{Detail, MeasurementReport, Metadata},
     Counts, Kind, Purpose,
 };
 use anyhow::{Context, Result};
@@ -295,6 +295,10 @@ pub struct Input {
 #[schemars(example = comparison_example())]
 pub struct Comparison {
     pub document_type: DocumentType,
+    /// The projection, named as in measurements. Optional only because comparisons written
+    /// by 0.8.0 lack it and schema 3 grows by optional fields (docs/report-compatibility.md).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub detail: Option<Detail>,
     pub schema_version: Version,
     pub before: Input,
     pub after: Input,
@@ -323,6 +327,7 @@ pub struct Comparison {
 }
 impl Comparison {
     pub fn headline(mut self) -> Self {
+        self.detail = Some(Detail::Headline);
         self.report = None;
         self.folders = None;
         self.packages = None;
@@ -356,6 +361,7 @@ fn comparison_example() -> Comparison {
     let zero = crate::Summary::default();
     Comparison {
         document_type: DocumentType::Comparison,
+        detail: Some(Detail::Headline),
         schema_version: Version::V3,
         before: Input {
             filename: "before.json".into(),
