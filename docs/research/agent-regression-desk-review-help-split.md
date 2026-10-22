@@ -49,13 +49,13 @@ The Git-ignored session records of eleven admissible campaigns from 2026-10-20 t
 | C7 | Neutral | The `--help` footer's filter sentence named JSON but not Markdown. | Fixed after the review |
 | C8 | Neutral | `--schema` long help lost "do not combine it with measurement options"; the combination still fails with a clear error. | Accepted |
 | C9 | Improvement | `--table-category` behaves as documented in every form and combination tried, including workspaces, singular and plural notes, and the Test/prod replacement. | — |
-| C10 | Risk, low | An unmatched or mistyped category yields an all-zero table without a warning; the note lists the real keys. This is the documented design, as for an unmatched language. | Accepted |
+| C10 | Risk, low | An unmatched or mistyped category yields an all-zero table without a warning; the note lists the real keys. This was the documented design, as for an unmatched language. | Fixed after the review: such an entry now warns on stderr |
 | C11 | Neutral | Option errors are specific; a repeated `--table-category` is unioned, as repeated values of the other table filters are. | — |
 | C12 | Neutral | Non-table formats warn about `--table-category` with the shared wording. | — |
 | C13 | Improvement | The README option table did not list `--table-category`. | Fixed after the review |
 | C14 | Improvement | Schemas and the configure guide agree that runners, harnesses, graders and CI gates are production tooling. | — |
 | C15 | Neutral | Only `category` changed plural form. | — |
-| C16 | Neutral | The gaps of the [0.9.0 review](agent-regression-desk-review-0.9.0.md#findings), B2 and B7, are unchanged and tracked in [PLAN](../PLAN.md#human-output-wording--follow-up). | Open |
+| C16 | Neutral | The gaps of the [0.9.0 review](agent-regression-desk-review-0.9.0.md#findings), B2 and B7, are unchanged and tracked in [PLAN](../PLAN.md#human-output-wording--follow-up); standalone-query errors such as `--guide is a standalone query and cannot be combined with --verbose` left both flags unquoted. | Quoting fixed after the review; B2 and B7 open |
 | C17 | Neutral | `locmetry help -h` is rejected by clap in both revisions. | — |
 
 ## Limits

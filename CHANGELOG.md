@@ -6,7 +6,7 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 
 ### Added
 
-- `--table-category` narrows tables to categories, as `--table-purpose` narrows them to purposes: `--table-category test,production:tooling` takes whole purposes or exact `purpose:category` keys, and `'production:*tooling*'` matches with wildcards. A `Not shown (categories)` note names what it leaves out, and Test/prod gives way to Comment % when only part of Production or Test is shown.
+- `--table-category` narrows tables to categories, as `--table-purpose` narrows them to purposes: `--table-category test,production:tooling` takes whole purposes or exact `purpose:category` keys, and `'production:*tooling*'` matches with wildcards. A `Not shown (categories)` note names what it leaves out, an entry that matches no category in the measurement warns, and Test/prod gives way to Comment % when only part of Production or Test is shown.
 
 ### Changed
 

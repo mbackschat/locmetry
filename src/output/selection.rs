@@ -68,12 +68,28 @@ impl CategoryPattern {
         wildcard(&self.purpose, &purpose.to_string())
     }
 
+    /// Whether any source in `rows` falls under this entry; category names
+    /// are the project's own and case-sensitive, so a miss is worth naming.
+    pub fn matches_any(&self, rows: &[FileRecord]) -> bool {
+        rows.iter()
+            .any(|row| row.kind == Kind::Source && self.matches(row))
+    }
+
     fn matches(&self, row: &FileRecord) -> bool {
         self.names(row.classification.purpose)
             && self
                 .category
                 .as_deref()
                 .is_none_or(|category| wildcard(category, &row.classification.category))
+    }
+}
+
+impl std::fmt::Display for CategoryPattern {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self.category {
+            Some(category) => write!(f, "{}:{category}", self.purpose),
+            None => f.write_str(&self.purpose),
+        }
     }
 }
 

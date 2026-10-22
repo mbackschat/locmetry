@@ -130,6 +130,18 @@ pub(crate) fn report(
     styling: Styling,
 ) -> Result<Outcome> {
     let summary = build_report(&results.rows);
+    if destination.shows(Format::Table) {
+        for entry in &shared.table_categories {
+            if !entry.matches_any(&results.rows) {
+                styling.stderr_message(
+                    Severity::Warning,
+                    format_args!(
+                        "'--table-category' entry '{entry}' matches no category in this measurement. '--show-categories' lists the measured ones."
+                    ),
+                );
+            }
+        }
+    }
     let module_files = largest_module_files(&results.modules, &results.rows);
     let human = HumanView {
         shared,

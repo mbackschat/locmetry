@@ -145,10 +145,11 @@ fn selecting_every_category_is_no_selection() {
     );
 }
 
-/// A purpose typo would silently empty every table, so it is a usage error;
-/// a category is the project's own name, so an unmatched one is not.
+/// A purpose typo would silently empty every table, so it is a usage error.
+/// A category is the project's own, case-sensitive name, so an entry that
+/// matches none only warns: the tables still show what the command asked for.
 #[test]
-fn unknown_purposes_are_rejected_and_unmatched_categories_are_not() {
+fn unknown_purposes_are_rejected_and_unmatched_categories_warn() {
     let temp = tempfile::tempdir().unwrap();
     project(temp.path());
     for value in ["prod:tooling", "tooling", "production:"] {
@@ -160,8 +161,25 @@ fn unknown_purposes_are_rejected_and_unmatched_categories_are_not() {
         let error = String::from_utf8_lossy(&output.stderr);
         assert!(error.contains(&format!("'{value}'")), "{error}");
     }
-    let text = table(&["--table-category", "production:nope"]);
-    assert!(text.contains("(7 code lines)."), "{text}");
+    let output = run(
+        temp.path(),
+        &[
+            "--format",
+            "table",
+            "--table-category",
+            "production:Tooling,test,other:nope*",
+        ],
+    );
+    assert_eq!(output.status.code(), Some(0));
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert_eq!(
+        stderr,
+        concat!(
+            "warning: '--table-category' entry 'production:Tooling' matches no category in this measurement. '--show-categories' lists the measured ones.\n",
+            "warning: '--table-category' entry 'other:nope*' matches no category in this measurement. '--show-categories' lists the measured ones.\n",
+        )
+    );
+    assert!(String::from_utf8_lossy(&output.stdout).contains("(6 code lines)."));
 }
 
 #[test]
