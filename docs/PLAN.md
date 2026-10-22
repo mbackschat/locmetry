@@ -4,7 +4,7 @@
 
 ## Windows Support — Follow-up
 
-- [ ] Publish a Scoop manifest, updated per release like the Homebrew tap, once a release ships the Windows zip.
+- [ ] Publish the Scoop manifest from [packaging/scoop](../packaging/scoop) in a bucket repository and update it per release like the Homebrew tap; 0.9.0 ships the Windows zip, and `render-manifest.sh 0.9.0` renders a valid manifest. Add the update step to the release handback in `scripts/release.py` once the bucket exists.
 - [ ] Generate PowerShell tab completion, together with the other shells; deferred by the owner on 2026-10-21.
 - Accept UTF-16 configuration and workspace files, and add PowerShell equivalents of the `jq` recipes, only when Windows users ask for them. Windows on ARM stays excluded while x86_64 emulation serves it. The [Windows support record](proposals/archive/windows-support.md) owns the rationale.
 

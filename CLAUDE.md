@@ -8,7 +8,7 @@
 - Current requirements: [PRODUCT](docs/PRODUCT.md); open work and links to deferred designs/history: [PLAN](docs/PLAN.md).
 - CLI entry points: [README](README.md); counting and selection limits: [measurement semantics](docs/measurement.md).
 - Design provenance: [research](docs/research/README.md); build/distribution decisions: [Tokei integration](docs/tokei-integration.md).
-- CI and releases: [.github/workflows](.github/workflows); Homebrew template: [packaging/homebrew](packaging/homebrew).
+- CI and releases: [.github/workflows](.github/workflows); Homebrew and Scoop templates: [packaging/homebrew](packaging/homebrew), [packaging/scoop](packaging/scoop).
 
 Before implementation, scan PLAN for relevant open work, then read only the applicable contract, plan section and source. Search headings and filenames before opening large documents. Consult archived checkpoints only when their rationale or evidence is needed; they are not current work instructions.
 
