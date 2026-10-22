@@ -764,6 +764,11 @@ fn human_comparisons_explain_presence_in_plain_words() {
     for absent in ["Entity", "members -", "Presence:"] {
         assert!(!table.contains(absent), "{absent}\n{table}");
     }
+    // One blank line under the title, as under the notes title.
+    assert!(
+        table.contains("▸ Findings\n\n- presence_changed"),
+        "{table}"
+    );
 }
 
 /// Locks that the human totals explain All counted: one row per content kind,

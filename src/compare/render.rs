@@ -522,15 +522,16 @@ fn render(c: &Comparison, markdown: bool, theme: Theme, variants: LanguageVarian
         .collect();
     if !findings.is_empty() {
         match markdown {
-            true => writeln!(out, "\n## Findings"),
+            true => write!(out, "\n## Findings\n\n"),
             false => write!(out, "\n{}", output::section_title("Findings", theme)),
         }
         .unwrap();
-        for f in findings {
+        for (index, f) in findings.into_iter().enumerate() {
             let context = f.context();
             writeln!(
                 out,
-                "\n- {} ({}{}): {}",
+                "{}- {} ({}{}): {}",
+                if index == 0 { "" } else { "\n" },
                 theme.paint(Role::Information, f.code()),
                 side_name(context.side),
                 context

@@ -92,7 +92,6 @@ Only in one report: 2 folders only before, 16 folders only after.
 
 ▸ Findings
 
-
 - presence_changed (before): Folder 'mobile/lib/interfaces' appears only in the before report. It may be deleted or no
 longer measured.
 
