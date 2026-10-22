@@ -2,10 +2,10 @@
 
 <!-- doc-status
 {
-  "status": "draft",
+  "status": "accepted",
   "date": "2026-10-23",
   "summary": "Built-in detectors and conventions for popular frameworks whose source is not in src/, and for .NET, PHP, Ruby and Django projects, so their production source is classified without configuration.",
-  "evidence": ""
+  "evidence": "[Owner decision in PLAN](../PLAN.md#accepted-proposals--implementation-order)"
 }
 -->
 

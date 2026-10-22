@@ -8,15 +8,20 @@
 - [ ] Generate PowerShell tab completion, together with the other shells; deferred by the owner on 2026-10-21.
 - Accept UTF-16 configuration and workspace files, and add PowerShell equivalents of the `jq` recipes, only when Windows users ask for them. Windows on ARM stays excluded while x86_64 emulation serves it. The [Windows support record](proposals/archive/windows-support.md) owns the rationale.
 
+## Accepted Proposals — Implementation Order
+
+Decided 2026-10-23 by the owner: implement the accepted proposals in this order, each with red/green TDD, and finish each before starting the next.
+
+1. [ ] Implement [framework layouts](proposals/framework-layouts.md). The optional Storybook-story and Jest-mock conventions are deferred by the same decision. Before closing, run the real detectors on the commits in the [measurement record](research/framework-layouts.md), because the recorded results are emulations.
+2. [ ] Implement [module credit by layout coverage](proposals/module-credit-by-coverage.md), then regenerate the Immich showcase.
+3. [ ] Implement [language corrections](proposals/language-corrections.md), then replace the explained Prolog row in the Immich showcase with a correction.
+4. [ ] Draft a proposal for detecting generated code inside claimed layouts. Across the framework measurements it was the largest silent false claim: MyBatis output 82% of one application's production, OpenAPI clients 16–30%, swag, Wire and MockGen 14%, Django migrations 20% ([precision pass](research/framework-layouts.md#shared-false-claims-not-specific-to-a-row)). Markers differ by generator and some output has none, so the design starts from that evidence and follows the [research rules](../CLAUDE.md#research-and-experiments).
+
 ## Configuration — Follow-up
 
 - [ ] Decide whether an unloaded `.locmetryrc` is project content. [PRODUCT](PRODUCT.md#project-configuration) excludes only the loaded configuration, so `--config OTHER` selects the scan root's `.locmetryrc` and reports it as an unrecognized file: coverage differs by one file from a discovery run of the same tree, which misleads anyone comparing a draft policy with the committed one. Two policy test drives hit this. Recommendation: exclude every file named `.locmetryrc` as policy, which also covers inactive ones in subfolders and nested projects, and record the coverage change as **Breaking**.
-- [ ] Decide the [module credit by layout coverage](proposals/module-credit-by-coverage.md) proposal. Every project in the policy test drives of 2026-10-22 and 2026-10-23 lost build-module credit to entries that kept `production` and only named another category, and the module count included modules without credit.
-- [ ] Design detection of generated code inside claimed layouts. Across the framework measurements it was the largest silent false claim: MyBatis output 82% of one application's production, OpenAPI clients 16–30%, swag, Wire and MockGen 14%, Django migrations 20% ([precision pass](research/framework-layouts.md#shared-false-claims-not-specific-to-a-row)). Markers differ by generator and some output has none, so the design starts from that evidence.
 - [ ] Make the Go layout skip `vendor/`, `testdata/` and folders starting with `_` or `.`, which `go help packages` excludes from `./...`; Loki's 3.16 million vendored lines count as Go production today. Changing an existing detector needs a new configuration `version` or an explicit compatibility decision.
 - [ ] Say in the [measurement semantics](measurement.md) that tracked files under an ignored path are not measured, because selection reads ignore files, not the Git index; two projects lost tracked files this way.
-- [ ] Decide the [framework layouts](proposals/framework-layouts.md) proposal. Next.js, Nuxt and React Router applications are 93–100% unclaimed without configuration, and .NET, PHP, Ruby and Django projects 38–99%, as the [framework layout measurements](research/framework-layouts.md) show.
-- [ ] Decide the [language corrections](proposals/language-corrections.md) proposal. The Immich showcase found that a policy cannot correct a language the counter recognized wrongly: its ProGuard file counts as Prolog. Test drives found the same gap in two more projects, including 172 C++ headers counted as C Header.
 
 ## Known Display Follow-up
 
@@ -35,11 +40,7 @@
 
 ## Proposals — Under Discussion
 
-- [Language corrections](proposals/language-corrections.md): draft of 2026-10-22, awaiting the owner's decision.
-- [Module credit by layout coverage](proposals/module-credit-by-coverage.md): draft of 2026-10-23, awaiting the owner's decision.
-- [Framework layouts](proposals/framework-layouts.md): draft of 2026-10-23, awaiting the owner's decision.
-
-The [proposal index](proposals/README.md) distinguishes active designs from historical decisions.
+None. The [proposal index](proposals/README.md) distinguishes active designs from historical decisions.
 
 ## Historical Evidence
 

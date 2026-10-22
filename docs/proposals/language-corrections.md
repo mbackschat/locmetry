@@ -2,10 +2,10 @@
 
 <!-- doc-status
 {
-  "status": "draft",
+  "status": "accepted",
   "date": "2026-10-23",
   "summary": "Policy entries that correct a language the counter recognized wrongly, naming another counter language or leaving the file unrecognized.",
-  "evidence": ""
+  "evidence": "[Owner decision in PLAN](../PLAN.md#accepted-proposals--implementation-order)"
 }
 -->
 

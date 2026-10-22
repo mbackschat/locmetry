@@ -2,10 +2,10 @@
 
 <!-- doc-status
 {
-  "status": "draft",
+  "status": "accepted",
   "date": "2026-10-23",
   "summary": "Credit a build module with the production source its layout covers, whichever stage decided it, and count only modules with credit.",
-  "evidence": ""
+  "evidence": "[Owner decision in PLAN](../PLAN.md#accepted-proposals--implementation-order)"
 }
 -->
 
