@@ -178,6 +178,20 @@ fn root_help_exposes_result_automation_and_policy_boundaries() {
 }
 
 #[test]
+fn command_summaries_name_every_supported_form() {
+    // Root help lists only these summaries, so an agent that stops there must
+    // learn both workspace forms and that explain takes several paths
+    // (agent regression desk review, 2026-10-21, F9).
+    let text = help("").split_whitespace().collect::<Vec<_>>().join(" ");
+    for form in [
+        "Measure several repositories or one project's folders as one virtual monorepo",
+        "Explain selection and classification of existing root-relative files",
+    ] {
+        assert!(text.contains(form), "missing command form: {form}");
+    }
+}
+
+#[test]
 fn root_scope_and_view_examples_execute_the_displayed_commands() {
     let root = tempfile::tempdir().unwrap();
     fixture(root.path());

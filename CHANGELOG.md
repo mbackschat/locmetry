@@ -11,6 +11,7 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 ### Fixed
 
 - An option spelling retired in 0.7.0, such as `--purpose` or `workspace --file`, is still rejected, but the error now names the option that replaced it instead of an unrelated one such as `--verbose` or `--files`.
+- Command summaries in `locmetry --help` mention workspaces of one project's folders and that `explain` takes several paths.
 
 ## [0.8.0] - 2026-10-21
 

@@ -251,8 +251,9 @@ pub(crate) struct Cli {
 
 #[derive(Subcommand)]
 pub(crate) enum Command {
-    /// Measure several repositories as one virtual monorepo: each root with its
-    /// own .locmetryrc, merged with paths prefixed by the root's folder name.
+    /// Measure several repositories or one project's folders as one virtual
+    /// monorepo: members keep their repository's .locmetryrc, and paths are
+    /// prefixed by the member's folder name.
     /// Defaults to a table on a terminal, a JSON headline in pipes.
     /// --output FILE saves only to that file, defaulting to full JSON; --format overrides the format.
     #[command(
@@ -344,7 +345,7 @@ counts, exit 1 rejects invalid input, and exit 0 does not prove identical settin
 Use locmetry --schema comparison for fields or locmetry --guide compare for detail."
     )]
     Compare(CompareArgs),
-    /// Explain selection and classification of one existing root-relative file.
+    /// Explain selection and classification of existing root-relative files.
     /// JSON prints the complete explanation; there is no separate headline.
     #[command(
         after_help = "For selection and classification diagnosis, use locmetry --guide selection.",

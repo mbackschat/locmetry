@@ -313,9 +313,10 @@ locmetry explain web/src/orders/Order.test.ts --workspace-file workspace.toml --
 ```
 
 ```output
-Measure several repositories as one virtual monorepo: each root with its own .locmetryrc, merged
-with paths prefixed by the root's folder name. Defaults to a table on a terminal, a JSON headline in
-pipes. --output FILE saves only to that file, defaulting to full JSON; --format overrides the format
+Measure several repositories or one project's folders as one virtual monorepo: members keep their
+repository's .locmetryrc, and paths are prefixed by the member's folder name. Defaults to a table on
+a terminal, a JSON headline in pipes. --output FILE saves only to that file, defaulting to full
+JSON; --format overrides the format
 
 Usage: locmetry workspace [OPTIONS]
 

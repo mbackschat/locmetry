@@ -329,7 +329,7 @@ locmetry --schema explanation | jq '{title, required}'
 ```
 
 ```output
-Explain selection and classification of one existing root-relative file. JSON prints the complete
+Explain selection and classification of existing root-relative files. JSON prints the complete
 explanation; there is no separate headline
 
 Usage: locmetry explain [OPTIONS] <PATH>...
