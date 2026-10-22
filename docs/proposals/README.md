@@ -8,7 +8,7 @@ Active designs live directly in this directory. Retired records live in `archive
 
 | Document | Status | Date | Summary |
 | --- | --- | --- | --- |
-| [Language Corrections](language-corrections.md) | draft | 2026-10-22 | Policy entries that correct a language the counter recognized wrongly, naming another counter language or leaving the file unrecognized. |
+| [Language Corrections](language-corrections.md) | draft | 2026-10-23 | Policy entries that correct a language the counter recognized wrongly, naming another counter language or leaving the file unrecognized. |
 
 <!-- doc-index:end -->
 

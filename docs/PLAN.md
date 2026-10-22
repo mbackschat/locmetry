@@ -11,10 +11,11 @@
 ## Configuration — Follow-up
 
 - [ ] Decide whether an unloaded `.locmetryrc` is project content. [PRODUCT](PRODUCT.md#project-configuration) excludes only the loaded configuration, so `--config OTHER` selects the scan root's `.locmetryrc` and reports it as an unrecognized file: coverage differs by one file from a discovery run of the same tree, which misleads anyone comparing a draft policy with the committed one. Two policy test drives hit this. Recommendation: exclude every file named `.locmetryrc` as policy, which also covers inactive ones in subfolders and nested projects, and record the coverage change as **Breaking**.
-- [ ] Decide the [language corrections](proposals/language-corrections.md) proposal. The Immich showcase found that a policy cannot correct a language the counter recognized wrongly: its ProGuard file counts as Prolog.
+- [ ] Decide the [language corrections](proposals/language-corrections.md) proposal. The Immich showcase found that a policy cannot correct a language the counter recognized wrongly: its ProGuard file counts as Prolog. Test drives found the same gap in two more projects, including 172 C++ headers counted as C Header.
 
 ## Known Display Follow-up
 
+- [ ] Fold BASH into Shell in human language tables, as TSX folds into TypeScript; JSON keeps both names. Tokei counts extensionless Bash scripts as BASH and `.sh` scripts as Shell, which split one project's scripts over two rows in three policy test drives on 2026-10-22. A [language correction](proposals/language-corrections.md) does not fit: neither name is wrong, and globs cannot select files by shebang.
 - Folder-partition convergence remains deferred: adaptive folder detail and JSON `unclassified_folders` intentionally use different policies. Revisit only if a workflow demonstrates confusing divergence, with explicit compatibility review. The [adaptive-folder decision](proposals/archive/adaptive-folder-detail.md#existing-partition-and-feasibility) owns the rationale.
 
 ## Ideas — Not Scheduled
