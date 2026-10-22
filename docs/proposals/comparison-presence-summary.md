@@ -13,7 +13,7 @@ This proposal answers the [PLAN](../PLAN.md#comparison-presence-findings--follow
 
 ## Problem
 
-Human comparisons list one `presence_changed` finding per folder, package and member that appears in only one report. Moving a folder `old` with 40 npm packages to `new`, measured on 2026-10-22 with a synthetic fixture, prints 162 such findings: 324 of the table's 360 lines. The one `modules_changed` finding above them, and the settings caveat after them, are easy to miss. The `Only in one report:` line already counts presence by kind and side, and headline JSON keeps only `presence_summary`, but the table and Markdown keep every line.
+Human comparisons list one `presence_changed` finding per folder, package and member that appears in only one report. Moving a folder `old` with 40 npm packages to `new`, measured on 2026-10-22 with a synthetic fixture, prints 162 such findings: 324 of the table's 360 lines. The one `modules_changed` finding comes first, but the presence lines after it push it, the totals and the `Only in one report:` line out of a terminal screen, so the visible end of the output is presence lines and measurement times. The `Only in one report:` line already counts presence by kind and side, and headline JSON keeps only `presence_summary`, but the table and Markdown keep every line.
 
 ## Design
 
@@ -34,7 +34,7 @@ Containment uses the recorded identities the findings already carry: folder path
 - presence_changed (before): 31 more folders and 2 packages appear only in the before report. '--format json' lists each one.
 ```
 
-The other findings are listed in full, before the presence findings. Wording follows the [human output wording rules](../help-design.md#human-output-wording).
+The other findings are listed in full and keep their present place before the presence findings. Wording follows the [human output wording rules](../help-design.md#human-output-wording).
 
 **Optional:** a smaller cap in table output than in Markdown. The proposal uses 10 for both, so a saved Markdown review matches what the terminal showed.
 
