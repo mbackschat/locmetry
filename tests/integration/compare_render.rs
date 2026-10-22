@@ -720,9 +720,12 @@ fn human_comparisons_group_interpretation_caveats_under_measurement_notes() {
                 .unwrap_or_else(|| panic!("missing Measurement notes:\n{text}"));
             assert!(results.contains("All counted"), "{text}");
             let notes = notes.split("Findings").next().unwrap();
+            // Unreadable lines are unknown, not zero, as every other note states.
+            assert!(!text.contains("count as 0"), "{text}");
             for caveat in [
                 "Net change = after − before, from the two saved reports.",
-                "Unreadable files count as 0; a folder seen in only one report may be newly visible, not newly created.",
+                "Unreadable files add nothing to the recorded counts: their lines are unknown, not zero.",
+                "A folder seen in only one report may be newly visible, not newly created.",
             ] {
                 assert!(!results.contains(caveat), "{text}");
                 assert_eq!(text.matches(caveat).count(), 1, "{text}");
@@ -751,7 +754,8 @@ fn human_comparisons_explain_presence_in_plain_words() {
     let table = String::from_utf8(output.stdout).unwrap();
     for expected in [
         "Net change = after − before, from the two saved reports.",
-        "Unreadable files count as 0; a folder seen in only one report may be newly visible, not newly created.",
+        "Unreadable files add nothing to the recorded counts: their lines are unknown, not zero.",
+        "A folder seen in only one report may be newly visible, not newly created.",
         "Only in one report: 1 folder only after.",
         "Folder \"src/extra\" appears only in the after report; it may be new or newly measured.",
     ] {

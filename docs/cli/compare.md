@@ -62,7 +62,8 @@ Net change: acme-orders → acme-orders
 ▸ Measurement notes
 
 - Net change = after − before, from the two saved reports.
-- Unreadable files count as 0; a folder seen in only one report may be newly visible, not newly created.
+- Unreadable files add nothing to the recorded counts: their lines are unknown, not zero.
+- A folder seen in only one report may be newly visible, not newly created.
 - Unrecognized files: same 2 paths in both reports; not counted on either side.
 - Folder totals containing these files cover counted files only; per-folder detail is in JSON findings[].folder.
 
@@ -296,7 +297,8 @@ Member all-counted code: matched +1, entering +0, leaving -0; total +1.
 ▸ Measurement notes
 
 - Net change = after − before, from the two saved reports.
-- Unreadable files count as 0; a folder seen in only one report may be newly visible, not newly created.
+- Unreadable files add nothing to the recorded counts: their lines are unknown, not zero.
+- A folder seen in only one report may be newly visible, not newly created.
 - Unrecognized files: same 2 paths in both reports; not counted on either side.
 - Folder totals containing these files cover counted files only; per-folder detail is in JSON findings[].folder.
 

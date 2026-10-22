@@ -69,7 +69,8 @@ pub(super) fn measurement_notes(c: &Comparison) -> Vec<(Role, String)> {
     let sides = [("before", before), ("after", after)];
     let mut notes = vec![
         (Role::Muted, "Net change = after − before, from the two saved reports.".into()),
-        (Role::Muted, "Unreadable files count as 0; a folder seen in only one report may be newly visible, not newly created.".into()),
+        (Role::Muted, "Unreadable files add nothing to the recorded counts: their lines are unknown, not zero.".into()),
+        (Role::Muted, "A folder seen in only one report may be newly visible, not newly created.".into()),
     ];
     let inaccurate: Vec<_> = sides
         .iter()
