@@ -179,7 +179,7 @@ Read results:
 Choose scope and views:
   --subfolder retains the root's policy and module context; --root on that folder
   starts a different measurement. Configuration is not discovered in ancestors.
-  Quote root-relative exclusion globs. --table-purpose and --table-language filter tables, not JSON.
+  Quote root-relative exclusion globs. --table-* options filter tables, not JSON.
   Tables and Markdown count language variants within their family, such as TSX within
   TypeScript, and name each fold; --split-languages separates them. JSON keeps backend names.
   --folder-rows needs --format table or --print table; its budget retains all top-level folders.
@@ -570,8 +570,7 @@ pub(crate) struct SharedArgs {
     pub(crate) no_bars: bool,
     #[command(flatten)]
     pub(crate) view: ViewArgs,
-    /// Show only these purposes' source in tables; comma-separated.
-    /// JSON and Markdown keep the complete measurement. Table format only.
+    /// Show only these purposes' source in tables; comma-separated. Table format only.
     #[arg(
         long = "table-purpose",
         value_enum,
@@ -580,9 +579,22 @@ pub(crate) struct SharedArgs {
         help_heading = "Presentation"
     )]
     pub(crate) purpose: Vec<PurposeArg>,
+    /// Show only these categories in tables: PURPOSE[:CATEGORY]
+    #[arg(
+        long = "table-category",
+        long_help = "Show only these categories' source in tables; comma-separated PURPOSE for \
+            all its categories or PURPOSE:CATEGORY. '*' matches any text; quote it in the \
+            shell. Test/prod gives way to Comment % when only part of Production or Test is \
+            shown. Table format only.",
+        value_delimiter = ',',
+        value_name = "CATEGORIES",
+        value_parser = locmetry::CategoryPattern::parse,
+        help_heading = "Presentation"
+    )]
+    pub(crate) table_categories: Vec<locmetry::CategoryPattern>,
     /// Show only these source languages in tables; comma-separated, in any case.
     /// A variant such as TSX selects its family's row unless --split-languages.
-    /// JSON and Markdown keep the complete measurement. Table format only.
+    /// Table format only.
     #[arg(
         long = "table-language",
         value_delimiter = ',',

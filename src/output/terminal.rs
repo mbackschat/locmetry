@@ -12,6 +12,8 @@ pub struct TableOptions {
     pub bars: Bars,
     /// Purposes whose source the tables count, in `Purpose::ALL` order.
     pub purposes: Vec<Purpose>,
+    /// Categories whose source the tables count; empty counts all.
+    pub category_selection: Vec<CategoryPattern>,
     /// Source languages the tables count, by display name; empty counts all.
     pub languages: Vec<String>,
     /// Omits every line outside the tables: legends, bar keys and notes.
@@ -36,6 +38,7 @@ pub fn render_table_with_options(
         folder_rows,
         bars,
         purposes,
+        category_selection,
         languages,
         tables_only,
         variants,
@@ -47,7 +50,7 @@ pub fn render_table_with_options(
             selected_languages.push(language);
         }
     }
-    let folds = variants.source_folds(rows, &purposes, &selected_languages);
+    let folds = variants.source_folds(rows, &purposes, &category_selection, &selected_languages);
     let folded = variants.folded(rows);
     let (summary, rows) = match &folded {
         Some((rows, summary)) => (summary, &rows[..]),
@@ -55,7 +58,7 @@ pub fn render_table_with_options(
     };
     // A selection counts only that source, so every table, total and bar is
     // rebuilt from the selected records.
-    let selection = TableSelection::of(rows, &purposes, &selected_languages);
+    let selection = TableSelection::of(rows, &purposes, &category_selection, &selected_languages);
     let selected_summary;
     let (summary, rows) = match &selection.rows {
         Some(selected) => {
@@ -64,7 +67,23 @@ pub fn render_table_with_options(
         }
         None => (summary, rows),
     };
-    let columns = PurposeColumns { shown: &purposes };
+    // A category selection within one purpose shows that purpose alone, as
+    // a purpose selection does; the purpose note still names only those the
+    // purpose option left out.
+    let shown: Vec<Purpose> = purposes
+        .iter()
+        .copied()
+        .filter(|purpose| {
+            category_selection.is_empty()
+                || category_selection
+                    .iter()
+                    .any(|pattern| pattern.names(*purpose))
+        })
+        .collect();
+    let columns = PurposeColumns {
+        shown: &shown,
+        sliced: selection.sliced,
+    };
     let languages = ordered(
         source_languages(rows).into_iter().collect(),
         |(counts, _)| counts.code,

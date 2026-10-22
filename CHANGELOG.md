@@ -4,6 +4,10 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 
 ## [Unreleased]
 
+### Added
+
+- `--table-category` narrows tables to categories, as `--table-purpose` narrows them to purposes: `--table-category test,production:tooling` takes whole purposes or exact `purpose:category` keys, and `'production:*tooling*'` matches with wildcards. A `Not shown (categories)` note names what it leaves out, and Test/prod gives way to Comment % when only part of Production or Test is shown.
+
 ### Changed
 
 - `--guide configure` explains when to classify verification code as test and when as production tooling: test runners, harnesses, graders and CI gates are tooling, and Test/prod depends on purpose, not category.

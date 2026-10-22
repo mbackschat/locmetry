@@ -260,6 +260,7 @@ impl HumanView<'_> {
                     bar_columns(stdout),
                 ),
                 purposes: selected_purposes(&shared.purpose),
+                category_selection: shared.table_categories.clone(),
                 languages: shared.languages.iter().map(|l| l.to_string()).collect(),
                 tables_only: shared.view.tables_only,
                 variants: shared.view.variants(),

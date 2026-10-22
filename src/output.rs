@@ -17,7 +17,7 @@ pub use terminal::{render_table_with_options, TableOptions};
 
 pub(crate) use selection::folded_note;
 use selection::TableSelection;
-pub use selection::{Fold, LanguageVariants};
+pub use selection::{CategoryPattern, Fold, LanguageVariants};
 
 use crate::report::Summary;
 use crate::style::{Role, Theme};
@@ -167,13 +167,17 @@ pub(crate) fn module_label(path: &str) -> &str {
 
 /// `noun`, pluralized with `s` unless `count` is one.
 fn plural(count: u64, noun: &str) -> String {
-    match count {
-        1 => noun.to_string(),
-        _ => format!("{noun}s"),
+    let consonant_y = noun
+        .strip_suffix('y')
+        .filter(|stem| stem.ends_with(|c: char| !"aeiou".contains(c)));
+    match (count, consonant_y) {
+        (1, _) => noun.to_string(),
+        (_, Some(stem)) => format!("{stem}ies"),
+        (_, None) => format!("{noun}s"),
     }
 }
 
-/// `count` followed by `noun`, pluralized with `s` unless it is one.
+/// `count` followed by `noun`, pluralized unless it is one.
 pub(crate) fn counted(count: u64, noun: &str) -> String {
     format!("{} {}", grouped(count), plural(count, noun))
 }

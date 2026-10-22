@@ -2,14 +2,14 @@
 
 <!-- doc-status
 {
-  "status": "accepted",
+  "status": "implemented",
   "date": "2026-10-22",
   "summary": "A --table-category option that narrows tables to purpose:category keys, with exact names and quoted wildcards.",
-  "evidence": "[PLAN](../PLAN.md#table-category-filter)"
+  "evidence": "[PRODUCT](../../PRODUCT.md#output-routing), [regressions](../../../tests/integration/table_category.rs)"
 }
 -->
 
-Status: accepted by the owner on 2026-10-22; implementation follows test-first.
+Status: historical decision record — implemented. The owner accepted the design on 2026-10-22, and it was implemented and verified test-first the same day. Archived on 2026-10-22 under the [retirement procedure](../README.md#retirement-procedure). [PRODUCT](../../PRODUCT.md#output-routing) and the [root command guide](../../cli/root.md#focus-on-categories) own the current behavior; the wording, examples and limits below describe the reviewed design, not current guarantees.
 
 ## Problem
 
@@ -33,7 +33,8 @@ Status: accepted by the owner on 2026-10-22; implementation follows test-first.
 - The filter applies to every table of a root, subfolder or workspace measurement: languages, folders, members and categories. JSON and Markdown keep the complete measurement; other formats warn that the option has no effect.
 - With `--table-purpose` and `--table-language`, a row is shown only when every filter matches it.
 - A `Not shown (categories): …` note names the categories left out and their code, largest first, as the purpose and language notes do.
-- Test/prod is replaced by Comment %, as in a single-purpose view. Categories divide one purpose, so a category selection would compare an arbitrary slice of test code with an arbitrary slice of production code; a language selection divides both purposes alike and keeps the ratio.
+- Test/prod is replaced by Comment %, as in a single-purpose view, when the selection keeps only part of Production's or Test's code. Categories divide one purpose, so such a selection would compare an arbitrary slice of test code with an arbitrary slice of production code; whole purposes keep the ratio, and a language selection divides both purposes alike and keeps it too.
+- Purpose columns appear only for purposes an entry can select, so a selection within one purpose shows it alone, as `--table-purpose` does.
 - The category table is not implied: filters filter and show flags show.
 
 ```sh

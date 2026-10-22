@@ -1,5 +1,5 @@
-//! Which source a table view counts: purpose and language selections and the
-//! folding of language variants into their family's row.
+//! Which source a table view counts: purpose, category and language
+//! selections and the folding of language variants into their family's row.
 
 use super::{counted, plural, purpose_title};
 use crate::{Counts, FileRecord, Kind, Purpose, ReportSummary};
@@ -32,6 +32,72 @@ fn excluded_languages<'r>(
 
 fn purpose_selected(row: &FileRecord, purposes: &[Purpose]) -> bool {
     row.kind != Kind::Source || purposes.contains(&row.classification.purpose)
+}
+
+/// One `--table-category` entry: a purpose, which selects all its categories,
+/// or a `purpose:category` key as the category table prints it. `*` in either
+/// part matches any run of characters (docs/proposals/archive/table-category-filter.md).
+#[derive(Clone, Debug)]
+pub struct CategoryPattern {
+    purpose: String,
+    category: Option<String>,
+}
+
+impl CategoryPattern {
+    /// Rejects a purpose part that can match no purpose, since that would
+    /// silently empty every table; categories are the project's own names.
+    pub fn parse(text: &str) -> Result<Self, String> {
+        let (purpose, category) = match text.split_once(':') {
+            Some((_, "")) => return Err("A category name must follow ':'.".into()),
+            Some((purpose, category)) => (purpose, Some(category.to_string())),
+            None => (text, None),
+        };
+        if !purpose.contains('*') && !Purpose::ALL.iter().any(|p| p.to_string() == purpose) {
+            return Err(format!(
+                "Unknown purpose '{purpose}'. Use 'production', 'test' or 'other', alone or before ':CATEGORY'."
+            ));
+        }
+        Ok(Self {
+            purpose: purpose.to_string(),
+            category,
+        })
+    }
+
+    /// Whether this entry can select source of `purpose` at all.
+    pub(super) fn names(&self, purpose: Purpose) -> bool {
+        wildcard(&self.purpose, &purpose.to_string())
+    }
+
+    fn matches(&self, row: &FileRecord) -> bool {
+        self.names(row.classification.purpose)
+            && self
+                .category
+                .as_deref()
+                .is_none_or(|category| wildcard(category, &row.classification.category))
+    }
+}
+
+/// Whether `pattern`, whose `*` matches any run of characters, covers all of `text`.
+fn wildcard(pattern: &str, text: &str) -> bool {
+    let mut parts = pattern.split('*');
+    let Some(mut rest) = text.strip_prefix(parts.next().unwrap_or_default()) else {
+        return false;
+    };
+    let parts: Vec<&str> = parts.collect();
+    let Some((last, middle)) = parts.split_last() else {
+        return rest.is_empty();
+    };
+    for part in middle {
+        match rest.find(part) {
+            Some(at) => rest = &rest[at + part.len()..],
+            None => return false,
+        }
+    }
+    rest.len() >= last.len() && rest.ends_with(last)
+}
+
+fn category_selected(row: &FileRecord, categories: &[CategoryPattern]) -> bool {
+    row.kind != Kind::Source || categories.iter().any(|pattern| pattern.matches(row))
 }
 
 /// `row` reduced to the selected `languages`: an embedded language keeps its
@@ -127,17 +193,19 @@ impl LanguageVariants {
             .collect()
     }
 
-    /// The folds in source that `purposes` and the `languages` row names
-    /// select; an empty `languages` selects every language.
+    /// The folds in source that `purposes`, `categories` and the `languages`
+    /// row names select; an empty `categories` or `languages` selects all.
     pub(super) fn source_folds(
         self,
         rows: &[FileRecord],
         purposes: &[Purpose],
+        categories: &[CategoryPattern],
         languages: &[String],
     ) -> Vec<Fold> {
         let names = rows
             .iter()
             .filter(|row| row.kind == Kind::Source && purpose_selected(row, purposes))
+            .filter(|row| categories.is_empty() || category_selected(row, categories))
             .flat_map(|row| row.languages.keys().map(String::as_str))
             .filter(|name| {
                 let row = crate::language_family(name).unwrap_or(name);
@@ -157,18 +225,28 @@ pub(crate) fn folded_note(folds: &[Fold]) -> Option<String> {
 }
 
 /// The source a table selection keeps and what it leaves out. Purposes filter
-/// first and languages then, so the code both notes exclude and the shown
-/// total add up to the full measurement.
+/// first, categories next and languages last, so the code the notes exclude
+/// and the shown total add up to the full measurement.
 pub(super) struct TableSelection {
     /// Selected records; `None` when the selection keeps everything.
     pub(super) rows: Option<Vec<FileRecord>>,
     /// Source code a strict purpose subset leaves out.
     pub(super) purposes_excluded: Option<u64>,
+    /// Category keys left out with their code, largest first.
+    pub(super) categories_excluded: Vec<(String, u64)>,
+    /// Whether the categories keep only part of Production's or Test's code,
+    /// so Test/prod would compare unrelated slices of the two.
+    pub(super) sliced: bool,
     pub(super) languages_excluded: Vec<(String, u64)>,
 }
 
 impl TableSelection {
-    pub(super) fn of(rows: &[FileRecord], purposes: &[Purpose], languages: &[String]) -> Self {
+    pub(super) fn of(
+        rows: &[FileRecord],
+        purposes: &[Purpose],
+        categories: &[CategoryPattern],
+        languages: &[String],
+    ) -> Self {
         let source_code = |rows: &[FileRecord]| -> u64 {
             rows.iter()
                 .filter(|row| row.kind == Kind::Source)
@@ -187,6 +265,17 @@ impl TableSelection {
             selected = Some(kept);
         }
         let current = selected.as_deref().unwrap_or(rows);
+        let (categories_excluded, sliced) = excluded_categories(current, categories);
+        if !categories_excluded.is_empty() {
+            selected = Some(
+                current
+                    .iter()
+                    .filter(|row| category_selected(row, categories))
+                    .cloned()
+                    .collect(),
+            );
+        }
+        let current = selected.as_deref().unwrap_or(rows);
         let languages_excluded = excluded_languages(current.iter(), languages);
         if !languages_excluded.is_empty() {
             selected = Some(
@@ -199,6 +288,8 @@ impl TableSelection {
         Self {
             rows: selected,
             purposes_excluded,
+            categories_excluded,
+            sliced,
             languages_excluded,
         }
     }
@@ -225,31 +316,67 @@ impl TableSelection {
                 .collect();
             notes.push(note(excluded, "purpose", code));
         }
-        if !self.languages_excluded.is_empty() {
-            // The largest name the bulk of what is missing; a long tail only
-            // needs its size, and a single remaining name is no longer than
-            // counting it.
-            const NAMED: usize = 5;
-            let excluded = self.languages_excluded.len();
-            let named = if excluded > NAMED + 1 {
-                NAMED
-            } else {
-                excluded
-            };
-            let mut names: Vec<String> = self
-                .languages_excluded
-                .iter()
-                .take(named)
-                .map(|(language, _)| language.clone())
-                .collect();
-            if excluded > named {
-                names.push(format!("{} more", excluded - named));
+        for (excluded, noun) in [
+            (&self.categories_excluded, "category"),
+            (&self.languages_excluded, "language"),
+        ] {
+            if !excluded.is_empty() {
+                let code = excluded.iter().map(|(_, code)| code).sum();
+                notes.push(note(largest_names(excluded), noun, code));
             }
-            let code = self.languages_excluded.iter().map(|(_, code)| code).sum();
-            notes.push(note(names, "language", code));
         }
         notes
     }
+}
+
+/// The largest names name the bulk of what is missing; a long tail only
+/// needs its size, and a single remaining name is no longer than counting it.
+fn largest_names(excluded: &[(String, u64)]) -> Vec<String> {
+    const NAMED: usize = 5;
+    let named = match excluded.len() > NAMED + 1 {
+        true => NAMED,
+        false => excluded.len(),
+    };
+    let mut names: Vec<String> = excluded
+        .iter()
+        .take(named)
+        .map(|(name, _)| name.clone())
+        .collect();
+    if excluded.len() > named {
+        names.push(format!("{} more", excluded.len() - named));
+    }
+    names
+}
+
+/// Category keys `categories` leaves out of `rows`, largest code first, and
+/// whether Production or Test keeps only part of its code; none without a
+/// selection.
+fn excluded_categories(
+    rows: &[FileRecord],
+    categories: &[CategoryPattern],
+) -> (Vec<(String, u64)>, bool) {
+    if categories.is_empty() {
+        return (Vec::new(), false);
+    }
+    let mut excluded = BTreeMap::<String, u64>::new();
+    let mut kept = [0u64; 3];
+    let mut left = [0u64; 3];
+    for row in rows.iter().filter(|row| row.kind == Kind::Source) {
+        let purpose = row.classification.purpose;
+        if category_selected(row, categories) {
+            kept[purpose.index()] += row.counts.code;
+        } else {
+            left[purpose.index()] += row.counts.code;
+            let key = crate::report::category_key(purpose, &row.classification.category);
+            *excluded.entry(key).or_default() += row.counts.code;
+        }
+    }
+    let sliced = [Purpose::Production, Purpose::Test]
+        .iter()
+        .any(|purpose| kept[purpose.index()] > 0 && left[purpose.index()] > 0);
+    let mut excluded: Vec<(String, u64)> = excluded.into_iter().collect();
+    excluded.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
+    (excluded, sliced)
 }
 
 /// `names` as prose: `A`, `A and B`, or `A, B and C`.

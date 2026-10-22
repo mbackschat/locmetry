@@ -35,6 +35,7 @@ mod report_totals;
 mod schema;
 mod subfolder;
 mod submodules;
+mod table_category;
 mod tables_only;
 mod terminal_safety;
 mod verbosity;

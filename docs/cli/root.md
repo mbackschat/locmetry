@@ -187,9 +187,43 @@ locmetry --root acme-orders --no-user-config --no-color --format table \
  Total           4     13    10 │        3       0 │     6     3      1 │      0.50
 ```
 
+## Focus on categories
+
+`--table-category` filters table counts to categories: a purpose selects all of its categories, a `purpose:category` key as the category table prints it selects one, and `*` matches any text, quoted for the shell. A note names the excluded categories and their code. Keeping only part of Production or Test replaces Test/prod with comment density, because the ratio would compare unrelated slices.
+
+```bash
+source scripts/cli-demo-env.sh
+locmetry --root acme-orders --no-user-config --no-color --format table \
+  --show-categories --table-category 'test,production:tool*' \
+  | sed '/^Root:/d; /^Roots:/d; /^Measured at:/d' \
+  | demo_wrap
+```
+
+```output
+ ───────────────────────────────────────────────────────────────────────────
+ Language    Files  Lines  Code │ Comments  Blanks │ Prod.  Test │ Comment %
+ ───────────────────────────────┼──────────────────┼─────────────┼──────────
+ Go              1      5     4 │        0       1 │     0     4 │      0.0%
+ TypeScript      1      4     3 │        1       0 │     0     3 │     25.0%
+ Python          1      3     2 │        1       0 │     2     0 │     33.3%
+ ───────────────────────────────┼──────────────────┼─────────────┼──────────
+ Total           3     12     9 │        2       1 │     2     7 │     18.2%
+ Lines = Code + Comments + Blanks · Production + Test = Code · Comment % = Comments / (Code + Comments)
+ Not shown (categories): production:implementation, production:build-tooling, other:generated and other:unclaimed (20
+code lines).
+
+ ──────────────────────────────────────
+ Category            Files  Lines  Code
+ ──────────────────────────────────────
+ test:test               2      9     7
+ production:tooling      1      3     2
+ Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
+
+```
+
 ## Print only the tables
 
-`--tables-only` prints the tables and nothing else: no legends, notes or location/time footer, so a transcript or script needs no filter. The columns keep the meanings the legends above define. A `--table-purpose` or `--table-language` selection is no longer named in the output; the command records it.
+`--tables-only` prints the tables and nothing else: no legends, notes or location/time footer, so a transcript or script needs no filter. The columns keep the meanings the legends above define. A `--table-purpose`, `--table-category` or `--table-language` selection is no longer named in the output; the command records it.
 
 ```bash
 source scripts/cli-demo-env.sh

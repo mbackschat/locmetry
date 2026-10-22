@@ -192,7 +192,40 @@ locmetry workspace --workspace-file workspace.toml --no-user-config --no-color -
 
 ```
 
-`--tables-only` keeps the language and repository tables and drops their legends and the roots/time footer, so the rows need no filter.
+`--table-category '*:generated'` counts only code in a `generated` category, of any purpose, so the member rows show which member holds it.
+
+```bash
+source scripts/cli-demo-env.sh
+locmetry workspace --workspace-file workspace.toml --no-user-config --no-color --format table \
+  --table-category '*:generated' \
+  | sed '/^Root:/d; /^Roots:/d; /^Measured at:/d' \
+  | demo_wrap
+```
+
+```output
+ ──────────────────────────────────────────────────────────────────────────────────
+ Language    Files  Lines  Code │ Comments  Blanks │ Prod.  Test  Other │ Test/prod
+ ───────────────────────────────┼──────────────────┼────────────────────┼──────────
+ TypeScript      1      2     1 │        1       0 │     0     0      1 │         -
+ ───────────────────────────────┼──────────────────┼────────────────────┼──────────
+ Total           1      2     1 │        1       0 │     0     0      1 │         -
+ Lines = Code + Comments + Blanks · Production + Test + Other = Code · Test/prod = Test / Production (Code)
+ Tests written in another language than the code they test skew per-language Test/prod.
+ Not shown (categories): production:implementation, test:test, production:build-tooling, production:tooling and
+other:unclaimed (28 code lines).
+
+ ──────────────────────────────────────────────────────────────
+ Member   Lines  Code │ Prod.  Test  Other │ Test/prod │  Share
+ ─────────────────────┼────────────────────┼───────────┼───────
+ web          2     1 │     0     0      1 │         - │ 100.0%
+ service      0     0 │     0     0      0 │         - │   0.0%
+ ─────────────────────┼────────────────────┼───────────┼───────
+ Total        2     1 │     0     0      1 │         - │ 100.0%
+ Production + Test + Other = Code · Test/prod = Test / Production (Code) · Share = Code / workspace Code
+
+```
+
+`--tables-only` keeps the language and member tables and drops their legends and the roots/time footer, so the rows need no filter.
 
 ```bash
 source scripts/cli-demo-env.sh

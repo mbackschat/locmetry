@@ -25,8 +25,8 @@ pub use config::{
 pub use modules::{detect as detect_modules, Module};
 pub use output::{
     measurement_time, render_markdown, render_table_with_options, report_text, validate_output,
-    write_report, BarKind, Bars, Findings, Fold, LanguageVariants, MemberView, RowOrder,
-    TableOptions,
+    write_report, BarKind, Bars, CategoryPattern, Findings, Fold, LanguageVariants, MemberView,
+    RowOrder, TableOptions,
 };
 pub use paths::{filesystem_path, member_path, within};
 pub use report::{

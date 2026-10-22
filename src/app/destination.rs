@@ -121,6 +121,7 @@ pub(crate) fn warn_ineffective_options(
         (shared.verbose, "--verbose"),
         (shared.bars.is_some(), "--show-bars"),
         (!shared.purpose.is_empty(), "--table-purpose"),
+        (!shared.table_categories.is_empty(), "--table-category"),
         (!shared.languages.is_empty(), "--table-language"),
         (shared.no_bars, "--no-bars"),
         (shared.categories, "--show-categories"),

@@ -106,6 +106,7 @@ fn legends_are_muted_in_root_and_workspace_tables_without_changing_plain_output(
                 folder_rows: None,
                 bars: Bars::Off,
                 purposes: Purpose::ALL.to_vec(),
+                category_selection: Vec::new(),
                 languages: Vec::new(),
                 tables_only: false,
                 variants: LanguageVariants::Split,
@@ -256,6 +257,7 @@ fn columns_derive_the_layout_their_roles_describe() {
     // One purpose leaves only the ratio, which still starts its group.
     let production = PurposeColumns {
         shown: &[Purpose::Production],
+        sliced: false,
     };
     let folder = Columns::with_purposes(&code_columns("Folder"), &production);
     assert_eq!(header(&folder), " Folder  Lines  Code │ Comment %");
@@ -413,6 +415,8 @@ fn language_note_names_the_largest_exclusions_and_counts_the_rest() {
     let selection = TableSelection {
         rows: None,
         purposes_excluded: None,
+        categories_excluded: Vec::new(),
+        sliced: false,
         languages_excluded: ["A", "B", "C", "D", "E", "F", "G"]
             .into_iter()
             .map(|language| (language.to_string(), 1_000))
@@ -568,4 +572,14 @@ fn emphasis_bolds_the_strong_column_without_shifting_alignment() {
     assert!(bold.contains("\x1b[1;36m  12\x1b[0m"), "{bold}");
     assert_eq!(unstyled(&bold), plain);
     assert!(!plain.contains('\x1b'));
+}
+
+/// A consonant before a final `y` takes `ies`, as in "categories"; a vowel
+/// keeps the `s`, as in "keys".
+#[test]
+fn counts_pluralize_final_y_after_a_consonant() {
+    assert_eq!(counted(2, "category"), "2 categories");
+    assert_eq!(counted(1, "category"), "1 category");
+    assert_eq!(counted(2, "key"), "2 keys");
+    assert_eq!(counted(3, "file"), "3 files");
 }

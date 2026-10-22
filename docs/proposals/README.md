@@ -6,9 +6,7 @@ Active designs live directly in this directory. Retired records live in `archive
 
 <!-- doc-index:start -->
 
-| Document | Status | Date | Summary |
-| --- | --- | --- | --- |
-| [Table Category Filter](table-category-filter.md) | accepted | 2026-10-22 | A --table-category option that narrows tables to purpose:category keys, with exact names and quoted wildcards. |
+No documents in this directory.
 
 <!-- doc-index:end -->
 

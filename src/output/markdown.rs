@@ -133,7 +133,7 @@ pub fn render_markdown(
     order: RowOrder,
     variants: LanguageVariants,
 ) -> String {
-    let folds = variants.source_folds(rows, &Purpose::ALL, &[]);
+    let folds = variants.source_folds(rows, &Purpose::ALL, &[], &[]);
     let folded = variants.folded(rows);
     let (summary, rows) = match &folded {
         Some((rows, summary)) => (summary, &rows[..]),

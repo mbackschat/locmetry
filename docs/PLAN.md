@@ -12,10 +12,6 @@
 
 - [ ] Update the action versions behind the Node.js runtime-deprecation warnings observed in the v0.3.0 CI/release runs. Treat this as a separate tested maintenance change; the [published-release record](plans/archive/development-plan-2026-10-16.md#minor-release-v030--published) preserves the original evidence.
 
-## Table Category Filter
-
-- [ ] Implement the accepted [table category filter](proposals/table-category-filter.md), decided by the owner on 2026-10-22.
-
 ## Human Output Wording — Follow-up
 
 - [ ] Close the error gaps the [0.9.0 desk review](research/agent-regression-desk-review-0.9.0.md#findings) left open as B7, by the [wording rules](help-design.md#human-output-wording): workspace member errors that show the canonical absolute path instead of the typed one, `Subfolder target must be a directory` and `Output must be outside the read-only scan root`, which name no input, and clap's suggestion of `'--show-bars'` for `workspace --show-folders`.

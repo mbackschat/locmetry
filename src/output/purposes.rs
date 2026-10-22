@@ -81,18 +81,21 @@ pub(crate) fn purpose_title(purpose: Purpose) -> &'static str {
 pub(crate) enum Ratio {
     /// Test code per production line, when both purposes are counted.
     TestPerProduction,
-    /// Comment density, which replaces a ratio that lacks one of its purposes.
+    /// Comment density, which replaces a ratio that lacks all of one of its purposes.
     CommentShare,
 }
 
 /// The purposes a table counts, which decide its purpose columns and ratio.
 pub(super) struct PurposeColumns<'a> {
     pub(super) shown: &'a [Purpose],
+    /// A category selection keeps only part of Production's or Test's code.
+    pub(super) sliced: bool,
 }
 
 /// Every purpose: the unfiltered view, and Markdown's.
 pub(super) const ALL_PURPOSES: PurposeColumns<'static> = PurposeColumns {
     shown: &Purpose::ALL,
+    sliced: false,
 };
 
 impl PurposeColumns<'_> {
@@ -104,8 +107,13 @@ impl PurposeColumns<'_> {
         }
     }
 
+    /// Test/prod needs all of both its purposes: a slice of either, as a
+    /// category selection can keep, would compare unrelated code.
     pub(super) fn ratio(&self) -> Ratio {
-        match self.shown.contains(&Purpose::Production) && self.shown.contains(&Purpose::Test) {
+        match !self.sliced
+            && self.shown.contains(&Purpose::Production)
+            && self.shown.contains(&Purpose::Test)
+        {
             true => Ratio::TestPerProduction,
             false => Ratio::CommentShare,
         }
