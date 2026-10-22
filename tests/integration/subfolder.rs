@@ -192,7 +192,7 @@ fn inactive_config_warning_uses_diagnostic_prefix_and_absolute_paths() {
             String::from_utf8_lossy(&out.stderr)
         );
         assert_eq!(String::from_utf8(out.stderr).unwrap(), format!(
-            "locmetry: '{}' is inactive. Project configuration: {}. '--subfolder' retains project policy.\n",
+            "warning: '{}' is inactive. Project configuration: {}. '--subfolder' retains project policy.\n",
             root.join("web").join("src").join(".locmetryrc").display(), root.join(".locmetryrc").display()
         ));
     }

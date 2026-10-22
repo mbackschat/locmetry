@@ -652,6 +652,30 @@ pub(crate) struct Styling {
     pub(crate) no_color: bool,
 }
 
+/// How serious a stderr message is. Its label keeps severity readable without
+/// color, as clap's own `error:` prefix already does for usage errors.
+#[derive(Clone, Copy)]
+pub(crate) enum Severity {
+    Warning,
+    Error,
+}
+
+impl Severity {
+    fn role(self) -> Role {
+        match self {
+            Self::Warning => Role::Warning,
+            Self::Error => Role::Error,
+        }
+    }
+
+    fn label(self) -> &'static str {
+        match self {
+            Self::Warning => "warning:",
+            Self::Error => "error:",
+        }
+    }
+}
+
 impl Styling {
     pub(crate) fn theme(self, is_terminal: bool) -> Theme {
         Theme::terminal(
@@ -665,11 +689,11 @@ impl Styling {
         )
     }
 
-    pub(crate) fn stderr_message(self, role: Role, message: impl std::fmt::Display) {
+    pub(crate) fn stderr_message(self, severity: Severity, message: impl std::fmt::Display) {
         eprintln!(
             "{} {}",
             self.theme(io::stderr().is_terminal())
-                .paint(role, "locmetry:"),
+                .paint(severity.role(), severity.label()),
             plain(&message.to_string())
         );
     }

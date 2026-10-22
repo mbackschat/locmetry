@@ -79,7 +79,7 @@ impl Destination<'_> {
             })
             .collect();
         styling.stderr_message(
-            Role::Warning,
+            Severity::Warning,
             format_args!(
                 "'{option}' has no effect here. It applies only to {} output. {}",
                 names.join(" and "),

@@ -3,7 +3,6 @@ mod guides;
 
 use anyhow::Result;
 use app::*;
-use locmetry::style::Role;
 use std::io::{self, Write};
 use std::process::ExitCode;
 
@@ -68,11 +67,11 @@ fn main() -> ExitCode {
     match run(cli) {
         Ok(Outcome::Complete) => ExitCode::SUCCESS,
         Ok(Outcome::Partial(message)) => {
-            styling.stderr_message(Role::Warning, message);
+            styling.stderr_message(Severity::Warning, message);
             ExitCode::from(2)
         }
         Err(error) => {
-            styling.stderr_message(Role::Error, format_args!("{error:#}"));
+            styling.stderr_message(Severity::Error, format_args!("{error:#}"));
             ExitCode::FAILURE
         }
     }

@@ -221,7 +221,7 @@ pub(crate) fn run_root(
                 .as_ref()
                 .map(dunce::canonicalize)
                 .transpose()?;
-            styling.stderr_message(Role::Warning, format_args!(
+            styling.stderr_message(Severity::Warning, format_args!(
                 "'{}' is inactive. Project configuration: {}. '--subfolder' retains project policy.",
                 inactive.display(),
                 project_config.as_ref().map(|p| p.display().to_string()).unwrap_or_else(|| "none (built-in settings)".into())

@@ -187,6 +187,25 @@ fn unusable_roots_and_workspace_files_are_named_as_typed() {
     }
 }
 
+/// Severity must survive `NO_COLOR` and agents reading stderr as text, so each
+/// message names it as clap's usage errors already do.
+#[test]
+fn stderr_messages_name_their_severity_like_usage_errors() {
+    let temp = fixture();
+    for (args, prefix) in [
+        (vec!["--bogus"], "error: "),
+        (vec!["--root", "absent"], "error: "),
+        (
+            vec!["--root", "source", "--format", "json", "--show-bars"],
+            "warning: ",
+        ),
+    ] {
+        let result = run(temp.path(), &args);
+        let stderr = String::from_utf8_lossy(&result.stderr);
+        assert!(stderr.starts_with(prefix), "{args:?}: {stderr}");
+    }
+}
+
 /// Exit code 2 is reserved for partial reports, so usage errors must not use
 /// clap's default of 2.
 #[test]
