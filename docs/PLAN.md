@@ -10,6 +10,7 @@
 
 ## Configuration — Follow-up
 
+- [ ] Decide whether an unloaded `.locmetryrc` is project content. [PRODUCT](PRODUCT.md#project-configuration) excludes only the loaded configuration, so `--config OTHER` selects the scan root's `.locmetryrc` and reports it as an unrecognized file: coverage differs by one file from a discovery run of the same tree, which misleads anyone comparing a draft policy with the committed one. Two policy test drives hit this. Recommendation: exclude every file named `.locmetryrc` as policy, which also covers inactive ones in subfolders and nested projects, and record the coverage change as **Breaking**.
 - [ ] Decide the [language corrections](proposals/language-corrections.md) proposal. The Immich showcase found that a policy cannot correct a language the counter recognized wrongly: its ProGuard file counts as Prolog.
 
 ## Known Display Follow-up
