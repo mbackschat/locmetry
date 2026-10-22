@@ -75,7 +75,7 @@ pub(crate) fn explain_path(
             let member = members
                 .iter()
                 .find(|member| member.name == name)
-                .context("Unknown workspace member")?;
+                .with_context(|| format!("Unknown workspace member '{name}'"))?;
             let target = match &member.folder {
                 Some(folder) => Path::new(folder).join(components.as_path()),
                 None => components.as_path().to_owned(),
@@ -100,7 +100,12 @@ pub(crate) fn explain_path(
         workspace.map(|(file, _)| file),
         &overrides,
     )?;
-    let (path, result) = locmetry::explain::inspect(&prepared.root, &target, &mut prepared.policy)?;
+    let explained = locmetry::explain::inspect(&prepared.root, &target, &mut prepared.policy);
+    // A member-relative path in the error would not be what the user typed.
+    let (path, result) = match member {
+        Some(_) => explained.with_context(|| format!("Cannot explain '{}'", path.display()))?,
+        None => explained?,
+    };
     let mut explanation = locmetry::explain::Explanation {
         document_type: locmetry::explain::DocumentType::Explanation,
         schema_version: locmetry::explain::Version::V3,

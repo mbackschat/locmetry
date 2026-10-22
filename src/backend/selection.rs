@@ -41,13 +41,14 @@ pub(crate) fn inspect_path(root: &Path, path: &str, label: &str) -> Result<Optio
     let mut relative = PathBuf::new();
     for component in Path::new(path).components() {
         let exact = std::fs::read_dir(&current)
-            .with_context(|| format!("Cannot inspect {label} path spelling"))?
+            .with_context(|| format!("Cannot inspect the spelling of {label} target '{path}'"))?
             .collect::<std::io::Result<Vec<_>>>()?
             .iter()
             .any(|entry| entry.file_name() == component.as_os_str());
         current.push(component);
-        let metadata = std::fs::symlink_metadata(&current)
-            .with_context(|| format!("{label} target does not exist or cannot be inspected"))?;
+        let metadata = std::fs::symlink_metadata(&current).with_context(|| {
+            format!("{label} target '{path}' does not exist or cannot be inspected")
+        })?;
         ensure!(
             exact,
             "{label} target must use the exact spelling of directory entries: {path}"

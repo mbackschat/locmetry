@@ -39,12 +39,26 @@ fn missing_targets_report_absence_instead_of_a_spelling_alias() {
         let output = run(temp.path(), path, &[]);
         assert_eq!(output.status.code(), Some(1));
         let error = String::from_utf8(output.stderr).unwrap();
+        // With several targets, only the named path tells which one is missing.
         assert!(
-            error.contains("Explanation target does not exist or cannot be inspected"),
+            error.contains(&format!(
+                "Explanation target '{path}' does not exist or cannot be inspected"
+            )),
             "{error}"
         );
         assert!(!error.contains("exact spelling"), "{error}");
     }
+    let output = common::locmetry()
+        .current_dir(temp.path())
+        .args(["--subfolder", "nope", "--format", "table"])
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(1));
+    let error = String::from_utf8(output.stderr).unwrap();
+    assert!(
+        error.contains("Subfolder target 'nope' does not exist or cannot be inspected"),
+        "{error}"
+    );
 }
 #[test]
 fn explains_first_match_module_inference_and_mapping_with_actual_file_counts() {
@@ -182,13 +196,24 @@ fn workspace_queries_use_member_policy_and_qualified_paths() {
         run("api/main.py", &["--hidden", "false"]).status.code(),
         Some(1)
     );
-    assert_eq!(run("missing/main.py", &[]).status.code(), Some(1));
+    let unknown = run("missing/main.py", &[]);
+    assert_eq!(unknown.status.code(), Some(1));
+    assert!(String::from_utf8(unknown.stderr)
+        .unwrap()
+        .contains("Unknown workspace member 'missing'"));
+    // Errors name the MEMBER/PATH the user typed, not only the member-relative path.
     for path in ["api/missing.py", "api/missing/main.py"] {
         let output = run(path, &[]);
         assert_eq!(output.status.code(), Some(1));
-        assert!(String::from_utf8(output.stderr)
-            .unwrap()
-            .contains("Explanation target does not exist or cannot be inspected"));
+        let error = String::from_utf8(output.stderr).unwrap();
+        assert!(
+            error.contains(&format!("Cannot explain '{path}'")),
+            "{error}"
+        );
+        assert!(
+            error.contains("does not exist or cannot be inspected"),
+            "{error}"
+        );
     }
 }
 
