@@ -138,9 +138,53 @@ class ExperimentTests(unittest.TestCase):
             self.assertEqual(Counter(p["order"] for p in selected), {"AB": 2, "BA": 2})
             self.assertEqual({p["repetition"] for p in selected}, {1, 2, 3, 4})
 
+    def test_regression_protocol_reuses_full_help_gates_for_the_desk_review_tasks(self):
+        from collections import Counter
+        full = self.full_help_runner()
+        original = json.loads(full.PROTOCOL.read_text())
+        correction = json.loads(full.PROTOCOL.with_name("compare-help-routing-study.json").read_text())
+        protocol = json.loads(full.PROTOCOL.with_name("regression-0.8-study.json").read_text())
+        # Tasks 3, 4 and 8 are the ones the 2026-10-21 desk review flagged.
+        self.assertEqual(protocol["task_ids"], [3, 4, 8])
+        self.assertEqual(len(protocol["pairs"]), 12)
+        self.assertEqual(protocol["maximum_sessions"], 24)
+        self.assertFalse(protocol["previous_trials_included"])
+        # The control is the last checked candidate, the comparison-routing correction.
+        self.assertEqual(protocol["control"]["source_revision"], "c9098e20a3dade541c61ca8ca2bc347943e672be")
+        self.assertEqual(protocol["control"]["binary_sha256"],
+                         "882fe74a64f6df405f47deaa9cfc6f88190bbd337f4c7531183e36b926f35a05")
+        self.assertEqual(protocol["task_files"], {})
+        for key in ["model", "effort", "limits", "repetitions", "concurrent_pairs"]:
+            self.assertEqual(protocol[key], original[key])
+        for key in ["correctness", "per_task_medians", "overall_all_run_totals", "secondary", "zero_comparator"]:
+            self.assertEqual(protocol["decision_rule"][key], correction["decision_rule"][key])
+        for number in protocol["task_ids"]:
+            selected = [p for p in protocol["pairs"] if p["task"] == number]
+            self.assertEqual(Counter(p["order"] for p in selected), {"AB": 2, "BA": 2})
+            self.assertEqual({p["repetition"] for p in selected}, {1, 2, 3, 4})
+            task = json.loads(BENCH.TASK.with_name(f"task{number}.json").read_text())
+            self.assertEqual(task["limits"], protocol["limits"])
+
+    def test_full_help_grader_checks_the_configuration_layout_task_with_its_legacy_oracle(self):
+        spec = importlib.util.spec_from_file_location("full_help_score", Path(__file__).with_name("score_full_help.py"))
+        grader = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(grader)
+        with tempfile.TemporaryDirectory() as tmp:
+            pair = Path(tmp)
+            task = json.loads(BENCH.TASK.with_name("task8.json").read_text())
+            (pair / "manifest.json").write_text(json.dumps({"task": task}))
+            evidence = pair / "evidence/run-01"
+            evidence.mkdir(parents=True)
+            (evidence / "summary.json").write_text(json.dumps({"cli_invocations": 5}))
+            with patch.object(grader.LEGACY, "grade", return_value={"task": 8}) as legacy:
+                result = grader.grade(pair, "run-01")
+            legacy.assert_called_once_with(pair.resolve(), "run-01")
+            self.assertEqual(result, {"task": 8, "explorer_cli_invocations": 5})
+
     def test_runner_rejects_unknown_protocols_or_changed_fixed_task_and_session_counts(self):
         full = self.full_help_runner()
-        for path in [full.PROTOCOL, full.PROTOCOL.with_name("compare-help-routing-study.json")]:
+        for path in [full.PROTOCOL, full.PROTOCOL.with_name("compare-help-routing-study.json"),
+                     full.PROTOCOL.with_name("regression-0.8-study.json")]:
             protocol = json.loads(path.read_text())
             full.validate_protocol(protocol)
             for key, value in [("revision", "unrecognized-study"), ("task_ids", [1, 4]), ("maximum_sessions", 48)]:

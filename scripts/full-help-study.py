@@ -15,15 +15,18 @@ BENCH = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(BENCH)
 PROTOCOL = BENCH.TASK.parent / "full-help-study.json"
 TASK_IDS = [1, 2, 3, 4, 5, 6, 7, 9, 10, 11]
+# Each frozen protocol's task set; a new study adds its own revision here.
+STUDY_TASKS = {
+    "full-help-coverage-v1": TASK_IDS,
+    "compare-help-routing-v1": [1, 4, 5, 7],
+    "agent-regression-0.8-v1": [3, 4, 8],
+}
 
 
 def validate_protocol(protocol):
-    if protocol["revision"] == "full-help-coverage-v1":
-        task_ids = TASK_IDS
-    elif protocol["revision"] == "compare-help-routing-v1":
-        task_ids = [1, 4, 5, 7]
-    else:
-        raise ValueError("Unknown study; only the fixed full-help and comparison-routing protocols are supported")
+    task_ids = STUDY_TASKS.get(protocol["revision"])
+    if task_ids is None:
+        raise ValueError("Unknown study; only the fixed protocols in STUDY_TASKS are supported")
     if protocol["task_ids"] != task_ids or protocol["repetitions"] != 4 or protocol["concurrent_pairs"] != 3:
         raise ValueError("The fixed protocol requires its task set, four pairs each and at most three concurrent pairs")
     pairs = protocol["pairs"]
