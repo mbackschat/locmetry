@@ -138,7 +138,7 @@ path = src
     );
     let table = String::from_utf8(run(&root, &["--verbose", "--format", "table"]).stdout).unwrap();
     assert!(
-        table.contains(" Git submodules: vendor/lib (2 code lines); exclude them with --exclude or scope.exclude if they are not this project's code.\n"),
+        table.contains(" Git submodules: vendor/lib (2 code lines). If they are not this project's code, exclude them with '--exclude' or 'scope.exclude'.\n"),
         "{table}"
     );
     let (_, document, _) = headline(&root, &["--exclude", "vendor/lib/**"]);
@@ -211,7 +211,7 @@ fn exclusions_that_exclude_nothing_are_reported() {
     );
     let table = String::from_utf8(run(&root, &["--verbose", "--format", "table"]).stdout).unwrap();
     assert!(
-        table.contains(" Exclusions that excluded nothing: third_party, **/*.gen.ts, build/**; exclude a folder as <folder>/**, and an ignore file may already hide the path.\n"),
+        table.contains(" Exclusions that excluded nothing: third_party, **/*.gen.ts, build/**. Exclude a folder as '<folder>/**'. An ignore file may already hide the path.\n"),
         "{table}"
     );
     let markdown = String::from_utf8(run(&root, &["--format", "markdown"]).stdout).unwrap();
@@ -247,7 +247,7 @@ fn categories_table_is_shown_on_request() {
  other:unclaimed         1      2     2
  production:tooling      1      1     1
  test:test               1      1     1
- Rows of one purpose add up to that purpose's Code; all rows add up to the total Code.
+ Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
 ";
     assert!(table.contains(expected), "{table}");
 }
@@ -281,7 +281,7 @@ fn reports_name_the_build_modules_that_decided_production() {
     let table = String::from_utf8(run(&root, &["--verbose", "--format", "table"]).stdout).unwrap();
     assert!(
         table.contains(
-            " Production from build modules: gradle 2 code lines in 1 module, npm 1 code line in 2 modules.\n"
+            " Production from build modules: 2 code lines in 1 'gradle' module, 1 code line in 2 'npm' modules.\n"
         ),
         "{table}"
     );
@@ -355,7 +355,7 @@ fn reports_name_the_largest_files_build_modules_claimed() {
     let table = String::from_utf8(run(&root, &["--verbose", "--format", "table"]).stdout).unwrap();
     assert!(
         table.contains(
-            " Largest module-claimed production; generated or vendored code here needs an entry:\n   web/src/client.ts             7 code lines  npm web\n   backend/src/main/kotlin/A.kt  2 code lines  gradle backend\n"
+            " Largest files counted as Production only by a build layout. If one is generated or vendored, exclude or reclassify it in '.locmetryrc':\n   web/src/client.ts             7 code lines  web (npm)\n   backend/src/main/kotlin/A.kt  2 code lines  backend (gradle)\n"
         ),
         "{table}"
     );
@@ -397,7 +397,10 @@ fn reports_name_the_largest_files_build_modules_claimed() {
     let (_, document, _) = headline(&root, &[]);
     assert_eq!(document["summary"]["largest_module_files"], json!([]));
     let table = String::from_utf8(run(&root, &["--verbose", "--format", "table"]).stdout).unwrap();
-    assert!(!table.contains("module-claimed"), "{table}");
+    assert!(
+        !table.contains("Largest files counted as Production"),
+        "{table}"
+    );
 }
 
 /// A folder holding most of the unclaimed code splits even when many

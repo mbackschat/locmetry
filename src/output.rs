@@ -117,7 +117,7 @@ pub struct MemberView {
 const LANGUAGE_RATIO_NOTE: &str =
     "Tests written in another language than the code they test skew per-language Test/prod.";
 const CATEGORY_LEGEND: &str =
-    "Rows of one purpose add up to that purpose's Code; all rows add up to the total Code.";
+    "Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.";
 
 /// Sorts labelled rows by `order`, where `code` gives a row's code lines.
 fn ordered<T>(
@@ -168,6 +168,17 @@ fn plural(count: u64, noun: &str) -> String {
 /// `count` followed by `noun`, pluralized with `s` unless it is one.
 pub(crate) fn counted(count: u64, noun: &str) -> String {
     format!("{} {}", grouped(count), plural(count, noun))
+}
+
+/// A literal value inside a sentence, single-quoted as the human output
+/// wording rules require (docs/help-design.md, Human Output Wording).
+pub(crate) fn quoted(value: &str) -> String {
+    format!("'{value}'")
+}
+
+/// A complete, quoted command, so its flags and a trailing `-` read as one unit.
+pub(crate) fn command(arguments: &str) -> String {
+    format!("'locmetry {arguments}'")
 }
 
 /// Source counts and code per purpose for each language. As in the

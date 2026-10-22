@@ -157,7 +157,7 @@ fn subfolder_failure_coverage_and_unused_policy_are_local() {
         assert!(out.status.success());
         let text = String::from_utf8(out.stdout).unwrap();
         assert!(
-            text.contains("check policy use with an unrestricted measurement"),
+            text.contains("Check policy use with an unrestricted measurement"),
             "{text}"
         );
         assert!(!text.contains("exclude a folder as"), "{text}");

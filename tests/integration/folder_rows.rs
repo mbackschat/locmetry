@@ -107,7 +107,7 @@ fn adaptive_rows_partition_purposes_direct_files_and_weighted_ratios() {
             ("Total".into(), values(18, 11, 6, 1, "0.55")),
         ])
     );
-    assert!(text.contains("Adaptive folder detail; rows cover measured source once."));
+    assert!(text.contains("Adaptive folder detail: rows cover measured source once."));
     let named = table(root, 7, &["--sort", "name"]);
     assert_eq!(counts(&text), counts(&named));
     assert_ne!(folder_rows(&text), folder_rows(&named));
@@ -415,7 +415,7 @@ fn adaptive_styling_preserves_plain_alignment_and_mutes_the_legend() {
     let plain = render(locmetry::style::Theme::PLAIN);
     let styled = render(locmetry::style::Theme::terminal(true));
     assert!(
-        styled.contains("\x1b[90mAdaptive folder detail; rows cover measured source once.\x1b[0m")
+        styled.contains("\x1b[90mAdaptive folder detail: rows cover measured source once.\x1b[0m")
     );
     assert_eq!(plain, common::unstyled(&styled));
 }
@@ -499,7 +499,9 @@ fn budget_hint_names_the_largest_unsplit_folder_after_other_expansions() {
         assert!(rows.contains_key("src/only/deep"));
         assert_eq!(rows["Total"][0], "899");
         assert!(
-            text.contains("packages has more folder detail; increase --folder-rows."),
+            text.contains(
+                "'packages' has more folder detail. Increase '--folder-rows' to show it."
+            ),
             "{text}"
         );
     }
@@ -523,7 +525,9 @@ fn budget_hint_names_the_parent_of_the_largest_remainder() {
     let text = table(root, 3, &[]);
     assert_eq!(counts(&text)["packages (5 more child folders)"][0], "50");
     assert!(
-        text.contains("More child folders of packages can be shown; increase --folder-rows."),
+        text.contains(
+            "More child folders of 'packages' can be shown. Increase '--folder-rows' to show them."
+        ),
         "{text}"
     );
 }
@@ -537,14 +541,14 @@ fn budget_hint_in_wide_tables_depends_on_the_largest_row_only() {
     source(root, "small/p.rs", 1);
     let text = table(root, 1, &[]);
     assert!(
-        text.contains("large has more folder detail; increase --folder-rows."),
+        text.contains("'large' has more folder detail. Increase '--folder-rows' to show it."),
         "{text}"
     );
     source(root, "flat/p.rs", 20);
     let text = table(root, 1, &[]);
-    assert!(!text.contains("increase --folder-rows"), "{text}");
+    assert!(!text.contains("Increase '--folder-rows'"), "{text}");
     source(root, "p.rs", 30);
-    assert!(!table(root, 1, &[]).contains("increase --folder-rows"));
+    assert!(!table(root, 1, &[]).contains("Increase '--folder-rows'"));
 }
 
 #[test]
@@ -553,7 +557,7 @@ fn zero_code_folders_do_not_promise_more_detail_with_a_larger_budget() {
     let root = temp.path();
     write(root, "empty/a/p.rs", "// comment\n");
     write(root, "empty/b/p.rs", "// comment\n");
-    assert!(!table(root, 1, &[]).contains("increase --folder-rows"));
+    assert!(!table(root, 1, &[]).contains("Increase '--folder-rows'"));
 }
 
 #[cfg(unix)]
@@ -565,11 +569,11 @@ fn budget_hint_uses_code_order_ties_and_sanitizes_its_path() {
     source(root, "z\x1b[31m\n/y/p.rs", 5);
     let text = table(root, 1, &[]);
     assert!(
-        text.contains("z [31m  has more folder detail; increase --folder-rows."),
+        text.contains("'z [31m ' has more folder detail. Increase '--folder-rows' to show it."),
         "{text}"
     );
     source(root, "a/p.rs", 10);
     for order in ["code", "name"] {
-        assert!(!table(root, 1, &["--sort", order]).contains("increase --folder-rows"));
+        assert!(!table(root, 1, &["--sort", order]).contains("Increase '--folder-rows'"));
     }
 }

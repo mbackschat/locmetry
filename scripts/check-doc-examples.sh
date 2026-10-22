@@ -384,7 +384,7 @@ done
 extract_blocks 'Look inside large folders' "$temporary/adaptive.sh" 2 0 "$repository/docs/guides/reports.md"
 (cd "$temporary/issues" && bash "$temporary/adaptive.sh") > "$temporary/adaptive.stdout"
 [[ ! -s "$temporary/adaptive.stdout" ]]
-grep -Fq 'Adaptive folder detail; rows cover measured source once.' "$temporary/issues/folders.txt"
+grep -Fq 'Adaptive folder detail: rows cover measured source once.' "$temporary/issues/folders.txt"
 grep -Eq '^ web/src +2 .*1 +1 +0 .*1\.00' "$temporary/issues/folders.txt"
 
 # Two test folders distinguish a language sum from a list of per-folder rows.

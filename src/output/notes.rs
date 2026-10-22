@@ -28,7 +28,8 @@ pub(super) fn repositories_note(members: &[MemberView], kind: MemberNotes) -> Op
                     "file with a parsing failure",
                 ));
             }
-            (!findings.is_empty()).then(|| format!("{}: {}", member.name, findings.join(", ")))
+            (!findings.is_empty())
+                .then(|| format!("{} has {}", quoted(&member.name), findings.join(" and ")))
         })
         .collect();
     let label = match kind {
@@ -36,7 +37,7 @@ pub(super) fn repositories_note(members: &[MemberView], kind: MemberNotes) -> Op
         MemberNotes::Unclaimed => "Unclaimed source by repository",
         MemberNotes::Unavailable => "Unavailable counts",
     };
-    (!parts.is_empty()).then(|| format!("{label}: {}.", parts.join("; ")))
+    (!parts.is_empty()).then(|| format!("{label}: {}.", parts.join(", ")))
 }
 
 /// Code each build system classified, in one line.
@@ -55,9 +56,11 @@ pub(super) fn build_modules_note(modules: &[ModuleShare], order: RowOrder) -> Op
         .into_iter()
         .map(|(id, system)| {
             format!(
-                "{id} {} in {}",
+                "{} in {} {} {}",
                 counted(system.code, "code line"),
-                counted(system.modules, "module")
+                grouped(system.modules),
+                quoted(&id),
+                plural(system.modules, "module")
             )
         })
         .collect();
@@ -116,7 +119,11 @@ pub(super) fn unclaimed_note(folders: &[FolderShare], theme: Theme) -> String {
         )
         .unwrap();
     }
-    note + "\n To inspect or refine purpose classification, use locmetry --guide configure; --files --output - shows each file's rule."
+    note + &format!(
+        "\n To inspect or refine purpose classification, use {}. {} shows each file's rule.",
+        command("--guide configure"),
+        command("--files --output -")
+    )
 }
 
 /// The largest module-claimed files as an aligned list; like the unclaimed
@@ -130,16 +137,16 @@ pub(super) fn module_files_note(files: &[ModuleFile]) -> String {
                 grouped(file.code),
                 plural(file.code, "code line"),
                 format!(
-                    "{} {}",
-                    plain(&file.detector),
-                    plain(module_label(&file.module))
+                    "{} ({})",
+                    plain(module_label(&file.module)),
+                    plain(&file.detector)
                 ),
             ]
         })
         .collect();
     let [path, code, unit, _] = column_widths(&rows);
     let mut note = String::from(
-        "Largest module-claimed production; generated or vendored code here needs an entry:",
+        "Largest files counted as Production only by a build layout. If one is generated or vendored, exclude or reclassify it in '.locmetryrc':",
     );
     for [file, lines, lines_unit, module] in &rows {
         write!(
@@ -154,7 +161,7 @@ pub(super) fn module_files_note(files: &[ModuleFile]) -> String {
 /// Label of a module folder; `.` is the scan root.
 pub(super) fn module_label(path: &str) -> &str {
     match path {
-        "." => "(scan root)",
+        "." => "scan root",
         path => path,
     }
 }
@@ -180,7 +187,7 @@ pub(super) fn submodules_note(submodules: &[SubmoduleShare]) -> Option<String> {
         .map(|share| format!("{} ({})", share.path, counted(share.code, "code line")))
         .collect();
     Some(format!(
-        "Git submodules: {}; exclude them with --exclude or scope.exclude if they are not this project's code.",
+        "Git submodules: {}. If they are not this project's code, exclude them with '--exclude' or 'scope.exclude'.",
         shares.join(", ")
     ))
 }
@@ -212,13 +219,13 @@ pub(super) fn unused_exclusions_note(
 ) -> Option<String> {
     (!patterns.is_empty()).then(|| {
         format!(
-            "Exclusions that excluded nothing{}: {}; {}.",
+            "Exclusions that excluded nothing{}: {}. {}.",
             subtree(subfolder),
             patterns.join(", "),
             match subfolder {
-                Some(_) => "check policy use with an unrestricted measurement",
+                Some(_) => "Check policy use with an unrestricted measurement",
                 None =>
-                    "exclude a folder as <folder>/**, and an ignore file may already hide the path",
+                    "Exclude a folder as '<folder>/**'. An ignore file may already hide the path",
             }
         )
     })
@@ -240,9 +247,12 @@ pub(super) fn inline_tests_legend(rows: &[FileRecord]) -> Vec<String> {
         .into_iter()
         .map(|((language, purpose), (files, code))| {
             format!(
-                "{language} {purpose} includes {} of inline #[cfg(test)] tests in {}; --files --output - names them.",
+                "{} in {} includes {} of inline #[cfg(test)] tests in {}. {} names them.",
+                purpose_title(purpose),
+                quoted(language),
                 counted(code, "code line"),
-                counted(files, "file")
+                counted(files, "file"),
+                command("--files --output -")
             )
         })
         .collect()

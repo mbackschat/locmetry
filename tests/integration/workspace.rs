@@ -251,7 +251,7 @@ fn workspace_notes_name_the_member_of_each_finding() {
         "{table}"
     );
     assert!(
-        table.contains("Exclusions that excluded nothing: third_party (web);"),
+        table.contains("Exclusions that excluded nothing: third_party (web)."),
         "{table}"
     );
     assert!(
@@ -609,11 +609,11 @@ fn workspace_table_compares_repositories() {
     );
     assert!(!table.contains(" Folder "), "{table}");
     assert!(
-        table.contains(" Production + Test + Other = Code; Test/prod = Test / Production (Code); Share = Code / workspace Code.\n"),
+        table.contains(" Production + Test + Other = Code · Test/prod = Test / Production (Code) · Share = Code / workspace Code\n"),
         "{table}"
     );
     assert!(
-        table.contains(" Unclaimed source by repository: api: 1 unclaimed file (1 code line); web: 2 unclaimed files (2 code lines).\n"),
+        table.contains(" Unclaimed source by repository: 'api' has 1 unclaimed file (1 code line), 'web' has 2 unclaimed files (2 code lines).\n"),
         "{table}"
     );
 }
@@ -639,7 +639,7 @@ fn workspace_markdown_breaks_categories_and_languages_down_by_repository() {
         "| Repository | Lines | **Code** | Production | Test | Other | Test/prod | Share |\n",
         "| web | 6 | 6 | 3 | 1 | 2 | 0.33 | 60.0% |\n",
         "| **Total** | **10** | **10** | **4** | **3** | **3** | **0.75** | **100.0%** |\n",
-        "Production + Test + Other = Code; Test/prod = Test / Production (Code); Share = Code / workspace Code.",
+        "Production + Test + Other = Code · Test/prod = Test / Production (Code) · Share = Code / workspace Code",
         "Each total is the sum of its repository columns.",
         "## Source categories by repository\n",
         "| Category | api Lines | api Code | web Lines | web Code | Total Lines | Total Code |\n",
@@ -649,7 +649,7 @@ fn workspace_markdown_breaks_categories_and_languages_down_by_repository() {
         "| Language | api Lines | api Code | web Lines | web Code | Total Lines | Total Code |\n",
         "| TypeScript | 0 | 0 | 6 | 6 | 6 | 6 |\n",
         "| Rust | 4 | 4 | 0 | 0 | 4 | 4 |\n",
-        "Repositories to review: api: 1 unclaimed file (1 code line); web: 2 unclaimed files (2 code lines).",
+        "Repositories to review: 'api' has 1 unclaimed file (1 code line), 'web' has 2 unclaimed files (2 code lines).",
     ] {
         assert!(markdown.contains(expected), "{expected:?} missing in:\n{markdown}");
     }
@@ -894,7 +894,7 @@ fn folder_members_report_unused_policy_once_for_the_workspace() {
     assert!(verbose.contains("docs-tooling"), "{verbose}");
     assert!(!verbose.contains("docs-tooling ("), "{verbose}");
     assert!(verbose.contains("Project: "), "{verbose}");
-    assert!(verbose.contains("folders api, web"), "{verbose}");
+    assert!(verbose.contains("(folders: api, web)"), "{verbose}");
 }
 
 #[test]

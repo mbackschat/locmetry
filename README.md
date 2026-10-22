@@ -73,10 +73,10 @@ cd immich && locmetry
  C Header        1        1        1 │        0       0 │       1       0       0 │      0.00 │   0.0%  ▏
  ────────────────────────────────────┼──────────────────┼─────────────────────────┼───────────┼─────────────────────────
  Total       2,529  333,360  282,770 │    9,149  41,441 │ 179,704  86,901  16,165 │      0.48 │ 100.0%
- Lines = Code + Comments + Blanks; Production + Test + Other = Code; Test/prod = Test / Production (Code).
+ Lines = Code + Comments + Blanks · Production + Test + Other = Code · Test/prod = Test / Production (Code)
  Tests written in another language than the code they test skew per-language Test/prod.
  Folded: TSX → TypeScript.
- Share = Code / total Code. Bars: █ Production  ▓ Test  ░ Other; the largest row fills the bar.
+ Share = Code / total Code. Bars: █ Production  ▓ Test  ░ Other. The largest row fills the bar.
 ```
 
 Code is split by purpose; comments and blanks stay separate. Data and documentation do not inflate source totals. Language variants count within their family's row, here TSX within TypeScript, and the `Folded:` line names each fold; `--split-languages` shows them separately, and JSON keeps every backend language. `Test/prod` divides test code by production code; it describes volume, not coverage. If your numbers differ from these, personal defaults in `~/.config/locmetry/config.toml` (on Windows `%APPDATA%\locmetry\config.toml`) may apply; `--no-user-config` ignores them.
@@ -126,8 +126,8 @@ cd immich && locmetry --show-categories
  test:test-infrastructure       4      251      234 │  0.1%  ▏
  production:build-tooling       4      186      148 │  0.1%  ▏
  test:performance-test          1       81       64 │  0.0%  ▏
- Rows of one purpose add up to that purpose's Code; all rows add up to the total Code.
- Share = Code / total Code. Bars: █ Production  ▓ Test  ░ Other; the largest row fills the bar.
+ Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
+ Share = Code / total Code. Bars: █ Production  ▓ Test  ░ Other. The largest row fills the bar.
 ```
 
 Categories are labels assigned by built-in conventions, such as `test` and `build-tooling`, and by the policy, such as `generated`, `native` and `tooling`; a line counter has no equivalent.
@@ -165,8 +165,8 @@ locmetry workspace --workspace-file immich/workspace.toml
  machine-learning    6,698    5,291 │   3,221   2,070       0 │      0.64 │   1.9%  █▓
  ───────────────────────────────────┼─────────────────────────┼───────────┼─────────────────────────────────────────────
  Total             332,353  281,955 │ 178,889  86,901  16,165 │      0.49 │ 100.0%
- Production + Test + Other = Code; Test/prod = Test / Production (Code); Share = Code / workspace Code.
- Bars: █ Production  ▓ Test  ░ Other; the largest row fills the bar.
+ Production + Test + Other = Code · Test/prod = Test / Production (Code) · Share = Code / workspace Code
+ Bars: █ Production  ▓ Test  ░ Other. The largest row fills the bar.
 ```
 
 Compare saved reports of two releases, `v3.2.0` and `v3.3.4`:
@@ -313,7 +313,7 @@ The explanation identifies the deciding stage, the matching pattern and the reas
 
 Built-in wrapper patterns cover `gradlew`, `gradlew.bat`, `mvnw`, `mvnw.cmd`, and files under `gradle/wrapper/` or `.mvn/wrapper/` at any depth. The enabled convention classifies them as `other` / `third-party-wrapper` unless an override or earlier convention wins; [wrapper details and precedence](docs/PRODUCT.md#matching-and-precedence) define the conditions.
 
-Classification applies to whole files, so inline tests cannot receive a separate purpose. When Rust production files contain `#[cfg(test)]` items, a line below the language table names their code, such as “Rust production includes 145 code lines of inline #[cfg(test)] tests in 3 files”, and full JSON reports them as `inline_tests`. [Measurement limits](docs/measurement.md) define this and other boundaries.
+Classification applies to whole files, so inline tests cannot receive a separate purpose. When Rust production files contain `#[cfg(test)]` items, a line below the language table names their code, such as “Production in 'Rust' includes 145 code lines of inline #[cfg(test)] tests in 3 files”, and full JSON reports them as `inline_tests`. [Measurement limits](docs/measurement.md) define this and other boundaries.
 
 ### Build modules
 
@@ -335,7 +335,7 @@ On Immich, `cd immich && locmetry --verbose` reports what the modules contribute
 
 <!-- showcase-modules -->
 ```text
- Production from build modules: npm 107,922 code lines in 12 modules, dart 58,827 code lines in 2 modules, gradle 4,102 code lines in 2 modules, python 3,037 code lines in 1 module.
+ Production from build modules: 107,922 code lines in 12 'npm' modules, 58,827 code lines in 2 'dart' modules, 4,102 code lines in 2 'gradle' modules, 3,037 code lines in 1 'python' module.
 ```
 
 Tests inside these trees stay tests, and nested modules decide for themselves. Detection reads file names only and never runs a build, so custom layouts need configuration; [module detection](docs/PRODUCT.md#module-detection) has the details.

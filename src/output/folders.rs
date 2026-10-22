@@ -1,4 +1,4 @@
-use super::RowOrder;
+use super::{quoted, RowOrder};
 use crate::{
     paths::{below, parent, ROOT},
     report::{collapse_folder, Summary},
@@ -222,12 +222,12 @@ pub(super) fn adaptive(
         .filter(|row| row.code() > 0)
         .and_then(|row| match row.kind {
             RowKind::Folder if !tree.children(&row.path).is_empty() => Some(format!(
-                "{} has more folder detail; increase --folder-rows.",
-                row.path
+                "{} has more folder detail. Increase '--folder-rows' to show it.",
+                quoted(&row.path)
             )),
             RowKind::More(_) => Some(format!(
-                "More child folders of {} can be shown; increase --folder-rows.",
-                row.path
+                "More child folders of {} can be shown. Increase '--folder-rows' to show them.",
+                quoted(&row.path)
             )),
             RowKind::Folder | RowKind::Direct => None,
         });

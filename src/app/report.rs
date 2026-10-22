@@ -103,7 +103,7 @@ pub(crate) fn measured_roots(location: &Location, markdown: bool) -> String {
                 .map(path)
                 .collect();
             format!(
-                "Project: {}, folders {}",
+                "Project: {} (folders: {})",
                 path(&members[0].root),
                 folders.join(", ")
             )

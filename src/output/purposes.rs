@@ -185,6 +185,6 @@ impl PurposeColumns<'_> {
         .into_iter()
         .flatten()
         .collect();
-        format!("{}.", parts.join("; "))
+        parts.join(" · ")
     }
 }

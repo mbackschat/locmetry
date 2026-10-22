@@ -94,14 +94,14 @@ fn verbose_tables_expose_routine_findings_with_optional_classification_advice() 
         let text = String::from_utf8(output.stdout).unwrap();
         for note in [
             "Not source code:",
-            "; --files --output - lists each file's kind.",
+            ". 'locmetry --files --output -' lists each file's kind.",
             "Production from build modules:",
             "Git submodules:",
             "Unclaimed source:",
             "Entries that decided",
             "Exclusions that excluded",
-            "Unrecognized files: 2 unrecognized files (no extension: 1, png: 1)",
-            "To inspect or refine purpose classification, use locmetry --guide configure",
+            "Unrecognized files: 2 (no extension: 1, png: 1)",
+            "To inspect or refine purpose classification, use 'locmetry --guide configure'",
         ] {
             assert!(text.contains(note), "missing {note}: {text}");
         }
@@ -159,8 +159,8 @@ fn mixed_failures_stay_visible_without_routine_notes_or_report_path_lists() {
                     .lines()
                     .find(|line| line.contains("Unavailable counts:"))
                     .unwrap();
-                assert!(members.contains("api: 1 file with a parsing failure"));
-                assert!(members.contains("web: 1 file with a parsing failure"));
+                assert!(members.contains("'api' has 1 file with a parsing failure"));
+                assert!(members.contains("'web' has 1 file with a parsing failure"));
                 assert!(!members.contains("unclaimed"));
                 assert_eq!(text.contains("Unclaimed source by repository:"), verbose);
             }
@@ -278,19 +278,19 @@ fn unreadable_counts_and_member_failures_are_separate_from_optional_findings() {
                 },
             );
             assert!(
-                text.contains("Unavailable counts: api: 1 unreadable file."),
+                text.contains("Unavailable counts: 'api' has 1 unreadable file."),
                 "{text}"
             );
             assert!(
                 text.contains(&format!(
-                    "{} 1 unreadable file; missing lines are not zero.",
+                    "{} 1 unreadable file. Their lines are unknown, not zero.",
                     theme.paint(Role::Warning, "Not counted:")
                 )),
                 "{text}"
             );
             assert_eq!(
                 text.contains(
-                    "Unclaimed source by repository: api: 2 unclaimed files (3 code lines)."
+                    "Unclaimed source by repository: 'api' has 2 unclaimed files (3 code lines)."
                 ),
                 verbose
             );
@@ -327,7 +327,7 @@ fn verbose_note_counts_code_in_documentation_snippets() {
         assert!(
             text.contains(
                 " Not source code: 2 documentation files (11 lines, including 3 code lines in \
-                 embedded snippets); --files --output - lists each file's kind.\n"
+                 embedded snippets). 'locmetry --files --output -' lists each file's kind.\n"
             ),
             "{text}"
         );

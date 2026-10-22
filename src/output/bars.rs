@@ -57,8 +57,8 @@ impl BarKind {
 
     pub(super) fn scale_note(self) -> &'static str {
         match self {
-            BarKind::Purpose => "; the largest row fills the bar.",
-            BarKind::Comments => "; the densest row fills the bar.",
+            BarKind::Purpose => ". The largest row fills the bar.",
+            BarKind::Comments => ". The densest row fills the bar.",
         }
     }
 

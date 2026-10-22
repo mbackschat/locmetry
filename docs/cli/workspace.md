@@ -29,7 +29,7 @@ locmetry workspace --workspace-file workspace.toml --no-user-config --no-color -
  TypeScript      4     13    10 │        3       0 │     6     3      1 │      0.50
  ───────────────────────────────┼──────────────────┼────────────────────┼──────────
  Total          11     37    29 │        6       2 │    20     7      2 │      0.35
- Lines = Code + Comments + Blanks; Production + Test + Other = Code; Test/prod = Test / Production (Code).
+ Lines = Code + Comments + Blanks · Production + Test + Other = Code · Test/prod = Test / Production (Code)
  Tests written in another language than the code they test skew per-language Test/prod.
  Folded: TSX → TypeScript.
 
@@ -40,7 +40,7 @@ locmetry workspace --workspace-file workspace.toml --no-user-config --no-color -
  web            19    16 │    12     3      1 │      0.25 │  55.2%
  ────────────────────────┼────────────────────┼───────────┼───────
  Total          37    29 │    20     7      2 │      0.35 │ 100.0%
- Production + Test + Other = Code; Test/prod = Test / Production (Code); Share = Code / workspace Code.
+ Production + Test + Other = Code · Test/prod = Test / Production (Code) · Share = Code / workspace Code
 
  ─────────────────────────────────────────────
  Category                   Files  Lines  Code
@@ -51,21 +51,24 @@ locmetry workspace --workspace-file workspace.toml --no-user-config --no-color -
  production:implementation      5     19    16
  production:tooling             1      3     2
  test:test                      2      9     7
- Rows of one purpose add up to that purpose's Code; all rows add up to the total Code.
+ Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
 
- Not source code: 2 data files (2 lines), 1 documentation file (3 lines); --files --output - lists each file's kind.
- Production from build modules: go 4 code lines in 1 module, npm 12 code lines in 1 module.
- Largest module-claimed production; generated or vendored code here needs an entry:
-   web/src/index.html              5 code lines  npm web
-   service/src/main.go             4 code lines  go service
-   web/src/orders/Order.ts         3 code lines  npm web
-   web/src/orders/OrderView.tsx    3 code lines  npm web
-   web/src/orders/receipt.acmetpl  1 code line   npm web
+ Not source code: 2 data files (2 lines), 1 documentation file (3 lines). 'locmetry --files --output -' lists each
+file's kind.
+ Production from build modules: 4 code lines in 1 'go' module, 12 code lines in 1 'npm' module.
+ Largest files counted as Production only by a build layout. If one is generated or vendored, exclude or reclassify it
+in '.locmetryrc':
+   web/src/index.html              5 code lines  web (npm)
+   service/src/main.go             4 code lines  service (go)
+   web/src/orders/Order.ts         3 code lines  web (npm)
+   web/src/orders/OrderView.tsx    3 code lines  web (npm)
+   web/src/orders/receipt.acmetpl  1 code line   web (npm)
  Unclaimed source: 1 code line in 1 file, here:
    service/experiments  1 code line  1 file
- To inspect or refine purpose classification, use locmetry --guide configure; --files --output - shows each file's rule.
- Unclaimed source by repository: service: 1 unclaimed file (1 code line).
- Unrecognized files: 2 unrecognized files (asset: 1, mod: 1); missing lines are not zero.
+ To inspect or refine purpose classification, use 'locmetry --guide configure'. 'locmetry --files --output -' shows each
+file's rule.
+ Unclaimed source by repository: 'service' has 1 unclaimed file (1 code line).
+ Unrecognized files: 2 (asset: 1, mod: 1). Their lines are unknown, not zero.
 
 ```
 
@@ -142,10 +145,10 @@ locmetry workspace --workspace-file workspace.toml --no-user-config --no-color -
  TypeScript      2      8     6 │        2       0 │     3     3 │      1.00 │  22.2%  █████▓▓▓▓▓
  ───────────────────────────────┼──────────────────┼─────────────┼───────────┼──────────────────────
  Total           9     33    27 │        4       2 │    20     7 │      0.35 │ 100.0%
- Lines = Code + Comments + Blanks; Production + Test = Code; Test/prod = Test / Production (Code).
+ Lines = Code + Comments + Blanks · Production + Test = Code · Test/prod = Test / Production (Code)
  Tests written in another language than the code they test skew per-language Test/prod.
  Not shown (purpose): Other (2 code lines).
- Share = Code / total Code. Bars: █ Production  ▓ Test; the largest row fills the bar.
+ Share = Code / total Code. Bars: █ Production  ▓ Test. The largest row fills the bar.
 
  ───────────────────────────────────────────────────────────────────────────────────────────────────
  Repository  Lines  Code │ Prod.  Test │ Test/prod │  Share  Code share
@@ -154,8 +157,8 @@ locmetry workspace --workspace-file workspace.toml --no-user-config --no-color -
  web            17    15 │    12     3 │      0.25 │  55.6%  ███████████████████████████████▓▓▓▓▓▓▓▓
  ────────────────────────┼─────────────┼───────────┼────────────────────────────────────────────────
  Total          33    27 │    20     7 │      0.35 │ 100.0%
- Production + Test = Code; Test/prod = Test / Production (Code); Share = Code / workspace Code.
- Bars: █ Production  ▓ Test; the largest row fills the bar.
+ Production + Test = Code · Test/prod = Test / Production (Code) · Share = Code / workspace Code
+ Bars: █ Production  ▓ Test. The largest row fills the bar.
 
 ```
 
@@ -176,7 +179,7 @@ locmetry workspace --workspace-file workspace.toml --no-user-config --no-color -
  Go            2     11     8 │        1       2 │     4     4      0 │      1.00
  ─────────────────────────────┼──────────────────┼────────────────────┼──────────
  Total         2     11     8 │        1       2 │     4     4      0 │      1.00
- Lines = Code + Comments + Blanks; Production + Test + Other = Code; Test/prod = Test / Production (Code).
+ Lines = Code + Comments + Blanks · Production + Test + Other = Code · Test/prod = Test / Production (Code)
  Tests written in another language than the code they test skew per-language Test/prod.
  Not shown (languages): TypeScript, HTML, Python, Makefile and JavaScript (21 code lines).
 
@@ -187,7 +190,7 @@ locmetry workspace --workspace-file workspace.toml --no-user-config --no-color -
  web             0     0 │     0     0      0 │         - │   0.0%
  ────────────────────────┼────────────────────┼───────────┼───────
  Total          11     8 │     4     4      0 │      1.00 │ 100.0%
- Production + Test + Other = Code; Test/prod = Test / Production (Code); Share = Code / workspace Code.
+ Production + Test + Other = Code · Test/prod = Test / Production (Code) · Share = Code / workspace Code
 
 ```
 
@@ -292,7 +295,7 @@ sed -n '/^## Source purpose/,/^## Source categories/p' workspace.md
 | web | 19 | 16 | 12 | 3 | 1 | 0.25 | 55.2% |
 | **Total** | **37** | **29** | **20** | **7** | **2** | **0.35** | **100.0%** |
 
-*Production + Test + Other = Code; Test/prod = Test / Production (Code); Share = Code / workspace Code.*
+*Production + Test + Other = Code · Test/prod = Test / Production (Code) · Share = Code / workspace Code*
 
 ## Source categories by repository
 ```

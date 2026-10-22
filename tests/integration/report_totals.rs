@@ -65,7 +65,7 @@ fn human_count_tables_expose_lines_before_code() {
     let markdown = run(root.path(), &["--format", "markdown"]);
     assert!(markdown.contains("| cargo | 1 | 3 | 1 |"), "{markdown}");
     assert!(
-        markdown.contains("| (scan root) | cargo | 3 | 1 |"),
+        markdown.contains("| scan root | cargo | 3 | 1 |"),
         "{markdown}"
     );
     for heading in [

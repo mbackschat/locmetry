@@ -126,7 +126,7 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  C Header        1        1        1 │        0       0 │       1       0       0 │      0.00
  ────────────────────────────────────┼──────────────────┼─────────────────────────┼──────────
  Total       2,529  333,360  282,770 │    9,149  41,441 │ 179,704  86,901  16,165 │      0.48
- Lines = Code + Comments + Blanks; Production + Test + Other = Code; Test/prod = Test / Production (Code).
+ Lines = Code + Comments + Blanks · Production + Test + Other = Code · Test/prod = Test / Production (Code)
  Tests written in another language than the code they test skew per-language Test/prod.
  Folded: TSX → TypeScript.
 
@@ -143,7 +143,7 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  test:test-infrastructure       4      251      234
  production:build-tooling       4      186      148
  test:performance-test          1       81       64
- Rows of one purpose add up to that purpose's Code; all rows add up to the total Code.
+ Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
 
 ```
 

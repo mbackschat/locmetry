@@ -361,7 +361,7 @@ pub(super) fn render_build_modules(
     if files.is_empty() {
         return;
     }
-    output.push_str("\nLargest module-claimed files; nothing else reviews them, so generated or vendored code here needs an entry.\n\n| Path | Lines | Code | Module | Build system |\n| --- | ---: | ---: | --- | --- |\n");
+    output.push_str("\nLargest files counted as Production only by a build layout. If one is generated or vendored, exclude or reclassify it in `.locmetryrc`.\n\n| Path | Lines | Code | Module | Build system |\n| --- | ---: | ---: | --- | --- |\n");
     for file in files {
         writeln!(
             output,

@@ -176,7 +176,7 @@ pub fn render_table_with_options(
             output += &text.text;
             output += &legend(&columns.legend(None, None));
             if let Some(view) = &adaptive {
-                output += &legend("Adaptive folder detail; rows cover measured source once.");
+                output += &legend("Adaptive folder detail: rows cover measured source once.");
                 if let Some(hint) = &view.budget_hint {
                     output += &legend(&plain(hint));
                 }
@@ -255,8 +255,9 @@ pub fn render_table_with_options(
                 })
                 .collect();
             notes.push(TerminalNote::Text(format!(
-                "Not source code: {}; --files --output - lists each file's kind.",
-                kinds.join(", ")
+                "Not source code: {}. {} lists each file's kind.",
+                kinds.join(", "),
+                command("--files --output -")
             )));
         }
         notes.extend(build_modules_note(findings.modules, order).map(TerminalNote::Text));
@@ -295,8 +296,8 @@ pub fn render_table_with_options(
             })
             .collect();
         notes.push(TerminalNote::Unrecognized(format!(
-            "{} ({}); missing lines are not zero.",
-            counted(coverage.unrecognized_files as u64, "unrecognized file"),
+            "{} ({}). Their lines are unknown, not zero.",
+            grouped(coverage.unrecognized_files as u64),
             extensions.join(", ")
         )));
     }
@@ -316,7 +317,7 @@ pub fn render_table_with_options(
     }
     if !gaps.is_empty() {
         notes.push(TerminalNote::CoverageGap(format!(
-            "{}; missing lines are not zero.",
+            "{}. Their lines are unknown, not zero.",
             gaps.join(", ")
         )));
     }

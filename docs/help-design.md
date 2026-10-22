@@ -68,3 +68,17 @@ For a material new example or routing change, define the task, applicability bou
 Use fresh agents at the owner's requested tier, record the actual model and effort, compare one changed variable with the current interface, and balance execution order. Retain failures and recovery costs. Measure agent-facing calls, uncached input, cached input, output including reasoning, shell/CLI invocations, reference retrievals and final-delivery time separately. Do not infer efficiency from help length or fewer guide calls alone. Set a bounded sample and stopping rule before running; do not pool historical runs or repeat until a favorable result appears.
 
 Routine factual corrections do not need another agent campaign. Every executable help example still needs a synthetic regression that runs the displayed configuration and command against an independent expected result. Check applicable help aliases, README agreement, affected guides and output parity, following the repository's [verification policy](../CLAUDE.md#testing-guidelines). Record what was tested and keep any broader recommendation within that evidence.
+
+## Human Output Wording
+
+These rules cover the text Locmetry prints for people: measurement, workspace and comparison notes, legends and footers, the `explain` table, and Locmetry's own warnings and errors. Help keeps its usage syntax, and Markdown reports quote with backticks, which render as code there. The rules exist because readers took values for words, missed facts joined by ";", and read the `-` of `--output -` as a stray dash (owner review, 2026-10-22).
+
+- Single-quote a literal value used inside a sentence: languages, categories, build systems, folders, members, paths, file names, finding codes and configuration keys, as in `Production in 'Rust' includes …`. Locmetry's own vocabulary is not quoted and keeps its capitalisation: Files, Lines, Code, Comments, Blanks, Production, Test, Other, Test/prod. Values listed after a label, such as `Not shown (languages): Python, Shell`, table cells and aligned lists stay unquoted.
+- Write one fact per sentence; never join facts with ";". A legend of parallel formulas separates them with ` · `.
+- Quote a command whole, starting with `locmetry`, as in `'locmetry --files --output -'`; quote a flag mentioned on its own, as in `'--folder-rows'`.
+- Use single quotes only. Convert double quotes, backticks and Rust's `{:?}` formatting, including in messages passed on from libraries.
+- Make counts agree in number, as in `1 line`, and write zero without a sign.
+- Name a label once: `Unrecognized files: 6`, not `Unrecognized files: 6 unrecognized files`.
+- Name the input a user typed when it cannot be used, as in `Explanation target 'src/x.rs' does not exist`.
+
+`cargo test --locked --test integration wording::` runs representative commands and fails on what it can detect mechanically: ";" in prose, flags outside quotes, double quotes and backticks, plural units after `1`, signed zeros, and fixture values that open a sentence or precede a count or purpose. Add a scenario for each new note or message. Review covers what the guard cannot see, such as a value quoted in one note and bare in another.

@@ -84,7 +84,7 @@ fn production_only_tables_count_production_source_and_show_comment_share() {
         "{text}"
     );
     assert!(text.contains(
-        " Lines = Code + Comments + Blanks; Comment % = Comments / (Code + Comments).\n"
+        " Lines = Code + Comments + Blanks · Comment % = Comments / (Code + Comments)\n"
     ));
     assert!(text.contains(" Not shown (purposes): Test and Other (2 code lines).\n"));
     assert!(!text.contains("Test/prod"), "{text}");
@@ -103,7 +103,7 @@ fn selected_purposes_keep_their_columns_and_choose_the_ratio() {
         cells(&text, "Rust"),
         ["Rust", "2", "5", "3", "2", "0", "2", "1", "0.50"]
     );
-    assert!(text.contains("Production + Test = Code; Test/prod = Test / Production (Code)."));
+    assert!(text.contains("Production + Test = Code · Test/prod = Test / Production (Code)"));
     assert!(text.contains(" Not shown (purpose): Other (1 code line).\n"));
 
     let text = table(&["--format", "table", "--table-purpose", "other,test"]);
@@ -289,7 +289,7 @@ fn comment_bars_compare_densities_under_a_titled_column() {
         .unwrap();
     assert!(header.ends_with("│ Comment %  Comment density"), "{header}");
     assert!(text.contains(
-        "Comment % = Comments / (Code + Comments). Bars: ▓ Comment %; the densest row fills the bar."
+        "Comment % = Comments / (Code + Comments). Bars: ▓ Comment %. The densest row fills the bar."
     ));
 
     let bare = run(
@@ -364,7 +364,7 @@ fn single_purpose_bars_chart_comments() {
         "{rust}"
     );
     assert!(
-        text.contains(" Bars: ▓ Comment %; the densest row fills the bar.\n"),
+        text.contains(" Bars: ▓ Comment %. The densest row fills the bar.\n"),
         "{text}"
     );
 }

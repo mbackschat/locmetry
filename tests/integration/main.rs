@@ -38,6 +38,7 @@ mod submodules;
 mod tables_only;
 mod terminal_safety;
 mod verbosity;
+mod wording;
 mod workspace;
 
 /// Locks the single binary: Cargo builds every top-level `tests/*.rs` file as
