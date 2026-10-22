@@ -6,7 +6,9 @@ from concurrent.futures import ThreadPoolExecutor
 import importlib.util
 import json
 from pathlib import Path
+import re
 import shutil
+import subprocess
 import tempfile
 import time
 
@@ -39,6 +41,38 @@ def require_explorer_writable(destination):
                          "where the explorer sandbox lets the launcher record calls; archive the evidence afterwards")
 
 
+def codex_catalog(model, effort):
+    """Codex's own catalog entry for the frozen model, refusing one it does not offer.
+
+    The owner's tier mapping names the model, and Codex cannot tell which model is
+    a tier's latest; it can confirm the model and effort exist and name newer
+    versions of the same family, which the owner then weighs before acknowledging.
+    """
+    version = subprocess.run(["codex", "--version"], capture_output=True, text=True, check=True).stdout.strip()
+    models = json.loads(subprocess.run(["codex", "debug", "models"], capture_output=True, text=True, check=True).stdout)["models"]
+    entry = next((m for m in models if m["slug"] == model), None)
+    if entry is None:
+        raise ValueError(f"Codex {version} does not list model {model}")
+    efforts = [level["effort"] for level in entry.get("supported_reasoning_levels", [])]
+    if effort not in efforts:
+        raise ValueError(f"Codex {version} does not support effort {effort} for {model}: {', '.join(efforts)}")
+
+    def family(slug):
+        match = re.fullmatch(r"(.+?)-(\d+(?:\.\d+)*)-([a-z]+)", slug)
+        return match and (match[1], match[3], tuple(int(part) for part in match[2].split(".")))
+
+    own = family(model)
+    newer = sorted(m["slug"] for m in models
+                   if own and family(m["slug"]) and family(m["slug"])[:2] == own[:2] and family(m["slug"])[2] > own[2])
+    return {"codex_version": version, "model": model, "efforts": efforts, "newer_in_family": newer}
+
+
+def require_acknowledgement(plan, acknowledgement):
+    expected = f"{plan['model']}:{plan['effort']}"
+    if acknowledgement != expected:
+        raise ValueError(f"The owner must acknowledge the frozen model and effort before launch: --acknowledge {expected}")
+
+
 def validate_protocol(protocol):
     task_ids = STUDY_TASKS.get(protocol["revision"])
     if task_ids is None:
@@ -55,10 +89,13 @@ def validate_protocol(protocol):
             raise ValueError(f"Task {task} requires AB/BA twice each")
 
 
-def campaign(destination, binaries, revisions, protocol_path=PROTOCOL, *, prepare_only=False):
+def campaign(destination, binaries, revisions, protocol_path=PROTOCOL, *, prepare_only=False, acknowledgement=None):
     require_explorer_writable(destination)
     protocol = json.loads(protocol_path.read_text())
     validate_protocol(protocol)
+    if not prepare_only:
+        require_acknowledgement(protocol, acknowledgement)
+    catalog = codex_catalog(protocol["model"], protocol["effort"])
     if len(binaries) != 2 or len(revisions) != 2 or not all(revisions):
         raise ValueError("Supply both binaries and their source revisions")
     for binary in binaries:
@@ -106,7 +143,7 @@ def campaign(destination, binaries, revisions, protocol_path=PROTOCOL, *, prepar
         if snapshot is not None and snapshot != manifest["repository_snapshot"]:
             raise ValueError("The preparation repository changed while freezing the study")
         snapshot = manifest["repository_snapshot"]
-    plan = dict(protocol, treatment="supplied-binaries", arms=arms, repository_snapshot=snapshot,
+    plan = dict(protocol, treatment="supplied-binaries", arms=arms, repository_snapshot=snapshot, codex_catalog=catalog,
                 protocol_sha256=BENCH.sha(destination / "protocol.json"),
                 runner_sha256=BENCH.sha(Path(__file__)), harness_sha256=BENCH.sha(Path(BENCH.__file__)),
                 grader_sha256=BENCH.sha(BENCH.REPO / "scripts/score_agent_explorability.py"),
@@ -116,11 +153,13 @@ def campaign(destination, binaries, revisions, protocol_path=PROTOCOL, *, prepar
                               for p in sorted(destination.rglob("*")) if p.is_file()})
     (destination / "campaign.json").write_text(json.dumps(plan, indent=2) + "\n")
     (destination / "campaign.sha256").write_text(BENCH.sha(destination / "campaign.json") + "\n")
+    print(f"Frozen for {catalog['model']} at {protocol['effort']} ({catalog['codex_version']}); "
+          f"newer in its family: {', '.join(catalog['newer_in_family']) or 'none'}", flush=True)
     if not prepare_only:
-        run_frozen(destination)
+        run_frozen(destination, acknowledgement)
 
 
-def run_frozen(destination):
+def run_frozen(destination, acknowledgement):
     require_explorer_writable(destination)
     if (destination / "started.json").exists():
         raise ValueError("This bounded campaign already started; no replacement or extra trials are permitted")
@@ -138,9 +177,12 @@ def run_frozen(destination):
                            (BENCH.REPO / "scripts/score_full_help.py", plan["full_help_grader_sha256"])]:
         if BENCH.sha(path) != expected:
             raise ValueError(f"Study code changed after freezing: {path.name}")
+    require_acknowledgement(plan, acknowledgement)
+    catalog = codex_catalog(plan["model"], plan["effort"])
     with (destination / "started.json").open("x") as started:
         json.dump({"started": time.time(), "sessions": len(plan["pairs"]) * 2,
-                   "protocol_sha256": plan["protocol_sha256"]}, started, indent=2)
+                   "protocol_sha256": plan["protocol_sha256"], "acknowledged": acknowledgement,
+                   "codex_catalog": catalog}, started, indent=2)
         started.write("\n")
 
     def pair(item):
@@ -165,18 +207,20 @@ def main():
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--prepare-only", action="store_true")
     mode.add_argument("--run-frozen", action="store_true")
+    parser.add_argument("--acknowledge", metavar="MODEL:EFFORT",
+                        help="the owner's acknowledgement of the frozen model and effort; required to launch")
     args = parser.parse_args()
     supplied = [args.control, args.candidate, args.control_revision, args.candidate_revision]
     if args.run_frozen:
         if any(supplied):
             parser.error("--run-frozen uses the already frozen binaries and revisions")
-        run_frozen(args.destination.resolve())
+        run_frozen(args.destination.resolve(), args.acknowledge)
     else:
         if not all(supplied):
             parser.error("--control, --candidate, --control-revision and --candidate-revision are required")
         campaign(args.destination.resolve(), [args.control.resolve(), args.candidate.resolve()],
                  [args.control_revision, args.candidate_revision], args.protocol.resolve(),
-                 prepare_only=args.prepare_only)
+                 prepare_only=args.prepare_only, acknowledgement=args.acknowledge)
 
 
 if __name__ == "__main__":

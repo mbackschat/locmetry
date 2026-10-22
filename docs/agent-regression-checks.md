@@ -20,7 +20,7 @@ Compare against the most recent version in the [ledger](#ledger), never against 
 
 ## Desk Review
 
-Give a fresh MEDIUM agent, resolved through the owner's tier mapping, the two revisions and this section. Unlike an agent-run subject, the reviewer may read the repository.
+After the owner acknowledges the resolved model and effort (see [Models](#models)), give a fresh MEDIUM agent the two revisions and this section. Unlike an agent-run subject, the reviewer may read the repository.
 
 1. Build each revision into its own scratch directory from `git archive`, without changing the working tree.
 2. Capture from both executables, with `NO_COLOR=1`, `COLUMNS=100` and an empty `XDG_CONFIG_HOME`: `-h` and `--help` of the root and every subcommand, every `--guide` topic, every `--schema` name, and the default table, `--verbose` table and JSON headline of a synthetic fixture.
@@ -36,7 +36,15 @@ Give a fresh MEDIUM agent, resolved through the owner's tier mapping, the two re
 
 Use the benchmark's frozen tasks, runners ([six-task](../scripts/agent-explorability.py), [full-help](../scripts/full-help-study.py)) and [replay contract](plans/agent-explorability-benchmark.md#isolation-fixtures-and-replay-contract): blind fresh sessions, identical model, effort, budget and environment in both arms, balanced AB and BA order. Apply the [full-help study's gates](research/agent-explorability-full-help-study.md) unchanged: no loss of correctness, per-task median calls at most the control's plus one, median uncached input at most 110% of the control's, and across all runs at most the control's total calls and 105% of its uncached input. A task whose prompt or oracle must change for the candidate becomes a new revision in both arms.
 
-Resolve MEDIUM through the owner's tier mapping for the CLI that runs the subjects, and record the actual model and effort. The runner drives Codex today. Results from different models are separate campaigns and are never pooled. Freeze and run a campaign below `/tmp`, because the explorer sandbox lets the launcher record calls only there; the runner refuses other destinations. Afterwards archive the raw sessions in Git-ignored `docs/research/local/agent-explorability/` and publish a dated research note with the design, results and limits.
+The runner drives Codex today. Results from different models are separate campaigns and are never pooled. Freeze and run a campaign below `/tmp`, because the explorer sandbox lets the launcher record calls only there; the runner refuses other destinations. Afterwards archive the raw sessions in Git-ignored `docs/research/local/agent-explorability/` and publish a dated research note with the design, results and limits.
+
+## Models
+
+Every agent in a check, whether desk reviewer, subject or blind answer reviewer, runs on the current MEDIUM tier of its CLI, resolved through the owner's tier mapping. The mapping lives outside the repository; when it defines no MEDIUM for that CLI, stop and ask the owner rather than choosing a model.
+
+- A new protocol records the resolved model and effort. The runner reads them only from the frozen protocol, so a later mapping change takes effect with the next protocol.
+- Freezing checks Codex's own catalog (`codex debug models`): it refuses a model or effort Codex does not offer and names newer models of the same family. When it names one, ask the owner to update the mapping before launching.
+- The owner acknowledges the model and effort before every agent run, including reviews. Launch with `--run-frozen --acknowledge MODEL:EFFORT`; the runner refuses any other value and records the acknowledgement and catalog entry in `started.json`.
 
 ## Help-Size Guard
 

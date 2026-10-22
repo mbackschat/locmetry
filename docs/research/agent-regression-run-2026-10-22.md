@@ -54,4 +54,4 @@ Future protocols could allow the total-calls gate a tolerance of one call for co
 
 ## Reproduce
 
-Freeze each protocol with the [runner](../../scripts/full-help-study.py) below `/tmp`, supplying the control's frozen binary and a candidate built from its commit, then launch with `--run-frozen`. Grade artifacts with the [full-help grader](../../scripts/score_full_help.py). Raw sessions, review packets, analysis and audit scripts remain in Git-ignored `docs/research/local/agent-explorability/`.
+Freeze each protocol with the [runner](../../scripts/full-help-study.py) below `/tmp`, supplying the control's frozen binary and a candidate built from its commit, then launch with `--run-frozen --acknowledge gpt-6.1-sol:xhigh`, which runners after this study require. Grade artifacts with the [full-help grader](../../scripts/score_full_help.py). Raw sessions, review packets, analysis and audit scripts remain in Git-ignored `docs/research/local/agent-explorability/`.

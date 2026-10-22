@@ -15,6 +15,8 @@ SPEC = importlib.util.spec_from_file_location("benchmark", Path(__file__).with_n
 BENCH = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(BENCH)
 STUDY_LAYOUT = "a63b71f"
+# The frozen study protocols run gpt-6.1-sol at xhigh; launches must name both.
+ACK = "gpt-6.1-sol:xhigh"
 SCORE_SPEC = importlib.util.spec_from_file_location("scoring", Path(__file__).with_name("score_agent_explorability.py"))
 SCORING = importlib.util.module_from_spec(SCORE_SPEC)
 SCORE_SPEC.loader.exec_module(SCORING)
@@ -114,11 +116,83 @@ class ExperimentTests(unittest.TestCase):
         for phrase in ["all-counted", "Code", "zero", "0, 1, and 2"]:
             self.assertIn(phrase, new["prompt"])
 
-    def full_help_runner(self):
+    def full_help_runner(self, *, catalog=True):
         spec = importlib.util.spec_from_file_location("full_help", Path(__file__).with_name("full-help-study.py"))
         full = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(full)
+        if catalog:
+            # Unit tests must not depend on the installed Codex; the catalog check has its own tests.
+            full.codex_catalog = lambda model, effort: {"codex_version": "codex-cli test", "model": model,
+                                                         "efforts": [effort], "newer_in_family": []}
         return full
+
+    def test_launch_requires_the_owner_to_acknowledge_the_frozen_model_and_effort(self):
+        full = self.full_help_runner()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            binaries = [root / arm for arm in "AB"]
+            for arm, binary in zip("AB", binaries):
+                binary.write_text(arm)
+            protocol = json.loads(full.PROTOCOL.with_name("regression-0.8-correction-study.json").read_text())
+            protocol["control"] = {"source_revision": "control-revision", "binary_sha256": BENCH.sha(binaries[0])}
+            protocol_path = root / "protocol.json"
+            protocol_path.write_text(json.dumps(protocol))
+            destination = root / "campaign"
+            with patch.object(full.BENCH, "REPO", BENCH.REPO), patch.object(full.BENCH, "run_agent") as run:
+                full.campaign(destination, binaries, ["control-revision", "candidate-revision"], protocol_path, prepare_only=True)
+                self.assertEqual(json.loads((destination / "campaign.json").read_text())["codex_catalog"]["model"], "gpt-6.1-sol")
+                for wrong in [None, "gpt-6.1-sol:high", "gpt-6-sol:xhigh"]:
+                    with self.subTest(acknowledgement=wrong), self.assertRaisesRegex(ValueError, "acknowledge"):
+                        full.run_frozen(destination, wrong)
+                run.assert_not_called()
+                self.assertFalse((destination / "started.json").exists())
+                full.run_frozen(destination, ACK)
+                started = json.loads((destination / "started.json").read_text())
+                self.assertEqual(started["acknowledged"], ACK)
+                self.assertEqual(started["codex_catalog"]["model"], "gpt-6.1-sol")
+                self.assertEqual(run.call_count, 8)
+
+    def test_codex_catalog_must_list_the_model_with_its_effort_and_names_newer_family_models(self):
+        full = self.full_help_runner(catalog=False)
+        models = {"models": [
+            {"slug": "gpt-6.1-sol", "supported_reasoning_levels": [{"effort": "high"}, {"effort": "xhigh"}]},
+            {"slug": "gpt-6.2-sol", "supported_reasoning_levels": [{"effort": "xhigh"}]},
+            {"slug": "gpt-6.3-luna", "supported_reasoning_levels": [{"effort": "xhigh"}]},
+            {"slug": "gpt-5.6-sol", "supported_reasoning_levels": [{"effort": "xhigh"}]},
+        ]}
+
+        def codex(args, **kwargs):
+            output = "codex-cli 9.9.9\n" if args[1] == "--version" else json.dumps(models)
+            return subprocess.CompletedProcess(args, 0, stdout=output, stderr="")
+
+        with patch.object(full.subprocess, "run", side_effect=codex):
+            entry = full.codex_catalog("gpt-6.1-sol", "xhigh")
+            self.assertEqual(entry["codex_version"], "codex-cli 9.9.9")
+            self.assertEqual(entry["newer_in_family"], ["gpt-6.2-sol"])
+            with self.assertRaisesRegex(ValueError, "does not list"):
+                full.codex_catalog("gpt-7-sol", "xhigh")
+            with self.assertRaisesRegex(ValueError, "effort"):
+                full.codex_catalog("gpt-6.1-sol", "max")
+
+    def test_freezing_refuses_a_model_codex_does_not_offer_before_creating_output(self):
+        full = self.full_help_runner(catalog=False)
+
+        def unavailable(model, effort):
+            raise ValueError(f"Codex does not list {model}")
+
+        full.codex_catalog = unavailable
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            binaries = [root / arm for arm in "AB"]
+            for arm, binary in zip("AB", binaries):
+                binary.write_text(arm)
+            protocol = json.loads(full.PROTOCOL.with_name("regression-0.8-correction-study.json").read_text())
+            protocol["control"] = {"source_revision": "control-revision", "binary_sha256": BENCH.sha(binaries[0])}
+            protocol_path = root / "protocol.json"
+            protocol_path.write_text(json.dumps(protocol))
+            with self.assertRaisesRegex(ValueError, "does not list"):
+                full.campaign(root / "campaign", binaries, ["control-revision", "candidate"], protocol_path, prepare_only=True)
+            self.assertFalse((root / "campaign").exists())
 
     def test_comparison_correction_protocol_preserves_gates_and_balances_four_tasks(self):
         from collections import Counter
@@ -233,11 +307,11 @@ class ExperimentTests(unittest.TestCase):
                 frozen_text = frozen_protocol.read_text()
                 frozen_protocol.write_text(frozen_text + " ")
                 with self.assertRaisesRegex(ValueError, "Frozen input changed"):
-                    full.run_frozen(destination)
+                    full.run_frozen(destination, ACK)
                 run.assert_not_called()
                 self.assertFalse((destination / "started.json").exists())
                 frozen_protocol.write_text(frozen_text)
-                full.run_frozen(destination)
+                full.run_frozen(destination, ACK)
                 self.assertEqual(run.call_count, 32)
                 self.assertEqual(json.loads((destination / "started.json").read_text())["sessions"], 32)
                 for item in protocol["pairs"]:
@@ -245,7 +319,7 @@ class ExperimentTests(unittest.TestCase):
                     actual = [call.args[1] for call in run.call_args_list if call.args[0] == target]
                     self.assertEqual(actual, [{"A": "run-02", "B": "run-01"}[arm] for arm in item["order"]])
                 with self.assertRaisesRegex(ValueError, "already started"):
-                    full.run_frozen(destination)
+                    full.run_frozen(destination, ACK)
                 self.assertEqual(run.call_count, 32)
 
     def test_full_help_freezes_inputs_before_running_and_uses_only_frozen_binaries(self):
@@ -279,14 +353,14 @@ class ExperimentTests(unittest.TestCase):
                 original = frozen.read_text()
                 frozen.write_text("changed frozen task")
                 with self.assertRaisesRegex(ValueError, "Frozen input changed"):
-                    full.run_frozen(destination)
+                    full.run_frozen(destination, ACK)
                 run.assert_not_called()
                 self.assertFalse((destination / "started.json").exists())
                 frozen.write_text(original)
                 original_grader = grader.read_text()
                 grader.write_text(original_grader + "\n")
                 with self.assertRaisesRegex(ValueError, "Study code changed after freezing: score_full_help.py"):
-                    full.run_frozen(destination)
+                    full.run_frozen(destination, ACK)
                 run.assert_not_called()
                 self.assertFalse((destination / "started.json").exists())
                 grader.write_text(original_grader)
@@ -294,7 +368,7 @@ class ExperimentTests(unittest.TestCase):
                 original_manifest = manifest.read_text()
                 manifest.write_text(original_manifest + " ")
                 with self.assertRaisesRegex(ValueError, "manifest changed"):
-                    full.run_frozen(destination)
+                    full.run_frozen(destination, ACK)
                 manifest.write_text(original_manifest)
                 binaries[0].write_text("changed after freeze")
                 protocol_path.write_text("changed after freeze")
@@ -313,7 +387,7 @@ class ExperimentTests(unittest.TestCase):
                         active.remove(target)
 
                 run.side_effect = observed_run
-                full.run_frozen(destination)
+                full.run_frozen(destination, ACK)
                 self.assertEqual(run.call_count, 80)
                 self.assertLessEqual(peak, 3)
                 for item in protocol["pairs"]:
@@ -324,7 +398,7 @@ class ExperimentTests(unittest.TestCase):
                 self.assertTrue((destination / "started.json").exists())
                 self.assertEqual(json.loads((destination / "started.json").read_text())["sessions"], 80)
                 with self.assertRaisesRegex(ValueError, "already started"):
-                    full.run_frozen(destination)
+                    full.run_frozen(destination, ACK)
 
     def test_full_help_rejects_wrong_control_before_creating_output(self):
         full = self.full_help_runner()
@@ -353,7 +427,7 @@ class ExperimentTests(unittest.TestCase):
             destination.mkdir()
             with patch.object(full, "EXPLORER_WRITABLE_ROOTS", ()), \
                     self.assertRaisesRegex(ValueError, "sandbox"):
-                full.run_frozen(destination)
+                full.run_frozen(destination, ACK)
             self.assertFalse((destination / "started.json").exists())
 
     def test_an_unfinished_last_telemetry_record_does_not_hide_earlier_events(self):
