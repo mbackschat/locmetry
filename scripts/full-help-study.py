@@ -7,6 +7,7 @@ import importlib.util
 import json
 from pathlib import Path
 import shutil
+import tempfile
 import time
 
 
@@ -21,6 +22,20 @@ STUDY_TASKS = {
     "compare-help-routing-v1": [1, 4, 5, 7],
     "agent-regression-0.8-v1": [3, 4, 8],
 }
+
+
+# Codex's workspace-write sandbox lets an explorer write only below its run
+# directory, /tmp and $TMPDIR, and each run's launcher logs calls in the
+# evidence folder beside it. A campaign frozen elsewhere recorded no CLI call
+# in any of its 24 sessions (0.8.0 regression run, 2026-10-22), so campaigns
+# run under a temporary root and are archived afterwards.
+EXPLORER_WRITABLE_ROOTS = (Path("/tmp").resolve(), Path(tempfile.gettempdir()).resolve())
+
+
+def require_explorer_writable(destination):
+    if not any(destination.resolve().is_relative_to(root) for root in EXPLORER_WRITABLE_ROOTS):
+        raise ValueError(f"Campaigns must run below {' or '.join(map(str, EXPLORER_WRITABLE_ROOTS)) or 'a temporary root'}, "
+                         "where the explorer sandbox lets the launcher record calls; archive the evidence afterwards")
 
 
 def validate_protocol(protocol):
@@ -40,6 +55,7 @@ def validate_protocol(protocol):
 
 
 def campaign(destination, binaries, revisions, protocol_path=PROTOCOL, *, prepare_only=False):
+    require_explorer_writable(destination)
     protocol = json.loads(protocol_path.read_text())
     validate_protocol(protocol)
     if len(binaries) != 2 or len(revisions) != 2 or not all(revisions):
@@ -104,6 +120,7 @@ def campaign(destination, binaries, revisions, protocol_path=PROTOCOL, *, prepar
 
 
 def run_frozen(destination):
+    require_explorer_writable(destination)
     if (destination / "started.json").exists():
         raise ValueError("This bounded campaign already started; no replacement or extra trials are permitted")
     if BENCH.sha(destination / "campaign.json") != (destination / "campaign.sha256").read_text().strip():

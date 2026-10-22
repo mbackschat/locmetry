@@ -318,6 +318,26 @@ class ExperimentTests(unittest.TestCase):
                 full.campaign(root / "campaign", [binary] * 2, ["wrong", "candidate"], prepare_only=True)
             self.assertFalse((root / "campaign").exists())
 
+    def test_campaigns_run_only_where_the_explorer_sandbox_lets_the_launcher_log_calls(self):
+        # Codex's workspace-write sandbox allows writes only below the run, /tmp and
+        # $TMPDIR, and the launcher logs beside the run; the first 0.8.0 regression
+        # campaign, frozen inside the repository, recorded no CLI call (2026-10-22).
+        full = self.full_help_runner()
+        outside = Path.home() / "locmetry-campaign-never-created"
+        with tempfile.TemporaryDirectory() as tmp:
+            binary = Path(tmp) / "binary"
+            binary.write_text("binary")
+            with self.assertRaisesRegex(ValueError, "sandbox"):
+                full.campaign(outside, [binary] * 2, ["control", "candidate"], prepare_only=True)
+        self.assertFalse(outside.exists())
+        with tempfile.TemporaryDirectory() as tmp:
+            destination = Path(tmp) / "campaign"
+            destination.mkdir()
+            with patch.object(full, "EXPLORER_WRITABLE_ROOTS", ()), \
+                    self.assertRaisesRegex(ValueError, "sandbox"):
+                full.run_frozen(destination)
+            self.assertFalse((destination / "started.json").exists())
+
     def test_an_unfinished_last_telemetry_record_does_not_hide_earlier_events(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "events.jsonl"
