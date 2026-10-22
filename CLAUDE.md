@@ -75,6 +75,15 @@ Choose verification from the changed behavior before implementation; combine row
 
 Run Cargo commands sharing a target directory sequentially to avoid build-lock contention. Reuse passing checks for unchanged relevant inputs; repeat or broaden them only after relevant changes, failures or unresolved concerns. CI retains the full platform matrix. In the handback, state the checks actually run and any material unverified boundary, without a routine list of unrelated skipped checks.
 
+## Research and Experiments
+
+Built-in heuristics apply to every measured project: conventions, detector layouts, language mappings and folds, default exclusions. Until a design for one has passed the checks below, present it as a draft, not a recommendation. These rules were adopted on 2026-10-23, after first-pass framework layouts failed them; the [framework layout record](docs/research/framework-layouts.md#documented-folders-versus-whole-package) shows how.
+
+- Measure both directions on real projects: what the rule classifies correctly and what it claims wrongly. A wrong claim is silent, while unclaimed code is reported for review, so weigh false claims higher and never accept a rule on a coverage metric alone. Starters and templates are smoke tests, not evidence.
+- Search other ecosystems for counterexamples before recommending, such as a folder or file name that means something else there.
+- Ground each rule in the tool's or framework's primary documentation, read directly and cited. Similarity to another detector is not evidence.
+- Report what was verified and what is only plausible, naming the projects and commits measured. Clone public repositories into the scratchpad, remove them afterwards, and keep their records in [docs/research](docs/research/README.md).
+
 ## Sensitive Analysis
 
 Keep measured-project names, paths, profiles, counts, and reports exclusively in Git-ignored `docs/research/local/`. Use synthetic public fixtures. Never force-add local analysis files. Exception, decided 2026-10-15 by the owner: a12-rulekit and bpmn-lean-experiment may be named in public documents; their paths, profiles, and counts stay local. Exception, decided 2026-10-21 by the owner: the public open-source project Immich, measured at pinned release tags, is the public showcase; its name, Locmetry policies, counts and reports may appear in public documents. Local checkout paths stay out of them. Exception, decided 2026-10-23 by the owner: records of public GitHub repositories, with their names, policies and counts, belong in [docs/research](docs/research/README.md) rather than the local folder; record the measured commit, keep local paths out, and keep the folder under 10 MB unless the owner agrees otherwise.
