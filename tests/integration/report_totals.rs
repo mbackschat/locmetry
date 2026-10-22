@@ -180,7 +180,7 @@ fn recorded_dates_format_in_utc_without_overflow() {
 }
 
 #[test]
-fn workspace_reports_retain_total_lines_in_repository_and_language_grids() {
+fn workspace_reports_retain_total_lines_in_member_and_language_grids() {
     let temp = tempfile::tempdir().unwrap();
     for name in ["first", "second"] {
         let root = temp.path().join(name);

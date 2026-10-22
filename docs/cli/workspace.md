@@ -160,7 +160,7 @@ locmetry workspace --workspace-file workspace.toml --no-user-config --no-color -
 
 ```
 
-`--table-language go` counts only Go source in every table, so the repository rows show where the Go code lives; the note under the language table names what the selection leaves out.
+`--table-language go` counts only Go source in every table, so the member rows show where the Go code lives; the note under the language table names what the selection leaves out.
 
 ```bash
 source scripts/cli-demo-env.sh

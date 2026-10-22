@@ -134,7 +134,7 @@ fn markdown_folds_language_tables_and_json_keeps_backend_names() {
 }
 
 #[test]
-fn workspace_repository_languages_fold_in_markdown() {
+fn workspace_member_languages_fold_in_markdown() {
     let temp = tempfile::tempdir().unwrap();
     project(&temp.path().join("web"));
     let markdown = stdout(run(

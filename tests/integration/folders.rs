@@ -106,7 +106,7 @@ fn folders_warn_without_changing_non_table_measurements() {
 }
 
 #[test]
-fn workspace_keeps_repository_rows_and_folders_is_a_root_measurement_option() {
+fn workspace_keeps_member_rows_and_folders_is_a_root_measurement_option() {
     let temp = fixture();
     let workspace = run(
         temp.path(),

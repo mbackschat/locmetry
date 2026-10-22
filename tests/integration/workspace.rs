@@ -556,7 +556,7 @@ fn table_row(table: &str, header: &str, label: &str) -> Vec<String> {
 }
 
 #[test]
-fn workspace_table_compares_repositories() {
+fn workspace_table_compares_members() {
     let temp = workspace();
     let output = locmetry(
         temp.path(),
@@ -619,7 +619,7 @@ fn workspace_table_compares_repositories() {
 }
 
 #[test]
-fn workspace_markdown_breaks_categories_and_languages_down_by_repository() {
+fn workspace_markdown_breaks_categories_and_languages_down_by_member() {
     let temp = workspace();
     let output = locmetry(
         temp.path(),
@@ -658,7 +658,7 @@ fn workspace_markdown_breaks_categories_and_languages_down_by_repository() {
 /// A regular run keeps its folder rows; the repository dimension exists only
 /// in workspace mode.
 #[test]
-fn regular_runs_have_no_repository_dimension() {
+fn regular_runs_have_no_member_dimension() {
     let temp = workspace();
     let web = temp.path().join("web");
     let headline = json(&locmetry(&web, &[]), 0);
@@ -677,7 +677,7 @@ fn regular_runs_have_no_repository_dimension() {
 /// Workspace bars chart repository shares under the repository table, which
 /// takes the folder table's place, so the shares cover the workspace once.
 #[test]
-fn workspace_bars_chart_repository_shares() {
+fn workspace_bars_chart_member_shares() {
     let temp = workspace();
     // Narrow enough that no bar fits beside a table, so both charts appear.
     let output = common::locmetry()
