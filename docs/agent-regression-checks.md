@@ -50,3 +50,30 @@ One row per check, newest first. The outcome links the evidence.
 | --- | --- | --- | --- | --- |
 | 2026-10-21 | `dc2bf33` (0.8.0 plus inline-test legend) | `v0.7.0`, itself unchecked | Desk review, `sonnet` at `xhigh` | No broken flag, example or route; help +13%, guides +27%; targeted run of tasks 3, 4 and 8 recommended; [desk review](research/agent-regression-desk-review-2026-10-21.md) |
 | 2026-10-20 | Full-feature help with comparison routing (before 0.7.0) | Adopted configuration routing `c17fece` | Full campaign, `gpt-6.1-sol` at `xhigh` | Adopted after correction; [full-help study](research/agent-explorability-full-help-study.md) |
+
+## Trend
+
+Each row is one task in one paired check: medians of the control and candidate runs, and their ratio. Only ratios within a campaign are valid; absolute counts from different campaigns are not comparable. A task's series continues while consecutive checks measure it on the same model and effort and each control is the previous candidate; "Since" names the series' first control, and the cumulative columns multiply the step ratios since then. A new model or effort starts a new series. With four runs per arm, ratios are diagnostic, not statistically established.
+
+`python3 scripts/agent-regression-trend.py update` regenerates the table from the portable results in [research](research/README.md); CI fails when it is stale.
+
+<!-- agent-regression-trend:start -->
+
+| Date | Model | Control → candidate | Task | Passes | Median calls | Median uncached input | Since | Calls since | Uncached since |
+| --- | --- | --- | ---: | --- | --- | --- | --- | ---: | ---: |
+| 2026-10-20 | gpt-6.1-sol `xhigh` | `c17fece` → `c9098e2` | 1 | 4/4 → 4/4 | 2 → 2 (×1.00) | 20,068 → 20,805 (×1.04) | `c17fece` | ×1.00 | ×1.04 |
+| 2026-10-20 | gpt-6.1-sol `xhigh` | `c17fece` → `c9098e2` | 4 | 4/4 → 4/4 | 7.5 → 7 (×0.93) | 44,296 → 34,253 (×0.77) | `c17fece` | ×0.93 | ×0.77 |
+| 2026-10-20 | gpt-6.1-sol `xhigh` | `c17fece` → `c9098e2` | 5 | 4/4 → 4/4 | 5.5 → 6 (×1.09) | 41,948 → 39,574 (×0.94) | `c17fece` | ×1.09 | ×0.94 |
+| 2026-10-20 | gpt-6.1-sol `xhigh` | `c17fece` → `c9098e2` | 7 | 3/4 → 4/4 | 5.5 → 5 (×0.91) | 43,706 → 47,774 (×1.09) | `c17fece` | ×0.91 | ×1.09 |
+| 2026-10-20 | gpt-6.1-sol `xhigh` | `c17fece` → `6fdaef3` | 1 | 4/4 → 4/4 | 3 → 2 (×0.67) | 20,802 → 20,714 (×1.00) | `c17fece` | ×0.67 | ×1.00 |
+| 2026-10-20 | gpt-6.1-sol `xhigh` | `c17fece` → `6fdaef3` | 2 | 4/4 → 4/4 | 7.5 → 7 (×0.93) | 35,099 → 37,620 (×1.07) | `c17fece` | ×0.93 | ×1.07 |
+| 2026-10-20 | gpt-6.1-sol `xhigh` | `c17fece` → `6fdaef3` | 3 | 4/4 → 4/4 | 6.5 → 6 (×0.92) | 32,249 → 31,532 (×0.98) | `c17fece` | ×0.92 | ×0.98 |
+| 2026-10-20 | gpt-6.1-sol `xhigh` | `c17fece` → `6fdaef3` | 4 | 4/4 → 4/4 | 6.5 → 8 (×1.23) | 38,992 → 34,919 (×0.90) | `c17fece` | ×1.23 | ×0.90 |
+| 2026-10-20 | gpt-6.1-sol `xhigh` | `c17fece` → `6fdaef3` | 5 | 4/4 → 4/4 | 7 → 6 (×0.86) | 60,008 → 37,458 (×0.62) | `c17fece` | ×0.86 | ×0.62 |
+| 2026-10-20 | gpt-6.1-sol `xhigh` | `c17fece` → `6fdaef3` | 6 | 4/4 → 4/4 | 4 → 4 (×1.00) | 29,273 → 27,486 (×0.94) | `c17fece` | ×1.00 | ×0.94 |
+| 2026-10-20 | gpt-6.1-sol `xhigh` | `c17fece` → `6fdaef3` | 7 | 4/4 → 4/4 | 5.5 → 5 (×0.91) | 50,830 → 47,100 (×0.93) | `c17fece` | ×0.91 | ×0.93 |
+| 2026-10-20 | gpt-6.1-sol `xhigh` | `c17fece` → `6fdaef3` | 9 | 4/4 → 4/4 | 5.5 → 6 (×1.09) | 31,352 → 28,942 (×0.92) | `c17fece` | ×1.09 | ×0.92 |
+| 2026-10-20 | gpt-6.1-sol `xhigh` | `c17fece` → `6fdaef3` | 10 | 4/4 → 4/4 | 7.5 → 7 (×0.93) | 35,114 → 35,127 (×1.00) | `c17fece` | ×0.93 | ×1.00 |
+| 2026-10-20 | gpt-6.1-sol `xhigh` | `c17fece` → `6fdaef3` | 11 | 4/4 → 4/4 | 7.5 → 8 (×1.07) | 38,581 → 38,420 (×1.00) | `c17fece` | ×1.07 | ×1.00 |
+
+<!-- agent-regression-trend:end -->
