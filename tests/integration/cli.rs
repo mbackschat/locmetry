@@ -168,6 +168,25 @@ fn missing_root_and_invalid_config_fail_without_success_json() {
     }
 }
 
+#[test]
+fn unusable_roots_and_workspace_files_are_named_as_typed() {
+    let temp = fixture();
+    for (args, named) in [
+        (vec!["--root", "absent"], "'absent'"),
+        (vec!["--root", "rules.toml"], "'rules.toml'"),
+        (vec!["explain", "x", "--root", "absent"], "'absent'"),
+        (
+            vec!["workspace", "--workspace-file", "absent.toml"],
+            "'absent.toml'",
+        ),
+    ] {
+        let result = run(temp.path(), &args);
+        let stderr = String::from_utf8_lossy(&result.stderr);
+        assert_eq!(result.status.code(), Some(1), "{args:?}");
+        assert!(stderr.contains(named), "{args:?}: {stderr}");
+    }
+}
+
 /// Exit code 2 is reserved for partial reports, so usage errors must not use
 /// clap's default of 2.
 #[test]

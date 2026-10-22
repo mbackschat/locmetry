@@ -18,7 +18,7 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 
 - `explain` tables no longer print “1 lines” or “1 blanks”, and comparison coverage findings no longer say “1 unreadable files”: each count agrees with its unit.
 - Comparison notes no longer say unreadable files "count as 0": they add nothing to the recorded counts, and their lines are unknown, not zero.
-- Errors for a missing `explain` target, `--subfolder` folder or workspace member name the path or member, so a failure among several `explain` paths shows which one; in a workspace the error names the `MEMBER/PATH` as typed.
+- Errors for a missing `explain` target, `--subfolder` folder or workspace member name the path or member, so a failure among several `explain` paths shows which one; in a workspace the error names the `MEMBER/PATH` as typed. Errors for a missing or unreadable scan root or workspace file name it too.
 - An option spelling retired in 0.7.0, such as `--purpose` or `workspace --file`, is still rejected, but the error now names the option that replaced it instead of an unrelated one such as `--verbose` or `--files`.
 - Command summaries in `locmetry --help` mention workspaces of one project's folders and that `explain` takes several paths.
 

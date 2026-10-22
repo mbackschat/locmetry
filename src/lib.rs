@@ -13,7 +13,7 @@ mod schema;
 pub mod style;
 
 pub use backend::{
-    file_records, git_submodules, language_family, language_kind, scan, scan_subfolder,
+    file_records, git_submodules, language_family, language_kind, scan, scan_root, scan_subfolder,
     scope_policy, source_language, subfolder_path, Coverage, ParseFailure, ParseFailureReason,
     Scan, DATA_LANGUAGES, DOCUMENTATION_LANGUAGES,
 };

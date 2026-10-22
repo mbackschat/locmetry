@@ -196,14 +196,23 @@ pub fn scan(root: &Path, policy: &Policy) -> Result<Scan> {
     scan_selection(root, policy, None).map(|(scan, _)| scan)
 }
 
+/// The canonical, readable scan root. Errors name `root` as the user typed it,
+/// per the human output wording rules (docs/help-design.md).
+pub fn scan_root(root: &Path) -> Result<PathBuf> {
+    let named = crate::output::quoted(&root.display().to_string());
+    let canonical =
+        dunce::canonicalize(root).with_context(|| format!("Cannot open scan root {named}"))?;
+    ensure!(canonical.is_dir(), "Scan root {named} must be a directory");
+    std::fs::read_dir(&canonical).with_context(|| format!("Cannot read scan root {named}"))?;
+    Ok(canonical)
+}
+
 pub(crate) fn scan_selection(
     root: &Path,
     policy: &Policy,
     target: Option<Target<'_>>,
 ) -> Result<(Scan, Option<Exclusion>)> {
-    let root = dunce::canonicalize(root).context("Scan root does not exist")?;
-    ensure!(root.is_dir(), "Scan root must be a directory");
-    std::fs::read_dir(&root).context("Cannot read scan root")?;
+    let root = scan_root(root)?;
     let Selection {
         mut paths,
         target_selected,

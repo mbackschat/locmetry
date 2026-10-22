@@ -6,9 +6,11 @@ pub(crate) fn run_explain(args: &ExplainArgs, styling: Styling) -> Result<Outcom
     let workspace = args
         .workspace
         .as_deref()
-        .map(dunce::canonicalize)
-        .transpose()
-        .context("Cannot read workspace file")?;
+        .map(|file| {
+            dunce::canonicalize(file)
+                .with_context(|| format!("Cannot read workspace file '{}'", file.display()))
+        })
+        .transpose()?;
     let members = workspace
         .as_deref()
         .map(|file| workspace_members(locmetry::workspace_definition(file)?))

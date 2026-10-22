@@ -1,7 +1,7 @@
 //! Focused evidence for one existing path, using ordinary selection and counting.
 use crate::style::{Role, Theme};
 use crate::{backend, contract, output, Policy};
-use anyhow::{ensure, Context, Result};
+use anyhow::{ensure, Result};
 use schemars::JsonSchema;
 use serde::Serialize;
 use std::path::Path;
@@ -63,8 +63,7 @@ pub enum PathResult {
 pub use crate::backend::FilterReason;
 
 pub fn inspect(root: &Path, path: &Path, policy: &mut Policy) -> Result<(String, PathResult)> {
-    let root = dunce::canonicalize(root).context("Scan root does not exist")?;
-    ensure!(root.is_dir(), "Scan root must be a directory");
+    let root = backend::scan_root(root)?;
     let root = root.as_path();
     ensure!(
         path.components()

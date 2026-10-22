@@ -223,6 +223,9 @@ fn scenarios() -> Vec<Vec<&'static str>> {
         vec!["--root", "badmapping"],
         vec!["--root", "project", "--subfolder", "skipped"],
         vec!["compare", "bad.json", "bad.json"],
+        vec!["--root", "absent"],
+        vec!["--root", "bad.json"],
+        vec!["workspace", "--workspace-file", "absent.toml"],
     ];
     scenarios.extend(explained);
     scenarios
