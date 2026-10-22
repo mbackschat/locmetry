@@ -3,6 +3,7 @@
 //! desk review (B7) found canonical absolute paths, inputs left unnamed and a
 //! clap tip that pointed at an unrelated option.
 use crate::common::{self, write_all};
+use std::path::Path;
 
 #[test]
 fn errors_name_the_input_as_typed() {
@@ -21,10 +22,15 @@ fn errors_name_the_input_as_typed() {
             ),
         ],
     );
+    // A file's roots are joined to its folder, so Windows shows 'cfg\missing'.
+    let joined = format!(
+        "Workspace member root '{}' does not exist",
+        Path::new("cfg").join("missing").display()
+    );
     for (args, message) in [
         (
             vec!["workspace", "--workspace-file", "cfg/missing.toml"],
-            "Workspace member root 'cfg/missing' does not exist",
+            joined.as_str(),
         ),
         (
             vec!["workspace", "--root", "proj/src/lib.rs"],
