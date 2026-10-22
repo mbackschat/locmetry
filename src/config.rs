@@ -70,7 +70,7 @@ const BUILTIN: &str = "builtin:";
 pub enum Purpose {
     /// Maintained non-test source, not necessarily shipped runtime code: the product itself and the tooling, build logic, examples, and demos a project keeps working. Tell these apart with `category`, such as `implementation`, `tooling`, `build-tooling`, or `example`, not with another purpose.
     Production,
-    /// Tests and code that exists only to support them, such as fixtures, harnesses, and test utilities.
+    /// Tests and code that exists only to support them, such as fixtures, stand-in services, and test utilities. Programs that run, prepare, or score tests, such as test runners, graders, and CI gates, are production with a category such as `tooling`.
     Test,
     /// Source that counts as neither production nor test. Code no stage claims lands here with category `unclaimed` and is listed for review as `summary.unclaimed_folders`; code an entry or convention assigns here on purpose, such as abandoned prototypes, archived experiments, copied snippets, or build-tool wrappers, is counted but not listed. Maintained code that is not the product, such as tooling or examples, is production with its own category.
     Other,
