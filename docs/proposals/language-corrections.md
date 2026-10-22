@@ -48,11 +48,11 @@ language = "unrecognized"
 reason = "ProGuard keep rules; the counter reads the .pro extension as Prolog"
 ```
 
-- `id`, `match` and `reason` are required. A correction contradicts the counter, so it records its evidence, as a policy override does.
+- `id` and `match` are required; `reason` is optional, as for classification entries, and `explain` shows it. The same mechanism exists elsewhere as `linguist-language` in GitHub Linguist's `.gitattributes` and as `--force-lang` in cloc.
 - `language` names a counter language, as a mapping does, or the reserved value `"unrecognized"`. ProGuard has no counter language, and counting its `#` comments with Prolog's syntax would produce wrong comment and code lines. An unrecognized file stays selected, counts nothing and is listed in `metadata.coverage.unrecognized`, which already means "selected but not counted".
 - A file corrected to a language is counted with that language. Its content kind follows that language.
 - Corrections apply before recognition, and the first matching correction decides. Mappings never apply to a corrected file.
-- Corrections are allowed where mappings are allowed: in the project configuration and in personal defaults, with the project's corrections first.
+- Corrections are allowed only in the project configuration. Which language a file is written in is knowledge about one project; a personal correction would override the counter in every project measured, whereas a personal mapping only fills gaps.
 - Reports name the deciding correction in a new per-file field, `language_correction`, beside `language_mapping`. `explain` shows the correction and its reason.
 - A correction that decides no selected file is reported as unused, as unused classification entries and exclusions are. Unused mappings are not reported today, but a correction contradicts the counter, so a stale one should surface. Comparisons treat a change to corrections as a policy change, as they do for mappings.
 
@@ -75,5 +75,5 @@ Measurement already counts unrecognized files through mappings after the counter
 - A correction to a counter language counts a misrecognized fixture file with that language's comment syntax and content kind.
 - Correcting C++ `.h` fixture files to `"C++ Header"` moves them out of the C Header row and into the C++ row of the language table, while JSON reports `C++ Header`.
 - A mapping matching a corrected file does not apply. The first of two matching corrections decides. An unused correction is reported.
-- A personal correction applies after the project's corrections.
+- A correction in personal defaults is rejected.
 - `explain`, full JSON and both schemas show the correction. The configure guide and PRODUCT describe it next to mappings.
