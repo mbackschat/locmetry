@@ -153,7 +153,7 @@ fn readme_common_commands_mirror_long_help_examples() {
     assert!(!examples.is_empty());
     assert_eq!(
         table, examples,
-        "edit the examples in src/app/cli.rs `after_long_help`, then mirror them in README"
+        "edit the examples in src/app/cli/long_help.rs `root_examples!`, then mirror them in README"
     );
     assert_eq!(help("help"), long);
     assert!(!help("-h").contains("Examples:"));

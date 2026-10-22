@@ -14,6 +14,8 @@ Help should let a person or agent discover a task, choose a valid route and veri
 
 These placement rules are design judgments informed by the evidence below, not separately measured claims about every surface.
 
+`-h` is the summary and `--help` the manual. Give each option and command a summary that fits one line beside its name, and put further sentences only in its long help: write the summary as the doc comment and the complete text as `long_help`, so `--help` does not repeat the summary; clap then points from `-h` to `--help`. State a fact once per help text: a footer does not restate an option's own help, and the command list does not repeat what each command's help says. This cut the four `-h` texts by 40% and all help by 16% on 2026-10-22, before the next desk review measured any effect on agents.
+
 ## Covering the Feature Set
 
 Maintain a task inventory before declaring the help experience complete. The inventory below maps each supported workflow to its help destination and verification; it owns the current coverage map. The [completed full-help coverage plan](plans/archive/full-help-coverage.md) records the implementation scope. Check newly added options against that inventory and the executable option guard in [help tests](../tests/integration/help.rs). A new feature needs a discoverable capability, a valid next action, its consequential boundary and observable verification; it does not automatically need another root example.

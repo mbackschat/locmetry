@@ -435,9 +435,10 @@ error: Cannot compare before report 'headline.json': A full measurement report i
 metadata.kinds, metadata.modules, metadata.coverage.unrecognized, metadata.config. Capture a full measurement with
 '--output FILE' or '--format json'. A headline cannot reconstruct the missing baseline, and rerunning measures the
 current tree.
-Compare two saved full reports: net change is after minus before. Defaults to a table on a terminal,
-a JSON headline in pipes. --output FILE saves only to that file, defaulting to full JSON; --format
-overrides the format
+Compare two saved full reports: net change is after minus before.
+
+Defaults to a table on a terminal, a JSON headline in pipes. --output FILE saves only to that file,
+defaulting to full JSON; --format overrides the format.
 
 Usage: locmetry compare [OPTIONS] <BEFORE> <AFTER>
 

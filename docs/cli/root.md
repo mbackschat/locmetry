@@ -426,15 +426,15 @@ full JSON; --format overrides the format.
 Usage: locmetry [OPTIONS] [DIR] [COMMAND]
 
 Commands:
-  workspace  Measure several repositories or one project's folders as one virtual monorepo: members
-             keep their repository's .locmetryrc, and paths are prefixed by the member's folder
-             name. Defaults to a table on a terminal, a JSON headline in pipes. --output FILE saves
-             only to that file, defaulting to full JSON; --format overrides the format
-  compare    Compare two saved full reports: net change is after minus before. Defaults to a table
-             on a terminal, a JSON headline in pipes. --output FILE saves only to that file,
-             defaulting to full JSON; --format overrides the format
-  explain    Explain selection and classification of existing root-relative files. JSON prints the
-             complete explanation; there is no separate headline
+  workspace  Measure several repositories or one project's folders as one virtual monorepo
+  compare    Compare two saved full reports: net change is after minus before
+  explain    Explain selection and classification of existing root-relative files
+  help       Print this message or the help of the given subcommand(s)
+
+Arguments:
+  [DIR]
+          Directory to measure, instead of --root [default: the current directory]
+
 locmetry 0.9.0
 Source: docs/guides/configure.md (locmetry 0.9.0)
 Source: docs/guides/selection.md (locmetry 0.9.0)
