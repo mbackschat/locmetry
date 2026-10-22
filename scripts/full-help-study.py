@@ -21,6 +21,7 @@ STUDY_TASKS = {
     "full-help-coverage-v1": TASK_IDS,
     "compare-help-routing-v1": [1, 4, 5, 7],
     "agent-regression-0.8-v1": [3, 4, 8],
+    "agent-regression-0.8-correction-v1": [4],
 }
 
 

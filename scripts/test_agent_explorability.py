@@ -165,6 +165,23 @@ class ExperimentTests(unittest.TestCase):
             task = json.loads(BENCH.TASK.with_name(f"task{number}.json").read_text())
             self.assertEqual(task["limits"], protocol["limits"])
 
+    def test_regression_correction_reruns_only_the_failed_comparison_task(self):
+        from collections import Counter
+        full = self.full_help_runner()
+        regression = json.loads(full.PROTOCOL.with_name("regression-0.8-study.json").read_text())
+        protocol = json.loads(full.PROTOCOL.with_name("regression-0.8-correction-study.json").read_text())
+        # Task 4 alone failed its call gate on 2026-10-22; its control stays fixed.
+        self.assertEqual(protocol["task_ids"], [4])
+        self.assertEqual(protocol["maximum_sessions"], 8)
+        self.assertFalse(protocol["previous_trials_included"])
+        for key in ["control", "model", "effort", "limits", "repetitions", "concurrent_pairs", "task_files"]:
+            self.assertEqual(protocol[key], regression[key])
+        for key in ["correctness", "per_task_medians", "overall_all_run_totals", "secondary", "zero_comparator"]:
+            self.assertEqual(protocol["decision_rule"][key], regression["decision_rule"][key])
+        self.assertEqual(Counter(p["order"] for p in protocol["pairs"]), {"AB": 2, "BA": 2})
+        self.assertEqual({p["repetition"] for p in protocol["pairs"]}, {1, 2, 3, 4})
+        full.validate_protocol(protocol)
+
     def test_full_help_grader_checks_the_configuration_layout_task_with_its_legacy_oracle(self):
         spec = importlib.util.spec_from_file_location("full_help_score", Path(__file__).with_name("score_full_help.py"))
         grader = importlib.util.module_from_spec(spec)
@@ -184,7 +201,8 @@ class ExperimentTests(unittest.TestCase):
     def test_runner_rejects_unknown_protocols_or_changed_fixed_task_and_session_counts(self):
         full = self.full_help_runner()
         for path in [full.PROTOCOL, full.PROTOCOL.with_name("compare-help-routing-study.json"),
-                     full.PROTOCOL.with_name("regression-0.8-study.json")]:
+                     full.PROTOCOL.with_name("regression-0.8-study.json"),
+                     full.PROTOCOL.with_name("regression-0.8-correction-study.json")]:
             protocol = json.loads(path.read_text())
             full.validate_protocol(protocol)
             for key, value in [("revision", "unrecognized-study"), ("task_ids", [1, 4]), ("maximum_sessions", 48)]:
