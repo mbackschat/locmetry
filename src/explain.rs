@@ -1,6 +1,6 @@
 //! Focused evidence for one existing path, using ordinary selection and counting.
 use crate::style::{Role, Theme};
-use crate::{backend, contract, Policy};
+use crate::{backend, contract, output, Policy};
 use anyhow::{ensure, Context, Result};
 use schemars::JsonSchema;
 use serde::Serialize;
@@ -171,11 +171,11 @@ impl Explanation {
                     (
                         "Counts",
                         format!(
-                            "{} code, {} comments, {} blanks, {} lines",
-                            file.counts.code,
-                            file.counts.comments,
-                            file.counts.blanks,
-                            file.counts.lines
+                            "{} code, {}, {}, {}",
+                            output::grouped(file.counts.code),
+                            output::counted(file.counts.comments, "comment"),
+                            output::counted(file.counts.blanks, "blank"),
+                            output::counted(file.counts.lines, "line")
                         ),
                     ),
                 ]);
@@ -189,7 +189,14 @@ impl Explanation {
                     rows.push(("Reason", reason.clone()));
                 }
                 if let Some(module) = &decision.module {
-                    rows.push(("Module", format!("{} ({})", module.path, module.detector)));
+                    rows.push((
+                        "Module",
+                        format!(
+                            "{} ({})",
+                            output::module_label(&module.path),
+                            module.detector
+                        ),
+                    ));
                 }
             }
             PathResult::Excluded { at, patterns } => rows.extend([
@@ -198,25 +205,33 @@ impl Explanation {
                 ("Patterns", patterns.join(", ")),
             ]),
             PathResult::NotSelected { reason } => {
-                let detail = match reason {
-                    FilterReason::IgnorePolicy => "ignore_policy: disabling ignore filtering selects this path; winning ignore rule not recorded",
-                    FilterReason::HiddenPolicy => "hidden_policy: enabling hidden paths selects this path",
-                    FilterReason::ReasonNotRecorded => "reason_not_recorded: available evidence does not establish a cause",
+                let (code, detail) = match reason {
+                    FilterReason::IgnorePolicy => ("ignore_policy", "Disabling ignore filtering selects this path. The winning ignore rule is not recorded."),
+                    FilterReason::HiddenPolicy => ("hidden_policy", "Enabling hidden paths selects this path."),
+                    FilterReason::ReasonNotRecorded => ("reason_not_recorded", "The available evidence does not establish a cause."),
                 };
-                rows.extend([("State", "not_selected".into()), ("Reason", detail.into())]);
+                rows.extend([
+                    ("State", "not_selected".into()),
+                    ("Reason", code.into()),
+                    ("Detail", detail.into()),
+                ]);
             }
             PathResult::Unrecognized => {
-                rows.push(("State", "unrecognized: no parser or mapping".into()));
+                rows.push((
+                    "State",
+                    "unrecognized (no parser or language mapping)".into(),
+                ));
             }
             PathResult::Unread => {
-                rows.push(("State", "unread: counts unavailable".into()));
+                rows.push(("State", "unread (counts unavailable)".into()));
             }
             PathResult::ParseFailed { failure } => rows.extend([
-                ("State", "parse_failed: counts unavailable".into()),
-                ("Reason", format!("{}: {}", failure.reason, failure.message)),
+                ("State", "parse_failed (counts unavailable)".into()),
+                ("Reason", failure.reason.to_string()),
+                ("Detail", failure.message.clone()),
             ]),
             PathResult::Symlink { at } => rows.extend([
-                ("State", "symlink: not followed".into()),
+                ("State", "symlink (not followed)".into()),
                 ("Symlink at", at.clone()),
             ]),
         }
@@ -274,7 +289,7 @@ mod style_tests {
         let mut explanation = example();
         explanation.result = PathResult::Unread;
         let styled = explanation.render_with_theme(false, Theme::TERMINAL);
-        assert!(styled.contains("\x1b[33mState\x1b[0m: unread: counts unavailable"));
+        assert!(styled.contains("\x1b[33mState\x1b[0m: unread (counts unavailable)"));
         assert_eq!(
             styled
                 .replace("\x1b[1m", "")
@@ -283,7 +298,7 @@ mod style_tests {
             explanation.render(false)
         );
         let markdown = explanation.render(true);
-        assert!(markdown.contains("| **State** | unread: counts unavailable |"));
+        assert!(markdown.contains("| **State** | unread (counts unavailable) |"));
         assert!(!markdown.contains('\x1b'));
     }
 }

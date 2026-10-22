@@ -157,6 +157,14 @@ pub(crate) fn signed(change: i128) -> String {
     }
 }
 
+/// Label of a module folder; `.` is the scan root.
+pub(crate) fn module_label(path: &str) -> &str {
+    match path {
+        "." => "scan root",
+        path => path,
+    }
+}
+
 /// `noun`, pluralized with `s` unless `count` is one.
 fn plural(count: u64, noun: &str) -> String {
     match count {
@@ -280,7 +288,7 @@ pub fn write_report(output: &Path, text: &str) -> Result<()> {
     if let Some(parent) = output.parent().filter(|p| !p.as_os_str().is_empty()) {
         fs::create_dir_all(parent)?;
     }
-    fs::write(output, text).with_context(|| format!("Cannot write report {}", output.display()))
+    fs::write(output, text).with_context(|| format!("Cannot write report '{}'", output.display()))
 }
 
 fn display_project(project: &str, subfolder: Option<&str>) -> String {

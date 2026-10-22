@@ -158,14 +158,6 @@ pub(super) fn module_files_note(files: &[ModuleFile]) -> String {
     note
 }
 
-/// Label of a module folder; `.` is the scan root.
-pub(super) fn module_label(path: &str) -> &str {
-    match path {
-        "." => "scan root",
-        path => path,
-    }
-}
-
 /// Folders listed in the terminal note; the JSON headline lists all of them.
 pub(super) const FOLDER_LINES: usize = 8;
 
@@ -273,5 +265,5 @@ pub(super) fn inline_tests_note(summary: &Summary, attribute: &str) -> Option<St
             )
         })
         .collect();
-    (!purposes.is_empty()).then(|| format!("Inline tests: {}.", purposes.join("; ")))
+    (!purposes.is_empty()).then(|| format!("Inline tests: {}.", purposes.join(", ")))
 }

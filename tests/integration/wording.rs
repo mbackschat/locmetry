@@ -1,5 +1,6 @@
 //! Guards the human output wording rules (docs/help-design.md, Human Output
-//! Wording) on real output: each scenario's prose lines must avoid joining
+//! Wording) on real output of measurement, workspace, compare and explain
+//! tables, warnings and errors: each scenario's prose lines must avoid joining
 //! facts with ';', bare flags, double quotes and backticks, wrong plurals,
 //! signed zeros, and unquoted values that start a sentence or precede a count.
 use crate::common::{self, write};
@@ -53,6 +54,50 @@ fn fixture(root: &Path) {
     write(&worker, "go.mod", "module worker\n\ngo 1.21\n");
     write(&worker, "main.go", "package main\n\nfunc main() {}\n");
     write(&worker, "tools/run.py", "print(2)\n");
+    write(&project, ".ignore", "ignored.py\n");
+    write(&project, "ignored.py", "print(3)\n");
+    write(&root.join("badconfig"), ".locmetryrc", "not valid toml\n");
+    write(
+        &root.join("badmapping"),
+        ".locmetryrc",
+        "version = 1\n[[languages.mappings]]\nmatch = [\"*.q\"]\nlanguage = \"Nope\"\n",
+    );
+}
+
+/// Saves before and after reports around a change that adds a folder, an
+/// unrecognized file and a notebook parse failure, and lets a member leave.
+fn prepare_comparisons(root: &Path) {
+    let save = |args: &[&str]| {
+        common::locmetry()
+            .current_dir(root)
+            .args(args)
+            .output()
+            .unwrap()
+    };
+    save(&["--root", "project", "--output", "before.json"]);
+    save(&[
+        "--root",
+        "project",
+        "--format",
+        "headline",
+        "--output",
+        "headline.json",
+    ]);
+    save(&[
+        "workspace",
+        "--root",
+        "project",
+        "--root",
+        "worker",
+        "--output",
+        "wbefore.json",
+    ]);
+    let project = root.join("project");
+    write(&project, "newpkg/mod.py", "print(4)\n");
+    write(&project, "blob2.qqq", "x\n");
+    write(&project, "broken.ipynb", "{}\n");
+    save(&["--root", "project", "--output", "after.json"]);
+    save(&["workspace", "--root", "project", "--output", "wafter.json"]);
 }
 
 /// Values the fixture puts into output; they must be quoted inside sentences.
@@ -72,7 +117,16 @@ const VALUES: [&str; 12] = [
 ];
 
 fn scenarios() -> Vec<Vec<&'static str>> {
-    vec![
+    let explained = [
+        "src/lib.rs",
+        "scripts/tool.py",
+        "blob.xyz",
+        "broken.ipynb",
+        "ignored.py",
+        "missing.rs",
+    ]
+    .map(|path| vec!["explain", "--root", "project", "--format", "table", path]);
+    let mut scenarios = vec![
         vec!["--root", "project", "--format", "table"],
         vec!["--root", "project", "--format", "table", "--verbose"],
         vec![
@@ -113,7 +167,56 @@ fn scenarios() -> Vec<Vec<&'static str>> {
             "table",
             "--verbose",
         ],
-    ]
+        vec!["compare", "before.json", "after.json", "--format", "table"],
+        vec![
+            "compare",
+            "wbefore.json",
+            "wafter.json",
+            "--format",
+            "table",
+        ],
+        vec![
+            "compare",
+            "wbefore.json",
+            "wafter.json",
+            "--member",
+            "worker",
+            "--format",
+            "table",
+        ],
+        vec![
+            "compare",
+            "wbefore.json",
+            "wafter.json",
+            "--member",
+            "nobody",
+        ],
+        vec!["compare", "before.json", "headline.json"],
+        vec!["--root", "project", "--format", "json", "--tables-only"],
+        vec!["--root", "project", "--format", "json", "--show-folders"],
+        vec!["--root", "project", "--format", "json", "--verbose"],
+        vec![
+            "--root",
+            "project",
+            "--format",
+            "table",
+            "--markdown-depth",
+            "2",
+        ],
+        vec!["--root", "project", "--format", "table", "--files"],
+        vec![
+            "--root",
+            "project",
+            "--format",
+            "json",
+            "--folder-rows",
+            "3",
+        ],
+        vec!["--root", "badconfig"],
+        vec!["--root", "badmapping"],
+    ];
+    scenarios.extend(explained);
+    scenarios
 }
 
 /// Lines a reader takes as sentences: not table rows, rules or aligned lists,
@@ -223,7 +326,9 @@ fn violations(line: &str) -> Vec<&'static str> {
 fn human_output_follows_the_wording_rules() {
     let temp = tempfile::tempdir().unwrap();
     fixture(temp.path());
-    let mut report = Vec::new();
+    prepare_comparisons(temp.path());
+    // Many scenarios print the same note; report each offending line once.
+    let mut report = std::collections::BTreeMap::new();
     for args in scenarios() {
         let output = common::locmetry()
             .current_dir(temp.path())
@@ -231,17 +336,26 @@ fn human_output_follows_the_wording_rules() {
             .args(&args)
             .output()
             .unwrap();
+        // JSON quotes by its own syntax; only human output and messages are prose.
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let human = !stdout.trim_start().starts_with('{');
         let text = format!(
             "{}{}",
-            String::from_utf8_lossy(&output.stdout),
+            if human { &stdout } else { "" },
             String::from_utf8_lossy(&output.stderr)
         );
         for line in prose(&text) {
             for violation in violations(line) {
-                report.push(format!("{}\n    {line}\n    {violation}", args.join(" ")));
+                report
+                    .entry((line.to_owned(), violation))
+                    .or_insert_with(|| args.join(" "));
             }
         }
     }
+    let report: Vec<String> = report
+        .into_iter()
+        .map(|((line, violation), args)| format!("{args}\n    {line}\n    {violation}"))
+        .collect();
     assert!(report.is_empty(), "{}", report.join("\n"));
 }
 

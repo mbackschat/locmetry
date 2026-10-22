@@ -68,7 +68,7 @@ pub(crate) fn parse_cli() -> clap::error::Result<Cli> {
         if matches.contains_id("folder_rows") {
             return Err(command.error(
                 clap::error::ErrorKind::ArgumentConflict,
-                "--folder-rows is only available for single-root measurement, not subcommands",
+                "'--folder-rows' is only available for single-root measurement, not subcommands",
             ));
         }
         if command.get_arguments().any(|arg| {
@@ -78,7 +78,7 @@ pub(crate) fn parse_cli() -> clap::error::Result<Cli> {
         }) {
             return Err(command.error(
                 clap::error::ErrorKind::ArgumentConflict,
-                format!("Root measurement arguments cannot be combined with the '{name}' subcommand; put that command's options after its name"),
+                format!("Root measurement arguments cannot be combined with the '{name}' subcommand. Put that command's options after its name."),
             ));
         }
     }

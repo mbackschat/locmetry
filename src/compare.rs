@@ -199,13 +199,15 @@ pub enum Entity {
     Package { path: String, detector: String },
 }
 impl Entity {
-    /// The entity as a sentence names it, e.g. `Folder "src/extra"`; quotes keep
+    /// The entity as a sentence names it, e.g. `Folder 'src/extra'`; quotes keep
     /// a path distinct from the words around it.
     pub(crate) fn named(&self) -> String {
         match self {
-            Entity::Member { name } => format!("Member \"{name}\""),
-            Entity::Folder { path } => format!("Folder \"{path}\""),
-            Entity::Package { path, detector } => format!("Package \"{path}\" ({detector})"),
+            Entity::Member { name } => format!("Member {}", crate::output::quoted(name)),
+            Entity::Folder { path } => format!("Folder {}", crate::output::quoted(path)),
+            Entity::Package { path, detector } => {
+                format!("Package {} ({detector})", crate::output::quoted(path))
+            }
         }
     }
 }

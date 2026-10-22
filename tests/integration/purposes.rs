@@ -239,7 +239,7 @@ fn unknown_and_non_source_languages_are_rejected() {
     let temp = project();
     let root = temp.path().join("project");
     for (value, message) in [
-        ("Rusty", "unknown language \"Rusty\""),
+        ("Rusty", "Unknown language 'Rusty'"),
         ("json", "JSON is data, not source"),
     ] {
         let output = run(
@@ -264,7 +264,7 @@ fn purpose_filters_only_tables() {
     assert!(output.status.success());
     assert!(String::from_utf8(output.stderr)
         .unwrap()
-        .contains("--table-purpose has no effect here; it applies only to table output"));
+        .contains("'--table-purpose' has no effect here. It applies only to table output"));
 }
 
 /// Comment bars compare densities: the densest row fills the bar, under a

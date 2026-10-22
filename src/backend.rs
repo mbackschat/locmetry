@@ -214,17 +214,17 @@ pub(crate) fn scan_selection(
         if !target_selected {
             if let Some(excluded) = &exclusion {
                 bail!(
-                    "Subfolder {folder} is excluded at {} by {}; revise the exclusion policy",
+                    "Subfolder '{folder}' is excluded at '{}' by {}. Revise the exclusion policy.",
                     excluded.at,
                     excluded.patterns.join(", ")
                 );
             }
             let reason = match filter_reason(&root, policy.scope(), Target::Subfolder(folder))? {
-                FilterReason::IgnorePolicy => "ignore policy; try --respect-ignore-files false (changes the whole project policy and module context)",
-                FilterReason::HiddenPolicy => "hidden policy; try --hidden true (changes the whole project policy and module context)",
-                FilterReason::ReasonNotRecorded => "cause could not be established; inspect overlapping scope filters",
+                FilterReason::IgnorePolicy => "ignore policy. Try '--respect-ignore-files false', which changes the whole project policy and module context.",
+                FilterReason::HiddenPolicy => "hidden policy. Try '--hidden true', which changes the whole project policy and module context.",
+                FilterReason::ReasonNotRecorded => "cause could not be established. Inspect overlapping scope filters.",
             };
-            bail!("Subfolder {folder} is not selected: {reason}");
+            bail!("Subfolder '{folder}' is not selected: {reason}");
         }
     }
     let names = paths

@@ -16,12 +16,12 @@ pub(crate) fn destination(shared: &SharedArgs) -> Result<Destination<'_>> {
     let mut destination = output_destination(&shared.output, shared.format);
     anyhow::ensure!(
         shared.print.is_none() || destination.path.is_some(),
-        "--print requires --output FILE; without a saved file, stdout already receives the result"
+        "'--print' requires '--output FILE'. Without a saved file, stdout already receives the result."
     );
     destination.print = shared.print;
     anyhow::ensure!(
         !shared.files || destination.shows(Format::Json),
-        "--files adds per-file records only to full JSON; {}",
+        "'--files' adds per-file records only to full JSON. {}",
         destination.format_remedy(Format::Json)
     );
     Ok(destination)
@@ -58,8 +58,8 @@ impl Destination<'_> {
             Format::Markdown => "markdown",
         };
         match self.path {
-            Some(_) => format!("use --print {name} or --format {name}"),
-            None => format!("use --format {name}"),
+            Some(_) => format!("Use '--print {name}' or '--format {name}'."),
+            None => format!("Use '--format {name}'."),
         }
     }
 
@@ -81,7 +81,7 @@ impl Destination<'_> {
         styling.stderr_message(
             Role::Warning,
             format_args!(
-                "{option} has no effect here; it applies only to {} output; {}",
+                "'{option}' has no effect here. It applies only to {} output. {}",
                 names.join(" and "),
                 self.format_remedy(supported[0])
             ),

@@ -80,7 +80,7 @@ pub fn source_language(name: &str) -> Result<&'static str, String> {
                 .map(|(language, _)| *language)
                 .find(|language| language.name().eq_ignore_ascii_case(name))
         })
-        .ok_or_else(|| format!("unknown language {name:?}; use a name from the Language table"))?;
+        .ok_or_else(|| format!("Unknown language '{name}'. Use a name from the Language table."))?;
     match language_kind(language.name()) {
         Kind::Source => Ok(language.name()),
         kind => Err(format!("{} is {kind}, not source", language.name())),

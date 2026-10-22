@@ -203,6 +203,6 @@ fn split_languages_warns_without_a_table_or_markdown_view() {
     let output = run(temp.path(), &["--format", "json", "--split-languages"]);
     assert!(output.status.success());
     assert!(String::from_utf8_lossy(&output.stderr).contains(
-        "--split-languages has no effect here; it applies only to table and Markdown output"
+        "'--split-languages' has no effect here. It applies only to table and Markdown output"
     ));
 }

@@ -14,7 +14,7 @@ fn run(cli: Cli) -> Result<Outcome> {
         let mut stdout = io::stdout().lock();
         writeln!(
             stdout,
-            "Source: {path}; locmetry {}\n",
+            "Source: {path} (locmetry {})\n",
             env!("CARGO_PKG_VERSION")
         )?;
         stdout.write_all(text.as_bytes())?;

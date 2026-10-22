@@ -45,7 +45,7 @@ fn member_suffix(before: String, after: String) -> String {
         }
     };
     format!(
-        " Members before: {}; after: {}.",
+        " Members before: {}. Members after: {}.",
         shown(before),
         shown(after)
     )
@@ -77,7 +77,7 @@ pub(super) fn measurement_notes(c: &Comparison) -> Vec<(Role, String)> {
         .filter_map(|(side, m)| m.backend_inaccurate.then_some(*side))
         .collect();
     if !inaccurate.is_empty() {
-        notes.push((Role::Warning, format!("Inaccurate input: {}; recorded counts may be partial, even without identified failure paths.", inaccurate.join(", "))));
+        notes.push((Role::Warning, format!("Inaccurate input: {}. Recorded counts may be partial, even without identified failure paths.", inaccurate.join(", "))));
     }
 
     let unread_a: BTreeSet<_> = a.unread.iter().collect();
@@ -86,7 +86,7 @@ pub(super) fn measurement_notes(c: &Comparison) -> Vec<(Role, String)> {
         notes.push((
             Role::Warning,
             format!(
-                "Unreadable files: {}; not counted on the affected side(s).{}",
+                "Unreadable files: {}. Not counted on the affected side(s).{}",
                 set_summary(&unread_a, &unread_b, "path"),
                 member_suffix(
                     failure_members(before, a.unread.iter().map(String::as_str)),
@@ -115,7 +115,7 @@ pub(super) fn measurement_notes(c: &Comparison) -> Vec<(Role, String)> {
             (None, None) => unreachable!("at least one recorded failure"),
         };
         notes.push((Role::Warning, format!(
-            "Parse failures: {summary}; compared by path/reason, not counted on the affected side(s).{}",
+            "Parse failures: {summary}. Compared by path and reason, not counted on the affected side(s).{}",
             member_suffix(
                 parse_failure_members(before),
                 parse_failure_members(after),
@@ -146,7 +146,7 @@ pub(super) fn measurement_notes(c: &Comparison) -> Vec<(Role, String)> {
             Role::Information,
             format!(
                 "Failure evidence: {}. Missing evidence does not certify historical counts.",
-                missing.join("; ")
+                missing.join(", ")
             ),
         ));
     }
@@ -156,20 +156,20 @@ pub(super) fn measurement_notes(c: &Comparison) -> Vec<(Role, String)> {
     let has_unknown = !unknown_a.is_empty() || !unknown_b.is_empty();
     if has_unknown {
         let counting = if unknown_a == unknown_b {
-            "not counted on either side"
+            "Not counted on either side"
         } else {
-            "not counted on the affected side(s)"
+            "Not counted on the affected side(s)"
         };
         notes.push((
             Role::Muted,
             format!(
-                "Unrecognized files: {}; {counting}.",
+                "Unrecognized files: {}. {counting}.",
                 set_summary(&unknown_a, &unknown_b, "path")
             ),
         ));
     }
     if has_unknown || has_failures || !unread_a.is_empty() || !unread_b.is_empty() {
-        notes.push((Role::Muted, "Folder totals containing these files cover counted files only; per-folder detail is in JSON findings[].folder.".into()));
+        notes.push((Role::Muted, "Folder totals containing these files cover counted files only. Per-folder detail is in the JSON field 'findings[].folder'.".into()));
     }
 
     for (name, a, b) in [
@@ -190,7 +190,7 @@ pub(super) fn measurement_notes(c: &Comparison) -> Vec<(Role, String)> {
         }
     }
     if before.locmetry_version != after.locmetry_version {
-        notes.push((Role::Muted, "Counting corrections can differ between versions; the reports cannot show whether they did.".into()));
+        notes.push((Role::Muted, "Counting corrections can differ between versions. The reports cannot show whether they did.".into()));
     }
     notes
 }

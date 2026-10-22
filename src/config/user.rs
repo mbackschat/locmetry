@@ -39,16 +39,16 @@ pub(super) struct UserLanguages {
 impl UserDefaults {
     pub(super) fn load(path: &Path) -> Result<Self> {
         let input = std::fs::read_to_string(path)
-            .with_context(|| format!("Cannot read user defaults {}", path.display()))?;
+            .with_context(|| format!("Cannot read user defaults '{}'", path.display()))?;
         let defaults: Self = parse_toml(&input).with_context(|| {
             format!(
-                "Invalid user defaults {}; they may set only `version`, `scope.exclude`, and `[[languages.mappings]]`",
+                "Invalid user defaults '{}'. They may set only 'version', 'scope.exclude' and '[[languages.mappings]]'.",
                 path.display()
             )
         })?;
         ensure!(
             defaults.version == 1,
-            "Unsupported version {} in user defaults {}",
+            "Unsupported version {} in user defaults '{}'",
             defaults.version,
             path.display()
         );
@@ -65,7 +65,7 @@ impl UserDefaults {
                     .mappings
                     .iter()
                     .all(|project| project.id != mapping.id),
-                "Language mapping {:?} in user defaults {} is also defined by the project",
+                "Language mapping '{}' in user defaults '{}' is also defined by the project",
                 mapping.id,
                 path.display()
             );

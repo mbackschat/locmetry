@@ -151,7 +151,7 @@ fn bars_follow_language_and_folder_tables_within_the_terminal_width() {
         .unwrap();
     assert!(String::from_utf8(json.stderr)
         .unwrap()
-        .contains("--show-bars has no effect here; it applies only to table output"));
+        .contains("'--show-bars' has no effect here. It applies only to table output"));
 }
 
 /// With room for the minimum inline bar beside a table, its rows carry their
@@ -336,7 +336,7 @@ fn bars_are_never_automatic_in_pipes_and_cannot_be_both_forced_and_refused() {
     let json = run(&root, &["--format", "json", "--no-bars"]);
     assert!(String::from_utf8(json.stderr)
         .unwrap()
-        .contains("--no-bars has no effect here; it applies only to table output"));
+        .contains("'--no-bars' has no effect here. It applies only to table output"));
 }
 
 /// One measurement serves an agent twice: `--print` sends a second view to
@@ -388,7 +388,7 @@ fn print_shows_a_second_view_of_the_saved_measurement() {
     assert!(alone.stdout.is_empty());
     assert!(String::from_utf8(alone.stderr)
         .unwrap()
-        .contains("--print requires --output FILE"));
+        .contains("'--print' requires '--output FILE'"));
 }
 
 /// Rows sort by code, largest first, unless `--sort name` asks for the stable

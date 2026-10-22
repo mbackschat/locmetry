@@ -82,7 +82,7 @@ fn folders_warn_without_changing_non_table_measurements() {
         assert!(original.status.success());
         assert!(requested.status.success());
         assert!(String::from_utf8_lossy(&requested.stderr)
-            .contains("--show-folders has no effect here; it applies only to table output"));
+            .contains("'--show-folders' has no effect here. It applies only to table output"));
         if format == "markdown" {
             let original = String::from_utf8(original.stdout).unwrap();
             let requested = String::from_utf8(requested.stdout).unwrap();
@@ -102,7 +102,7 @@ fn folders_warn_without_changing_non_table_measurements() {
     let output = run(temp.path(), &["project", "--show-folders"]);
     assert!(output.status.success());
     assert!(serde_json::from_slice::<Value>(&output.stdout).is_ok());
-    assert!(String::from_utf8_lossy(&output.stderr).contains("--show-folders has no effect here"));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("'--show-folders' has no effect here"));
 }
 
 #[test]

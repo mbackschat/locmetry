@@ -362,10 +362,10 @@ fn invalid_view_combinations_preserve_files_and_fail_before_root_preparation() {
         vec!["workspace", "--root", "missing"],
     ] {
         for (extra, expected) in [
-            (vec!["--format", "table", "--files"], "--files adds"),
+            (vec!["--format", "table", "--files"], "'--files' adds"),
             (
                 vec!["--format", "headline", "--print", "table", "--files"],
-                "--files adds",
+                "'--files' adds",
             ),
         ] {
             for exists in [false, true] {
@@ -397,7 +397,9 @@ fn invalid_view_combinations_preserve_files_and_fail_before_root_preparation() {
         ],
     ] {
         let output = run(temp.path(), &args);
-        assert!(String::from_utf8_lossy(&output.stderr).contains("--print requires --output FILE"));
+        assert!(
+            String::from_utf8_lossy(&output.stderr).contains("'--print' requires '--output FILE'")
+        );
         assert!(output.stdout.is_empty());
     }
     fs::write(temp.path().join("saved"), "keep me").unwrap();
@@ -412,7 +414,9 @@ fn invalid_view_combinations_preserve_files_and_fail_before_root_preparation() {
             "10",
         ],
     );
-    assert!(String::from_utf8_lossy(&output.stderr).contains("--folder-rows requires table output"));
+    assert!(
+        String::from_utf8_lossy(&output.stderr).contains("'--folder-rows' requires table output")
+    );
     assert_eq!(
         fs::read_to_string(temp.path().join("saved")).unwrap(),
         "keep me"

@@ -143,7 +143,7 @@ fn mixed_failures_stay_visible_without_routine_notes_or_report_path_lists() {
             let text = String::from_utf8(output.stdout).unwrap();
             let stderr = String::from_utf8(output.stderr).unwrap();
             assert!(stderr.contains("bad.ipynb: invalid_notebook"), "{stderr}");
-            assert!(text.contains("Backend reported incomplete counts; inspect the JSON metadata."));
+            assert!(text.contains("Backend reported incomplete counts. Inspect the JSON metadata."));
             let gap = text
                 .lines()
                 .find(|line| line.contains("Not counted:"))
@@ -178,7 +178,7 @@ fn verbose_is_table_only_and_does_not_change_markdown_or_json_evidence() {
         assert!(plain.status.success());
         assert!(detail.status.success());
         assert!(String::from_utf8_lossy(&detail.stderr)
-            .contains("--verbose has no effect here; it applies only to table output"));
+            .contains("'--verbose' has no effect here. It applies only to table output"));
         if format == "markdown" {
             let plain = String::from_utf8(plain.stdout).unwrap();
             let detail = String::from_utf8(detail.stdout).unwrap();

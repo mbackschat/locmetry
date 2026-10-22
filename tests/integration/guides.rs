@@ -54,7 +54,7 @@ fn guides_print_their_exact_sources_without_loading_configuration() {
         );
         assert!(out.stderr.is_empty());
         let expected = format!(
-            "Source: docs/guides/{topic}.md; locmetry {}\n\n{}",
+            "Source: docs/guides/{topic}.md (locmetry {})\n\n{}",
             env!("CARGO_PKG_VERSION"),
             source(topic)
         );

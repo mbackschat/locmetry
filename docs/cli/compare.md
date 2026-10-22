@@ -57,18 +57,19 @@ Net change: acme-orders → acme-orders
  web (both)        19     20      +1 │     16     17      +1
  ────────────────────────────────────┼──────────────────────
  Source total      37     38      +1 │     29     30      +1
- Folders are recursive; do not sum parents and children.
+ Folders are recursive. Do not sum parents and children.
 
 ▸ Measurement notes
 
 - Net change = after − before, from the two saved reports.
 - Unreadable files add nothing to the recorded counts: their lines are unknown, not zero.
 - A folder seen in only one report may be newly visible, not newly created.
-- Unrecognized files: same 2 paths in both reports; not counted on either side.
-- Folder totals containing these files cover counted files only; per-folder detail is in JSON findings[].folder.
+- Unrecognized files: same 2 paths in both reports. Not counted on either side.
+- Folder totals containing these files cover counted files only. Per-folder detail is in the JSON field
+'findings[].folder'.
 
-No recorded differences in measurement settings. Reports do not fingerprint source, ignore files or executable builds;
-this does not prove source-only growth.
+No recorded differences in measurement settings. Reports do not fingerprint source, ignore files or executable builds.
+This does not prove source-only growth.
 
 ```
 
@@ -248,7 +249,7 @@ locmetry compare before.json after.json --member web --no-color --format table \
 
 ```output
 Net change: service + web → service + web
-Member: web (both); counts and detail cover this member only.
+Member: web (both). Counts and detail cover this member only.
 Input metadata, measurement notes, report-level findings and partial status cover the whole workspace inputs.
 
  ──────────────────────────────────────────────────────────────────────────────────────
@@ -279,11 +280,11 @@ Input metadata, measurement notes, report-level findings and partial status cove
  Source total      19     20      +1 │     16     17      +1
  Folded: TSX → TypeScript.
 
-Member source lines: matched +1, entering +0, leaving -0; total +1.
-Member all-counted lines: matched +1, entering +0, leaving -0; total +1.
+Member source lines: matched +1, entering 0, leaving 0, total +1.
+Member all-counted lines: matched +1, entering 0, leaving 0, total +1.
 
-Member source code: matched +1, entering +0, leaving -0; total +1.
-Member all-counted code: matched +1, entering +0, leaving -0; total +1.
+Member source code: matched +1, entering 0, leaving 0, total +1.
+Member all-counted code: matched +1, entering 0, leaving 0, total +1.
 
  ───────────────────────────────────────────────────────────
                        Lines         │         Code
@@ -292,18 +293,19 @@ Member all-counted code: matched +1, entering +0, leaving -0; total +1.
  src (both)        19     20      +1 │     16     17      +1
  ────────────────────────────────────┼──────────────────────
  Source total      19     20      +1 │     16     17      +1
- Folders are recursive; do not sum parents and children.
+ Folders are recursive. Do not sum parents and children.
 
 ▸ Measurement notes
 
 - Net change = after − before, from the two saved reports.
 - Unreadable files add nothing to the recorded counts: their lines are unknown, not zero.
 - A folder seen in only one report may be newly visible, not newly created.
-- Unrecognized files: same 2 paths in both reports; not counted on either side.
-- Folder totals containing these files cover counted files only; per-folder detail is in JSON findings[].folder.
+- Unrecognized files: same 2 paths in both reports. Not counted on either side.
+- Folder totals containing these files cover counted files only. Per-folder detail is in the JSON field
+'findings[].folder'.
 
-No recorded differences in measurement settings. Reports do not fingerprint source, ignore files or executable builds;
-this does not prove source-only growth.
+No recorded differences in measurement settings. Reports do not fingerprint source, ignore files or executable builds.
+This does not prove source-only growth.
 
 ```
 
@@ -429,9 +431,10 @@ locmetry compare --no-color --help | sed '/^Presentation:/,$d'
 ```
 
 ```output
-locmetry: Cannot compare before report headline.json: Full measurement report required; missing review, breakdown,
+locmetry: Cannot compare before report headline.json: A full measurement report is required. Missing: review, breakdown,
 metadata.kinds, metadata.modules, metadata.coverage.unrecognized, metadata.config. Capture a full measurement with
---output FILE or --format json. A headline cannot reconstruct the missing baseline; rerunning measures the current tree
+'--output FILE' or '--format json'. A headline cannot reconstruct the missing baseline, and rerunning measures the
+current tree.
 Compare two saved full reports: net change is after minus before. Defaults to a table on a terminal,
 a JSON headline in pipes. --output FILE saves only to that file, defaulting to full JSON; --format
 overrides the format

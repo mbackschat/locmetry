@@ -77,76 +77,77 @@ Net change: immich → immich
  web (both)                67,048   67,833     +785 │  57,577   58,255    +678
  ───────────────────────────────────────────────────┼─────────────────────────
  Source total             322,106  333,360  +11,254 │ 273,566  282,770  +9,204
- Folders are recursive; do not sum parents and children.
+ Folders are recursive. Do not sum parents and children.
 
-Only in one report: 2 folders only before; 16 folders only after.
+Only in one report: 2 folders only before, 16 folders only after.
 
 ▸ Measurement notes
 
 - Net change = after − before, from the two saved reports.
 - Unreadable files add nothing to the recorded counts: their lines are unknown, not zero.
 - A folder seen in only one report may be newly visible, not newly created.
-- Unrecognized files: same 436 paths in both reports; not counted on either side.
-- Folder totals containing these files cover counted files only; per-folder detail is in JSON findings[].folder.
+- Unrecognized files: same 436 paths in both reports. Not counted on either side.
+- Folder totals containing these files cover counted files only. Per-folder detail is in the JSON field
+'findings[].folder'.
 
 ▸ Findings
 
 
-- presence_changed (Before): Folder "mobile/lib/interfaces" appears only in the before report; it may be deleted or no
+- presence_changed (before): Folder 'mobile/lib/interfaces' appears only in the before report. It may be deleted or no
 longer measured.
 
-- presence_changed (Before): Folder "mobile/lib/mixins" appears only in the before report; it may be deleted or no
+- presence_changed (before): Folder 'mobile/lib/mixins' appears only in the before report. It may be deleted or no
 longer measured.
 
-- presence_changed (After): Folder "mobile/lib/data/store/util" appears only in the after report; it may be new or newly
+- presence_changed (after): Folder 'mobile/lib/data/store' appears only in the after report. It may be new or newly
 measured.
 
-- presence_changed (After): Folder "mobile/lib/data/store" appears only in the after report; it may be new or newly
+- presence_changed (after): Folder 'mobile/lib/data/store/util' appears only in the after report. It may be new or newly
 measured.
 
-- presence_changed (After): Folder "mobile/lib/presentation/widgets/slideshow" appears only in the after report; it may
+- presence_changed (after): Folder 'mobile/lib/presentation/widgets/slideshow' appears only in the after report. It may
 be new or newly measured.
 
-- presence_changed (After): Folder "mobile/lib/presentation/widgets/sliver_app_bar" appears only in the after report; it
+- presence_changed (after): Folder 'mobile/lib/presentation/widgets/sliver_app_bar' appears only in the after report. It
 may be new or newly measured.
 
-- presence_changed (After): Folder "mobile/packages/ui/lib/extensions" appears only in the after report; it may be new
+- presence_changed (after): Folder 'mobile/packages/ui/lib/extensions' appears only in the after report. It may be new
 or newly measured.
 
-- presence_changed (After): Folder "mobile/packages/ui/lib/src/components/settings" appears only in the after report; it
+- presence_changed (after): Folder 'mobile/packages/ui/lib/src/components/settings' appears only in the after report. It
 may be new or newly measured.
 
-- presence_changed (After): Folder "mobile/test/data/store/util" appears only in the after report; it may be new or
-newly measured.
+- presence_changed (after): Folder 'mobile/test/data' appears only in the after report. It may be new or newly measured.
 
-- presence_changed (After): Folder "mobile/test/data/store" appears only in the after report; it may be new or newly
+- presence_changed (after): Folder 'mobile/test/data/store' appears only in the after report. It may be new or newly
 measured.
 
-- presence_changed (After): Folder "mobile/test/data" appears only in the after report; it may be new or newly measured.
-
-- presence_changed (After): Folder "mobile/test/medium/utils" appears only in the after report; it may be new or newly
-measured.
-
-- presence_changed (After): Folder "mobile/test/presentation/pages" appears only in the after report; it may be new or
+- presence_changed (after): Folder 'mobile/test/data/store/util' appears only in the after report. It may be new or
 newly measured.
 
-- presence_changed (After): Folder "mobile/test/presentation/widgets/slideshow" appears only in the after report; it may
+- presence_changed (after): Folder 'mobile/test/medium/utils' appears only in the after report. It may be new or newly
+measured.
+
+- presence_changed (after): Folder 'mobile/test/presentation/pages' appears only in the after report. It may be new or
+newly measured.
+
+- presence_changed (after): Folder 'mobile/test/presentation/widgets/slideshow' appears only in the after report. It may
 be new or newly measured.
 
-- presence_changed (After): Folder "mobile/test/widgets/settings/beta_sync_settings" appears only in the after report;
-it may be new or newly measured.
-
-- presence_changed (After): Folder "mobile/test/widgets/settings" appears only in the after report; it may be new or
-newly measured.
-
-- presence_changed (After): Folder "mobile/test/widgets" appears only in the after report; it may be new or newly
+- presence_changed (after): Folder 'mobile/test/widgets' appears only in the after report. It may be new or newly
 measured.
 
-- presence_changed (After): Folder "web/src/lib/components/memories" appears only in the after report; it may be new or
+- presence_changed (after): Folder 'mobile/test/widgets/settings' appears only in the after report. It may be new or
 newly measured.
 
-No recorded differences in measurement settings. Reports do not fingerprint source, ignore files or executable builds;
-this does not prove source-only growth.
+- presence_changed (after): Folder 'mobile/test/widgets/settings/beta_sync_settings' appears only in the after report.
+It may be new or newly measured.
+
+- presence_changed (after): Folder 'web/src/lib/components/memories' appears only in the after report. It may be new or
+newly measured.
+
+No recorded differences in measurement settings. Reports do not fingerprint source, ignore files or executable builds.
+This does not prove source-only growth.
 
 ```
 
@@ -168,7 +169,7 @@ locmetry compare before.json after.json --member mobile --format table --no-colo
 ```output
 Net change: e2e + machine-learning + mobile + packages + server + web → e2e + machine-learning + mobile + packages +
 server + web
-Member: mobile (both); counts and detail cover this member only.
+Member: mobile (both). Counts and detail cover this member only.
 Input metadata, measurement notes, report-level findings and partial status cover the whole workspace inputs.
 
  ──────────────────────────────────────────────────────────────────────────────────────────────
@@ -202,11 +203,11 @@ Input metadata, measurement notes, report-level findings and partial status cove
  ──────────────────────────────────────┼───────────────────────
  Source total  98,994  100,142  +1,148 │ 82,656  83,220    +564
 
-Member source lines: matched +1148, entering +0, leaving -0; total +1148.
-Member all-counted lines: matched +12022, entering +0, leaving -0; total +12022.
+Member source lines: matched +1,148, entering 0, leaving 0, total +1,148.
+Member all-counted lines: matched +12,022, entering 0, leaving 0, total +12,022.
 
-Member source code: matched +564, entering +0, leaving -0; total +564.
-Member all-counted code: matched +11434, entering +0, leaving -0; total +11434.
+Member source code: matched +564, entering 0, leaving 0, total +564.
+Member all-counted code: matched +11,434, entering 0, leaving 0, total +11,434.
 
  ─────────────────────────────────────────────────────────────────────────
                                    Lines          │          Code
@@ -221,17 +222,18 @@ Member all-counted code: matched +11434, entering +0, leaving -0; total +11434.
  test (both)              16,843   19,170  +2,327 │ 13,613  15,396  +1,783
  ─────────────────────────────────────────────────┼───────────────────────
  Source total             98,994  100,142  +1,148 │ 82,656  83,220    +564
- Folders are recursive; do not sum parents and children.
+ Folders are recursive. Do not sum parents and children.
 
-Only in one report: 2 folders only before; 15 folders only after.
+Only in one report: 2 folders only before, 15 folders only after.
 
 ▸ Measurement notes
 
 - Net change = after − before, from the two saved reports.
 - Unreadable files add nothing to the recorded counts: their lines are unknown, not zero.
 - A folder seen in only one report may be newly visible, not newly created.
-- Unrecognized files: same 229 paths in both reports; not counted on either side.
-- Folder totals containing these files cover counted files only; per-folder detail is in JSON findings[].folder.
+- Unrecognized files: same 229 paths in both reports. Not counted on either side.
+- Folder totals containing these files cover counted files only. Per-folder detail is in the JSON field
+'findings[].folder'.
 
 ```
 

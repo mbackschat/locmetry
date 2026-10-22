@@ -142,11 +142,11 @@ fn workspace_composition_keeps_offsetting_arrivals_and_departures() {
     let after = save(temp.path(), "after.json", &workspace(&[&new]));
     for text in human_comparisons(&before, &after, 0) {
         assert!(
-            text.contains("Workspace source lines: matched +0, entering +1, leaving -1; total +0."),
+            text.contains("Workspace source lines: matched 0, entering +1, leaving -1, total 0."),
             "{text}"
         );
         assert!(
-            text.contains("Workspace source code: matched +0, entering +1, leaving -1; total +0."),
+            text.contains("Workspace source code: matched 0, entering +1, leaving -1, total 0."),
             "{text}"
         );
         assert!(
@@ -218,7 +218,7 @@ fn human_coverage_notes_summarize_paths_without_changing_json_findings() {
     for text in human_comparisons(&before, &before, 0) {
         assert_eq!(text.matches("Unrecognized files:").count(), 1, "{text}");
         assert!(
-            text.contains("same 1 path in both reports; not counted on either side."),
+            text.contains("same 1 path in both reports. Not counted on either side."),
             "{text}"
         );
         assert!(!text.contains("coverage_gap"), "{text}");
@@ -280,7 +280,7 @@ fn human_coverage_notes_keep_missing_evidence_distinct_from_recorded_failures() 
     let historical = save(temp.path(), "historical.json", &legacy);
     for text in human_comparisons(&historical, &historical, 0) {
         assert!(
-            text.contains("Failure evidence: not recorded (before); not recorded (after)."),
+            text.contains("Failure evidence: not recorded (before), not recorded (after)."),
             "{text}"
         );
         assert!(!text.contains("same"), "{text}");
@@ -360,7 +360,7 @@ fn human_coverage_notes_name_actionable_members_and_count_missing_member_evidenc
             .find(|l| l.contains("Parse failures:"))
             .unwrap();
         assert!(
-            failures.contains("Members before: api; after: api"),
+            failures.contains("Members before: api. Members after: api"),
             "{text}"
         );
         assert!(
@@ -375,7 +375,7 @@ fn human_coverage_notes_name_actionable_members_and_count_missing_member_evidenc
     }
     for text in human_comparisons(&historical, &saved, 2) {
         assert!(
-            text.contains("Members before: not recorded; after: api."),
+            text.contains("Members before: not recorded. Members after: api."),
             "{text}"
         );
     }
@@ -393,7 +393,7 @@ fn human_producer_notes_show_each_changed_field_without_asserting_counting_behav
     let version = save(temp.path(), "version.json", &report);
     for text in human_comparisons(&before, &version, 0) {
         assert!(text.contains("Locmetry version: old → new."), "{text}");
-        assert!(text.contains("Counting corrections can differ between versions; the reports cannot show whether they did."), "{text}");
+        assert!(text.contains("Counting corrections can differ between versions. The reports cannot show whether they did."), "{text}");
         assert!(!text.contains("counter_changed"), "{text}");
         assert!(!text.contains("No recorded differences"), "{text}");
     }
@@ -529,7 +529,7 @@ fn source_code_grids_preserve_zero_code_folder_and_member_presence() {
 }
 
 #[test]
-fn workspace_composition_colors_signed_contributions_and_mutes_signed_zero() {
+fn workspace_composition_colors_signed_contributions_and_mutes_unsigned_zero() {
     use locmetry::style::Theme;
     let temp = tempfile::tempdir().unwrap();
     let api = temp.path().join("api");
@@ -550,7 +550,7 @@ fn workspace_composition_colors_signed_contributions_and_mutes_signed_zero() {
             "\x1b[31m-3\x1b[0m",
             "\x1b[32m+5\x1b[0m",
             "\x1b[31m-2\x1b[0m",
-            "\x1b[90m+0\x1b[0m",
+            "\x1b[90m0\x1b[0m",
         ),
         (
             &after,
@@ -558,14 +558,14 @@ fn workspace_composition_colors_signed_contributions_and_mutes_signed_zero() {
             "\x1b[32m+3\x1b[0m",
             "\x1b[32m+2\x1b[0m",
             "\x1b[31m-5\x1b[0m",
-            "\x1b[90m+0\x1b[0m",
+            "\x1b[90m0\x1b[0m",
         ),
         (
             &after,
             &grown,
             "\x1b[32m+1\x1b[0m",
-            "\x1b[90m+0\x1b[0m",
-            "\x1b[90m-0\x1b[0m",
+            "\x1b[90m0\x1b[0m",
+            "\x1b[90m0\x1b[0m",
             "\x1b[32m+1\x1b[0m",
         ),
         (
@@ -585,7 +585,7 @@ fn workspace_composition_colors_signed_contributions_and_mutes_signed_zero() {
             locmetry::LanguageVariants::Split,
         );
         let expected =
-            format!("matched {matched}, entering {entering}, leaving {leaving}; total {total}.");
+            format!("matched {matched}, entering {entering}, leaving {leaving}, total {total}.");
         for label in [
             "source lines",
             "all-counted lines",
@@ -757,7 +757,7 @@ fn human_comparisons_explain_presence_in_plain_words() {
         "Unreadable files add nothing to the recorded counts: their lines are unknown, not zero.",
         "A folder seen in only one report may be newly visible, not newly created.",
         "Only in one report: 1 folder only after.",
-        "Folder \"src/extra\" appears only in the after report; it may be new or newly measured.",
+        "Folder 'src/extra' appears only in the after report. It may be new or newly measured.",
     ] {
         assert!(table.contains(expected), "{expected}\n{table}");
     }
@@ -854,7 +854,7 @@ fn totals_split_all_counted_by_kind_and_grids_end_in_their_source_total() {
         "{folders}"
     );
     assert!(
-        folders.contains("Folders are recursive; do not sum parents and children."),
+        folders.contains("Folders are recursive. Do not sum parents and children."),
         "{folders}"
     );
     assert!(!folders.contains(". (both)"), "{folders}");

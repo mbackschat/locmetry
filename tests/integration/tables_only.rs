@@ -184,7 +184,7 @@ fn verbose_conflicts_and_other_formats_warn() {
     );
     assert!(json.status.success());
     assert!(String::from_utf8_lossy(&json.stderr)
-        .contains("--tables-only has no effect here; it applies only to table output"));
+        .contains("'--tables-only' has no effect here. It applies only to table output"));
     let report = temp.path().join("report.json");
     stdout(run(
         temp.path(),
@@ -203,5 +203,5 @@ fn verbose_conflicts_and_other_formats_warn() {
     );
     assert!(markdown.status.success());
     assert!(String::from_utf8_lossy(&markdown.stderr)
-        .contains("--tables-only has no effect here; it applies only to table output"));
+        .contains("'--tables-only' has no effect here. It applies only to table output"));
 }

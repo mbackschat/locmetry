@@ -12,9 +12,11 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 
 - Default tables name Rust `#[cfg(test)]` code counted with production in a legend line below the language table, such as “Production in 'Rust' includes 145 code lines of inline #[cfg(test)] tests in 3 files”, so it is visible where Test/prod is read. `--verbose` no longer repeats it as an `Inline tests:` note; Markdown keeps that note.
 - Table notes and legends are easier to scan: languages, modules, folders, members and commands inside sentences are single-quoted, as in “'locmetry --files --output -' lists each file's kind”, separate facts are separate sentences instead of being joined by semicolons, and formula legends separate their formulas with “·”. The verbose note on module-claimed files now reads “Largest files counted as Production only by a build layout”, with each file's module named as “web (npm)”.
+- Comparison notes, `explain` tables, warnings and errors follow the same wording: values and paths are single-quoted, the composition lines show an unchanged figure as `0` instead of `+0` or `-0`, comparison findings name their side as “(after)” rather than “(After)”, and `explain` gives a filter or parse-failure reason its own `Detail:` line.
 
 ### Fixed
 
+- `explain` tables no longer print “1 lines” or “1 blanks”, and comparison coverage findings no longer say “1 unreadable files”: each count agrees with its unit.
 - Comparison notes no longer say unreadable files "count as 0": they add nothing to the recorded counts, and their lines are unknown, not zero.
 - Errors for a missing `explain` target, `--subfolder` folder or workspace member name the path or member, so a failure among several `explain` paths shows which one; in a workspace the error names the `MEMBER/PATH` as typed.
 - An option spelling retired in 0.7.0, such as `--purpose` or `workspace --file`, is still rejected, but the error now names the option that replaced it instead of an unrelated one such as `--verbose` or `--files`.

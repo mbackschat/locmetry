@@ -352,13 +352,13 @@ fn grids(c: &Comparison, markdown: bool, variants: LanguageVariants) -> (Vec<Gri
             })
             .collect();
         Grid {
-            title: "Folders (recursive; do not sum parents and children)",
+            title: "Folders (recursive, do not sum parents and children)",
             label: "Folder",
             rows,
             total,
             secondary: false,
             legend: (!markdown)
-                .then(|| "Folders are recursive; do not sum parents and children.".into()),
+                .then(|| "Folders are recursive. Do not sum parents and children.".into()),
         }
     });
     (grids, folder_grid)
@@ -386,7 +386,7 @@ fn render(c: &Comparison, markdown: bool, theme: Theme, variants: LanguageVarian
     {
         writeln!(
             out,
-            "Subfolder: {} (project-relative; measured contributions only)",
+            "Subfolder: {} (project-relative, measured contributions only)",
             label(folder, markdown)
         )
         .unwrap();
@@ -400,7 +400,7 @@ fn render(c: &Comparison, markdown: bool, theme: Theme, variants: LanguageVarian
             .unwrap_or("not recorded");
         writeln!(
             out,
-            "{}; counts and detail cover this member only.",
+            "{}. Counts and detail cover this member only.",
             theme.strong(
                 Role::Information,
                 &format!("Member: {} ({presence})", label(member, markdown))
@@ -437,15 +437,12 @@ fn render(c: &Comparison, markdown: bool, theme: Theme, variants: LanguageVarian
                 std::cmp::Ordering::Equal => Role::Muted,
                 std::cmp::Ordering::Greater => Role::Increase,
             };
-            theme.paint(role, &format!("{value:+}"))
+            theme.paint(role, &output::signed(value))
         };
-        let leaving = |value: u64| match value {
-            0 => theme.paint(Role::Muted, "-0"),
-            _ => signed(-i128::from(value)),
-        };
+        let leaving = |value: u64| signed(-i128::from(value));
         writeln!(
             out,
-            "\n{scope} source lines: matched {}, entering {}, leaving {}; total {}.",
+            "\n{scope} source lines: matched {}, entering {}, leaving {}, total {}.",
             signed(composition.source.matched.lines.into()),
             signed(composition.source.entering.lines.into()),
             leaving(composition.source.leaving.lines),
@@ -454,7 +451,7 @@ fn render(c: &Comparison, markdown: bool, theme: Theme, variants: LanguageVarian
         .unwrap();
         writeln!(
             out,
-            "{scope} all-counted lines: matched {}, entering {}, leaving {}; total {}.",
+            "{scope} all-counted lines: matched {}, entering {}, leaving {}, total {}.",
             signed(composition.all_counted.matched.lines.into()),
             signed(composition.all_counted.entering.lines.into()),
             leaving(composition.all_counted.leaving.lines),
@@ -463,7 +460,7 @@ fn render(c: &Comparison, markdown: bool, theme: Theme, variants: LanguageVarian
         .unwrap();
         writeln!(
             out,
-            "\n{scope} source code: matched {}, entering {}, leaving {}; total {}.",
+            "\n{scope} source code: matched {}, entering {}, leaving {}, total {}.",
             signed(composition.source.matched.code.into()),
             signed(composition.source.entering.code.into()),
             leaving(composition.source.leaving.code),
@@ -472,7 +469,7 @@ fn render(c: &Comparison, markdown: bool, theme: Theme, variants: LanguageVarian
         .unwrap();
         writeln!(
             out,
-            "{scope} all-counted code: matched {}, entering {}, leaving {}; total {}.",
+            "{scope} all-counted code: matched {}, entering {}, leaving {}, total {}.",
             signed(composition.all_counted.matched.code.into()),
             signed(composition.all_counted.entering.code.into()),
             leaving(composition.all_counted.leaving.code),
@@ -497,7 +494,7 @@ fn render(c: &Comparison, markdown: bool, theme: Theme, variants: LanguageVarian
     .map(|(count, noun, side)| format!("{} only {side}", crate::output::counted(count, noun)))
     .collect();
     if !presence.is_empty() {
-        writeln!(out, "\nOnly in one report: {}.", presence.join("; ")).unwrap();
+        writeln!(out, "\nOnly in one report: {}.", presence.join(", ")).unwrap();
     } else if c.members.is_some() && counts_unchanged(c) {
         writeln!(out, "\nNo recorded count or presence changes.").unwrap();
     }
@@ -533,9 +530,9 @@ fn render(c: &Comparison, markdown: bool, theme: Theme, variants: LanguageVarian
             let context = f.context();
             writeln!(
                 out,
-                "\n- {} ({:?}{}): {}",
+                "\n- {} ({}{}): {}",
                 theme.paint(Role::Information, f.code()),
-                context.side,
+                side_name(context.side),
                 context
                     .member
                     .as_ref()
@@ -554,7 +551,7 @@ fn render(c: &Comparison, markdown: bool, theme: Theme, variants: LanguageVarian
                 | Finding::IdentityChanged { .. }
         )
     }) {
-        writeln!(out, "\n{}", theme.paint(Role::Muted, "No recorded differences in measurement settings. Reports do not fingerprint source, ignore files or executable builds; this does not prove source-only growth.")).unwrap();
+        writeln!(out, "\n{}", theme.paint(Role::Muted, "No recorded differences in measurement settings. Reports do not fingerprint source, ignore files or executable builds. This does not prove source-only growth.")).unwrap();
     }
     writeln!(
         out,
@@ -564,6 +561,13 @@ fn render(c: &Comparison, markdown: bool, theme: Theme, variants: LanguageVarian
     )
     .unwrap();
     out
+}
+fn side_name(side: Side) -> &'static str {
+    match side {
+        Side::Before => "before",
+        Side::After => "after",
+        Side::Both => "both",
+    }
 }
 fn presence_name(p: Presence) -> &'static str {
     match p {

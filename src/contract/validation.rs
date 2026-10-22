@@ -64,7 +64,7 @@ fn path(path: &str, root: Root) -> Result<()> {
     }
     ensure!(
         !path.is_empty() && path.split('/').all(|part| !matches!(part, "" | "." | "..")),
-        "invalid root-relative path {path:?}"
+        "invalid root-relative path '{path}'"
     );
     Ok(())
 }
@@ -86,7 +86,7 @@ fn purpose_key(key: &str, shape: PurposeKey) -> Result<()> {
     };
     ensure!(
         Purpose::ALL.iter().any(|p| p.to_string() == prefix),
-        "invalid purpose key {key:?}"
+        "invalid purpose key '{key}'"
     );
     Ok(())
 }
@@ -139,7 +139,7 @@ impl MeasurementReport {
                     && m.scope.is_some()
                     && m.config_path.is_some()
                     && m.workspace_path.is_none(),
-                "metadata: single-root fields required; workspace_path needs members"
+                "metadata: single-root fields are required, and 'workspace_path' needs members"
             ),
             Some(members) => {
                 ensure!(!members.is_empty(), "metadata.members must not be empty");
@@ -190,7 +190,7 @@ impl MeasurementReport {
         {
             ensure!(
                 inside(p),
-                "measured path {p:?} is outside subfolder {folder:?}"
+                "measured path '{p}' is outside subfolder '{folder}'"
             );
         }
         for p in self.breakdown.iter().flatten().map(|r| &r.folder).chain(
@@ -202,7 +202,7 @@ impl MeasurementReport {
         ) {
             ensure!(
                 folder_inside(p),
-                "measured folder {p:?} is outside subfolder {folder:?}"
+                "measured folder '{p}' is outside subfolder '{folder}'"
             );
         }
         let top = member_of(folder);
@@ -439,7 +439,7 @@ impl MeasurementReport {
         }
         if !missing.is_empty() {
             bail!(
-                "Full measurement report required; missing {}. Capture a full measurement with --output FILE or --format json. A headline cannot reconstruct the missing baseline; rerunning measures the current tree",
+                "A full measurement report is required. Missing: {}. Capture a full measurement with '--output FILE' or '--format json'. A headline cannot reconstruct the missing baseline, and rerunning measures the current tree.",
                 missing.join(", ")
             );
         }

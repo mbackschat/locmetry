@@ -38,12 +38,12 @@ pub enum WorkspaceDefinition {
 /// The members a workspace file names, with paths resolved against its folder.
 pub fn workspace_definition(path: &Path) -> Result<WorkspaceDefinition> {
     let input = std::fs::read_to_string(path)
-        .with_context(|| format!("Cannot read workspace file {}", path.display()))?;
-    let file: WorkspaceFile =
-        parse_toml(&input).with_context(|| format!("Invalid workspace file {}", path.display()))?;
+        .with_context(|| format!("Cannot read workspace file '{}'", path.display()))?;
+    let file: WorkspaceFile = parse_toml(&input)
+        .with_context(|| format!("Invalid workspace file '{}'", path.display()))?;
     ensure!(
         file.version == 1,
-        "Unsupported version {} in workspace file {}",
+        "Unsupported version {} in workspace file '{}'",
         file.version,
         path.display()
     );
@@ -52,7 +52,7 @@ pub fn workspace_definition(path: &Path) -> Result<WorkspaceDefinition> {
         (Some(roots), None, None) => {
             ensure!(
                 !roots.is_empty(),
-                "Workspace file {} lists no roots",
+                "Workspace file '{}' lists no roots",
                 path.display()
             );
             Ok(WorkspaceDefinition::Roots(
@@ -62,7 +62,7 @@ pub fn workspace_definition(path: &Path) -> Result<WorkspaceDefinition> {
         (None, Some(project), Some(folders)) => {
             ensure!(
                 !folders.is_empty(),
-                "Workspace file {} lists no folders",
+                "Workspace file '{}' lists no folders",
                 path.display()
             );
             Ok(WorkspaceDefinition::Folders {
@@ -71,15 +71,15 @@ pub fn workspace_definition(path: &Path) -> Result<WorkspaceDefinition> {
             })
         }
         (Some(_), _, _) => bail!(
-            "Workspace file {} combines roots with project or folders; name either independent roots or one project's folders",
+            "Workspace file '{}' combines roots with project or folders. Name either independent roots or one project's folders.",
             path.display()
         ),
         (None, Some(_), None) => bail!(
-            "Workspace file {} names a project but no folders",
+            "Workspace file '{}' names a project but no folders",
             path.display()
         ),
         (None, None, _) => bail!(
-            "Workspace file {} needs roots, or a project with folders",
+            "Workspace file '{}' needs roots, or a project with folders",
             path.display()
         ),
     }

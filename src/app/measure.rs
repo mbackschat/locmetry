@@ -121,13 +121,13 @@ pub(crate) fn workspace_members(
             .iter()
             .map(|given| {
                 let root = dunce::canonicalize(given).with_context(|| {
-                    format!("Workspace member {}: root does not exist", given.display())
+                    format!("Workspace member root '{}' does not exist", given.display())
                 })?;
                 let name = root
                     .file_name()
                     .and_then(|name| name.to_str())
                     .with_context(|| {
-                        format!("Workspace member {} has no folder name", given.display())
+                        format!("Workspace member '{}' has no folder name", given.display())
                     })?
                     .to_owned();
                 Ok(WorkspaceMember {
@@ -139,7 +139,7 @@ pub(crate) fn workspace_members(
             .collect::<Result<Vec<_>>>()?,
         locmetry::WorkspaceDefinition::Folders { project, folders } => {
             let root = dunce::canonicalize(&project).with_context(|| {
-                format!("Workspace project {} does not exist", project.display())
+                format!("Workspace project '{}' does not exist", project.display())
             })?;
             folders
                 .iter()
@@ -173,12 +173,12 @@ pub(crate) fn workspace_members(
         };
         anyhow::ensure!(
             location(member) != location(other),
-            "Workspace root {} is given twice",
+            "Workspace root '{}' is given twice",
             location(member).display()
         );
         anyhow::ensure!(
             member.name != other.name,
-            "Workspace members {} and {} share the name {}",
+            "Workspace members '{}' and '{}' share the name '{}'",
             location(member).display(),
             location(other).display(),
             member.name
@@ -189,7 +189,7 @@ pub(crate) fn workspace_members(
             location(outer) != location(member) && location(member).starts_with(location(outer))
         }) {
             anyhow::bail!(
-                "Workspace member {} lies inside member {}",
+                "Workspace member '{}' lies inside member '{}'",
                 location(member).display(),
                 location(outer).display()
             );

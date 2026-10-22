@@ -102,14 +102,17 @@ pub(super) fn parse(path: &Path, config: &Config) -> Result<Report, Error> {
     let notebook: Notebook = serde_json::from_str(&text).map_err(|error| {
         Error::Content(
             ParseFailureReason::InvalidNotebook,
-            format!("Cannot decode notebook: {error}"),
+            format!(
+                "Cannot decode notebook: {}",
+                error.to_string().replace('`', "'")
+            ),
         )
     })?;
     if notebook.nbformat != 4 || notebook.nbformat_minor > 5 {
         return Err(Error::Content(
             ParseFailureReason::UnsupportedNotebookVersion,
             format!(
-                "Notebook version {}.{} is unsupported; expected 4.0 through 4.5",
+                "Notebook version {}.{} is unsupported. Expected 4.0 through 4.5.",
                 notebook.nbformat, notebook.nbformat_minor
             ),
         ));

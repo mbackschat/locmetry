@@ -586,3 +586,33 @@ fn several_workspace_paths_use_each_members_policy() {
         ]
     );
 }
+
+#[test]
+fn table_counts_name_each_figure_with_its_number_and_unit() {
+    let temp = tempfile::tempdir().unwrap();
+    write(
+        temp.path(),
+        "Cargo.toml",
+        "[package]\nname = \"d\"\nversion = \"0.1.0\"\n",
+    );
+    write(temp.path(), "src/lib.rs", "// a\n\nfn a() {}\n\n");
+    write(temp.path(), "tool.py", "print(1)\n");
+    for (path, counts, module) in [
+        (
+            "tool.py",
+            "Counts: 1 code, 0 comments, 0 blanks, 1 line\n",
+            None,
+        ),
+        (
+            "src/lib.rs",
+            "Counts: 1 code, 1 comment, 2 blanks, 4 lines\n",
+            Some("Module: scan root (cargo)\n"),
+        ),
+    ] {
+        let text = common::stdout(run(temp.path(), path, &["--format", "table"]));
+        assert!(text.contains(counts), "{text}");
+        if let Some(module) = module {
+            assert!(text.contains(module), "{text}");
+        }
+    }
+}

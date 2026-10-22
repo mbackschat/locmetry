@@ -28,7 +28,7 @@ Purpose: production
 Category: tooling
 Rule: tooling
 Stage: rule
-Counts: 2 code, 1 comments, 0 blanks, 3 lines
+Counts: 2 code, 1 comment, 0 blanks, 3 lines
 Matching patterns: service/scripts/**
 Reason: Maintained check script that developers run before a commit
 ```
@@ -311,7 +311,7 @@ sed '/^| .*Root.* |/d' explanation.md
 | **Category** | tooling |
 | **Rule** | tooling |
 | **Stage** | rule |
-| **Counts** | 2 code, 1 comments, 0 blanks, 3 lines |
+| **Counts** | 2 code, 1 comment, 0 blanks, 3 lines |
 | **Matching patterns** | service/scripts/** |
 | **Reason** | Maintained check script that developers run before a commit |
 ```

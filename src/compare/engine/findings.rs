@@ -45,7 +45,7 @@ pub(super) fn presence_finding(
         (Entity::Member { .. }, Presence::BeforeOnly) => (
             Side::Before,
             format!(
-                "{} left the workspace measurement; its source may still exist.",
+                "{} left the workspace measurement. Its source may still exist.",
                 entity.named()
             ),
         ),
@@ -56,14 +56,14 @@ pub(super) fn presence_finding(
         (entity, Presence::BeforeOnly) => (
             Side::Before,
             format!(
-                "{} appears only in the before report; it may be deleted or no longer measured.",
+                "{} appears only in the before report. It may be deleted or no longer measured.",
                 entity.named()
             ),
         ),
         (entity, _) => (
             Side::After,
             format!(
-                "{} appears only in the after report; it may be new or newly measured.",
+                "{} appears only in the after report. It may be new or newly measured.",
                 entity.named()
             ),
         ),
@@ -140,7 +140,7 @@ pub(super) fn settings_findings(
         findings.push(Finding::IdentityChanged {
             context: context(
                 Side::Both,
-                "Project names differ; pairing does not verify repository identity.",
+                "Project names differ. Pairing does not verify repository identity.",
                 None,
                 &["/project"],
             ),
@@ -210,17 +210,20 @@ pub(super) fn settings_findings(
             (
                 m.coverage.unrecognized_files,
                 "/metadata/coverage/unrecognized",
-                "unrecognized files",
+                ("unrecognized file", "unrecognized files"),
             ),
             (
                 m.coverage.unread.len() as u64,
                 "/metadata/coverage/unread",
-                "unreadable files",
+                ("unreadable file", "unreadable files"),
             ),
             (
                 m.coverage.parse_failures.as_ref().map_or(0, |f| f.len()) as u64,
                 "/metadata/coverage/parse_failures",
-                "files with parsing/counting failures",
+                (
+                    "file with a parsing or counting failure",
+                    "files with parsing or counting failures",
+                ),
             ),
         ] {
             if n > 0 {
@@ -228,7 +231,10 @@ pub(super) fn settings_findings(
                     folder: None,
                     context: context(
                         side,
-                        format!("{n} {description}; their counts are unknown, not zero."),
+                        format!(
+                            "{n} {}. Their counts are unknown, not zero.",
+                            if n == 1 { description.0 } else { description.1 }
+                        ),
                         None,
                         &[path],
                     ),
@@ -236,14 +242,14 @@ pub(super) fn settings_findings(
             }
         }
         if m.coverage.parse_failures.is_none() {
-            findings.push(Finding::CoverageGap{folder:None,context:context(side,"Notebook parsing failure evidence was not recorded; historic counts are not certified.",None,&["/metadata/coverage/parse_failures"])});
+            findings.push(Finding::CoverageGap{folder:None,context:context(side,"Notebook parsing failure evidence was not recorded. Historic counts are not certified.",None,&["/metadata/coverage/parse_failures"])});
         }
         if m.backend_inaccurate {
             findings.push(Finding::CoverageGap {
                 folder: None,
                 context: context(
                     side,
-                    "Input is marked inaccurate; net change compares recorded measured subsets.",
+                    "Input is marked inaccurate. Net change compares recorded measured subsets.",
                     None,
                     &["/metadata/backend_inaccurate"],
                 ),
@@ -259,7 +265,7 @@ pub(super) fn settings_findings(
         let affected: BTreeSet<_> = unavailable.map(|path| parent(path).to_string()).collect();
         for folder in affected {
             findings.push(Finding::CoverageGap {
-                context: context(side, format!("Folder {folder} contains unavailable counts; its recorded totals and recursive parents cover measured subsets only."), member_for(&folder, m.members.is_some()), &["/metadata/coverage"]),
+                context: context(side, format!("Folder {} contains unavailable counts. Its recorded totals and recursive parents cover measured subsets only.", crate::output::quoted(&folder)), member_for(&folder, m.members.is_some()), &["/metadata/coverage"]),
                 folder: Some(folder),
             });
         }

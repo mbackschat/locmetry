@@ -48,11 +48,17 @@ fn parse_toml<T: serde::de::DeserializeOwned>(input: &str) -> Result<T> {
                 let before = &input[..span.start];
                 let line = before.matches('\n').count() + 1;
                 let column = before.rsplit('\n').next().unwrap_or(before).chars().count() + 1;
-                anyhow!("line {line}, column {column}: {message}")
+                anyhow!("line {line}, column {column}: {}", single_quoted(message))
             }
-            None => anyhow!("{message}"),
+            None => anyhow!("{}", single_quoted(message)),
         }
     })
+}
+
+/// The parser's message with its backtick quotes made single quotes, as the
+/// human output wording rules require (docs/help-design.md, Human Output Wording).
+fn single_quoted(message: &str) -> String {
+    message.replace('`', "'")
 }
 
 /// Category of source that a build module classifies.
@@ -107,7 +113,7 @@ impl<'de> Deserialize<'de> for Purpose {
             .find(|purpose| purpose.to_string() == name)
             .ok_or_else(|| match name.as_ref() {
                 "unclassified" => D::Error::custom(
-                    "purpose \"unclassified\" was renamed to \"other\" in locmetry 0.5",
+                    "purpose 'unclassified' was renamed to 'other' in locmetry 0.5",
                 ),
                 _ => D::Error::unknown_variant(&name, &["production", "test", "other"]),
             })
@@ -214,7 +220,7 @@ fn check_categories(config: &ConfigFile) -> Result<()> {
         };
         ensure!(
             config.categories.contains_key(category) || builtin.contains(category),
-            "Entry {} uses category {category:?}, which [categories] does not declare; declared: {}; built in: {}",
+            "Entry '{}' uses category '{category}', which [categories] does not declare. Declared: {}. Built in: {}.",
             entry.id,
             config.categories.keys().cloned().collect::<Vec<_>>().join(", "),
             builtin.into_iter().collect::<Vec<_>>().join(", ")
@@ -229,11 +235,11 @@ fn check_ids<'a>(ids: impl IntoIterator<Item = &'a str>) -> Result<()> {
     for id in ids {
         ensure!(
             !id.is_empty() && seen.insert(id),
-            "Entry IDs must be nonempty and unique: {id:?}"
+            "Entry ID '{id}' is empty or not unique"
         );
         ensure!(
             id != FALLBACK && !id.starts_with(BUILTIN),
-            "Entry ID {id:?} is reserved for {FALLBACK} or {BUILTIN} provenance"
+            "Entry ID '{id}' is reserved for '{FALLBACK}' or '{BUILTIN}' provenance"
         );
     }
     Ok(())
@@ -382,11 +388,11 @@ impl Policy {
                 Ok(LanguageMapping {
                     id: mapping.id.clone(),
                     matcher: glob_set(mapping.patterns.iter().map(String::as_str)).with_context(
-                        || format!("Invalid match in language mapping {}", mapping.id),
+                        || format!("Invalid match in language mapping '{}'", mapping.id),
                     )?,
                     language: LanguageType::from_name(&mapping.language).with_context(|| {
                         format!(
-                            "Unknown language {:?} in language mapping {}",
+                            "Unknown language '{}' in language mapping '{}'",
                             mapping.language, mapping.id
                         )
                     })?,
@@ -446,13 +452,13 @@ impl Policy {
                 // reproduced every reviewed classification (docs/PLAN.md section 4).
                 ensure!(
                     path.extension().is_none_or(|extension| extension != "json"),
-                    "{} looks like a retired JSON/regex profile; translate it to TOML (docs/PRODUCT.md)",
+                    "'{}' looks like a retired JSON/regex profile. Translate it to TOML (docs/PRODUCT.md).",
                     path.display()
                 );
                 let input = std::fs::read_to_string(path)
-                    .with_context(|| format!("Cannot read configuration {}", path.display()))?;
+                    .with_context(|| format!("Cannot read configuration '{}'", path.display()))?;
                 parse_toml(&input)
-                    .with_context(|| format!("Invalid configuration {}", path.display()))?
+                    .with_context(|| format!("Invalid configuration '{}'", path.display()))?
             }
             None => toml::from_str("version = 1").expect("built-in configuration is valid"),
         };
@@ -462,7 +468,7 @@ impl Policy {
         let sources: Vec<String> = [project, user]
             .into_iter()
             .flatten()
-            .map(|path| path.display().to_string())
+            .map(|path| format!("'{}'", path.display()))
             .collect();
         Self::from_config(config)
             .with_context(|| format!("Invalid configuration {}", sources.join(" with ")))
@@ -480,7 +486,7 @@ impl Policy {
     /// is escaped so glob metacharacters in its name match only itself.
     pub fn exclude_configuration(&mut self, root: &Path, config: &Path) -> Result<()> {
         let config = dunce::canonicalize(config)
-            .with_context(|| format!("Cannot resolve configuration {}", config.display()))?;
+            .with_context(|| format!("Cannot resolve configuration '{}'", config.display()))?;
         let Ok(relative) = config.strip_prefix(root) else {
             return Ok(());
         };

@@ -61,7 +61,7 @@ fn declared_categories_restrict_entry_categories() {
     let error = Policy::from_toml(&format!("{declared}{}", entry("prof"))).unwrap_err();
     let message = format!("{error:#}");
     assert!(
-        message.contains("\"prof\"") && message.contains("proof"),
+        message.contains("'prof'") && message.contains("proof"),
         "{message}"
     );
     Policy::from_toml(&format!("version = 1\n{}", entry("anything"))).unwrap();
@@ -704,7 +704,7 @@ fn retired_json_profiles_fail_with_a_migration_hint() {
     fs::write(&path, r#"{"project":"p","root":".","rules":[]}"#).unwrap();
     let error = Policy::load(&path).unwrap_err();
     assert!(
-        format!("{error:#}").contains("translate it to TOML"),
+        format!("{error:#}").contains("Translate it to TOML"),
         "{error:#}"
     );
 }
@@ -747,7 +747,7 @@ fn the_old_unclassified_purpose_names_its_replacement() {
     ] {
         let error = format!("{:#}", Policy::from_toml(toml).unwrap_err());
         assert!(
-            error.contains("\"unclassified\" was renamed to \"other\""),
+            error.contains("'unclassified' was renamed to 'other'"),
             "{error}"
         );
     }
@@ -776,7 +776,7 @@ fn configuration_errors_name_the_position_on_one_line() {
     assert_eq!(error.lines().count(), 1, "{error}");
     assert!(
         error.contains(
-            ".locmetryrc: line 6, column 11: purpose \"unclassified\" was renamed to \"other\""
+            ".locmetryrc': line 6, column 11: purpose 'unclassified' was renamed to 'other'"
         ),
         "{error}"
     );

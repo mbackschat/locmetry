@@ -19,20 +19,20 @@ pub(crate) fn literal_glob(path: &str) -> String {
 pub(super) fn glob(pattern: &str) -> Result<Glob> {
     ensure!(
         !pattern.starts_with('!'),
-        "Pattern {pattern:?} uses negation, which is not supported"
+        "Pattern '{pattern}' uses negation, which is not supported"
     );
     ensure!(
         !pattern.starts_with('/')
             && pattern
                 .split('/')
                 .all(|part| !matches!(part, "" | "." | "..")),
-        "Pattern {pattern:?} must be a relative path glob without empty, `.`, or `..` segments"
+        "Pattern '{pattern}' must be a relative path glob without empty, '.' or '..' segments"
     );
     GlobBuilder::new(pattern)
         .literal_separator(true)
         .backslash_escape(true)
         .build()
-        .with_context(|| format!("Invalid glob {pattern:?}"))
+        .with_context(|| format!("Invalid glob '{pattern}'"))
 }
 
 pub(super) fn glob_set<'a>(patterns: impl IntoIterator<Item = &'a str>) -> Result<GlobSet> {

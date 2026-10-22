@@ -158,7 +158,7 @@ pub(crate) fn run_compare(args: &CompareArgs, styling: Styling) -> Result<Outcom
     destination.write(&text)?;
     Ok(if partial {
         Outcome::Partial(
-            "Net change uses partial input measurements; inspect coverage findings.".into(),
+            "Net change uses partial input measurements. Inspect the coverage findings.".into(),
         )
     } else {
         Outcome::Complete
@@ -178,7 +178,7 @@ pub(crate) fn run_root(
     if folder_rows.is_some() {
         anyhow::ensure!(
             destination.shows(Format::Table),
-            "--folder-rows requires table output; {}",
+            "'--folder-rows' requires table output. {}",
             destination.format_remedy(Format::Table)
         );
     }
@@ -220,7 +220,7 @@ pub(crate) fn run_root(
                 .map(dunce::canonicalize)
                 .transpose()?;
             styling.stderr_message(Role::Warning, format_args!(
-                "{} is inactive; project configuration: {}. --subfolder retains project policy.",
+                "'{}' is inactive. Project configuration: {}. '--subfolder' retains project policy.",
                 inactive.display(),
                 project_config.as_ref().map(|p| p.display().to_string()).unwrap_or_else(|| "none (built-in settings)".into())
             ));
@@ -268,7 +268,7 @@ pub(crate) fn run_workspace(args: &WorkspaceArgs, styling: Styling) -> Result<Ou
         .as_deref()
         .map(|file| {
             dunce::canonicalize(file)
-                .with_context(|| format!("Cannot read workspace file {}", file.display()))
+                .with_context(|| format!("Cannot read workspace file '{}'", file.display()))
         })
         .transpose()?;
     let definition = match &workspace_path {
@@ -308,8 +308,8 @@ pub(crate) fn run_workspace(args: &WorkspaceArgs, styling: Styling) -> Result<Ou
             .map(|(name, handle)| {
                 handle
                     .join()
-                    .map_err(|_| anyhow::anyhow!("Workspace member {name} panicked"))?
-                    .with_context(|| format!("Workspace member {name}"))
+                    .map_err(|_| anyhow::anyhow!("Workspace member '{name}' panicked"))?
+                    .with_context(|| format!("Workspace member '{name}'"))
             })
             .collect::<Result<Vec<_>>>()
     })?;

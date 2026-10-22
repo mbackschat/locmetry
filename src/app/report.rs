@@ -223,7 +223,7 @@ impl HumanView<'_> {
                 _ => self.styling.theme(terminal),
             };
             human.push_str(&format!(
-                "\n{}; inspect the JSON metadata.\n",
+                "\n{}. Inspect the JSON metadata.\n",
                 theme.paint(Role::Warning, "Backend reported incomplete counts")
             ));
         }
@@ -447,7 +447,7 @@ fn partial_counts(coverage: &Coverage) -> String {
         failures.push("backend did not identify affected paths".into());
     }
     format!(
-        "Backend reported incomplete counts; output contains partial results. Unavailable files: {}",
+        "Backend reported incomplete counts, so the output holds partial results. Unavailable files: {}",
         failures.join(", ")
     )
 }

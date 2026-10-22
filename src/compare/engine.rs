@@ -13,14 +13,14 @@ use folders::*;
 /// `Out-File -Encoding utf8` (docs/proposals/archive/windows-support.md); without a
 /// mark, the bytes pass through unchanged as UTF-8.
 pub fn read_input(path: &Path) -> Result<MeasurementReport> {
-    let bytes = fs::read(path).with_context(|| format!("Cannot read {}", path.display()))?;
+    let bytes = fs::read(path).with_context(|| format!("Cannot read '{}'", path.display()))?;
     let mut text = String::new();
     encoding_rs_io::DecodeReaderBytesBuilder::new()
         .build(bytes.as_slice())
         .read_to_string(&mut text)
-        .with_context(|| format!("Invalid measurement report encoding {}", path.display()))?;
+        .with_context(|| format!("Invalid measurement report encoding '{}'", path.display()))?;
     serde_json::from_str(&text)
-        .with_context(|| format!("Invalid measurement report {}", path.display()))
+        .with_context(|| format!("Invalid measurement report '{}'", path.display()))
 }
 
 /// Refuses an output that is an input under another name. File identity,
@@ -31,7 +31,7 @@ pub fn validate_destination(path: &Path, inputs: [&Path; 2]) -> Result<()> {
         for input in inputs {
             ensure!(
                 !same_file::is_same_file(path, input)?,
-                "Comparison output must not overwrite input {}",
+                "Comparison output must not overwrite input '{}'",
                 input.display()
             );
         }
@@ -281,10 +281,10 @@ impl Comparison {
         let members = self
             .members
             .as_mut()
-            .context("--member requires two workspace reports")?;
+            .context("'--member' requires two workspace reports")?;
         let selected = members.get(name).with_context(|| {
             format!(
-                "Unknown workspace member {name:?}; available: {}",
+                "Unknown workspace member '{name}'. Available: {}",
                 members.keys().cloned().collect::<Vec<_>>().join(", ")
             )
         })?;

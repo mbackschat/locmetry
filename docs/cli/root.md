@@ -404,10 +404,10 @@ Commands:
   explain    Explain selection and classification of existing root-relative files. JSON prints the
              complete explanation; there is no separate headline
 locmetry 0.8.0
-Source: docs/guides/configure.md; locmetry 0.8.0
-Source: docs/guides/selection.md; locmetry 0.8.0
-Source: docs/guides/reports.md; locmetry 0.8.0
-Source: docs/guides/compare.md; locmetry 0.8.0
+Source: docs/guides/configure.md (locmetry 0.8.0)
+Source: docs/guides/selection.md (locmetry 0.8.0)
+Source: docs/guides/reports.md (locmetry 0.8.0)
+Source: docs/guides/compare.md (locmetry 0.8.0)
 Configuration
 MeasurementReport
 Workspace

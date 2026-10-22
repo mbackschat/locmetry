@@ -339,7 +339,7 @@ fn an_invalid_member_configuration_fails_the_workspace_naming_the_member() {
         temp.path(),
         &["workspace", "--root", "web", "--root", "api"],
     ));
-    assert!(stderr.contains("Workspace member api"), "{stderr}");
+    assert!(stderr.contains("Workspace member 'api'"), "{stderr}");
 }
 
 #[test]
@@ -957,7 +957,7 @@ fn invalid_folder_workspaces_fail_before_measuring() {
         ("orphan.toml", "project"),
         ("whole.toml", "project root"),
         ("nested.toml", "inside"),
-        ("twins.toml", "share the name src"),
+        ("twins.toml", "share the name 'src'"),
         ("absent.toml", "mobile"),
         ("empty.toml", "folders"),
     ] {

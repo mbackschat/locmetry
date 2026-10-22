@@ -217,7 +217,7 @@ fn member_selection_rejects_unknown_names_single_roots_and_invalid_inputs_before
             &single,
             &single,
             "api",
-            "--member requires two workspace reports",
+            "'--member' requires two workspace reports",
         ),
     ] {
         let output = compare(
@@ -287,6 +287,9 @@ fn member_selection_retains_whole_input_partial_status_and_provenance() {
         assert_eq!(out.status.code(), Some(2));
         let text = String::from_utf8(out.stdout).unwrap();
         assert!(text.contains("whole workspace inputs"), "{text}");
-        assert!(text.contains("Members before: web; after: web"), "{text}");
+        assert!(
+            text.contains("Members before: web. Members after: web"),
+            "{text}"
+        );
     }
 }
