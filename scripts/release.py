@@ -93,9 +93,9 @@ def release_files(original, version, today):
     if original["Cargo.lock"].count(lock_marker) != 1:
         raise ReleaseError("Cargo.lock does not match the crate version.")
     updated["Cargo.lock"] = original["Cargo.lock"].replace(lock_marker, f'name = "locmetry"\nversion = "{version}"')
-    # A recorded version is a whole output line or a guide source's `; locmetry X` tail.
-    recorded = re.compile(rf"(?m)^((?:Source: .*; )?locmetry ){re.escape(current)}$")
-    updated[RECORDING], count = recorded.subn(rf"\g<1>{version}", original[RECORDING])
+    # A recorded version is a whole output line or a guide source's `(locmetry X)` tail.
+    recorded = re.compile(rf"(?m)^(locmetry |Source: .* \(locmetry ){re.escape(current)}(\)?)$")
+    updated[RECORDING], count = recorded.subn(rf"\g<1>{version}\g<2>", original[RECORDING])
     if not count:
         raise ReleaseError(f"{RECORDING} records no locmetry {current} output to update.")
     date = release_date(original[CHANGELOG], version, today)

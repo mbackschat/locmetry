@@ -26,7 +26,7 @@ locmetry guide --source
 
 ```output
 locmetry {version}
-Source: docs/guides/configure.md; locmetry {version}
+Source: docs/guides/configure.md (locmetry {version})
 ```
 
 Reports from locmetry 0.4.0 or later compare.
