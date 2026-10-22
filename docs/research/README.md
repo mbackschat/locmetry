@@ -18,7 +18,7 @@ The [archived implementation record](../plans/archive/measurement-quality-and-ne
 - [Integration and distribution](../tokei-integration.md): embedded Rust backend and minimal dependency model.
 - [Measurement semantics and limits](../measurement.md): selection and counting details as implemented.
 
-Sensitive project analyses, candidate rules, raw measurements, and breakdowns belong exclusively in `docs/research/local/`. That directory is Git-ignored and is not part of the shared documentation.
+Sensitive project analyses, candidate rules, raw measurements, and breakdowns of private projects belong exclusively in `docs/research/local/`. That directory is Git-ignored and is not part of the shared documentation.
 
 - [Full-feature help study](agent-explorability-full-help-study.md): ten-task evaluation, bounded comparison-routing correction, adoption decision and retained resource tradeoffs.
 - [Agent regression desk review, 0.7.0 to 0.8.0](agent-regression-desk-review-2026-10-21.md): no broken flag, example or route; reading-cost growth and two risks on measured tasks.
@@ -28,3 +28,5 @@ Sensitive project analyses, candidate rules, raw measurements, and breakdowns be
 - [Agent regression run, 0.8.0](agent-regression-run-2026-10-22.md): tasks 3, 4 and 8 against `c9098e2`; a comparison-cost regression traced to the missing comparison `detail`, its correction and the recorded one-call residual.
 
 - [Report analytics assessment](report-analytics.md): DuckDB, pandas, Polars and simpler alternatives; schema-3 and Showboat decisions.
+- [Policy test drives](policy-test-drives/README.md): policies written for public GitHub projects, what configuration could not express, and the experiments behind the 2026-10-23 proposals.
+- [Framework layouts out of the box](framework-layouts.md): starters of the most used web frameworks measured without configuration, and an emulation of the proposed detectors.

@@ -9,7 +9,7 @@
 }
 -->
 
-The Immich showcase found this gap on 2026-10-22. Policy test drives on six further projects on 2026-10-22 and 2026-10-23, and an experiment on a public Go monorepo, found it in each of them.
+The Immich showcase found this gap on 2026-10-22. The [policy test drives](../research/policy-test-drives/README.md) of 2026-10-22 and 2026-10-23 found it in every project.
 
 ## Problem
 
@@ -25,13 +25,12 @@ The credit answers "how much production source do the build files account for", 
 | Project | Entries that keep `production` and set another category | Code lines | Module credit |
 | --- | --- | ---: | --- |
 | Immich | Android runner as `native` | 4,102 | Gradle 4,102 to 0 |
-| A Java workflow engine | OpenAPI templates, QA tooling, examples | 43,207 | Maven modules with code 80 to 60 |
-| A TypeScript UI library | Demo apps and documentation snippets as `example` | 18,204 | npm 37,506 to 19,265; 3 of 9 modules now classify nothing |
-| A TypeScript SDK | Generated code, documentation sample apps, docs tooling | 7,866 | Python, Go and Maven sample modules drop out of the note |
-| A Java data service | Build logic, tooling and examples | 6,029 | Gradle modules with code 42 to 31 |
-| A public Go monorepo | Generated protobuf and parser code, developer tools | 134,430 | Go 396,844 to 262,414 |
+| [CIB seven](../research/policy-test-drives/cibseven.md) | OpenAPI templates, QA tooling, examples | 43,207 | Maven modules with code 80 to 60, while 198 are reported |
+| [Temporal](../research/policy-test-drives/temporal.md) | Generated code, documentation sample apps, docs tooling | 7,866 | Python, Go and Maven sample modules drop out of the note |
+| [Loki](../research/policy-test-drives/loki.md) | Generated protobuf and parser code, developer tools | 134,430 | Go 396,844 to 262,414 |
+| [axum](../research/policy-test-drives/axum.md) | Example crates as `example` | 4,795 | Cargo 27,364 to 22,569, while 61 crates are reported |
 
-In every project, entries that change purpose also took module files, as they should: vendored Go modules, test fakes, generated diagrams. Separately, one project's 96 Gradle "modules" included 45 folders holding only a build file, and several npm modules had no source at all; the count included them.
+Two private projects showed the same pattern for demo apps, documentation snippets, build logic and tooling. In every project, entries that change purpose also took module files, as they should: vendored Go modules, test fakes, generated diagrams. Separately, the count included modules without any source: in a private project almost half of the Gradle "modules" were folders holding only a build file, and several npm packages had no `src/`.
 
 ## Design
 
@@ -49,7 +48,7 @@ Both parts change reported values, so they ship together and are **Breaking**. N
 
 **Excluded:**
 
-- Category-only entries, an entry without `purpose` that sets only the category and leaves the purpose, and with it the credit, to a later stage. This was the earlier draft of this proposal. On the Go monorepo it kept the same 134,430 lines only after its entries were split by module coverage: a tools folder mixed module source with scripts no stage claims, so a category-only entry left 2,200 lines unclaimed, and deployment and example folders without module source left 8,462 more. A policy author would have to know which files a module covers to choose the entry form, while credit by coverage needs no new syntax.
+- Category-only entries, an entry without `purpose` that sets only the category and leaves the purpose, and with it the credit, to a later stage. This was the earlier draft of this proposal. On Loki it kept the same 134,430 lines only after its entries were split by module coverage: a tools folder mixed module source with scripts no stage claims, so a category-only entry left 2,200 lines unclaimed, and deployment and example folders without module source left 8,462 more. A policy author would have to know which files a module covers to choose the entry form, while credit by coverage needs no new syntax.
 - A separate table of category refinements limited to built-in decisions. It has the same mixed-folder problem and adds a concept.
 - Rules that apply only to files no other stage decides. One project asked for them; that is separate scope.
 

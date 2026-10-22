@@ -1,0 +1,80 @@
+version = 1
+
+[categories]
+tooling = "Maintained lint, format, test-runner, packaging and CI tooling that is not the product"
+doc-snippet = "Code excerpts included verbatim in the documentation or in Javadoc"
+embedded-data = "Reference data embedded in a source file as a string literal"
+test-support = "Code that exists only inside the tests, such as test helpers and snapshot serializers"
+fixture = "Input files the tests read and transform, which are not executable tests themselves"
+
+[[rules]]
+id = "gradle-convention-plugins"
+match = ["buildSrc/src/main/**"]
+kind = ["source"]
+purpose = "production"
+category = "build-tooling"
+reason = "buildSrc holds the Gradle convention plugins (kernel-java-conventions, kernel-js-conventions, ...) that the module build scripts apply; this is build logic, not kernel implementation, like the build scripts the build-script convention already marks build-tooling"
+
+[[rules]]
+id = "ci-pipeline"
+match = ["build-kernel/jenkins/**"]
+kind = ["source"]
+purpose = "production"
+category = "tooling"
+reason = "Pipeline of the open-source build: JenkinsFile.kernel.os.build.groovy runs 'gradle build' and publishes the TEST*.xml reports, and loads utils.groovy"
+
+[[rules]]
+id = "npm-pack-scripts"
+match = ["scripts/**"]
+kind = ["source"]
+purpose = "production"
+category = "tooling"
+reason = "The prepack and postpack npm scripts of six published workspace packages call prepack-clean.js and postpack-restore.js, which copy the license files into each package"
+
+[[rules]]
+id = "lint-format-config"
+match = ["kernel-ts/eslint-config/**", "**/eslint.config.mjs", "**/.prettierrc.js", "kernel-ts/codemod/scripts/copyright.js"]
+kind = ["source"]
+purpose = "production"
+category = "tooling"
+reason = "kernel-ts/eslint-config is the shared ESLint configuration package ('does not get deployed') that each package's eslint.config.mjs imports; the Gradle npm_lint task runs ESLint with --max-warnings 0 as part of the build. eslint.config.mjs and .prettierrc.js are the file names ESLint and Prettier discover, and kernel-ts/codemod/eslint.config.mjs names scripts/copyright.js (a license-header comment only) as the templateFile of its notice rule"
+
+[[rules]]
+id = "codemod-jest-config"
+match = ["kernel-ts/codemod/jest.config.ts"]
+kind = ["source"]
+purpose = "production"
+category = "tooling"
+reason = "Jest runner configuration of the codemod package (test matching, coverage, JUnit reporter, snapshot serializer); the runner setup is tooling that runs the tests, not a test"
+
+[[rules]]
+id = "codemod-test-support"
+match = ["kernel-ts/codemod/src/core/test-runner.ts", "kernel-ts/codemod/src/snapshotSerializer.ts"]
+kind = ["source"]
+purpose = "test"
+category = "test-support"
+reason = "test-runner.ts registers Jest describe/it/expect cases from the fixture files and is imported only by the two __tests__/transform.test.ts files; snapshotSerializer.ts is referenced only by snapshotSerializers in jest.config.ts. Neither runs outside the tests"
+
+[[rules]]
+id = "embedded-tld-list"
+match = ["kernel-rt/kernel-core-customfieldtype-impl/src/main/js/internal/utils/EmailVerifierUtils.ts"]
+kind = ["source"]
+purpose = "production"
+category = "embedded-data"
+reason = "About 1,500 of the 1,549 lines are a snapshot of the IANA top-level-domain list (dated 2021) inside one string literal, with an update instruction in the file; the logic is under ten lines"
+
+[[rules]]
+id = "documentation-snippets"
+match = ["documentation/dev/assets/snippets/**", "**/src/snippets/**"]
+kind = ["source"]
+purpose = "other"
+category = "doc-snippet"
+reason = "AsciiDoc pages include these files by tag (:snippetBaseDir: ./assets/snippets in documentation/dev/*.adoc), and the Javadoc of DocumentMultiPointer includes src/snippets/java/javadocsnippets through {@snippet}; the conventions name that folder as every Java module's Javadoc snippet path. The buildSrc convention comment says the snippets cannot be compiled or run in this repository, so they are neither product nor executed tests here"
+
+[[overrides]]
+id = "codemod-fixtures"
+match = ["kernel-ts/codemod/src/transforms/*/__tests__/__fixtures__/**"]
+kind = ["source"]
+purpose = "test"
+category = "fixture"
+reason = "test-runner.ts reads every file in __tests__/__fixtures__, strips its '// description:' and '// expectation:' comments, applies the transform and compares with a Jest snapshot; the fixtures are inputs, not tests. An override because the built-in test-directory convention would otherwise keep them in category test"

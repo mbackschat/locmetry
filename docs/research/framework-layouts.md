@@ -1,0 +1,70 @@
+# Framework Layouts Out of the Box
+
+Measured 2026-10-23 with the development build of Locmetry 0.9.0 (`--no-user-config`, no project policy) on shallow clones, removed afterwards. Question: does a project built with a popular framework get its production source classified without any configuration? The [module credit proposal](../proposals/module-credit-by-coverage.md) and the [framework layouts proposal](../proposals/framework-layouts.md) use these results.
+
+## Selection
+
+The candidates are the web frameworks most used by professional developers in the [Stack Overflow Developer Survey 2025](https://survey.stackoverflow.co/2025/technology/), with each framework's share given in the table below. Generic runtimes and libraries without a project layout (Node.js, jQuery, Express, Flask, Fastify, WordPress, AngularJS) were left out. For each framework the measurement used an official starter or a well-known open-source application at the commit listed.
+
+## Results
+
+"Unclaimed" is the share of source code lines that no stage decided; it is the code the tool reports as needing a decision. Tests decided by the built-in conventions are not unclaimed.
+
+| Framework (share) | Project measured | Commit | Unclaimed | Why |
+| --- | --- | --- | ---: | --- |
+| Next.js (21.5%) | [vercel/commerce](https://github.com/vercel/commerce) | `f7521d57d29f` | 100% | Code in `app/`, `components/`, `lib/`; the npm layout claims only `src/` |
+| Next.js | [shadcn-ui/taxonomy](https://github.com/shadcn-ui/taxonomy) | `298a8857c712` | 100% | Same |
+| Next.js in a Turborepo | [vercel/turborepo](https://github.com/vercel/turborepo) `examples/basic` | `8003ff0fe919` | 93% | Both apps use `app/` |
+| Nuxt (4.1%) | [nuxt-ui-templates/dashboard](https://github.com/nuxt-ui-templates/dashboard) | `7d78d4078eed` | 100% | Nuxt 4 code in `app/` and `server/` |
+| React Router framework mode | [remix-run/react-router-templates](https://github.com/remix-run/react-router-templates) `default` | `067adb378a00` | 100% | Code in `app/` |
+| ASP.NET Core (21.3%), Blazor (7.6%) | [jasontaylordev/CleanArchitecture](https://github.com/jasontaylordev/CleanArchitecture) | `968abf7dc488` | 38% | No .NET detector: all 2,097 production C# lines are unclaimed; only the two npm client apps are claimed |
+| ASP.NET Core | [dotnet/eShop](https://github.com/dotnet/eShop) | `913acea66708` | 0% | Claimed by accident: a root `package.json` for Playwright makes the npm layout's `src/**` claim the C# projects |
+| Django (11.7%) | [wagtail/bakerydemo](https://github.com/wagtail/bakerydemo) | `c9b38d7a7170` | 99% | `manage.py` and `requirements.txt`, but no `pyproject.toml`, `setup.py` or `setup.cfg`, so no Python module |
+| Laravel (9.3%) | [laravel/laravel](https://github.com/laravel/laravel) | `9ffef3bc4241` | 97% | No PHP detector |
+| Symfony (4.3%) | [symfony/demo](https://github.com/symfony/demo) | `8d2e2ef75c3e` | 88% | No PHP detector; the code is in `src/` |
+| Ruby on Rails (6.2%) | [maybe-finance/maybe](https://github.com/maybe-finance/maybe) | `77b546983275` | 72% | No Ruby detector; the remaining 28% are conventional tests |
+| Svelte (6.9%) | [sveltejs/realworld](https://github.com/sveltejs/realworld) | `df796708040f` | 52% | The application in `src/` is claimed; the unclaimed lines are one stylesheet in `static/`, which is a public asset folder |
+| Angular (19.8%) | [angular-realworld-example-app](https://github.com/realworld-apps/angular-realworld-example-app) | `dd99ed2cf39c` | 1% | Works: code in `src/` |
+| React and Vue with Vite | [vitejs/vite](https://github.com/vitejs/vite) `create-vite` templates | `4ca25e1d3a24` | 4–5% | Works; the unclaimed lines are root tool configuration such as `vite.config.ts` |
+| Astro (4.3%) | [withastro/astro](https://github.com/withastro/astro) `examples/blog` | `6cf3423e4c62` | 4% | Works |
+| NestJS (7.4%) | [nestjs/typescript-starter](https://github.com/nestjs/typescript-starter) | `0b6d71261ba3` | 19% | Works; the unclaimed 20 lines are root tool configuration |
+| Expo (React Native) | [expo/expo](https://github.com/expo/expo) `templates/expo-template-default` | `651db16bdc7f` | 11% | Works: code in `src/app`; the unclaimed lines are a reset script |
+| Spring Boot (15.6%) | [spring-projects/spring-petclinic](https://github.com/spring-projects/spring-petclinic) | `500158f73241` | 0% | Works |
+| FastAPI (15.1%) | [fastapi/full-stack-fastapi-template](https://github.com/fastapi/full-stack-fastapi-template) | `b1125d883948` | 6% | Works: Python module and npm modules |
+
+## Documented layouts
+
+- **Next.js:** the [project structure](https://nextjs.org/docs/app/getting-started/project-structure) lists `app`, `pages`, `public` and an optional `src` at the top level, with configuration in `next.config.js`. Components and libraries may live anywhere in the project, so the project root is the source root.
+- **Nuxt 4:** the [directory structure](https://nuxt.com/docs/4.x/directory-structure) puts application code in `app/`, server code in `server/`, code shared by both in `shared/`, and layers in `layers/`; configuration is `nuxt.config.ts`, and `public/` holds static files.
+- **React Router framework mode:** the application lives in `app/` by default (`appDirectory`), configured by `react-router.config.ts`.
+- **.NET SDK projects:** the [project SDK](https://learn.microsoft.com/dotnet/core/project-sdk/overview) includes `**/*.cs` below the project file by default (`EnableDefaultCompileItems`), so every source file in a project folder is compiled.
+- **Laravel:** the [directory structure](https://laravel.com/docs/12.x/structure) puts almost all application classes in `app/`, routes in `routes/`, migrations and seeders in `database/`, views and uncompiled assets in `resources/`.
+- **Rails:** application code in `app/`, extensions in `lib/`, configuration in `config/` and migrations in `db/`.
+- **Symfony:** the [best practices](https://symfony.com/doc/current/best_practices.html) recommend the default flat layout: code in `src/`, front-end sources in `assets/`, and `config/`, `migrations/`, `templates/`, `translations/` and `tests/` at the top level; `public/` is the web root. Flex projects carry `symfony.lock`.
+- **Django:** `startproject` creates `manage.py` beside the project package; apps are packages next to it.
+
+## Emulation of the proposed layouts
+
+Each proposed detector was emulated with equivalent `[[rules]]`, plus a rule for root tool configuration, on the same commits:
+
+| Project | Unclaimed before | Emulated | Remaining unclaimed |
+| --- | ---: | ---: | --- |
+| vercel/commerce | 100% | 0% | none |
+| shadcn-ui/taxonomy | 100% | 0% | none |
+| Turborepo `examples/basic` | 93% | 10% | `packages/eslint-config`, a configuration package without `src/` |
+| nuxt-ui-templates/dashboard | 100% | 0% | none |
+| React Router `default` | 100% | 9% | the root `Dockerfile` |
+| jasontaylordev/CleanArchitecture | 38% | 3% | `build/` scripts and `dotnet new` item templates |
+| laravel/laravel | 97% | 5% | `database/factories`, `database/seeders` and `public/index.php` |
+| symfony/demo | 88% | 3% | root files and `public/` |
+| maybe-finance/maybe | 72% | 3% | `db/` schema and seeds, `public/`, `bin/` |
+| wagtail/bakerydemo | 99% | 1% | root files and `vagrant/` |
+
+A generic Composer layout of `src/**` alone left 48% of symfony/demo unclaimed, all in `assets/` and `templates/`; the Symfony-specific layout closed it. The Turborepo remainder shows why an npm package without `src/` should not be claimed as a whole: it is a tooling package.
+
+## Conclusions
+
+- Frameworks that keep code in `src/` work out of the box; frameworks whose source root is the package root, or `app/`, do not, although they are among the most used.
+- Three ecosystems in the top 25 have no detector at all: .NET, PHP and Ruby. Django projects without packaging metadata miss the Python detector.
+- Root tool configuration files such as `vite.config.ts` and `eslint.config.mjs` stay unclaimed in every JavaScript project; the build-script convention covers Gradle, Maven, CMake and Make files only.
+- The npm layout's `src/**` claims files of any language below a `package.json`. In eShop that made C# production by accident; no rule depends on it.

@@ -9,7 +9,7 @@
 }
 -->
 
-The Immich showcase found this gap on 2026-10-22, as its [measurement recording](../showcase/measure.md#look-at-the-code-around-the-product) shows. Policy test drives on six further projects on 2026-10-22 and 2026-10-23, and an experiment on a public Go monorepo, found more cases.
+The Immich showcase found this gap on 2026-10-22, as its [measurement recording](../showcase/measure.md#look-at-the-code-around-the-product) shows. The [policy test drives](../research/policy-test-drives/README.md) of 2026-10-22 and 2026-10-23 found more cases.
 
 ## Problem
 
@@ -24,13 +24,13 @@ The counter assigns each extension to one language. These files were recognized 
 | Project | Files | Recognized as | Written in | Correction |
 | --- | ---: | --- | --- | --- |
 | Immich | 1 | Prolog (`.pro`) | ProGuard keep rules | `"unrecognized"` |
-| A C++ runtime inside a Java project | 172 | C Header (every `.h`) | C++ headers | `"C++ Header"`, which the tables then fold into C++ |
+| [a12-kernel-antlr4](../research/policy-test-drives/a12-kernel.md), an ANTLR fork | 172 | C Header (every `.h`) | C++ headers | `"C++ Header"`, which the tables then fold into C++ |
 | The same project | 2 | Autoconf (`.in`) | CMake templates (`.cmake.in`) | `"CMake"` |
 | The same project | 1 | Autoconf (`.in`) | Python packaging manifest (`MANIFEST.in`) | `"unrecognized"` |
-| A Java service | 2 | Forge Config (`.cfg`) | INI-style tool configuration | `"INI"` |
-| The same service | 3 | Pan (`.tpl`) | Helm Go templates, 602 code lines | `"Go HTML"`, Go's template syntax with its `{{/* */}}` comments |
-| A public Go monorepo | 32 | Pan (`.tpl`) | Helm and documentation Go templates | `"Go HTML"` |
-| The same monorepo | 5 | Happy (`.y`) | goyacc grammars; Happy has no comment syntax, so comments count as code | `"unrecognized"` |
+| A private Java service | | Forge Config (`.cfg`) | INI-style tool configuration | `"INI"` |
+| The same service | | Pan (`.tpl`) | Helm Go templates | `"Go HTML"`, Go's template syntax with its `{{/* */}}` comments |
+| [Loki](../research/policy-test-drives/loki.md) | 32 | Pan (`.tpl`) | Helm and documentation Go templates | `"Go HTML"` |
+| The same project | 5 | Happy (`.y`) | goyacc grammars; Happy has no comment syntax, so comments count as code | `"unrecognized"` |
 
 Corrections choose among the counter's languages. Go templates fit Go HTML, whose template comments are the same: in one Helm helpers file Pan counts 15 comment lines and Go HTML 179, so the correction also moves 164 lines out of code; grammars without a counter language become unrecognized and leave the source totals. The Go monorepo's assembler files, counted as GNU Style Assembly, need no correction: the label is approximate, but the comment syntax and therefore the counts are right.
 

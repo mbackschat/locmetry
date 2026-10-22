@@ -1,0 +1,7 @@
+version = 1
+roots = [
+    "a12-kernel",
+    "a12-kernel-antlr4",
+    "a12-kernel-bootstrap",
+    "a12-kernel-mm",
+]

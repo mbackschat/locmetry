@@ -1,0 +1,109 @@
+version = 1
+
+[categories]
+vendored = "Third-party Go modules copied by go mod vendor"
+generated = "Code written by protoc, goyacc, controller-gen and similar generators"
+tooling = "Developer and release tools that are not part of a shipped binary"
+deployment = "Helm charts, Jsonnet, Docker and Terraform packaging"
+docs = "Documentation sources and their snippets"
+example = "Example deployments"
+test-support = "Fakes and the integration-test harness"
+
+[[rules]]
+id = "vendored"
+match = ["vendor/**"]
+purpose = "other"
+category = "vendored"
+
+[[rules]]
+id = "test-fakes"
+match = ["operator/internal/external/k8s/k8sfakes/**", "integration/**"]
+kind = ["source"]
+purpose = "test"
+category = "test-support"
+
+[[rules]]
+id = "generated"
+match = [
+  "clients/cmd/docker-driver/logdriver/entry.pb.go",
+  "clients/pkg/logentry/logql/expr.y.go",
+  "operator/api/config/v1/zz_generated.deepcopy.go",
+  "operator/api/loki/v1/zz_generated.deepcopy.go",
+  "operator/api/loki/v1beta1/zz_generated.deepcopy.go",
+  "pkg/bloombuild/protos/service.pb.go",
+  "pkg/bloombuild/protos/types.pb.go",
+  "pkg/compactor/client/grpc/grpc.pb.go",
+  "pkg/compactor/deletion/deletionproto/types.pb.go",
+  "pkg/dataobj/compaction/v2/proto/compactionv2.pb.go",
+  "pkg/dataobj/internal/metadata/datasetmd/datasetmd.pb.go",
+  "pkg/dataobj/internal/metadata/filemd/filemd.pb.go",
+  "pkg/dataset/encoding/wirecodec/internal/arraymd/arraymd.pb.go",
+  "pkg/dataset/encoding/wirecodec/internal/datasetmd/datasetmd.pb.go",
+  "pkg/dataset/encoding/wirecodec/internal/inlinemd/inlinemd.pb.go",
+  "pkg/dataset/encoding/wirecodec/internal/layoutmd/layoutmd.pb.go",
+  "pkg/dataset/encoding/wirecodec/internal/typemd/typemd.pb.go",
+  "pkg/engine/internal/proto/expressionpb/expressionpb.pb.go",
+  "pkg/engine/internal/proto/physicalpb/physicalpb.pb.go",
+  "pkg/engine/internal/proto/ulid/ulid.pb.go",
+  "pkg/engine/internal/proto/wirepb/wirepb.pb.go",
+  "pkg/ingester/checkpoint.pb.go",
+  "pkg/limits/proto/limits.pb.go",
+  "pkg/logproto/bloomgateway.pb.go",
+  "pkg/logproto/indexgateway.pb.go",
+  "pkg/logproto/ingester-rf1.pb.go",
+  "pkg/logproto/internal_push.pb.go",
+  "pkg/logproto/logproto.pb.go",
+  "pkg/logproto/metrics.pb.go",
+  "pkg/logproto/pattern.pb.go",
+  "pkg/logproto/sketch.pb.go",
+  "pkg/logql/log/jsonexpr/jsonexpr.y.go",
+  "pkg/logql/log/logfmt/logfmtexpr.y.go",
+  "pkg/logql/log/pattern/expr.y.go",
+  "pkg/logql/syntax/syntax.y.go",
+  "pkg/logqlmodel/stats/stats.pb.go",
+  "pkg/lokifrontend/frontend/v1/frontendv1pb/frontend.pb.go",
+  "pkg/lokifrontend/frontend/v2/frontendv2pb/frontend.pb.go",
+  "pkg/push/push-rf1.pb.go",
+  "pkg/push/push.pb.go",
+  "pkg/querier/queryrange/queryrange.pb.go",
+  "pkg/querier/queryrange/queryrangebase/definitions/definitions.pb.go",
+  "pkg/querier/queryrange/queryrangebase/queryrange.pb.go",
+  "pkg/querier/stats/stats.pb.go",
+  "pkg/ruler/base/ruler.pb.go",
+  "pkg/ruler/rulespb/rules.pb.go",
+  "pkg/scheduler/schedulerpb/scheduler.pb.go",
+  "pkg/storage/chunk/cache/resultscache/test_types.pb.go",
+  "pkg/storage/chunk/cache/resultscache/types.pb.go",
+  "pkg/xcap/internal/proto/xcap.pb.go",
+  "tools/doc-generator/main.go",
+]
+purpose = "production"
+category = "generated"
+
+[[rules]]
+id = "tools"
+match = ["tools/**", "operator/hack/**", "operator/.bingo/**", ".github/**", "Makefile", "*.mk", "loki-build-image/**", "nix/**", "flake.nix", "operator/Makefile"]
+kind = ["source"]
+purpose = "production"
+category = "tooling"
+
+[[rules]]
+id = "deployment"
+match = ["production/**", "operator/jsonnet/**", "operator/bundle/**", "operator/config/**", "**/Dockerfile*", "**/*.Dockerfile"]
+kind = ["source"]
+purpose = "production"
+category = "deployment"
+
+[[rules]]
+id = "docs"
+match = ["docs/**", "operator/docs/**", "operator/website/**"]
+kind = ["source"]
+purpose = "other"
+category = "docs"
+
+[[rules]]
+id = "examples"
+match = ["examples/**"]
+kind = ["source"]
+purpose = "production"
+category = "example"

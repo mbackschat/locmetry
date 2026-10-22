@@ -1,0 +1,16 @@
+version = 1
+
+[[rules]]
+id = "examples"
+match = ["examples/**"]
+kind = ["source"]
+purpose = "production"
+category = "example"
+reason = "Each example is its own crate that demonstrates one feature; none ships in a published crate"
+
+[[rules]]
+id = "benchmarks"
+match = ["axum/benches/**"]
+kind = ["source"]
+purpose = "test"
+category = "benchmark"

@@ -1,0 +1,161 @@
+version = 1
+
+# Unrecognized by extension: the counter has no BPMN/CMMN/DMN, XSD or Jenkins pipeline language.
+[[languages.mappings]]
+id = "xml-documents"
+match = ["**/*.bpmn", "**/*.cmmn", "**/*.dmn", "**/*.xsd"]
+language = "XML"
+
+[[languages.mappings]]
+id = "jenkins-pipelines"
+match = ["Jenkinsfile", "Jenkinsfile.cib", ".ci/**/Jenkinsfile"]
+language = "Groovy"
+
+[categories]
+frontend = "AngularJS web applications (Cockpit, Admin, Tasklist, Welcome) and their shared libraries"
+tooling = "Maintained programs that build, document, run or gate the project or its verification"
+test-support = "Fixtures, scenarios, rules and stand-in modules that exist only to support tests"
+example = "Example and demo applications"
+distribution = "Launch scripts and landing page shipped inside the distributions"
+api-docs = "FreeMarker templates from which the REST API OpenAPI document is generated"
+vendored = "Third-party code copied into the repository"
+unreferenced = "Files that no build, page or document in the repository uses"
+
+[[rules]]
+id = "frontend-test-runner"
+match = ["webapps/frontend/ui/common/unit-tests/karma.conf.js"]
+kind = ["source"]
+purpose = "production"
+category = "tooling"
+reason = "Karma runner configuration that loads **/unit-tests/*.spec.js; a runner is tooling, not a test"
+
+[[rules]]
+id = "frontend-unit-test-support"
+match = ["webapps/frontend/**/unit-tests/**"]
+kind = ["source"]
+purpose = "test"
+category = "test-support"
+reason = "Mocks and Angular test modules next to the Karma specs (create-cam-api-mock.js, tests-module.js, unit-tests/module.js); the unit-tests folder is not a built-in test directory"
+
+[[rules]]
+id = "frontend-build"
+match = ["webapps/frontend/webpack.*.js", "webapps/frontend/scripts/**"]
+kind = ["source"]
+purpose = "production"
+category = "build-tooling"
+reason = "Webpack configuration and the license-header loader and license check that package.json runs as build and license-check scripts"
+
+# Listed before frontend, whose camunda-commons-ui glob would otherwise claim these two files.
+[[rules]]
+id = "unreferenced-style-demo"
+match = [
+  "webapps/frontend/camunda-commons-ui/kitchen-sink.html",
+  "webapps/frontend/camunda-commons-ui/resources/less/test-styles.less",
+]
+kind = ["source"]
+purpose = "other"
+category = "unreferenced"
+reason = "A style-demo page and its stylesheet: neither the webpack build, the README nor any other file in the repository references them (git grep, 2026-10-23)"
+
+[[rules]]
+id = "frontend"
+match = [
+  "webapps/frontend/ui/**",
+  "webapps/frontend/camunda-bpm-sdk-js/**",
+  "webapps/frontend/camunda-commons-ui/**",
+  "webapps/frontend/public/**",
+]
+kind = ["source"]
+purpose = "production"
+category = "frontend"
+reason = "webapps/frontend/package.json builds these into the Cockpit, Admin, Tasklist and Welcome webapps; the npm layout has no src folder, so no build module claims them"
+
+[[rules]]
+id = "client-integration-tests"
+match = ["clients/java/client/src/it/**"]
+purpose = "test"
+reason = "clients/java/client/pom.xml registers src/it/java with build-helper add-test-source and runs the *IT classes with failsafe"
+
+[[rules]]
+id = "webapp-integration-tests"
+match = ["qa/integration-tests-webapps/integration-tests/src/main/**"]
+purpose = "test"
+reason = "JUnit integration tests (RestIT, LoginIT, ...) with their base classes and rules, kept under src/main; the module pom says other modules run them with the failsafe plugin"
+
+[[rules]]
+id = "qa-test-support"
+match = [
+  "qa/test-db-instance-migration/*/src/main/**",
+  "qa/test-db-rolling-update/*/src/main/**",
+  "qa/test-db-util/src/main/**",
+  "qa/ensure-clean-db-plugin/src/main/**",
+  "distro/{run,run4}/qa/example-plugin/src/main/**",
+  "clients/java/qa/engine-variable-test/src/main/**",
+  "commons/testing/src/main/**",
+]
+purpose = "test"
+category = "test-support"
+reason = "Upgrade and rolling-update scenario fixtures and their runner and JUnit rule (READMEs of the two suites), the engine plugin that fails tests on a dirty database, QA-only plugin and deployment modules, and commons/testing (JUnit logging rule); all exist only for tests"
+
+[[rules]]
+id = "qa-test-tooling"
+match = [
+  "qa/performance-tests-engine/src/main/**",
+  "qa/test-db-indexes-in-scripts/src/main/**",
+]
+kind = ["source"]
+purpose = "production"
+category = "tooling"
+reason = "The performance benchmark framework (runner, load generator, report builders; its tests live in src/test) and the IndexChecker program that exec-maven-plugin runs as a build gate; a harness or gate is tooling"
+
+[[rules]]
+id = "examples-and-demos"
+match = [
+  "examples/**",
+  "webapps/assembly/src/main/runtime/develop/**",
+  "webapps/assembly/src/main/webapp/develop/**",
+]
+kind = ["source"]
+purpose = "production"
+category = "example"
+reason = "The invoice demo application shipped with the full distributions (examples/invoice/README.md) and the demo data and forms that the webapps develop profile loads"
+
+[[rules]]
+id = "distribution-launchers"
+match = ["distro/**/assembly/**", "distro/cibseven-welcome/**"]
+kind = ["source"]
+purpose = "production"
+category = "distribution"
+reason = "Start, stop and run scripts and the welcome page that the Tomcat, WildFly and Run distributions ship to users"
+
+[[rules]]
+id = "ci-pipelines"
+match = ["Jenkinsfile", "Jenkinsfile.cib", ".ci/**/Jenkinsfile"]
+kind = ["source"]
+purpose = "production"
+category = "tooling"
+reason = "Jenkins build and test pipelines; CI gates are tooling"
+
+[[rules]]
+id = "docs-and-ci-helpers"
+match = ["engine-rest/docs/build.js", "settings/maven/init-mssql.sql"]
+kind = ["source"]
+purpose = "production"
+category = "tooling"
+reason = "build.js renders the REST API reference with Redoc (engine-rest/docs/package.json); init-mssql.sql is mounted by settings/maven/docker-compose.yml to prepare the SQL Server test database"
+
+[[rules]]
+id = "openapi-templates"
+match = ["engine-rest/engine-rest-openapi/src/main/templates/**"]
+kind = ["source"]
+purpose = "production"
+category = "api-docs"
+reason = "Hand-written FreeMarker templates that the engine-rest-openapi build renders into openapi.json (module README); documentation source rather than engine implementation"
+
+[[rules]]
+id = "apache-commons-codec-copy"
+match = ["engine/src/main/java/org/cibseven/bpm/engine/impl/digest/_apacheCommonsCodec/**"]
+kind = ["source"]
+purpose = "other"
+category = "vendored"
+reason = "package.html in this folder states that Base64 and StringUtils are copied from Apache Commons Codec 1.4"

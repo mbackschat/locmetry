@@ -12,6 +12,7 @@
 
 - [ ] Decide whether an unloaded `.locmetryrc` is project content. [PRODUCT](PRODUCT.md#project-configuration) excludes only the loaded configuration, so `--config OTHER` selects the scan root's `.locmetryrc` and reports it as an unrecognized file: coverage differs by one file from a discovery run of the same tree, which misleads anyone comparing a draft policy with the committed one. Two policy test drives hit this. Recommendation: exclude every file named `.locmetryrc` as policy, which also covers inactive ones in subfolders and nested projects, and record the coverage change as **Breaking**.
 - [ ] Decide the [module credit by layout coverage](proposals/module-credit-by-coverage.md) proposal. Every project in the policy test drives of 2026-10-22 and 2026-10-23 lost build-module credit to entries that kept `production` and only named another category, and the module count included modules without credit.
+- [ ] Decide the [framework layouts](proposals/framework-layouts.md) proposal. Next.js, Nuxt and React Router applications are 93–100% unclaimed without configuration, and .NET, PHP, Ruby and Django projects 38–99%, as the [framework layout measurements](research/framework-layouts.md) show.
 - [ ] Decide the [language corrections](proposals/language-corrections.md) proposal. The Immich showcase found that a policy cannot correct a language the counter recognized wrongly: its ProGuard file counts as Prolog. Test drives found the same gap in two more projects, including 172 C++ headers counted as C Header.
 
 ## Known Display Follow-up
@@ -33,6 +34,7 @@
 
 - [Language corrections](proposals/language-corrections.md): draft of 2026-10-22, awaiting the owner's decision.
 - [Module credit by layout coverage](proposals/module-credit-by-coverage.md): draft of 2026-10-23, awaiting the owner's decision.
+- [Framework layouts](proposals/framework-layouts.md): draft of 2026-10-23, awaiting the owner's decision.
 
 The [proposal index](proposals/README.md) distinguishes active designs from historical decisions.
 

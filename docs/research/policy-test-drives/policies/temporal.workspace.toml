@@ -1,0 +1,4 @@
+version = 1
+
+# Three independent repositories, each measured with its own .locmetryrc.
+roots = ["documentation", "samples-typescript", "sdk-typescript"]

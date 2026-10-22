@@ -1,0 +1,53 @@
+version = 1
+
+# Each top-level folder is a sample project meant to be copied as a template, and the samples are
+# this repository's product, so sample code is production with the default category
+# "implementation"; only repository and sample tooling gets its own category.
+
+[categories]
+tooling = "Maintained scripts and configuration for linting, testing, deploying and keeping the samples consistent"
+
+[[rules]]
+id = "shared-lint-and-test-config"
+match = ["**/.eslintrc.js", "**/.eslintrc.cjs", "**/jest.config.js"]
+kind = ["source"]
+purpose = "production"
+category = "tooling"
+reason = "50 of the 61 tracked .eslintrc.js files are byte-identical copies of .shared/.eslintrc.js, which .scripts/copy-shared-files.mjs writes into each sample on commit, and the rest are sample-specific ESLint configuration it leaves alone (ESLINTRC_EXCLUDE); jest.config.js files configure a test runner, which is production tooling rather than a test"
+
+[[rules]]
+id = "repository-tooling"
+match = [".scripts/**", ".husky/pre-push"]
+kind = ["source"]
+purpose = "production"
+category = "tooling"
+reason = "The root package.json runs .scripts/copy-shared-files.mjs and .scripts/upgrade-versions.mjs through zx, and the pre-push hook runs copy-shared-files"
+
+[[rules]]
+id = "sample-deploy-scripts"
+match = ["lambda-worker/*.sh"]
+kind = ["source"]
+purpose = "production"
+category = "tooling"
+reason = "The sample's README lists deploy-lambda.sh and mk-iam-role.sh as its deployment files and instructs running them"
+
+[[rules]]
+id = "samples-outside-src"
+match = [
+  "food-delivery/apps/driver/**",
+  "food-delivery/apps/menu/**",
+  "food-delivery/packages/**",
+  "nextjs-ecommerce-oneclick/**",
+  "nestjs-exchange-rates/**",
+  "langsmith/**",
+  "monorepo-folders/packages/backend-apis/**",
+  "monorepo-folders/packages/temporal-worker/**",
+  "monorepo-folders/packages/frontend-ui/public/**",
+  "scratchpad/**",
+  "protobufs/protos/*.proto",
+  "protobufs/protos/root.js",
+]
+kind = ["source"]
+purpose = "production"
+category = "implementation"
+reason = "Sample code the npm src/** layout misses because the sample keeps it in Next.js pages/, NestJS apps/*/src, Turborepo apps/ and packages/, per-sample src folders below a shared package.json, or a single scratchpad.ts; .scripts/list-of-samples.json lists every one of these folders as a sample, and their conventional tests keep the test classification"

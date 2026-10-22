@@ -1,0 +1,70 @@
+version = 1
+
+[categories]
+tooling = "Maintained scripts and configuration that build, check and publish the documentation site"
+site-config = "Docusaurus configuration and navigation structure written as JavaScript"
+example = "Runnable sample applications whose code the documentation embeds"
+test-support = "Files that only the visual-regression tests load"
+
+[[overrides]]
+id = "test-runner"
+match = ["tests/run-all.mjs"]
+kind = ["source"]
+purpose = "production"
+category = "tooling"
+reason = "Its header says it runs every tests/test-*.mjs suite and reports a combined status for CI; a runner is production tooling, and the tests/ convention would count it as a test"
+
+[[rules]]
+id = "docs-sample-apps"
+match = ["sample-apps/**"]
+kind = ["source"]
+purpose = "production"
+category = "example"
+reason = "snipsync.config.yaml pulls ./sample-apps/**/*.go and *.java into the pages, docs link to these files with ViewSourceCodeNotice, and Dependabot keeps their go.mod files current, so they are maintained examples; their Go tests keep the built-in test classification"
+
+[[rules]]
+id = "visual-test-stylesheet"
+match = ["visuals/screenshot.css"]
+kind = ["source"]
+purpose = "test"
+category = "test-support"
+reason = "Read only by tests/playwright/screenshot.doc.spec.ts, which injects it to damp animations during screenshot comparison"
+
+[[rules]]
+id = "site-build-code"
+match = [
+  "middleware.js",
+  "plugins/**",
+  "scripts/mdx-to-md.mjs",
+  "scripts/component-handlers/**",
+  "static/scripts/googletag.js",
+  "static/scripts/copycode-notice.js",
+]
+kind = ["source"]
+purpose = "production"
+category = "implementation"
+reason = "Code that runs as part of the published site: middleware.js is the Vercel edge rewrite for Accept: text/markdown, plugins/** are registered in docusaurus.config.js, scripts/mdx-to-md.mjs is the transformer that plugins/markdown-pages imports in its postBuild hook (MARKDOWN_PIPELINE.md), and the two static scripts are listed under scripts: in docusaurus.config.js"
+
+[[rules]]
+id = "site-config"
+match = ["docusaurus.config.js", "sidebars.js"]
+kind = ["source"]
+purpose = "production"
+category = "site-config"
+reason = "sidebars.js is a single object literal of page ids with no functions, and docusaurus.config.js is mostly option data; a separate category keeps navigation data out of the implementation total"
+
+[[rules]]
+id = "maintenance-tooling"
+match = [
+  "bin/**",
+  "scripts/**",
+  "types/**",
+  "vale/auto-fix-vale.js",
+  "static/scripts/screenshot-artifacts.sh",
+  ".eslintrc.js",
+  "playwright.config.ts",
+]
+kind = ["source"]
+purpose = "production"
+category = "tooling"
+reason = "package.json runs bin/*.js as prebuild, postbuild and check scripts and workflows call bin/*.js, scripts/lint-mermaid.mjs and screenshot-artifacts.sh; vale/auto-fix-vale.js backs the fix-vale script; types/docusaurus.d.ts is a type-checker shim that does not affect build output; playwright.config.ts and .eslintrc.js configure the test runner and linter; bin/*.test.js keep their built-in test classification"
