@@ -8,10 +8,6 @@
 - [ ] Generate PowerShell tab completion, together with the other shells; deferred by the owner on 2026-10-21.
 - Accept UTF-16 configuration and workspace files, and add PowerShell equivalents of the `jq` recipes, only when Windows users ask for them. Windows on ARM stays excluded while x86_64 emulation serves it. The [Windows support record](proposals/archive/windows-support.md) owns the rationale.
 
-## CI Maintenance — Follow-up
-
-- [ ] Update the action versions behind the Node.js runtime-deprecation warnings observed in the v0.3.0 CI/release runs. Treat this as a separate tested maintenance change; the [published-release record](plans/archive/development-plan-2026-10-16.md#minor-release-v030--published) preserves the original evidence.
-
 ## Comparison Presence Findings — Follow-up
 
 - [ ] Decide the [comparison presence summary](proposals/comparison-presence-summary.md) proposal, which bounds human presence findings for large folder/member/package restructures and keeps complete JSON evidence. Coverage summaries and source-code row selection are already implemented; [their checkpoint](plans/archive/measurement-quality-and-net-change.md#comparison-readability--2026-10-16) records the separation of scope.
