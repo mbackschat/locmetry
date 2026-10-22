@@ -265,7 +265,7 @@ View options apply to every supporting saved or printed view of the same measure
 
 Help groups selection and policy, output and content, and presentation. Selection options change what is measured; presentation options change a view. Use explicit `--format table` for table recipes in pipes, where the default is a headline. `--table-purpose` and `--table-language` filter tables only; they do not restrict JSON or Markdown measurement totals.
 
-The following are exact option names. Former spellings are rejected, not aliases; command names and unrelated options are unchanged.
+The following are exact option names. Former spellings are rejected, not aliases, with exit 1 and an error that names the current option; command names and unrelated options are unchanged.
 
 | Current option | Rejected former spelling |
 | --- | --- |

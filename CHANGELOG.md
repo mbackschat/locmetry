@@ -8,6 +8,10 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 
 - Default tables name Rust `#[cfg(test)]` code counted with production in a legend line below the language table, such as “Rust production includes 145 code lines of inline #[cfg(test)] tests in 3 files”, so it is visible where Test/prod is read. `--verbose` no longer repeats it as an `Inline tests:` note; Markdown keeps that note.
 
+### Fixed
+
+- An option spelling retired in 0.7.0, such as `--purpose` or `workspace --file`, is still rejected, but the error now names the option that replaced it instead of an unrelated one such as `--verbose` or `--files`.
+
 ## [0.8.0] - 2026-10-21
 
 ### Added

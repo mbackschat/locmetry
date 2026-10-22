@@ -84,28 +84,61 @@ fn retired_spellings_are_rejected_in_every_command_that_used_them() {
         vec!["--root", "project"],
         vec!["workspace", "--root", "project"],
     ] {
-        for old in [
-            vec!["--categories"],
-            vec!["--bars"],
-            vec!["--purpose", "production"],
-            vec!["--depth", "2"],
+        for (old, tip) in [
+            (
+                vec!["--categories"],
+                "'--categories' was renamed to '--show-categories'",
+            ),
+            (
+                vec!["--bars=table"],
+                "'--bars' was renamed to '--show-bars'",
+            ),
+            (
+                vec!["--purpose", "production"],
+                "'--purpose' was renamed to '--table-purpose'",
+            ),
+            (
+                vec!["--depth", "2"],
+                "'--depth' was renamed to '--markdown-depth'",
+            ),
         ] {
             let args = [prefix.clone(), old].concat();
             let output = run(temp.path(), &args);
             assert_eq!(output.status.code(), Some(1), "{args:?}");
             assert!(output.stdout.is_empty());
-            assert!(String::from_utf8_lossy(&output.stderr).contains("unexpected argument"));
+            assert_retired_spelling_names_its_successor(&output.stderr, tip);
         }
     }
-    for args in [
-        vec!["--root", "project", "--folders"],
-        vec!["workspace", "--file", "repos.toml"],
-        vec!["explain", "project/src/lib.rs", "--workspace", "repos.toml"],
+    for (args, tip) in [
+        (
+            vec!["--root", "project", "--folders"],
+            "'--folders' was renamed to '--show-folders'",
+        ),
+        (
+            vec!["workspace", "--file", "repos.toml"],
+            "'workspace --file' was renamed to '--workspace-file'",
+        ),
+        (
+            vec!["explain", "project/src/lib.rs", "--workspace", "repos.toml"],
+            "'explain --workspace' was renamed to '--workspace-file'",
+        ),
     ] {
         let output = run(temp.path(), &args);
         assert_eq!(output.status.code(), Some(1), "{args:?}");
-        assert!(String::from_utf8_lossy(&output.stderr).contains("unexpected argument"));
+        assert_retired_spelling_names_its_successor(&output.stderr, tip);
     }
+}
+
+/// Clap's similarity tips sent agents with pre-0.7.0 knowledge to unrelated
+/// options, such as `--purpose` to `--verbose` and `workspace --file` to
+/// `--files` (agent regression desk review, 2026-10-21, finding F11).
+fn assert_retired_spelling_names_its_successor(stderr: &[u8], tip: &str) {
+    let stderr = String::from_utf8_lossy(stderr);
+    assert!(stderr.contains("unexpected argument"), "{stderr}");
+    assert_eq!(stderr.matches("tip:").count(), 1, "{stderr}");
+    assert!(stderr.contains(tip), "{stderr}");
+    assert!(!stderr.contains("similar argument"), "{stderr}");
+    assert!(!stderr.contains("as a value"), "{stderr}");
 }
 
 #[test]
