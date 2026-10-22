@@ -5,6 +5,7 @@ use crate::style::{Role, Theme};
 use crate::{Counts, Kind, Purpose};
 use std::fmt::Write;
 
+mod findings;
 mod notes;
 
 fn label(value: &str, markdown: bool) -> String {
@@ -520,29 +521,7 @@ fn render(c: &Comparison, markdown: bool, theme: Theme, variants: LanguageVarian
             )
         })
         .collect();
-    if !findings.is_empty() {
-        match markdown {
-            true => write!(out, "\n## Findings\n\n"),
-            false => write!(out, "\n{}", output::section_title("Findings", theme)),
-        }
-        .unwrap();
-        for (index, f) in findings.into_iter().enumerate() {
-            let context = f.context();
-            writeln!(
-                out,
-                "{}- {} ({}{}): {}",
-                if index == 0 { "" } else { "\n" },
-                theme.paint(Role::Information, f.code()),
-                side_name(context.side),
-                context
-                    .member
-                    .as_ref()
-                    .map_or(String::new(), |m| format!(", {}", label(m, markdown))),
-                label(&context.message, markdown)
-            )
-            .unwrap();
-        }
-    }
+    findings::write_findings(&mut out, &findings, markdown, theme);
     if !c.findings.iter().any(|f| {
         matches!(
             f,

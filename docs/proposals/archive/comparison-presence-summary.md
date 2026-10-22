@@ -2,14 +2,16 @@
 
 <!-- doc-status
 {
-  "status": "draft",
+  "status": "implemented",
   "date": "2026-10-22",
   "summary": "Bounded presence findings in human comparisons: contained folders and packages fold into their outermost changed folder or member, and a cap ends the list with a count.",
-  "evidence": ""
+  "evidence": "[PRODUCT](../../PRODUCT.md#net-change), [regressions](../../../tests/integration/compare_presence.rs)"
 }
 -->
 
-This proposal answers the [PLAN](../PLAN.md#comparison-presence-findings--follow-up) item to evaluate a bounded human summary for large restructures. The [comparison readability checkpoint](../plans/archive/measurement-quality-and-net-change.md#comparison-readability--2026-10-16) left it open as a separate decision.
+Status: historical decision record — implemented. The owner accepted the design on 2026-10-22, and it was implemented and verified test-first the same day. One amendment came from the Immich showcase replay: a side with exactly one finding beyond the cap lists it by name, because a closing line in its place hid the name and saved no line. Archived on 2026-10-22 under the [retirement procedure](../README.md#retirement-procedure). [PRODUCT](../../PRODUCT.md#net-change) and the [compare guide](../../guides/compare.md) own the current behavior; the wording, examples and limits below describe the reviewed design, not current guarantees.
+
+This proposal answers the [PLAN](../../PLAN.md) item to evaluate a bounded human summary for large restructures. The [comparison readability checkpoint](../../plans/archive/measurement-quality-and-net-change.md#comparison-readability--2026-10-16) left it open as a separate decision.
 
 ## Problem
 
@@ -34,7 +36,7 @@ Containment uses the recorded identities the findings already carry: folder path
 - presence_changed (before): 31 more folders and 2 packages appear only in the before report. '--format json' lists each one.
 ```
 
-The other findings are listed in full and keep their present place before the presence findings. Wording follows the [human output wording rules](../help-design.md#human-output-wording).
+The other findings are listed in full and keep their present place before the presence findings. Wording follows the [human output wording rules](../../help-design.md#human-output-wording).
 
 **Optional:** a smaller cap in table output than in Markdown. The proposal uses 10 for both, so a saved Markdown review matches what the terminal showed.
 
@@ -55,4 +57,4 @@ Folding handles the common case. Moving or deleting a subtree changes presence f
 - 25 sibling folders that appear only after list 10 lines and a closing line that counts 15 more.
 - Full JSON for each fixture is byte-identical before and after the change, apart from `measured_at`.
 - The wording guard gains a scenario with folded and capped presence.
-- [PRODUCT](../PRODUCT.md) and the [compare guide](../guides/compare.md) describe the bounded human list and point to JSON for every identity.
+- [PRODUCT](../../PRODUCT.md) and the [compare guide](../../guides/compare.md) describe the bounded human list and point to JSON for every identity.

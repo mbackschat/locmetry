@@ -38,38 +38,13 @@ pub(super) fn presence_finding(
     member: Option<String>,
     paths: &[&str],
 ) -> Option<Finding> {
-    if p == Presence::Both {
-        return None;
-    }
-    let (side, message) = match (&entity, p) {
-        (Entity::Member { .. }, Presence::BeforeOnly) => (
-            Side::Before,
-            format!(
-                "{} left the workspace measurement. Its source may still exist.",
-                entity.named()
-            ),
-        ),
-        (Entity::Member { .. }, _) => (
-            Side::After,
-            format!("{} joined the workspace measurement.", entity.named()),
-        ),
-        (entity, Presence::BeforeOnly) => (
-            Side::Before,
-            format!(
-                "{} appears only in the before report. It may be deleted or no longer measured.",
-                entity.named()
-            ),
-        ),
-        (entity, _) => (
-            Side::After,
-            format!(
-                "{} appears only in the after report. It may be new or newly measured.",
-                entity.named()
-            ),
-        ),
+    let side = match p {
+        Presence::Both => return None,
+        Presence::BeforeOnly => Side::Before,
+        Presence::AfterOnly => Side::After,
     };
     Some(Finding::PresenceChanged {
-        context: context(side, message, member, paths),
+        context: context(side, entity.presence_message(p, ""), member, paths),
         entity,
         presence: p,
     })

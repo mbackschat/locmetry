@@ -12,6 +12,7 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 
 - `-h` gives each option and command a one-line summary, and `--help` keeps the full text: `locmetry -h` is 41% shorter and points to `--help` for more. The command list and the help footer no longer repeat what the commands' and options' own help says.
 - `--guide configure` and `--schema config` explain when to classify verification code as test and when as production tooling: test runners, harnesses, graders and CI gates are tooling, and Test/prod depends on purpose, not category.
+- Comparison tables and Markdown no longer list every folder and package of a moved, added or removed subtree: one finding names the outermost folder or workspace member with how many folders and packages it holds, and a side with more than 11 presence findings lists 10 and counts the rest. JSON still lists every finding.
 
 ### Fixed
 

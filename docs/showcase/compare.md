@@ -98,11 +98,8 @@ longer measured.
 - presence_changed (before): Folder 'mobile/lib/mixins' appears only in the before report. It may be deleted or no
 longer measured.
 
-- presence_changed (after): Folder 'mobile/lib/data/store' appears only in the after report. It may be new or newly
-measured.
-
-- presence_changed (after): Folder 'mobile/lib/data/store/util' appears only in the after report. It may be new or newly
-measured.
+- presence_changed (after): Folder 'mobile/lib/data/store' appears only in the after report, with 1 folder inside it. It
+may be new or newly measured.
 
 - presence_changed (after): Folder 'mobile/lib/presentation/widgets/slideshow' appears only in the after report. It may
 be new or newly measured.
@@ -116,13 +113,8 @@ or newly measured.
 - presence_changed (after): Folder 'mobile/packages/ui/lib/src/components/settings' appears only in the after report. It
 may be new or newly measured.
 
-- presence_changed (after): Folder 'mobile/test/data' appears only in the after report. It may be new or newly measured.
-
-- presence_changed (after): Folder 'mobile/test/data/store' appears only in the after report. It may be new or newly
-measured.
-
-- presence_changed (after): Folder 'mobile/test/data/store/util' appears only in the after report. It may be new or
-newly measured.
+- presence_changed (after): Folder 'mobile/test/data' appears only in the after report, with 2 folders inside it. It may
+be new or newly measured.
 
 - presence_changed (after): Folder 'mobile/test/medium/utils' appears only in the after report. It may be new or newly
 measured.
@@ -133,14 +125,8 @@ newly measured.
 - presence_changed (after): Folder 'mobile/test/presentation/widgets/slideshow' appears only in the after report. It may
 be new or newly measured.
 
-- presence_changed (after): Folder 'mobile/test/widgets' appears only in the after report. It may be new or newly
-measured.
-
-- presence_changed (after): Folder 'mobile/test/widgets/settings' appears only in the after report. It may be new or
-newly measured.
-
-- presence_changed (after): Folder 'mobile/test/widgets/settings/beta_sync_settings' appears only in the after report.
-It may be new or newly measured.
+- presence_changed (after): Folder 'mobile/test/widgets' appears only in the after report, with 2 folders inside it. It
+may be new or newly measured.
 
 - presence_changed (after): Folder 'web/src/lib/components/memories' appears only in the after report. It may be new or
 newly measured.

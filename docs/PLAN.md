@@ -8,10 +8,6 @@
 - [ ] Generate PowerShell tab completion, together with the other shells; deferred by the owner on 2026-10-21.
 - Accept UTF-16 configuration and workspace files, and add PowerShell equivalents of the `jq` recipes, only when Windows users ask for them. Windows on ARM stays excluded while x86_64 emulation serves it. The [Windows support record](proposals/archive/windows-support.md) owns the rationale.
 
-## Comparison Presence Findings — Follow-up
-
-- [ ] Decide the [comparison presence summary](proposals/comparison-presence-summary.md) proposal, which bounds human presence findings for large folder/member/package restructures and keeps complete JSON evidence. Coverage summaries and source-code row selection are already implemented; [their checkpoint](plans/archive/measurement-quality-and-net-change.md#comparison-readability--2026-10-16) records the separation of scope.
-
 ## Known Display Follow-up
 
 - Folder-partition convergence remains deferred: adaptive folder detail and JSON `unclassified_folders` intentionally use different policies. Revisit only if a workflow demonstrates confusing divergence, with explicit compatibility review. The [adaptive-folder decision](proposals/archive/adaptive-folder-detail.md#existing-partition-and-feasibility) owns the rationale.
@@ -28,9 +24,7 @@
 
 ## Proposals — Under Discussion
 
-- [Comparison presence summary](proposals/comparison-presence-summary.md): draft of 2026-10-22, awaiting the owner's decision.
-
-The [proposal index](proposals/README.md) distinguishes active designs from historical decisions.
+None. The [proposal index](proposals/README.md) distinguishes active designs from historical decisions.
 
 ## Historical Evidence
 

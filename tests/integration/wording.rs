@@ -70,8 +70,9 @@ fn fixture(root: &Path) {
     );
 }
 
-/// Saves before and after reports around a change that adds a folder, an
-/// unrecognized file and a notebook parse failure, and lets a member leave.
+/// Saves before and after reports around a change that adds a folder with a
+/// subfolder, which folds into it, an unrecognized file and a notebook parse
+/// failure, and lets a member leave.
 fn prepare_comparisons(root: &Path) {
     let save = |args: &[&str]| {
         common::locmetry()
@@ -100,6 +101,7 @@ fn prepare_comparisons(root: &Path) {
     ]);
     let project = root.join("project");
     write(&project, "newpkg/mod.py", "print(4)\n");
+    write(&project, "newpkg/sub/more.py", "print(6)\n");
     write(&project, "blob2.qqq", "x\n");
     write(&project, "broken.ipynb", "{}\n");
     save(&["--root", "project", "--output", "after.json"]);

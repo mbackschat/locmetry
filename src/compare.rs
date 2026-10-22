@@ -210,6 +210,27 @@ impl Entity {
             }
         }
     }
+
+    /// What a presence finding says about the entity. Human output passes what
+    /// folded into it as `inside`, such as ", with 3 folders inside it"; JSON
+    /// messages pass "".
+    pub(crate) fn presence_message(&self, presence: Presence, inside: &str) -> String {
+        let named = self.named();
+        match (self, presence) {
+            (Entity::Member { .. }, Presence::BeforeOnly) => format!(
+                "{named} left the workspace measurement{inside}. Its source may still exist."
+            ),
+            (Entity::Member { .. }, _) => {
+                format!("{named} joined the workspace measurement{inside}.")
+            }
+            (_, Presence::BeforeOnly) => format!(
+                "{named} appears only in the before report{inside}. It may be deleted or no longer measured."
+            ),
+            _ => format!(
+                "{named} appears only in the after report{inside}. It may be new or newly measured."
+            ),
+        }
+    }
 }
 
 /// Stable finding codes; consumers branch on code, not explanatory message text.

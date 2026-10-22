@@ -13,6 +13,7 @@ mod cli_tables;
 mod cli_user_defaults;
 mod compare;
 mod compare_member;
+mod compare_presence;
 mod compare_render;
 mod config;
 mod contracts;
