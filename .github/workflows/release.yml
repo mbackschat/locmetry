@@ -32,7 +32,7 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Require the tag to match the crate version
         if: github.event_name == 'push'
         run: test "${GITHUB_REF_NAME#v}" = "$(cargo pkgid | sed 's/.*[#@]//')"
@@ -90,7 +90,7 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           ! grep -qiaE 'vcruntime[0-9]*\.dll|msvcp[0-9]*\.dll|api-ms-win-crt-' "$BINARY"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.target }}
           path: |
@@ -102,10 +102,10 @@ jobs:
     if: github.event_name == 'push'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # The version's CHANGELOG.md section is the release text.
       - run: python3 scripts/release.py "${GITHUB_REF_NAME#v}" --notes > "$RUNNER_TEMP/notes.md"
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           merge-multiple: true
           path: dist
