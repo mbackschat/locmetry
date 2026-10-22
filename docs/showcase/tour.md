@@ -178,10 +178,10 @@ bash "$repository/scripts/compare-locmetry-files.sh" builtin.json reviewed.json 
     "code": 16165
   },
   {
-    "from": "other/unclaimed",
+    "from": "production/implementation",
     "to": "production/native",
-    "files": 32,
-    "code": 3156
+    "files": 38,
+    "code": 4102
   },
   {
     "from": "production/implementation",
@@ -191,9 +191,15 @@ bash "$repository/scripts/compare-locmetry-files.sh" builtin.json reviewed.json 
   },
   {
     "from": "other/unclaimed",
+    "to": "production/native",
+    "files": 29,
+    "code": 3104
+  },
+  {
+    "from": "other/unclaimed",
     "to": "production/tooling",
-    "files": 24,
-    "code": 1044
+    "files": 27,
+    "code": 1096
   },
   {
     "from": "other/unclaimed",

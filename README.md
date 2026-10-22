@@ -116,12 +116,12 @@ cd immich && locmetry --show-categories
  ────────────────────────────────────────────────────────────────────────────────────────────────────
  Category                   Files    Lines     Code │ Share  Code share
  ───────────────────────────────────────────────────┼────────────────────────────────────────────────
- production:implementation  1,875  204,088  174,215 │ 61.6%  ████████████████████████████████████████
- test:test                    496   99,255   83,485 │ 29.5%  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+ production:implementation  1,837  199,093  170,113 │ 60.2%  ████████████████████████████████████████
+ test:test                    496   99,255   83,485 │ 29.5%  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
  other:generated               38   19,173   16,165 │  5.7%  ░░░░
- production:native             32    3,967    3,156 │  1.1%  █
+ production:native             67    8,870    7,206 │  2.5%  ██
  test:end-to-end               23    3,719    3,118 │  1.1%  ▓
- production:tooling            25    1,617    1,387 │  0.5%  ▏
+ production:tooling            28    1,709    1,439 │  0.5%  ▏
  production:deployment         31    1,023      798 │  0.3%  ▏
  test:test-infrastructure       4      251      234 │  0.1%  ▏
  production:build-tooling       4      186      148 │  0.1%  ▏
@@ -130,7 +130,7 @@ cd immich && locmetry --show-categories
  Share = Code / total Code. Bars: █ Production  ▓ Test  ░ Other. The largest row fills the bar.
 ```
 
-Categories are labels assigned by built-in conventions, such as `test` and `build-tooling`, and by the policy, such as `generated`, `native` and `tooling`; a line counter has no equivalent.
+Categories are labels assigned by built-in conventions, such as `test` and `build-tooling`, and by the policy, such as `generated`, `native` and `tooling`; a line counter has no equivalent. The showcase narrows the tables to [the code around the product](docs/showcase/measure.md#look-at-the-code-around-the-product) with `--table-category` and [focuses on the mobile app](docs/showcase/measure.md#focus-on-the-mobile-app) with `--subfolder`.
 
 `locmetry explain FILE` names the rule behind any decision; for the generated SDK client, it reports the override and the reason recorded with it.
 
@@ -336,7 +336,7 @@ On Immich, `cd immich && locmetry --verbose` reports what the modules contribute
 
 <!-- showcase-modules -->
 ```text
- Production from build modules: 107,922 code lines in 12 'npm' modules, 58,827 code lines in 2 'dart' modules, 4,102 code lines in 2 'gradle' modules, 3,037 code lines in 1 'python' module.
+ Production from build modules: 107,922 code lines in 12 'npm' modules, 58,827 code lines in 2 'dart' modules, 3,037 code lines in 1 'python' module.
 ```
 
 Tests inside these trees stay tests, and nested modules decide for themselves. Detection reads file names only and never runs a build, so custom layouts need configuration; [module detection](docs/PRODUCT.md#module-detection) has the details.
@@ -361,11 +361,11 @@ reason = "Header: DO NOT MODIFY, generated using oazapfts from the OpenAPI speci
 
 [[rules]]
 id = "ios-app"
-match = ["mobile/ios/**"]
+match = ["mobile/ios/**/*.swift", "mobile/ios/**/*.h"]
 kind = ["source"]
 purpose = "production"
 category = "native"
-reason = "Swift code of the iOS runner and widget extension; no Package.swift declares it"
+reason = "Swift code and headers of the iOS runner and its extensions; no Package.swift declares it"
 ```
 
 Tests still win over ordinary rules; an override is needed only to beat a convention. Entries without evidence belong in the review list as unclaimed source, not in the policy. A clean review list alone does not establish correct classification.
