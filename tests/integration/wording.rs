@@ -48,13 +48,19 @@ fn fixture(root: &Path) {
     write(
         &project,
         ".locmetryrc",
-        "version = 1\n[scope]\nexclude = [\"nothing-here/**\"]\n[[rules]]\nid = \"ghost\"\nmatch = [\"ghost/**\"]\npurpose = \"production\"\n",
+        "version = 1\n[scope]\nexclude = [\"nothing-here/**\", \"skipped/**\"]\n[[rules]]\nid = \"ghost\"\nmatch = [\"ghost/**\"]\npurpose = \"production\"\n",
     );
     let worker = root.join("worker");
     write(&worker, "go.mod", "module worker\n\ngo 1.21\n");
     write(&worker, "main.go", "package main\n\nfunc main() {}\n");
     write(&worker, "tools/run.py", "print(2)\n");
     write(&project, ".ignore", "ignored.py\n");
+    write(&project, "skipped/a.py", "print(5)\n");
+    write(
+        root,
+        "bad.json",
+        "{\"document_type\": \"measurement\", \"x\": 1}\n",
+    );
     write(&project, "ignored.py", "print(3)\n");
     write(&root.join("badconfig"), ".locmetryrc", "not valid toml\n");
     write(
@@ -124,6 +130,7 @@ fn scenarios() -> Vec<Vec<&'static str>> {
         "broken.ipynb",
         "ignored.py",
         "missing.rs",
+        "src",
     ]
     .map(|path| vec!["explain", "--root", "project", "--format", "table", path]);
     let mut scenarios = vec![
@@ -214,6 +221,8 @@ fn scenarios() -> Vec<Vec<&'static str>> {
         ],
         vec!["--root", "badconfig"],
         vec!["--root", "badmapping"],
+        vec!["--root", "project", "--subfolder", "skipped"],
+        vec!["compare", "bad.json", "bad.json"],
     ];
     scenarios.extend(explained);
     scenarios
@@ -278,6 +287,9 @@ fn violations(line: &str) -> Vec<&'static str> {
         .any(|word| word.trim_start_matches('(').starts_with("--"))
     {
         found.push("flag or command outside single quotes");
+    }
+    if text.contains(".:") {
+        found.push("'.:' seam: a sentence ends where a cause is appended");
     }
     if text.contains('"') || text.contains('`') {
         found.push("double quotes or backticks: use single quotes");
@@ -369,6 +381,10 @@ fn the_guard_flags_each_rule_and_spares_compliant_text() {
         ("matched +1, leaving -0", "signed zero"),
         ("Production from build modules: npm 12 code lines.", "value"),
         ("Rust production includes 3 code lines.", "value"),
+        (
+            "Invalid defaults 'x'. They may set only 'version'.: line 2",
+            "'.:'",
+        ),
     ] {
         assert!(
             violations(line).iter().any(|v| v.contains(rule)),

@@ -184,6 +184,12 @@ pub(crate) fn quoted(value: &str) -> String {
     format!("'{value}'")
 }
 
+/// A library's message with its backtick quotes made single quotes, as the
+/// human output wording rules require (docs/help-design.md, Human Output Wording).
+pub(crate) fn single_quoted(message: &str) -> String {
+    message.replace('`', "'")
+}
+
 /// A complete, quoted command, so its flags and a trailing `-` read as one unit.
 pub(crate) fn command(arguments: &str) -> String {
     format!("'locmetry {arguments}'")

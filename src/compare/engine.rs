@@ -20,6 +20,7 @@ pub fn read_input(path: &Path) -> Result<MeasurementReport> {
         .read_to_string(&mut text)
         .with_context(|| format!("Invalid measurement report encoding '{}'", path.display()))?;
     serde_json::from_str(&text)
+        .map_err(|error| anyhow::anyhow!(crate::output::single_quoted(&error.to_string())))
         .with_context(|| format!("Invalid measurement report '{}'", path.display()))
 }
 
@@ -83,10 +84,10 @@ pub fn compare(
         .with_context(|| format!("Invalid after measurement {after_name}"))?;
     before
         .require_comparison_evidence()
-        .with_context(|| format!("Cannot compare before report {before_name}"))?;
+        .with_context(|| format!("Cannot compare before report '{before_name}'"))?;
     after
         .require_comparison_evidence()
-        .with_context(|| format!("Cannot compare after report {after_name}"))?;
+        .with_context(|| format!("Cannot compare after report '{after_name}'"))?;
     let workspace = before.metadata.members.is_some();
     ensure!(
         workspace == after.metadata.members.is_some(),

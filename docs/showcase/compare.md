@@ -203,11 +203,11 @@ Input metadata, measurement notes, report-level findings and partial status cove
  ──────────────────────────────────────┼───────────────────────
  Source total  98,994  100,142  +1,148 │ 82,656  83,220    +564
 
-Member source lines: matched +1,148, entering 0, leaving 0, total +1,148.
-Member all-counted lines: matched +12,022, entering 0, leaving 0, total +12,022.
+Member source lines: matched +1,148, entering 0, leaving 0. Total +1,148.
+Member all-counted lines: matched +12,022, entering 0, leaving 0. Total +12,022.
 
-Member source code: matched +564, entering 0, leaving 0, total +564.
-Member all-counted code: matched +11,434, entering 0, leaving 0, total +11,434.
+Member source code: matched +564, entering 0, leaving 0. Total +564.
+Member all-counted code: matched +11,434, entering 0, leaving 0. Total +11,434.
 
  ─────────────────────────────────────────────────────────────────────────
                                    Lines          │          Code

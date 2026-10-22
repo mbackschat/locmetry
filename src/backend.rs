@@ -216,7 +216,12 @@ pub(crate) fn scan_selection(
                 bail!(
                     "Subfolder '{folder}' is excluded at '{}' by {}. Revise the exclusion policy.",
                     excluded.at,
-                    excluded.patterns.join(", ")
+                    excluded
+                        .patterns
+                        .iter()
+                        .map(|pattern| crate::output::quoted(pattern))
+                        .collect::<Vec<_>>()
+                        .join(", ")
                 );
             }
             let reason = match filter_reason(&root, policy.scope(), Target::Subfolder(folder))? {

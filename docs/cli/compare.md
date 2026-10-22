@@ -280,11 +280,11 @@ Input metadata, measurement notes, report-level findings and partial status cove
  Source total      19     20      +1 │     16     17      +1
  Folded: TSX → TypeScript.
 
-Member source lines: matched +1, entering 0, leaving 0, total +1.
-Member all-counted lines: matched +1, entering 0, leaving 0, total +1.
+Member source lines: matched +1, entering 0, leaving 0. Total +1.
+Member all-counted lines: matched +1, entering 0, leaving 0. Total +1.
 
-Member source code: matched +1, entering 0, leaving 0, total +1.
-Member all-counted code: matched +1, entering 0, leaving 0, total +1.
+Member source code: matched +1, entering 0, leaving 0. Total +1.
+Member all-counted code: matched +1, entering 0, leaving 0. Total +1.
 
  ───────────────────────────────────────────────────────────
                        Lines         │         Code
@@ -431,9 +431,9 @@ locmetry compare --no-color --help | sed '/^Presentation:/,$d'
 ```
 
 ```output
-locmetry: Cannot compare before report headline.json: A full measurement report is required. Missing: review, breakdown,
-metadata.kinds, metadata.modules, metadata.coverage.unrecognized, metadata.config. Capture a full measurement with
-'--output FILE' or '--format json'. A headline cannot reconstruct the missing baseline, and rerunning measures the
+locmetry: Cannot compare before report 'headline.json': A full measurement report is required. Missing: review,
+breakdown, metadata.kinds, metadata.modules, metadata.coverage.unrecognized, metadata.config. Capture a full measurement
+with '--output FILE' or '--format json'. A headline cannot reconstruct the missing baseline, and rerunning measures the
 current tree.
 Compare two saved full reports: net change is after minus before. Defaults to a table on a terminal,
 a JSON headline in pipes. --output FILE saves only to that file, defaulting to full JSON; --format

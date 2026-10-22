@@ -442,7 +442,7 @@ fn render(c: &Comparison, markdown: bool, theme: Theme, variants: LanguageVarian
         let leaving = |value: u64| signed(-i128::from(value));
         writeln!(
             out,
-            "\n{scope} source lines: matched {}, entering {}, leaving {}, total {}.",
+            "\n{scope} source lines: matched {}, entering {}, leaving {}. Total {}.",
             signed(composition.source.matched.lines.into()),
             signed(composition.source.entering.lines.into()),
             leaving(composition.source.leaving.lines),
@@ -451,7 +451,7 @@ fn render(c: &Comparison, markdown: bool, theme: Theme, variants: LanguageVarian
         .unwrap();
         writeln!(
             out,
-            "{scope} all-counted lines: matched {}, entering {}, leaving {}, total {}.",
+            "{scope} all-counted lines: matched {}, entering {}, leaving {}. Total {}.",
             signed(composition.all_counted.matched.lines.into()),
             signed(composition.all_counted.entering.lines.into()),
             leaving(composition.all_counted.leaving.lines),
@@ -460,7 +460,7 @@ fn render(c: &Comparison, markdown: bool, theme: Theme, variants: LanguageVarian
         .unwrap();
         writeln!(
             out,
-            "\n{scope} source code: matched {}, entering {}, leaving {}, total {}.",
+            "\n{scope} source code: matched {}, entering {}, leaving {}. Total {}.",
             signed(composition.source.matched.code.into()),
             signed(composition.source.entering.code.into()),
             leaving(composition.source.leaving.code),
@@ -469,7 +469,7 @@ fn render(c: &Comparison, markdown: bool, theme: Theme, variants: LanguageVarian
         .unwrap();
         writeln!(
             out,
-            "{scope} all-counted code: matched {}, entering {}, leaving {}, total {}.",
+            "{scope} all-counted code: matched {}, entering {}, leaving {}. Total {}.",
             signed(composition.all_counted.matched.code.into()),
             signed(composition.all_counted.entering.code.into()),
             leaving(composition.all_counted.leaving.code),

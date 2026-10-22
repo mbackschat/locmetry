@@ -441,7 +441,11 @@ fn aliases_and_directory_queries_fail_instead_of_claiming_filtering() {
     for directory in [".", "./", "src"] {
         let output = run(root, directory, &[]);
         assert_eq!(output.status.code(), Some(1));
-        assert!(String::from_utf8_lossy(&output.stderr).contains("target must be a file"));
+        let error = String::from_utf8_lossy(&output.stderr);
+        assert!(
+            error.contains(&format!("Explanation target '{directory}' must be a file")),
+            "{error}"
+        );
     }
     write(root, "repos.toml", "version = 1\nroots = [\"src\"]\n");
     let output = common::locmetry()
@@ -455,7 +459,7 @@ fn aliases_and_directory_queries_fail_instead_of_claiming_filtering() {
         .output()
         .unwrap();
     assert_eq!(output.status.code(), Some(1));
-    assert!(String::from_utf8_lossy(&output.stderr).contains("target must be a file"));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("' must be a file"));
 }
 
 #[test]

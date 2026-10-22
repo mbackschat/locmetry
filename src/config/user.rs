@@ -42,7 +42,7 @@ impl UserDefaults {
             .with_context(|| format!("Cannot read user defaults '{}'", path.display()))?;
         let defaults: Self = parse_toml(&input).with_context(|| {
             format!(
-                "Invalid user defaults '{}'. They may set only 'version', 'scope.exclude' and '[[languages.mappings]]'.",
+                "Invalid user defaults '{}' (they may set only 'version', 'scope.exclude' and '[[languages.mappings]]')",
                 path.display()
             )
         })?;

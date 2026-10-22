@@ -142,11 +142,11 @@ fn workspace_composition_keeps_offsetting_arrivals_and_departures() {
     let after = save(temp.path(), "after.json", &workspace(&[&new]));
     for text in human_comparisons(&before, &after, 0) {
         assert!(
-            text.contains("Workspace source lines: matched 0, entering +1, leaving -1, total 0."),
+            text.contains("Workspace source lines: matched 0, entering +1, leaving -1. Total 0."),
             "{text}"
         );
         assert!(
-            text.contains("Workspace source code: matched 0, entering +1, leaving -1, total 0."),
+            text.contains("Workspace source code: matched 0, entering +1, leaving -1. Total 0."),
             "{text}"
         );
         assert!(
@@ -585,7 +585,7 @@ fn workspace_composition_colors_signed_contributions_and_mutes_unsigned_zero() {
             locmetry::LanguageVariants::Split,
         );
         let expected =
-            format!("matched {matched}, entering {entering}, leaving {leaving}, total {total}.");
+            format!("matched {matched}, entering {entering}, leaving {leaving}. Total {total}.");
         for label in [
             "source lines",
             "all-counted lines",

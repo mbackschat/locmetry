@@ -69,7 +69,8 @@ pub fn inspect(root: &Path, path: &Path, policy: &mut Policy) -> Result<(String,
     ensure!(
         path.components()
             .any(|part| part != std::path::Component::CurDir),
-        "Explanation target must be a file"
+        "Explanation target '{}' must be a file",
+        path.display()
     );
     let path = backend::relative_path(path)?;
     if let Some(at) = backend::inspect_path(root, &path, "Explanation")? {
@@ -77,7 +78,7 @@ pub fn inspect(root: &Path, path: &Path, policy: &mut Policy) -> Result<(String,
     }
     ensure!(
         root.join(&path).is_file(),
-        "Explanation target must be a file"
+        "Explanation target '{path}' must be a file"
     );
     let (scan, exclusion) =
         backend::scan_selection(root, policy, Some(backend::Target::File(&path)))?;

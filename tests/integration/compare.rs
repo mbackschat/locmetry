@@ -780,7 +780,7 @@ fn older_measurement_schemas_are_invalid() {
         assert_eq!(output.status.code(), Some(1));
         let error = String::from_utf8_lossy(&output.stderr);
         assert!(
-            error.contains(&format!("unknown variant `{version}`, expected `3`")),
+            error.contains(&format!("unknown variant '{version}', expected '3'")),
             "{error}"
         );
     }

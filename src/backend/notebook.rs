@@ -104,7 +104,7 @@ pub(super) fn parse(path: &Path, config: &Config) -> Result<Report, Error> {
             ParseFailureReason::InvalidNotebook,
             format!(
                 "Cannot decode notebook: {}",
-                error.to_string().replace('`', "'")
+                crate::output::single_quoted(&error.to_string())
             ),
         )
     })?;

@@ -51,7 +51,7 @@ pub(crate) fn run_explain(args: &ExplainArgs, styling: Styling) -> Result<Outcom
         .collect();
     Ok(match partial.is_empty() {
         true => Outcome::Complete,
-        false => Outcome::Partial(format!("Counts unavailable for {}", partial.join(", "))),
+        false => Outcome::Partial(format!("Counts unavailable: {}", partial.join(", "))),
     })
 }
 

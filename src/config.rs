@@ -48,17 +48,14 @@ fn parse_toml<T: serde::de::DeserializeOwned>(input: &str) -> Result<T> {
                 let before = &input[..span.start];
                 let line = before.matches('\n').count() + 1;
                 let column = before.rsplit('\n').next().unwrap_or(before).chars().count() + 1;
-                anyhow!("line {line}, column {column}: {}", single_quoted(message))
+                anyhow!(
+                    "line {line}, column {column}: {}",
+                    crate::output::single_quoted(message)
+                )
             }
-            None => anyhow!("{}", single_quoted(message)),
+            None => anyhow!("{}", crate::output::single_quoted(message)),
         }
     })
-}
-
-/// The parser's message with its backtick quotes made single quotes, as the
-/// human output wording rules require (docs/help-design.md, Human Output Wording).
-fn single_quoted(message: &str) -> String {
-    message.replace('`', "'")
 }
 
 /// Category of source that a build module classifies.

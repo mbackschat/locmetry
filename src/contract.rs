@@ -365,7 +365,7 @@ pub struct ReportSummary {
     pub build_modules: BTreeMap<String, crate::BuildSystemShare>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub submodules: Vec<crate::SubmoduleShare>,
-    /// The five largest source files that build-module layouts classified as production, by code and then path. Nothing else reviews module-claimed code; a generated or vendored file here needs an entry. [] records none; absence means an earlier producer did not record the list.
+    /// The five largest source files that build-module layouts classified as production, by code and then path. Nothing else reviews these files, so exclude or reclassify a generated or vendored one. [] records none; absence means an earlier producer did not record the list.
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",

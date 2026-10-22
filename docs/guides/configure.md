@@ -11,7 +11,7 @@ The first measurement precedes edits. This command works with the installed bina
 locmetry --root . --format headline
 ```
 
-Read the compact headline first: effective scope, loaded configuration paths, coverage, `summary.submodules`, `summary.unclaimed_folders`, `summary.largest_module_files` and unused-policy findings. Module layouts claim production without review, so read the largest module-claimed files for generated or vendored code. `.locmetryrc` is discovered only at the scan root, not in ancestors. `--config FILE` replaces project discovery; its patterns still use the scan root as their base. Personal defaults can affect selection and language recognition; inspect them rather than silently disabling them for a real project.
+Read the compact headline first: effective scope, loaded configuration paths, coverage, `summary.submodules`, `summary.unclaimed_folders`, `summary.largest_module_files` and unused-policy findings. Module layouts claim production without review, so read the largest files counted as production only by a build layout, and exclude or reclassify generated or vendored ones. `.locmetryrc` is discovered only at the scan root, not in ancestors. `--config FILE` replaces project discovery; its patterns still use the scan root as their base. Personal defaults can affect selection and language recognition; inspect them rather than silently disabling them for a real project.
 
 Inspect `summary.unused_entries` and `summary.unused_exclusions` when present; omission means no such findings in that report.
 
