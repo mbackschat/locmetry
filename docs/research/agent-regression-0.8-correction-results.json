@@ -1,0 +1,428 @@
+{
+  "revision": "agent-regression-0.8-correction-results-v1",
+  "date": "2026-10-22",
+  "protocol": "tests/fixtures/agent-explorability/regression-0.8-correction-study.json",
+  "model": "gpt-6.1-sol",
+  "effort": "xhigh",
+  "arms": {
+    "A": {
+      "source_revision": "c9098e20a3dade541c61ca8ca2bc347943e672be",
+      "source_provenance": "operator-declared prebuilt binary",
+      "binary_sha256": "882fe74a64f6df405f47deaa9cfc6f88190bbd337f4c7531183e36b926f35a05"
+    },
+    "B": {
+      "source_revision": "142645ebfb997b0f5ee50fd16b493c3f570eaa1b",
+      "source_provenance": "operator-declared prebuilt binary",
+      "binary_sha256": "b98df3820e80838815125a42d8b10468e0839eb57aaee91ab44b32620a7d7ea5"
+    }
+  },
+  "preparation_revision": "b893e4938c034459dd03776d7d7f486e8525869f",
+  "previous_trials_included": false,
+  "analysis": {
+    "per_task": {
+      "4": {
+        "A": {
+          "tools": {
+            "total": 28,
+            "median": 7.0,
+            "minimum": 5,
+            "maximum": 9
+          },
+          "shell": {
+            "total": 58,
+            "median": 14.0,
+            "minimum": 14,
+            "maximum": 16
+          },
+          "cli": {
+            "total": 28,
+            "median": 7.0,
+            "minimum": 7,
+            "maximum": 7
+          },
+          "fresh": {
+            "total": 152771,
+            "median": 38063.5,
+            "minimum": 29767,
+            "maximum": 46877
+          },
+          "cached": {
+            "total": 833152,
+            "median": 196224.0,
+            "minimum": 151040,
+            "maximum": 289664
+          },
+          "output": {
+            "total": 14274,
+            "median": 3592.5,
+            "minimum": 3266,
+            "maximum": 3823
+          },
+          "seconds": {
+            "total": 369.5282061100006,
+            "median": 98.16639149188995,
+            "minimum": 69.47980809211731,
+            "maximum": 103.7156150341034
+          },
+          "guide_calls": {
+            "total": 0,
+            "median": 0.0,
+            "minimum": 0,
+            "maximum": 0
+          },
+          "schema_calls": {
+            "total": 0,
+            "median": 0.0,
+            "minimum": 0,
+            "maximum": 0
+          },
+          "passes": 3
+        },
+        "B": {
+          "tools": {
+            "total": 29,
+            "median": 7.5,
+            "minimum": 6,
+            "maximum": 8
+          },
+          "shell": {
+            "total": 57,
+            "median": 13.5,
+            "minimum": 13,
+            "maximum": 17
+          },
+          "cli": {
+            "total": 28,
+            "median": 7.0,
+            "minimum": 7,
+            "maximum": 7
+          },
+          "fresh": {
+            "total": 152622,
+            "median": 32830.5,
+            "minimum": 27625,
+            "maximum": 59336
+          },
+          "cached": {
+            "total": 905856,
+            "median": 221056.0,
+            "minimum": 191872,
+            "maximum": 271872
+          },
+          "output": {
+            "total": 15857,
+            "median": 3911.5,
+            "minimum": 3743,
+            "maximum": 4291
+          },
+          "seconds": {
+            "total": 407.61984276771545,
+            "median": 101.65396344661713,
+            "minimum": 88.53044080734253,
+            "maximum": 115.78147506713867
+          },
+          "guide_calls": {
+            "total": 0,
+            "median": 0.0,
+            "minimum": 0,
+            "maximum": 0
+          },
+          "schema_calls": {
+            "total": 0,
+            "median": 0.0,
+            "minimum": 0,
+            "maximum": 0
+          },
+          "passes": 4
+        }
+      }
+    },
+    "totals": {
+      "A": {
+        "tools": 28,
+        "shell": 58,
+        "cli": 28,
+        "fresh": 152771,
+        "cached": 833152,
+        "output": 14274,
+        "seconds": 369.5282061100006,
+        "guide_calls": 0,
+        "schema_calls": 0
+      },
+      "B": {
+        "tools": 29,
+        "shell": 57,
+        "cli": 28,
+        "fresh": 152622,
+        "cached": 905856,
+        "output": 15857,
+        "seconds": 407.61984276771545,
+        "guide_calls": 0,
+        "schema_calls": 0
+      }
+    },
+    "paired": {
+      "4": {
+        "tools": {
+          "lower": 2,
+          "equal": 0,
+          "higher": 2,
+          "differences": [
+            1,
+            -2,
+            3,
+            -1
+          ]
+        },
+        "fresh": {
+          "lower": 1,
+          "equal": 0,
+          "higher": 3,
+          "differences": [
+            16718,
+            833,
+            1552,
+            -19252
+          ]
+        }
+      }
+    },
+    "primary_failures": [
+      {
+        "scope": "overall",
+        "metric": "tools",
+        "control": 28,
+        "candidate": 29,
+        "bound": 28
+      }
+    ],
+    "secondary_flags": [],
+    "correctness": true,
+    "primary_cost_pass": false,
+    "peak_concurrency": 3
+  },
+  "runs": [
+    {
+      "task": 4,
+      "rep": 1,
+      "arm": "B",
+      "tools": 8,
+      "shell": 13,
+      "cli": 7,
+      "fresh": 59336,
+      "cached": 214912,
+      "output": 3887,
+      "seconds": 88.53044080734253,
+      "guides": [],
+      "schemas": [],
+      "first_cli": [
+        "--help"
+      ],
+      "cli_nonzero": 1,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "guide_calls": 0,
+      "schema_calls": 0,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 4,
+      "rep": 1,
+      "arm": "A",
+      "tools": 7,
+      "shell": 14,
+      "cli": 7,
+      "fresh": 42618,
+      "cached": 195968,
+      "output": 3555,
+      "seconds": 96.69152617454529,
+      "guides": [],
+      "schemas": [],
+      "first_cli": [
+        "--help"
+      ],
+      "cli_nonzero": 1,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "guide_calls": 0,
+      "schema_calls": 0,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "critical_failure"
+    },
+    {
+      "task": 4,
+      "rep": 2,
+      "arm": "B",
+      "tools": 7,
+      "shell": 14,
+      "cli": 7,
+      "fresh": 34342,
+      "cached": 227200,
+      "output": 3743,
+      "seconds": 88.53929376602173,
+      "guides": [],
+      "schemas": [],
+      "first_cli": [
+        "--help"
+      ],
+      "cli_nonzero": 1,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "guide_calls": 0,
+      "schema_calls": 0,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 4,
+      "rep": 2,
+      "arm": "A",
+      "tools": 9,
+      "shell": 16,
+      "cli": 7,
+      "fresh": 33509,
+      "cached": 289664,
+      "output": 3630,
+      "seconds": 99.64125680923462,
+      "guides": [],
+      "schemas": [],
+      "first_cli": [
+        "--help"
+      ],
+      "cli_nonzero": 1,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "guide_calls": 0,
+      "schema_calls": 0,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 4,
+      "rep": 3,
+      "arm": "B",
+      "tools": 8,
+      "shell": 17,
+      "cli": 7,
+      "fresh": 31319,
+      "cached": 271872,
+      "output": 3936,
+      "seconds": 114.76863312721252,
+      "guides": [],
+      "schemas": [],
+      "first_cli": [
+        "--help"
+      ],
+      "cli_nonzero": 1,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "guide_calls": 0,
+      "schema_calls": 0,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 4,
+      "rep": 3,
+      "arm": "A",
+      "tools": 5,
+      "shell": 14,
+      "cli": 7,
+      "fresh": 29767,
+      "cached": 151040,
+      "output": 3266,
+      "seconds": 69.47980809211731,
+      "guides": [],
+      "schemas": [],
+      "first_cli": [
+        "--help"
+      ],
+      "cli_nonzero": 1,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "guide_calls": 0,
+      "schema_calls": 0,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 4,
+      "rep": 4,
+      "arm": "B",
+      "tools": 6,
+      "shell": 13,
+      "cli": 7,
+      "fresh": 27625,
+      "cached": 191872,
+      "output": 4291,
+      "seconds": 115.78147506713867,
+      "guides": [],
+      "schemas": [],
+      "first_cli": [
+        "--help"
+      ],
+      "cli_nonzero": 1,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "guide_calls": 0,
+      "schema_calls": 0,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 4,
+      "rep": 4,
+      "arm": "A",
+      "tools": 7,
+      "shell": 14,
+      "cli": 7,
+      "fresh": 46877,
+      "cached": 196480,
+      "output": 3823,
+      "seconds": 103.7156150341034,
+      "guides": [],
+      "schemas": [],
+      "first_cli": [
+        "--help"
+      ],
+      "cli_nonzero": 1,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "guide_calls": 0,
+      "schema_calls": 0,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    }
+  ],
+  "review": {
+    "cases": 8,
+    "passed": 7,
+    "incomplete": 0,
+    "critical_failures": 1,
+    "passes_by_arm": {
+      "A": 3,
+      "B": 4
+    }
+  },
+  "audit": {
+    "status": "admissible_primary_cost_gate_failed",
+    "checks": 142,
+    "integrity_failures": 0,
+    "peak_explorer_concurrency": 3,
+    "limits": [
+      "Prebuilt arm source revisions are operator declarations, separately recorded from preparation-repository source hashes; binary hashes are verified, but this audit does not reproduce binary builds.",
+      "Read-scope verification combines complete native tool names, nested tool methods and shell-command pattern inspection. OS and shell startup reads are outside the explorer-directed command audit; the sandbox itself permits root reads, so prompt scope is verified from recorded actions rather than enforced by a read-denying sandbox.",
+      "Generated pre-session baseline files are protected by the harness completion-time in-memory digest check; that initial digest is not separately persisted. Frozen generation specifications, summary fixture-integrity results and final task artifact checks remain available.",
+      "The seconds metric is harness elapsed time from invocation setup through completion/copying, rather than exact native final-message latency. It exceeds native task_complete by 0.47\u20138.17 seconds in this correction; answers match both native sessions and CLI events. Gates use the recorded elapsed metric."
+    ]
+  }
+}

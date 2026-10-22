@@ -48,6 +48,8 @@ One row per check, newest first. The outcome links the evidence.
 
 | Date | Candidate | Control | Level | Outcome |
 | --- | --- | --- | --- | --- |
+| 2026-10-22 | `142645e` (`81e7445` plus comparison `detail`) | `c9098e2` | Targeted agent run, task 4 correction, `gpt-6.1-sol` at `xhigh` | Correctness 4/4; per-task gates pass; total calls 29 against 28 fails by one, adopted with the residual recorded; [correction](research/agent-regression-run-2026-10-22.md#correction) |
+| 2026-10-22 | `81e7445` (0.8.0 plus inline-test legend and help fixes) | `c9098e2` | Targeted agent run, tasks 3, 4 and 8, `gpt-6.1-sol` at `xhigh` | Correctness 24/24; task 4 median calls 7 → 9.5 because comparisons lacked `detail`; cost gates failed; [agent run](research/agent-regression-run-2026-10-22.md) |
 | 2026-10-21 | `dc2bf33` (0.8.0 plus inline-test legend) | `v0.7.0`, itself unchecked | Desk review, `sonnet` at `xhigh` | No broken flag, example or route; help +13%, guides +27%; targeted run of tasks 3, 4 and 8 recommended; [desk review](research/agent-regression-desk-review-2026-10-21.md) |
 | 2026-10-20 | Full-feature help with comparison routing (before 0.7.0) | Adopted configuration routing `c17fece` | Full campaign, `gpt-6.1-sol` at `xhigh` | Adopted after correction; [full-help study](research/agent-explorability-full-help-study.md) |
 
@@ -75,5 +77,9 @@ Each row is one task in one paired check: medians of the control and candidate r
 | 2026-10-20 | gpt-6.1-sol `xhigh` | `c17fece` → `6fdaef3` | 9 | 4/4 → 4/4 | 5.5 → 6 (×1.09) | 31,352 → 28,942 (×0.92) | `c17fece` | ×1.09 | ×0.92 |
 | 2026-10-20 | gpt-6.1-sol `xhigh` | `c17fece` → `6fdaef3` | 10 | 4/4 → 4/4 | 7.5 → 7 (×0.93) | 35,114 → 35,127 (×1.00) | `c17fece` | ×0.93 | ×1.00 |
 | 2026-10-20 | gpt-6.1-sol `xhigh` | `c17fece` → `6fdaef3` | 11 | 4/4 → 4/4 | 7.5 → 8 (×1.07) | 38,581 → 38,420 (×1.00) | `c17fece` | ×1.07 | ×1.00 |
+| 2026-10-22 | gpt-6.1-sol `xhigh` | `c9098e2` → `142645e` | 4 | 3/4 → 4/4 | 7 → 7.5 (×1.07) | 38,064 → 32,830 (×0.86) | `c17fece` | ×1.00 | ×0.67 |
+| 2026-10-22 | gpt-6.1-sol `xhigh` | `c9098e2` → `81e7445` | 3 | 4/4 → 4/4 | 6.5 → 6 (×0.92) | 32,572 → 32,976 (×1.01) | `c9098e2` | ×0.92 | ×1.01 |
+| 2026-10-22 | gpt-6.1-sol `xhigh` | `c9098e2` → `81e7445` | 4 | 4/4 → 4/4 | 7 → 9.5 (×1.36) | 36,792 → 39,608 (×1.08) | `c17fece` | ×1.27 | ×0.83 |
+| 2026-10-22 | gpt-6.1-sol `xhigh` | `c9098e2` → `81e7445` | 8 | 4/4 → 4/4 | 5.5 → 6 (×1.09) | 29,886 → 32,705 (×1.09) | `c9098e2` | ×1.09 | ×1.09 |
 
 <!-- agent-regression-trend:end -->
