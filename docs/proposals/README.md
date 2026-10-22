@@ -8,6 +8,7 @@ Active designs live directly in this directory. Retired records live in `archive
 
 | Document | Status | Date | Summary |
 | --- | --- | --- | --- |
+| [Category Refinements](category-refinements.md) | draft | 2026-10-23 | Policy entries that change only the category of files a built-in convention or build module decided, keeping their purpose, provenance and module credit; build_modules counts contributing modules. |
 | [Language Corrections](language-corrections.md) | draft | 2026-10-23 | Policy entries that correct a language the counter recognized wrongly, naming another counter language or leaving the file unrecognized. |
 
 <!-- doc-index:end -->

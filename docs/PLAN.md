@@ -11,6 +11,7 @@
 ## Configuration — Follow-up
 
 - [ ] Decide whether an unloaded `.locmetryrc` is project content. [PRODUCT](PRODUCT.md#project-configuration) excludes only the loaded configuration, so `--config OTHER` selects the scan root's `.locmetryrc` and reports it as an unrecognized file: coverage differs by one file from a discovery run of the same tree, which misleads anyone comparing a draft policy with the committed one. Two policy test drives hit this. Recommendation: exclude every file named `.locmetryrc` as policy, which also covers inactive ones in subfolders and nested projects, and record the coverage change as **Breaking**.
+- [ ] Decide the [category refinements](proposals/category-refinements.md) proposal. Every project in the policy test drives of 2026-10-22 and 2026-10-23 lost build-module credit to entries that only wanted another category, about 79,000 code lines in five projects, and the module count hid the loss.
 - [ ] Decide the [language corrections](proposals/language-corrections.md) proposal. The Immich showcase found that a policy cannot correct a language the counter recognized wrongly: its ProGuard file counts as Prolog. Test drives found the same gap in two more projects, including 172 C++ headers counted as C Header.
 
 ## Known Display Follow-up
@@ -31,6 +32,7 @@
 ## Proposals — Under Discussion
 
 - [Language corrections](proposals/language-corrections.md): draft of 2026-10-22, awaiting the owner's decision.
+- [Category refinements](proposals/category-refinements.md): draft of 2026-10-23, awaiting the owner's decision.
 
 The [proposal index](proposals/README.md) distinguishes active designs from historical decisions.
 
