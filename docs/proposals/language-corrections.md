@@ -9,7 +9,7 @@
 }
 -->
 
-The Immich showcase found this gap on 2026-10-22, as its [measurement recording](../showcase/measure.md#look-at-the-code-around-the-product) shows. Policy test drives on six further projects on 2026-10-22 and 2026-10-23 found more cases.
+The Immich showcase found this gap on 2026-10-22, as its [measurement recording](../showcase/measure.md#look-at-the-code-around-the-product) shows. Policy test drives on six further projects on 2026-10-22 and 2026-10-23, and an experiment on a public Go monorepo, found more cases.
 
 ## Problem
 
@@ -28,11 +28,13 @@ The counter assigns each extension to one language. These files were recognized 
 | The same project | 2 | Autoconf (`.in`) | CMake templates (`.cmake.in`) | `"CMake"` |
 | The same project | 1 | Autoconf (`.in`) | Python packaging manifest (`MANIFEST.in`) | `"unrecognized"` |
 | A Java service | 2 | Forge Config (`.cfg`) | INI-style tool configuration | `"INI"` |
-| The same service | 3 | Pan (`.tpl`) | Helm Go templates, 602 code lines | `"unrecognized"` |
+| The same service | 3 | Pan (`.tpl`) | Helm Go templates, 602 code lines | `"Go HTML"`, Go's template syntax with its `{{/* */}}` comments |
+| A public Go monorepo | 32 | Pan (`.tpl`) | Helm and documentation Go templates | `"Go HTML"` |
+| The same monorepo | 5 | Happy (`.y`) | goyacc grammars; Happy has no comment syntax, so comments count as code | `"unrecognized"` |
 
-The Helm case shows the cost of the exclusion below: the counter has no Go template language, so a correction removes those lines from the source totals instead of counting them as another language.
+Corrections choose among the counter's languages. Go templates fit Go HTML, whose template comments are the same: in one Helm helpers file Pan counts 15 comment lines and Go HTML 179, so the correction also moves 164 lines out of code; grammars without a counter language become unrecognized and leave the source totals. The Go monorepo's assembler files, counted as GNU Style Assembly, need no correction: the label is approximate, but the comment syntax and therefore the counts are right.
 
-Two kinds of case look similar but are out of scope. Bash scripts appear as BASH when extensionless and as Shell when named `.sh`, in three projects; neither label is wrong, and globs cannot select files by their shebang, so a table fold of BASH into Shell, tracked in [PLAN](../PLAN.md), is the fitting change. Formats the counter does not know at all, such as Go templates, StringTemplate or Mermaid, need a language of their own; that is separate future scope.
+Two kinds of case look similar but are out of scope. Bash scripts appear as BASH when extensionless and as Shell when named `.sh`, in four projects; neither label is wrong, and globs cannot select files by their shebang, so a table fold of BASH into Shell, tracked in [PLAN](../PLAN.md), is the fitting change. Formats the counter does not know at all, such as yacc grammars, StringTemplate or Mermaid, need a language of their own; that is separate future scope.
 
 ## Design
 
@@ -61,7 +63,7 @@ reason = "ProGuard keep rules; the counter reads the .pro extension as Prolog"
 **Excluded:**
 
 - Changing mappings so that they also apply to recognized files. An existing broad mapping, such as a personal `**/*.foo`, would silently start overriding the counter.
-- Mapping a misrecognized file to the nearest counter language. It would count its lines with the wrong comment syntax and report a language the file is not written in.
+- Requiring a counter language for every correction. Where no counter language shares the file's comment syntax, the nearest one would count comments as code; `"unrecognized"` covers that case.
 - Custom languages and custom content kinds. PRODUCT keeps custom content-kind overrides as separate optional scope.
 - Merging two counter names for one language, such as BASH and Shell. That is a presentation fold, not a correction.
 
