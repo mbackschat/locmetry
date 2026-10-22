@@ -408,7 +408,7 @@ pub(crate) struct SharedArgs {
         help_heading = "Presentation"
     )]
     pub(crate) purpose: Vec<PurposeArg>,
-    /// Show only these categories in tables: PURPOSE[:CATEGORY]
+    /// Show only these categories in tables; comma-separated PURPOSE[:CATEGORY]
     #[arg(
         long = "table-category",
         long_help = "Show only these categories' source in tables; comma-separated PURPOSE for \

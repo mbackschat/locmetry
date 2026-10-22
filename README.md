@@ -238,6 +238,7 @@ Without explicit options, a terminal gets a table and a pipe gets a compact JSON
 | `--show-folders` / `--folder-rows N` | Top-level / adaptive folder rows in a single-root table, saved or printed. |
 | `--show-categories` / `--verbose` | Add category rows / classification and coverage notes to tables. |
 | `--table-purpose LIST` | Filter table source and totals by purpose; JSON and Markdown retain the complete measurement. |
+| `--table-category LIST` | Filter table source and totals by category, such as `test,production:tooling` or `'production:*tooling*'`; a note names the excluded categories and their code. |
 | `--table-language LIST` | Filter table source and totals by language, such as `TypeScript,Svelte`; a note names the excluded languages and their code. |
 | `--split-languages` | Show language variants such as TSX, JSX and C++ Header as their own rows instead of within TypeScript, JavaScript and C++. |
 | `--show-bars[=KIND]` / `--no-bars` | Force / suppress table charts. `KIND` is `purpose` or `comments`; selecting one table purpose uses comment density even with `=purpose`. Terminals show fitting bars automatically. |

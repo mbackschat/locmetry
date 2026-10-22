@@ -22,6 +22,7 @@ Sensitive project analyses, candidate rules, raw measurements, and breakdowns be
 
 - [Full-feature help study](agent-explorability-full-help-study.md): ten-task evaluation, bounded comparison-routing correction, adoption decision and retained resource tradeoffs.
 - [Agent regression desk review, 0.7.0 to 0.8.0](agent-regression-desk-review-2026-10-21.md): no broken flag, example or route; reading-cost growth and two risks on measured tasks.
+- [Agent regression desk review, help split and category filter](agent-regression-desk-review-help-split.md): no regression; in 310 earlier sessions agents never called `-h`, so the shorter `-h` needs no agent run.
 - [Agent regression desk review, 0.9.0](agent-regression-desk-review-0.9.0.md): no regression and no agent run needed; workspace output says member, notes quote flags only, stderr names severity.
 - [Agent regression desk review, human output wording](agent-regression-desk-review-2026-10-22.md): help and schemas unchanged, JSON changes only in message texts; quoted whole commands omit the invocation's scope.
 - [Agent regression run, 0.8.0](agent-regression-run-2026-10-22.md): tasks 3, 4 and 8 against `c9098e2`; a comparison-cost regression traced to the missing comparison `detail`, its correction and the recorded one-call residual.

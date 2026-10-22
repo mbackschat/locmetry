@@ -72,7 +72,7 @@ Read results:
 Choose scope and views:
   --subfolder retains the root's policy and module context; --root on that folder
   starts a different measurement. Configuration is not discovered in ancestors.
-  Quote root-relative exclusion globs. --table-* options filter tables, not JSON.
+  Quote root-relative exclusion globs. --table-* options filter tables, not JSON or Markdown.
   Folder parent rows include descendants.
 
 Broader policy:
