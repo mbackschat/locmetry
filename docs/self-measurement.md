@@ -16,15 +16,16 @@ The synthetic workspace remains independently measurable. Configuration discover
 | --- | --- | --- |
 | Rust implementation under `src/` | Production / `implementation`, through Cargo inference | Existing module detection already expresses its role. |
 | `tests/` and conventional `scripts/test_*.py` files | Test / `test`, through built-in conventions | Preserve existing decisions without redundant rules or overrides. |
-| Documentation maintenance (indexes and the README's Immich excerpts), release preparation and saved-measurement review | Production / `tooling` | These maintained commands operate the repository, prepare distribution and inspect measurement evidence. |
+| Documentation maintenance (indexes, the README's Immich excerpts and the agent-regression trend table), release preparation and saved-measurement review | Production / `tooling` | These maintained commands operate the repository, prepare distribution and inspect measurement evidence. |
 | Source under `packaging/` | Production / `distribution` | Formula generation, installation definitions and notice templates are maintained distribution code. |
-| Named documentation checks, demo support and agent-evaluation harnesses | Test / `test-infrastructure` | They execute, prepare or assess verification workflows. |
+| Agent-evaluation harnesses and graders, the recorded-guide replay, the file-size gate, and demo and showcase environments | Production / `verification-tooling` | They are programs that run, prepare or score verification, and most have their own unit tests. |
+| The documentation-example check | Test / `test` | It runs documented examples and fails on a mismatch, as an integration test does. |
 
 The configuration owns the exact path lists and category descriptions. Script entries name known responsibilities rather than assigning every future file under `scripts/` to production or test. New unrecognized responsibilities should surface as unclaimed source and prompt a review.
 
 All added classification rules restrict `kind` to `source`. Data and documentation remain counted in their own content-kind totals; they are not pulled into these purpose decisions merely because they share a directory. Existing built-in conventions can still assign them a purpose. Ordinary rules suffice: no decision here needs to outrank a test or build convention.
 
-Production includes operational tooling even when it is not shipped in the executable. Test includes the infrastructure used to verify the project. This is a role-based distinction, not a statement that production means shipped bytes or that every test file contains assertions.
+Production includes operational tooling even when it is not shipped in the executable, including the programs that run verification. Test holds the code that verifies: test files, checks and support that exists only inside tests, such as fixtures. A program with its own unit tests is code under test, so classifying it as Test would count those unit tests as tests of tests and inflate Test/prod; until 2026-10-22 the verification programs were Test, which put Python's ratio at 5.62 where its tests of Python code give 0.79 (owner decision, 2026-10-22). This is a role-based distinction, not a statement that production means shipped bytes or that every test file contains assertions.
 
 ## Deliberate Limits
 
@@ -52,7 +53,7 @@ locmetry explain examples/cli-workspace/acme-orders/service/src/main.go --no-use
 locmetry --root examples/cli-workspace/acme-orders --no-user-config --format table
 ```
 
-Expect release preparation to be production tooling, the documentation checker to be test infrastructure, and the fixture path to be explicitly excluded in the repository-root explanation. The final command should still measure the demonstration with its own policy. Inspect deciding rules and coverage, not just whether the unclaimed list is empty.
+Expect release preparation to be production tooling, the documentation checker to be test, and the fixture path to be explicitly excluded in the repository-root explanation. The final command should still measure the demonstration with its own policy. Inspect deciding rules and coverage, not just whether the unclaimed list is empty.
 
 Before changing policy, capture full file detail and use the [configuration-transition recipe](guides/compare.md#inspect-configuration-transitions). Counts for retained files should stay unchanged when only classification changes; excluding the fixture changes the measured subset. Reports do not establish unchanged source contents. Keep self-measurement reports and any independent input-identity evidence in the ignored local-analysis directory, following [contributor instructions](../CLAUDE.md#sensitive-analysis).
 

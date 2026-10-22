@@ -7,7 +7,7 @@ exclude = ["examples/cli-workspace/**"]
 [categories]
 tooling = "Commands that maintain the repository, prepare releases and review measurements"
 distribution = "Packaging, installation and third-party notice generation"
-test-infrastructure = "Execution, preparation and evaluation of verification workflows"
+verification-tooling = "Programs that run, prepare or score verification workflows"
 
 [[rules]]
 id = "repository-tooling"
@@ -16,6 +16,7 @@ match = [
     "scripts/release.py",
     "scripts/compare-locmetry-files.sh",
     "scripts/refresh-readme-showcase.py",
+    "scripts/agent-regression-trend.py",
 ]
 kind = ["source"]
 purpose = "production"
@@ -31,9 +32,8 @@ category = "distribution"
 reason = "Maintained packaging and notice-generation source supports installation and distribution; see [distribution](docs/tokei-integration.md)"
 
 [[rules]]
-id = "verification-infrastructure"
+id = "verification-tooling"
 match = [
-    "scripts/check-doc-examples.sh",
     "scripts/check-file-sizes.py",
     "scripts/check-recorded-guides.py",
     "scripts/cli-demo-env.sh",
@@ -47,6 +47,13 @@ match = [
     "scripts/verify_help_recipe.py",
 ]
 kind = ["source"]
+purpose = "production"
+category = "verification-tooling"
+reason = "These programs run, prepare or score documentation and agent-workflow checks, and their own unit tests test them; see [self-measurement design](docs/self-measurement.md)"
+
+[[rules]]
+id = "documentation-checks"
+match = ["scripts/check-doc-examples.sh"]
+kind = ["source"]
 purpose = "test"
-category = "test-infrastructure"
-reason = "These scripts prepare, execute or assess documentation and agent-workflow checks; see [self-measurement design](docs/self-measurement.md)"
+reason = "Runs the documented examples and fails on a mismatch, as an integration test does; see [self-measurement design](docs/self-measurement.md)"
