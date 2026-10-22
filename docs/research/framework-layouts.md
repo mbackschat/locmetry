@@ -86,9 +86,44 @@ The whole-package layout would have claimed every unclaimed folder above, includ
 
 A `spec/` test directory was also rejected: Kubernetes' [kube-openapi](https://github.com/kubernetes/kube-openapi) keeps production Go in `pkg/validation/spec/`, and GitHub code search found about 3,900 Go files declaring `package spec` under a `spec` path on 2026-10-23. RSpec's own pattern, `spec/**/*_spec.rb`, does not have this problem.
 
+## Precision pass
+
+On 2026-10-23, after the first draft of the proposal was found to have been validated on coverage and templates only, every proposed row was checked for false claims on real applications, as [CLAUDE.md](../../CLAUDE.md#research-and-experiments) now requires. File trees of 44 applications were read through the GitHub API, and three agents (Claude Code `sonnet` at `xhigh`) measured 23 applications of the ten web frameworks with the most GitHub stars: React, Vue, Next.js, FastAPI, Angular, Django, Gin, Svelte, Laravel and Spring Boot. Rows were emulated with rules or computed from file lists, not run as detectors.
+
+### Changes to the proposal
+
+| Row | False claim found | Evidence | Change |
+| --- | --- | --- | --- |
+| `*.config.*` as build tooling | Application code named `*.config.ts` | 29 `app.config` files in fetched trees, including Angular's generated `src/app/app.config.ts` and Nuxt's runtime `app.config.ts`; 15 plugin and policy configurations, 742 lines, in [ever-co/ever-gauzy](https://github.com/ever-co/ever-gauzy) `b3fe0424c59a`; `sentry.server.config.ts` and `sentry.edge.config.ts` in [polarsource/polar](https://github.com/polarsource/polar) `ad44441b7edf`; `auth.config`, `content.config`, `i18n.config` elsewhere | Match named tools only; test runners as tests |
+| `django` | Tests counted as production | Django's `startapp` creates `tests.py`, which no convention covers; [zulip/zulip](https://github.com/zulip/zulip) has 91 outside test folders, [django/djangoproject.com](https://github.com/django/djangoproject.com) `2f3a10a91b68` 11 (3.9k lines, 7.5% of production); GitHub code search found about 678,000 `tests.py` files importing Django's `TestCase` | Add a `tests.py` test convention |
+| `dotnet` | Generated EF Core metadata counted as hand-written | `*.Designer.cs` are 67% of the C# bytes of [bitwarden/server](https://github.com/bitwarden/server) and 20% of [jellyfin/jellyfin](https://github.com/jellyfin/jellyfin); [EF Core migrations](https://learn.microsoft.com/ef/core/managing-schemas/migrations/) generate a designer and a model snapshot file per migration | Add a `dotnet-generated` convention |
+| `laravel` | Translations counted as production | `resources/lang` is 411,394 lines, 54% of all source, in [snipe/snipe-it](https://github.com/snipe/snipe-it) `e6c9fee06eb6`; Laravel 12 documents a root `lang/` instead | Leave `resources/lang/` out |
+
+### Rows that held
+
+- `next` and `nuxt` with documented names: in thirteen applications at most 1% of the claimed files look like mocks, stories or generated code, apart from shadcn/ui's documentation examples; [mfts/papermark](https://github.com/mfts/papermark) `ed19717ec02a` and [dubinc/dub](https://github.com/dubinc/dub) `880c344b0223` measured 87% and 89% production with no generated or vendored claims.
+- `react-router`, `rails`, `gem`, `symfony`, `composer`, the `.Tests` folder convention and the RSpec file pattern: no false claims beyond the shared ones below. No `.Test` or `.Tests` folder in the fetched trees was anything but a test project.
+- `manage.py` sits outside the root in several projects (`netbox/manage.py`, `src/manage.py` in paperless-ngx); rooting the module at its folder handles them. In example folders it would make examples production modules, as every detector already does for examples with a descriptor.
+
+### Shared false claims, not specific to a row
+
+- Generated code inside claimed layouts is the largest class: MyBatis Generator output 81.6% of production in [macrozheng/mall](https://github.com/macrozheng/mall) `dcaa93b31503`; an OpenAPI client 16% in [halo-dev/halo](https://github.com/halo-dev/halo) `6745dd2f85de`; swag, Wire and MockGen 14% in both Gin applications ([apache/answer](https://github.com/apache/answer) `6744295fa888`, [flipped-aurora/gin-vue-admin](https://github.com/flipped-aurora/gin-vue-admin) `f7f1009c98e6`); generated SDKs and clients about 30% in Polar; Django migrations 20% and a generated GraphQL schema in [saleor/saleor](https://github.com/saleor/saleor) `ec535e23e86b`. Go's official marker, `^// Code generated .* DO NOT EDIT\.$`, matches Wire and MockGen but not swag; MyBatis output has no marker.
+- Vendored libraries inside source folders: `fontawesome-all.js` (820 KiB) in Pixelfed's `resources/assets/js/lib/`, a vendored gem with its own `.gemspec` in a Discourse plugin, `swagger-ui-bundle.js` in open-webui.
+- Storybook stories and test helpers under `src/`: 37,314 lines of stories and 19,117 lines of `spec/` helpers in [bitwarden/clients](https://github.com/bitwarden/clients) `f9e3fc5c2a19`, 10,874 lines of stories in [element-hq/element-web](https://github.com/element-hq/element-web) `314f3662ca74`.
+- Large data tables written as code: 121,600 lines of `un_locode`, IATA and ISO tables in NetBox.
+
+### Other observations
+
+- Go's `./...` pattern excludes `vendor/`, `testdata/` and folders starting with `_` or `.` ([`go help packages`](https://pkg.go.dev/cmd/go#hdr-Package_lists_and_patterns)); Locmetry's Go layout claims them.
+- Language misrecognitions: compiled `.mo` translation catalogs as Modelica (NetBox, 11.2k lines), Firebase `*.rules` as Snakemake, `requirements.in` as Autoconf, Helm and code-generator `.tpl` templates as Pan in both Gin applications.
+- Tracked files under an ignored path are not measured: Firefly III's 17 `resources/lang/en_US` files, because `resources/lang/.gitignore` contains `*`.
+- Frameworks with `src/` are claimed but not finished: 3 of 8 React, Vue, Svelte and Angular applications were 42–53% unclaimed, mostly backends in `server/` or `backend/`, and the claimed part held 0.3–15% stories, mocks, helpers or generated code.
+
 ## Conclusions
 
-- Frameworks that keep code in `src/` work out of the box; frameworks whose source root is the package root, or `app/`, do not, although they are among the most used.
+- Frameworks whose source root is the package root or `app/`, and ecosystems without a detector, need the proposed rows to be measured usefully without configuration.
+- Frameworks that keep code in `src/` have it claimed, but real applications also carry backends outside `src/` and non-production code inside it.
 - Three ecosystems in the top 25 have no detector at all: .NET, PHP and Ruby. Django projects without packaging metadata miss the Python detector.
-- Root tool configuration files such as `vite.config.ts` and `eslint.config.mjs` stay unclaimed in every JavaScript project; the build-script convention covers Gradle, Maven, CMake and Make files only.
+- Root tool configuration files such as `vite.config.ts` and `eslint.config.mjs` stay unclaimed in every JavaScript project; a convention must match tool names, because application code uses the `*.config.*` suffix too.
+- Generated code in claimed layouts is the largest source of silent false claims across all ecosystems measured.
 - The npm layout's `src/**` claims files of any language below a `package.json`. In eShop that made C# production by accident; no rule depends on it.

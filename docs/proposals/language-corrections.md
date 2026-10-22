@@ -31,6 +31,7 @@ The counter assigns each extension to one language. These files were recognized 
 | The same service | | Pan (`.tpl`) | Helm Go templates | `"Go HTML"`, Go's template syntax with its `{{/* */}}` comments |
 | [Loki](../research/policy-test-drives/loki.md) | 32 | Pan (`.tpl`) | Helm and documentation Go templates | `"Go HTML"` |
 | The same project | 5 | Happy (`.y`) | goyacc grammars; Happy has no comment syntax, so comments count as code | `"unrecognized"` |
+| [NetBox](https://github.com/netbox-community/netbox) | 17 | Modelica (`.mo`) | Compiled gettext catalogs, binary | `"unrecognized"` |
 
 Corrections choose among the counter's languages. Go templates fit Go HTML, whose template comments are the same: in one Helm helpers file Pan counts 15 comment lines and Go HTML 179, so the correction also moves 164 lines out of code; grammars without a counter language become unrecognized and leave the source totals. The Go monorepo's assembler files, counted as GNU Style Assembly, need no correction: the label is approximate, but the comment syntax and therefore the counts are right.
 
