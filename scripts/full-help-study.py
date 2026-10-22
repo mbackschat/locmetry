@@ -123,6 +123,8 @@ def campaign(destination, binaries, revisions, protocol_path=PROTOCOL, *, prepar
     frozen_binaries.mkdir()
     for arm, binary in zip("AB", binaries):
         shutil.copy2(binary, frozen_binaries / arm)
+        # Every pair hard-links this file, so none may change it in place.
+        (frozen_binaries / arm).chmod(0o555)
     scripts = destination / "scripts"
     scripts.mkdir()
     for path in [Path(__file__), Path(BENCH.__file__), BENCH.REPO / "scripts/score_agent_explorability.py",

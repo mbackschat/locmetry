@@ -81,6 +81,18 @@ def with_help_recipe(source, routing=False):
     (source.parent / "treatment.patch").write_text("".join(patch))
 
 
+def share_binary(binary, target):
+    """Hard-link a frozen binary into a pair, copying only where no link can be made.
+
+    Per-pair copies made the 0.8.0 regression run's evidence 905 MB (2026-10-22).
+    Sharing one file is safe because audits hash each pair's binary after the run.
+    """
+    try:
+        os.link(binary, target)
+    except OSError:
+        shutil.copy2(binary, target)
+
+
 def prepare(destination, task_path=TASK, binaries=None, treatment="without-guides", *, arm_provenance=None):
     supplied = treatment == "supplied-binaries"
     if treatment not in ["without-guides", "help-recipe", "help-routing", "supplied-binaries"]:
@@ -122,7 +134,7 @@ def prepare(destination, task_path=TASK, binaries=None, treatment="without-guide
         for condition, binary in zip(conditions, binaries):
             target = destination / condition / "target/debug/locmetry"
             target.parent.mkdir(parents=True)
-            shutil.copy2(binary, target)
+            share_binary(binary, target)
     task = json.loads(task_path.read_text())
     manifest = {
         "revision": task["revision"],

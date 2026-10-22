@@ -86,6 +86,44 @@ class ExperimentTests(unittest.TestCase):
                 self.assertEqual((pair / "user-config" / run / "locmetry/config.toml").read_text(), task["user_defaults"])
                 self.assertFalse((pair / run / "user-config").exists())
 
+    def test_pairs_share_each_frozen_binary_instead_of_copying_it(self):
+        # 24 per-pair copies made the 0.8.0 regression run's evidence 905 MB (2026-10-22).
+        full = self.full_help_runner()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            binaries = [root / arm for arm in "AB"]
+            for arm, binary in zip("AB", binaries):
+                binary.write_text(arm)
+            protocol = json.loads(full.PROTOCOL.with_name("regression-0.8-correction-study.json").read_text())
+            protocol["control"] = {"source_revision": "control-revision", "binary_sha256": BENCH.sha(binaries[0])}
+            protocol_path = root / "protocol.json"
+            protocol_path.write_text(json.dumps(protocol))
+            destination = root / "campaign"
+            with patch.object(full.BENCH, "REPO", BENCH.REPO):
+                full.campaign(destination, binaries, ["control-revision", "candidate-revision"], protocol_path, prepare_only=True)
+            for arm in "AB":
+                frozen = destination / "binaries" / arm
+                # Read-only, so no pair can change the file every pair shares.
+                self.assertEqual(frozen.stat().st_mode & 0o222, 0)
+                for pair in destination.glob("task*-rep*"):
+                    self.assertEqual((pair / arm / "target/debug/locmetry").stat().st_ino, frozen.stat().st_ino)
+            self.assertEqual(binaries[0].read_text(), "A")
+            self.assertTrue(binaries[0].stat().st_mode & 0o200, "the supplied source stays writable")
+
+    def test_pair_binaries_fall_back_to_copies_where_hard_links_fail(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            binaries = [root / arm for arm in "AB"]
+            for arm, binary in zip("AB", binaries):
+                binary.write_text(arm)
+            pair = root / "pair"
+            with patch.object(BENCH.os, "link", side_effect=OSError("cross-device link")):
+                BENCH.prepare(pair, BENCH.TASK, binaries, "supplied-binaries")
+            for arm, binary in zip("AB", binaries):
+                target = pair / arm / "target/debug/locmetry"
+                self.assertEqual(target.read_text(), arm)
+                self.assertNotEqual(target.stat().st_ino, binary.stat().st_ino)
+
     def test_supplied_mode_requires_exactly_two_existing_binaries_before_creating_output(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
