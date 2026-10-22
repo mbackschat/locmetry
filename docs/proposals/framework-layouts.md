@@ -26,22 +26,22 @@ These frameworks are used by between 4% and 22% of professional developers each.
 
 | Kind | ID | Descriptor in a folder | Claims |
 | --- | --- | --- | --- |
-| Detector | `next` | `next.config.{js,cjs,mjs,ts}` | Every top-level entry of the folder except `public/` |
-| Detector | `nuxt` | `nuxt.config.{js,mjs,ts}` | Every top-level entry of the folder except `public/` |
+| Detector | `next` | `next.config.{js,cjs,mjs,ts}` | `app/**`, `pages/**`, `src/**`; the shared-code folders the Next.js docs name, `components/**`, `lib/**`, `ui/**`, `utils/**`, `hooks/**`, `styles/**`; and the root `instrumentation`, `instrumentation-client`, `proxy`, `middleware` and `mdx-components` files |
+| Detector | `nuxt` | `nuxt.config.{js,mjs,ts}` | `app/**`, `server/**`, `shared/**`, `layers/**`, `modules/**`; the Nuxt 3 root folders `assets/**`, `components/**`, `composables/**`, `layouts/**`, `middleware/**`, `pages/**`, `plugins/**`, `utils/**`; and the root `app.vue`, `error.vue` and `app.config.*` |
 | Detector | `react-router` | `react-router.config.{js,ts}` | `app/**` |
-| Detector | `dotnet` | `*.csproj`, `*.fsproj`, `*.vbproj` | `**`, as the SDK compiles every source file below the project file by default |
+| Detector | `dotnet` | `*.csproj`, `*.fsproj`, `*.vbproj` | `**/*.{cs,fs,vb,razor,cshtml}`: the SDK's default compile items and Razor files; static files in `wwwroot/` stay unclaimed |
 | Detector | `composer` | `composer.json` | `src/**`, the PSR-4 convention Symfony and most packages use |
 | Detector | `symfony` | `symfony.lock` | `src/**`, `assets/**`, `config/**`, `migrations/**`, `templates/**` |
 | Detector | `laravel` | `artisan` | `app/**`, `bootstrap/**`, `config/**`, `database/migrations/**`, `resources/**`, `routes/**` |
-| Detector | `rack` | `config.ru` | `app/**`, `lib/**`, `config/**`, `db/migrate/**`, the Rails layout |
+| Detector | `rails` | `config.ru`, which `rails new` creates | `app/**`, `lib/**`, `config/**`, `db/migrate/**` |
 | Detector | `gem` | `*.gemspec` | `lib/**`, `exe/**`, the RubyGems layout |
 | Detector | `django` | `manage.py` | The Python flat layout: each top-level package except names such as `docs` and `scripts` |
-| Test convention | `dotnet-test-project` | | `**/*.Tests/**` and `**/*.*Tests/**`, the `Project.Tests` naming of .NET test projects |
-| Test convention | `spec-directory` | | `**/spec/**`, the default test root of RSpec and Jasmine |
+| Test convention | `dotnet-test-project` | | `**/*.*Test/**` and `**/*.*Tests/**`, the `Project.Tests` naming of .NET test projects |
+| Test convention | `rspec-file` | | `**/*_spec.rb`, RSpec's default pattern; `**/spec/{spec_helper,rails_helper}.rb`; and `**/spec/{support,factories}/**/*.rb` |
 | Build convention | `js-tool-config` | | `**/*.config.{js,cjs,mjs,ts,cts,mts}` as `production:build-tooling` |
 
 - The existing rules apply unchanged: test and build conventions run before detectors, the innermost module decides, and detectors sharing a folder combine their layouts. A Next.js app in `apps/web` of a Turborepo is its own module.
-- The "every top-level entry except `public/`" layout is computed from file names, as the Python flat layout already is. It mirrors the Go detector's whole-package layout, and the excluded folder is each framework's documented static-asset folder.
+- Next.js and Nuxt layouts list only folder and file names their documentation gives. Next.js calls itself unopinionated about organization and names `components`, `lib`, `ui`, `utils`, `hooks` and `styles` as examples, so a feature folder such as `modules/` stays unclaimed and is reported for one rule. Across thirteen real applications this claims 89–100% of the source files in ten; the [measurement record](../research/framework-layouts.md#documented-folders-versus-whole-package) lists the rest.
 - Descriptors given as `*.csproj` and `*.gemspec` match by file extension; all others match exact names, as today.
 - The configure guide, `--help` text on module detection, and PRODUCT's [Module Detection](../PRODUCT.md#module-detection) list the new detectors and conventions.
 
@@ -50,6 +50,8 @@ These frameworks are used by between 4% and 22% of professional developers each.
 **Excluded:**
 
 - Reading descriptor contents, such as `package.json` dependencies or Composer's `autoload` paths. Detectors read only file names, which keeps detection fast and its results explainable from the tree.
+- Whole-package layouts for Next.js and Nuxt. In the same applications they would silently count `scripts/`, Playwright helpers, mocks, vendored code and hidden tool folders as production, while the documented layout leaves such folders visible as unclaimed.
+- A `spec/` test directory. Production Go packages are named `spec`, such as `pkg/validation/spec` in Kubernetes' kube-openapi, which many Go projects vendor; conventions run before detectors and would make them tests.
 - Claiming the whole package of every npm package without `src/`. Repositories often have a root `package.json` only for tooling, and their scripts would silently become production.
 - Frameworks that already work, and layouts a release-specific option changes, such as React Router's `appDirectory`. A rule corrects those.
 
@@ -59,6 +61,6 @@ Detectors are a table of descriptor names and layouts in `src/modules.rs`; the P
 
 ## Acceptance
 
-- Synthetic fixtures for each detector and convention: the claimed paths are production with the detector's provenance, a `public/` file stays unclaimed, a `.Tests` project and a `spec/` file are tests, and a `*.config.ts` file is build tooling.
-- At the commits in the [measurement record](../research/framework-layouts.md), the Next.js, Nuxt, React Router, .NET, Laravel, Symfony, Rails and Django projects leave unclaimed only the folders the record's emulation lists, at most 10% of source each. The projects that already worked keep their production totals except for tool configuration, which becomes build tooling.
+- Synthetic fixtures for each detector and convention: the claimed paths are production with the detector's provenance, a Next.js `scripts/` file and a .NET `wwwroot/` script stay unclaimed, a `.Tests` project and a `*_spec.rb` file are tests, a Go file in `pkg/spec/` stays production, and a `*.config.ts` file is build tooling.
+- At the commits in the [measurement record](../research/framework-layouts.md), the Next.js, Nuxt, React Router, .NET, Laravel, Symfony, Rails and Django projects leave unclaimed only the folders the record lists for them. The projects that already worked keep their production totals except for tool configuration, which becomes build tooling.
 - An agent regression check before release, because `--help` and the guides change.

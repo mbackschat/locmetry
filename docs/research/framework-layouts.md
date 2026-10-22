@@ -60,7 +60,31 @@ Each proposed detector was emulated with equivalent `[[rules]]`, plus a rule for
 | maybe-finance/maybe | 72% | 3% | `db/` schema and seeds, `public/`, `bin/` |
 | wagtail/bakerydemo | 99% | 1% | root files and `vagrant/` |
 
-A generic Composer layout of `src/**` alone left 48% of symfony/demo unclaimed, all in `assets/` and `templates/`; the Symfony-specific layout closed it. The Turborepo remainder shows why an npm package without `src/` should not be claimed as a whole: it is a tooling package.
+The Next.js and Nuxt rows emulate a whole-package layout, which the next section replaces. A generic Composer layout of `src/**` alone left 48% of symfony/demo unclaimed, all in `assets/` and `templates/`; the Symfony-specific layout closed it. The Turborepo remainder shows why an npm package without `src/` should not be claimed as a whole: it is a tooling package.
+
+## Documented folders versus whole package
+
+A whole-package layout for Next.js and Nuxt also claims folders that are not application code. To compare it with a layout of only the documented names, the file trees of thirteen applications were read through the GitHub API on 2026-10-23. Counted are JavaScript, TypeScript and Vue files of the application package, without nested packages, conventional tests and `*.config.*` files.
+
+| Application | Framework | Files | Claimed by documented names | Left unclaimed |
+| --- | --- | ---: | ---: | --- |
+| [vercel/ai-chatbot](https://github.com/vercel/ai-chatbot) | Next.js | 141 | 94% | `artifacts/` 8 |
+| [mfts/papermark](https://github.com/mfts/papermark) | Next.js | 1,375 | 89% | `ee/` 154, `context/` 3 |
+| [dubinc/dub](https://github.com/dubinc/dub) `apps/web` | Next.js | 3,714 | 96% | `scripts/` 129, `playwright/` 23 |
+| [elie222/inbox-zero](https://github.com/elie222/inbox-zero) `apps/web` | Next.js | 2,335 | 96% | `scripts/` 43, `providers/` 13, `ee/` 12, `store/` 11 |
+| [shadcn-ui/ui](https://github.com/shadcn-ui/ui) `apps/v4` | Next.js | 3,661 | 10% | `examples/` 1,769, `registry/` 1,513 |
+| [nextjs/saas-starter](https://github.com/nextjs/saas-starter) | Next.js | 39 | 100% | none |
+| vercel/commerce | Next.js | 64 | 100% | none |
+| shadcn-ui/taxonomy | Next.js | 126 | 94% | `config/` 5, `types/` 2 |
+| [formbricks/formbricks](https://github.com/formbricks/formbricks) `apps/web` | Next.js | 2,644 | 35% | `modules/` 1,673, `scripts/` 28, `playwright/` 9 |
+| [calcom/cal.com](https://github.com/calcom/cal.com) `apps/web` | Next.js | 920 | 43% | `modules/` 428, `playwright/` 77 |
+| [elk-zone/elk](https://github.com/elk-zone/elk) | Nuxt 3 | 377 | 93% | `scripts/`, `service-worker/`, `config/`, `mocks/` |
+| [nuxt/nuxt.com](https://github.com/nuxt/nuxt.com) | Nuxt 4 | 339 | 99% | `scripts/` 3 |
+| nuxt-ui-templates/dashboard | Nuxt 4 | 31 | 100% | none |
+
+The whole-package layout would have claimed every unclaimed folder above, including scripts, Playwright helpers and mocks, and also hidden folders such as `.github` and `.cursor` at an application root. The documented layout leaves feature folders such as `modules/`, `examples/` and `registry/` for a rule, which keeps the uncertain part visible.
+
+A `spec/` test directory was also rejected: Kubernetes' [kube-openapi](https://github.com/kubernetes/kube-openapi) keeps production Go in `pkg/validation/spec/`, and GitHub code search found about 3,900 Go files declaring `package spec` under a `spec` path on 2026-10-23. RSpec's own pattern, `spec/**/*_spec.rb`, does not have this problem.
 
 ## Conclusions
 
