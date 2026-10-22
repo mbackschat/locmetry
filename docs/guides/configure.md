@@ -101,6 +101,10 @@ category = "test-support"
 
 Verify with `locmetry explain __test__/helpers/setup.js --root . --format json`: the deciding stage becomes `override`, purpose stays `test`, and category becomes `test-support`. Remeasure to verify unchanged source purpose totals. A category subtotal covers files assigned that label; it is not proof that all conceptual helper code has been identified.
 
+## Test Support or Verification Tooling
+
+Purpose, not category, decides Test/prod: the ratio divides all Test code by all Production code and ignores categories. Classify as `test` the code that verifies and the support that exists only inside tests, such as helpers, fixtures and stand-in services. Classify as `production`, with a category such as `tooling`, the programs that run, prepare or score verification: test-runner configuration, harnesses, graders and CI gates. A program with its own tests is code under test. Classified as `test`, its tests would count as tests of tests and inflate Test/prod.
+
 ## Worked Configuration
 
 In a fresh temporary working directory, create this synthetic project. Here the project owner confirms that `scripts/tool.py` is maintained tooling, `src/sample.js` is historical demonstration code, and the role of `unknown.py` is unresolved.

@@ -4,6 +4,10 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 
 ## [Unreleased]
 
+### Changed
+
+- `--guide configure` explains when to classify verification code as test and when as production tooling: test runners, harnesses, graders and CI gates are tooling, and Test/prod depends on purpose, not category.
+
 ## [0.9.0] - 2026-10-22
 
 ### Added
