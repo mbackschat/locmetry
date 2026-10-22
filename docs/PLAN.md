@@ -8,6 +8,10 @@
 - [ ] Generate PowerShell tab completion, together with the other shells; deferred by the owner on 2026-10-21.
 - Accept UTF-16 configuration and workspace files, and add PowerShell equivalents of the `jq` recipes, only when Windows users ask for them. Windows on ARM stays excluded while x86_64 emulation serves it. The [Windows support record](proposals/archive/windows-support.md) owns the rationale.
 
+## Configuration — Follow-up
+
+- [ ] Decide the [language corrections](proposals/language-corrections.md) proposal. The Immich showcase found that a policy cannot correct a language the counter recognized wrongly: its ProGuard file counts as Prolog.
+
 ## Known Display Follow-up
 
 - Folder-partition convergence remains deferred: adaptive folder detail and JSON `unclassified_folders` intentionally use different policies. Revisit only if a workflow demonstrates confusing divergence, with explicit compatibility review. The [adaptive-folder decision](proposals/archive/adaptive-folder-detail.md#existing-partition-and-feasibility) owns the rationale.
@@ -24,7 +28,9 @@
 
 ## Proposals — Under Discussion
 
-None. The [proposal index](proposals/README.md) distinguishes active designs from historical decisions.
+- [Language corrections](proposals/language-corrections.md): draft of 2026-10-22, awaiting the owner's decision.
+
+The [proposal index](proposals/README.md) distinguishes active designs from historical decisions.
 
 ## Historical Evidence
 
