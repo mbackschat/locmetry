@@ -14,7 +14,7 @@
 
 ## Comparison Presence Findings — Follow-up
 
-- [ ] Evaluate a bounded human summary for large folder/member/package restructures, preserving complete JSON evidence. Coverage summaries and source-code row selection are already implemented; [their checkpoint](plans/archive/measurement-quality-and-net-change.md#comparison-readability--2026-10-16) records the separation of scope.
+- [ ] Decide the [comparison presence summary](proposals/comparison-presence-summary.md) proposal, which bounds human presence findings for large folder/member/package restructures and keeps complete JSON evidence. Coverage summaries and source-code row selection are already implemented; [their checkpoint](plans/archive/measurement-quality-and-net-change.md#comparison-readability--2026-10-16) records the separation of scope.
 
 ## Known Display Follow-up
 
@@ -32,7 +32,9 @@
 
 ## Proposals — Under Discussion
 
-None. The [proposal index](proposals/README.md) distinguishes active designs from historical decisions.
+- [Comparison presence summary](proposals/comparison-presence-summary.md): draft of 2026-10-22, awaiting the owner's decision.
+
+The [proposal index](proposals/README.md) distinguishes active designs from historical decisions.
 
 ## Historical Evidence
 

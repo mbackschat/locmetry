@@ -6,7 +6,9 @@ Active designs live directly in this directory. Retired records live in `archive
 
 <!-- doc-index:start -->
 
-No documents in this directory.
+| Document | Status | Date | Summary |
+| --- | --- | --- | --- |
+| [Comparison Presence Summary](comparison-presence-summary.md) | draft | 2026-10-22 | Bounded presence findings in human comparisons: contained folders and packages fold into their outermost changed folder or member, and a cap ends the list with a count. |
 
 <!-- doc-index:end -->
 
