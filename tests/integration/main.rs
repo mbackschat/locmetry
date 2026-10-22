@@ -22,6 +22,7 @@ mod folders;
 mod guides;
 mod help;
 mod inline_tests;
+mod input_errors;
 mod language_families;
 mod measurement;
 mod notebooks;

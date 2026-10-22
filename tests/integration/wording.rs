@@ -244,6 +244,10 @@ fn scenarios() -> Vec<Vec<&'static str>> {
         vec!["--root", "absent"],
         vec!["--root", "bad.json"],
         vec!["workspace", "--workspace-file", "absent.toml"],
+        vec!["workspace", "--root", "project", "--show-folders"],
+        vec!["workspace", "--root", "project/src/lib.rs"],
+        vec!["--root", "project", "--subfolder", "src/lib.rs"],
+        vec!["--root", "project", "--output", "project/out.json"],
     ];
     scenarios.extend(explained);
     scenarios

@@ -53,9 +53,15 @@ pub(crate) fn cli_command(args: &[std::ffi::OsString]) -> clap::Command {
 pub(crate) fn parse_cli() -> clap::error::Result<Cli> {
     let args: Vec<_> = std::env::args_os().collect();
     let mut command = cli_command(&args);
+    let named = args
+        .iter()
+        .skip(1)
+        .take_while(|arg| *arg != "--")
+        .find_map(|arg| command.find_subcommand(arg))
+        .map(|subcommand| subcommand.get_name().to_owned());
     let matches = command
         .try_get_matches_from_mut(args)
-        .map_err(|error| name_retired_successor(error, &command))?;
+        .map_err(|error| replace_misleading_tip(error, &command, named.as_deref()))?;
     for query in ["schema", "guide"] {
         if matches.value_source(query) == Some(clap::parser::ValueSource::CommandLine) {
             validate_query(&mut command, &matches, query)?;
@@ -112,17 +118,25 @@ const RETIRED_SPELLINGS: [(&str, &str, &str); 7] = [
     ("--workspace", "explain --workspace", "--workspace-file"),
 ];
 
-/// Replaces clap's tips for a retired spelling with the spelling that replaced it.
+/// Replaces clap's tips for an unknown option that Locmetry knows elsewhere:
+/// a retired spelling gets the spelling that replaced it, and a root option
+/// given to a command gets where it applies.
 ///
 /// The former spellings stay rejected rather than aliased (docs/PRODUCT.md,
 /// "Option Names and Applicability"), but clap's similarity tips pointed agents
 /// with older knowledge at unrelated options, such as `--purpose` at `--verbose`
 /// and `workspace --file` at `--files` (agent regression desk review,
 /// 2026-10-21, F11). The tip names the command where a spelling existed only
-/// there, so it holds whichever command rejected it. The error is rebuilt
-/// because clap offers no way to remove its own tips, and its usage line was
-/// built around its own suggestion.
-fn name_retired_successor(error: clap::Error, command: &clap::Command) -> clap::Error {
+/// there, so it holds whichever command rejected it. Root options given to a
+/// command drew the same kind of tip, such as `--show-bars` for
+/// `workspace --show-folders`, or a `--` escape (0.9.0 desk review, B7). The
+/// error is rebuilt because clap offers no way to remove its own tips, and its
+/// usage line was built around its own suggestion.
+fn replace_misleading_tip(
+    error: clap::Error,
+    command: &clap::Command,
+    named: Option<&str>,
+) -> clap::Error {
     use clap::error::{ContextKind, ContextValue, ErrorKind};
     if error.kind() != ErrorKind::UnknownArgument {
         return error;
@@ -131,20 +145,29 @@ fn name_retired_successor(error: clap::Error, command: &clap::Command) -> clap::
         return error;
     };
     let flag = invalid.split('=').next().unwrap_or_default();
-    let Some((_, former, current)) = RETIRED_SPELLINGS.iter().find(|(old, ..)| *old == flag) else {
-        return error;
-    };
     let valid = command.get_styles().get_valid();
-    let tip =
-        format!("'{valid}{former}{valid:#}' was renamed to '{valid}{current}{valid:#}' in 0.7.0");
-    let mut renamed = clap::Error::new(ErrorKind::UnknownArgument).with_cmd(command);
-    renamed.insert(
+    let root_option = flag.strip_prefix("--").is_some_and(|long| {
+        command
+            .get_arguments()
+            .any(|arg| arg.get_long() == Some(long))
+    });
+    let tip = match (RETIRED_SPELLINGS.iter().find(|(old, ..)| *old == flag), named) {
+        (Some((_, former, current)), _) => {
+            format!("'{valid}{former}{valid:#}' was renamed to '{valid}{current}{valid:#}' in 0.7.0")
+        }
+        (None, Some(name)) if root_option => format!(
+            "'{valid}{flag}{valid:#}' is only available without a command, not with '{valid}{name}{valid:#}'"
+        ),
+        _ => return error,
+    };
+    let mut rebuilt = clap::Error::new(ErrorKind::UnknownArgument).with_cmd(command);
+    rebuilt.insert(
         ContextKind::InvalidArg,
         ContextValue::String(flag.to_owned()),
     );
-    renamed.insert(
+    rebuilt.insert(
         ContextKind::Suggested,
         ContextValue::StyledStrs(vec![tip.into()]),
     );
-    renamed
+    rebuilt
 }

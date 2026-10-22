@@ -68,7 +68,8 @@ pub fn subfolder_path(root: &Path, given: &Path) -> Result<Option<String>> {
         given
             .components()
             .all(|c| matches!(c, Component::Normal(_) | Component::CurDir)),
-        "Subfolder must be root-relative without parent components"
+        "Subfolder '{}' must be root-relative without parent components",
+        given.display()
     );
     if given.components().all(|c| c == Component::CurDir) {
         return Ok(None);
@@ -76,11 +77,11 @@ pub fn subfolder_path(root: &Path, given: &Path) -> Result<Option<String>> {
     let path = relative_path(given)?;
     ensure!(
         inspect_path(root, &path, "Subfolder")?.is_none(),
-        "Subfolder must not pass through a symlink: {path}"
+        "Subfolder '{path}' must not pass through a symlink"
     );
     ensure!(
         root.join(&path).is_dir(),
-        "Subfolder target must be a directory"
+        "Subfolder '{path}' must be a directory"
     );
     Ok(Some(path))
 }

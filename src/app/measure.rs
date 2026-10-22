@@ -107,6 +107,8 @@ pub(crate) fn common<'a>(mut lists: impl Iterator<Item = &'a Vec<String>>) -> Ve
 /// `--subfolder` measures it.
 pub(crate) struct WorkspaceMember {
     pub(crate) name: String,
+    /// The root or folder as the user typed it, for errors.
+    pub(crate) given: String,
     pub(crate) root: PathBuf,
     pub(crate) folder: Option<String>,
 }
@@ -120,18 +122,21 @@ pub(crate) fn workspace_members(
         locmetry::WorkspaceDefinition::Roots(roots) => roots
             .iter()
             .map(|given| {
-                let root = dunce::canonicalize(given).with_context(|| {
-                    format!("Workspace member root '{}' does not exist", given.display())
-                })?;
+                let given = given.display().to_string();
+                let root = dunce::canonicalize(&given)
+                    .with_context(|| format!("Workspace member root '{given}' does not exist"))?;
+                anyhow::ensure!(
+                    root.is_dir(),
+                    "Workspace member root '{given}' must be a directory"
+                );
                 let name = root
                     .file_name()
                     .and_then(|name| name.to_str())
-                    .with_context(|| {
-                        format!("Workspace member '{}' has no folder name", given.display())
-                    })?
+                    .with_context(|| format!("Workspace member '{given}' has no folder name"))?
                     .to_owned();
                 Ok(WorkspaceMember {
                     name,
+                    given,
                     root,
                     folder: None,
                 })
@@ -145,9 +150,11 @@ pub(crate) fn workspace_members(
                 .iter()
                 .map(|given| {
                     let folder = locmetry::subfolder_path(&root, Path::new(given))
-                        .with_context(|| format!("Workspace folder {given}"))?
+                        .with_context(|| format!("Workspace folder '{given}'"))?
                         .with_context(|| {
-                            format!("Workspace folder {given} names the project root, not a folder")
+                            format!(
+                                "Workspace folder '{given}' names the project root, not a folder"
+                            )
                         })?;
                     let name = folder
                         .rsplit_once('/')
@@ -155,6 +162,7 @@ pub(crate) fn workspace_members(
                         .to_owned();
                     Ok(WorkspaceMember {
                         name,
+                        given: given.clone(),
                         root: root.clone(),
                         folder: Some(folder),
                     })
@@ -171,16 +179,23 @@ pub(crate) fn workspace_members(
         let [member, other] = pair else {
             unreachable!("windows of two")
         };
-        anyhow::ensure!(
-            location(member) != location(other),
-            "Workspace root '{}' is given twice",
-            location(member).display()
-        );
+        if location(member) == location(other) {
+            anyhow::ensure!(
+                member.given != other.given,
+                "Workspace root '{}' is given twice",
+                member.given
+            );
+            anyhow::bail!(
+                "Workspace roots '{}' and '{}' name the same folder",
+                member.given,
+                other.given
+            );
+        }
         anyhow::ensure!(
             member.name != other.name,
             "Workspace members '{}' and '{}' share the name '{}'",
-            location(member).display(),
-            location(other).display(),
+            member.given,
+            other.given,
             member.name
         );
     }
@@ -190,8 +205,8 @@ pub(crate) fn workspace_members(
         }) {
             anyhow::bail!(
                 "Workspace member '{}' lies inside member '{}'",
-                location(member).display(),
-                location(outer).display()
+                member.given,
+                outer.given
             );
         }
     }

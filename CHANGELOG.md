@@ -16,6 +16,7 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 ### Fixed
 
 - Errors for a `--guide` or `--schema` query combined with other arguments quote both flags, as other errors do, and name a directory argument in words.
+- Errors about an unusable path name it as typed rather than as a canonical absolute path: workspace files, member roots and folders, a `--subfolder` that is not a directory, and an `--output` inside the scan root or over the workspace file. A root option given to a command, such as `workspace --show-folders`, now says it is only available without a command instead of suggesting an unrelated option.
 
 ## [0.9.0] - 2026-10-22
 

@@ -252,16 +252,16 @@ fn resolve_destination(path: &Path) -> Result<PathBuf> {
 }
 
 pub fn validate_output(output: &Path, root: &Path, config: Option<&Path>) -> Result<()> {
+    let given = quoted(&output.display().to_string());
     let output = resolve_destination(output)?;
     ensure!(
         !output.starts_with(dunce::canonicalize(root)?),
-        "Output must be outside the read-only scan root"
+        "Output {given} must be outside the read-only scan root"
     );
     let config = config.map(dunce::canonicalize).transpose()?;
     ensure!(
         config.as_ref() != Some(&output),
-        "Output would overwrite the configuration: {}",
-        output.display()
+        "Output {given} would overwrite the configuration"
     );
     Ok(())
 }

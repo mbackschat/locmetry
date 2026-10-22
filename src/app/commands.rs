@@ -11,7 +11,8 @@ pub(crate) fn run_explain(args: &ExplainArgs, styling: Styling) -> Result<Outcom
                 .with_context(|| format!("Cannot read workspace file '{}'", file.display()))
         })
         .transpose()?;
-    let members = workspace
+    let members = args
+        .workspace
         .as_deref()
         .map(|file| workspace_members(locmetry::workspace_definition(file)?))
         .transpose()?;
@@ -273,7 +274,9 @@ pub(crate) fn run_workspace(args: &WorkspaceArgs, styling: Styling) -> Result<Ou
                 .with_context(|| format!("Cannot read workspace file '{}'", file.display()))
         })
         .transpose()?;
-    let definition = match &workspace_path {
+    // The file is read under the name the user typed, so errors about it and
+    // the roots it lists name paths the user can recognise.
+    let definition = match &args.file {
         Some(file) => locmetry::workspace_definition(file)?,
         None => locmetry::WorkspaceDefinition::Roots(args.roots.clone()),
     };

@@ -55,7 +55,7 @@ The Git-ignored session records of eleven admissible campaigns from 2026-10-20 t
 | C13 | Improvement | The README option table did not list `--table-category`. | Fixed after the review |
 | C14 | Improvement | Schemas and the configure guide agree that runners, harnesses, graders and CI gates are production tooling. | — |
 | C15 | Neutral | Only `category` changed plural form. | — |
-| C16 | Neutral | The gaps of the [0.9.0 review](agent-regression-desk-review-0.9.0.md#findings), B2 and B7, are unchanged and tracked in [PLAN](../PLAN.md#human-output-wording--follow-up); standalone-query errors such as `--guide is a standalone query and cannot be combined with --verbose` left both flags unquoted. | Quoting fixed after the review; B2 and B7 open |
+| C16 | Neutral | The gaps of the [0.9.0 review](agent-regression-desk-review-0.9.0.md#findings), B2 and B7, are unchanged and tracked in [PLAN](../PLAN.md); standalone-query errors such as `--guide is a standalone query and cannot be combined with --verbose` left both flags unquoted. | Quoting and B7 fixed after the review; B2 stays accepted |
 | C17 | Neutral | `locmetry help -h` is rejected by clap in both revisions. | — |
 
 ## Limits
