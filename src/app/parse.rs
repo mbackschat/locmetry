@@ -9,7 +9,7 @@ pub(crate) fn validate_query(
     if let Some(name) = matches.subcommand_name() {
         return Err(command.error(
             clap::error::ErrorKind::ArgumentConflict,
-            format!("--{query} is a standalone query and cannot be combined with '{name}'"),
+            format!("'--{query}' is a standalone query and cannot be combined with '{name}'"),
         ));
     }
     // Only concrete, explicit arguments matter: flattened groups inherit sources,
@@ -23,13 +23,13 @@ pub(crate) fn validate_query(
                     == Some(clap::parser::ValueSource::CommandLine)
         })
         .map(|arg| match arg.get_long() {
-            Some(long) => format!("--{long}"),
-            None => "DIR".to_owned(),
+            Some(long) => format!("'--{long}'"),
+            None => "a directory to measure".to_owned(),
         });
     if let Some(argument) = conflict {
         return Err(command.error(
             clap::error::ErrorKind::ArgumentConflict,
-            format!("--{query} is a standalone query and cannot be combined with {argument}"),
+            format!("'--{query}' is a standalone query and cannot be combined with {argument}"),
         ));
     }
     Ok(())

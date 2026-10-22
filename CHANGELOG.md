@@ -13,6 +13,10 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 - `-h` gives each option and command a one-line summary, and `--help` keeps the full text: `locmetry -h` is 41% shorter and points to `--help` for more. The command list and the help footer no longer repeat what the commands' and options' own help says.
 - `--guide configure` and `--schema config` explain when to classify verification code as test and when as production tooling: test runners, harnesses, graders and CI gates are tooling, and Test/prod depends on purpose, not category.
 
+### Fixed
+
+- Errors for a `--guide` or `--schema` query combined with other arguments quote both flags, as other errors do, and name a directory argument in words.
+
 ## [0.9.0] - 2026-10-22
 
 ### Added

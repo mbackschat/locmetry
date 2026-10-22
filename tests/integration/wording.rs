@@ -231,6 +231,8 @@ fn scenarios() -> Vec<Vec<&'static str>> {
             "--table-category",
             "test,production:*",
         ],
+        vec!["--guide", "configure", "--verbose"],
+        vec!["--schema", "config", "project"],
         vec!["--root", "absent"],
         vec!["--root", "bad.json"],
         vec!["workspace", "--workspace-file", "absent.toml"],
