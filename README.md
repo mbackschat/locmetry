@@ -197,7 +197,7 @@ Most of the change is test code. [Folder reporting](docs/guides/reports.md#look-
 | Category | A finer label inside a purpose, written `purpose:category`, such as `production:implementation`, `production:build-tooling` or `test:test`. It changes no totals; `--show-categories` breaks tables down by it. |
 | Unclaimed | Source that no convention, module or policy entry classified, reported as `other:unclaimed` and listed by folder for review. Its lines are counted; only its purpose is open. |
 | Build module | A folder with a build or framework file, such as `package.json`, `Cargo.toml` or `next.config.ts`; its conventional source folders are production. See [build modules](#build-modules). |
-| Convention | A built-in classification, such as files in `test/` being tests or `vite.config.ts` being build tooling. Conventions apply before the project's own rules. |
+| Convention | A built-in classification, such as files in `test/` being tests or `vite.config.ts` being build tooling. Conventions apply before the project's own rules; [built-in detection](docs/built-in-detection.md#test-conventions) lists them. |
 | Policy | The project's `.locmetryrc`: scope exclusions and entries that classify what the built-ins cannot. `rules` apply after conventions, `overrides` before them. See [configuration](#configuration). |
 | Provenance | The convention, module or entry that decided a file, recorded as its `rule`; `locmetry explain PATH` shows it. |
 | Test/prod | Test code divided by production code, with Other left out. It describes volume, not test coverage. |
@@ -368,7 +368,7 @@ On Immich, `cd immich && locmetry --verbose` reports what the modules contribute
  Production from build modules: 107,922 code lines in 8 'npm' modules, 59,170 code lines in 2 'dart' modules, 4,102 code lines in 1 'gradle' module, 3,037 code lines in 1 'python' module.
 ```
 
-Tests inside these trees stay tests, and nested modules decide for themselves. Detection reads file names only and never runs a build, so custom layouts need configuration; [module detection](docs/PRODUCT.md#module-detection) has the details.
+Tests inside these trees stay tests, and nested modules decide for themselves. Before module layouts apply, built-in conventions recognize tests, such as `test/` folders, `*.test.ts`, `*Test.java`, `*_test.go`, `test_*.py` and `*_spec.rb`, and build tooling, such as Gradle, Maven, CMake and Make scripts, build wrappers and the configuration of named JavaScript tools. Detection reads file names only and never runs a build, so custom layouts need configuration. The [built-in detection reference](docs/built-in-detection.md) explains how detectors and conventions decide and lists every one.
 
 ### Configuration
 
@@ -417,6 +417,7 @@ For a production-rule change covered by the example in `locmetry --help`, inspec
 
 - [Changelog](CHANGELOG.md): user-visible changes per release, with breaking changes marked.
 - [Product contract](docs/PRODUCT.md): supported settings, fields and guarantees.
+- [Built-in detection](docs/built-in-detection.md): every module detector, convention and language mapping, and how they decide.
 - [Measurement limits](docs/measurement.md): selection and counting boundaries.
 - [Documentation index](docs/README.md): architecture, research and current work.
 - [Contributor guidelines](CLAUDE.md): development conventions and checks.

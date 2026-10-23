@@ -5,6 +5,7 @@
 
 mod common;
 
+mod builtin_detection;
 mod cli;
 mod cli_findings;
 mod cli_modules;

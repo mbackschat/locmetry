@@ -381,6 +381,12 @@ impl<'a> ModuleOwners<'a> {
 }
 
 /// Modules declared among the selected root-relative `files`, sorted by path, then detector ID.
+/// Detector IDs in detection order, which documentation checks compare with
+/// the built-in detection reference.
+pub fn detector_ids() -> impl Iterator<Item = &'static str> {
+    DETECTORS.iter().map(|detector| detector.id())
+}
+
 pub fn detect(files: &[&str]) -> Vec<Module> {
     let mut declared = BTreeSet::new();
     for path in files {

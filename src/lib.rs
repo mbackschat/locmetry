@@ -22,7 +22,7 @@ pub use config::{
     Classification, EffectiveConfig, Policy, Purpose, Scope, ScopeOverrides, WorkspaceDefinition,
     CONFIG_FILE,
 };
-pub use modules::{detect as detect_modules, Module};
+pub use modules::{detect as detect_modules, detector_ids as module_detector_ids, Module};
 pub use output::{
     measurement_time, render_markdown, render_table_with_options, report_text, validate_output,
     write_report, BarKind, Bars, CategoryPattern, Findings, Fold, LanguageVariants, MemberView,
