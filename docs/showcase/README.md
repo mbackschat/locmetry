@@ -3,7 +3,7 @@
 These executable demonstrations measure [Immich](https://github.com/immich-app/immich), a popular self-hosted photo platform, at pinned releases. They show what Locmetry adds on a real multi-language project: content kinds separated from source, production and test told apart, and a reviewed policy that records what only the project knows. The [command guides](../cli/README.md) remain the option-by-option reference on the small checked-in fixture.
 
 - [Tour: build a policy for Immich](tour.md): built-in conventions, review, a draft policy from evidence and the resulting transitions.
-- [Measure Immich](measure.md): built-in conventions alone, the evidence behind a decision, the reviewed policy, explanations, folder detail, a category selection and the mobile app.
+- [Measure Immich](measure.md): built-in conventions alone, the evidence behind a decision, the reviewed policy, explanations, a review of every policy entry, folder detail, a category selection and the mobile app.
 - [Measure Immich as a workspace](workspace.md): six application components measured under the project's one policy.
 - [Compare two Immich releases](compare.md): `v3.2.0 → v3.3.4` for the whole repository and for one member.
 

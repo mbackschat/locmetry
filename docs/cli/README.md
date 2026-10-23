@@ -2,10 +2,10 @@
 
 These guides are executable demonstrations made with [Showboat](https://github.com/simonw/showboat), following its command-and-captured-output workflow. They all use the checked-in [Acme Orders workspace](../../examples/cli-workspace/README.md); the [Immich showcase](../showcase/README.md) demonstrates the same commands on a real project. No application build or fixture dependency installation is needed.
 
-- [Measure a project](root.md): root selection, classification, folder views, reporting and discovery.
+- [Measure a project](root.md): root selection, classification, folder views, reporting, discovery and policy review.
 - [Measure a workspace](workspace.md): member policy, combined reports and export choices.
 - [Compare saved measurements](compare.md): a visible source change, output formats, member selection and membership changes.
-- [Explain a file](explain.md): deciding rules, selection states and policy experiments.
+- [Explain a file](explain.md): deciding rules, selection states, policy experiments and refinements.
 
 Contributors and agents should read the [authoring guidelines](../showboat-authoring.md) before adding or changing a recording.
 

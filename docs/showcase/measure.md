@@ -172,6 +172,63 @@ locmetry explain packages/sdk/src/fetch-client.ts --root immich --format json \
 }
 ```
 
+## Review every entry of the policy
+
+An explanation covers one file; `summary.policy_entries` covers every entry of the policy at once, with the files and code each decided and what it replaced. `--verbose` turns the replaced decisions that changed a purpose into one note: here the generated code moves from Production to Other and the end-to-end code to Test, as the policy intends. An unintended move, such as a glob that is broader than meant, would show up in the same place.
+
+```bash
+source scripts/showcase-env.sh
+locmetry --root immich --format table --verbose --no-color --no-bars \
+  | grep '^ Entries that changed' \
+  | demo_wrap
+
+```
+
+```output
+ Entries that changed the purpose a later stage would give: generated-sdk-client (Production to Other, 6,466 code
+lines), generated-query-snapshots (Production to Other, 9,699 code lines), end-to-end-suites (Production to Test, 3,118
+code lines), end-to-end-auth-server (Production to Test, 10 code lines).
+```
+
+The JSON entry also shows files an entry matched but did not decide. The developer-tooling rule matches tool configuration that built-in conventions classify first, so those files stay build tooling or test configuration. `preempted` names the conventions and how many files each took. The rule's glob for package configuration files decides nothing at all, since the conventions cover every file it matches, so `unused_patterns` lists it as a candidate for removal from the policy.
+
+```bash
+source scripts/showcase-env.sh
+locmetry --root immich --format json \
+  | jq '.summary.policy_entries[] | select(.id == "developer-tooling")'
+
+```
+
+```output
+{
+  "id": "developer-tooling",
+  "stage": "rule",
+  "purpose": "production",
+  "files": 14,
+  "code": 722,
+  "preempted": [
+    {
+      "by": "builtin:js-tool-config",
+      "files": 10
+    },
+    {
+      "by": "builtin:js-test-runner-config",
+      "files": 3
+    }
+  ],
+  "unused_patterns": [
+    "packages/*/*.config.{js,cjs,mjs,ts}"
+  ],
+  "displaced": [
+    {
+      "decision": "production:implementation",
+      "files": 1,
+      "code": 343
+    }
+  ]
+}
+```
+
 ## See where the code lives
 
 Adaptive folder detail expands the largest folders within a row budget and covers the source once, so parents and expanded children never count twice.

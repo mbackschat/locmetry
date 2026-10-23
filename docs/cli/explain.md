@@ -255,6 +255,53 @@ locmetry explain service/experiments/probe.py --root acme-orders --config propos
 }
 ```
 
+## Relabel tests with a refinement
+
+A refinement changes only the category of files whose decided purpose it names. Here it relabels the web tests as unit tests but leaves out the order tests with `except`, so they fall through to the next refinement. The table keeps the convention as `Rule` and names the refinement with its reason.
+
+```bash
+source scripts/cli-demo-env.sh
+cat > proposed.toml <<'TOML'
+version = 1
+
+[[refinements]]
+id = "web-unit-tests"
+purpose = "test"
+match = ["web/src/**"]
+except = ["web/src/orders/**"]
+category = "unit"
+
+[[refinements]]
+id = "order-tests"
+purpose = "test"
+match = ["web/src/orders/**"]
+category = "order-rules"
+reason = "Tests of the order pricing rules"
+TOML
+locmetry explain web/src/orders/Order.test.ts --root acme-orders --config proposed.toml \
+  --no-user-config --no-color --format table \
+  | sed '/^Root:/d'
+
+```
+
+```output
+Path explanation
+Path: web/src/orders/Order.test.ts
+Project config: proposed.toml
+Personal config: none
+State: counted
+Language: TypeScript
+Kind: source
+Purpose: test
+Category: order-rules
+Rule: builtin:js-test-file
+Stage: convention
+Counts: 3 code, 1 comment, 0 blanks, 4 lines
+Matching patterns: **/*.{test,spec}.{js,jsx,mjs,cjs,ts,tsx,mts,cts}
+Refinement: order-tests, matching web/src/orders/**
+Refinement reason: Tests of the order pricing rules
+```
+
 ## Use a workspace and save Markdown
 
 `--workspace-file` takes member-prefixed paths and applies that member's policy. Single-root policy flags cannot accompany it. Explain supports table, JSON and Markdown; redirect stdout to save it because there is no `--output` or headline option. The Markdown excerpt omits its absolute root row.

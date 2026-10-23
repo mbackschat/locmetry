@@ -36,7 +36,7 @@ locmetry --root acme-orders --no-user-config --no-color --no-bars --format table
 
 ## Explore folders and decisions
 
-`--folder-rows` expands folders within a row budget; `--sort name` changes presentation order. `--show-categories` and `--verbose` expose classification and coverage, including the unclaimed experiment and unrecognized files. The positional directory selects the same root.
+`--folder-rows` expands folders within a row budget; `--sort name` changes presentation order. `--show-categories` and `--verbose` expose classification and coverage, including the unclaimed experiment and unrecognized files. The last notes name the `generated-client` override, which counts code the npm layout would call Production as Other: the fixture intends that move, and the note lets a reviewer confirm it. The positional directory selects the same root.
 
 ```bash
 source scripts/cli-demo-env.sh
@@ -101,6 +101,7 @@ in '.locmetryrc':
  Unclaimed source: 1 code line in 1 file, here:
    service/experiments  1 code line  1 file
  To inspect or refine purpose classification, use '--guide configure'. '--files --output -' shows each file's rule.
+ Entries that changed the purpose a later stage would give: generated-client (Production to Other, 1 code line).
  Unrecognized files: 2 (asset: 1, mod: 1). Their lines are unknown, not zero.
 
 ```
@@ -481,4 +482,118 @@ locmetry --root acme-orders --no-user-config --config stale.toml --format json \
     "web/vendor/**"
   ]
 }
+```
+
+## Review what each entry decided
+
+A policy can be partly wrong without matching nothing. `--config` replaces the fixture policy, so the drafts below have none of its entries or exclusions. This draft labels the order tests with an override over their whole folder, and gives the service tests a finer category with a refinement whose second glob has a case mistake. `summary.policy_entries` lists each entry with the files and code it decided. The override also took two production files the npm layout would have decided, which `displaced` shows, and the refinement names its glob that decided nothing under `unused_patterns`; neither problem leaves an entry unused.
+
+```bash
+source scripts/cli-demo-env.sh
+cat > draft.toml <<'TOML'
+version = 1
+
+[[overrides]]
+id = "order-tests"
+match = ["web/src/orders/**"]
+purpose = "test"
+category = "unit"
+
+[[refinements]]
+id = "service-tests"
+purpose = "test"
+match = ["service/tests/**", "service/Tests/**"]
+category = "integration"
+TOML
+locmetry --root acme-orders --no-user-config --config draft.toml --format json \
+  | jq ".summary.policy_entries"
+
+```
+
+```output
+[
+  {
+    "id": "order-tests",
+    "stage": "override",
+    "purpose": "test",
+    "files": 3,
+    "code": 9,
+    "displaced": [
+      {
+        "decision": "production:implementation",
+        "files": 2,
+        "code": 6
+      },
+      {
+        "decision": "test:test",
+        "files": 1,
+        "code": 3
+      }
+    ]
+  },
+  {
+    "id": "service-tests",
+    "stage": "refinement",
+    "purpose": "test",
+    "files": 1,
+    "code": 4,
+    "unused_patterns": [
+      "service/Tests/**"
+    ],
+    "displaced": [
+      {
+        "decision": "test:test",
+        "files": 1,
+        "code": 4
+      }
+    ]
+  }
+]
+```
+
+Refinements are the safe way to give tests finer categories: each applies after classification to files of its stated `purpose` and changes only their category, so production code under the same glob stays production. The corrected draft relabels both test folders and fixes the glob. Only Test rows change category; Production keeps its files, as the purpose columns show.
+
+```bash
+source scripts/cli-demo-env.sh
+cat > draft.toml <<'TOML'
+version = 1
+
+[[refinements]]
+id = "order-tests"
+purpose = "test"
+match = ["web/src/orders/**"]
+category = "unit"
+
+[[refinements]]
+id = "service-tests"
+purpose = "test"
+match = ["service/tests/**"]
+category = "integration"
+TOML
+locmetry --root acme-orders --no-user-config --config draft.toml --no-color --no-bars \
+  --format table --show-categories --tables-only
+
+```
+
+```output
+ ──────────────────────────────────────────────────────────────────────────────────
+ Language    Files  Lines  Code │ Comments  Blanks │ Prod.  Test  Other │ Test/prod
+ ───────────────────────────────┼──────────────────┼────────────────────┼──────────
+ TypeScript      4     13    10 │        3       0 │     7     3      0 │      0.43
+ Go              2     11     8 │        1       2 │     4     4      0 │      1.00
+ Python          4      7     5 │        2       0 │     0     0      5 │         -
+ HTML            1      4     4 │        0       0 │     4     0      0 │      0.00
+ Makefile        1      2     2 │        0       0 │     2     0      0 │      0.00
+ JavaScript      0      1     1 │        0       0 │     1     0      0 │      0.00
+ ───────────────────────────────┼──────────────────┼────────────────────┼──────────
+ Total          12     38    30 │        6       2 │    18     7      5 │      0.39
+
+ ─────────────────────────────────────────────
+ Category                   Files  Lines  Code
+ ─────────────────────────────────────────────
+ production:implementation      5     20    16
+ other:unclaimed                4      7     5
+ test:integration               1      5     4
+ test:unit                      1      4     3
+ production:build-tooling       1      2     2
 ```

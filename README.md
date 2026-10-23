@@ -216,7 +216,7 @@ Most of the change is test code. [Folder reporting](docs/guides/reports.md#look-
 | Unclaimed | Source that no convention, module or policy entry classified, reported as `other:unclaimed` and listed by folder for review. Its lines are counted; only its purpose is open. |
 | Build module | A folder with a build or framework file, such as `package.json`, `Cargo.toml` or `next.config.ts`; its conventional source folders are production. See [build modules](#build-modules). |
 | Convention | A built-in classification, such as files in `test/` being tests or `vite.config.ts` being build tooling. Conventions apply before the project's own rules; [built-in detection](docs/built-in-detection.md#test-conventions) lists them. |
-| Policy | The project's `.locmetryrc`: scope exclusions and entries that classify what the built-ins cannot. `rules` apply after conventions, `overrides` before them. See [configuration](#configuration). |
+| Policy | The project's `.locmetryrc`: scope exclusions and entries that classify what the built-ins cannot. `rules` apply after conventions, `overrides` before them, and `refinements` change only the category of files already decided. See [configuration](#configuration). |
 | Provenance | The convention, module or entry that decided a file, recorded as its `rule`; `locmetry explain PATH` shows it. |
 | Test/prod | Test code divided by production code, with Other left out. It describes volume, not test coverage. |
 | Coverage | How many selected files were counted. Unrecognized or unreadable files are reported, never counted as zero. |
@@ -325,7 +325,7 @@ For file-level recognition and classification changes, run `compare-locmetry-fil
 Locmetry embeds Tokei for counting and applies project policy to each file. Purpose, category and content kind are separate dimensions, as [Terms](#terms) explains. Kind follows the physical file, so a fenced code block in Markdown or other documentation counts as documentation, never as source; `--verbose` shows how many code lines such snippets hold. Rust doc comments, doctests included, stay comments of their file.
 
 - **Module context:** selected build descriptors, such as npm, Gradle, Cargo, Go, Python or .NET project files, and framework descriptors, such as `next.config.ts` or Laravel's `artisan`, identify conventional source layouts, as [build modules](#build-modules) describes. The innermost module supplies context, so nested projects do not inherit an outer project's layout blindly.
-- **Ordered decisions:** explicit overrides precede test and build conventions, ordinary project rules, module inference and fallback. Tests inside production source trees remain tests; overrides can express exceptions. Every counted file records the deciding rule.
+- **Ordered decisions:** explicit overrides precede test and build conventions, ordinary project rules, module inference and fallback. Tests inside production source trees remain tests; overrides can express exceptions. Refinements then give decided files a finer category without changing their purpose. Every counted file records the deciding rule, and reports count what each policy entry decided.
 - **Scope and coverage:** exclusions and ignore rules determine what is selected. Unrecognized files and unavailable counts remain distinguishable from zero. Read/parse failures produce a partial report and exit 2; unresolved classification alone does not make counts partial.
 
 These Immich files show each kind of decision, from module layout and test conventions to project entries:
@@ -415,9 +415,9 @@ category = "native"
 reason = "Swift code and headers of the iOS runner and its extensions; no Package.swift declares it"
 ```
 
-Tests still win over ordinary rules; an override is needed only to beat a convention. Entries without evidence belong in the review list as unclaimed source, not in the policy. A clean review list alone does not establish correct classification.
+Tests still win over ordinary rules; an override is needed only to change the purpose a convention gives. To give tests or other decided files a finer category, such as `property-law`, use a refinement, which cannot move code between production and test. Reports list each entry with the files and code it decided and the decisions it replaced as `summary.policy_entries`, so an entry that misses most of its files or moves production code into tests shows up. Entries without evidence belong in the review list as unclaimed source, not in the policy. A clean review list alone does not establish correct classification.
 
-The [configuration guide](docs/guides/configure.md) covers overrides, custom categories, language mappings and evidence-based review. [Personal defaults](docs/PRODUCT.md#user-defaults) can supply exclusions and language mappings across projects; they cannot assign purposes or categories.
+The [configuration guide](docs/guides/configure.md) covers overrides, refinements, `except` lists, custom categories, language mappings and evidence-based review. [Personal defaults](docs/PRODUCT.md#user-defaults) can supply exclusions and language mappings across projects; they cannot assign purposes or categories.
 
 Locmetry's own [.locmetryrc](.locmetryrc) is a maintained example: it excludes the synthetic demonstration workspace and distinguishes operational tooling, distribution and verification infrastructure. [Self-measurement design](docs/self-measurement.md) explains the decisions and how to verify them.
 

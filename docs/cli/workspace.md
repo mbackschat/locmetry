@@ -65,6 +65,7 @@ in '.locmetryrc':
  Unclaimed source: 1 code line in 1 file, here:
    service/experiments  1 code line  1 file
  To inspect or refine purpose classification, use '--guide configure'. '--files --output -' shows each file's rule.
+ Entries that changed the purpose a later stage would give: generated-client (web) (Production to Other, 1 code line).
  Unclaimed source by member: 'service' has 1 unclaimed file (1 code line).
  Unrecognized files: 2 (asset: 1, mod: 1). Their lines are unknown, not zero.
 
