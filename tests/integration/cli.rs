@@ -326,7 +326,34 @@ fn loaded_configuration_inside_the_scan_root_is_not_measured() {
     assert!(metadata["scope"]["exclude"]
         .as_array()
         .unwrap()
-        .contains(&json!(".locmetryrc")));
+        .contains(&json!("**/.locmetryrc")));
+}
+
+/// Every `.locmetryrc` is policy, loaded or not, even without default
+/// exclusions: one beside an explicit `--config` or in a nested project would
+/// otherwise be an unrecognized file, so trying a draft policy would change
+/// coverage compared with a discovery run of the same tree.
+#[test]
+fn unloaded_configurations_are_not_measured() {
+    let temp = project(&[
+        (".locmetryrc", APP_RULE),
+        (
+            "draft.toml",
+            "version = 1\n[scope]\ndefault_excludes = false\n",
+        ),
+        ("nested/.locmetryrc", APP_RULE),
+        ("src/a.ts", "let a = 1;\n"),
+    ]);
+    let (success, document, stderr) =
+        report(&temp.path().join("project"), &["--config", "draft.toml"]);
+    assert!(success, "{stderr}");
+    let metadata = &document["metadata"];
+    assert_eq!(metadata["coverage"]["selected_files"], 1);
+    assert_eq!(metadata["coverage"]["unrecognized"], json!([]));
+    assert!(metadata["scope"]["exclude"]
+        .as_array()
+        .unwrap()
+        .contains(&json!("**/.locmetryrc")));
 }
 
 /// Glob metacharacters in the configuration's name match literally, so its
@@ -413,7 +440,7 @@ fn cli_scope_settings_override_the_project_configuration() {
             "**/.lake/**",
             "gen/**",
             "vendor/**",
-            ".locmetryrc"
+            "**/.locmetryrc"
         ])
     );
 }

@@ -1,7 +1,7 @@
 //! Measurement policy: which files are selected and how each one is classified.
 //!
 //! The input is the version-1 TOML contract in docs/PRODUCT.md.
-use crate::{backend::relative_path, modules::Module, Kind};
+use crate::{modules::Module, Kind};
 use anyhow::{anyhow, bail, ensure, Context, Result};
 use globset::{Glob, GlobBuilder, GlobSet, GlobSetBuilder};
 use schemars::JsonSchema;
@@ -16,6 +16,7 @@ use tokei::LanguageType;
 mod builtin;
 mod corrections;
 mod decision;
+mod exclusions;
 mod file;
 mod generated;
 mod schema;
@@ -475,49 +476,6 @@ impl Policy {
     pub fn override_scope(&mut self, overrides: &ScopeOverrides) -> Result<()> {
         self.scope = self.scope.with_overrides(overrides)?;
         Ok(())
-    }
-
-    /// Excludes the loaded configuration file when it lies inside the
-    /// canonical scan `root`.
-    ///
-    /// The configuration is measurement policy, not project content. Its path
-    /// is escaped so glob metacharacters in its name match only itself.
-    pub fn exclude_configuration(&mut self, root: &Path, config: &Path) -> Result<()> {
-        let config = dunce::canonicalize(config)
-            .with_context(|| format!("Cannot resolve configuration '{}'", config.display()))?;
-        let Ok(relative) = config.strip_prefix(root) else {
-            return Ok(());
-        };
-        let pattern = literal_glob(&relative_path(relative)?);
-        self.configuration_exclusions.insert(pattern.clone());
-        self.override_scope(&ScopeOverrides {
-            exclude: vec![pattern],
-            ..Default::default()
-        })
-    }
-
-    /// Configured exclusions that left out no file or folder, given the
-    /// indices into the effective exclusions that a scan applied.
-    ///
-    /// Default exclusions and the configuration's own path are omitted: they
-    /// routinely match nothing, as with a hidden `.locmetryrc` and
-    /// `hidden = false`. A pattern repeated across layers counts once.
-    pub fn unused_exclusions(&self, applied: &BTreeSet<usize>) -> Vec<String> {
-        let patterns = self.scope.exclusions();
-        let used: BTreeSet<&str> = applied
-            .iter()
-            .map(|&index| patterns[index].as_str())
-            .collect();
-        let mut unused: Vec<String> = Vec::new();
-        for pattern in &patterns[self.scope.default_count()..] {
-            if !used.contains(pattern.as_str())
-                && !self.configuration_exclusions.contains(pattern)
-                && !unused.contains(pattern)
-            {
-                unused.push(pattern.clone());
-            }
-        }
-        unused
     }
 
     /// Adopts the modules a scan detected, unless `builtin_modules = false`.

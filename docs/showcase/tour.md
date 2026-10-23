@@ -41,7 +41,7 @@ in '.locmetryrc':
    docs                          213 code lines   2 files
    and 10 more folders (346 code lines)
  To inspect or refine purpose classification, use '--guide configure'. '--files --output -' shows each file's rule.
- Unrecognized files: 437 (png: 165, webp: 146, no extension: 62, ttf: 19, lock: 10). Their lines are unknown, not zero.
+ Unrecognized files: 436 (png: 165, webp: 146, no extension: 61, ttf: 19, lock: 10). Their lines are unknown, not zero.
 
 ```
 

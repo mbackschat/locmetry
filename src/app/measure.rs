@@ -41,6 +41,7 @@ pub(crate) fn prepare(
     let mut policy = Policy::load_layers(config_path.as_deref(), user_path)?;
     policy.override_scope(overrides)?;
     let root = locmetry::scan_root(root)?;
+    policy.exclude_configuration_files()?;
     for path in [config_path.as_deref(), user_path, workspace_path]
         .into_iter()
         .flatten()

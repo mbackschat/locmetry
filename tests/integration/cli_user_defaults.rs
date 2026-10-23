@@ -81,7 +81,7 @@ fn user_defaults_add_exclusions_and_language_mappings() {
             "**/.lake/**",
             "**/*.generated.ts",
             "vendor/**",
-            ".locmetryrc"
+            "**/.locmetryrc"
         ])
     );
     assert!(
