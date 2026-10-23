@@ -7,7 +7,17 @@
 [![Latest release](https://img.shields.io/github/v/release/mbackschat/locmetry)](https://github.com/mbackschat/locmetry/releases/latest)
 [![Licence: MIT](https://img.shields.io/github/license/mbackschat/locmetry)](LICENSE)
 
-Locmetry counts code, comments and blank lines, classifies files as production, test or other and by category, such as generated code or tooling, and records the rule behind each classification. Reports separate source code from data and documentation and show results by language and folder.
+Line counters such as Tokei, cloc and scc report how many lines of each language a repository holds. Locmetry reports what those lines are for: it counts with Tokei, then classifies every file as production, test or other code and by category, such as generated code or tooling, keeps data and documentation out of source totals, and records the rule behind each classification so you can check it.
+
+| | Line counters (Tokei, cloc, scc) | Locmetry |
+| --- | --- | --- |
+| Code, comments and blanks per language | Yes | Yes, counted by Tokei |
+| Production, test and other code | Not built in; scc can map file patterns to custom categories | Built in from build modules and test conventions, refined by a reviewed policy |
+| Data and documentation | Counted next to source: JSON counts as code | Reported apart from source code |
+| Why a file counts where it does | No classification to explain | `locmetry explain PATH` names the deciding rule |
+| Change between two measurements | cloc `--diff` compares source trees | `locmetry compare` compares saved reports by purpose, language and folder |
+
+The [comparison on Immich](#compared-with-a-line-counter-how-much-text-per-language) shows what that changes: the counters count its database schemas, OpenAPI specification and translations as code.
 
 It needs no configuration to start: Locmetry recognizes the [build modules](#build-modules) of npm, Gradle, Maven, Cargo, Go, Python, Lake, Swift, Dart, .NET, Composer and RubyGems projects and of Next.js, Nuxt, React Router, Symfony, Laravel, Rails and Django applications, counts their conventional source layouts as production and finds tests by built-in conventions, so even a multi-language monorepo gets a production/test split on the first run.
 
