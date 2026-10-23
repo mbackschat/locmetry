@@ -41,6 +41,21 @@ pub struct Decision {
     /// The generated-code marker that refined the module's claim to category `generated`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub generated: Option<GeneratedEvidence>,
+    /// The refinement that replaced the deciding stage's category.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub refinement: Option<RefinementEvidence>,
+}
+
+/// A refinement that changed a decided file's category, as `explain` reports it.
+#[derive(Serialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct RefinementEvidence {
+    pub id: String,
+    /// Matching globs of the refinement, relative to the member's root.
+    pub matched_patterns: Vec<String>,
+    /// The refinement's stated reason, when supplied.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
 }
 
 /// One first-match decision about a counted file, see [`super::Policy::resolve`].

@@ -229,7 +229,7 @@ fn configuration_mapping_example_keeps_recognition_separate_from_purpose() {
 }
 
 #[test]
-fn configuration_category_example_requires_an_override_without_changing_purpose() {
+fn configuration_category_example_refines_without_changing_purpose() {
     let root = tempfile::tempdir().unwrap();
     write(
         root.path(),
@@ -238,7 +238,7 @@ fn configuration_category_example_requires_an_override_without_changing_purpose(
     );
     let guide = source("configure");
     let ordinary = block(&guide, "category-rule", "toml");
-    let override_entry = block(&guide, "category-override", "toml");
+    let refinement = block(&guide, "category-refinement", "toml");
     write(root.path(), ".locmetryrc", ordinary);
     let classified = document(
         root.path(),
@@ -260,7 +260,7 @@ fn configuration_category_example_requires_an_override_without_changing_purpose(
     assert_eq!(helper["result"]["file"]["category"], "test");
     assert_eq!(helper["result"]["decision"]["stage"], "convention");
 
-    write(root.path(), ".locmetryrc", override_entry);
+    write(root.path(), ".locmetryrc", refinement);
     let refined = document(
         root.path(),
         &["--no-user-config", "--files", "--output", "-"],
@@ -283,7 +283,12 @@ fn configuration_category_example_requires_an_override_without_changing_purpose(
     );
     assert_eq!(helper["result"]["file"]["purpose"], "test");
     assert_eq!(helper["result"]["file"]["category"], "test-support");
-    assert_eq!(helper["result"]["decision"]["stage"], "override");
+    assert_eq!(helper["result"]["file"]["rule"], "builtin:test-directory");
+    assert_eq!(helper["result"]["decision"]["stage"], "convention");
+    assert_eq!(
+        helper["result"]["decision"]["refinement"]["id"],
+        "test-helpers"
+    );
 }
 
 #[test]

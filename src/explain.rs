@@ -44,7 +44,7 @@ pub enum PathResult {
     /// Successfully counted, including known zero. Parser and optional mapping ID are in file.
     Counted {
         file: Box<contract::File>,
-        decision: Decision,
+        decision: Box<Decision>,
         /// The project language correction that replaced the counter's language.
         #[serde(skip_serializing_if = "Option::is_none")]
         correction: Option<Correction>,
@@ -115,7 +115,7 @@ pub fn inspect(root: &Path, path: &Path, policy: &mut Policy) -> Result<(String,
         let decision = policy.decision(&path, file.kind, scan.marker(&file).as_ref());
         PathResult::Counted {
             file: Box::new(contract::File::from(&file)),
-            decision,
+            decision: Box::new(decision),
             correction,
         }
     } else if let Some(failure) = scan.coverage.parse_failures.into_iter().next() {
@@ -243,6 +243,19 @@ impl Explanation {
                         format!("{}, whose layout covers this file", label(module)),
                     )),
                     (None, None) => {}
+                }
+                if let Some(refinement) = &decision.refinement {
+                    rows.push((
+                        "Refinement",
+                        format!(
+                            "{}, matching {}",
+                            refinement.id,
+                            refinement.matched_patterns.join(", ")
+                        ),
+                    ));
+                    if let Some(reason) = &refinement.reason {
+                        rows.push(("Refinement reason", reason.clone()));
+                    }
                 }
                 if let Some(generated) = &decision.generated {
                     rows.push((

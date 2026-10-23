@@ -17,6 +17,7 @@ mod audit;
 mod builtin;
 mod corrections;
 mod decision;
+mod entry;
 mod exclusions;
 mod file;
 mod generated;
@@ -31,7 +32,8 @@ use builtin::{
 pub use corrections::{CorrectedLanguage, UNRECOGNIZED};
 use corrections::{CorrectionConfig, LanguageCorrection};
 pub(crate) use decision::Resolution;
-pub use decision::{Decision, Stage};
+pub use decision::{Decision, RefinementEvidence, Stage};
+use entry::{check_categories, check_entry_ids, check_ids, Entry};
 pub use file::*;
 use generated::GENERATED_CATEGORY;
 pub use generated::{GeneratedEvidence, GeneratedMarker};
@@ -141,7 +143,12 @@ impl Classification {
     /// Code an entry or convention assigns `other` on purpose, such as a
     /// parked prototype or a build wrapper, is decided.
     pub fn is_unclaimed(&self) -> bool {
-        self.purpose == Purpose::Other && self.rule == FALLBACK
+        self.purpose == Purpose::Other && self.is_fallback()
+    }
+
+    /// Whether no stage decided this file, whatever the fallback purpose.
+    pub fn is_fallback(&self) -> bool {
+        self.rule == FALLBACK
     }
 }
 
@@ -155,132 +162,6 @@ pub(crate) fn module_detector(rule: &str) -> Option<&str> {
     rule.strip_prefix(BUILTIN)?.strip_suffix("-module")
 }
 
-#[derive(Debug)]
-struct Entry {
-    id: String,
-    matcher: GlobSet,
-    /// Paths the entry leaves out although `matcher` matches them.
-    except: GlobSet,
-    kinds: Option<Vec<Kind>>,
-    purpose: Purpose,
-    category: String,
-}
-
-impl Entry {
-    fn matches(&self, path: &str, kind: Kind) -> bool {
-        self.matcher.is_match(path) && !self.except.is_match(path) && self.has_kind(kind)
-    }
-
-    fn has_kind(&self, kind: Kind) -> bool {
-        self.kinds
-            .as_ref()
-            .is_none_or(|kinds| kinds.contains(&kind))
-    }
-
-    fn classification(&self) -> Classification {
-        Classification {
-            purpose: self.purpose,
-            category: self.category.clone(),
-            rule: self.id.clone(),
-        }
-    }
-
-    fn from_config(entry: &EntryConfig) -> Result<Self> {
-        ensure!(
-            !entry.patterns.is_empty(),
-            "Entry {} needs a nonempty match array",
-            entry.id
-        );
-        ensure!(
-            entry.kind.as_ref().is_none_or(|kinds| !kinds.is_empty()),
-            "Entry {} needs a nonempty kind array when kind is present",
-            entry.id
-        );
-        ensure!(
-            entry
-                .except
-                .as_ref()
-                .is_none_or(|except| !except.is_empty()),
-            "Entry {} needs a nonempty except array when except is present",
-            entry.id
-        );
-        Ok(Self {
-            id: entry.id.clone(),
-            matcher: glob_set(entry.patterns.iter().map(String::as_str))
-                .with_context(|| format!("Invalid match in entry {}", entry.id))?,
-            except: glob_set(entry.except.iter().flatten().map(String::as_str))
-                .with_context(|| format!("Invalid except in entry {}", entry.id))?,
-            kinds: entry.kind.clone(),
-            purpose: entry.purpose,
-            category: entry
-                .category
-                .clone()
-                .unwrap_or_else(|| entry.purpose.to_string()),
-        })
-    }
-}
-
-/// Rejects entry categories that a declared `[categories]` list does not
-/// name; without a list, categories stay free-form.
-fn check_categories(config: &ConfigFile) -> Result<()> {
-    if config.categories.is_empty() {
-        return Ok(());
-    }
-    let builtin: BTreeSet<String> = Purpose::ALL
-        .iter()
-        .map(Purpose::to_string)
-        .chain([MODULE_CATEGORY, GENERATED_CATEGORY].map(String::from))
-        .chain(
-            BUILTIN_TESTS_V1
-                .iter()
-                .chain(BUILTIN_BUILD_V1)
-                .map(|convention| convention.category.to_string()),
-        )
-        .collect();
-    for entry in config.overrides.iter().chain(&config.rules) {
-        let Some(category) = &entry.category else {
-            continue;
-        };
-        ensure!(
-            config.categories.contains_key(category) || builtin.contains(category),
-            "Entry '{}' uses category '{category}', which [categories] does not declare. Declared: {}. Built in: {}.",
-            entry.id,
-            config.categories.keys().cloned().collect::<Vec<_>>().join(", "),
-            builtin.into_iter().collect::<Vec<_>>().join(", ")
-        );
-    }
-    Ok(())
-}
-
-/// Rejects empty, duplicate, and reserved entry IDs across all stages.
-/// Overrides, rules and language corrections share one ID space, because
-/// `summary.unused_entries` lists them together.
-fn check_entry_ids(config: &ConfigFile) -> Result<()> {
-    check_ids(
-        config
-            .overrides
-            .iter()
-            .chain(&config.rules)
-            .map(|entry| entry.id.as_str())
-            .chain(config.languages.corrections.iter().map(|c| c.id.as_str())),
-    )
-}
-
-fn check_ids<'a>(ids: impl IntoIterator<Item = &'a str>) -> Result<()> {
-    let mut seen = BTreeSet::new();
-    for id in ids {
-        ensure!(
-            !id.is_empty() && seen.insert(id),
-            "Entry ID '{id}' is empty or not unique"
-        );
-        ensure!(
-            id != FALLBACK && !id.starts_with(BUILTIN),
-            "Entry ID '{id}' is reserved for '{FALLBACK}' or '{BUILTIN}' provenance"
-        );
-    }
-    Ok(())
-}
-
 /// Scope and classification for one measurement.
 #[derive(Debug)]
 pub struct Policy {
@@ -289,6 +170,8 @@ pub struct Policy {
     /// Built-in test conventions, then built-in build conventions.
     conventions: Vec<Entry>,
     rules: Vec<Entry>,
+    /// Category-only entries applied to decided files, see [`Policy::refine`].
+    refinements: Vec<Entry>,
     /// Whether build descriptors may declare production source.
     detect_modules: bool,
     /// Whether generated-code markers refine module claims.
@@ -442,6 +325,11 @@ impl Policy {
             overrides: entries(&config.overrides)?,
             conventions,
             rules: entries(&config.rules)?,
+            refinements: config
+                .refinements
+                .iter()
+                .map(Entry::from_refinement)
+                .collect::<Result<_>>()?,
             detect_modules,
             generated,
             modules: Vec::new(),
@@ -530,12 +418,34 @@ impl Policy {
         Ok(())
     }
 
-    /// IDs of the project's overrides and rules, in order.
+    /// IDs of the project's overrides, rules and refinements, in order.
     pub fn entry_ids(&self) -> impl Iterator<Item = &str> {
         self.overrides
             .iter()
             .chain(&self.rules)
+            .chain(&self.refinements)
             .map(|entry| entry.id.as_str())
+    }
+
+    /// The first refinement for a file decided as `decided`. Files that
+    /// reached the fallback stay `unclaimed` for review, and files a
+    /// generated-code marker refined keep that documented evidence.
+    fn refinement_for(&self, path: &str, kind: Kind, decided: &Classification) -> Option<&Entry> {
+        if decided.is_fallback() || GeneratedMarker::V1.iter().any(|m| m.rule() == decided.rule) {
+            return None;
+        }
+        self.refinements.iter().find(|refinement| {
+            refinement.purpose == decided.purpose && refinement.matches(path, kind)
+        })
+    }
+
+    /// Replaces the category of a decided file with its first refinement's,
+    /// recording the refinement; purpose and `rule` stay.
+    pub(crate) fn refine(&self, row: &mut crate::FileRecord) {
+        if let Some(refinement) = self.refinement_for(&row.path, row.kind, &row.classification) {
+            row.classification.category = refinement.category.clone();
+            row.refinement = Some(refinement.id.clone());
+        }
     }
 
     /// Modules whose source this policy classifies.
@@ -636,6 +546,7 @@ impl Policy {
                 reason: None,
                 module: None,
                 generated: None,
+                refinement: None,
             };
         };
         let config = self
@@ -650,6 +561,32 @@ impl Policy {
             Some(module) => &module.sources,
             None => &config.expect("compiled entry has configuration").patterns,
         };
+        let generated = evidence
+            .filter(|_| self.generated && kind == Kind::Source && stage == Stage::Module)
+            .cloned();
+        let refinement = match generated {
+            Some(_) => None,
+            None => self.refinement_for(path, kind, &entry.classification()),
+        }
+        .map(|refinement| {
+            let config = self
+                .snapshot
+                .configuration
+                .refinements
+                .iter()
+                .find(|config| config.id == refinement.id)
+                .expect("compiled refinement has configuration");
+            RefinementEvidence {
+                id: refinement.id.clone(),
+                matched_patterns: refinement
+                    .matcher
+                    .matches(path)
+                    .iter()
+                    .map(|&i| config.patterns[i].clone())
+                    .collect(),
+                reason: config.reason.clone(),
+            }
+        });
         Decision {
             stage,
             matched_patterns: entry
@@ -660,9 +597,8 @@ impl Policy {
                 .collect(),
             reason: config.and_then(|config| config.reason.clone()),
             module: module.map(crate::contract::Module::from),
-            generated: evidence
-                .filter(|_| self.generated && kind == Kind::Source && stage == Stage::Module)
-                .cloned(),
+            generated,
+            refinement,
         }
     }
 

@@ -86,6 +86,8 @@ pub struct FileRecord {
     /// The module credited with this production source file: the innermost
     /// module whose layout covers it, whichever stage decided it.
     pub module: Option<crate::contract::Module>,
+    /// The refinement that replaced the deciding stage's category.
+    pub refinement: Option<String>,
 }
 
 impl Serialize for FileRecord {

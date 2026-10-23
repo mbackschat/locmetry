@@ -481,6 +481,14 @@ pub struct File {
     )]
     #[schemars(with = "Module")]
     pub module: Option<Module>,
+    /// Only for files a project refinement recategorized: its ID. `category` is the refinement's, while `rule` still names the stage that decided the purpose.
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "present"
+    )]
+    #[schemars(with = "String")]
+    pub refinement: Option<String>,
 }
 impl From<&crate::FileRecord> for File {
     fn from(f: &crate::FileRecord) -> Self {
@@ -502,6 +510,7 @@ impl From<&crate::FileRecord> for File {
             }),
             inline_tests: (f.inline_tests.lines > 0).then(|| f.inline_tests.into()),
             module: f.module.clone(),
+            refinement: f.refinement.clone(),
         }
     }
 }

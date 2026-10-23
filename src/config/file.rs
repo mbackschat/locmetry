@@ -171,7 +171,7 @@ pub(super) struct LanguageMapping {
 
 /// Locmetry project configuration: TOML in `.locmetryrc` at the scan root, or the file `--config` names.
 ///
-/// Every measured file gets one purpose (`production`, `test`, or `other`) and a category from the first stage that matches: (1) `overrides`, in order; (2) built-in test conventions, then built-in build conventions; (3) `rules`, in order; (4) build modules, conventional source layouts inferred from descriptors; (5) the fallback. Scope exclusions apply before all stages. The stage order is fixed, so where `[[overrides]]` and `[[rules]]` appear in the file does not matter; only the order within each list decides between entries that match the same file. A broad rule never swallows conventional tests or build scripts, and an override beats the conventions; but a rule does take source a build module would claim, so match only the folders a rule is about. Each file records the deciding stage in its `rule` field: an entry ID, `builtin:<convention>`, `builtin:<detector>-module`, or `fallback`.
+/// Every measured file gets one purpose (`production`, `test`, or `other`) and a category from the first stage that matches: (1) `overrides`, in order; (2) built-in test conventions, then built-in build conventions; (3) `rules`, in order; (4) build modules, conventional source layouts inferred from descriptors; (5) the fallback. Then the first matching `refinements` entry for the file's purpose may replace its category, never its purpose; it skips files that reached the fallback and files a generated-code marker refined. Scope exclusions apply before all stages. The stage order is fixed, so where `[[overrides]]` and `[[rules]]` appear in the file does not matter; only the order within each list decides between entries that match the same file. A broad rule never swallows conventional tests or build scripts, and an override beats the conventions; but a rule does take source a build module would claim, so match only the folders a rule is about. Each file records the deciding stage in its `rule` field: an entry ID, `builtin:<convention>`, `builtin:<detector>-module`, or `fallback`.
 ///
 /// This file is the only one that classifies: `--config` replaces `.locmetryrc`, while user defaults (`--schema user-config`) and command-line flags only add exclusions and language mappings or switch scope settings. The same files and configuration always give the same classification, independent of the order in which files are found.
 ///
@@ -213,6 +213,38 @@ pub(super) struct ConfigFile {
     /// Entries checked after the built-in conventions and before build modules; the first matching entry decides. Use them for ordinary project knowledge: maintained tooling or examples as `production` with a category, unmaintained prototypes as `other`, or source no build file declares; conventional tests, build scripts, and build-tool wrappers inside a matched tree keep their built-in classification, but build-module source does not.
     #[serde(default)]
     pub(super) rules: Vec<EntryConfig>,
+    /// Entries that change only the category of files a stage already decided, checked after every classification stage and generated-code marker; the first matching refinement decides. Use them to give tests or production code a finer category, such as `property-law`, without the risk of an override, which can also change the purpose.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub(super) refinements: Vec<RefinementConfig>,
+}
+
+/// Changes the category of matching files whose decided purpose is `purpose`. Purpose, totals, module credit and the file's `rule` stay; files that reached the fallback stay `unclaimed`, and files a generated-code marker refined stay `generated`. Files record the refinement as `refinement`.
+#[derive(Clone, Debug, Deserialize, Serialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+#[schemars(rename = "Refinement")]
+pub(super) struct RefinementConfig {
+    /// Unique among overrides, rules, refinements and corrections.
+    #[schemars(length(min = 1))]
+    pub(super) id: String,
+    /// The decided purpose of the files this refinement applies to.
+    pub(super) purpose: Purpose,
+    /// Root-relative globs; the refinement matches a file when any of them matches.
+    #[serde(rename = "match")]
+    #[schemars(length(min = 1), extend("items" = {"type": "string"}))]
+    pub(super) patterns: Vec<String>,
+    /// Root-relative globs of files the refinement leaves out; a later refinement may still match them.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[schemars(length(min = 1), extend("items" = {"type": "string"}))]
+    pub(super) except: Option<Vec<String>>,
+    /// Restricts the refinement to files of these content kinds; absent means every kind.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[schemars(length(min = 1))]
+    pub(super) kind: Option<Vec<Kind>>,
+    /// The category matching files get instead of the one their deciding stage gave.
+    pub(super) category: String,
+    /// Why the refinement exists, for reviewers; `explain` shows it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(super) reason: Option<String>,
 }
 
 /// Effective project policy with the exact built-in sets applied by the producer.

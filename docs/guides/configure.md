@@ -30,7 +30,7 @@ Locmetry does not require `jq`. Request `locmetry --guide reports` for evidence 
 
 ## Decide Purpose, Not Just Coverage
 
-Each file has one content kind, one purpose and one category. Classification uses first match: overrides → built-in test/build conventions → rules → inferred build modules, refined by generated-code markers → fallback. List order matters within overrides/rules. A rule cannot beat a convention; an override can. Scope exclusions run before classification and do not reclassify files.
+Each file has one content kind, one purpose and one category. Classification uses first match: overrides → built-in test/build conventions → rules → inferred build modules, refined by generated-code markers → fallback. Refinements then change only the category of decided files. List order matters within overrides, rules and refinements. A rule cannot beat a convention; an override can, and a refinement relabels a convention's files without beating it. Scope exclusions run before classification and do not reclassify files.
 
 Review representative already-classified source as well as the unclaimed list. Module inference can mark fixtures or historical samples as production, so zero unclaimed code is not proof of correctness. Names suggest inspection, not a verdict. Use a targeted explanation before changing policy:
 
@@ -108,20 +108,23 @@ purpose = "test"
 category = "test-support"
 ```
 
-When repository evidence confirms these files are test helpers and the finer category is useful, replace that entry with this narrow override. These are minimal complete configurations; when merging into existing policy, preserve the top-level `version` and unrelated entries. Keep the entry ID unique; if `[categories]` is present, declare `test-support` there.
+When repository evidence confirms these files are test helpers and the finer category is useful, add a refinement instead. A refinement applies after every classification stage to files whose decided purpose equals its `purpose`, and changes only their category: purpose, totals, module credit and `rule` stay, so it cannot move code between production and test. These are minimal complete configurations; when merging into existing policy, preserve the top-level `version` and unrelated entries. Keep the ID unique; if `[categories]` is present, declare `test-support` there.
 
-<!-- category-override -->
+<!-- category-refinement -->
 ```toml
 version = 1
 
-[[overrides]]
+[[refinements]]
 id = "test-helpers"
-match = ["__test__/helpers/**"]
 purpose = "test"
+match = ["__test__/helpers/**"]
 category = "test-support"
+reason = "Shared setup for the test suites"
 ```
 
-Verify with `locmetry explain __test__/helpers/setup.js --root . --format json`: the deciding stage becomes `override`, purpose stays `test`, and category becomes `test-support`. Remeasure to verify unchanged source purpose totals. A category subtotal covers files assigned that label; it is not proof that all conceptual helper code has been identified.
+Verify with `locmetry explain __test__/helpers/setup.js --root . --format json`: `result.file.rule` still names the test-directory convention, `result.file.category` becomes `test-support`, and `result.decision.refinement` names the refinement with its matching patterns and reason. The first matching refinement decides; use `except` to leave files to a later one. Refinements never change files that reached the fallback, which stay `unclaimed` for review, or files a generated-code marker refined, which stay `generated`. `summary.policy_entries` reports for each refinement the files it relabeled, under `displaced` the categories it replaced, and under `preempted` the earlier refinements that took matching files. A category subtotal covers files assigned that label; it is not proof that all conceptual helper code has been identified.
+
+Use an override only when the purpose itself must change, such as archived tests counted as `other`.
 
 ## Test Support or Verification Tooling
 

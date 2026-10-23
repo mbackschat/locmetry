@@ -168,6 +168,7 @@ pub(super) fn file_records_with(
                 counts,
                 languages,
                 inline_tests: Counts::default(),
+                refinement: None,
             });
         }
     }
@@ -179,6 +180,9 @@ pub(super) fn file_records_with(
                 row.classification = evidence.classification();
             }
         });
+    for row in &mut rows {
+        policy.refine(row);
+    }
     rows.sort_by(|a, b| a.path.cmp(&b.path));
     Ok(rows)
 }

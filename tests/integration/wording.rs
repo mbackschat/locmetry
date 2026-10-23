@@ -9,7 +9,7 @@ use std::path::Path;
 /// A project and a second workspace member that trigger most notes: build
 /// modules, inline tests, folded languages, unclaimed source, data and
 /// documentation, unrecognized files, unused entries, an entry changing a
-/// module's purpose, a Git submodule and folder rows with more detail than fits.
+/// module's purpose, a refinement, a Git submodule and folder rows with more detail than fits.
 fn fixture(root: &Path) {
     let project = root.join("project");
     write(
@@ -48,7 +48,7 @@ fn fixture(root: &Path) {
     write(
         &project,
         ".locmetryrc",
-        "version = 1\n[scope]\nexclude = [\"nothing-here/**\", \"skipped/**\"]\n[[rules]]\nid = \"ghost\"\nmatch = [\"ghost/**\"]\npurpose = \"production\"\n[[overrides]]\nid = \"model-fixture\"\nmatch = [\"web/src/model.ts\"]\npurpose = \"test\"\n",
+        "version = 1\n[scope]\nexclude = [\"nothing-here/**\", \"skipped/**\"]\n[[rules]]\nid = \"ghost\"\nmatch = [\"ghost/**\"]\npurpose = \"production\"\n[[overrides]]\nid = \"model-fixture\"\nmatch = [\"web/src/model.ts\"]\npurpose = \"test\"\n[[refinements]]\nid = \"core-lib\"\npurpose = \"production\"\nmatch = [\"src/lib.rs\"]\ncategory = \"core\"\nreason = \"Library entry point\"\n",
     );
     let worker = root.join("worker");
     write(&worker, "go.mod", "module worker\n\ngo 1.21\n");

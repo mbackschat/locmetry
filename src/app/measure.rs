@@ -85,7 +85,9 @@ pub(crate) fn measure(prepared: Prepared, subfolder: Option<&str>) -> Result<Mea
     let unused = unused_entries(
         policy.entry_ids().chain(policy.correction_ids()),
         rows.iter()
-            .map(|row| row.classification.rule.as_str())
+            .flat_map(|row| [Some(&row.classification.rule), row.refinement.as_ref()])
+            .flatten()
+            .map(String::as_str)
             .chain(scan.corrections.values().map(String::as_str)),
     );
     Ok(Measurement {

@@ -15,6 +15,7 @@ use std::collections::{BTreeMap, HashMap};
 pub enum EntryStage {
     Override,
     Rule,
+    Refinement,
     Correction,
 }
 
@@ -24,13 +25,13 @@ pub enum EntryStage {
 pub struct PolicyEntry {
     pub id: String,
     pub stage: EntryStage,
-    /// The purpose the entry assigns; absent for language corrections, which decide a language.
+    /// The purpose an override or rule assigns, or the decided purpose a refinement applies to; absent for language corrections, which decide a language.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub purpose: Option<Purpose>,
     /// Files the entry decided, of every kind. A correction to `unrecognized` decides files that count no lines.
     pub files: u64,
     pub code: u64,
-    /// Files the entry matches that an earlier entry or built-in convention decided, by the deciding `rule`, largest first.
+    /// Files the entry matches that an earlier entry, built-in convention, refinement or generated-code marker decided, by its ID, largest first.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub preempted: Vec<Preemption>,
     /// The entry's `match` globs that decided no file.
@@ -39,7 +40,7 @@ pub struct PolicyEntry {
     /// The entry's `except` globs that left out no file the entry otherwise matches.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub unused_exceptions: Vec<String>,
-    /// The decided files by the `purpose:category` that later stages would give them without the entry, before generated-code markers, largest code first. Files that would reach the fallback are left out: claiming unclaimed code replaces no decision.
+    /// The decided files by the `purpose:category` that later stages would give them without the entry, before generated-code markers, largest code first; for a refinement, the decision it recategorized. Files that would reach the fallback are left out: claiming unclaimed code replaces no decision.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub displaced: Vec<Displacement>,
 }
@@ -154,8 +155,8 @@ fn displacements(by_decision: BTreeMap<String, (u64, u64)>) -> Vec<Displacement>
 }
 
 impl Policy {
-    /// The project's overrides, rules and language corrections, in that
-    /// order, with what each decided among `rows`; `corrections` maps every
+    /// The project's overrides, rules, refinements and language corrections,
+    /// in that order, with what each decided among `rows`; `corrections` maps every
     /// selected file a correction decided, counted or not, to its ID.
     pub fn policy_entries(
         &self,
@@ -224,8 +225,68 @@ impl Policy {
                 )
             })
             .collect();
+        entries.extend(self.refinement_entries(rows));
         entries.extend(self.correction_entries(rows, corrections));
         entries
+    }
+
+    fn refinement_entries(&self, rows: &[FileRecord]) -> Vec<PolicyEntry> {
+        let configs = &self.snapshot.configuration.refinements;
+        let mut tallies: Vec<Tally> = configs
+            .iter()
+            .map(|config| {
+                Tally::new(
+                    config.patterns.len(),
+                    config.except.iter().flatten().count(),
+                )
+            })
+            .collect();
+        for row in rows.iter().filter(|row| !row.classification.is_fallback()) {
+            let (path, kind) = (row.path.as_str(), row.kind);
+            for (refinement, tally) in self.refinements.iter().zip(&mut tallies) {
+                if refinement.purpose != row.classification.purpose
+                    || !refinement.has_kind(kind)
+                    || !refinement.matcher.is_match(path)
+                {
+                    continue;
+                }
+                let excepted = refinement.except.matches(path);
+                if !excepted.is_empty() {
+                    excepted
+                        .into_iter()
+                        .for_each(|i| tally.exceptions[i] = true);
+                } else if row.refinement.as_ref() == Some(&refinement.id) {
+                    tally.files += 1;
+                    tally.code += row.counts.code;
+                    for i in refinement.matcher.matches(path) {
+                        tally.patterns[i] = true;
+                    }
+                    let decided = self.classify(path, kind);
+                    let decision = format!("{}:{}", decided.purpose, decided.category);
+                    let counts = tally.displaced.entry(decision).or_default();
+                    counts.0 += 1;
+                    counts.1 += row.counts.code;
+                } else {
+                    // An earlier refinement, or a generated-code marker that
+                    // refinements leave alone.
+                    let by = row.refinement.as_ref().unwrap_or(&row.classification.rule);
+                    *tally.preempted.entry(by.clone()).or_default() += 1;
+                }
+            }
+        }
+        tallies
+            .into_iter()
+            .zip(configs)
+            .map(|(tally, config)| {
+                tally.entry(
+                    &config.id,
+                    EntryStage::Refinement,
+                    Some(config.purpose),
+                    &config.patterns,
+                    config.except.as_deref().unwrap_or_default(),
+                )
+            })
+            .collect()
     }
 
     fn correction_entries(
