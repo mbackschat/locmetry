@@ -8,7 +8,7 @@
 
 ## Next Release
 
-- [ ] Run an [agent regression check](agent-regression-checks.md) before the next release: the accepted proposals implemented on 2026-10-23 and the follow-ups after them changed `--help`, guides, schema descriptions and report fields.
+- [ ] Settle the [2026-10-23 desk review](research/agent-regression-desk-review-2026-10-23.md) before the next release: it found no correctness regression, but the schemas grew 28%, so tasks 3 and 8 need a targeted agent run on the cost gates, preferably after the duplicated language list in the schemas is shared.
 
 ## Proposals — Under Discussion
 
