@@ -206,3 +206,35 @@ fn split_languages_warns_without_a_table_or_markdown_view() {
         "'--split-languages' has no effect here. It applies only to table and Markdown output"
     ));
 }
+
+/// Tokei names a script BASH only by its `.bash` extension or a bash shebang
+/// and Shell by `.sh`, whatever its shebang, so one project's scripts split
+/// by naming rather than dialect; tables show them in one Shell row.
+#[test]
+fn bash_scripts_fold_into_shell_and_json_keeps_both_names() {
+    let temp = tempfile::tempdir().unwrap();
+    write_all(
+        temp.path(),
+        &[
+            ("scripts/build.sh", "#!/usr/bin/env bash\necho build\n"),
+            ("scripts/deploy", "#!/usr/bin/env bash\necho a\necho b\n"),
+        ],
+    );
+    let folded = stdout(run(
+        temp.path(),
+        &["--format", "table", "--no-color", "--no-bars"],
+    ));
+    assert_eq!(figures(&folded, "Shell"), ["2", "5", "3"]);
+    assert!(!has_row(&folded, "BASH"), "{folded}");
+    assert!(folded.contains("\n Folded: BASH → Shell.\n"), "{folded}");
+
+    let json: Value =
+        serde_json::from_str(&stdout(run(temp.path(), &["--files", "--output", "-"]))).unwrap();
+    let languages: Vec<_> = json["files"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|file| file["language"].as_str().unwrap())
+        .collect();
+    assert_eq!(languages, ["Shell", "BASH"]);
+}

@@ -110,7 +110,7 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  Kotlin         35    4,604    3,810 │      177     617 │   3,810       0       0 │      0.00
  Swift          28    3,874    3,103 │      232     539 │   3,103       0       0 │      0.00
  CSS             2      818      691 │       26     101 │     691       0       0 │      0.00
- Shell          17      525      371 │       67      87 │     371       0       0 │      0.00
+ Shell          19      565      401 │       69      95 │     401       0       0 │      0.00
  Dockerfile      4      369      267 │       12      90 │     257      10       0 │      0.04
  C++             1      295      251 │       11      33 │     251       0       0 │      0.00
  HCL            16      262      225 │        4      33 │     225       0       0 │      0.00
@@ -118,7 +118,6 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  Groovy          3      173      139 │        7      27 │     139       0       0 │      0.00
  Java            1      166      124 │       25      17 │     124       0       0 │      0.00
  HTML            1       74       66 │        2       6 │      66       0       0 │      0.00
- BASH            2       40       30 │        2       8 │      30       0       0 │      0.00
  PostCSS         0       31       28 │        0       3 │      28       0       0 │      0.00
  CMake           1       13        9 │        0       4 │       9       0       0 │      0.00
  Templ           1       11        6 │        0       5 │       6       0       0 │      0.00
@@ -127,7 +126,7 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  Total       2,528  333,313  282,733 │    9,149  41,431 │ 179,557  87,011  16,165 │      0.48
  Lines = Code + Comments + Blanks · Production + Test + Other = Code · Test/prod = Test / Production (Code)
  Tests written in another language than the code they test skew per-language Test/prod.
- Folded: TSX → TypeScript.
+ Folded: BASH → Shell, TSX → TypeScript.
 
  ──────────────────────────────────────────────────
  Category                   Files    Lines     Code
@@ -223,19 +222,19 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  Language    Files  Lines   Code │ Comments  Blanks │ Prod.  Test │ Comment %
  ────────────────────────────────┼──────────────────┼─────────────┼──────────
  JavaScript     13    822    715 │       62      45 │   715     0 │      8.0%
- Shell          14    510    365 │       62      83 │   365     0 │     14.5%
+ Shell          16    550    395 │       64      91 │   395     0 │     13.9%
  Dart            1    388    343 │        1      44 │   343     0 │      0.3%
  TypeScript      6    357    335 │        5      17 │   111   224 │      1.5%
  Dockerfile      4    369    267 │       12      90 │   257    10 │      4.3%
  HCL            16    262    225 │        4      33 │   225     0 │      1.7%
  Groovy          3    173    139 │        7      27 │   139     0 │      4.8%
  Python          2     51     38 │        1      12 │    38     0 │      2.6%
- BASH            2     40     30 │        2       8 │    30     0 │      6.2%
  CMake           1     13      9 │        0       4 │     9     0 │      0.0%
  Templ           1     11      6 │        0       5 │     6     0 │      0.0%
  ────────────────────────────────┼──────────────────┼─────────────┼──────────
  Total          63  2,996  2,472 │      156     368 │ 2,238   234 │      5.9%
  Lines = Code + Comments + Blanks · Production + Test = Code · Comment % = Comments / (Code + Comments)
+ Folded: BASH → Shell.
  Not shown (categories): production:implementation, test:test, other:generated, production:native, test:end-to-end and
 test:performance-test (280,261 code lines).
 

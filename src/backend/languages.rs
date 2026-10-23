@@ -47,9 +47,11 @@ pub const DOCUMENTATION_LANGUAGES: &[LanguageType] = &[
 ];
 
 /// Variants that human views show within their family's row: the same
-/// language with embedded markup, or its header and module units. C Header
-/// stays apart because Tokei assigns every `.h` to it, including C++ and
-/// Objective-C headers; Fortran has no family name Tokei knows.
+/// language with embedded markup, its header and module units, or BASH,
+/// which Tokei assigns by `.bash` or a bash shebang while every `.sh` is
+/// Shell, so one project's scripts split by naming rather than dialect. C
+/// Header stays apart because Tokei assigns every `.h` to it, including C++
+/// and Objective-C headers; Fortran has no family name Tokei knows.
 pub(super) const LANGUAGE_FAMILIES: &[(LanguageType, LanguageType)] = &[
     (Tsx, TypeScript),
     (GlimmerTs, TypeScript),
@@ -58,6 +60,7 @@ pub(super) const LANGUAGE_FAMILIES: &[(LanguageType, LanguageType)] = &[
     (CppHeader, Cpp),
     (CppModule, Cpp),
     (UnrealShaderHeader, UnrealShader),
+    (Bash, Sh),
 ];
 
 /// The family a variant's display name joins, such as TypeScript for TSX;

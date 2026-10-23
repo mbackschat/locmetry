@@ -28,7 +28,6 @@ Decided 2026-10-23 by the owner: implement the accepted proposals in this order,
 
 ## Known Display Follow-up
 
-- [ ] Fold BASH into Shell in human language tables, as TSX folds into TypeScript; JSON keeps both names. Tokei counts extensionless Bash scripts as BASH and `.sh` scripts as Shell, which split one project's scripts over two rows in four projects measured on 2026-10-22 and 2026-10-23. A [language correction](proposals/archive/language-corrections.md) does not fit: neither name is wrong, and globs cannot select files by shebang.
 - Folder-partition convergence remains deferred: adaptive folder detail and JSON `unclassified_folders` intentionally use different policies. Revisit only if a workflow demonstrates confusing divergence, with explicit compatibility review. The [adaptive-folder decision](proposals/archive/adaptive-folder-detail.md#existing-partition-and-feasibility) owns the rationale.
 
 ## Ideas — Not Scheduled

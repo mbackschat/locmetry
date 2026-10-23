@@ -30,12 +30,11 @@ locmetry workspace --workspace-file v3.3.4/immich/workspace.toml --format table 
  CSS             1      692      589 │       18      85 │     589       0       0 │      0.00
  Dockerfile      4      369      267 │       12      90 │     257      10       0 │      0.04
  C++             1      295      251 │       11      33 │     251       0       0 │      0.00
- Shell          12      307      209 │       47      51 │     209       0       0 │      0.00
+ Shell          14      347      239 │       49      59 │     239       0       0 │      0.00
  C               2      225      168 │       30      27 │     168       0       0 │      0.00
  Groovy          3      173      139 │        7      27 │     139       0       0 │      0.00
  Java            1      166      124 │       25      17 │     124       0       0 │      0.00
  HTML            1       74       66 │        2       6 │      66       0       0 │      0.00
- BASH            2       40       30 │        2       8 │      30       0       0 │      0.00
  PostCSS         0       31       28 │        0       3 │      28       0       0 │      0.00
  CMake           1       13        9 │        0       4 │       9       0       0 │      0.00
  C Header        1        1        1 │        0       0 │       1       0       0 │      0.00
@@ -43,7 +42,7 @@ locmetry workspace --workspace-file v3.3.4/immich/workspace.toml --format table 
  Total       2,497  332,306  281,918 │    9,072  41,316 │ 178,742  87,011  16,165 │      0.49
  Lines = Code + Comments + Blanks · Production + Test + Other = Code · Test/prod = Test / Production (Code)
  Tests written in another language than the code they test skew per-language Test/prod.
- Folded: TSX → TypeScript.
+ Folded: BASH → Shell, TSX → TypeScript.
 
  ─────────────────────────────────────────────────────────────────────────────────
  Member              Lines     Code │   Prod.    Test   Other │ Test/prod │  Share
