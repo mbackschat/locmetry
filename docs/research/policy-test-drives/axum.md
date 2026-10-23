@@ -1,6 +1,6 @@
 # axum Experiment (2026-10-23)
 
-Main session, development build of Locmetry 0.9.0, `--no-user-config`, on a shallow clone of [tokio-rs/axum](https://github.com/tokio-rs/axum) at `86aa6153e47b`, removed afterwards. Purpose: test the [module credit proposal](../../proposals/module-credit-by-coverage.md) in a Rust workspace. [axum.policy.toml](policies/axum.policy.toml) marks the example crates as `production:example` and the benchmarks as tests.
+Main session, development build of Locmetry 0.9.0, `--no-user-config`, on a shallow clone of [tokio-rs/axum](https://github.com/tokio-rs/axum) at `86aa6153e47b`, removed afterwards. Purpose: test the [module credit proposal](../../proposals/archive/module-credit-by-coverage.md) in a Rust workspace. [axum.policy.toml](policies/axum.policy.toml) marks the example crates as `production:example` and the benchmarks as tests.
 
 ## Result
 

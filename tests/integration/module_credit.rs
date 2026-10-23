@@ -1,4 +1,4 @@
-//! Module credit by layout coverage (docs/proposals/module-credit-by-coverage.md):
+//! Module credit by layout coverage (docs/proposals/archive/module-credit-by-coverage.md):
 //! a module is credited with the production source its layout covers,
 //! whichever stage decided it, so an entry that only names a category does
 //! not make the module look smaller.

@@ -2,14 +2,16 @@
 
 <!-- doc-status
 {
-  "status": "accepted",
+  "status": "implemented",
   "date": "2026-10-23",
   "summary": "Credit a build module with the production source its layout covers, whichever stage decided it, and count only modules with credit.",
-  "evidence": "[Owner decision in PLAN](../PLAN.md#accepted-proposals--implementation-order)"
+  "evidence": "[PRODUCT](../../PRODUCT.md#module-detection), [regressions](../../../tests/integration/module_credit.rs)"
 }
 -->
 
-The Immich showcase found this gap on 2026-10-22. The [policy test drives](../research/policy-test-drives/README.md) of 2026-10-22 and 2026-10-23 found it in every project.
+Status: historical decision record — implemented. The owner accepted the design on 2026-10-23, and it was implemented test-first and verified the same day in commit `36ba8ef`, including the optional `explain` note. On the Immich showcase, Gradle is credited with the Android runner's 4,102 code lines again; Dart also gains 343 lines of `mobile/bin` that the policy labels tooling, and the note counts 8 instead of 12 npm modules, both consequences of the definition. Archived on 2026-10-23 under the [retirement procedure](../README.md#retirement-procedure). [PRODUCT](../../PRODUCT.md#module-detection) owns the current behavior; the wording, examples and limits below describe the reviewed design, not current guarantees.
+
+The Immich showcase found this gap on 2026-10-22. The [policy test drives](../../research/policy-test-drives/README.md) of 2026-10-22 and 2026-10-23 found it in every project.
 
 ## Problem
 
@@ -25,16 +27,16 @@ The credit answers "how much production source do the build files account for", 
 | Project | Entries that keep `production` and set another category | Code lines | Module credit |
 | --- | --- | ---: | --- |
 | Immich | Android runner as `native` | 4,102 | Gradle 4,102 to 0 |
-| [CIB seven](../research/policy-test-drives/cibseven.md) | OpenAPI templates, QA tooling, examples | 43,207 | Maven modules with code 80 to 60, while 198 are reported |
-| [Temporal](../research/policy-test-drives/temporal.md) | Generated code, documentation sample apps, docs tooling | 7,866 | Python, Go and Maven sample modules drop out of the note |
-| [Loki](../research/policy-test-drives/loki.md) | Generated protobuf and parser code, developer tools | 134,430 | Go 396,844 to 262,414 |
-| [axum](../research/policy-test-drives/axum.md) | Example crates as `example` | 4,795 | Cargo 27,364 to 22,569, while 61 crates are reported |
+| [CIB seven](../../research/policy-test-drives/cibseven.md) | OpenAPI templates, QA tooling, examples | 43,207 | Maven modules with code 80 to 60, while 198 are reported |
+| [Temporal](../../research/policy-test-drives/temporal.md) | Generated code, documentation sample apps, docs tooling | 7,866 | Python, Go and Maven sample modules drop out of the note |
+| [Loki](../../research/policy-test-drives/loki.md) | Generated protobuf and parser code, developer tools | 134,430 | Go 396,844 to 262,414 |
+| [axum](../../research/policy-test-drives/axum.md) | Example crates as `example` | 4,795 | Cargo 27,364 to 22,569, while 61 crates are reported |
 
 Two private projects showed the same pattern for demo apps, documentation snippets, build logic and tooling. In every project, entries that change purpose also took module files, as they should: vendored Go modules, test fakes, generated diagrams. Separately, the count included modules without any source: in a private project almost half of the Gradle "modules" were folders holding only a build file, and several npm packages had no `src/`.
 
 ## Design
 
-**Required: a module's credit is the production source its layout covers.** A measured source file counts for the innermost module whose layout covers it, chosen as in [Module Detection](../PRODUCT.md#module-detection), when its final purpose is `production`, whichever stage decided it:
+**Required: a module's credit is the production source its layout covers.** A measured source file counts for the innermost module whose layout covers it, chosen as in [Module Detection](../../PRODUCT.md#module-detection), when its final purpose is `production`, whichever stage decided it:
 
 - An entry that keeps `production` and sets a category, such as `native`, `generated` or `tooling`, keeps the module's credit. An entry that changes the purpose to `test` or `other`, such as for vendored or generated-and-unmaintained code, removes it.
 - `rule` keeps naming the deciding stage. `summary.largest_module_files` keeps listing only files a layout decided, because its purpose is to surface production that nobody reviewed; a file an entry decided has been reviewed.
@@ -54,7 +56,7 @@ Both parts change reported values, so they ship together and are **Breaking**. N
 
 ## Feasibility
 
-Classification already finds the innermost covering module for files no earlier stage decides; the same lookup runs for every production source file to fill `module`. Module shares then sum by that field instead of by `rule`. The largest-module-files list keeps its `rule`-based selection. The report contract check switches from `rule` to `module`; reports of earlier producers lack the field and keep their old meaning, so comparisons across this change report credit differences that come from the definition, not from the code. The schemas and PRODUCT's [report content](../PRODUCT.md#report-content) description change with it.
+Classification already finds the innermost covering module for files no earlier stage decides; the same lookup runs for every production source file to fill `module`. Module shares then sum by that field instead of by `rule`. The largest-module-files list keeps its `rule`-based selection. The report contract check switches from `rule` to `module`; reports of earlier producers lack the field and keep their old meaning, so comparisons across this change report credit differences that come from the definition, not from the code. The schemas and PRODUCT's [report content](../../PRODUCT.md#report-content) description change with it.
 
 ## Acceptance
 

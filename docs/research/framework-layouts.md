@@ -1,6 +1,6 @@
 # Framework Layouts Out of the Box
 
-Measured 2026-10-23 with the development build of Locmetry 0.9.0 (`--no-user-config`, no project policy) on shallow clones, removed afterwards. Question: does a project built with a popular framework get its production source classified without any configuration? The [module credit proposal](../proposals/module-credit-by-coverage.md) and the [framework layouts proposal](../proposals/archive/framework-layouts.md) use these results.
+Measured 2026-10-23 with the development build of Locmetry 0.9.0 (`--no-user-config`, no project policy) on shallow clones, removed afterwards. Question: does a project built with a popular framework get its production source classified without any configuration? The [module credit proposal](../proposals/archive/module-credit-by-coverage.md) and the [framework layouts proposal](../proposals/archive/framework-layouts.md) use these results.
 
 ## Selection
 
