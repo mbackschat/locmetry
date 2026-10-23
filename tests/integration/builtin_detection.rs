@@ -25,7 +25,7 @@ fn recorded(document: &Value, key: &str) -> Vec<String> {
         .unwrap()
         .iter()
         .map(|entry| {
-            let id = entry["id"].as_str().unwrap();
+            let id = entry["id"].as_str().or(entry.as_str()).unwrap();
             id.strip_prefix("builtin:").unwrap_or(id).to_string()
         })
         .collect()
@@ -52,6 +52,10 @@ fn the_reference_lists_every_built_in_in_the_order_it_applies() {
     assert_eq!(
         documented(&page, "Language Mappings"),
         recorded(&document, "builtin_language_mappings")
+    );
+    assert_eq!(
+        documented(&page, "Generated-Code Markers"),
+        recorded(&document, "builtin_generated_markers")
     );
     assert_eq!(
         documented(&page, "Module Detectors"),

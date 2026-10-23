@@ -11,7 +11,7 @@ The first measurement precedes edits. This command works with the installed bina
 locmetry --root . --format headline
 ```
 
-Read the compact headline first: effective scope, loaded configuration paths, coverage, `summary.submodules`, `summary.unclaimed_folders`, `summary.largest_module_files` and unused-policy findings. Module layouts claim production without review, so read the largest files counted as production only by a build layout, and exclude or reclassify generated or vendored ones. `.locmetryrc` is discovered only at the scan root, not in ancestors. `--config FILE` replaces project discovery; its patterns still use the scan root as their base. Personal defaults can affect selection and language recognition; inspect them rather than silently disabling them for a real project.
+Read the compact headline first: effective scope, loaded configuration paths, coverage, `summary.submodules`, `summary.unclaimed_folders`, `summary.largest_module_files` and unused-policy findings. Module layouts claim production without review, so read the largest files counted as production only by a build layout, and exclude or reclassify generated or vendored ones. Generated code with a documented marker, such as Go's `// Code generated … DO NOT EDIT.` line or a `.gitattributes` `linguist-generated` declaration, is already `production:generated` with the marker as its `rule` and is not listed there; code from a generator without such a marker needs an entry. `.locmetryrc` is discovered only at the scan root, not in ancestors. `--config FILE` replaces project discovery; its patterns still use the scan root as their base. Personal defaults can affect selection and language recognition; inspect them rather than silently disabling them for a real project.
 
 Inspect `summary.unused_entries` and `summary.unused_exclusions` when present; omission means no such findings in that report.
 
@@ -30,7 +30,7 @@ Locmetry does not require `jq`. Request `locmetry --guide reports` for evidence 
 
 ## Decide Purpose, Not Just Coverage
 
-Each file has one content kind, one purpose and one category. Classification uses first match: overrides → built-in test/build conventions → rules → inferred build modules → fallback. List order matters within overrides/rules. A rule cannot beat a convention; an override can. Scope exclusions run before classification and do not reclassify files.
+Each file has one content kind, one purpose and one category. Classification uses first match: overrides → built-in test/build conventions → rules → inferred build modules, refined by generated-code markers → fallback. List order matters within overrides/rules. A rule cannot beat a convention; an override can. Scope exclusions run before classification and do not reclassify files.
 
 Review representative already-classified source as well as the unclaimed list. Module inference can mark fixtures or historical samples as production, so zero unclaimed code is not proof of correctness. Names suggest inspection, not a verdict. Use a targeted explanation before changing policy:
 

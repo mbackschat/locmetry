@@ -22,6 +22,7 @@ mod explain;
 mod folder_rows;
 mod folders;
 mod framework_layouts;
+mod generated_markers;
 mod guides;
 mod help;
 mod inline_tests;

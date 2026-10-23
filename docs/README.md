@@ -4,7 +4,7 @@ Start with the workflow or contract relevant to your task. Status tables in the 
 
 - [Tour: build a policy for Immich](showcase/tour.md): measure a real project with built-in conventions, review the gaps, record evidence-based entries and check what changed.
 - [Supported product contract](PRODUCT.md): flags, configuration, reports and compatibility guarantees.
-- [Built-in detection](built-in-detection.md): how module detectors and conventions classify a project without configuration, with every one listed.
+- [Built-in detection](built-in-detection.md): how module detectors, generated-code markers and conventions classify a project without configuration, with every one listed.
 - [Measurement semantics](measurement.md): counting, selection boundaries and private regression instructions.
 - [Measure Locmetry itself](self-measurement.md): the root configuration's scope, classification decisions and verification.
 - [Saved report compatibility](report-compatibility.md): historical fields and comparison evidence.

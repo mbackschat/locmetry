@@ -33,7 +33,7 @@ def preserved_policy(original, actual):
         return False
     defaults = {
         "scope": {"hidden": True, "respect_ignore_files": True, "default_excludes": True, "exclude": []},
-        "classification": {"builtin_tests": True, "builtin_build": True, "builtin_modules": True, "fallback": "other"},
+        "classification": {"builtin_tests": True, "builtin_build": True, "builtin_modules": True, "builtin_generated": True, "fallback": "other"},
     }
     for section, settings in defaults.items():
         for key, default in settings.items():

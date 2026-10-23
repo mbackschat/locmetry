@@ -149,20 +149,6 @@ pub(super) const BUILTIN_BUILD_V1: &[Convention] = &[
         purpose: Purpose::Production,
         category: "build-tooling",
     },
-    // Designer, source-generator and EF Core migration metadata files, which
-    // were 67% of one application's C# (docs/research/framework-layouts.md;
-    // https://learn.microsoft.com/ef/core/managing-schemas/migrations/).
-    Convention {
-        id: "dotnet-generated",
-        patterns: &[
-            "**/*.Designer.cs",
-            "**/*.g.cs",
-            "**/*.g.i.cs",
-            "**/*ModelSnapshot.cs",
-        ],
-        purpose: Purpose::Production,
-        category: "generated",
-    },
 ];
 
 /// Version-1 language mappings for files Tokei 15.0.0 does not recognize.

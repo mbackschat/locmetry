@@ -156,7 +156,12 @@ fn config_schema_explains_precedence_and_switches() {
         .and_then(|reference| reference.strip_prefix('#'))
         .unwrap();
     let switch = |name: &str| description(&schema, &format!("{classification}/properties/{name}"));
-    for name in ["builtin_tests", "builtin_build", "builtin_modules"] {
+    for name in [
+        "builtin_tests",
+        "builtin_build",
+        "builtin_modules",
+        "builtin_generated",
+    ] {
         assert_eq!(
             schema.pointer(&format!("{classification}/properties/{name}/default")),
             Some(&json!(true)),
@@ -171,6 +176,7 @@ fn config_schema_explains_precedence_and_switches() {
         assert!(switch("builtin_tests").contains(convention), "{convention}");
     }
     assert!(switch("builtin_build").contains("build-wrapper"));
+    assert!(switch("builtin_generated").contains("builtin:java-generated-annotation"));
     let modules = switch("builtin_modules");
     for build_file in [
         "package.json",

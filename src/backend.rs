@@ -1,5 +1,6 @@
 use crate::{
-    config::CorrectedLanguage, modules, Counts, FileRecord, Kind, Module, Policy, Purpose,
+    config::{CorrectedLanguage, GeneratedEvidence},
+    modules, Counts, FileRecord, Kind, Module, Policy, Purpose,
 };
 use anyhow::{bail, ensure, Context, Result};
 use ignore::WalkBuilder;
@@ -15,6 +16,7 @@ use tokei::LanguageType;
 
 use LanguageType::*;
 
+mod generated;
 mod handlebars;
 mod inline_tests;
 mod languages;
@@ -167,6 +169,9 @@ pub struct Scan {
     pub unused_exclusions: Vec<String>,
     /// Counts of inline `#[cfg(test)]` items per counted Rust file that has any.
     pub inline_tests: BTreeMap<String, Counts>,
+    /// Generated-code marker per counted file that carries one; a marker
+    /// applies only where a module layout decides the file.
+    pub generated: BTreeMap<String, GeneratedEvidence>,
 }
 
 impl Scan {
@@ -177,6 +182,13 @@ impl Scan {
             row.language_mapping = self.mappings.get(&row.path).cloned();
             row.language_correction = self.corrections.get(&row.path).cloned();
             rows.push(row);
+        }
+        for row in &mut rows {
+            if let Some(evidence) =
+                policy.applied_marker(&row.path, row.kind, self.generated.get(&row.path))
+            {
+                row.classification = evidence.classification();
+            }
         }
         // In a test file, inline tests are already counted as test.
         for row in &mut rows {
@@ -328,7 +340,13 @@ pub(crate) fn scan_selection(
         }
     }
     let mut mapped = serde_json::to_value(mapped)?;
-    normalize_reports(&mut mapped, &root, policy)?;
+    let mapped_names = normalize_reports(&mut mapped, &root, policy)?;
+    let generated = if policy.reads_generated_markers() {
+        let all_counted = counted.iter().chain(&mapped_names).cloned().collect();
+        generated::evidence(&root, &paths, &all_counted, &config)?
+    } else {
+        BTreeMap::new()
+    };
     coverage.mapped_files = mappings.len();
     coverage.counted_files = counted.len() + mappings.len() + corrected_files;
     coverage.unread.sort();
@@ -357,6 +375,7 @@ pub(crate) fn scan_selection(
             modules,
             unused_exclusions,
             inline_tests,
+            generated,
         },
         exclusion,
     ))

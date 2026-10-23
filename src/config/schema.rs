@@ -1,8 +1,8 @@
 //! JSON Schemas of the configuration files, whose descriptions state the
 //! built-in sets from the same constants that apply them.
 use super::{
-    module_rule, ConfigFile, Convention, UserDefaults, WorkspaceFile, BUILTIN, BUILTIN_BUILD_V1,
-    BUILTIN_LANGUAGES_V1, BUILTIN_TESTS_V1, DEFAULT_EXCLUDES,
+    module_rule, ConfigFile, Convention, GeneratedMarker, UserDefaults, WorkspaceFile, BUILTIN,
+    BUILTIN_BUILD_V1, BUILTIN_LANGUAGES_V1, BUILTIN_TESTS_V1, DEFAULT_EXCLUDES,
 };
 use crate::modules::DETECTORS;
 use schemars::{transform::RecursiveTransform, JsonSchema, Schema, SchemaGenerator};
@@ -105,6 +105,15 @@ pub(super) fn describe_test_conventions(schema: &mut Schema) {
 
 pub(super) fn describe_build_conventions(schema: &mut Schema) {
     describe_conventions(schema, BUILTIN_BUILD_V1);
+}
+
+pub(super) fn describe_generated_markers(schema: &mut Schema) {
+    let list = GeneratedMarker::V1
+        .iter()
+        .map(|marker| format!("`{}`: {}", marker.rule(), marker.matches()))
+        .collect::<Vec<_>>()
+        .join("; ");
+    append_description(schema, format!("Markers, in order: {list}."));
 }
 
 pub(super) fn describe_detectors(schema: &mut Schema) {

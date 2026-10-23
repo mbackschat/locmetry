@@ -15,7 +15,9 @@ use tokei::LanguageType;
 
 mod builtin;
 mod corrections;
+mod decision;
 mod file;
+mod generated;
 mod schema;
 mod scope;
 mod user;
@@ -25,7 +27,10 @@ use builtin::{
 };
 pub use corrections::{CorrectedLanguage, UNRECOGNIZED};
 use corrections::{CorrectionConfig, LanguageCorrection};
+pub use decision::{Decision, Stage};
 pub use file::*;
+use generated::GENERATED_CATEGORY;
+pub use generated::{GeneratedEvidence, GeneratedMarker};
 pub use schema::{config_schema, user_config_schema, workspace_schema};
 pub use scope::*;
 pub use user::*;
@@ -206,7 +211,7 @@ fn check_categories(config: &ConfigFile) -> Result<()> {
     let builtin: BTreeSet<String> = Purpose::ALL
         .iter()
         .map(Purpose::to_string)
-        .chain(std::iter::once(MODULE_CATEGORY.to_string()))
+        .chain([MODULE_CATEGORY, GENERATED_CATEGORY].map(String::from))
         .chain(
             BUILTIN_TESTS_V1
                 .iter()
@@ -258,43 +263,6 @@ fn check_ids<'a>(ids: impl IntoIterator<Item = &'a str>) -> Result<()> {
     Ok(())
 }
 
-#[derive(Serialize, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum Stage {
-    Override,
-    Convention,
-    Rule,
-    Module,
-    Fallback,
-}
-
-impl std::fmt::Display for Stage {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(match self {
-            Self::Override => "override",
-            Self::Convention => "convention",
-            Self::Rule => "rule",
-            Self::Module => "module",
-            Self::Fallback => "fallback",
-        })
-    }
-}
-
-/// Evidence from the same first-match decision as measurement: overrides, conventions, rules, innermost module, fallback. Later matching entries do not decide the file.
-#[derive(Serialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
-pub struct Decision {
-    pub stage: Stage,
-    /// Matching globs of the winning entry, relative to the member's root. Empty for fallback.
-    pub matched_patterns: Vec<String>,
-    /// The winning user entry's stated reason, when supplied.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub reason: Option<String>,
-    /// Winning descriptor-inferred module; this is layout inference, not semantic build membership.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub module: Option<crate::contract::Module>,
-}
-
 /// Scope and classification for one measurement.
 #[derive(Debug)]
 pub struct Policy {
@@ -305,6 +273,8 @@ pub struct Policy {
     rules: Vec<Entry>,
     /// Whether build descriptors may declare production source.
     detect_modules: bool,
+    /// Whether generated-code markers refine module claims.
+    generated: bool,
     /// Modules adopted from the scan; empty when detection is disabled.
     modules: Vec<Module>,
     /// One production entry per adopted module; applied after rules and
@@ -334,6 +304,7 @@ impl Policy {
     fn from_config(mut config: ConfigFile) -> Result<Self> {
         // Defaults belong to a new measurement, not to historical receipt decoding.
         let detect_modules = *config.classification.builtin_modules.get_or_insert(true);
+        let generated = *config.classification.builtin_generated.get_or_insert(true);
         ensure!(
             config.version == 1,
             "Unsupported configuration version {}",
@@ -430,6 +401,11 @@ impl Policy {
                 })
                 .collect(),
             builtin_conventions: convention_snapshot,
+            builtin_generated_markers: GeneratedMarker::V1
+                .iter()
+                .filter(|_| generated)
+                .map(|marker| marker.rule())
+                .collect(),
         };
         let fallback = config.classification.fallback;
         let corrections = config
@@ -444,6 +420,7 @@ impl Policy {
             conventions,
             rules: entries(&config.rules)?,
             detect_modules,
+            generated,
             modules: Vec::new(),
             module_entries: Vec::new(),
             fallback,
@@ -601,6 +578,25 @@ impl Policy {
             .map(|(module, entry)| (Stage::Module, entry, Some(module)))
     }
 
+    /// Whether a scan must look for generated-code markers: they refine only
+    /// module claims, so without modules nothing reads file content for them.
+    pub(crate) fn reads_generated_markers(&self) -> bool {
+        self.generated && self.detect_modules
+    }
+
+    /// The marker evidence that refines `path` to `production:generated`:
+    /// only source a module layout decided, so overrides, conventions and
+    /// rules keep their files (docs/PRODUCT.md, Matching and Precedence).
+    pub(crate) fn applied_marker<'a>(
+        &self,
+        path: &str,
+        kind: Kind,
+        evidence: Option<&'a GeneratedEvidence>,
+    ) -> Option<&'a GeneratedEvidence> {
+        let evidence = evidence.filter(|_| self.generated && kind == Kind::Source)?;
+        matches!(self.deciding_entry(path, kind), Some((Stage::Module, ..))).then_some(evidence)
+    }
+
     /// The module credited with `path`: for production source, the innermost
     /// module whose layout covers it, whichever stage decided the file, so an
     /// entry that keeps `production` and only names a category keeps the
@@ -621,13 +617,19 @@ impl Policy {
             })
     }
 
-    pub(crate) fn decision(&self, path: &str, kind: Kind) -> Decision {
+    pub(crate) fn decision(
+        &self,
+        path: &str,
+        kind: Kind,
+        evidence: Option<&GeneratedEvidence>,
+    ) -> Decision {
         let Some((stage, entry, module)) = self.deciding_entry(path, kind) else {
             return Decision {
                 stage: Stage::Fallback,
                 matched_patterns: Vec::new(),
                 reason: None,
                 module: None,
+                generated: None,
             };
         };
         let config = self
@@ -655,6 +657,7 @@ impl Policy {
                 path: module.path.clone(),
                 detector: module.detector.into(),
             }),
+            generated: self.applied_marker(path, kind, evidence).cloned(),
         }
     }
 

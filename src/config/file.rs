@@ -66,6 +66,15 @@ pub(super) struct ClassificationSettings {
     )]
     #[schemars(with = "bool", extend("default" = true))]
     pub(super) builtin_modules: Option<bool>,
+    /// Whether generated-code markers refine build-module claims: module source that carries a documented marker is `production` with category `generated` instead of `implementation`, recorded with the marker as its `rule`. Overrides, conventions and rules decide first, and purpose, totals and module credit stay the same.
+    #[schemars(transform = schema::describe_generated_markers)]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "crate::contract::present"
+    )]
+    #[schemars(with = "bool", extend("default" = true))]
+    pub(super) builtin_generated: Option<bool>,
     /// Purpose of files that no stage matched; their category is `unclaimed` and their `rule` is `fallback`. Keep `other` so unclaimed code is reported for review instead of silently counted.
     pub(super) fallback: Purpose,
 }
@@ -76,6 +85,7 @@ impl Default for ClassificationSettings {
             builtin_tests: true,
             builtin_build: true,
             builtin_modules: None,
+            builtin_generated: None,
             fallback: Purpose::Other,
         }
     }
@@ -212,6 +222,9 @@ pub struct EffectiveConfig {
     pub(super) builtin_conventions: Vec<EntryConfig>,
     /// Ordered mappings applied after user/project mappings.
     pub(super) builtin_language_mappings: Vec<MappingConfig>,
+    /// Generated-code markers applied by this measurement; reports of earlier producers lack the field.
+    #[serde(default)]
+    pub(super) builtin_generated_markers: Vec<String>,
 }
 
 impl EffectiveConfig {
