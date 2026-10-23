@@ -193,11 +193,20 @@ impl Entry {
             "Entry {} needs a nonempty kind array when kind is present",
             entry.id
         );
+        ensure!(
+            entry
+                .except
+                .as_ref()
+                .is_none_or(|except| !except.is_empty()),
+            "Entry {} needs a nonempty except array when except is present",
+            entry.id
+        );
         Ok(Self {
             id: entry.id.clone(),
             matcher: glob_set(entry.patterns.iter().map(String::as_str))
                 .with_context(|| format!("Invalid match in entry {}", entry.id))?,
-            except: GlobSet::empty(),
+            except: glob_set(entry.except.iter().flatten().map(String::as_str))
+                .with_context(|| format!("Invalid except in entry {}", entry.id))?,
             kinds: entry.kind.clone(),
             purpose: entry.purpose,
             category: entry
@@ -341,6 +350,7 @@ impl Policy {
                 patterns: convention.patterns.iter().map(|s| s.to_string()).collect(),
                 purpose: convention.purpose,
                 category: Some(convention.category.into()),
+                except: None,
                 kind: None,
                 reason: None,
             })

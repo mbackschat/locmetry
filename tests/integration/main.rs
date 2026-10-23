@@ -34,6 +34,7 @@ mod module_credit;
 mod notebooks;
 mod output_contract;
 mod platform;
+mod policy_entries;
 mod private_regression;
 mod purposes;
 mod queries;

@@ -2,12 +2,14 @@
 
 <!-- doc-status
 {
-  "status": "draft",
+  "status": "accepted",
   "date": "2026-10-24",
   "summary": "Per-entry decision counts and findings in reports, `except` lists on entries, and a refinement stage that changes only a file's category.",
-  "evidence": ""
+  "evidence": "[Owner decision of 2026-10-24 in PLAN](../PLAN.md#accepted-proposals--implementation-order)"
 }
 -->
+
+Status: accepted by the owner on 2026-10-24.
 
 Three projects asked, on 2026-10-24, how to categorize their tests more finely, for example property laws apart from unit tests, and then reported what slowed them down: a12-rulekit, bpmn-lean-experiment and a private Lean project. Their figures stay in the Git-ignored local research folder. The [policy test drives](../research/policy-test-drives/README.md#findings) of 2026-10-22 and 2026-10-23 had already raised the `except` list.
 

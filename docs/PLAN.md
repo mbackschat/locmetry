@@ -2,9 +2,13 @@
 
 [PRODUCT](PRODUCT.md) owns supported requirements. This file indexes open work and decision gates; it is not a checkpoint log. Read the relevant linked design only when working on that item. Deferred and unscheduled items live in [DEFERRED](DEFERRED.md) and do not authorize implementation.
 
+## Accepted Proposals — Implementation Order
+
+- [Reviewable policy entries and category refinements](proposals/policy-entry-review.md): accepted by the owner on 2026-10-24; in implementation, `except` first, then the entry audit, then refinements. Three projects categorizing their tests could not see partly wrong entries and needed overrides to change only a category.
+
 ## Proposals — Under Discussion
 
-- [Reviewable policy entries and category refinements](proposals/policy-entry-review.md): draft of 2026-10-24, awaiting the owner's decision. Three projects categorizing their tests could not see partly wrong entries and needed overrides to change only a category.
+None at present.
 
 The [proposal index](proposals/README.md) distinguishes active designs from historical decisions.
 

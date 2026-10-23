@@ -4,6 +4,10 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 
 ## [Unreleased]
 
+### Added
+
+- Overrides and rules accept an `except` list of globs: files it names are left out of the entry and fall through to later entries and stages, so an exception such as `FieldAgreementTest` among `*AgreementTest` laws no longer depends on entry order.
+
 ## [0.10.0] - 2026-10-23
 
 ### Added

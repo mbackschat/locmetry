@@ -44,7 +44,7 @@ Substitute an existing root-relative path. Inspect `result.file.rule`, `result.d
 2. Count it deliberately as other through an entry with `purpose = "other"` and a `reason`; it then leaves the unclaimed review list.
 3. Leave it unclaimed and report the open question to the owner. Do not manufacture a rule just to remove the finding.
 
-Globs match root-relative file paths. `docs/**` covers descendants; `docs` does not mean the directory. `*.py` matches root files only; `**/*.py` also covers deeper paths. Patterns are case-sensitive. Use `[[rules]]` for decisions after conventions, and `[[overrides]]` only when the evidence requires winning before conventions. An optional `[categories]` table documents permitted custom categories and catches typos. The schema supplies the complete matching contract.
+Globs match root-relative file paths. `docs/**` covers descendants; `docs` does not mean the directory. `*.py` matches root files only; `**/*.py` also covers deeper paths. Patterns are case-sensitive. Use `[[rules]]` for decisions after conventions, and `[[overrides]]` only when the evidence requires winning before conventions. To keep particular files out of an entry, list them in its `except` array: they fall through to later entries and stages, so the exception is stated instead of depending on entry order. An optional `[categories]` table documents permitted custom categories and catches typos. The schema supplies the complete matching contract.
 
 ## Recognize a Language, Then Review Purpose
 

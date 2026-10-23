@@ -103,6 +103,10 @@ pub(super) struct EntryConfig {
     #[serde(rename = "match")]
     #[schemars(length(min = 1), extend("items" = {"type": "string"}))]
     pub(super) patterns: Vec<String>,
+    /// Root-relative globs of files the entry leaves out although `match` matches them; they fall through to later entries and stages, as if the entry were absent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[schemars(length(min = 1), extend("items" = {"type": "string"}))]
+    pub(super) except: Option<Vec<String>>,
     /// Restricts the entry to files of these content kinds; absent means every kind.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[schemars(length(min = 1))]
