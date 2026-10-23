@@ -345,7 +345,7 @@ Locmetry recognizes build modules by their descriptors and counts each one's con
 | Gradle | `build.gradle`, `build.gradle.kts` | `src/main/**`, Kotlin Multiplatform `src/*Main/**` |
 | Maven | `pom.xml` | `src/main/**` |
 | Cargo | `Cargo.toml` | `src/**` |
-| Go | `go.mod` | every `*.go` file |
+| Go | `go.mod` | every `*.go` file outside `vendor/`, `testdata/` and names starting with `_` or `.` |
 | Python | `pyproject.toml`, `setup.py`, `setup.cfg` | `src/**` and top-level packages |
 | Lake (Lean) | `lakefile.lean`, `lakefile.toml` | every `*.lean` file |
 | Swift | `Package.swift` | `Sources/**` |

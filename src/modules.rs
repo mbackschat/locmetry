@@ -24,6 +24,40 @@ pub trait ModuleDetector: Sync {
     /// to it; `files` are all selected root-relative paths, for layouts that
     /// depend on what exists.
     fn production_sources(&self, directory: &str, files: &[&str]) -> Vec<String>;
+    /// Globs relative to the module's directory that its production source
+    /// leaves out although `production_sources` match them.
+    fn excluded_sources(&self) -> &'static [&'static str] {
+        &[]
+    }
+}
+
+/// Go modules: the packages `./...` builds. `go help packages` excludes
+/// `vendor` and `testdata` folders and names starting with `_` or `.` from
+/// the wildcard, so they hold vendored dependencies, test inputs or code the
+/// build ignores; nested modules are left to the innermost module rule, as
+/// the Go tool leaves them to their own `go.mod`.
+struct GoModules;
+
+impl ModuleDetector for GoModules {
+    fn id(&self) -> &'static str {
+        "go"
+    }
+
+    fn descriptors(&self) -> &'static [&'static str] {
+        &["go.mod"]
+    }
+
+    fn layout(&self) -> String {
+        "`**/*.go` except in `vendor/` and `testdata/` folders and in folders or files starting with `_` or `.`, which `./...` skips".into()
+    }
+
+    fn production_sources(&self, _: &str, _: &[&str]) -> Vec<String> {
+        vec!["**/*.go".into()]
+    }
+
+    fn excluded_sources(&self) -> &'static [&'static str] {
+        &["**/{vendor,testdata,_*,.*}/**", "**/[._]*"]
+    }
 }
 
 /// A build system whose production source follows a fixed default layout.
@@ -164,7 +198,7 @@ fn laravel_layout(files: &[&str]) -> Vec<String> {
 
 /// Built-in detectors. Layouts follow each tool's documented defaults: npm
 /// and Cargo `src/`, Maven and Gradle `src/main/` plus Kotlin Multiplatform
-/// `src/<target>Main/`, Go packages anywhere below `go.mod`, Python's `src`
+/// `src/<target>Main/`, the Go packages `./...` builds below `go.mod`, Python's `src`
 /// or flat layout, Lean sources anywhere below a Lake lakefile, Swift
 /// Package Manager's `Sources/`, and the pub package layout's `lib/` and
 /// `bin/` for Dart and Flutter; framework detectors follow the documentation
@@ -191,11 +225,7 @@ pub static DETECTORS: &[&dyn ModuleDetector] = &[
         descriptors: &["Cargo.toml"],
         sources: &["src/**"],
     },
-    &DefaultLayout {
-        id: "go",
-        descriptors: &["go.mod"],
-        sources: &["**/*.go"],
-    },
+    &GoModules,
     &ComputedLayout {
         id: "python",
         descriptors: &["pyproject.toml", "setup.py", "setup.cfg"],
@@ -329,6 +359,9 @@ pub struct Module {
     /// Root-relative globs of the module's production source.
     #[serde(skip)]
     pub sources: Vec<String>,
+    /// Root-relative globs of files `sources` match but the layout leaves out.
+    #[serde(skip)]
+    pub excluded: Vec<String>,
 }
 
 impl Module {
@@ -415,6 +448,11 @@ pub fn detect(files: &[&str]) -> Vec<Module> {
                 sources: detector
                     .production_sources(directory, files)
                     .into_iter()
+                    .map(|glob| format!("{prefix}{glob}"))
+                    .collect(),
+                excluded: detector
+                    .excluded_sources()
+                    .iter()
                     .map(|glob| format!("{prefix}{glob}"))
                     .collect(),
             }

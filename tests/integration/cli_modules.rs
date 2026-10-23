@@ -283,6 +283,49 @@ fn python_modules_follow_setuptools_package_discovery() {
     );
 }
 
+/// Go modules claim what `./...` builds: `go help packages` excludes
+/// `vendor` and `testdata` folders and names starting with `_` or `.`, at any
+/// depth, so vendored dependencies and test inputs stay open for review.
+#[test]
+fn go_modules_claim_only_what_the_go_tool_builds() {
+    let temp = project(&[
+        ("go.mod", "module svc\n"),
+        ("main.go", "package main\n"),
+        ("internal/store/store.go", "package store\n"),
+        ("vendor/github.com/lib/pq/conn.go", "package pq\n"),
+        ("internal/vendor/copied.go", "package vendor\n"),
+        ("internal/store/testdata/fixture.go", "package fixture\n"),
+        ("_examples/demo/demo.go", "package main\n"),
+        (".tools/gen.go", "package main\n"),
+        ("internal/_scratch.go", "package internal\n"),
+        ("internal/.hidden.go", "package internal\n"),
+        ("internal/vendored/ok.go", "package vendored\n"),
+        ("internal/my_data/ok.go", "package my_data\n"),
+    ]);
+    let (success, document, stderr) = report(&temp.path().join("project"), &[]);
+    assert!(success, "{stderr}");
+    let source: Vec<_> = classifications(&document)
+        .into_iter()
+        .filter(|(path, _, _)| path.ends_with(".go"))
+        .collect();
+    assert_eq!(
+        source,
+        [
+            triple(".tools/gen.go", "other", "fallback"),
+            triple("_examples/demo/demo.go", "other", "fallback"),
+            triple("internal/.hidden.go", "other", "fallback"),
+            triple("internal/_scratch.go", "other", "fallback"),
+            triple("internal/my_data/ok.go", "production", "builtin:go-module"),
+            triple("internal/store/store.go", "production", "builtin:go-module"),
+            triple("internal/store/testdata/fixture.go", "other", "fallback"),
+            triple("internal/vendor/copied.go", "other", "fallback"),
+            triple("internal/vendored/ok.go", "production", "builtin:go-module"),
+            triple("main.go", "production", "builtin:go-module"),
+            triple("vendor/github.com/lib/pq/conn.go", "other", "fallback"),
+        ]
+    );
+}
+
 /// Swift packages: `Sources/` is production, and test targets in `Tests/` or
 /// Xcode-style `<Name>Tests/` folders are tests wherever they live.
 #[test]

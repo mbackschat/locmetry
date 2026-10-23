@@ -155,6 +155,8 @@ pub(crate) fn module_detector(rule: &str) -> Option<&str> {
 struct Entry {
     id: String,
     matcher: GlobSet,
+    /// Paths the entry leaves out although `matcher` matches them.
+    except: GlobSet,
     kinds: Option<Vec<Kind>>,
     purpose: Purpose,
     category: String,
@@ -163,6 +165,7 @@ struct Entry {
 impl Entry {
     fn matches(&self, path: &str, kind: Kind) -> bool {
         self.matcher.is_match(path)
+            && !self.except.is_match(path)
             && self
                 .kinds
                 .as_ref()
@@ -192,6 +195,7 @@ impl Entry {
             id: entry.id.clone(),
             matcher: glob_set(entry.patterns.iter().map(String::as_str))
                 .with_context(|| format!("Invalid match in entry {}", entry.id))?,
+            except: GlobSet::empty(),
             kinds: entry.kind.clone(),
             purpose: entry.purpose,
             category: entry
@@ -342,6 +346,7 @@ impl Policy {
                 Ok(Entry {
                     id: format!("{BUILTIN}{}", convention.id),
                     matcher: glob_set(convention.patterns.iter().copied())?,
+                    except: GlobSet::empty(),
                     kinds: None,
                     purpose: convention.purpose,
                     category: convention.category.into(),
@@ -530,6 +535,7 @@ impl Policy {
                 let entry = Entry {
                     id: module_rule(module.detector),
                     matcher: glob_set(module.sources.iter().map(String::as_str))?,
+                    except: glob_set(module.excluded.iter().map(String::as_str))?,
                     kinds: None,
                     purpose: Purpose::Production,
                     category: MODULE_CATEGORY.into(),

@@ -14,6 +14,7 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 
 ### Changed
 
+- **Breaking:** Go modules no longer count `vendor/` and `testdata/` folders or folders and files starting with `_` or `.` as production, because `go build ./...` skips them; vendored dependencies and test inputs are now reported as unclaimed. Projects with a committed `vendor/` folder show much less Go production code than before.
 - **Breaking:** build modules are credited with the production source their layout covers, whichever stage decided it. An entry that keeps `production` and only names a category, such as `native` or `generated`, no longer removes the module's credit; one that changes the purpose still does. `summary.build_modules` and the `--verbose` note count only modules with credit, while the Markdown module list still shows every module. File records name the credited module as `module`, and `explain` shows it as `Module credit` when an entry decided the file. Comparisons with earlier reports show credit differences that come from this definition.
 - `-h` gives each option and command a one-line summary, and `--help` keeps the full text: `locmetry -h` is 41% shorter and points to `--help` for more. The command list and the help footer no longer repeat what the commands' and options' own help says.
 - `--guide configure` and `--schema config` explain when to classify verification code as test and when as production tooling: test runners, harnesses, graders and CI gates are tooling, and Test/prod depends on purpose, not category.

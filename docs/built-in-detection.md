@@ -30,7 +30,7 @@ Each built-in rests on its tool's or framework's own documentation and was measu
 | `gradle` | `build.gradle`, `build.gradle.kts` | `src/main/**`, Kotlin Multiplatform `src/*Main/**` |
 | `maven` | `pom.xml` | `src/main/**` |
 | `cargo` | `Cargo.toml` | `src/**` |
-| `go` | `go.mod` | every `*.go` file |
+| `go` | `go.mod` | every `*.go` file except in `vendor/` and `testdata/` folders and in folders or files starting with `_` or `.`, which [`go help packages`](https://pkg.go.dev/cmd/go#hdr-Package_lists_and_patterns) excludes from `./...`; vendored dependencies and test inputs stay unclaimed ([measurements](research/go-layout.md)) |
 | `python` | `pyproject.toml`, `setup.py`, `setup.cfg` | `src/**`, plus top-level packages with `__init__.py` as setuptools discovers them, excluding names such as `docs`, `scripts`, and `tools` |
 | `lake` | `lakefile.lean`, `lakefile.toml` | every `*.lean` file; the lakefile is a build script, and test libraries named `<Name>Test/` or `<Name>Tests/` are tests through the `lean-test-library` convention |
 | `swift` | `Package.swift` | `Sources/**`; test targets in `Tests/` or `<Name>Tests/` are tests through the `swift-test-target` convention |
