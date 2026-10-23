@@ -2,16 +2,16 @@
 
 <!-- doc-status
 {
-  "status": "accepted",
+  "status": "implemented",
   "date": "2026-10-24",
   "summary": "Per-entry decision counts and findings in reports, `except` lists on entries, and a refinement stage that changes only a file's category.",
-  "evidence": "[Owner decision of 2026-10-24 in PLAN](../PLAN.md#accepted-proposals--implementation-order)"
+  "evidence": "[PRODUCT](../../PRODUCT.md#matching-and-precedence), [regressions](../../../tests/integration/policy_entries.rs)"
 }
 -->
 
-Status: accepted by the owner on 2026-10-24.
+Status: historical decision record — implemented. The owner accepted the design on 2026-10-24, and it was implemented test-first and verified the same day in commits `62f6445` (`except`), `e611b43` (entry audit), `14be602` (refinements) and `b3c1dd3` (recorded walkthroughs). Two amendments arose during implementation: each audited entry also reports its `purpose`, so readers can tell which displaced decisions changed it, and refinements accept `except` like other entries. The optional `decision.also_matched` in `explain` was not implemented; [DEFERRED](../../DEFERRED.md#configuration-and-categories) keeps it with its reopening condition. On the Immich showcase the audit found two globs that decide nothing on both pinned tags, which [PLAN](../../PLAN.md) tracks. Archived on 2026-10-24 under the [retirement procedure](../README.md#retirement-procedure). [PRODUCT](../../PRODUCT.md#matching-and-precedence) and the [configure guide](../../guides/configure.md#refine-a-category-without-changing-purpose) own the current behavior; the wording, examples and limits below describe the reviewed design, not current guarantees.
 
-Three projects asked, on 2026-10-24, how to categorize their tests more finely, for example property laws apart from unit tests, and then reported what slowed them down: a12-rulekit, bpmn-lean-experiment and a private Lean project. Their figures stay in the Git-ignored local research folder. The [policy test drives](../research/policy-test-drives/README.md#findings) of 2026-10-22 and 2026-10-23 had already raised the `except` list.
+Three projects asked, on 2026-10-24, how to categorize their tests more finely, for example property laws apart from unit tests, and then reported what slowed them down: a12-rulekit, bpmn-lean-experiment and a private Lean project. Their figures stay in the Git-ignored local research folder. The [policy test drives](../../research/policy-test-drives/README.md#findings) of 2026-10-22 and 2026-10-23 had already raised the `except` list.
 
 ## Problem
 
@@ -21,7 +21,7 @@ Three projects asked, on 2026-10-24, how to categorize their tests more finely, 
 - In the private Lean project, an entry matched a whole folder but decided fewer files, because an earlier entry took the rest. That ordering dependency is invisible in reports.
 - In bpmn-lean-experiment, a broad override turned production demo hosts into tests. A glob inside an entry that matches nothing is not reported either.
 
-**Giving a test a finer category requires an override, the most powerful stage.** Built-in test conventions win over `[[rules]]`, so a rule with `purpose = "test"` over conventional tests decides nothing. The [configure guide](../guides/configure.md#refine-a-category-without-changing-purpose) therefore recommends a narrow override and asks the author to remeasure and confirm that purpose totals did not change. Overrides beat every stage, so a glob broader than intended moves code between production and test, which is how bpmn-lean-experiment's mistake happened. The author checks the invariant by hand; the tool could guarantee it.
+**Giving a test a finer category requires an override, the most powerful stage.** Built-in test conventions win over `[[rules]]`, so a rule with `purpose = "test"` over conventional tests decides nothing. The [configure guide](../../guides/configure.md#refine-a-category-without-changing-purpose) therefore recommends a narrow override and asks the author to remeasure and confirm that purpose totals did not change. Overrides beat every stage, so a glob broader than intended moves code between production and test, which is how bpmn-lean-experiment's mistake happened. The author checks the invariant by hand; the tool could guarantee it.
 
 **Exceptions exist only as entry order.** To keep `FieldAgreementTest` out of a law category, a12-rulekit narrowed `*AgreementTest` to a `laws/` folder. Ordering an earlier entry to catch the exception works too, but reports do not show it.
 
@@ -79,16 +79,16 @@ reason = "Property-based laws of the rule engine"
 - A refinement that decides no file is listed in `summary.unused_entries`.
 - The configure guide's category section recommends a refinement instead of a narrow override; overrides remain for decisions that change purpose.
 
-The module credit proposal [excluded a table of category refinements](archive/module-credit-by-coverage.md#design) because category-only entries leave files in mixed folders unclaimed when they replace purpose-setting rules. A refinement does not replace a rule: it acts only on files whose purpose is already decided and claims nothing, so a mixed folder keeps its claimed and unclaimed files as before. Generated-code markers already refine categories this way.
+The module credit proposal [excluded a table of category refinements](module-credit-by-coverage.md#design) because category-only entries leave files in mixed folders unclaimed when they replace purpose-setting rules. A refinement does not replace a rule: it acts only on files whose purpose is already decided and claims nothing, so a mixed folder keeps its claimed and unclaimed files as before. Generated-code markers already refine categories this way.
 
-All three parts are additive: existing configurations measure the same, and the new report fields are optional fields of schema 3, as [report compatibility](../report-compatibility.md) describes.
+All three parts are additive: existing configurations measure the same, and the new report fields are optional fields of schema 3, as [report compatibility](../../report-compatibility.md) describes.
 
 **Optional:** `explain` lists the other entries that match a file but do not decide it, as `decision.also_matched`, so a single file's ordering dependency can be inspected without a full measurement.
 
 **Excluded:**
 
-- Classifying purpose by file content, such as the share of `theorem` declarations in a Lean file. Paths keep decisions deterministic and explainable, and a content predicate is per-language policy inside the counter; a12-rulekit argued against it. A content predicate restricted to refinements is deferred in [DEFERRED](../DEFERRED.md#configuration-and-categories).
-- Orthogonal tags beside the category. They break the guarantee that category rows add up to purpose totals; bpmn-lean-experiment asked for them only if a second axis recurs, which [DEFERRED](../DEFERRED.md#configuration-and-categories) tracks.
+- Classifying purpose by file content, such as the share of `theorem` declarations in a Lean file. Paths keep decisions deterministic and explainable, and a content predicate is per-language policy inside the counter; a12-rulekit argued against it. A content predicate restricted to refinements is deferred in [DEFERRED](../../DEFERRED.md#configuration-and-categories).
+- Orthogonal tags beside the category. They break the guarantee that category rows add up to purpose totals; bpmn-lean-experiment asked for them only if a second axis recurs, which [DEFERRED](../../DEFERRED.md#configuration-and-categories) tracks.
 - Purpose warnings that fail a measurement. Intended purpose changes are common, so a note is the right strength.
 - `except` on language corrections and scope exclusions. No project asked for them.
 

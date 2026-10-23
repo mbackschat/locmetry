@@ -1,4 +1,4 @@
-//! Reviewable policy entries (docs/proposals/policy-entry-review.md): `except`
+//! Reviewable policy entries (docs/proposals/archive/policy-entry-review.md): `except`
 //! lists on classification entries, `summary.policy_entries`, which counts
 //! what each entry decided and names what it lost or replaced, and
 //! refinements, which change only the category of decided files.

@@ -6,9 +6,7 @@ Active designs live directly in this directory. Retired records live in `archive
 
 <!-- doc-index:start -->
 
-| Document | Status | Date | Summary |
-| --- | --- | --- | --- |
-| [Reviewable Policy Entries and Category Refinements](policy-entry-review.md) | accepted | 2026-10-24 | Per-entry decision counts and findings in reports, `except` lists on entries, and a refinement stage that changes only a file's category. |
+No documents in this directory.
 
 <!-- doc-index:end -->
 

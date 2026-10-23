@@ -2,9 +2,9 @@
 
 [PRODUCT](PRODUCT.md) owns supported requirements. This file indexes open work and decision gates; it is not a checkpoint log. Read the relevant linked design only when working on that item. Deferred and unscheduled items live in [DEFERRED](DEFERRED.md) and do not authorize implementation.
 
-## Accepted Proposals — Implementation Order
+## Showcase — Follow-up
 
-- [Reviewable policy entries and category refinements](proposals/policy-entry-review.md): accepted by the owner on 2026-10-24; in implementation, `except` first, then the entry audit, then refinements. Three projects categorizing their tests could not see partly wrong entries and needed overrides to change only a category.
+- [ ] Review two globs of the Immich overlay that decide no file on either pinned tag, which `summary.policy_entries` reports as `unused_patterns`: `packages/*/*.config.{js,cjs,mjs,ts}` in `developer-tooling`, whose files built-in JavaScript conventions now classify first, and `docker/**` in `deployment`. Follow the [overlay review procedure](../examples/showcase/immich/README.md#review-the-policy) and regenerate the showcase recordings; the [measure recording](showcase/measure.md#review-every-entry-of-the-policy) currently cites the first glob as its example.
 
 ## Proposals — Under Discussion
 
@@ -22,6 +22,7 @@ The [proposal index](proposals/README.md) distinguishes active designs from hist
 - [Default report output decision](proposals/archive/default-report-output-proposal-redacted.md): reviewed design and acceptance evidence.
 - [Development and release snapshot through 2026-10-16](plans/archive/development-plan-2026-10-16.md): completed work, published releases and their verification links.
 - [Measurement quality and subsequent implementation checkpoints](plans/archive/measurement-quality-and-net-change.md): S1–S5, reviews, accepted decisions and completion evidence.
+- [Reviewable policy entries and category refinements](proposals/archive/policy-entry-review.md): `except`, per-entry audit and refinements, implemented 2026-10-24 from three projects' test-categorization feedback.
 - [Test/production ratio design](plans/archive/test-production-ratios.md): research behind neutral, unbanded ratios.
 - [Research index](research/README.md): dated findings and source provenance.
 

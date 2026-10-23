@@ -1,5 +1,5 @@
 //! What each project entry decided in one measurement, reported as
-//! `summary.policy_entries` (docs/proposals/policy-entry-review.md).
+//! `summary.policy_entries` (docs/proposals/archive/policy-entry-review.md).
 //! `unused_entries` flags only an entry that decides nothing; these counts
 //! also expose an entry that decides fewer files than intended, loses files
 //! to an earlier stage, or replaces another stage's decision.

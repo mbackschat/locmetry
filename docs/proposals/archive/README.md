@@ -17,6 +17,7 @@ These records preserve the reviewed designs and their outcomes. Dates record the
 | [Language Corrections](language-corrections.md) | implemented | 2026-10-23 | Policy entries that correct a language the counter recognized wrongly, naming another counter language or leaving the file unrecognized. |
 | [Module Credit by Layout Coverage](module-credit-by-coverage.md) | implemented | 2026-10-23 | Credit a build module with the production source its layout covers, whichever stage decided it, and count only modules with credit. |
 | [Net Change Between Measurement Reports](net-change.md) | implemented | 2026-10-15 | Aggregate and topology comparison; per-file comparison remains deferred. |
+| [Reviewable Policy Entries and Category Refinements](policy-entry-review.md) | implemented | 2026-10-24 | Per-entry decision counts and findings in reports, `except` lists on entries, and a refinement stage that changes only a file's category. |
 | [Subtree Measurement with Project Context](subtree-measurement.md) | implemented | 2026-10-16 | Project-aware subfolder measurement. |
 | [Table Category Filter](table-category-filter.md) | implemented | 2026-10-22 | A --table-category option that narrows tables to purpose:category keys, with exact names and quoted wildcards. |
 | [Windows Support](windows-support.md) | implemented | 2026-10-21 | Windows x86_64 release and CI target, used from PowerShell; Scoop and tab completion remain follow-ups. |

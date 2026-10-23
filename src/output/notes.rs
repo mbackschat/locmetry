@@ -207,7 +207,7 @@ pub(super) fn unused_entries_note(entries: &[String], subfolder: Option<&str>) -
 /// Names entries whose files a later stage would give another purpose, such
 /// as an override turning module production into tests. Such moves are often
 /// intended, as for test runners classified as tooling, so the note asks for
-/// review instead of warning (docs/proposals/policy-entry-review.md).
+/// review instead of warning (docs/proposals/archive/policy-entry-review.md).
 pub(super) fn purpose_changes_note(entries: &[crate::PolicyEntry]) -> Option<String> {
     let changes: Vec<String> = entries
         .iter()
