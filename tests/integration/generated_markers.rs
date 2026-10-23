@@ -1,4 +1,4 @@
-//! Generated-code markers (docs/proposals/generated-code-markers.md): a
+//! Generated-code markers (docs/proposals/archive/generated-code-markers.md): a
 //! documented marker refines a module claim to `production:generated`, while
 //! look-alikes that claimed hand-written code in the measurements stay
 //! implementation (docs/research/generated-code-markers.md).

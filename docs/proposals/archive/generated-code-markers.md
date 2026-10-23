@@ -2,16 +2,18 @@
 
 <!-- doc-status
 {
-  "status": "accepted",
+  "status": "implemented",
   "date": "2026-10-23",
   "summary": "Classify module-claimed production that carries a documented generated-code marker, or a .gitattributes linguist-generated declaration, as production with category generated.",
-  "evidence": "[Owner decision of 2026-10-23 in PLAN](../PLAN.md#accepted-proposals--implementation-order)"
+  "evidence": "[Built-in detection](../../built-in-detection.md#generated-code-markers), [regressions](../../../tests/integration/generated_markers.rs)"
 }
 -->
 
+Status: historical decision record — implemented. The owner accepted the design on 2026-10-23, after a Java and Spring measurement added `java-generated-annotation` and a precision recheck deferred every optional marker; it was implemented test-first and verified the same day in commit `341c057`, which replaced the unreleased `dotnet-generated` convention. One addition beyond the design: following GitHub Linguist, an explicit `-linguist-generated` or `linguist-generated=false` also overrides the content markers. On twelve repositories of the [measurement record](../../research/generated-code-markers.md#acceptance-run), the markers reproduced the recorded counts, and every match in the Go generator repositories outside conventional generated names is generated. The optional markers stay deferred in [PLAN](../../PLAN.md). Archived on 2026-10-23 under the [retirement procedure](../README.md#retirement-procedure). The [built-in detection reference](../../built-in-detection.md#generated-code-markers) and [PRODUCT](../../PRODUCT.md#matching-and-precedence) own the current behavior; the wording, examples and limits below describe the reviewed design, not current guarantees.
+
 ## Problem
 
-Module layouts claim every file in a source folder as hand-written implementation, including generated code: Polar's SDKs, Jellyfin's and Bitwarden's EF Core migrations, gin-vue-admin's generated Go and Loki's protocol buffer code. The [generated-code measurements](../research/generated-code-markers.md) of 2026-10-23 found documented markers on 7–37% of module-claimed production in four of ten applications, and on 83–84% in two more, mostly EF Core designer files and vendored Go. Nothing in the report says so; a policy author finds it only by reading file headers or the largest-module-files list.
+Module layouts claim every file in a source folder as hand-written implementation, including generated code: Polar's SDKs, Jellyfin's and Bitwarden's EF Core migrations, gin-vue-admin's generated Go and Loki's protocol buffer code. The [generated-code measurements](../../research/generated-code-markers.md) of 2026-10-23 found documented markers on 7–37% of module-claimed production in four of ten applications, and on 83–84% in two more, mostly EF Core designer files and vendored Go. Nothing in the report says so; a policy author finds it only by reading file headers or the largest-module-files list.
 
 ## Design
 
@@ -46,7 +48,7 @@ Module layouts claim every file in a source folder as hand-written implementatio
 - Free-text heuristics, such as "generated" near "do not edit": they claimed hand-written production in sqlc, protobuf-go and gopls. Linguist's looser Go check, any `// Code generated` line in the first 40 lines, claimed gopls's hand-written generator.
 - MyBatis Generator's `@mbg.generated` tag, which marks elements rather than files, claimed the generator's own source, and is absent from mall's generated code.
 - Naming a generator in a header, such as OpenAPI Generator, which claimed Immich's hand-written SDK script.
-- Changing the purpose. Generated code is shipped and often maintained; a project that counts it as Other says so with an entry, as Immich does. The deferred [generated and minified evidence](../plans/measurement-quality-and-net-change.md#conditional-follow-ups-and-preserved-rationales) keeps its rationale: generated does not mean disposable.
+- Changing the purpose. Generated code is shipped and often maintained; a project that counts it as Other says so with an entry, as Immich does. The deferred [generated and minified evidence](../../plans/measurement-quality-and-net-change.md#conditional-follow-ups-and-preserved-rationales) keeps its rationale: generated does not mean disposable.
 - Files no module layout claims. Unclaimed files are already listed for review, and entries, conventions and tests decide the rest.
 - Generators without a documented marker, such as mall's MyBatis output and Immich's SQL snapshots: they need policy entries.
 
@@ -58,5 +60,5 @@ Classification so far reads only paths. Markers read the leading comment block o
 
 - Fixtures: a module-claimed Go file with Go's line is `production:generated` with `builtin:go-generated-header`; the same line after the `package` clause, or `// Code generated` without `DO NOT EDIT.`, stays implementation; a `*.designer.vb` file and a C# file with a byte-order mark and `// <auto-generated />` are generated; a Java class annotated `@jakarta.annotation.Generated` after an annotation whose arguments contain braces is generated, while `@Generated` on a method only, or one imported from another package such as `lombok`, leaves the file implementation; a `.gitattributes` pattern marks files generated and a later `-linguist-generated` unsets it; a rule-decided or test file with a marker keeps its decision.
 - Module credit is unchanged, and `summary.largest_module_files` omits marker-decided files.
-- On the commits in the [measurement record](../research/generated-code-markers.md), the reclassified code matches the record's documented column, and the generators' repositories gain no generated file outside those the record lists as generated.
+- On the commits in the [measurement record](../../research/generated-code-markers.md), the reclassified code matches the record's documented column, and the generators' repositories gain no generated file outside those the record lists as generated.
 - PRODUCT, the README, the configure guide, both schemas and the changelog describe the markers; the `dotnet-generated` convention is gone from them.
