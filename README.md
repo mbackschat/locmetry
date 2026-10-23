@@ -33,6 +33,8 @@ Run Locmetry from PowerShell; the [common commands](#common-commands) work there
 
 These excerpts measure [Immich](https://github.com/immich-app/immich) `v3.3.4`, a popular self-hosted photo platform with a TypeScript server, a Svelte web client, a Flutter app and a Python machine-learning service. Locmetry measures it with a short [reviewed policy](examples/showcase/immich/README.md) kept in this repository; the [refresh script](scripts/refresh-readme-showcase.py) regenerates every excerpt from the pinned checkout.
 
+New to the vocabulary? [Terms](#terms) explains purpose, category, unclaimed and the other words in these excerpts.
+
 **[Take the tour](docs/showcase/tour.md)** to build that policy step by step, from the first measurement to reviewed decisions.
 
 ▶️ **The [showcase recordings](docs/showcase/README.md) replay measurement, workspace and comparison on Immich; the [command guides](docs/cli/README.md) cover every option on a small fixture.**
@@ -187,6 +189,24 @@ Compare saved reports of two releases, `v3.2.0` and `v3.3.4`:
 
 Most of the change is test code. [Folder reporting](docs/guides/reports.md#look-inside-large-folders) and [comparison](docs/guides/compare.md) explain the remaining views.
 
+## Terms
+
+| Term | Meaning |
+| --- | --- |
+| Content kind | Each counted file is source, data such as JSON, or documentation such as Markdown, decided by its language. Tables and totals count source; data and documentation are reported separately. |
+| Purpose | `production`, `test` or `other`. Production is maintained non-test source, including build scripts and tooling; `other` is source that counts as neither, such as generated code a policy sets aside or code nothing claimed. |
+| Category | A finer label inside a purpose, written `purpose:category`, such as `production:implementation`, `production:build-tooling` or `test:test`. It changes no totals; `--show-categories` breaks tables down by it. |
+| Unclaimed | Source that no convention, module or policy entry classified, reported as `other:unclaimed` and listed by folder for review. Its lines are counted; only its purpose is open. |
+| Build module | A folder with a build or framework file, such as `package.json`, `Cargo.toml` or `next.config.ts`; its conventional source folders are production. See [build modules](#build-modules). |
+| Convention | A built-in classification, such as files in `test/` being tests or `vite.config.ts` being build tooling. Conventions apply before the project's own rules. |
+| Policy | The project's `.locmetryrc`: scope exclusions and entries that classify what the built-ins cannot. `rules` apply after conventions, `overrides` before them. See [configuration](#configuration). |
+| Provenance | The convention, module or entry that decided a file, recorded as its `rule`; `locmetry explain PATH` shows it. |
+| Test/prod | Test code divided by production code, with Other left out. It describes volume, not test coverage. |
+| Coverage | How many selected files were counted. Unrecognized or unreadable files are reported, never counted as zero. |
+| Workspace, member | Several repositories, each under its own policy, or folders of one project under its policy, measured together into one report; each repository or folder is a member. |
+
+[PRODUCT](docs/PRODUCT.md#measurement-model) defines these terms in full.
+
 ## Common commands
 
 | Task | Command |
@@ -285,7 +305,7 @@ For file-level recognition and classification changes, run `compare-locmetry-fil
 
 ## How classification works
 
-Locmetry embeds Tokei for counting and applies project policy to each file. Purpose (`production`, `test`, `other`), category (such as `implementation` or `tooling`) and content kind (source, data, documentation or unknown) are separate dimensions. `other` means neither production nor test; code no stage claimed is `other` with category `unclaimed`. Kind follows the physical file, so a fenced code block in Markdown or other documentation counts as documentation, never as source; `--verbose` shows how many code lines such snippets hold. Rust doc comments, doctests included, stay comments of their file.
+Locmetry embeds Tokei for counting and applies project policy to each file. Purpose, category and content kind are separate dimensions, as [Terms](#terms) explains. Kind follows the physical file, so a fenced code block in Markdown or other documentation counts as documentation, never as source; `--verbose` shows how many code lines such snippets hold. Rust doc comments, doctests included, stay comments of their file.
 
 - **Module context:** selected build descriptors, such as npm, Gradle, Cargo, Go, Python or .NET project files, and framework descriptors, such as `next.config.ts` or Laravel's `artisan`, identify conventional source layouts, as [build modules](#build-modules) describes. The innermost module supplies context, so nested projects do not inherit an outer project's layout blindly.
 - **Ordered decisions:** explicit overrides precede test and build conventions, ordinary project rules, module inference and fallback. Tests inside production source trees remain tests; overrides can express exceptions. Every counted file records the deciding rule.
