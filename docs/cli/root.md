@@ -435,11 +435,11 @@ Arguments:
   [DIR]
           Directory to measure, instead of --root [default: the current directory]
 
-locmetry 0.9.0
-Source: docs/guides/configure.md (locmetry 0.9.0)
-Source: docs/guides/selection.md (locmetry 0.9.0)
-Source: docs/guides/reports.md (locmetry 0.9.0)
-Source: docs/guides/compare.md (locmetry 0.9.0)
+locmetry 0.10.0
+Source: docs/guides/configure.md (locmetry 0.10.0)
+Source: docs/guides/selection.md (locmetry 0.10.0)
+Source: docs/guides/reports.md (locmetry 0.10.0)
+Source: docs/guides/compare.md (locmetry 0.10.0)
 Configuration
 MeasurementReport
 Workspace

@@ -4,6 +4,8 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-10-23
+
 ### Added
 
 - Windows users can install and update Locmetry with Scoop from the `mbackschat/scoop-bucket` bucket; see [Windows and PowerShell](README.md#windows-and-powershell).
@@ -115,7 +117,8 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 - **Breaking:** presentation options are named for what they show: `--folders`, `--categories`, `--bars`, `--purpose` and `--depth` became `--show-folders`, `--show-categories`, `--show-bars`, `--table-purpose` and `--markdown-depth`. `workspace --file` and `explain --workspace` became `--workspace-file`. The former spellings are rejected.
 - `--files` adds per-file records to every full JSON view, whether saved or printed.
 
-[Unreleased]: https://github.com/mbackschat/locmetry/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/mbackschat/locmetry/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/mbackschat/locmetry/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/mbackschat/locmetry/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/mbackschat/locmetry/compare/v0.7.6...v0.8.0
 [0.7.6]: https://github.com/mbackschat/locmetry/compare/v0.7.5...v0.7.6
