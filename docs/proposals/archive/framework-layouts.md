@@ -2,16 +2,18 @@
 
 <!-- doc-status
 {
-  "status": "accepted",
+  "status": "implemented",
   "date": "2026-10-23",
   "summary": "Built-in detectors and conventions for popular frameworks whose source is not in src/, and for .NET, PHP, Ruby and Django projects, so their production source is classified without configuration.",
-  "evidence": "[Owner decision in PLAN](../PLAN.md#accepted-proposals--implementation-order)"
+  "evidence": "[PRODUCT](../../PRODUCT.md#module-detection), [regressions](../../../tests/integration/framework_layouts.rs), [detector run](../../research/framework-layouts.md#detector-run)"
 }
 -->
 
+Status: historical decision record — implemented. The owner accepted the design on 2026-10-23, and it was implemented test-first and verified on real applications the same day in commit `7d95a41`. Archived on 2026-10-23 under the [retirement procedure](../README.md#retirement-procedure). [PRODUCT](../../PRODUCT.md#module-detection) owns the current behavior, and `locmetry --schema config` lists the executable conventions and layouts; `--help` and the configure guide route there rather than listing detectors. The optional parts and the gaps the [detector run](../../research/framework-layouts.md#detector-run) found are tracked in [PLAN](../../PLAN.md). The wording, examples and limits below describe the reviewed design, not current guarantees.
+
 ## Problem
 
-Locmetry claims production source through build descriptors and their documented default layouts. The [framework layout measurements](../research/framework-layouts.md) of 2026-10-23 measured starters and real applications of the most used web frameworks, by the Stack Overflow Developer Survey 2025 and by GitHub stars, without configuration:
+Locmetry claims production source through build descriptors and their documented default layouts. The [framework layout measurements](../../research/framework-layouts.md) of 2026-10-23 measured starters and real applications of the most used web frameworks, by the Stack Overflow Developer Survey 2025 and by GitHub stars, without configuration:
 
 - Next.js, Nuxt and React Router applications are 93–100% unclaimed. Their package root, or `app/`, is the source root, while the npm layout claims only `src/`.
 - .NET, Laravel, Symfony and Rails projects are 38–99% unclaimed, because no detector knows their descriptors. Django projects without packaging metadata are 71–99% unclaimed.
@@ -48,7 +50,7 @@ A new user's first measurement of such a project reports most of it as needing a
 - Tool configuration is matched by tool name, not by the `*.config.*` suffix. Application code uses the suffix too: Angular's `src/app/app.config.ts`, Nuxt's `app.config.ts`, NestJS configuration modules, Sentry's `sentry.server.config.ts` and fifteen plugin configurations in one Angular and NestJS monorepo. Test-runner configuration is test tooling, so it gets the test purpose.
 - The Laravel row leaves translations out: `resources/lang/` held 54% of one application's source as PHP arrays, and Laravel 12 moved them to a root `lang/` folder, which no row claims either.
 - Descriptors given as `*.csproj` and `*.gemspec` match by file extension; all others match exact names, as today.
-- The configure guide, `--help` text on module detection, and PRODUCT's [Module Detection](../PRODUCT.md#module-detection) list the new detectors and conventions.
+- The configure guide, `--help` text on module detection, and PRODUCT's [Module Detection](../../PRODUCT.md#module-detection) list the new detectors and conventions.
 
 **Optional:**
 
@@ -57,7 +59,7 @@ A new user's first measurement of such a project reports most of it as needing a
 
 **Excluded:**
 
-- Generated code inside claimed layouts, such as Django migrations, OpenAPI clients, swag documentation and MyBatis output, is a problem of every detector, measured at up to 82% of an application's production. It needs a mechanism of its own, tracked in [PLAN](../PLAN.md); only the .NET designer files, recognizable by name, are handled here.
+- Generated code inside claimed layouts, such as Django migrations, OpenAPI clients, swag documentation and MyBatis output, is a problem of every detector, measured at up to 82% of an application's production. It needs a mechanism of its own, tracked in [PLAN](../../PLAN.md); only the .NET designer files, recognizable by name, are handled here.
 - Reading descriptor contents, such as `package.json` dependencies or Composer's `autoload` paths. Detectors read only file names, which keeps detection fast and its results explainable from the tree.
 - Whole-package layouts for Next.js and Nuxt. In real applications they would silently count `scripts/`, Playwright helpers, mocks, vendored code and hidden tool folders as production.
 - A `spec/` test directory. Production Go packages are named `spec`, such as `pkg/validation/spec` in Kubernetes' kube-openapi, which many Go projects vendor; conventions run before detectors and would make them tests.
@@ -72,5 +74,5 @@ Detectors are a table of descriptor names and layouts in `src/modules.rs`; the P
 ## Acceptance
 
 - Synthetic fixtures for each detector and convention: the claimed paths are production with the detector's provenance; a Next.js `scripts/` file, a .NET `wwwroot/` script and a Laravel `resources/lang/` file stay unclaimed; a `.Tests` project, a `*_spec.rb` file, a Django `tests.py` and a `vitest.config.ts` are tests; a Go file in `pkg/spec/` and an Angular `src/app/app.config.ts` stay production; a `vite.config.ts` is build tooling; and an EF Core `*.Designer.cs` is `production:generated`.
-- At the commits in the [measurement record](../research/framework-layouts.md), each measured application leaves unclaimed only the folders the record lists for it, and the false claims the record lists are absent.
+- At the commits in the [measurement record](../../research/framework-layouts.md), each measured application leaves unclaimed only the folders the record lists for it, and the false claims the record lists are absent.
 - An agent regression check before release, because `--help` and the guides change.

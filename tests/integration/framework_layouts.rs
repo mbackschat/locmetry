@@ -1,4 +1,4 @@
-//! Framework detectors and conventions (docs/proposals/framework-layouts.md):
+//! Framework detectors and conventions (docs/proposals/archive/framework-layouts.md):
 //! each fixture pairs the folders a layout claims with neighbours it must
 //! leave alone, because a wrong claim is silent while unclaimed code is
 //! reported for review.

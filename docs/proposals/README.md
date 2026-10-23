@@ -8,7 +8,6 @@ Active designs live directly in this directory. Retired records live in `archive
 
 | Document | Status | Date | Summary |
 | --- | --- | --- | --- |
-| [Framework Layouts](framework-layouts.md) | accepted | 2026-10-23 | Built-in detectors and conventions for popular frameworks whose source is not in src/, and for .NET, PHP, Ruby and Django projects, so their production source is classified without configuration. |
 | [Language Corrections](language-corrections.md) | accepted | 2026-10-23 | Policy entries that correct a language the counter recognized wrongly, naming another counter language or leaving the file unrecognized. |
 | [Module Credit by Layout Coverage](module-credit-by-coverage.md) | accepted | 2026-10-23 | Credit a build module with the production source its layout covers, whichever stage decided it, and count only modules with credit. |
 

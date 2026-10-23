@@ -1,6 +1,6 @@
 # Framework Layouts Out of the Box
 
-Measured 2026-10-23 with the development build of Locmetry 0.9.0 (`--no-user-config`, no project policy) on shallow clones, removed afterwards. Question: does a project built with a popular framework get its production source classified without any configuration? The [module credit proposal](../proposals/module-credit-by-coverage.md) and the [framework layouts proposal](../proposals/framework-layouts.md) use these results.
+Measured 2026-10-23 with the development build of Locmetry 0.9.0 (`--no-user-config`, no project policy) on shallow clones, removed afterwards. Question: does a project built with a popular framework get its production source classified without any configuration? The [module credit proposal](../proposals/module-credit-by-coverage.md) and the [framework layouts proposal](../proposals/archive/framework-layouts.md) use these results.
 
 ## Selection
 
@@ -127,3 +127,30 @@ On 2026-10-23, after the first draft of the proposal was found to have been vali
 - Root tool configuration files such as `vite.config.ts` and `eslint.config.mjs` stay unclaimed in every JavaScript project; a convention must match tool names, because application code uses the `*.config.*` suffix too.
 - Generated code in claimed layouts is the largest source of silent false claims across all ecosystems measured.
 - The npm layout's `src/**` claims files of any language below a `package.json`. In eShop that made C# production by accident; no rule depends on it.
+
+## Detector run
+
+On 2026-10-23 the implemented detectors and conventions (commit `7d95a41`, release build, `--no-user-config`) measured the emulated projects and the precision-pass applications at the commits above; the shallow clones were removed afterwards. "Unclaimed" is the share of source code lines.
+
+| Project | Unclaimed | Remaining unclaimed | Against the record |
+| --- | ---: | --- | --- |
+| vercel/commerce | 0% | none | as recorded |
+| shadcn-ui/taxonomy | 8% | `config/`, `types/`, root `contentlayer.config.js` and `env.mjs`, Prisma SQL migrations | the record counted neither root files nor SQL |
+| Turborepo `examples/basic` | 10% | `packages/eslint-config` | as recorded |
+| nuxt-ui-templates/dashboard | 0% | none | as recorded |
+| React Router `default` | 9% | the root `Dockerfile` | as recorded |
+| jasontaylordev/CleanArchitecture | 5% | `build/`, item templates, root files of the two client apps | client-app root files beyond the record |
+| laravel/laravel | 5% | `database/factories`, `database/seeders`, `public/` | as recorded |
+| symfony/demo | 3% | root files and `public/` | as recorded |
+| maybe-finance/maybe | 3% | `db/`, `public/`, `bin/`, vendored `vendor/javascript`, root files | as recorded, plus small folders |
+| wagtail/bakerydemo | 1% | root files and `vagrant/` | as recorded |
+| [dubinc/dub](https://github.com/dubinc/dub) `880c344b0223` | 3% | `apps/web/scripts` 129 files and `apps/web/playwright` 23 files | as recorded |
+| [dotnet/eShop](https://github.com/dotnet/eShop) `913acea66708` | 26% | `wwwroot/` assets, 18 Blazor CSS isolation files (`*.razor.css`, 2,510 lines) and 25 MAUI XAML files (2,015 lines) | the accidental npm claim is gone; see below |
+
+The false claims the precision pass found are absent: Snipe-IT's `resources/lang` stays unclaimed; Polar's `sentry.*.config.ts` stay unclaimed; ever-gauzy's plugin configurations are module source or unclaimed, while its 96 `jest.config.ts` files are tests; djangoproject.com's 3,893 lines of `tests.py` are tests; and eShop's 2,283 lines of EF Core designer and snapshot files are `production:generated`. No new false claim was found. One example became production as the record predicted for any example with a descriptor: Polar's Nuxt adapter playground, 38 lines.
+
+Three gaps leave code unclaimed, which reports show for review:
+
+- **.NET UI files:** Blazor CSS isolation files and MAUI or WPF XAML sit beside the compiled sources and are part of the application, but the `dotnet` layout claims only compile items and Razor files.
+- **A Django app named `docs`:** djangoproject.com's documentation app, 3,968 lines, is excluded by the flat layout's list of non-package names, which `django` shares with `python`.
+- **Root files of Next.js applications** that are neither documented conventions nor named tools, such as `env.mjs`.
