@@ -14,23 +14,42 @@ fn read_json(path: &Path) -> Value {
     serde_json::from_slice(&fs::read(path).unwrap()).unwrap()
 }
 
-/// Renames the historical `data/config` kind to its current `data` spelling.
+/// Renames a historical kind or purpose name in a summary key to its current spelling.
 ///
-/// Saved measurements predate the rename in schema `poc-3`; everything else,
-/// including every count and classification, must still match exactly.
-fn current_kind_spelling(value: Value) -> Value {
+/// Keys combine a kind and a purpose (`source:other`), a purpose and a
+/// category (`other:wrapper`), or name a purpose alone.
+fn current_key_spelling(key: &str) -> String {
+    key.split(':')
+        .map(|part| current_name_spelling(part).unwrap_or(part))
+        .collect::<Vec<_>>()
+        .join(":")
+}
+
+/// The current spelling of a renamed kind or purpose, if `name` is a historical one.
+fn current_name_spelling(name: &str) -> Option<&'static str> {
+    match name {
+        "data/config" => Some("data"),
+        "unclassified" => Some("other"),
+        _ => None,
+    }
+}
+
+/// Renames historical kind and purpose names to their current spelling.
+///
+/// Saved measurements predate the `data/config` kind's rename to `data` in
+/// schema `poc-3` and the `unclassified` purpose's rename to `other` in
+/// locmetry 0.5; everything else, including every count and classification,
+/// must still match exactly.
+fn current_spelling(value: Value) -> Value {
     match value {
-        Value::String(text) if text == "data/config" => Value::String("data".into()),
-        Value::Array(items) => Value::Array(items.into_iter().map(current_kind_spelling).collect()),
+        Value::String(text) => match current_name_spelling(&text) {
+            Some(name) => Value::String(name.into()),
+            None => Value::String(text),
+        },
+        Value::Array(items) => Value::Array(items.into_iter().map(current_spelling).collect()),
         Value::Object(map) => Value::Object(
             map.into_iter()
-                .map(|(key, value)| {
-                    let key = match key.strip_prefix("data/config:") {
-                        Some(purpose) => format!("data:{purpose}"),
-                        None => key,
-                    };
-                    (key, current_kind_spelling(value))
-                })
+                .map(|(key, value)| (current_key_spelling(&key), current_spelling(value)))
                 .collect(),
         ),
         other => other,
@@ -108,7 +127,7 @@ fn reviewed_configurations_reproduce_saved_measurements() {
         };
         let sibling = |suffix: &str| path.with_file_name(format!("{stem}{suffix}"));
         let policy = Policy::load(&path).unwrap();
-        let baseline = current_kind_spelling(read_json(&sibling("-measurement.json")));
+        let baseline = current_spelling(read_json(&sibling("-measurement.json")));
         let raw = read_json(&sibling("-measurement.tokei.json"));
         let reviewed = read_json(&sibling(".examples.json"));
         let kinds: BTreeMap<_, _> = baseline["files"]
