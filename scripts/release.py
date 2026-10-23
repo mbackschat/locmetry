@@ -210,7 +210,8 @@ def execute(root, version, publish):
     push(root, version)
     print("Release requested. Publication is complete only when the Release workflow succeeds:")
     print("https://github.com/mbackschat/locmetry/actions/workflows/release.yml")
-    print(f"Then update Homebrew with packaging/homebrew/render-formula.sh {version}.")
+    print(f"Then update Homebrew with packaging/homebrew/render-formula.sh {version}")
+    print(f"and Scoop with packaging/scoop/render-manifest.sh {version}.")
 
 
 def main():

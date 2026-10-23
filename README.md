@@ -35,6 +35,13 @@ Or download a binary from the [latest release](https://github.com/mbackschat/loc
 
 ### Windows and PowerShell
 
+Install with [Scoop](https://scoop.sh):
+
+```powershell
+scoop bucket add mbackschat https://github.com/mbackschat/scoop-bucket
+scoop install mbackschat/locmetry
+```
+
 Run Locmetry from PowerShell; the [common commands](#common-commands) work there as written, including globs in single quotes such as `--exclude 'vendor/**'`.
 
 - Save reports with `--output FILE` rather than `>`. Windows PowerShell 5.1 redirects as UTF-16; `locmetry compare` reads that, but other tools may not.
