@@ -2,10 +2,6 @@
 
 [PRODUCT](PRODUCT.md) owns supported requirements. This file indexes open work and decision gates; it is not a checkpoint log. Read the relevant linked design only when working on that item. Deferred and unscheduled items live in [DEFERRED](DEFERRED.md) and do not authorize implementation.
 
-## Showcase — Follow-up
-
-- [ ] Review two globs of the Immich overlay that decide no file on either pinned tag, which `summary.policy_entries` reports as `unused_patterns`: `packages/*/*.config.{js,cjs,mjs,ts}` in `developer-tooling`, whose files built-in JavaScript conventions now classify first, and `docker/**` in `deployment`. Follow the [overlay review procedure](../examples/showcase/immich/README.md#review-the-policy) and regenerate the showcase recordings; the [measure recording](showcase/measure.md#review-every-entry-of-the-policy) currently cites the first glob as its example.
-
 ## Proposals — Under Discussion
 
 None at present.

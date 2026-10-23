@@ -27,7 +27,7 @@ EXAMPLES = [
     "packages/sdk/src/fetch-client.ts",
 ]
 # Policy entries quoted in the README's configuration example.
-QUOTED_ENTRIES = ["generated-sdk-client", "ios-app"]
+QUOTED_ENTRIES = ["generated-sdk-client", "ios-app", "android-app"]
 
 
 def showcase(script):
@@ -81,7 +81,9 @@ def examples_table():
         record = files[path]
         rule = record["rule"]
         kind = "" if rule.startswith("builtin:") else " (project entry)"
-        lines.append(f"| `{path}` | {record['purpose']} / {record['category']} | `{rule}`{kind} |")
+        # A refinement keeps the deciding rule and changes only the category.
+        refined = f", refined by `{record['refinement']}`" if "refinement" in record else ""
+        lines.append(f"| `{path}` | {record['purpose']} / {record['category']} | `{rule}`{kind}{refined} |")
     return "\n".join(lines) + "\n"
 
 

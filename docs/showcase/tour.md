@@ -68,14 +68,14 @@ The SDK client and the 37 query snapshots carry generator headers. `server/src/b
 
 ## Draft a policy from the evidence
 
-Overrides beat the module layout for the generated files. Rules claim the end-to-end support code and the iOS app, which conventions leave as production or unclaimed. Every entry restricts itself to source and records its reason.
+Rules take the generated files from the module layout, because rules apply before build modules, and claim the end-to-end support code and the iOS app, which conventions leave as production or unclaimed. No override is needed, since none of these files is a conventional test or build script. Every entry restricts itself to source and records its reason.
 
 ```bash
 source scripts/showcase-env.sh
 cat > draft.toml <<'TOML'
 version = 1
 
-[[overrides]]
+[[rules]]
 id = "generated-sdk-client"
 match = ["packages/sdk/src/fetch-client.ts"]
 kind = ["source"]
@@ -83,7 +83,7 @@ purpose = "other"
 category = "generated"
 reason = "Header: DO NOT MODIFY, generated using oazapfts"
 
-[[overrides]]
+[[rules]]
 id = "generated-query-snapshots"
 match = ["server/src/queries/**"]
 kind = ["source"]
@@ -105,7 +105,7 @@ match = ["mobile/ios/**"]
 kind = ["source"]
 purpose = "production"
 category = "native"
-reason = "Swift code of the iOS app; no Package.swift declares it"
+reason = "Swift code of the iOS app. No Package.swift declares it"
 TOML
 locmetry --root immich --config draft.toml --format table --verbose --no-color --no-bars \
   | sed '/^Root:/d; /^Roots:/d; /^Project:/d; /^Measured at:/d' \
@@ -176,6 +176,12 @@ bash "$repository/scripts/compare-locmetry-files.sh" builtin.json reviewed.json 
     "to": "other/generated",
     "files": 38,
     "code": 16165
+  },
+  {
+    "from": "test/test",
+    "to": "test/end-to-end",
+    "files": 49,
+    "code": 9885
   },
   {
     "from": "production/implementation",

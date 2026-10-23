@@ -136,10 +136,10 @@ cd immich && locmetry --show-categories
  Category                   Files    Lines     Code │ Share  Code share
  ───────────────────────────────────────────────────┼────────────────────────────────────────────────
  production:implementation  1,837  199,093  170,113 │ 60.2%  ████████████████████████████████████████
- test:test                    499   99,381   83,595 │ 29.6%  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+ test:test                    450   87,800   73,710 │ 26.1%  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
  other:generated               38   19,173   16,165 │  5.7%  ░░░░
+ test:end-to-end               72   15,300   13,003 │  4.6%  ▓▓▓
  production:native             67    8,870    7,206 │  2.5%  ██
- test:end-to-end               23    3,719    3,118 │  1.1%  ▓
  production:deployment         31    1,023      798 │  0.3%  ▏
  production:tooling            14      909      722 │  0.3%  ▏
  production:build-tooling      14      813      718 │  0.3%  ▏
@@ -151,7 +151,7 @@ cd immich && locmetry --show-categories
 
 Categories are labels assigned by built-in conventions, such as `test` and `build-tooling`, and by the policy, such as `generated`, `native` and `tooling`; a line counter has no equivalent. The showcase narrows the tables to [the code around the product](docs/showcase/measure.md#look-at-the-code-around-the-product) with `--table-category` and [focuses on the mobile app](docs/showcase/measure.md#focus-on-the-mobile-app) with `--subfolder`.
 
-`locmetry explain FILE` names the rule behind any decision; for the generated SDK client, it reports the override and the reason recorded with it.
+`locmetry explain FILE` names the rule behind any decision; for the generated SDK client, it reports the rule and the reason recorded with it.
 
 ### Workspaces and comparisons answer "where, and what changed"
 
@@ -328,7 +328,7 @@ Locmetry embeds Tokei for counting and applies project policy to each file. Purp
 - **Ordered decisions:** explicit overrides precede test and build conventions, ordinary project rules, module inference and fallback. Tests inside production source trees remain tests; overrides can express exceptions. Refinements then give decided files a finer category without changing their purpose. Every counted file records the deciding rule, and reports count what each policy entry decided.
 - **Scope and coverage:** exclusions and ignore rules determine what is selected. Unrecognized files and unavailable counts remain distinguishable from zero. Read/parse failures produce a partial report and exit 2; unresolved classification alone does not make counts partial.
 
-These Immich files show each kind of decision, from module layout and test conventions to project entries:
+These Immich files show each kind of decision, from module layout and test conventions to project entries and refinements:
 
 <!-- showcase-examples -->
 | File | Purpose / category | Deciding rule |
@@ -336,8 +336,8 @@ These Immich files show each kind of decision, from module layout and test conve
 | `server/src/services/asset.service.ts` | production / implementation | `builtin:npm-module` |
 | `mobile/lib/main.dart` | production / implementation | `builtin:dart-module` |
 | `server/src/services/asset.service.spec.ts` | test / test | `builtin:js-test-file` |
-| `e2e/src/specs/web/album.e2e-spec.ts` | test / test | `builtin:js-e2e-spec-file` |
-| `e2e/src/utils.ts` | test / end-to-end | `end-to-end-suites` (project entry) |
+| `e2e/src/specs/web/album.e2e-spec.ts` | test / end-to-end | `builtin:js-e2e-spec-file`, refined by `end-to-end` |
+| `e2e/src/utils.ts` | test / end-to-end | `end-to-end-suites` (project entry), refined by `end-to-end` |
 | `mobile/ios/Runner/AppDelegate.swift` | production / native | `ios-app` (project entry) |
 | `packages/sdk/src/fetch-client.ts` | other / generated | `generated-sdk-client` (project entry) |
 
@@ -392,13 +392,15 @@ Tests inside these trees stay tests, and nested modules decide for themselves. G
 
 No configuration is required to start. Add `.locmetryrc` when conventions cannot know local intent: which code is vendored, which scripts are maintained tooling, or which experiments should explicitly count as `other`. Locmetry does not automatically recognize vendored or generated code.
 
-Two entries of the Immich policy show the shape: an override that beats the npm module layout for generated code, and a rule for code no build descriptor declares. Each restricts itself to source and records its evidence:
+Three entries of the Immich policy show the shape: a rule that takes generated code from the npm module layout, a rule for code no build descriptor declares, and a refinement that relabels code without changing its purpose. Each restricts itself to source, records its evidence, and says in a comment why it uses its stage:
 
 <!-- showcase-config -->
 ```toml
 version = 1
 
-[[overrides]]
+# A rule suffices to take a file from the npm module layout: rules apply before
+# build modules, and no test or build convention claims generated sources.
+[[rules]]
 id = "generated-sdk-client"
 match = ["packages/sdk/src/fetch-client.ts"]
 kind = ["source"]
@@ -406,20 +408,32 @@ purpose = "other"
 category = "generated"
 reason = "Header: DO NOT MODIFY, generated using oazapfts from the OpenAPI specification"
 
+# A rule claims the iOS code because no Package.swift declares it, so it would
+# otherwise stay unclaimed. The Android code is module source and only needs
+# the android-app refinement below.
 [[rules]]
 id = "ios-app"
 match = ["mobile/ios/**/*.swift", "mobile/ios/**/*.h"]
 kind = ["source"]
 purpose = "production"
 category = "native"
-reason = "Swift code and headers of the iOS runner and its extensions; no Package.swift declares it"
+reason = "Swift code and headers of the iOS runner and its extensions. No Package.swift declares it"
+
+# The Gradle module layout already counts the Android runner as production.
+[[refinements]]
+id = "android-app"
+purpose = "production"
+match = ["mobile/android/app/src/main/**"]
+kind = ["source"]
+category = "native"
+reason = "Kotlin, Java and C code of the Android runner, which the Gradle layout labels implementation"
 ```
 
 Tests still win over ordinary rules; an override is needed only to change the purpose a convention gives. To give tests or other decided files a finer category, such as `property-law`, use a refinement, which cannot move code between production and test. Reports list each entry with the files and code it decided and the decisions it replaced as `summary.policy_entries`, so an entry that misses most of its files or moves production code into tests shows up. Entries without evidence belong in the review list as unclaimed source, not in the policy. A clean review list alone does not establish correct classification.
 
 The [configuration guide](docs/guides/configure.md) covers overrides, refinements, `except` lists, custom categories, language mappings and evidence-based review. [Personal defaults](docs/PRODUCT.md#user-defaults) can supply exclusions and language mappings across projects; they cannot assign purposes or categories.
 
-Locmetry's own [.locmetryrc](.locmetryrc) is a maintained example: it excludes the synthetic demonstration workspace and distinguishes operational tooling, distribution and verification infrastructure. [Self-measurement design](docs/self-measurement.md) explains the decisions and how to verify them.
+Locmetry's own [.locmetryrc](.locmetryrc) is a maintained example: it excludes the synthetic demonstration workspace, distinguishes operational tooling, distribution and verification infrastructure, and splits its tests into unit, integration, tooling and documentation checks with refinements. The [Immich policy](examples/showcase/immich/overlay/.locmetryrc) is the larger example, and [its README](examples/showcase/immich/README.md#how-the-policy-is-built) explains why each entry uses its stage. [Self-measurement design](docs/self-measurement.md) explains the decisions and how to verify them.
 
 For a production-rule change covered by the example in `locmetry --help`, inspect existing configuration and measure current decisions, adapt the paths and category, then run the displayed verification command. Reading a guide or schema first is optional for that route. Use `locmetry --guide configure` or `locmetry --schema config` for exclusions, overrides, intentional Other, or semantics not shown there. Verify per-file decisions and unresolved review items before concluding. Guides and schemas are available from the installed binary without a network connection.
 

@@ -132,10 +132,10 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  Category                   Files    Lines     Code
  ──────────────────────────────────────────────────
  production:implementation  1,837  199,093  170,113
- test:test                    499   99,381   83,595
+ test:test                    450   87,800   73,710
  other:generated               38   19,173   16,165
+ test:end-to-end               72   15,300   13,003
  production:native             67    8,870    7,206
- test:end-to-end               23    3,719    3,118
  production:deployment         31    1,023      798
  production:tooling            14      909      722
  production:build-tooling      14      813      718
@@ -145,11 +145,11 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
 
 ```
 
-Generated code moves from production to Other with category `generated`, end-to-end helpers join the tests, and nothing remains unclaimed. Test/prod divides test code by production code; it describes volume, not coverage.
+Generated code moves from production to Other with category `generated`, end-to-end helpers join the tests, the whole end-to-end suite shares one category, and nothing remains unclaimed. Test/prod divides test code by production code; it describes volume, not coverage.
 
 ## Trace a policy decision
 
-The same explanation now names the override that decided and the reason recorded with it, so a reviewer can check the evidence instead of trusting the number.
+The same explanation now names the rule that decided and the reason recorded with it, so a reviewer can check the evidence instead of trusting the number.
 
 ```bash
 source scripts/showcase-env.sh
@@ -163,7 +163,7 @@ locmetry explain packages/sdk/src/fetch-client.ts --root immich --format json \
   "purpose": "other",
   "category": "generated",
   "decision": {
-    "stage": "override",
+    "stage": "rule",
     "matched_patterns": [
       "packages/sdk/src/fetch-client.ts"
     ],
@@ -187,43 +187,49 @@ locmetry --root immich --format table --verbose --no-color --no-bars \
 ```output
  Entries that changed the purpose a later stage would give: generated-sdk-client (Production to Other, 6,466 code
 lines), generated-query-snapshots (Production to Other, 9,699 code lines), end-to-end-suites (Production to Test, 3,118
-code lines), end-to-end-auth-server (Production to Test, 10 code lines).
+code lines).
 ```
 
-The JSON entry also shows files an entry matched but did not decide. The developer-tooling rule matches tool configuration that built-in conventions classify first, so those files stay build tooling or test configuration. `preempted` names the conventions and how many files each took. The rule's glob for package configuration files decides nothing at all, since the conventions cover every file it matches, so `unused_patterns` lists it as a candidate for removal from the policy.
+The JSON entries also show how a rule and a refinement share one decision. The `end-to-end-suites` rule makes the suites' helpers tests, which the npm layout would count as production, and `preempted` names the convention that made the 49 spec files tests first. The `end-to-end` refinement then gives all of them one category, and its `displaced` shows that it changed only the category of files that were already tests.
 
 ```bash
 source scripts/showcase-env.sh
 locmetry --root immich --format json \
-  | jq '.summary.policy_entries[] | select(.id == "developer-tooling")'
-
+  | jq '.summary.policy_entries[] | select(.id == "end-to-end-suites" or .id == "end-to-end")'
 ```
 
 ```output
 {
-  "id": "developer-tooling",
+  "id": "end-to-end-suites",
   "stage": "rule",
-  "purpose": "production",
-  "files": 14,
-  "code": 722,
+  "purpose": "test",
+  "files": 23,
+  "code": 3118,
   "preempted": [
     {
-      "by": "builtin:js-tool-config",
-      "files": 10
-    },
-    {
-      "by": "builtin:js-test-runner-config",
-      "files": 3
+      "by": "builtin:js-e2e-spec-file",
+      "files": 49
     }
-  ],
-  "unused_patterns": [
-    "packages/*/*.config.{js,cjs,mjs,ts}"
   ],
   "displaced": [
     {
       "decision": "production:implementation",
-      "files": 1,
-      "code": 343
+      "files": 23,
+      "code": 3118
+    }
+  ]
+}
+{
+  "id": "end-to-end",
+  "stage": "refinement",
+  "purpose": "test",
+  "files": 72,
+  "code": 13003,
+  "displaced": [
+    {
+      "decision": "test:test",
+      "files": 72,
+      "code": 13003
     }
   ]
 }
@@ -292,7 +298,7 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  Total          63  2,996  2,472 │      156     368 │ 2,238   234 │      5.9%
  Lines = Code + Comments + Blanks · Production + Test = Code · Comment % = Comments / (Code + Comments)
  Folded: BASH → Shell.
- Not shown (categories): production:implementation, test:test, other:generated, production:native, test:end-to-end and
+ Not shown (categories): production:implementation, test:test, other:generated, test:end-to-end, production:native and
 test:performance-test (280,261 code lines).
 
  ────────────────────────────────────────────
@@ -352,4 +358,4 @@ locmetry --root immich --subfolder mobile --format table --show-categories --no-
 
 ```
 
-The mobile app has a Test/prod of 0.24, half the project's 0.48. Its platform code, Kotlin, Java and C for Android and Swift for iOS, is 7,206 code lines, about a tenth of its production code; Dart carries the rest. Android code needs an override because the Gradle module convention would otherwise label it `implementation`, while no build descriptor declares the iOS code, so an ordinary rule suffices there.
+The mobile app has a Test/prod of 0.24, half the project's 0.48. Its platform code, Kotlin, Java and C for Android and Swift for iOS, is 7,206 code lines, about a tenth of its production code; Dart carries the rest. The Gradle module layout already counts the Android code as production, so a refinement only relabels it `native`, while no build descriptor declares the iOS code, so a rule claims it.
