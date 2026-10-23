@@ -44,7 +44,7 @@ Decided 2026-10-23 by the owner: implement the accepted proposals in this order,
 
 ## Proposals — Under Discussion
 
-- [Generated-code markers](proposals/generated-code-markers.md), draft of 2026-10-23: module-claimed production with a documented marker or a `.gitattributes` `linguist-generated` declaration becomes `production:generated`. Decisions: accept the required markers; turn the unreleased `dotnet-generated` convention into the Roslyn marker before release; defer the optional markers, Django's migration header, OpenAPI Generator's manifest, `@generated` and tool-specific headers.
+- [Generated-code markers](proposals/generated-code-markers.md), draft of 2026-10-23: module-claimed production with a documented marker or a `.gitattributes` `linguist-generated` declaration becomes `production:generated`. Decisions: accept the required markers, including Java's type-level `@Generated` added after a Java and Spring measurement; turn the unreleased `dotnet-generated` convention into the Roslyn marker before release; defer the optional markers, Django's migration header, OpenAPI Generator's manifest, `@generated` and tool-specific headers.
 
 The [proposal index](proposals/README.md) distinguishes active designs from historical decisions.
 
