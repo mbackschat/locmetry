@@ -19,7 +19,7 @@ locmetry workspace --workspace-file v3.3.4/immich/workspace.toml --format table 
  ────────────────────────────────────────────────────────────────────────────────────────────
  Language    Files    Lines     Code │ Comments  Blanks │   Prod.    Test   Other │ Test/prod
  ────────────────────────────────────┼──────────────────┼─────────────────────────┼──────────
- TypeScript  1,083  171,885  145,882 │    4,633  21,370 │  70,910  68,506   6,466 │      0.97
+ TypeScript  1,083  171,885  145,882 │    4,633  21,370 │  70,800  68,616   6,466 │      0.97
  Dart          823   90,871   75,726 │    2,779  12,366 │  59,495  16,231       0 │      0.27
  JavaScript     11   22,954   19,487 │      382   3,085 │  19,425      62       0 │      0.00
  Svelte        412   19,014   17,442 │      200   1,372 │  17,420      22       0 │      0.00
@@ -41,7 +41,7 @@ locmetry workspace --workspace-file v3.3.4/immich/workspace.toml --format table 
  CMake           1       13        9 │        0       4 │       9       0       0 │      0.00
  C Header        1        1        1 │        0       0 │       1       0       0 │      0.00
  ────────────────────────────────────┼──────────────────┼─────────────────────────┼──────────
- Total       2,498  332,353  281,955 │    9,072  41,326 │ 178,889  86,901  16,165 │      0.49
+ Total       2,498  332,353  281,955 │    9,072  41,326 │ 178,779  87,011  16,165 │      0.49
  Lines = Code + Comments + Blanks · Production + Test + Other = Code · Test/prod = Test / Production (Code)
  Tests written in another language than the code they test skew per-language Test/prod.
  Folded: TSX → TypeScript.
@@ -52,11 +52,11 @@ locmetry workspace --workspace-file v3.3.4/immich/workspace.toml --format table 
  server            129,296  111,950 │  53,296  48,955   9,699 │      0.92 │  39.7%
  mobile            100,142   83,220 │  66,989  16,231       0 │      0.24 │  29.5%
  web                67,833   58,255 │  52,867   5,388       0 │      0.10 │  20.7%
- e2e                15,491   13,174 │     171  13,003       0 │     76.04 │   4.7%
+ e2e                15,491   13,174 │      61  13,113       0 │    214.97 │   4.7%
  packages           12,893   10,065 │   2,345   1,254   6,466 │      0.53 │   3.6%
  machine-learning    6,698    5,291 │   3,221   2,070       0 │      0.64 │   1.9%
  ───────────────────────────────────┼─────────────────────────┼───────────┼───────
- Total             332,353  281,955 │ 178,889  86,901  16,165 │      0.49 │ 100.0%
+ Total             332,353  281,955 │ 178,779  87,011  16,165 │      0.49 │ 100.0%
  Production + Test + Other = Code · Test/prod = Test / Production (Code) · Share = Code / workspace Code
 
 ```

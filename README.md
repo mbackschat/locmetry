@@ -9,7 +9,7 @@
 
 Locmetry counts code, comments and blank lines, classifies files as production, test or other and by category, such as generated code or tooling, and records the rule behind each classification. Reports separate source code from data and documentation and show results by language and folder.
 
-It needs no configuration to start: Locmetry recognizes the [build modules](#build-modules) of npm, Gradle, Maven, Cargo, Go, Python, Lake, Swift and Dart projects, counts their conventional source layouts as production and finds tests by built-in conventions, so even a multi-language monorepo gets a production/test split on the first run.
+It needs no configuration to start: Locmetry recognizes the [build modules](#build-modules) of npm, Gradle, Maven, Cargo, Go, Python, Lake, Swift, Dart, .NET, Composer and RubyGems projects and of Next.js, Nuxt, React Router, Symfony, Laravel, Rails and Django applications, counts their conventional source layouts as production and finds tests by built-in conventions, so even a multi-language monorepo gets a production/test split on the first run.
 
 ## Install
 
@@ -48,7 +48,7 @@ cd immich && locmetry
  ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
  Language    Files    Lines     Code │ Comments  Blanks │   Prod.    Test   Other │ Test/prod │  Share  Code share
  ────────────────────────────────────┼──────────────────┼─────────────────────────┼───────────┼─────────────────────────
- TypeScript  1,085  171,956  145,943 │    4,633  21,380 │  70,971  68,506   6,466 │      0.97 │  51.6%  ████████▓▓▓▓▓▓▓░
+ TypeScript  1,085  171,956  145,943 │    4,633  21,380 │  70,861  68,616   6,466 │      0.97 │  51.6%  ████████▓▓▓▓▓▓▓░
  Dart          823   90,871   75,726 │    2,779  12,366 │  59,495  16,231       0 │      0.27 │  26.8%  ██████▓▓
  JavaScript     17   23,273   19,746 │      427   3,100 │  19,684      62       0 │      0.00 │   7.0%  ██
  Svelte        412   19,014   17,442 │      200   1,372 │  17,420      22       0 │      0.00 │   6.2%  ██
@@ -72,7 +72,7 @@ cd immich && locmetry
  Templ           1       11        6 │        0       5 │       6       0       0 │      0.00 │   0.0%  ▏
  C Header        1        1        1 │        0       0 │       1       0       0 │      0.00 │   0.0%  ▏
  ────────────────────────────────────┼──────────────────┼─────────────────────────┼───────────┼─────────────────────────
- Total       2,529  333,360  282,770 │    9,149  41,441 │ 179,704  86,901  16,165 │      0.48 │ 100.0%
+ Total       2,529  333,360  282,770 │    9,149  41,441 │ 179,594  87,011  16,165 │      0.48 │ 100.0%
  Lines = Code + Comments + Blanks · Production + Test + Other = Code · Test/prod = Test / Production (Code)
  Tests written in another language than the code they test skew per-language Test/prod.
  Folded: TSX → TypeScript.
@@ -89,7 +89,7 @@ Line counters are good at counting, and Locmetry counts with Tokei too. Their to
 | Tool | Reported code | of which JSON | Production / test split |
 | --- | ---: | ---: | --- |
 | Tokei 15.0.0 | 518,920 | 209,607 (40%) | none |
-| cloc 2.10 | 529,600 | 209,931 (40%) | none |
+| cloc 2.10 | 530,430 | 209,931 (40%) | none |
 | scc 4.1.0 | 510,075 | 209,867 (41%) | none |
 
 ### A reviewed policy answers "what does this project consist of"
@@ -99,10 +99,10 @@ Built-in conventions already recognize the npm, Gradle, Python and Dart [build m
 <!-- showcase-policy -->
 | Source code | Built-in conventions | Reviewed policy |
 | --- | ---: | ---: |
-| Production | 193,662 | 179,704 |
-| Test | 83,485 | 86,901 |
+| Production | 194,232 | 179,594 |
+| Test | 83,595 | 87,011 |
 | Other: generated | 0 | 16,165 |
-| Other: unclaimed | 5,623 | 0 |
+| Other: unclaimed | 4,943 | 0 |
 | Test/prod | 0.43 | 0.48 |
 
 `--show-categories` breaks each purpose down by category, which shows what the project consists of:
@@ -117,14 +117,14 @@ cd immich && locmetry --show-categories
  Category                   Files    Lines     Code │ Share  Code share
  ───────────────────────────────────────────────────┼────────────────────────────────────────────────
  production:implementation  1,837  199,093  170,113 │ 60.2%  ████████████████████████████████████████
- test:test                    496   99,255   83,485 │ 29.5%  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+ test:test                    499   99,381   83,595 │ 29.6%  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
  other:generated               38   19,173   16,165 │  5.7%  ░░░░
  production:native             67    8,870    7,206 │  2.5%  ██
  test:end-to-end               23    3,719    3,118 │  1.1%  ▓
- production:tooling            28    1,709    1,439 │  0.5%  ▏
  production:deployment         31    1,023      798 │  0.3%  ▏
+ production:tooling            15      956      759 │  0.3%  ▏
+ production:build-tooling      14      813      718 │  0.3%  ▏
  test:test-infrastructure       4      251      234 │  0.1%  ▏
- production:build-tooling       4      186      148 │  0.1%  ▏
  test:performance-test          1       81       64 │  0.0%  ▏
  Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
  Share = Code / total Code. Bars: █ Production  ▓ Test  ░ Other. The largest row fills the bar.
@@ -160,11 +160,11 @@ locmetry workspace --workspace-file immich/workspace.toml
  server            129,296  111,950 │  53,296  48,955   9,699 │      0.92 │  39.7%  █████████████████▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░
  mobile            100,142   83,220 │  66,989  16,231       0 │      0.24 │  29.5%  ██████████████████████▓▓▓▓▓
  web                67,833   58,255 │  52,867   5,388       0 │      0.10 │  20.7%  █████████████████▓▓
- e2e                15,491   13,174 │     171  13,003       0 │     76.04 │   4.7%  ▓▓▓▓
+ e2e                15,491   13,174 │      61  13,113       0 │    214.97 │   4.7%  ▓▓▓▓
  packages           12,893   10,065 │   2,345   1,254   6,466 │      0.53 │   3.6%  █░░
  machine-learning    6,698    5,291 │   3,221   2,070       0 │      0.64 │   1.9%  █▓
  ───────────────────────────────────┼─────────────────────────┼───────────┼─────────────────────────────────────────────
- Total             332,353  281,955 │ 178,889  86,901  16,165 │      0.49 │ 100.0%
+ Total             332,353  281,955 │ 178,779  87,011  16,165 │      0.49 │ 100.0%
  Production + Test + Other = Code · Test/prod = Test / Production (Code) · Share = Code / workspace Code
  Bars: █ Production  ▓ Test  ░ Other. The largest row fills the bar.
 ```
@@ -177,8 +177,8 @@ Compare saved reports of two releases, `v3.2.0` and `v3.3.4`:
                          Lines           │           Code
  Purpose        before    after   change │  before    after  change
  ────────────────────────────────────────┼─────────────────────────
- Production    208,180  210,881   +2,701 │ 177,605  179,704  +2,099
- Test           96,101  103,306   +7,205 │  81,051   86,901  +5,850
+ Production    208,054  210,755   +2,701 │ 177,495  179,594  +2,099
+ Test           96,227  103,432   +7,205 │  81,161   87,011  +5,850
  Other          17,825   19,173   +1,348 │  14,910   16,165  +1,255
  ────────────────────────────────────────┼─────────────────────────
  Source total  322,106  333,360  +11,254 │ 273,566  282,770  +9,204
@@ -287,7 +287,7 @@ For file-level recognition and classification changes, run `compare-locmetry-fil
 
 Locmetry embeds Tokei for counting and applies project policy to each file. Purpose (`production`, `test`, `other`), category (such as `implementation` or `tooling`) and content kind (source, data, documentation or unknown) are separate dimensions. `other` means neither production nor test; code no stage claimed is `other` with category `unclaimed`. Kind follows the physical file, so a fenced code block in Markdown or other documentation counts as documentation, never as source; `--verbose` shows how many code lines such snippets hold. Rust doc comments, doctests included, stay comments of their file.
 
-- **Module context:** selected npm, Gradle, Maven, Cargo, Go, Python, Lake, Swift and Dart descriptors identify conventional source layouts, as [build modules](#build-modules) describes. The innermost module supplies context, so nested projects do not inherit an outer project's layout blindly.
+- **Module context:** selected build descriptors, such as npm, Gradle, Cargo, Go, Python or .NET project files, and framework descriptors, such as `next.config.ts` or Laravel's `artisan`, identify conventional source layouts, as [build modules](#build-modules) describes. The innermost module supplies context, so nested projects do not inherit an outer project's layout blindly.
 - **Ordered decisions:** explicit overrides precede test and build conventions, ordinary project rules, module inference and fallback. Tests inside production source trees remain tests; overrides can express exceptions. Every counted file records the deciding rule.
 - **Scope and coverage:** exclusions and ignore rules determine what is selected. Unrecognized files and unavailable counts remain distinguishable from zero. Read/parse failures produce a partial report and exit 2; unresolved classification alone does not make counts partial.
 
@@ -331,6 +331,16 @@ Locmetry recognizes build modules by their descriptors and counts each one's con
 | Lake (Lean) | `lakefile.lean`, `lakefile.toml` | every `*.lean` file |
 | Swift | `Package.swift` | `Sources/**` |
 | Dart and Flutter | `pubspec.yaml` | `lib/**`, `bin/**` |
+| Next.js | `next.config.*` | `app/**`, `pages/**`, `src/**`, root `middleware`, `instrumentation` and similar files, and the folders the docs show, such as `components/**` and `lib/**` |
+| Nuxt | `nuxt.config.*` | `app/**`, `server/**` and the other documented folders, `app.vue`, `error.vue` |
+| React Router | `react-router.config.*` | `app/**` |
+| .NET | `*.csproj`, `*.fsproj`, `*.vbproj` | every `*.cs`, `*.fs`, `*.vb`, `*.razor` and `*.cshtml` file |
+| Composer | `composer.json` | `src/**` |
+| Symfony | `symfony.lock` | `src/**`, `assets/**`, `config/**`, `migrations/**`, `templates/**` |
+| Laravel | `artisan` | `app/**`, `bootstrap/**`, `config/**`, `database/migrations/**`, `routes/**`, `resources/**` except `lang/` |
+| Rails | `config.ru` | `app/**`, `lib/**`, `config/**`, `db/migrate/**` |
+| RubyGems | `*.gemspec` | `lib/**`, `exe/**` |
+| Django | `manage.py` | top-level packages |
 
 On Immich, `cd immich && locmetry --verbose` reports what the modules contributed:
 

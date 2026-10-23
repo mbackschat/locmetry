@@ -8,6 +8,8 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 
 - `--table-category` narrows tables to categories, as `--table-purpose` narrows them to purposes: `--table-category test,production:tooling` takes whole purposes or exact `purpose:category` keys, and `'production:*tooling*'` matches with wildcards. A `Not shown (categories)` note names what it leaves out, an entry that matches no category in the measurement warns, and Test/prod gives way to Comment % when only part of Production or Test is shown.
 
+- Popular frameworks are classified without configuration: Next.js, Nuxt, React Router, .NET, Composer, Symfony, Laravel, Rails, RubyGems and Django projects are detected as build modules with the folders their documentation names. .NET test projects, RSpec files, Django `tests.py` and test-runner configuration such as `vitest.config.ts` are tests; configuration of named JavaScript tools such as `vite.config.ts` is build tooling; and .NET designer and EF Core snapshot files are `production:generated`. Comparisons with earlier reports may show these files reclassified.
+
 ### Changed
 
 - `-h` gives each option and command a one-line summary, and `--help` keeps the full text: `locmetry -h` is 41% shorter and points to `--help` for more. The command list and the help footer no longer repeat what the commands' and options' own help says.

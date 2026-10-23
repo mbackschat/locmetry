@@ -26,9 +26,9 @@ locmetry --root immich --config builtin-only.toml --format json \
   "all_counted": 522776,
   "source": 282770,
   "purposes": {
-    "production": 193662,
-    "test": 83485,
-    "other": 5623
+    "production": 194232,
+    "test": 83595,
+    "other": 4943
   },
   "unclaimed": [
     {
@@ -42,9 +42,9 @@ locmetry --root immich --config builtin-only.toml --format json \
       "code": 830
     },
     {
-      "folder": "packages",
-      "files": 11,
-      "code": 361
+      "folder": "mobile/pigeon",
+      "files": 9,
+      "code": 325
     }
   ]
 }
@@ -101,7 +101,7 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  ────────────────────────────────────────────────────────────────────────────────────────────
  Language    Files    Lines     Code │ Comments  Blanks │   Prod.    Test   Other │ Test/prod
  ────────────────────────────────────┼──────────────────┼─────────────────────────┼──────────
- TypeScript  1,085  171,956  145,943 │    4,633  21,380 │  70,971  68,506   6,466 │      0.97
+ TypeScript  1,085  171,956  145,943 │    4,633  21,380 │  70,861  68,616   6,466 │      0.97
  Dart          823   90,871   75,726 │    2,779  12,366 │  59,495  16,231       0 │      0.27
  JavaScript     17   23,273   19,746 │      427   3,100 │  19,684      62       0 │      0.00
  Svelte        412   19,014   17,442 │      200   1,372 │  17,420      22       0 │      0.00
@@ -125,7 +125,7 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  Templ           1       11        6 │        0       5 │       6       0       0 │      0.00
  C Header        1        1        1 │        0       0 │       1       0       0 │      0.00
  ────────────────────────────────────┼──────────────────┼─────────────────────────┼──────────
- Total       2,529  333,360  282,770 │    9,149  41,441 │ 179,704  86,901  16,165 │      0.48
+ Total       2,529  333,360  282,770 │    9,149  41,441 │ 179,594  87,011  16,165 │      0.48
  Lines = Code + Comments + Blanks · Production + Test + Other = Code · Test/prod = Test / Production (Code)
  Tests written in another language than the code they test skew per-language Test/prod.
  Folded: TSX → TypeScript.
@@ -134,14 +134,14 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  Category                   Files    Lines     Code
  ──────────────────────────────────────────────────
  production:implementation  1,837  199,093  170,113
- test:test                    496   99,255   83,485
+ test:test                    499   99,381   83,595
  other:generated               38   19,173   16,165
  production:native             67    8,870    7,206
  test:end-to-end               23    3,719    3,118
- production:tooling            28    1,709    1,439
  production:deployment         31    1,023      798
+ production:tooling            15      956      759
+ production:build-tooling      14      813      718
  test:test-infrastructure       4      251      234
- production:build-tooling       4      186      148
  test:performance-test          1       81       64
  Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
 
@@ -197,14 +197,14 @@ locmetry --root immich --format table --folder-rows 16 --no-color --no-bars --ta
  docs                       492      401 │     401       0       0 │      0.00
  deployment                 262      225 │     225       0       0 │      0.00
  server (direct files)      243      200 │     200       0       0 │      0.00
- e2e (direct files)         191      171 │     171       0       0 │      0.00
+ e2e (direct files)         191      171 │      61     110       0 │      1.80
  server/bin                 157      126 │     126       0       0 │      0.00
  (root files)               131      111 │     111       0       0 │      0.00
  .devcontainer/server        85       58 │      58       0       0 │      0.00
  open-api/bin                26       14 │      14       0       0 │      0.00
  misc/release                11        6 │       6       0       0 │      0.00
  ────────────────────────────────────────┼─────────────────────────┼──────────
- Total                  333,360  282,770 │ 179,704  86,901  16,165 │      0.48
+ Total                  333,360  282,770 │ 179,594  87,011  16,165 │      0.48
 ```
 
 ## Look at the code around the product
@@ -224,9 +224,9 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  Language    Files  Lines   Code │ Comments  Blanks │ Prod.  Test │ Comment %
  ────────────────────────────────┼──────────────────┼─────────────┼──────────
  JavaScript     13    822    715 │       62      45 │   715     0 │      8.0%
- TypeScript      9    483    445 │        8      30 │   221   224 │      1.8%
  Shell          14    510    365 │       62      83 │   365     0 │     14.5%
  Dart            1    388    343 │        1      44 │   343     0 │      0.3%
+ TypeScript      6    357    335 │        5      17 │   111   224 │      1.5%
  Dockerfile      4    369    267 │       12      90 │   257    10 │      4.3%
  HCL            16    262    225 │        4      33 │   225     0 │      1.7%
  Groovy          3    173    139 │        7      27 │   139     0 │      4.8%
@@ -236,18 +236,18 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  CMake           1     13      9 │        0       4 │     9     0 │      0.0%
  Templ           1     11      6 │        0       5 │     6     0 │      0.0%
  ────────────────────────────────┼──────────────────┼─────────────┼──────────
- Total          67  3,169  2,619 │      159     391 │ 2,385   234 │      5.7%
+ Total          64  3,043  2,509 │      156     378 │ 2,275   234 │      5.9%
  Lines = Code + Comments + Blanks · Production + Test = Code · Comment % = Comments / (Code + Comments)
  Not shown (categories): production:implementation, test:test, other:generated, production:native, test:end-to-end and
-test:performance-test (280,151 code lines).
+test:performance-test (280,261 code lines).
 
- ─────────────────────────────────────────────
- Category                  Files  Lines   Code
- ─────────────────────────────────────────────
- production:tooling           28  1,709  1,439
- production:deployment        31  1,023    798
- test:test-infrastructure      4    251    234
- production:build-tooling      4    186    148
+ ────────────────────────────────────────────
+ Category                  Files  Lines  Code
+ ────────────────────────────────────────────
+ production:deployment        31  1,023   798
+ production:tooling           15    956   759
+ production:build-tooling     14    813   718
+ test:test-infrastructure      4    251   234
  Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
 
 ```

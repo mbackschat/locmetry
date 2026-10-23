@@ -81,6 +81,30 @@ pub(super) const BUILTIN_TESTS_V1: &[Convention] = &[
         "python-test-file",
         &["**/test_*.py", "**/*_test.py", "**/conftest.py"],
     ),
+    // .NET test projects are named `<Project>.Tests` or `<Project>.Test`; their
+    // C# files carry no test suffix, and the `dotnet` detector would claim them.
+    test_convention("dotnet-test-project", &["**/*.*Test/**", "**/*.*Tests/**"]),
+    // RSpec's default pattern and its generated helpers. A `spec/` directory
+    // convention was rejected: Go packages are named `spec`
+    // (docs/research/framework-layouts.md).
+    test_convention(
+        "rspec-file",
+        &[
+            "**/*_spec.rb",
+            "**/spec/{spec_helper,rails_helper}.rb",
+            "**/spec/{support,factories}/**/*.rb",
+        ],
+    ),
+    // Django's `startapp` creates a `tests.py` in every app.
+    test_convention("django-tests-module", &["**/tests.py"]),
+    // Test-runner configuration is test tooling.
+    test_convention(
+        "js-test-runner-config",
+        &[
+            "**/{vitest,jest,playwright,cypress}.config.*",
+            "**/{vitest,jest,playwright,cypress}.*.config.*",
+        ],
+    ),
 ];
 
 /// Version-1 build conventions, applied after test conventions.
@@ -112,6 +136,32 @@ pub(super) const BUILTIN_BUILD_V1: &[Convention] = &[
         ],
         purpose: Purpose::Other,
         category: "third-party-wrapper",
+    },
+    // Named tools only: application code also uses the `*.config.*` suffix,
+    // such as Angular's `app.config.ts` and Sentry's `sentry.server.config.ts`
+    // (docs/research/framework-layouts.md, precision pass).
+    Convention {
+        id: "js-tool-config",
+        patterns: &[
+            "**/{vite,webpack,rollup,rolldown,esbuild,tsup,tsdown,babel,postcss,tailwind,eslint,prettier,stylelint,lint-staged,commitlint,metro,next,nuxt,astro,svelte,react-router}.config.*",
+            "**/{vite,webpack,rollup,rolldown,esbuild,tsup,tsdown,babel,postcss,tailwind,eslint,prettier,stylelint,lint-staged,commitlint,metro,next,nuxt,astro,svelte,react-router}.*.config.*",
+        ],
+        purpose: Purpose::Production,
+        category: "build-tooling",
+    },
+    // Designer, source-generator and EF Core migration metadata files, which
+    // were 67% of one application's C# (docs/research/framework-layouts.md;
+    // https://learn.microsoft.com/ef/core/managing-schemas/migrations/).
+    Convention {
+        id: "dotnet-generated",
+        patterns: &[
+            "**/*.Designer.cs",
+            "**/*.g.cs",
+            "**/*.g.i.cs",
+            "**/*ModelSnapshot.cs",
+        ],
+        purpose: Purpose::Production,
+        category: "generated",
     },
 ];
 

@@ -30,16 +30,16 @@ in '.locmetryrc':
    server/src/queries/person.repository.sql                        1,344 code lines  server (npm)
    server/src/schema/migrations/1752267649968-StandardizeNames.ts  1,193 code lines  server (npm)
    server/src/repositories/asset.repository.ts                     1,161 code lines  server (npm)
- Unclaimed source: 5,623 code lines in 102 files, here:
+ Unclaimed source: 4,943 code lines in 89 files, here:
    mobile/ios/Runner           2,272 code lines  21 files
    mobile/ios/WidgetExtension    830 code lines   7 files
-   packages                      361 code lines  11 files
-   server                        326 code lines   7 files
    mobile/pigeon                 325 code lines   9 files
-   web                           302 code lines   5 files
+   packages                      266 code lines   8 files
    machine-learning              248 code lines   4 files
-   docs                          232 code lines   4 files
-   and 11 more folders (727 code lines)
+   deployment                    225 code lines  16 files
+   server                        218 code lines   6 files
+   docs                          213 code lines   2 files
+   and 10 more folders (346 code lines)
  To inspect or refine purpose classification, use '--guide configure'. '--files --output -' shows each file's rule.
  Unrecognized files: 437 (png: 165, webp: 146, no extension: 62, ttf: 19, lock: 10). Their lines are unknown, not zero.
 
@@ -114,16 +114,16 @@ locmetry --root immich --config draft.toml --format table --verbose --no-color -
 ```
 
 ```output
- Unclaimed source: 2,467 code lines in 70 files, here:
-   mobile            413 code lines  12 files
-   packages          361 code lines  11 files
-   server            326 code lines   7 files
-   web               302 code lines   5 files
-   machine-learning  248 code lines   4 files
-   docs              232 code lines   4 files
-   deployment        225 code lines  16 files
-   e2e               171 code lines   4 files
-   and 4 more folders (189 code lines)
+ Unclaimed source: 1,787 code lines in 57 files, here:
+   mobile                413 code lines  12 files
+   packages              266 code lines   8 files
+   machine-learning      248 code lines   4 files
+   deployment            225 code lines  16 files
+   server                218 code lines   6 files
+   docs                  213 code lines   2 files
+   (root files)          111 code lines   2 files
+   .devcontainer/server   58 code lines   3 files
+   and 3 more folders (35 code lines)
  To inspect or refine purpose classification, use '--guide configure'. '--files --output -' shows each file's rule.
 ```
 
@@ -145,9 +145,9 @@ locmetry compare builtin.json reviewed.json --format table --no-color \
 ```output
  Purpose        before    after   change │  before    after   change
  ────────────────────────────────────────┼──────────────────────────
- Production    227,138  210,881  -16,257 │ 193,662  179,704  -13,958
- Test           99,255  103,306   +4,051 │  83,485   86,901   +3,416
- Other           6,967   19,173  +12,206 │   5,623   16,165  +10,542
+ Production    227,765  210,755  -17,010 │ 194,232  179,594  -14,638
+ Test           99,381  103,432   +4,051 │  83,595   87,011   +3,416
+ Other           6,214   19,173  +12,959 │   4,943   16,165  +11,222
  ────────────────────────────────────────┼──────────────────────────
  Source total  333,360  333,360        0 │ 282,770  282,770        0
  Test/prod (Code): 0.43 → 0.48 (before → after)
@@ -197,15 +197,15 @@ bash "$repository/scripts/compare-locmetry-files.sh" builtin.json reviewed.json 
   },
   {
     "from": "other/unclaimed",
-    "to": "production/tooling",
-    "files": 27,
-    "code": 1096
-  },
-  {
-    "from": "other/unclaimed",
     "to": "production/deployment",
     "files": 31,
     "code": 798
+  },
+  {
+    "from": "other/unclaimed",
+    "to": "production/tooling",
+    "files": 14,
+    "code": 416
   },
   {
     "from": "production/implementation",

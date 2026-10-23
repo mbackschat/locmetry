@@ -14,7 +14,9 @@ use std::collections::{BTreeSet, HashMap};
 pub trait ModuleDetector: Sync {
     /// Build-system name; files it claims record `builtin:<id>-module`.
     fn id(&self) -> &'static str;
-    /// File names that make their directory a module.
+    /// File names that make their directory a module; `*.ext` matches any
+    /// file name with that extension, as .NET project files and gemspecs
+    /// carry the project's name.
     fn descriptors(&self) -> &'static [&'static str];
     /// The production layout in Markdown, for the configuration schema.
     fn layout(&self) -> String;
@@ -53,9 +55,40 @@ impl ModuleDetector for DefaultLayout {
     }
 }
 
-/// Python packaging: the `src` layout, or the flat layout's top-level packages,
-/// as setuptools' automatic discovery finds them.
-struct Python;
+/// A build system whose production layout depends on which folders exist.
+struct ComputedLayout {
+    id: &'static str,
+    descriptors: &'static [&'static str],
+    layout: &'static str,
+    /// Globs from the selected paths relative to the module's directory.
+    sources: fn(&[&str]) -> Vec<String>,
+}
+
+impl ModuleDetector for ComputedLayout {
+    fn id(&self) -> &'static str {
+        self.id
+    }
+
+    fn descriptors(&self) -> &'static [&'static str] {
+        self.descriptors
+    }
+
+    fn layout(&self) -> String {
+        self.layout.into()
+    }
+
+    fn production_sources(&self, directory: &str, files: &[&str]) -> Vec<String> {
+        let prefix = match directory {
+            "." => String::new(),
+            _ => format!("{directory}/"),
+        };
+        let relative: Vec<&str> = files
+            .iter()
+            .filter_map(|path| path.strip_prefix(prefix.as_str()))
+            .collect();
+        (self.sources)(&relative)
+    }
+}
 
 /// Top-level names setuptools' flat-layout discovery never treats as packages
 /// (setuptools `discovery.FlatLayoutPackageFinder.DEFAULT_EXCLUDE`, a subset
@@ -81,38 +114,52 @@ const PYTHON_NON_PACKAGES: &[&str] = &[
     "venv",
 ];
 
-impl ModuleDetector for Python {
-    fn id(&self) -> &'static str {
-        "python"
-    }
+/// The flat layout's top-level packages, as setuptools' automatic discovery
+/// finds them.
+fn python_flat_layout(files: &[&str]) -> Vec<String> {
+    let packages: BTreeSet<&str> = files
+        .iter()
+        .filter_map(|path| path.strip_suffix("/__init__.py"))
+        .filter(|package| !package.contains('/') && !PYTHON_NON_PACKAGES.contains(package))
+        .collect();
+    packages
+        .into_iter()
+        .map(|package| format!("{}/**", literal_glob(package)))
+        .collect()
+}
 
-    fn descriptors(&self) -> &'static [&'static str] {
-        &["pyproject.toml", "setup.py", "setup.cfg"]
-    }
+fn python_layout(files: &[&str]) -> Vec<String> {
+    std::iter::once("src/**".to_string())
+        .chain(python_flat_layout(files))
+        .collect()
+}
 
-    fn layout(&self) -> String {
-        "`src/**`, plus each top-level folder with an `__init__.py` except names such as `docs`, `scripts`, and `tools`".into()
-    }
-
-    fn production_sources(&self, directory: &str, files: &[&str]) -> Vec<String> {
-        let prefix = match directory {
-            "." => String::new(),
-            _ => format!("{directory}/"),
-        };
-        let packages: BTreeSet<&str> = files
-            .iter()
-            .filter_map(|path| path.strip_prefix(prefix.as_str()))
-            .filter_map(|path| path.strip_suffix("/__init__.py"))
-            .filter(|package| !package.contains('/') && !PYTHON_NON_PACKAGES.contains(package))
-            .collect();
-        std::iter::once("src/**".to_string())
-            .chain(
-                packages
-                    .into_iter()
-                    .map(|package| format!("{}/**", literal_glob(package))),
-            )
-            .collect()
-    }
+/// Laravel's documented folders, and each folder in `resources/` except
+/// `lang/`: translations held 54% of one application's source as PHP arrays
+/// (docs/research/framework-layouts.md, precision pass).
+fn laravel_layout(files: &[&str]) -> Vec<String> {
+    let resources: BTreeSet<&str> = files
+        .iter()
+        .filter_map(|path| path.strip_prefix("resources/"))
+        .filter_map(|path| path.split_once('/'))
+        .map(|(folder, _)| folder)
+        .filter(|folder| *folder != "lang")
+        .collect();
+    [
+        "app/**",
+        "bootstrap/**",
+        "config/**",
+        "database/migrations/**",
+        "routes/**",
+    ]
+    .into_iter()
+    .map(String::from)
+    .chain(
+        resources
+            .into_iter()
+            .map(|folder| format!("resources/{}/**", literal_glob(folder))),
+    )
+    .collect()
 }
 
 /// Built-in detectors. Layouts follow each tool's documented defaults: npm
@@ -120,8 +167,9 @@ impl ModuleDetector for Python {
 /// `src/<target>Main/`, Go packages anywhere below `go.mod`, Python's `src`
 /// or flat layout, Lean sources anywhere below a Lake lakefile, Swift
 /// Package Manager's `Sources/`, and the pub package layout's `lib/` and
-/// `bin/` for Dart and Flutter. Test conventions run earlier, so test files
-/// inside these trees stay tests.
+/// `bin/` for Dart and Flutter; framework detectors follow the documentation
+/// cited at each. Test conventions run earlier, so test files inside these
+/// trees stay tests.
 pub static DETECTORS: &[&dyn ModuleDetector] = &[
     &DefaultLayout {
         id: "npm",
@@ -148,7 +196,12 @@ pub static DETECTORS: &[&dyn ModuleDetector] = &[
         descriptors: &["go.mod"],
         sources: &["**/*.go"],
     },
-    &Python,
+    &ComputedLayout {
+        id: "python",
+        descriptors: &["pyproject.toml", "setup.py", "setup.cfg"],
+        layout: "`src/**`, plus each top-level folder with an `__init__.py` except names such as `docs`, `scripts`, and `tools`",
+        sources: python_layout,
+    },
     // Lake's `lean_lib` defaults to `srcDir = "."`, so Lean sources sit at the
     // package root; the lakefile itself is a build script, matched earlier.
     &DefaultLayout {
@@ -168,7 +221,100 @@ pub static DETECTORS: &[&dyn ModuleDetector] = &[
         descriptors: &["pubspec.yaml"],
         sources: &["lib/**", "bin/**"],
     },
+    // Frameworks whose source is not in `src/`, with the folders their primary
+    // documentation names; whole-package layouts were rejected because they
+    // claim scripts, mocks and vendored code (docs/research/framework-layouts.md).
+    // https://nextjs.org/docs/app/getting-started/project-structure: `app`,
+    // `pages`, `src` and the root files are conventions; the other folders
+    // are the docs' "generalized placeholders", adopted as what the docs show.
+    &DefaultLayout {
+        id: "next",
+        descriptors: &[
+            "next.config.js",
+            "next.config.cjs",
+            "next.config.mjs",
+            "next.config.ts",
+        ],
+        sources: &[
+            "{app,pages,src}/**",
+            "{instrumentation,instrumentation-client,proxy,middleware,mdx-components}.{js,jsx,ts,tsx}",
+            "{components,lib,ui,utils,hooks,styles}/**",
+        ],
+    },
+    // https://nuxt.com/docs/4.x/directory-structure, plus the Nuxt 3 root
+    // folders that Nuxt 4 moved into `app/`.
+    &DefaultLayout {
+        id: "nuxt",
+        descriptors: &["nuxt.config.js", "nuxt.config.mjs", "nuxt.config.ts"],
+        sources: &[
+            "{app,server,shared,layers,modules}/**",
+            "{assets,components,composables,layouts,middleware,pages,plugins,utils}/**",
+            "{app,error}.vue",
+            "app.config.*",
+        ],
+    },
+    // React Router framework mode's default `appDirectory`.
+    &DefaultLayout {
+        id: "react-router",
+        descriptors: &["react-router.config.js", "react-router.config.ts"],
+        sources: &["app/**"],
+    },
+    // The SDK's default compile items and Razor files
+    // (https://learn.microsoft.com/dotnet/core/project-sdk/overview); static
+    // files in `wwwroot/` are not compiled and stay open.
+    &DefaultLayout {
+        id: "dotnet",
+        descriptors: &["*.csproj", "*.fsproj", "*.vbproj"],
+        sources: &["**/*.{cs,fs,vb,razor,cshtml}"],
+    },
+    // PSR-4's `src/`, which Symfony and most Composer packages use.
+    &DefaultLayout {
+        id: "composer",
+        descriptors: &["composer.json"],
+        sources: &["src/**"],
+    },
+    // https://symfony.com/doc/current/best_practices.html
+    &DefaultLayout {
+        id: "symfony",
+        descriptors: &["symfony.lock"],
+        sources: &["{src,assets,config,migrations,templates}/**"],
+    },
+    // https://laravel.com/docs/12.x/structure
+    &ComputedLayout {
+        id: "laravel",
+        descriptors: &["artisan"],
+        layout: "`app/**`, `bootstrap/**`, `config/**`, `database/migrations/**`, `routes/**`, and each folder in `resources/` except `lang/`",
+        sources: laravel_layout,
+    },
+    // `rails new` creates `config.ru`; Rails autoloads `app/` and `lib/`.
+    &DefaultLayout {
+        id: "rails",
+        descriptors: &["config.ru"],
+        sources: &["{app,lib,config}/**", "db/migrate/**"],
+    },
+    // The RubyGems layout: libraries in `lib/`, executables in `exe/`.
+    &DefaultLayout {
+        id: "gem",
+        descriptors: &["*.gemspec"],
+        sources: &["lib/**", "exe/**"],
+    },
+    // Django projects often lack packaging metadata; `manage.py` sits beside
+    // the project and app packages that `startproject` and `startapp` create.
+    &ComputedLayout {
+        id: "django",
+        descriptors: &["manage.py"],
+        layout: "each top-level folder with an `__init__.py` except names such as `docs`, `scripts`, and `tools`",
+        sources: python_flat_layout,
+    },
 ];
+
+/// Whether a file `name` is the build `descriptor`, which may be `*.ext`.
+fn declares(descriptor: &str, name: &str) -> bool {
+    match descriptor.strip_prefix('*') {
+        Some(extension) => name.len() > extension.len() && name.ends_with(extension),
+        None => descriptor == name,
+    }
+}
 
 /// A module declared by a build descriptor.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
@@ -236,7 +382,11 @@ pub fn detect(files: &[&str]) -> Vec<Module> {
     for path in files {
         let (directory, name) = path.rsplit_once('/').unwrap_or((".", path));
         for (index, detector) in DETECTORS.iter().enumerate() {
-            if detector.descriptors().contains(&name) {
+            if detector
+                .descriptors()
+                .iter()
+                .any(|descriptor| declares(descriptor, name))
+            {
                 declared.insert((directory, index));
             }
         }
