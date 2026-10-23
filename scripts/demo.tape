@@ -1,9 +1,9 @@
 # VHS script for docs/assets/demo.gif; run it through scripts/record-demo.sh,
 # which builds Locmetry and stages the pinned Immich showcase it measures.
 Set Shell "bash"
-Set FontSize 13
-Set Width 1120
-Set Height 960
+Set FontSize 12
+Set Width 1040
+Set Height 900
 Set Padding 20
 Set TypingSpeed 45ms
 Set Framerate 24
