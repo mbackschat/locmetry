@@ -46,22 +46,33 @@ fn drop_null(schema: &mut Schema) {
     }
 }
 
-pub(super) fn language_names(_: &mut SchemaGenerator) -> Schema {
-    // Tokei 15's language_type.tera.rs:345 accepts both display and enum names.
-    let names: std::collections::BTreeSet<String> = LanguageType::list()
-        .iter()
-        .flat_map(|(language, _)| [language.name().to_string(), format!("{language:?}")])
-        .collect();
-    schemars::json_schema!({"type": "string", "enum": names})
+/// A counter language name, defined once in each schema that needs it, so
+/// mappings and corrections share the list instead of repeating it.
+struct LanguageName;
+
+impl JsonSchema for LanguageName {
+    fn schema_name() -> std::borrow::Cow<'static, str> {
+        "LanguageName".into()
+    }
+
+    fn json_schema(_: &mut SchemaGenerator) -> Schema {
+        // Tokei 15's language_type.tera.rs:345 accepts both display and enum names.
+        let names: std::collections::BTreeSet<String> = LanguageType::list()
+            .iter()
+            .flat_map(|(language, _)| [language.name().to_string(), format!("{language:?}")])
+            .collect();
+        schemars::json_schema!({"type": "string", "enum": names})
+    }
+}
+
+pub(super) fn language_names(generator: &mut SchemaGenerator) -> Schema {
+    generator.subschema_for::<LanguageName>()
 }
 
 /// Counter language names, as for mappings, plus the reserved `unrecognized`.
 pub(super) fn correction_languages(generator: &mut SchemaGenerator) -> Schema {
-    let mut schema = language_names(generator);
-    if let Some(Value::Array(names)) = schema.get_mut("enum") {
-        names.push(super::UNRECOGNIZED.into());
-    }
-    schema
+    let names = language_names(generator);
+    schemars::json_schema!({"anyOf": [names, {"const": super::UNRECOGNIZED}]})
 }
 
 /// Appends a generated list to a schema description, so the schema states the

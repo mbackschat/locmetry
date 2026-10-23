@@ -255,11 +255,34 @@ fn config_schema_defines_production_as_maintained_non_test_source() {
 fn config_schema_lists_language_names() {
     let schema = schema("config");
     let names = schema
-        .pointer("/$defs/LanguageMapping/properties/language/enum")
+        .pointer("/$defs/LanguageName/enum")
         .and_then(Value::as_array)
         .unwrap();
     assert!(names.contains(&json!("Groovy")));
     assert!(names.contains(&json!("BASH")));
+}
+
+/// Mappings and corrections share one list of language names: a second copy
+/// cost every schema that embeds the configuration 7.5 KB of reading
+/// (docs/research/agent-regression-desk-review-2026-10-23.md, D1).
+#[test]
+fn schemas_define_language_names_once() {
+    for name in ["config", "report", "comparison"] {
+        let text = schema(name).to_string();
+        assert_eq!(text.matches("\"Groovy\"").count(), 1, "{name}");
+    }
+    let schema = schema("config");
+    let mapping = |language: &str| {
+        format!("version = 1\n[[languages.mappings]]\nid = \"m\"\nmatch = [\"*.x\"]\nlanguage = \"{language}\"")
+    };
+    let correction = |language: &str| {
+        format!("version = 1\n[[languages.corrections]]\nid = \"c\"\nmatch = [\"*.x\"]\nlanguage = \"{language}\"\nreason = \"r\"")
+    };
+    assert!(is_valid(&schema, &mapping("Groovy")));
+    assert!(!is_valid(&schema, &mapping("unrecognized")));
+    assert!(is_valid(&schema, &correction("Groovy")));
+    assert!(is_valid(&schema, &correction("unrecognized")));
+    assert!(!is_valid(&schema, &correction("Klingon")));
 }
 
 #[test]

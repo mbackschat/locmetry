@@ -14,6 +14,7 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 
 ### Changed
 
+- `--schema config`, `report` and `comparison` list the counter's language names once, shared by language mappings and corrections, which makes them 12.7 KB shorter each; they accept the same files as before.
 - Tables and Markdown show BASH scripts in the Shell row, with a `Folded: BASH → Shell.` note, because the counter names extensionless bash scripts BASH and `.sh` scripts Shell whatever their shebang, which split one project's scripts over two rows. `--split-languages` shows them apart, and JSON keeps both names.
 - Every `.locmetryrc` in the measured tree is excluded as policy, not only the loaded one, so trying a draft policy with `--config` or measuring a tree with nested projects no longer lists `.locmetryrc` files as unrecognized. The effective exclusions show `**/.locmetryrc` instead of `.locmetryrc`.
 - **Breaking:** Go modules no longer count `vendor/` and `testdata/` folders or folders and files starting with `_` or `.` as production, because `go build ./...` skips them; vendored dependencies and test inputs are now reported as unclaimed. Projects with a committed `vendor/` folder show much less Go production code than before.
