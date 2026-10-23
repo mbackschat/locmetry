@@ -108,6 +108,9 @@ fn workspace_merges_members_as_prefixed_top_level_folders() {
             report["files"].as_array().unwrap().iter().map(move |file| {
                 let mut file = file.clone();
                 file["path"] = json!(prefixed(member, file["path"].as_str().unwrap()));
+                if let Some(module) = file.get_mut("module") {
+                    module["path"] = json!(prefixed(member, module["path"].as_str().unwrap()));
+                }
                 file
             })
         })

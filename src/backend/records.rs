@@ -143,8 +143,10 @@ pub fn file_records(payload: &Value, policy: &Policy) -> Result<Vec<FileRecord>>
                 counts.add(value);
             }
             counts.files = 1;
+            let classification = policy.classify(&path, kind);
             rows.push(FileRecord {
-                classification: policy.classify(&path, kind),
+                module: policy.credited_module(&path, kind, &classification),
+                classification,
                 path,
                 language: language.clone(),
                 kind,

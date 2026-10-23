@@ -27,6 +27,7 @@ mod inline_tests;
 mod input_errors;
 mod language_families;
 mod measurement;
+mod module_credit;
 mod notebooks;
 mod output_contract;
 mod platform;

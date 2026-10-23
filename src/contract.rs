@@ -360,7 +360,7 @@ pub struct ReportSummary {
     pub unclaimed_folders: Option<Vec<crate::FolderShare>>,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub members: BTreeMap<String, Summary>,
-    /// Without subfolder selection: adopted modules. With it: only modules classifying at least one measured source file; code is their measured contribution. Context-only modules remain in metadata.modules.
+    /// Modules credited with at least one measured production source file, and the code credited to them: the production source each layout covers, whichever stage decided it, as the files' `module` records. Context-only modules remain in metadata.modules. Reports of earlier producers counted every adopted module and credited files by `rule`.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub build_modules: BTreeMap<String, crate::BuildSystemShare>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -450,6 +450,14 @@ pub struct File {
     )]
     #[schemars(with = "LineCounts")]
     pub inline_tests: Option<LineCounts>,
+    /// Only for production source a module layout covers: the innermost such module, credited with the file in `summary.build_modules` whichever stage decided it. Reports of earlier versions omit it and credit modules by `rule`.
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "present"
+    )]
+    #[schemars(with = "Module")]
+    pub module: Option<Module>,
 }
 impl From<&crate::FileRecord> for File {
     fn from(f: &crate::FileRecord) -> Self {
@@ -469,6 +477,7 @@ impl From<&crate::FileRecord> for File {
                     .collect()
             }),
             inline_tests: (f.inline_tests.lines > 0).then(|| f.inline_tests.into()),
+            module: f.module.clone(),
         }
     }
 }

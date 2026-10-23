@@ -589,8 +589,11 @@ fn subfolder_human_labels_flatten_controls_while_json_preserves_path_identity() 
     assert!(root.ends_with(", subfolder src/odd name"), "{text}");
 }
 
+/// The innermost module whose layout covers a production file is credited,
+/// whichever stage decided it: the `manual` override keeps production inside
+/// the root npm layout, so the root module keeps its credit.
 #[test]
-fn module_contributions_follow_deciding_rules_and_deepest_matching_directories() {
+fn module_contributions_follow_layout_coverage_and_deepest_matching_directories() {
     let temp = tempfile::tempdir().unwrap();
     let root = temp.path();
     write(root, "package.json", "{}\n");
@@ -624,13 +627,13 @@ fn module_contributions_follow_deciding_rules_and_deepest_matching_directories()
     assert_eq!(
         value["summary"]["build_modules"],
         json!({
-            "npm": {"modules": 3, "code": 7},
+            "npm": {"modules": 3, "code": 8},
             "gradle": {"modules": 1, "code": 3},
         })
     );
     assert_eq!(value["summary"]["source_purpose"]["production"]["code"], 12);
     let mut forged = value;
-    forged["summary"]["build_modules"]["npm"]["code"] = json!(6);
+    forged["summary"]["build_modules"]["npm"]["code"] = json!(7);
     forged["summary"]["build_modules"]["gradle"]["code"] = json!(4);
     let error = serde_json::from_value::<locmetry::contract::MeasurementReport>(forged)
         .unwrap()

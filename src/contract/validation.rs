@@ -125,6 +125,7 @@ impl MeasurementReport {
         validate_totals(&self.summary.totals, "summary")?;
         let coverage_paths = self.validate_coverage()?;
         self.validate_subfolder(&coverage_paths)?;
+        self.validate_build_modules()?;
         self.validate_findings()?;
         self.validate_breakdown()?;
         self.validate_files(&coverage_paths)?;
@@ -250,36 +251,76 @@ impl MeasurementReport {
                 );
             }
         }
-        if let (Some(files), Some(modules)) = (&self.files, &self.metadata.modules) {
-            let mut contributions = BTreeMap::<(&str, &str), u64>::new();
-            let owners = crate::modules::ModuleOwners::new(
-                modules
-                    .iter()
-                    .map(|m| (m.path.as_str(), m.detector.as_str())),
-            );
-            for file in files.iter().filter(|f| f.kind == Kind::Source) {
-                if let Some(index) = owners.owner(&file.path, &file.rule) {
-                    let owner = &modules[index];
-                    let code = contributions
-                        .entry((&owner.detector, &owner.path))
-                        .or_default();
-                    *code = checked_sum([*code, file.counts.code], "module contribution")?;
-                }
-            }
-            let mut expected = BTreeMap::<&str, (u64, u64)>::new();
-            for ((detector, _), code) in contributions {
-                let entry = expected.entry(detector).or_default();
-                entry.0 += 1;
-                entry.1 = checked_sum([entry.1, code], "build_modules")?;
-            }
+        Ok(())
+    }
+
+    /// Reconciles `summary.build_modules` with the file records' `module`
+    /// credit. Earlier producers credited modules by `rule` and wrote no
+    /// `module`; their unrestricted reports also counted modules without
+    /// credit, so only their subfolder reports can be reconciled.
+    fn validate_build_modules(&self) -> Result<()> {
+        let (Some(files), Some(modules)) = (&self.files, &self.metadata.modules) else {
+            return Ok(());
+        };
+        let by_module = files.iter().any(|f| f.module.is_some());
+        let restricted = self
+            .metadata
+            .scope
+            .as_ref()
+            .is_some_and(|s| s.subfolder.is_some());
+        if !by_module && !restricted {
+            return Ok(());
+        }
+        let shares = &self.summary.build_modules;
+        for file in files {
+            let Some(module) = &file.module else {
+                continue;
+            };
             ensure!(
-                expected.len() == shares.len()
-                    && expected.iter().all(|(key, (modules, code))| shares
-                        .get(*key)
-                        .is_some_and(|s| s.modules == *modules && s.code == *code)),
-                "build_modules conflicts with measured file contributions"
+                file.kind == Kind::Source
+                    && file.purpose == Purpose::Production
+                    && below(&file.path, &module.path).is_some()
+                    && modules
+                        .iter()
+                        .any(|m| m.path == module.path && m.detector == module.detector),
+                "file module must be a recorded module containing production source"
             );
         }
+        let owners = crate::modules::ModuleOwners::new(
+            modules
+                .iter()
+                .map(|m| (m.path.as_str(), m.detector.as_str())),
+        );
+        let mut contributions = BTreeMap::<(&str, &str), u64>::new();
+        for file in files.iter().filter(|f| f.kind == Kind::Source) {
+            let owner = match &file.module {
+                Some(module) => Some((module.detector.as_str(), module.path.as_str())),
+                None if by_module => None,
+                None => owners.owner(&file.path, &file.rule).map(|index| {
+                    (
+                        modules[index].detector.as_str(),
+                        modules[index].path.as_str(),
+                    )
+                }),
+            };
+            if let Some(owner) = owner {
+                let code = contributions.entry(owner).or_default();
+                *code = checked_sum([*code, file.counts.code], "module contribution")?;
+            }
+        }
+        let mut expected = BTreeMap::<&str, (u64, u64)>::new();
+        for ((detector, _), code) in contributions {
+            let entry = expected.entry(detector).or_default();
+            entry.0 += 1;
+            entry.1 = checked_sum([entry.1, code], "build_modules")?;
+        }
+        ensure!(
+            expected.len() == shares.len()
+                && expected.iter().all(|(key, (modules, code))| shares
+                    .get(*key)
+                    .is_some_and(|s| s.modules == *modules && s.code == *code)),
+            "build_modules conflicts with measured file contributions"
+        );
         Ok(())
     }
 

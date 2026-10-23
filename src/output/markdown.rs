@@ -322,7 +322,7 @@ pub(super) fn render_build_modules(
     if modules.is_empty() {
         return;
     }
-    output.push_str("\n## Build modules\n\nFolders whose build file declares a source layout; that layout counts as production where no override, convention, or rule decided first. Code is the source each module classified; 0 means other stages claimed its files or its layout matched none.\n\n| Build system | Modules | Lines | Code |\n| --- | ---: | ---: | ---: |\n");
+    output.push_str("\n## Build modules\n\nFolders whose build file declares a source layout; that layout counts as production where no override, convention, or rule decided first. Code is the production source each module's layout covers, whichever stage decided it; 0 means its layout covers none, a hint at a misleading build file.\n\n| Build system | Modules | Lines | Code |\n| --- | ---: | ---: | ---: |\n");
     let systems = build_systems(modules)
         .into_iter()
         .map(|(id, system)| (id.to_string(), system))

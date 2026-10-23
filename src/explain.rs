@@ -122,7 +122,10 @@ impl Explanation {
         match &mut self.result {
             PathResult::Counted { file, decision } => {
                 file.path = prefix(&file.path);
-                if let Some(module) = &mut decision.module {
+                for module in [&mut decision.module, &mut file.module]
+                    .into_iter()
+                    .flatten()
+                {
                     module.path = prefix(&module.path);
                 }
             }
@@ -188,15 +191,21 @@ impl Explanation {
                 if let Some(reason) = &decision.reason {
                     rows.push(("Reason", reason.clone()));
                 }
-                if let Some(module) = &decision.module {
-                    rows.push((
-                        "Module",
-                        format!(
-                            "{} ({})",
-                            output::module_label(&module.path),
-                            module.detector
-                        ),
-                    ));
+                let label = |module: &crate::contract::Module| {
+                    format!(
+                        "{} ({})",
+                        output::module_label(&module.path),
+                        module.detector
+                    )
+                };
+                match (&decision.module, &file.module) {
+                    (Some(module), _) => rows.push(("Module", label(module))),
+                    // An entry decided the file, but the module keeps its credit.
+                    (None, Some(module)) => rows.push((
+                        "Module credit",
+                        format!("{}, whose layout covers this file", label(module)),
+                    )),
+                    (None, None) => {}
                 }
             }
             PathResult::Excluded { at, patterns } => rows.extend([

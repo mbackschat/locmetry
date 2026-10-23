@@ -21,8 +21,8 @@ locmetry --root immich --config builtin-only.toml --format table --verbose --no-
 ```output
  Not source code: 296 data files (245,954 lines), 210 documentation files (12,521 lines, including 793 code lines in
 embedded snippets). '--files --output -' lists each file's kind.
- Production from build modules: 127,205 code lines in 12 'npm' modules, 59,170 code lines in 2 'dart' modules, 4,102
-code lines in 2 'gradle' modules, 3,037 code lines in 1 'python' module.
+ Production from build modules: 127,205 code lines in 9 'npm' modules, 59,170 code lines in 2 'dart' modules, 4,102 code
+lines in 1 'gradle' module, 3,037 code lines in 1 'python' module.
  Largest files counted as Production only by a build layout. If one is generated or vendored, exclude or reclassify it
 in '.locmetryrc':
    packages/sdk/src/fetch-client.ts                                6,466 code lines  packages/sdk (npm)

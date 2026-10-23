@@ -253,8 +253,9 @@ fn categories_table_is_shown_on_request() {
 }
 
 /// Readers see which build systems decided production and how much code each
-/// one claimed; a module whose layout claimed nothing hints at a misleading
-/// build file.
+/// one claimed. A module whose layout covers no production source is left out
+/// of the summary but stays in the Markdown module list, where 0 hints at a
+/// misleading build file.
 #[test]
 fn reports_name_the_build_modules_that_decided_production() {
     let temp = project(&[
@@ -274,14 +275,13 @@ fn reports_name_the_build_modules_that_decided_production() {
         document["summary"]["build_modules"],
         json!({
             "gradle": {"modules": 1, "code": 2},
-            "maven": {"modules": 1, "code": 0},
-            "npm": {"modules": 2, "code": 1}
+            "npm": {"modules": 1, "code": 1}
         })
     );
     let table = String::from_utf8(run(&root, &["--verbose", "--format", "table"]).stdout).unwrap();
     assert!(
         table.contains(
-            " Production from build modules: 2 code lines in 1 'gradle' module, 1 code line in 2 'npm' modules.\n"
+            " Production from build modules: 2 code lines in 1 'gradle' module, 1 code line in 1 'npm' module.\n"
         ),
         "{table}"
     );
@@ -289,9 +289,10 @@ fn reports_name_the_build_modules_that_decided_production() {
     let section = &markdown[markdown.find("## Build modules").expect(&markdown)..];
     for row in [
         "| gradle | 1 | 2 |",
-        "| npm | 2 | 1 |",
+        "| npm | 1 | 1 |",
         "| backend | gradle | 2 |",
         "| tools | npm | 0 |",
+        "| legacy | maven | 0 |",
     ] {
         assert!(section.contains(row), "{row} in {section}");
     }

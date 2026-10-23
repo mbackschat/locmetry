@@ -379,6 +379,9 @@ pub(crate) fn run_workspace(args: &WorkspaceArgs, styling: Styling) -> Result<Ou
             .rows
             .extend(measurement.rows.into_iter().map(|mut row| {
                 row.path = prefixed(&row.path);
+                if let Some(module) = &mut row.module {
+                    module.path = prefixed(&module.path);
+                }
                 row
             }));
         results.coverage.merge(&measurement.coverage, prefixed);

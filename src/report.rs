@@ -5,7 +5,10 @@ use crate::{
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize, Serializer};
-use std::{collections::BTreeMap, fmt};
+use std::{
+    collections::{BTreeMap, HashMap},
+    fmt,
+};
 
 #[derive(Clone, Copy, Debug, Default, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
@@ -81,6 +84,9 @@ pub struct FileRecord {
     /// Lines of inline `#[cfg(test)]` items, counted with the file's own
     /// purpose; zero in test files and in files without such items.
     pub inline_tests: Counts,
+    /// The module credited with this production source file: the innermost
+    /// module whose layout covers it, whichever stage decided it.
+    pub module: Option<crate::contract::Module>,
 }
 
 impl Serialize for FileRecord {
@@ -476,9 +482,8 @@ pub struct ModuleShare {
     pub code: u64,
 }
 
-/// Source code each adopted module classified, in module order. A file
-/// belongs to the innermost module of the detector that decided it, which is
-/// the module whose layout claimed it.
+/// Source code credited to each adopted module, in module order: the
+/// production source its layout covers, whichever stage decided it.
 pub fn module_shares(modules: &[Module], rows: &[FileRecord]) -> Vec<ModuleShare> {
     let mut shares: Vec<ModuleShare> = modules
         .iter()
@@ -490,9 +495,18 @@ pub fn module_shares(modules: &[Module], rows: &[FileRecord]) -> Vec<ModuleShare
             code: 0,
         })
         .collect();
-    let owners = ModuleOwners::new(modules.iter().map(|m| (m.path.as_str(), m.detector)));
+    let index: HashMap<(&str, &str), usize> = modules
+        .iter()
+        .enumerate()
+        .map(|(index, module)| ((module.path.as_str(), module.detector), index))
+        .collect();
     for row in rows.iter().filter(|row| row.kind == Kind::Source) {
-        if let Some(index) = owners.owner(&row.path, &row.classification.rule) {
+        let credited = row.module.as_ref().and_then(|module| {
+            index
+                .get(&(module.path.as_str(), module.detector.as_str()))
+                .copied()
+        });
+        if let Some(index) = credited {
             shares[index].files += 1;
             shares[index].lines += row.counts.lines;
             shares[index].code += row.counts.code;
@@ -546,7 +560,7 @@ pub(crate) fn rank_module_files(mut files: Vec<ModuleFile>) -> Vec<ModuleFile> {
     files
 }
 
-/// Modules and classified source code of one build system.
+/// Credited modules and their production source code, for one build system.
 #[derive(Clone, Debug, Default, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct BuildSystemShare {
@@ -554,10 +568,12 @@ pub struct BuildSystemShare {
     pub code: u64,
 }
 
-/// [`module_shares`] per build system, keyed by detector ID.
+/// [`module_shares`] per build system, keyed by detector ID, counting only
+/// modules credited with at least one measured production source file; a
+/// system without any is omitted.
 pub fn build_systems(shares: &[ModuleShare]) -> BTreeMap<&'static str, BuildSystemShare> {
     let mut systems = BTreeMap::<_, BuildSystemShare>::new();
-    for share in shares {
+    for share in shares.iter().filter(|share| share.files > 0) {
         let system = systems.entry(share.detector).or_default();
         system.modules += 1;
         system.code += share.code;

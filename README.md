@@ -366,7 +366,7 @@ On Immich, `cd immich && locmetry --verbose` reports what the modules contribute
 
 <!-- showcase-modules -->
 ```text
- Production from build modules: 107,922 code lines in 12 'npm' modules, 58,827 code lines in 2 'dart' modules, 3,037 code lines in 1 'python' module.
+ Production from build modules: 107,922 code lines in 8 'npm' modules, 59,170 code lines in 2 'dart' modules, 4,102 code lines in 1 'gradle' module, 3,037 code lines in 1 'python' module.
 ```
 
 Tests inside these trees stay tests, and nested modules decide for themselves. Detection reads file names only and never runs a build, so custom layouts need configuration; [module detection](docs/PRODUCT.md#module-detection) has the details.

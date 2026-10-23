@@ -100,6 +100,7 @@ impl MeasurementReport {
                         None => BTreeMap::from([(f.language.clone(), f.counts.into())]),
                     },
                     inline_tests: f.inline_tests.map(Counts::from).unwrap_or_default(),
+                    module: f.module.clone(),
                 })
                 .collect::<Vec<_>>();
             let file_counts = records.iter().map(|f| f.counts).collect::<Vec<_>>();

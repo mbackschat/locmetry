@@ -582,6 +582,26 @@ impl Policy {
             .map(|(module, entry)| (Stage::Module, entry, Some(module)))
     }
 
+    /// The module credited with `path`: for production source, the innermost
+    /// module whose layout covers it, whichever stage decided the file, so an
+    /// entry that keeps `production` and only names a category keeps the
+    /// module's credit (docs/PRODUCT.md, Module Detection).
+    pub fn credited_module(
+        &self,
+        path: &str,
+        kind: Kind,
+        classification: &Classification,
+    ) -> Option<crate::contract::Module> {
+        if kind != Kind::Source || classification.purpose != Purpose::Production {
+            return None;
+        }
+        self.module_entry(path, kind)
+            .map(|(module, _)| crate::contract::Module {
+                path: module.path.clone(),
+                detector: module.detector.into(),
+            })
+    }
+
     pub(crate) fn decision(&self, path: &str, kind: Kind) -> Decision {
         let Some((stage, entry, module)) = self.deciding_entry(path, kind) else {
             return Decision {
