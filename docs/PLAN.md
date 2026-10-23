@@ -4,7 +4,7 @@
 
 ## Proposals — Under Discussion
 
-None at present.
+- [Category reference](proposals/category-reference.md): draft of 2026-10-24, awaiting the owner's decision on its vocabulary. The owner chose its shape: an embedded guide with names and policy conventions, a guard over Locmetry's own documents, and aligned model policies.
 
 The [proposal index](proposals/README.md) distinguishes active designs from historical decisions.
 

@@ -34,4 +34,5 @@ Sensitive project analyses, candidate rules, raw measurements, and breakdowns of
 - [Generated-code markers](generated-code-markers.md): documented markers, `.gitattributes` declarations and heuristics measured for coverage and false claims on applications and generators' own repositories.
 - [Prior art for purpose classification](classification-prior-art.md): Linguist, go-enry, gengo and framework detectors; none infers a production and test split, and Linguist's generated-file checks are the starting evidence for generated code.
 - [Go layout](go-layout.md): the Go packages `./...` builds, measured on six Go repositories; vendored dependencies and test inputs no longer count as production.
+- [Category vocabulary](category-vocabulary.md): the category names 24 policies chose, how they drift, and four fresh GitHub projects measured to test whether one reference vocabulary covers them.
 - [Framework layouts out of the box](framework-layouts.md): starters of the most used web frameworks measured without configuration, and an emulation of the proposed detectors.

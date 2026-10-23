@@ -6,7 +6,9 @@ Active designs live directly in this directory. Retired records live in `archive
 
 <!-- doc-index:start -->
 
-No documents in this directory.
+| Document | Status | Date | Summary |
+| --- | --- | --- | --- |
+| [Category Reference](category-reference.md) | draft | 2026-10-24 | A non-binding reference of category names, naming rules and policy conventions, embedded as a guide and enforced on Locmetry's own documents. |
 
 <!-- doc-index:end -->
 
