@@ -294,6 +294,30 @@ class ExperimentTests(unittest.TestCase):
         self.assertEqual({p["repetition"] for p in protocol["pairs"]}, {1, 2, 3, 4})
         full.validate_protocol(protocol)
 
+    def test_schema_growth_run_measures_the_configuration_tasks_against_the_last_ledger_candidate(self):
+        from collections import Counter
+        full = self.full_help_runner()
+        regression = json.loads(full.PROTOCOL.with_name("regression-0.8-study.json").read_text())
+        protocol = json.loads(full.PROTOCOL.with_name("regression-2026-10-23-study.json").read_text())
+        # Tasks 3 and 8 read --schema config in every recorded session; the
+        # 2026-10-23 desk review found the schemas 28% larger.
+        self.assertEqual(protocol["task_ids"], [3, 8])
+        self.assertEqual(protocol["maximum_sessions"], 16)
+        self.assertFalse(protocol["previous_trials_included"])
+        # The control is the last ledger candidate, the help-split desk review's.
+        self.assertEqual(protocol["control"]["source_revision"], "3bec0a383c20ec0fe5902fb4e13b969b5f3be014")
+        self.assertEqual(protocol["control"]["binary_sha256"],
+                         "b1fc44c97df70c263b3930eb7628b90b872cb7bdb192a25fe428242627c13854")
+        for key in ["model", "effort", "limits", "repetitions", "concurrent_pairs", "task_files"]:
+            self.assertEqual(protocol[key], regression[key])
+        for key in ["correctness", "per_task_medians", "overall_all_run_totals", "secondary", "zero_comparator"]:
+            self.assertEqual(protocol["decision_rule"][key], regression["decision_rule"][key])
+        for number in protocol["task_ids"]:
+            selected = [p for p in protocol["pairs"] if p["task"] == number]
+            self.assertEqual(Counter(p["order"] for p in selected), {"AB": 2, "BA": 2})
+            self.assertEqual({p["repetition"] for p in selected}, {1, 2, 3, 4})
+        full.validate_protocol(protocol)
+
     def test_full_help_grader_checks_the_configuration_layout_task_with_its_legacy_oracle(self):
         spec = importlib.util.spec_from_file_location("full_help_score", Path(__file__).with_name("score_full_help.py"))
         grader = importlib.util.module_from_spec(spec)
@@ -314,7 +338,8 @@ class ExperimentTests(unittest.TestCase):
         full = self.full_help_runner()
         for path in [full.PROTOCOL, full.PROTOCOL.with_name("compare-help-routing-study.json"),
                      full.PROTOCOL.with_name("regression-0.8-study.json"),
-                     full.PROTOCOL.with_name("regression-0.8-correction-study.json")]:
+                     full.PROTOCOL.with_name("regression-0.8-correction-study.json"),
+                     full.PROTOCOL.with_name("regression-2026-10-23-study.json")]:
             protocol = json.loads(path.read_text())
             full.validate_protocol(protocol)
             for key, value in [("revision", "unrecognized-study"), ("task_ids", [1, 4]), ("maximum_sessions", 48)]:

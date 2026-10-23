@@ -24,6 +24,7 @@ STUDY_TASKS = {
     "compare-help-routing-v1": [1, 4, 5, 7],
     "agent-regression-0.8-v1": [3, 4, 8],
     "agent-regression-0.8-correction-v1": [4],
+    "agent-regression-2026-10-23-v1": [3, 8],
 }
 
 
