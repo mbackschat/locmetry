@@ -85,6 +85,18 @@ jobs:
       - name: Require static linkage
         if: runner.os == 'Linux'
         run: file "$BINARY" | grep -E 'statically linked|static-pie linked'
+      - uses: taiki-e/install-action@v2
+        if: runner.os == 'Linux'
+        with:
+          tool: cargo-deb@3.8.0,cargo-generate-rpm@0.21.1
+      # The packages wrap the binary checked above; Cargo.toml holds their
+      # metadata. Each is installed and measured in a clean container.
+      - name: Build and install the Linux packages
+        if: runner.os == 'Linux'
+        run: |
+          cargo deb --no-build --no-strip --target ${{ matrix.target }} --output ./
+          cargo generate-rpm --target ${{ matrix.target }} --output ./
+          packaging/linux/verify-packages.sh .
       # A dynamically linked C runtime appears as an imported DLL name.
       - name: Require the static C runtime
         if: runner.os == 'Windows'
@@ -96,6 +108,8 @@ jobs:
           path: |
             locmetry-*.tar.gz
             locmetry-*.zip
+            locmetry*.deb
+            locmetry*.rpm
 
   publish:
     needs: build
@@ -109,9 +123,9 @@ jobs:
         with:
           merge-multiple: true
           path: dist
-      - run: sha256sum locmetry-*.tar.gz locmetry-*.zip > SHA256SUMS
+      - run: sha256sum locmetry-*.tar.gz locmetry-*.zip locmetry*.deb locmetry*.rpm > SHA256SUMS
         working-directory: dist
-      - run: gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/notes.md" locmetry-*.tar.gz locmetry-*.zip SHA256SUMS
+      - run: gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/notes.md" locmetry-*.tar.gz locmetry-*.zip locmetry*.deb locmetry*.rpm SHA256SUMS
         working-directory: dist
         env:
           GH_TOKEN: ${{ github.token }}

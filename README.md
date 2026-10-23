@@ -19,7 +19,7 @@ With Homebrew on macOS arm64 or Linux x86_64 and aarch64:
 brew install mbackschat/tap/locmetry
 ```
 
-Or download a binary from the [latest release](https://github.com/mbackschat/locmetry/releases/latest); releases after 0.7.6 also include a zip for Windows x86_64. Locmetry is a self-contained executable with no separately installed runtime or counter. Linux binaries are static, the Windows binary needs no Visual C++ runtime, and macOS uses operating-system libraries. See [manual installation and source builds](docs/tokei-integration.md#installation) for alternatives.
+Or download a binary from the [latest release](https://github.com/mbackschat/locmetry/releases/latest); releases after 0.7.6 also include a zip for Windows x86_64. Locmetry is a self-contained executable with no separately installed runtime or counter. Linux binaries are static, the Windows binary needs no Visual C++ runtime, and macOS uses operating-system libraries. Releases after 0.9.0 also include `.deb` and `.rpm` packages for Debian, Ubuntu, Fedora and other Linux distributions. See [manual installation, Linux packages and source builds](docs/tokei-integration.md#installation) for alternatives.
 
 ### Windows and PowerShell
 

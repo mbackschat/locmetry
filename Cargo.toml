@@ -35,6 +35,41 @@ doctest = false
 jsonschema = { version = "0.58", default-features = false }
 tempfile = "3"
 
+# Linux packages wrap the static musl release binary, so they declare no library
+# dependencies; the optional helper only suggests jq, as the Homebrew formula does.
+[package.metadata.deb]
+maintainer = "Martin Backschat <mbackschat@mail.de>"
+section = "devel"
+depends = []
+suggests = "jq"
+license-file = ["LICENSE", "0"]
+extended-description = "Locmetry counts code, comments and blank lines, classifies files as production, test or other, and records the rule behind each classification. Reports show results by language and folder and compare saved reports across projects and workspaces."
+assets = [
+    ["target/release/locmetry", "usr/bin/", "755"],
+    ["scripts/compare-locmetry-files.sh", "usr/bin/", "755"],
+    ["README.md", "usr/share/doc/locmetry/", "644"],
+    ["CHANGELOG.md", "usr/share/doc/locmetry/", "644"],
+    ["THIRD-PARTY-NOTICES.md", "usr/share/doc/locmetry/", "644"],
+]
+
+# The automatic scan would only find the helper's Bash, declared here instead.
+[package.metadata.generate-rpm]
+auto-req = "no"
+assets = [
+    { source = "target/release/locmetry", dest = "/usr/bin/locmetry", mode = "755" },
+    { source = "scripts/compare-locmetry-files.sh", dest = "/usr/bin/compare-locmetry-files.sh", mode = "755" },
+    { source = "README.md", dest = "/usr/share/doc/locmetry/README.md", mode = "644", doc = true },
+    { source = "CHANGELOG.md", dest = "/usr/share/doc/locmetry/CHANGELOG.md", mode = "644", doc = true },
+    { source = "THIRD-PARTY-NOTICES.md", dest = "/usr/share/doc/locmetry/THIRD-PARTY-NOTICES.md", mode = "644", doc = true },
+    { source = "LICENSE", dest = "/usr/share/licenses/locmetry/LICENSE", mode = "644", doc = true },
+]
+
+[package.metadata.generate-rpm.requires]
+bash = "*"
+
+[package.metadata.generate-rpm.suggests]
+jq = "*"
+
 [profile.release]
 strip = true
 lto = "thin"

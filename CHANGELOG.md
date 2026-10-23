@@ -6,6 +6,7 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 
 ### Added
 
+- Releases include `.deb` and `.rpm` packages for Linux x86_64 and aarch64, installed with `apt` or `dnf`; see [installation](docs/tokei-integration.md#installation).
 - `--table-category` narrows tables to categories, as `--table-purpose` narrows them to purposes: `--table-category test,production:tooling` takes whole purposes or exact `purpose:category` keys, and `'production:*tooling*'` matches with wildcards. A `Not shown (categories)` note names what it leaves out, an entry that matches no category in the measurement warns, and Test/prod gives way to Comment % when only part of Production or Test is shown.
 
 - Popular frameworks are classified without configuration: Next.js, Nuxt, React Router, .NET, Composer, Symfony, Laravel, Rails, RubyGems and Django projects are detected as build modules with the folders their documentation names. .NET test projects, RSpec files, Django `tests.py` and test-runner configuration such as `vitest.config.ts` are tests; and configuration of named JavaScript tools such as `vite.config.ts` is build tooling. Comparisons with earlier reports may show these files reclassified.

@@ -305,6 +305,22 @@ class PackageTests(unittest.TestCase):
             self.assertIn("brew install jq", result.stderr)
             self.assertIn("package manager", result.stderr)
 
+    def test_every_built_asset_is_checksummed_and_released(self):
+        workflow = (Path(__file__).resolve().parents[1] / ".github/workflows/release.yml").read_text()
+        lines = workflow.splitlines()
+        start = lines.index("          path: |") + 1
+        uploaded = []
+        for line in lines[start:]:
+            if not line.startswith(" " * 12):
+                break
+            uploaded.append(line.strip())
+        checksummed = next(line for line in lines if "sha256sum" in line).split()
+        released = next(line for line in lines if "gh release create" in line).split()
+        self.assertTrue({"locmetry*.deb", "locmetry*.rpm"} <= set(uploaded), uploaded)
+        for pattern in uploaded:
+            self.assertIn(pattern, checksummed)
+            self.assertIn(pattern, released)
+
 
 if __name__ == "__main__":
     unittest.main()
