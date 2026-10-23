@@ -19,6 +19,8 @@ Line counters such as Tokei, cloc and scc report how many lines of each language
 
 The [comparison on Immich](#compared-with-a-line-counter-how-much-text-per-language) shows what that changes: the counters count its database schemas, OpenAPI specification and translations as code.
 
+![Locmetry measures Immich by language and purpose, explains why a generated SDK client counts as other code, and compares two Immich releases](docs/assets/demo.gif)
+
 It needs no configuration to start: Locmetry recognizes the [build modules](#build-modules) of npm, Gradle, Maven, Cargo, Go, Python, Lake, Swift, Dart, .NET, Composer and RubyGems projects and of Next.js, Nuxt, React Router, Symfony, Laravel, Rails and Django applications, counts their conventional source layouts as production and finds tests by built-in conventions, so even a multi-language monorepo gets a production/test split on the first run.
 
 ## Install
