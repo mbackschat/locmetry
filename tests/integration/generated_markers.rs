@@ -253,6 +253,26 @@ fn gitattributes_declarations_follow_git_precedence() {
     );
 }
 
+/// A `.gitattributes` file's patterns are anchored to its folder by name, so
+/// glob characters in that name match only themselves: unescaped, the
+/// patterns in `gen[1]` would match `gen1` and miss the folder's own files.
+#[test]
+fn gitattributes_patterns_anchor_to_their_folder_literally() {
+    let document = measured(&[
+        ("go.mod", "module example.com/x\n"),
+        ("gen[1]/.gitattributes", "*.go linguist-generated\n"),
+        ("gen[1]/a.go", "package gen\n"),
+        ("gen1/b.go", "package gen\n"),
+    ]);
+    expect(
+        &document,
+        &[
+            ("gen[1]/a.go", GENERATED, "builtin:linguist-generated"),
+            ("gen1/b.go", IMPLEMENTATION, "builtin:go-module"),
+        ],
+    );
+}
+
 /// Overrides, conventions and rules decide first, and the switch turns the
 /// markers off; reports record the applied marker set.
 #[test]

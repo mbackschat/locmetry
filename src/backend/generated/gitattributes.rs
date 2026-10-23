@@ -3,6 +3,7 @@
 //! deeper files win, and the attribute's state follows GitHub Linguist,
 //! where any value but `false` means generated (`lazy_blob.rb`,
 //! `boolean_attribute`).
+use crate::config::literal_glob;
 use globset::{GlobBuilder, GlobMatcher};
 use std::collections::BTreeSet;
 use std::path::Path;
@@ -134,7 +135,7 @@ fn parse(directory: &str, line: &str) -> Option<Line> {
         None if pattern.contains('/') => pattern.to_string(),
         None => format!("**/{pattern}"),
     };
-    let matcher = GlobBuilder::new(&join(directory, &relative))
+    let matcher = GlobBuilder::new(&join(&literal_glob(directory), &relative))
         .literal_separator(true)
         .backslash_escape(true)
         .build()
