@@ -204,6 +204,40 @@ pub(super) fn unused_entries_note(entries: &[String], subfolder: Option<&str>) -
     })
 }
 
+/// Names entries whose files a later stage would give another purpose, such
+/// as an override turning module production into tests. Such moves are often
+/// intended, as for test runners classified as tooling, so the note asks for
+/// review instead of warning (docs/proposals/policy-entry-review.md).
+pub(super) fn purpose_changes_note(entries: &[crate::PolicyEntry]) -> Option<String> {
+    let changes: Vec<String> = entries
+        .iter()
+        .flat_map(|entry| {
+            let to = entry.purpose?;
+            Some(
+                entry
+                    .purpose_changes()
+                    .into_iter()
+                    .map(move |(from, code)| {
+                        format!(
+                            "{} ({} to {}, {})",
+                            entry.id,
+                            purpose_title(from),
+                            purpose_title(to),
+                            counted(code, "code line")
+                        )
+                    }),
+            )
+        })
+        .flatten()
+        .collect();
+    (!changes.is_empty()).then(|| {
+        format!(
+            "Entries that changed the purpose a later stage would give: {}.",
+            changes.join(", ")
+        )
+    })
+}
+
 /// Scoped non-use cannot establish whether project exclusions need repair.
 pub(super) fn unused_exclusions_note(
     patterns: &[String],

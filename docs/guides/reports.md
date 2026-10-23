@@ -158,7 +158,7 @@ project = "."
 folders = ["server", "web", "mobile"]
 ```
 
-The members are named after the folders' last segments, and files outside every folder are not measured. The shared policy's unused entries and exclusions are those unused in every folder; they appear once in `summary.unused_entries` and `summary.unused_exclusions` and in verbose notes without a member name.
+The members are named after the folders' last segments, and files outside every folder are not measured. The shared policy's unused entries and exclusions are those unused in every folder; they appear once in `summary.unused_entries` and `summary.unused_exclusions` and in verbose notes without a member name. `summary.policy_entries` counts the shared policy's entries once over all folders. Independent roots instead record their own entries as `metadata.members[].policy_entries`.
 
 ## Query a Saved Report
 

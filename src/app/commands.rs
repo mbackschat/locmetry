@@ -247,6 +247,7 @@ pub(crate) fn run_root(
         submodules: measurement.submodules,
         unused_entries: measurement.unused_entries,
         unused_exclusions: measurement.unused_exclusions,
+        policy_entries: measurement.policy_entries,
         coverage: measurement.coverage,
         inaccurate: measurement.inaccurate,
         rows: measurement.rows,
@@ -332,6 +333,7 @@ pub(crate) fn run_workspace(args: &WorkspaceArgs, styling: Styling) -> Result<Ou
         submodules: Vec::new(),
         unused_entries: Vec::new(),
         unused_exclusions: Vec::new(),
+        policy_entries: Vec::new(),
         members: Vec::new(),
     };
     // Unused in every member folder means unused by the shared policy; an
@@ -339,6 +341,12 @@ pub(crate) fn run_workspace(args: &WorkspaceArgs, styling: Styling) -> Result<Ou
     if shared_policy {
         results.unused_entries = common(measurements.iter().map(|m| &m.unused_entries));
         results.unused_exclusions = common(measurements.iter().map(|m| &m.unused_exclusions));
+        results.policy_entries = locmetry::merged_policy_entries(
+            measurements
+                .iter()
+                .map(|m| m.policy_entries.clone())
+                .collect(),
+        );
     }
     let mut records = Vec::new();
     for (member, measurement) in members.iter().zip(measurements) {
@@ -347,11 +355,12 @@ pub(crate) fn run_workspace(args: &WorkspaceArgs, styling: Styling) -> Result<Ou
         let prefixed = |path: &str| locmetry::member_path(name, folder, path);
         let mut scope = scope_policy(&measurement.policy);
         scope.subfolder = member.folder.clone();
-        let (unused_entries, unused_exclusions) = match shared_policy {
-            true => (Vec::new(), Vec::new()),
+        let (unused_entries, unused_exclusions, policy_entries) = match shared_policy {
+            true => (Vec::new(), Vec::new(), Vec::new()),
             false => (
                 measurement.unused_entries.clone(),
                 measurement.unused_exclusions.clone(),
+                measurement.policy_entries.clone(),
             ),
         };
         records.push(contract::Member {
@@ -364,6 +373,7 @@ pub(crate) fn run_workspace(args: &WorkspaceArgs, styling: Styling) -> Result<Ou
             scope,
             unused_entries,
             unused_exclusions,
+            policy_entries,
             coverage: (&measurement.coverage).into(),
             config: Some(measurement.policy.snapshot().clone()),
         });
@@ -434,6 +444,17 @@ pub(crate) fn run_workspace(args: &WorkspaceArgs, styling: Styling) -> Result<Ou
                     .iter()
                     .map(|pattern| format!("{pattern} ({name})")),
             );
+            results
+                .policy_entries
+                .extend(
+                    measurement
+                        .policy_entries
+                        .iter()
+                        .map(|entry| locmetry::PolicyEntry {
+                            id: format!("{} ({name})", entry.id),
+                            ..entry.clone()
+                        }),
+                );
         }
     }
     // Prefixes keep each member's records together but can reorder them

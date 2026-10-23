@@ -18,9 +18,10 @@ pub use backend::{
     Scan, DATA_LANGUAGES, DOCUMENTATION_LANGUAGES,
 };
 pub use config::{
-    config_schema, user_config_schema, user_defaults_file, workspace_definition, workspace_schema,
-    Classification, EffectiveConfig, Policy, Purpose, Scope, ScopeOverrides, WorkspaceDefinition,
-    CONFIG_FILE,
+    config_schema, merged_policy_entries, user_config_schema, user_defaults_file,
+    workspace_definition, workspace_schema, Classification, Displacement, EffectiveConfig,
+    EntryStage, Policy, PolicyEntry, Preemption, Purpose, Scope, ScopeOverrides,
+    WorkspaceDefinition, CONFIG_FILE,
 };
 pub use modules::{detect as detect_modules, detector_ids as module_detector_ids, Module};
 pub use output::{

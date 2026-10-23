@@ -14,6 +14,9 @@ pub(crate) struct Results {
     /// Configuration findings as human notes name them.
     pub(crate) unused_entries: Vec<String>,
     pub(crate) unused_exclusions: Vec<String>,
+    /// What each project entry decided; in a workspace of independent roots,
+    /// IDs name their member as human notes do.
+    pub(crate) policy_entries: Vec<locmetry::PolicyEntry>,
     /// Workspace members in name order; empty for a single root.
     pub(crate) members: Vec<MemberView>,
 }
@@ -293,6 +296,7 @@ impl HumanView<'_> {
             submodules: &results.submodules,
             unused_entries: &results.unused_entries,
             unused_exclusions: &results.unused_exclusions,
+            policy_entries: &results.policy_entries,
             members: &results.members,
         }
     }
@@ -372,6 +376,10 @@ fn summary_document(
         largest_module_files: Some(module_files),
         unused_entries: findings_if(&results.unused_entries),
         unused_exclusions: findings_if(&results.unused_exclusions),
+        policy_entries: match findings {
+            true => results.policy_entries.clone(),
+            false => Vec::new(),
+        },
     }
 }
 

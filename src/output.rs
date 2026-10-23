@@ -98,6 +98,7 @@ pub struct Findings<'a> {
     pub submodules: &'a [SubmoduleShare],
     pub unused_entries: &'a [String],
     pub unused_exclusions: &'a [String],
+    pub policy_entries: &'a [crate::PolicyEntry],
     /// Workspace members in name order; empty for a single root.
     pub members: &'a [MemberView],
 }

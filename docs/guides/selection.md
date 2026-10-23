@@ -120,7 +120,7 @@ An earlier classification stage may win over your rule. Explain the file using t
 locmetry explain web/src/cart.test.ts --root acme-orders --no-user-config --format json
 ```
 
-The sample's test convention wins before module inference. When measuring a subfolder, use the same project-relative target and omit `--subfolder` from `explain`: the file already restricts counting. Entries listed as unused in a subtree may still decide files elsewhere. Only an unrestricted measurement supports the configuration-cleanup checks for `unused_entries` and `unused_exclusions`.
+The sample's test convention wins before module inference. When measuring a subfolder, use the same project-relative target and omit `--subfolder` from `explain`: the file already restricts counting. Entries listed as unused in a subtree may still decide files elsewhere. Only an unrestricted measurement supports the configuration-cleanup checks for `unused_entries` and `unused_exclusions`, and `summary.policy_entries` counts only the files of the measured subtree.
 
 ### A file is absent from the counts
 

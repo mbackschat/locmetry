@@ -390,6 +390,7 @@ fn adaptive_styling_preserves_plain_alignment_and_mutes_the_legend() {
         submodules: &[],
         unused_entries: &[],
         unused_exclusions: &[],
+        policy_entries: &[],
         members: &[],
     };
     let render = |theme| {

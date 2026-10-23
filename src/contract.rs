@@ -320,6 +320,9 @@ pub struct Member {
     pub unused_entries: Vec<String>,
     /// Exclusions of this member's own policy leaving out no observed candidate. Empty for folder members, whose shared project policy reports them once in `summary.unused_exclusions`.
     pub unused_exclusions: Vec<String>,
+    /// What each entry of this member's own policy decided, as `summary.policy_entries` describes. Absent for folder members, whose shared project policy reports once in the summary, and without entries.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub policy_entries: Vec<crate::PolicyEntry>,
     pub coverage: MemberCoverage,
     /// Full report only: this member's independently loaded policy.
     #[serde(
@@ -388,6 +391,9 @@ pub struct ReportSummary {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     /// Exclusions leaving out no observed candidate in the measured selection. With subfolder selection, or in a workspace of project folders, matches elsewhere do not count as use; policy cleanup requires an unrestricted measurement. Absent in a workspace of independent roots.
     pub unused_exclusions: Vec<String>,
+    /// What each override, rule and language correction decided, in that order: the files and code it decided, files an earlier entry or convention took, globs and exceptions that did nothing, and the decisions it replaced. Absent without entries and in a workspace of independent roots, whose members report their own; with subfolder selection it covers the measured files only.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub policy_entries: Vec<crate::PolicyEntry>,
 }
 
 /// Line categories are disjoint; lines = code + comments + blanks, using checked arithmetic.

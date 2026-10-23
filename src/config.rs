@@ -13,6 +13,7 @@ use std::{
 };
 use tokei::LanguageType;
 
+mod audit;
 mod builtin;
 mod corrections;
 mod decision;
@@ -23,6 +24,7 @@ mod schema;
 mod scope;
 mod user;
 mod workspace;
+pub use audit::{merged_policy_entries, Displacement, EntryStage, PolicyEntry, Preemption};
 use builtin::{
     Convention, BUILTIN_BUILD_V1, BUILTIN_LANGUAGES_V1, BUILTIN_TESTS_V1, DEFAULT_EXCLUDES,
 };
@@ -166,12 +168,13 @@ struct Entry {
 
 impl Entry {
     fn matches(&self, path: &str, kind: Kind) -> bool {
-        self.matcher.is_match(path)
-            && !self.except.is_match(path)
-            && self
-                .kinds
-                .as_ref()
-                .is_none_or(|kinds| kinds.contains(&kind))
+        self.matcher.is_match(path) && !self.except.is_match(path) && self.has_kind(kind)
+    }
+
+    fn has_kind(&self, kind: Kind) -> bool {
+        self.kinds
+            .as_ref()
+            .is_none_or(|kinds| kinds.contains(&kind))
     }
 
     fn classification(&self) -> Classification {
@@ -582,12 +585,31 @@ impl Policy {
     }
 
     fn deciding_entry(&self, path: &str, kind: Kind) -> Option<(Stage, &Entry, Option<&Module>)> {
+        self.first_match(path, kind, None)
+    }
+
+    /// The classification later stages give a file when the project entry
+    /// `skipped` is absent; `None` when the file would reach the fallback.
+    fn decision_without(&self, path: &str, kind: Kind, skipped: &str) -> Option<Classification> {
+        self.first_match(path, kind, Some(skipped))
+            .map(|(_, entry, _)| entry.classification())
+    }
+
+    fn first_match(
+        &self,
+        path: &str,
+        kind: Kind,
+        skipped: Option<&str>,
+    ) -> Option<(Stage, &Entry, Option<&Module>)> {
         for (stage, entries) in [
             (Stage::Override, &self.overrides),
             (Stage::Convention, &self.conventions),
             (Stage::Rule, &self.rules),
         ] {
-            if let Some(entry) = entries.iter().find(|entry| entry.matches(path, kind)) {
+            if let Some(entry) = entries
+                .iter()
+                .find(|entry| Some(entry.id.as_str()) != skipped && entry.matches(path, kind))
+            {
                 return Some((stage, entry, None));
             }
         }

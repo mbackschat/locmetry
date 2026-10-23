@@ -420,6 +420,7 @@ pub(super) fn render_coverage(output: &mut String, findings: &Findings) {
             findings.unused_exclusions,
             findings.subfolder,
         ))
+        .chain(purpose_changes_note(findings.policy_entries))
         .chain(members_note(findings.members, MemberNotes::All))
     {
         writeln!(output, "\n{note}").unwrap();

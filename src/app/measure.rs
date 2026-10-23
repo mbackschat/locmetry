@@ -14,6 +14,7 @@ pub(crate) struct Measurement {
     pub(crate) submodules: Vec<SubmoduleShare>,
     pub(crate) unused_entries: Vec<String>,
     pub(crate) unused_exclusions: Vec<String>,
+    pub(crate) policy_entries: Vec<locmetry::PolicyEntry>,
 }
 
 /// A root with its loaded policy, ready to scan; preparing first lets output
@@ -88,6 +89,7 @@ pub(crate) fn measure(prepared: Prepared, subfolder: Option<&str>) -> Result<Mea
             .chain(scan.corrections.values().map(String::as_str)),
     );
     Ok(Measurement {
+        policy_entries: policy.policy_entries(&rows, &scan.corrections),
         modules,
         submodules: submodule_shares(&git_submodules(&root), &rows),
         unused_entries: unused,

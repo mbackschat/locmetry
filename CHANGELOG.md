@@ -7,6 +7,7 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 ### Added
 
 - Overrides and rules accept an `except` list of globs: files it names are left out of the entry and fall through to later entries and stages, so an exception such as `FieldAgreementTest` among `*AgreementTest` laws no longer depends on entry order.
+- Reports list every override, rule and language correction in `summary.policy_entries` with the files and code it decided, the earlier entries or conventions that took some of its files, globs and exceptions that did nothing, and the decisions it replaced. An entry that decides only a few of its intended files, or moves production code into tests, now shows in the report instead of only an entry that decides nothing; `--verbose` notes entries that change a purpose a later stage would give.
 
 ## [0.10.0] - 2026-10-23
 

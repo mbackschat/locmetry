@@ -93,6 +93,7 @@ fn legends_are_muted_in_root_and_workspace_tables_without_changing_plain_output(
             module_files: &[],
             submodules: &[],
             unused_entries: &[],
+            policy_entries: &[],
             unused_exclusions: &[],
             members,
         };
