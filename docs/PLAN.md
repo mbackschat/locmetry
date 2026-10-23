@@ -4,7 +4,7 @@
 
 ## Proposals — Under Discussion
 
-None at present.
+- [Reviewable policy entries and category refinements](proposals/policy-entry-review.md): draft of 2026-10-24, awaiting the owner's decision. Three projects categorizing their tests could not see partly wrong entries and needed overrides to change only a category.
 
 The [proposal index](proposals/README.md) distinguishes active designs from historical decisions.
 
