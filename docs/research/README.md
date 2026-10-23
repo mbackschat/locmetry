@@ -29,5 +29,6 @@ Sensitive project analyses, candidate rules, raw measurements, and breakdowns of
 
 - [Report analytics assessment](report-analytics.md): DuckDB, pandas, Polars and simpler alternatives; schema-3 and Showboat decisions.
 - [Policy test drives](policy-test-drives/README.md): policies written for public GitHub projects, what configuration could not express, and the experiments behind the 2026-10-23 proposals.
+- [Generated-code markers](generated-code-markers.md): documented markers, `.gitattributes` declarations and heuristics measured for coverage and false claims on applications and generators' own repositories.
 - [Prior art for purpose classification](classification-prior-art.md): Linguist, go-enry, gengo and framework detectors; none infers a production and test split, and Linguist's generated-file checks are the starting evidence for generated code.
 - [Framework layouts out of the box](framework-layouts.md): starters of the most used web frameworks measured without configuration, and an emulation of the proposed detectors.

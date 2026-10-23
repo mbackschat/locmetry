@@ -15,7 +15,7 @@ Decided 2026-10-23 by the owner: implement the accepted proposals in this order,
 1. [x] Framework layouts, implemented and verified on 2026-10-23; the [archived record](proposals/archive/framework-layouts.md) holds the design and links the [detector run](research/framework-layouts.md#detector-run).
 2. [x] Module credit by layout coverage, implemented and verified on 2026-10-23, including the `explain` note; the [archived record](proposals/archive/module-credit-by-coverage.md) holds the design.
 3. [x] Language corrections, implemented and verified on 2026-10-23; the [archived record](proposals/archive/language-corrections.md) holds the design.
-4. [ ] Draft a proposal for detecting generated code inside claimed layouts. Across the framework measurements it was the largest silent false claim: MyBatis output 82% of one application's production, OpenAPI clients 16–30%, swag, Wire and MockGen 14%, Django migrations 20% ([precision pass](research/framework-layouts.md#shared-false-claims-not-specific-to-a-row)). Markers differ by generator and some output has none, so the design starts from that evidence and follows the [research rules](../CLAUDE.md#research-and-experiments). Decided 2026-10-23 by the owner: start from Linguist's generated-file checks as cited evidence, adapted rather than taken as a dependency, and evaluate reading Linguist's `.gitattributes` attributes; the [prior-art record](research/classification-prior-art.md) lists which measured generators they cover. Reconcile the design with the deferred [generated/minified evidence](plans/measurement-quality-and-net-change.md#conditional-follow-ups-and-preserved-rationales) item.
+4. [x] Drafted the [generated-code markers proposal](proposals/generated-code-markers.md) on 2026-10-23, from the [marker measurements](research/generated-code-markers.md) and Linguist's checks as the [prior-art record](research/classification-prior-art.md) proposed; it awaits the owner's decision under Proposals — Under Discussion.
 
 ## Configuration — Follow-up
 
@@ -44,7 +44,9 @@ Decided 2026-10-23 by the owner: implement the accepted proposals in this order,
 
 ## Proposals — Under Discussion
 
-None. The [proposal index](proposals/README.md) distinguishes active designs from historical decisions.
+- [Generated-code markers](proposals/generated-code-markers.md), draft of 2026-10-23: module-claimed production with a documented marker or a `.gitattributes` `linguist-generated` declaration becomes `production:generated`. Decisions: accept the required markers; turn the unreleased `dotnet-generated` convention into the Roslyn marker before release; include the optional Django and OpenAPI Generator markers and defer `@generated` and tool-specific headers.
+
+The [proposal index](proposals/README.md) distinguishes active designs from historical decisions.
 
 ## Historical Evidence
 

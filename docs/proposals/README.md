@@ -6,7 +6,9 @@ Active designs live directly in this directory. Retired records live in `archive
 
 <!-- doc-index:start -->
 
-No documents in this directory.
+| Document | Status | Date | Summary |
+| --- | --- | --- | --- |
+| [Generated-Code Markers](generated-code-markers.md) | draft | 2026-10-23 | Classify module-claimed production that carries a documented generated-code marker, or a .gitattributes linguist-generated declaration, as production with category generated. |
 
 <!-- doc-index:end -->
 
