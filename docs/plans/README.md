@@ -1,6 +1,6 @@
 # Plans
 
-These documents own detailed scope and decision gates. [PLAN](../PLAN.md) owns the open-work overview. A deferred design requires its recorded trigger and authorization before implementation. Dates record when the listed status took effect; see the [maintenance rules](../documentation-maintenance.md).
+These documents own detailed scope and decision gates. [PLAN](../PLAN.md) owns the open-work overview and [DEFERRED](../DEFERRED.md) the deferred items. A deferred design requires its recorded trigger and authorization before implementation. Dates record when the listed status took effect; see the [maintenance rules](../documentation-maintenance.md).
 
 <!-- doc-index:start -->
 

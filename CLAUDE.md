@@ -5,7 +5,7 @@
 `locmetry` is a Rust CLI embedding Tokei. Edit this canonical file; preserve `AGENTS.md` as its relative symlink. Project-specific rules below refine the global defaults.
 
 - Implementation: [src](src); synthetic integration tests and the opt-in private regression: [tests](tests).
-- Current requirements: [PRODUCT](docs/PRODUCT.md); open work and links to deferred designs/history: [PLAN](docs/PLAN.md).
+- Current requirements: [PRODUCT](docs/PRODUCT.md); open work and history links: [PLAN](docs/PLAN.md); deferred and unscheduled items with their reopening conditions: [DEFERRED](docs/DEFERRED.md).
 - CLI entry points: [README](README.md); counting and selection limits: [measurement semantics](docs/measurement.md).
 - Design provenance: [research](docs/research/README.md); build/distribution decisions: [Tokei integration](docs/tokei-integration.md).
 - CI and releases: [.github/workflows](.github/workflows); Homebrew and Scoop templates: [packaging/homebrew](packaging/homebrew), [packaging/scoop](packaging/scoop).
@@ -29,11 +29,11 @@ Use rustfmt, four-space indentation, `snake_case` functions/modules, and `Pascal
 
 Update the owner of an affected public guarantee and any user-facing entry point made inaccurate by the change. Do not edit every documentation file for each checkpoint. Update PLAN or a detailed plan only when scope, status, a material decision, acceptance criteria or remaining work changes; keep routine small-fix verification in the commit handback. Keep current behavior in README and PRODUCT and decision/verification evidence in the existing archives. Add an entry under `Unreleased` in [CHANGELOG.md](CHANGELOG.md) in the same commit as each change users can notice, worded for users and marked **Breaking** when it breaks commands, reports or configuration; internal refactors, tests and tooling need none. The release command refuses an empty `Unreleased` section and turns it into the version's section, which becomes the GitHub release text. Change CLAUDE.md only when contributor instructions change. Keep proposed behavior distinct from supported guarantees. Breaking changes to commands, reports and configuration are acceptable before 1.0, decided 2026-10-21 by the owner; record each in the owning contract.
 
-Keep PLAN focused on open work. When a plan is complete, transfer live follow-ups to PLAN or a focused deferred-design document, archive the completed record under `docs/plans/archive/`, and update tracked inbound/outbound links and fragments. Preserve historical text and provenance apart from link relocation and an archival status notice; do not maintain a second live copy. A history link in PLAN is sufficient; do not repeat completion narratives there.
+Keep PLAN focused on open work. When a plan is complete, transfer open follow-ups to PLAN and deferred ones to DEFERRED or a focused deferred-design document, archive the completed record under `docs/plans/archive/`, and update tracked inbound/outbound links and fragments. Preserve historical text and provenance apart from link relocation and an archival status notice; do not maintain a second live copy. A history link in PLAN is sufficient; do not repeat completion narratives there.
 
 Human presentation roles and palettes live in [src/style.rs](src/style.rs). Renderers select semantic roles, emphasis through `Theme::strong`, and pad terminal cells before styling; a palette alone maps roles to colors, so a new look (for example, light backgrounds) is a new palette, not renderer changes; keep escape sequences out of individual renderers and JSON. Configuration for custom themes remains outside the supported interface.
 
-Follow the [proposal retirement procedure](docs/proposals/README.md#retirement-procedure) when an accepted design is verified, rejected or superseded. Move retired records to the archive, transfer live follow-ups to the plan, and preserve their evidence and links.
+Follow the [proposal retirement procedure](docs/proposals/README.md#retirement-procedure) when an accepted design is verified, rejected or superseded. Move retired records to the archive, transfer open follow-ups to PLAN and deferred ones to DEFERRED, and preserve their evidence and links.
 
 ### Documentation ownership and checks
 
@@ -51,7 +51,7 @@ Keep changed guarantees and affected user-facing entry points consistent in the 
 | [Measurement semantics](docs/measurement.md) | Counting, selection boundaries and limitations | Add independent regression oracles for changed measurement behavior. |
 | [Configure](docs/guides/configure.md), [selection](docs/guides/selection.md), [reports](docs/guides/reports.md), [compare](docs/guides/compare.md) | Task workflows, examples and evidence interpretation | `cargo test --locked --test integration guides::` checks embedded sources and examples. Add the `explain::` or `queries::` filter when those behaviors change, and the documentation script when executable recipes are affected. |
 | Executable schemas | Machine-readable structure and semantics | `cargo test --locked --test integration schema::` checks emitted reports and documented TOML examples. |
-| [PLAN](docs/PLAN.md) and its linked live plans | Open scope, decisions and acceptance criteria | Update material changes only; record verified outcomes and retain deferred activation conditions. |
+| [PLAN](docs/PLAN.md), [DEFERRED](docs/DEFERRED.md) and their linked live plans | Open scope, decisions and acceptance criteria; deferred items and their reopening conditions | Update material changes only; record verified outcomes and retain deferred activation conditions. |
 | [Research](docs/research/README.md) | Dated findings and provenance | Preserve the historical evidence; link its resolution from the active plan. |
 
 Edit the regular Markdown files in `docs/guides/` directly. [src/guides.rs](src/guides.rs) embeds them verbatim with `include_str!`; rebuilding updates `--guide` output, with no generated documentation copy to maintain.

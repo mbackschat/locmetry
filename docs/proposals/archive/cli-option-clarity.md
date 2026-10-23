@@ -9,7 +9,7 @@
 }
 -->
 
-Status: historical decision record — implemented and verified on 2026-10-20. [PRODUCT](../../PRODUCT.md#option-names-and-applicability) owns current names and behavior. Imperative wording, examples and limitations below preserve the reviewed design and owner amendment, not a second live contract. Verification covers the development checkout and makes no publication claim. Deferred error-policy and optional file-detail naming decisions now belong to [PLAN](../../PLAN.md#ideas--not-scheduled).
+Status: historical decision record — implemented and verified on 2026-10-20. [PRODUCT](../../PRODUCT.md#option-names-and-applicability) owns current names and behavior. Imperative wording, examples and limitations below preserve the reviewed design and owner amendment, not a second live contract. Verification covers the development checkout and makes no publication claim. Deferred error-policy and optional file-detail naming decisions now belong to [DEFERRED](../../DEFERRED.md#command-line-options).
 
 ## Implementation Verification
 

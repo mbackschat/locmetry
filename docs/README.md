@@ -9,7 +9,8 @@ Start with the workflow or contract relevant to your task. Status tables in the 
 - [Measure Locmetry itself](self-measurement.md): the root configuration's scope, classification decisions and verification.
 - [Saved report compatibility](report-compatibility.md): historical fields and comparison evidence.
 - [Integration and distribution](tokei-integration.md): embedded backend, packaging and release procedures.
-- [Current work](PLAN.md): open tasks, decision gates and deferred scope.
+- [Current work](PLAN.md): open tasks and decision gates.
+- [Deferred work](DEFERRED.md): deferred and unscheduled items, each with the condition that would reopen it.
 - [Maintain these docs](documentation-maintenance.md): index ownership, status/date rules and automated checks.
 - [Design CLI help](help-design.md): what belongs in help, examples and references, with experimental rationale and evaluation criteria.
 - [Check agent use for regressions](agent-regression-checks.md): when and how to verify that interface changes keep agents correct and efficient, with a ledger of checks.

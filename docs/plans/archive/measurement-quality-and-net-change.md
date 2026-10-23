@@ -315,7 +315,7 @@ Red/green evidence: the initial command tests failed because `--subfolder` was a
 
 The full public suite and focused final renderer/subfolder tests pass. Formatting, Clippy with warnings denied and all README workflow checks pass; the new examples assert review lists/totals, module/test provenance, restricted folder labels, unrecognized state, coverage and data/documentation rows. The private frozen-count replay passes; it does not test subtree traversal, which the synthetic tests cover. A manual synthetic table inspection confirms useful child/direct-file rows with project-relative labels. No performance benchmark or Linux CI run was performed locally; whole-project context traversal remains a documented cost and failure boundary.
 
-Updated PRODUCT, README, measurement semantics, report compatibility, troubleshooting, executable schema descriptions and repository documentation-check guidance. The proposal is now historical; PRODUCT owns the contract. Remaining conditional capabilities stay deferred. An independently observed pre-existing terminal-note escaping gap is recorded in [the development plan](../../PLAN.md#known-display-follow-up). No push, release or external implementation review is claimed.
+Updated PRODUCT, README, measurement semantics, report compatibility, troubleshooting, executable schema descriptions and repository documentation-check guidance. The proposal is now historical; PRODUCT owns the contract. Remaining conditional capabilities stay deferred. An independently observed pre-existing terminal-note escaping gap is recorded in [the development plan](../../DEFERRED.md#display). No push, release or external implementation review is claimed.
 
 
 ## Subfolder Review Follow-up — 2026-10-16

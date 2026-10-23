@@ -5,7 +5,7 @@
   "status": "deferred",
   "date": "2026-10-16",
   "summary": "Conditional capabilities; each needs its recorded trigger and scope decision.",
-  "evidence": "[Deferred scope](../PLAN.md#ideas--not-scheduled)"
+  "evidence": "[Deferred scope](../DEFERRED.md#measurement-and-comparison)"
 }
 -->
 
