@@ -10,12 +10,13 @@
 
 ## Accepted Proposals — Implementation Order
 
-Decided 2026-10-23 by the owner: implement the accepted proposals in this order, each with red/green TDD, and finish each before starting the next. Each step implements its proposal's required design and acceptance; optional parts stay in the proposal unless named here. A finished step retires its proposal by the [retirement procedure](proposals/README.md#retirement-procedure). Steps 1 to 3 change `--help`, guides or report fields, so the next release needs an [agent regression check](agent-regression-checks.md).
+Decided 2026-10-23 by the owner: implement the accepted proposals in this order, each with red/green TDD, and finish each before starting the next. Each step implements its proposal's required design and acceptance; optional parts stay in the proposal unless named here. A finished step retires its proposal by the [retirement procedure](proposals/README.md#retirement-procedure). Steps 1 to 3 and 5 change `--help`, guides or report fields, so the next release needs an [agent regression check](agent-regression-checks.md).
 
 1. [x] Framework layouts, implemented and verified on 2026-10-23; the [archived record](proposals/archive/framework-layouts.md) holds the design and links the [detector run](research/framework-layouts.md#detector-run).
 2. [x] Module credit by layout coverage, implemented and verified on 2026-10-23, including the `explain` note; the [archived record](proposals/archive/module-credit-by-coverage.md) holds the design.
 3. [x] Language corrections, implemented and verified on 2026-10-23; the [archived record](proposals/archive/language-corrections.md) holds the design.
-4. [x] Drafted the [generated-code markers proposal](proposals/generated-code-markers.md) on 2026-10-23, from the [marker measurements](research/generated-code-markers.md) and Linguist's checks as the [prior-art record](research/classification-prior-art.md) proposed; it awaits the owner's decision under Proposals — Under Discussion.
+4. [x] Drafted the [generated-code markers proposal](proposals/generated-code-markers.md) on 2026-10-23, from the [marker measurements](research/generated-code-markers.md) and Linguist's checks as the [prior-art record](research/classification-prior-art.md) proposed; the owner accepted it on 2026-10-23.
+5. [ ] Generated-code markers: implement the [accepted proposal](proposals/generated-code-markers.md)'s required markers `go-generated-header`, `roslyn-generated`, `java-generated-annotation` and `linguist-generated`, and replace the unreleased `dotnet-generated` convention with `roslyn-generated` before the next release. Its optional markers stay deferred in the proposal.
 
 ## Configuration — Follow-up
 
@@ -44,7 +45,7 @@ Decided 2026-10-23 by the owner: implement the accepted proposals in this order,
 
 ## Proposals — Under Discussion
 
-- [Generated-code markers](proposals/generated-code-markers.md), draft of 2026-10-23: module-claimed production with a documented marker or a `.gitattributes` `linguist-generated` declaration becomes `production:generated`. The owner accepted Java's type-level `@Generated` as a required marker on 2026-10-23. Open decisions: accept the other required markers; turn the unreleased `dotnet-generated` convention into the Roslyn marker before release; defer the optional markers, Django's migration header, OpenAPI Generator's manifest, `@generated` and tool-specific headers.
+None at present.
 
 The [proposal index](proposals/README.md) distinguishes active designs from historical decisions.
 
