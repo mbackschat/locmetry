@@ -118,14 +118,13 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  Groovy          3      173      139 │        7      27 │     139       0       0 │      0.00
  Java            1      166      124 │       25      17 │     124       0       0 │      0.00
  HTML            1       74       66 │        2       6 │      66       0       0 │      0.00
- Prolog          1       47       37 │        0      10 │      37       0       0 │      0.00
  BASH            2       40       30 │        2       8 │      30       0       0 │      0.00
  PostCSS         0       31       28 │        0       3 │      28       0       0 │      0.00
  CMake           1       13        9 │        0       4 │       9       0       0 │      0.00
  Templ           1       11        6 │        0       5 │       6       0       0 │      0.00
  C Header        1        1        1 │        0       0 │       1       0       0 │      0.00
  ────────────────────────────────────┼──────────────────┼─────────────────────────┼──────────
- Total       2,529  333,360  282,770 │    9,149  41,441 │ 179,594  87,011  16,165 │      0.48
+ Total       2,528  333,313  282,733 │    9,149  41,431 │ 179,557  87,011  16,165 │      0.48
  Lines = Code + Comments + Blanks · Production + Test + Other = Code · Test/prod = Test / Production (Code)
  Tests written in another language than the code they test skew per-language Test/prod.
  Folded: TSX → TypeScript.
@@ -139,7 +138,7 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  production:native             67    8,870    7,206
  test:end-to-end               23    3,719    3,118
  production:deployment         31    1,023      798
- production:tooling            15      956      759
+ production:tooling            14      909      722
  production:build-tooling      14      813      718
  test:test-infrastructure       4      251      234
  test:performance-test          1       81       64
@@ -188,7 +187,7 @@ locmetry --root immich --format table --folder-rows 16 --no-color --no-bars --ta
  Folder                   Lines     Code │   Prod.    Test   Other │ Test/prod
  ────────────────────────────────────────┼─────────────────────────┼──────────
  server/src             104,285   90,467 │  52,970  27,798   9,699 │      0.52
- mobile                 100,142   83,220 │  66,989  16,231       0 │      0.24
+ mobile                 100,095   83,183 │  66,952  16,231       0 │      0.24
  web                     67,833   58,255 │  52,867   5,388       0 │      0.10
  server/test             24,611   21,157 │       0  21,157       0 │         -
  e2e/src                 15,300   13,003 │       0  13,003       0 │         -
@@ -204,7 +203,7 @@ locmetry --root immich --format table --folder-rows 16 --no-color --no-bars --ta
  open-api/bin                26       14 │      14       0       0 │      0.00
  misc/release                11        6 │       6       0       0 │      0.00
  ────────────────────────────────────────┼─────────────────────────┼──────────
- Total                  333,360  282,770 │ 179,594  87,011  16,165 │      0.48
+ Total                  333,313  282,733 │ 179,557  87,011  16,165 │      0.48
 ```
 
 ## Look at the code around the product
@@ -231,12 +230,11 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  HCL            16    262    225 │        4      33 │   225     0 │      1.7%
  Groovy          3    173    139 │        7      27 │   139     0 │      4.8%
  Python          2     51     38 │        1      12 │    38     0 │      2.6%
- Prolog          1     47     37 │        0      10 │    37     0 │      0.0%
  BASH            2     40     30 │        2       8 │    30     0 │      6.2%
  CMake           1     13      9 │        0       4 │     9     0 │      0.0%
  Templ           1     11      6 │        0       5 │     6     0 │      0.0%
  ────────────────────────────────┼──────────────────┼─────────────┼──────────
- Total          64  3,043  2,509 │      156     378 │ 2,275   234 │      5.9%
+ Total          63  2,996  2,472 │      156     368 │ 2,238   234 │      5.9%
  Lines = Code + Comments + Blanks · Production + Test = Code · Comment % = Comments / (Code + Comments)
  Not shown (categories): production:implementation, test:test, other:generated, production:native, test:end-to-end and
 test:performance-test (280,261 code lines).
@@ -245,16 +243,16 @@ test:performance-test (280,261 code lines).
  Category                  Files  Lines  Code
  ────────────────────────────────────────────
  production:deployment        31  1,023   798
- production:tooling           15    956   759
+ production:tooling           14    909   722
  production:build-tooling     14    813   718
  test:test-infrastructure      4    251   234
  Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
 
 ```
 
-Less than 1% of the source code builds, ships and tests the product, yet it spans 12 languages: JavaScript bundler and lint configuration, Shell and Dockerfile for deployment, HCL for the Terraform modules and Groovy for Gradle. Comment % replaces Test/prod because the selection holds only part of Production and Test, and the note names the categories left out.
+Less than 1% of the source code builds, ships and tests the product, yet it spans 11 languages: JavaScript bundler and lint configuration, Shell and Dockerfile for deployment, HCL for the Terraform modules and Groovy for Gradle. Comment % replaces Test/prod because the selection holds only part of Production and Test, and the note names the categories left out.
 
-The Prolog row is a test-drive finding rather than Prolog: `mobile/android/app/proguard-rules.pro` holds ProGuard rules, which the counter recognizes as Prolog by their extension. Language mappings apply only to files the counter does not recognize, so the policy can classify the file as tooling but cannot correct its language.
+No Prolog row appears, although the counter reads `mobile/android/app/proguard-rules.pro` as Prolog by its extension: the file holds ProGuard keep rules, and the policy's language correction leaves it unrecognized, because no counter language shares their syntax.
 
 ## Focus on the mobile app
 
@@ -278,12 +276,11 @@ locmetry --root immich --subfolder mobile --format table --show-categories --no-
  Groovy        3      173     139 │        7      27 │    139       0      0 │      0.00
  Java          1      166     124 │       25      17 │    124       0      0 │      0.00
  Shell         4      144      85 │       34      25 │     85       0      0 │      0.00
- Prolog        1       47      37 │        0      10 │     37       0      0 │      0.00
  Python        1       24      18 │        1       5 │     18       0      0 │      0.00
  CMake         1       13       9 │        0       4 │      9       0      0 │      0.00
  C Header      1        1       1 │        0       0 │      1       0      0 │      0.00
  ─────────────────────────────────┼──────────────────┼───────────────────────┼──────────
- Total       900  100,142  83,220 │    3,285  13,637 │ 66,989  16,231      0 │      0.24
+ Total       899  100,095  83,183 │    3,285  13,627 │ 66,952  16,231      0 │      0.24
  Lines = Code + Comments + Blanks · Production + Test + Other = Code · Test/prod = Test / Production (Code)
  Tests written in another language than the code they test skew per-language Test/prod.
 
@@ -293,7 +290,7 @@ locmetry --root immich --subfolder mobile --format table --show-categories --no-
  production:implementation    668  70,213  59,152
  test:test                    154  20,270  16,231
  production:native             67   8,870   7,206
- production:tooling             7     603     483
+ production:tooling             6     556     446
  production:build-tooling       4     186     148
  Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
 

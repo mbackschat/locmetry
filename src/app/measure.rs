@@ -77,10 +77,21 @@ pub(crate) fn measure(prepared: Prepared, subfolder: Option<&str>) -> Result<Mea
     if subfolder.is_some() {
         modules.retain(|module| module.files > 0);
     }
+    // A correction that decides no selected file contradicts the counter for
+    // nothing, so it is reported with the unused classification entries.
+    let mut unused = unused_entries(policy.entry_ids(), &rows);
+    let applied: std::collections::BTreeSet<&str> =
+        scan.corrections.values().map(String::as_str).collect();
+    unused.extend(
+        policy
+            .correction_ids()
+            .filter(|id| !applied.contains(id))
+            .map(String::from),
+    );
     Ok(Measurement {
         modules,
         submodules: submodule_shares(&git_submodules(&root), &rows),
-        unused_entries: unused_entries(policy.entry_ids(), &rows),
+        unused_entries: unused,
         unused_exclusions: scan.unused_exclusions,
         coverage: scan.coverage,
         inaccurate: scan.inaccurate,

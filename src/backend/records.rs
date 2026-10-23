@@ -151,6 +151,7 @@ pub fn file_records(payload: &Value, policy: &Policy) -> Result<Vec<FileRecord>>
                 language: language.clone(),
                 kind,
                 language_mapping: None,
+                language_correction: None,
                 counts,
                 languages,
                 inline_tests: Counts::default(),

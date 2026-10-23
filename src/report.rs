@@ -77,6 +77,8 @@ pub struct FileRecord {
     pub kind: Kind,
     /// Mapping provenance when recognition needed an explicit language.
     pub language_mapping: Option<String>,
+    /// The language correction that replaced the counter's recognition.
+    pub language_correction: Option<String>,
     pub classification: Classification,
     pub counts: Counts,
     /// Runtime participation includes the host; the public contract omits redundant single-language detail.

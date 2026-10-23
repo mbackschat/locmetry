@@ -35,13 +35,12 @@ locmetry workspace --workspace-file v3.3.4/immich/workspace.toml --format table 
  Groovy          3      173      139 │        7      27 │     139       0       0 │      0.00
  Java            1      166      124 │       25      17 │     124       0       0 │      0.00
  HTML            1       74       66 │        2       6 │      66       0       0 │      0.00
- Prolog          1       47       37 │        0      10 │      37       0       0 │      0.00
  BASH            2       40       30 │        2       8 │      30       0       0 │      0.00
  PostCSS         0       31       28 │        0       3 │      28       0       0 │      0.00
  CMake           1       13        9 │        0       4 │       9       0       0 │      0.00
  C Header        1        1        1 │        0       0 │       1       0       0 │      0.00
  ────────────────────────────────────┼──────────────────┼─────────────────────────┼──────────
- Total       2,498  332,353  281,955 │    9,072  41,326 │ 178,779  87,011  16,165 │      0.49
+ Total       2,497  332,306  281,918 │    9,072  41,316 │ 178,742  87,011  16,165 │      0.49
  Lines = Code + Comments + Blanks · Production + Test + Other = Code · Test/prod = Test / Production (Code)
  Tests written in another language than the code they test skew per-language Test/prod.
  Folded: TSX → TypeScript.
@@ -50,13 +49,13 @@ locmetry workspace --workspace-file v3.3.4/immich/workspace.toml --format table 
  Member              Lines     Code │   Prod.    Test   Other │ Test/prod │  Share
  ───────────────────────────────────┼─────────────────────────┼───────────┼───────
  server            129,296  111,950 │  53,296  48,955   9,699 │      0.92 │  39.7%
- mobile            100,142   83,220 │  66,989  16,231       0 │      0.24 │  29.5%
+ mobile            100,095   83,183 │  66,952  16,231       0 │      0.24 │  29.5%
  web                67,833   58,255 │  52,867   5,388       0 │      0.10 │  20.7%
  e2e                15,491   13,174 │      61  13,113       0 │    214.97 │   4.7%
  packages           12,893   10,065 │   2,345   1,254   6,466 │      0.53 │   3.6%
  machine-learning    6,698    5,291 │   3,221   2,070       0 │      0.64 │   1.9%
  ───────────────────────────────────┼─────────────────────────┼───────────┼───────
- Total             332,353  281,955 │ 178,779  87,011  16,165 │      0.49 │ 100.0%
+ Total             332,306  281,918 │ 178,742  87,011  16,165 │      0.49 │ 100.0%
  Production + Test + Other = Code · Test/prod = Test / Production (Code) · Share = Code / workspace Code
 
 ```
@@ -75,7 +74,7 @@ locmetry --root immich --subfolder mobile --format json \
 
 ```output
 {
-  "production": 66989,
+  "production": 66952,
   "test": 16231
 }
 ```

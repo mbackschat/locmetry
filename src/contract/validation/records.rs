@@ -86,6 +86,7 @@ impl MeasurementReport {
                     language: f.language.clone(),
                     kind: f.kind,
                     language_mapping: f.language_mapping.clone(),
+                    language_correction: f.language_correction.clone(),
                     classification: crate::Classification {
                         purpose: f.purpose,
                         category: f.category.clone(),

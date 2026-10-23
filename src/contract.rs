@@ -433,6 +433,14 @@ pub struct File {
     )]
     #[schemars(with = "String")]
     pub language_mapping: Option<String>,
+    /// Only for files a project language correction counted: its ID. The counter recognized the file as another language, which `language` replaces.
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "present"
+    )]
+    #[schemars(with = "String")]
+    pub language_correction: Option<String>,
     pub counts: LineCounts,
     /// Only for embedded languages. Counts sum to the file; host participation includes zero counts.
     #[serde(
@@ -469,6 +477,7 @@ impl From<&crate::FileRecord> for File {
             category: f.classification.category.clone(),
             rule: f.classification.rule.clone(),
             language_mapping: f.language_mapping.clone(),
+            language_correction: f.language_correction.clone(),
             counts: f.counts.into(),
             languages: (f.languages.len() > 1).then(|| {
                 f.languages

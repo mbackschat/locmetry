@@ -131,7 +131,7 @@ Four entries resolve more than half of the review list. What remains is deployme
 
 ## Check what the policy changed
 
-Capture full reports with and without the reviewed policy. Native `compare` shows the aggregate effect: unchanged counts moving between purposes. `sed` keeps the purpose table.
+Capture full reports with and without the reviewed policy. Native `compare` shows the aggregate effect: counts moving between purposes, and 47 lines leaving the source total, the ProGuard rules that the policy's language correction leaves uncounted. `sed` keeps the purpose table.
 
 ```bash
 source scripts/showcase-env.sh
@@ -145,11 +145,11 @@ locmetry compare builtin.json reviewed.json --format table --no-color \
 ```output
  Purpose        before    after   change │  before    after   change
  ────────────────────────────────────────┼──────────────────────────
- Production    227,765  210,755  -17,010 │ 194,232  179,594  -14,638
+ Production    227,765  210,708  -17,057 │ 194,232  179,557  -14,675
  Test           99,381  103,432   +4,051 │  83,595   87,011   +3,416
  Other           6,214   19,173  +12,959 │   4,943   16,165  +11,222
  ────────────────────────────────────────┼──────────────────────────
- Source total  333,360  333,360        0 │ 282,770  282,770        0
+ Source total  333,360  333,313      -47 │ 282,770  282,733      -37
  Test/prod (Code): 0.43 → 0.48 (before → after)
 ```
 
@@ -204,8 +204,8 @@ bash "$repository/scripts/compare-locmetry-files.sh" builtin.json reviewed.json 
   {
     "from": "other/unclaimed",
     "to": "production/tooling",
-    "files": 14,
-    "code": 416
+    "files": 13,
+    "code": 379
   },
   {
     "from": "production/implementation",

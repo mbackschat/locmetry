@@ -14,6 +14,7 @@ use std::{
 use tokei::LanguageType;
 
 mod builtin;
+mod corrections;
 mod file;
 mod schema;
 mod scope;
@@ -22,6 +23,8 @@ mod workspace;
 use builtin::{
     Convention, BUILTIN_BUILD_V1, BUILTIN_LANGUAGES_V1, BUILTIN_TESTS_V1, DEFAULT_EXCLUDES,
 };
+pub use corrections::{CorrectedLanguage, UNRECOGNIZED};
+use corrections::{CorrectionConfig, LanguageCorrection};
 pub use file::*;
 pub use schema::{config_schema, user_config_schema, workspace_schema};
 pub use scope::*;
@@ -227,6 +230,19 @@ fn check_categories(config: &ConfigFile) -> Result<()> {
 }
 
 /// Rejects empty, duplicate, and reserved entry IDs across all stages.
+/// Overrides, rules and language corrections share one ID space, because
+/// `summary.unused_entries` lists them together.
+fn check_entry_ids(config: &ConfigFile) -> Result<()> {
+    check_ids(
+        config
+            .overrides
+            .iter()
+            .chain(&config.rules)
+            .map(|entry| entry.id.as_str())
+            .chain(config.languages.corrections.iter().map(|c| c.id.as_str())),
+    )
+}
+
 fn check_ids<'a>(ids: impl IntoIterator<Item = &'a str>) -> Result<()> {
     let mut seen = BTreeSet::new();
     for id in ids {
@@ -300,6 +316,8 @@ pub struct Policy {
     configuration_exclusions: BTreeSet<String>,
     /// Project mappings first, then built-in ones.
     languages: Vec<LanguageMapping>,
+    /// Project corrections, applied before the counter recognizes a file.
+    corrections: Vec<LanguageCorrection>,
     snapshot: EffectiveConfig,
 }
 
@@ -321,13 +339,7 @@ impl Policy {
             "Unsupported configuration version {}",
             config.version
         );
-        check_ids(
-            config
-                .overrides
-                .iter()
-                .chain(&config.rules)
-                .map(|entry| entry.id.as_str()),
-        )?;
+        check_entry_ids(&config)?;
         check_categories(&config)?;
         let entries = |list: &[EntryConfig]| {
             list.iter()
@@ -420,6 +432,12 @@ impl Policy {
             builtin_conventions: convention_snapshot,
         };
         let fallback = config.classification.fallback;
+        let corrections = config
+            .languages
+            .corrections
+            .iter()
+            .map(LanguageCorrection::from_config)
+            .collect::<Result<Vec<_>>>()?;
         Ok(Self {
             scope: Scope::new(config.scope.clone())?,
             overrides: entries(&config.overrides)?,
@@ -431,6 +449,7 @@ impl Policy {
             fallback,
             configuration_exclusions: BTreeSet::new(),
             languages,
+            corrections,
             snapshot,
         })
     }
@@ -660,6 +679,28 @@ impl Policy {
 
     pub fn is_excluded(&self, path: &str) -> bool {
         self.scope.is_excluded(path)
+    }
+
+    /// The first correction matching `path`, with its ID; it replaces the
+    /// counter's recognition, and mappings no longer apply.
+    pub fn corrected_language(&self, path: &str) -> Option<(&str, CorrectedLanguage)> {
+        self.corrections
+            .iter()
+            .find(|correction| correction.matcher.is_match(path))
+            .map(|correction| (correction.id.as_str(), correction.language))
+    }
+
+    /// IDs of the project's language corrections, in order.
+    pub fn correction_ids(&self) -> impl Iterator<Item = &str> {
+        self.corrections.iter().map(|c| c.id.as_str())
+    }
+
+    /// The stated reason of correction `id`, when supplied.
+    pub fn correction_reason(&self, id: &str) -> Option<&str> {
+        self.corrections
+            .iter()
+            .find(|c| c.id == id)
+            .and_then(|c| c.reason.as_deref())
     }
 
     /// Language and mapping ID for a file the backend does not recognize.

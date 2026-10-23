@@ -111,7 +111,6 @@ match = [
     "docs/sidebars.js",
     "web/lint-env.js",
     ".pnpmfile.cjs",
-    "mobile/android/app/proguard-rules.pro",
     "mobile/bin/**",
     "mobile/ios/ci_scripts/**",
     "mobile/ios/scripts/**",
@@ -123,3 +122,9 @@ kind = ["source"]
 purpose = "production"
 category = "tooling"
 reason = "Build, bundling, lint and test-runner configuration plus maintained developer commands"
+
+[[languages.corrections]]
+id = "proguard-rules"
+match = ["mobile/android/app/proguard-rules.pro"]
+language = "unrecognized"
+reason = "ProGuard keep rules, which the counter reads as Prolog by their .pro extension; no counter language shares their syntax"

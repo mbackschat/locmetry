@@ -116,6 +116,9 @@ pub(super) struct LanguageSettings {
     pub(super) builtin: bool,
     /// Ordered mappings; the first matching one counts the file. They apply only to files the counter does not recognize, so they never change a recognized file's language. Reports list unrecognized files as `metadata.coverage.unrecognized`.
     pub(super) mappings: Vec<MappingConfig>,
+    /// Ordered corrections for files the counter recognized wrongly, such as ProGuard rules read as Prolog; the first matching one decides, before the counter recognizes the file, and mappings no longer apply to it. Reports name the correction as each counted file's `language_correction`. Only the project configuration may correct languages.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub(super) corrections: Vec<CorrectionConfig>,
 }
 
 impl Default for LanguageSettings {
@@ -123,6 +126,7 @@ impl Default for LanguageSettings {
         Self {
             builtin: true,
             mappings: Vec::new(),
+            corrections: Vec::new(),
         }
     }
 }
@@ -218,13 +222,10 @@ impl EffectiveConfig {
             "Unsupported effective configuration version {}",
             config.version
         );
-        check_ids(
-            config
-                .overrides
-                .iter()
-                .chain(&config.rules)
-                .map(|entry| entry.id.as_str()),
-        )?;
+        check_entry_ids(config)?;
+        for correction in &config.languages.corrections {
+            LanguageCorrection::from_config(correction)?;
+        }
         check_ids(
             config
                 .languages

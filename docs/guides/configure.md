@@ -71,6 +71,28 @@ locmetry explain bin/launch --root . --format json
 
 Inspect `result.file.language_mapping`, `purpose`, `category` and `rule`. Without a matching classification entry, convention or module, this launcher defaults to `other` / `unclaimed`; counting it successfully does not settle its role. Add a narrow purpose rule only after establishing that role, then verify again. A single capture establishes “mapped but unclaimed”; “newly mapped” requires comparison with an earlier capture. The [configuration-transition recipe](compare.md#inspect-configuration-transitions) shows how to inspect both classification and recognition changes.
 
+## Correct a Misrecognized Language
+
+The counter recognizes languages by file name and extension, and some extensions belong to several formats: ProGuard rules named `proguard-rules.pro` are read as Prolog, Helm's Go templates (`.tpl`) as Pan, and C++ headers as C Header. A mapping cannot change a recognized file, and an exclusion would hide the file instead of answering the question. After inspecting the file, correct its language in the project configuration:
+
+```toml
+version = 1
+
+[[languages.corrections]]
+id = "helm-templates"
+match = ["deploy/helm/**/*.tpl"]
+language = "Go HTML"
+reason = "Helm Go templates; Go HTML shares their {{/* */}} comments"
+
+[[languages.corrections]]
+id = "proguard-rules"
+match = ["android/app/proguard-rules.pro"]
+language = "unrecognized"
+reason = "ProGuard keep rules; no counter language shares their syntax"
+```
+
+Choose a counter language only when its comment syntax matches the file's, because the counts follow that syntax; otherwise use `"unrecognized"`, which leaves the file selected but uncounted. Remeasure and explain a corrected file: `result.file.language_correction` and `result.correction` name the correction, and an unused correction appears in `summary.unused_entries`. Corrections are project knowledge, so personal defaults cannot set them.
+
 ## Refine a Category Without Changing Purpose
 
 Classification selects a whole entry, not a separate winner for purpose and category. For a helper at `__test__/helpers/setup.js`, this ordinary rule loses to the built-in test-directory convention, leaving both purpose and category as `test`:

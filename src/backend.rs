@@ -1,4 +1,6 @@
-use crate::{modules, Counts, FileRecord, Kind, Module, Policy, Purpose};
+use crate::{
+    config::CorrectedLanguage, modules, Counts, FileRecord, Kind, Module, Policy, Purpose,
+};
 use anyhow::{bail, ensure, Context, Result};
 use ignore::WalkBuilder;
 use rayon::prelude::*;
@@ -153,6 +155,9 @@ pub struct Scan {
     pub mapped: Value,
     /// Mapping ID for each mapped file.
     pub mappings: BTreeMap<String, String>,
+    /// Correction ID for each selected file a language correction decided,
+    /// counted or left unrecognized.
+    pub corrections: BTreeMap<String, String>,
     pub coverage: Coverage,
     /// Some counts are missing because files could not be read or parsed.
     pub inaccurate: bool,
@@ -170,6 +175,7 @@ impl Scan {
         let mut rows = file_records(&self.payload, policy)?;
         for mut row in file_records(&self.mapped, policy)? {
             row.language_mapping = self.mappings.get(&row.path).cloned();
+            row.language_correction = self.corrections.get(&row.path).cloned();
             rows.push(row);
         }
         // In a test file, inline tests are already counted as test.
@@ -253,13 +259,27 @@ pub(crate) fn scan_selection(
         });
     }
     let unused_exclusions = policy.unused_exclusions(&applied);
+    let selected_files = paths.len();
+    // Corrections replace the counter's recognition, so their files bypass it.
+    let mut corrections = BTreeMap::new();
+    let mut corrected = Vec::new();
+    for path in std::mem::take(&mut paths) {
+        let name = relative_path(path.strip_prefix(&root)?)?;
+        match policy.corrected_language(&name) {
+            Some((id, language)) => {
+                corrections.insert(name.clone(), id.to_owned());
+                corrected.push((path, name, language));
+            }
+            None => paths.push(path),
+        }
+    }
     let config = tokei::Config {
         hidden: Some(true),
         no_ignore: Some(true),
         ..Default::default()
     };
     let mut coverage = Coverage {
-        selected_files: paths.len(),
+        selected_files,
         ..Default::default()
     };
     let languages = count_selected(&root, &paths, &config, &mut coverage)?;
@@ -286,25 +306,23 @@ pub(crate) fn scan_selection(
         match policy.mapped_language(&name) {
             None => coverage.unrecognized.push(name),
             Some((id, language)) => {
-                let report = parse_file(language, path, &config);
-                match report {
-                    Ok(report) => {
-                        mapped.entry(language).or_default().add_report(report);
-                        mappings.insert(name, id.to_owned());
-                    }
-                    Err(error) => {
-                        match error {
-                            ParseError::Read => coverage.unread.push(name),
-                            ParseError::Content(reason, message) => {
-                                coverage.parse_failures.push(ParseFailure {
-                                    path: name,
-                                    reason,
-                                    message,
-                                })
-                            }
-                        }
-                        inaccurate = true;
-                    }
+                if count_as(language, path, &name, &config, &mut mapped, &mut coverage) {
+                    mappings.insert(name, id.to_owned());
+                } else {
+                    inaccurate = true;
+                }
+            }
+        }
+    }
+    let mut corrected_files = 0;
+    for (path, name, language) in corrected {
+        match language {
+            CorrectedLanguage::Unrecognized => coverage.unrecognized.push(name),
+            CorrectedLanguage::Counted(language) => {
+                if count_as(language, &path, &name, &config, &mut mapped, &mut coverage) {
+                    corrected_files += 1;
+                } else {
+                    inaccurate = true;
                 }
             }
         }
@@ -312,7 +330,7 @@ pub(crate) fn scan_selection(
     let mut mapped = serde_json::to_value(mapped)?;
     normalize_reports(&mut mapped, &root, policy)?;
     coverage.mapped_files = mappings.len();
-    coverage.counted_files = counted.len() + mappings.len();
+    coverage.counted_files = counted.len() + mappings.len() + corrected_files;
     coverage.unread.sort();
     coverage.parse_failures.sort_by(|a, b| a.path.cmp(&b.path));
     coverage.unrecognized.sort();
@@ -333,6 +351,7 @@ pub(crate) fn scan_selection(
             payload,
             mapped,
             mappings,
+            corrections,
             coverage,
             inaccurate,
             modules,
@@ -433,6 +452,37 @@ fn decoded_text(
             ParseError::Content(reason, format!("Cannot decode {label} encoding: {error}"))
         })?;
     Ok(text)
+}
+
+/// Counts `path` with `language` into `counted`, the statistics of files the
+/// counter's own recognition did not count; a read or parse failure is
+/// recorded in `coverage` instead, and `false` returned.
+fn count_as(
+    language: LanguageType,
+    path: &Path,
+    name: &str,
+    config: &tokei::Config,
+    counted: &mut BTreeMap<LanguageType, tokei::Language>,
+    coverage: &mut Coverage,
+) -> bool {
+    match parse_file(language, path, config) {
+        Ok(report) => {
+            counted.entry(language).or_default().add_report(report);
+            true
+        }
+        Err(ParseError::Read) => {
+            coverage.unread.push(name.to_owned());
+            false
+        }
+        Err(ParseError::Content(reason, message)) => {
+            coverage.parse_failures.push(ParseFailure {
+                path: name.to_owned(),
+                reason,
+                message,
+            });
+            false
+        }
+    }
 }
 
 fn parse_file(

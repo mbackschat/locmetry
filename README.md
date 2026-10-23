@@ -67,14 +67,13 @@ cd immich && locmetry
  Groovy          3      173      139 │        7      27 │     139       0       0 │      0.00 │   0.0%  ▏
  Java            1      166      124 │       25      17 │     124       0       0 │      0.00 │   0.0%  ▏
  HTML            1       74       66 │        2       6 │      66       0       0 │      0.00 │   0.0%  ▏
- Prolog          1       47       37 │        0      10 │      37       0       0 │      0.00 │   0.0%  ▏
  BASH            2       40       30 │        2       8 │      30       0       0 │      0.00 │   0.0%  ▏
  PostCSS         0       31       28 │        0       3 │      28       0       0 │      0.00 │   0.0%  ▏
  CMake           1       13        9 │        0       4 │       9       0       0 │      0.00 │   0.0%  ▏
  Templ           1       11        6 │        0       5 │       6       0       0 │      0.00 │   0.0%  ▏
  C Header        1        1        1 │        0       0 │       1       0       0 │      0.00 │   0.0%  ▏
  ────────────────────────────────────┼──────────────────┼─────────────────────────┼───────────┼─────────────────────────
- Total       2,529  333,360  282,770 │    9,149  41,441 │ 179,594  87,011  16,165 │      0.48 │ 100.0%
+ Total       2,528  333,313  282,733 │    9,149  41,431 │ 179,557  87,011  16,165 │      0.48 │ 100.0%
  Lines = Code + Comments + Blanks · Production + Test + Other = Code · Test/prod = Test / Production (Code)
  Tests written in another language than the code they test skew per-language Test/prod.
  Folded: TSX → TypeScript.
@@ -91,7 +90,7 @@ Line counters are good at counting, and Locmetry counts with Tokei too. Their to
 | Tool | Reported code | of which JSON | Production / test split |
 | --- | ---: | ---: | --- |
 | Tokei 15.0.0 | 518,920 | 209,607 (40%) | none |
-| cloc 2.10 | 530,430 | 209,931 (40%) | none |
+| cloc 2.10 | 529,921 | 209,931 (40%) | none |
 | scc 4.1.0 | 510,075 | 209,867 (41%) | none |
 
 ### A reviewed policy answers "what does this project consist of"
@@ -101,7 +100,7 @@ Built-in conventions already recognize the npm, Gradle, Python and Dart [build m
 <!-- showcase-policy -->
 | Source code | Built-in conventions | Reviewed policy |
 | --- | ---: | ---: |
-| Production | 194,232 | 179,594 |
+| Production | 194,232 | 179,557 |
 | Test | 83,595 | 87,011 |
 | Other: generated | 0 | 16,165 |
 | Other: unclaimed | 4,943 | 0 |
@@ -124,7 +123,7 @@ cd immich && locmetry --show-categories
  production:native             67    8,870    7,206 │  2.5%  ██
  test:end-to-end               23    3,719    3,118 │  1.1%  ▓
  production:deployment         31    1,023      798 │  0.3%  ▏
- production:tooling            15      956      759 │  0.3%  ▏
+ production:tooling            14      909      722 │  0.3%  ▏
  production:build-tooling      14      813      718 │  0.3%  ▏
  test:test-infrastructure       4      251      234 │  0.1%  ▏
  test:performance-test          1       81       64 │  0.0%  ▏
@@ -160,13 +159,13 @@ locmetry workspace --workspace-file immich/workspace.toml
  Member              Lines     Code │   Prod.    Test   Other │ Test/prod │  Share  Code share
  ───────────────────────────────────┼─────────────────────────┼───────────┼─────────────────────────────────────────────
  server            129,296  111,950 │  53,296  48,955   9,699 │      0.92 │  39.7%  █████████████████▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░
- mobile            100,142   83,220 │  66,989  16,231       0 │      0.24 │  29.5%  ██████████████████████▓▓▓▓▓
+ mobile            100,095   83,183 │  66,952  16,231       0 │      0.24 │  29.5%  ██████████████████████▓▓▓▓▓
  web                67,833   58,255 │  52,867   5,388       0 │      0.10 │  20.7%  █████████████████▓▓
  e2e                15,491   13,174 │      61  13,113       0 │    214.97 │   4.7%  ▓▓▓▓
  packages           12,893   10,065 │   2,345   1,254   6,466 │      0.53 │   3.6%  █░░
  machine-learning    6,698    5,291 │   3,221   2,070       0 │      0.64 │   1.9%  █▓
  ───────────────────────────────────┼─────────────────────────┼───────────┼─────────────────────────────────────────────
- Total             332,353  281,955 │ 178,779  87,011  16,165 │      0.49 │ 100.0%
+ Total             332,306  281,918 │ 178,742  87,011  16,165 │      0.49 │ 100.0%
  Production + Test + Other = Code · Test/prod = Test / Production (Code) · Share = Code / workspace Code
  Bars: █ Production  ▓ Test  ░ Other. The largest row fills the bar.
 ```
@@ -179,11 +178,11 @@ Compare saved reports of two releases, `v3.2.0` and `v3.3.4`:
                          Lines           │           Code
  Purpose        before    after   change │  before    after  change
  ────────────────────────────────────────┼─────────────────────────
- Production    208,054  210,755   +2,701 │ 177,495  179,594  +2,099
+ Production    208,007  210,708   +2,701 │ 177,458  179,557  +2,099
  Test           96,227  103,432   +7,205 │  81,161   87,011  +5,850
  Other          17,825   19,173   +1,348 │  14,910   16,165  +1,255
  ────────────────────────────────────────┼─────────────────────────
- Source total  322,106  333,360  +11,254 │ 273,566  282,770  +9,204
+ Source total  322,059  333,313  +11,254 │ 273,529  282,733  +9,204
  Test/prod (Code): 0.46 → 0.48 (before → after)
 ```
 

@@ -55,6 +55,15 @@ pub(super) fn language_names(_: &mut SchemaGenerator) -> Schema {
     schemars::json_schema!({"type": "string", "enum": names})
 }
 
+/// Counter language names, as for mappings, plus the reserved `unrecognized`.
+pub(super) fn correction_languages(generator: &mut SchemaGenerator) -> Schema {
+    let mut schema = language_names(generator);
+    if let Some(Value::Array(names)) = schema.get_mut("enum") {
+        names.push(super::UNRECOGNIZED.into());
+    }
+    schema
+}
+
 /// Appends a generated list to a schema description, so the schema states the
 /// built-in sets from the same constants that apply them.
 fn append_description(schema: &mut Schema, text: String) {

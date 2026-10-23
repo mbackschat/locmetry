@@ -45,13 +45,19 @@ pub enum PathResult {
     Counted {
         file: Box<contract::File>,
         decision: Decision,
+        /// The project language correction that replaced the counter's language.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        correction: Option<Correction>,
     },
     /// The ordinary walker rejected this file or pruned its ancestor with the listed scope globs.
     Excluded { at: String, patterns: Vec<String> },
     /// The ordinary walker did not select the file. No winning ignore filename or line is claimed.
     NotSelected { reason: FilterReason },
-    /// Selected, but neither Tokei nor a fallback mapping recognized a language.
-    Unrecognized,
+    /// Selected; the counter recognized no language and no mapping applied, or a language correction left the file unrecognized.
+    Unrecognized {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        correction: Option<Correction>,
+    },
     /// Selected and recognized but unreadable; no known-zero count is supplied.
     Unread,
     /// Selected but the structured container could not supply counts.
@@ -61,6 +67,25 @@ pub enum PathResult {
 }
 
 pub use crate::backend::FilterReason;
+
+/// A project language correction that decided the file.
+#[derive(Serialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct Correction {
+    pub id: String,
+    /// The correction's stated reason, when supplied.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+}
+
+impl Correction {
+    fn describe(&self) -> String {
+        match &self.reason {
+            Some(reason) => format!("{} ({reason})", self.id),
+            None => self.id.clone(),
+        }
+    }
+}
 
 pub fn inspect(root: &Path, path: &Path, policy: &mut Policy) -> Result<(String, PathResult)> {
     let root = backend::scan_root(root)?;
@@ -82,18 +107,23 @@ pub fn inspect(root: &Path, path: &Path, policy: &mut Policy) -> Result<(String,
     let (scan, exclusion) =
         backend::scan_selection(root, policy, Some(backend::Target::File(&path)))?;
     policy.adopt_modules(&scan.modules)?;
+    let correction = scan.corrections.get(&path).map(|id| Correction {
+        id: id.clone(),
+        reason: policy.correction_reason(id).map(String::from),
+    });
     let result = if let Some(file) = scan.records(policy)?.into_iter().next() {
         let decision = policy.decision(&path, file.kind);
         PathResult::Counted {
             file: Box::new(contract::File::from(&file)),
             decision,
+            correction,
         }
     } else if let Some(failure) = scan.coverage.parse_failures.into_iter().next() {
         PathResult::ParseFailed { failure }
     } else if !scan.coverage.unread.is_empty() {
         PathResult::Unread
     } else if !scan.coverage.unrecognized.is_empty() {
-        PathResult::Unrecognized
+        PathResult::Unrecognized { correction }
     } else if let Some(exclusion) = exclusion {
         PathResult::Excluded {
             at: exclusion.at,
@@ -120,7 +150,7 @@ impl Explanation {
         let prefix = |path: &str| crate::paths::member_path(&member, folder, path);
         self.path = prefix(&self.path);
         match &mut self.result {
-            PathResult::Counted { file, decision } => {
+            PathResult::Counted { file, decision, .. } => {
                 file.path = prefix(&file.path);
                 for module in [&mut decision.module, &mut file.module]
                     .into_iter()
@@ -162,7 +192,11 @@ impl Explanation {
                 .unwrap_or_else(|| "none".into()),
         ));
         match &self.result {
-            PathResult::Counted { file, decision } => {
+            PathResult::Counted {
+                file,
+                decision,
+                correction,
+            } => {
                 rows.extend([
                     ("State", "counted".into()),
                     ("Language", file.language.clone()),
@@ -184,6 +218,9 @@ impl Explanation {
                 ]);
                 if let Some(mapping) = &file.language_mapping {
                     rows.push(("Language mapping", mapping.clone()));
+                }
+                if let Some(correction) = correction {
+                    rows.push(("Language correction", correction.describe()));
                 }
                 if !decision.matched_patterns.is_empty() {
                     rows.push(("Matching patterns", decision.matched_patterns.join(", ")));
@@ -225,12 +262,18 @@ impl Explanation {
                     ("Detail", detail.into()),
                 ]);
             }
-            PathResult::Unrecognized => {
+            PathResult::Unrecognized { correction: None } => {
                 rows.push((
                     "State",
                     "unrecognized (no parser or language mapping)".into(),
                 ));
             }
+            PathResult::Unrecognized {
+                correction: Some(correction),
+            } => rows.extend([
+                ("State", "unrecognized (by a language correction)".into()),
+                ("Language correction", correction.describe()),
+            ]),
             PathResult::Unread => {
                 rows.push(("State", "unread (counts unavailable)".into()));
             }
@@ -251,7 +294,9 @@ impl Explanation {
         };
         for (key, value) in rows {
             let role = match key {
-                "State" if self.partial() || matches!(self.result, PathResult::Unrecognized) => {
+                "State"
+                    if self.partial() || matches!(self.result, PathResult::Unrecognized { .. }) =>
+                {
                     Role::Warning
                 }
                 _ => Role::Heading,
@@ -285,7 +330,7 @@ fn example() -> Explanation {
         config_path: None,
         user_config_path: None,
         scope: backend::scope_policy(&Policy::defaults()),
-        result: PathResult::Unrecognized,
+        result: PathResult::Unrecognized { correction: None },
     }
 }
 
