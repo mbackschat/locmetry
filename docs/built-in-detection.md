@@ -44,7 +44,7 @@ Each built-in rests on its tool's or framework's own documentation and was measu
 | `laravel` | `artisan` | `app/**`, `bootstrap/**`, `config/**`, `database/migrations/**`, `routes/**`, and each folder in `resources/` except `lang/`; translations stay unclaimed |
 | `rails` | `config.ru` | `app/**`, `lib/**`, `config/**`, `db/migrate/**`; RSpec files are tests through the `rspec-file` convention |
 | `gem` | `*.gemspec` | `lib/**`, `exe/**`, the RubyGems layout |
-| `django` | `manage.py` | top-level packages with `__init__.py`, as for `python` but without `src/**`; each app's `tests.py` is a test through the `django-tests-module` convention |
+| `django` | `manage.py` | top-level packages with `__init__.py`, as for `python` but without `src/**`; each app's `tests.py` is a test through the `django-tests-module` convention. An app named like a folder setuptools never treats as a package, such as djangoproject.com's `docs` app, stays unclaimed: the gap is reported for review, while claiming such names would be a silent false claim wherever they hold documentation or tools (decided 2026-10-23 by the owner) |
 
 A descriptor written as `*.ext` matches any file name with that extension; all others match exact names. Framework detectors claim only the folders their documentation names, never the whole package, because real applications keep scripts, mocks and vendored code beside them. Where nested modules and build systems sharing a folder meet, [module detection](PRODUCT.md#module-detection) defines which module decides and which is credited.
 

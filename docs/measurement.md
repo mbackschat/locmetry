@@ -5,6 +5,7 @@
 ## Selection and Paths
 
 - Untracked nonignored files are included. With ignore files respected, `.ignore` and `.tokeignore` files always apply and `.gitignore` applies only inside a Git work tree. Symbolic links are not followed.
+- Selection reads ignore files, not the Git index: a tracked file under an ignored path, such as one added with `git add -f`, is not measured, and `explain` reports it as not selected by ignore policy. `--respect-ignore-files false` measures it, along with every other ignored file.
 - Exclusions are checked again against the backend response, so excluded files cannot leak into counts.
 - Counting parses selected files directly without another directory walk; replacing a selected file with a directory cannot introduce its children into the counts. Selection and reads are not a filesystem snapshot.
 - Rules match root-relative `/`-separated paths. Components come from the platform's path parser, so Unix file names may contain `:` or `\`.
