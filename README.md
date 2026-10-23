@@ -354,7 +354,7 @@ Locmetry recognizes build modules by their descriptors and counts each one's con
 | Next.js | `next.config.*` | `app/**`, `pages/**`, `src/**`, root `middleware`, `instrumentation` and similar files, and the folders the docs show, such as `components/**` and `lib/**` |
 | Nuxt | `nuxt.config.*` | `app/**`, `server/**` and the other documented folders, `app.vue`, `error.vue` |
 | React Router | `react-router.config.*` | `app/**` |
-| .NET | `*.csproj`, `*.fsproj`, `*.vbproj` | every `*.cs`, `*.fs`, `*.vb`, `*.razor` and `*.cshtml` file |
+| .NET | `*.csproj`, `*.fsproj`, `*.vbproj` | every `*.cs`, `*.fs`, `*.vb`, `*.razor`, `*.cshtml` and `*.xaml` file, and `*.razor.css` |
 | Composer | `composer.json` | `src/**` |
 | Symfony | `symfony.lock` | `src/**`, `assets/**`, `config/**`, `migrations/**`, `templates/**` |
 | Laravel | `artisan` | `app/**`, `bootstrap/**`, `config/**`, `database/migrations/**`, `routes/**`, `resources/**` except `lang/` |

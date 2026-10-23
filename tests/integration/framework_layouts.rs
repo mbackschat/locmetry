@@ -207,6 +207,10 @@ fn dotnet_projects_claim_compile_items_and_test_projects_are_tests() {
         ("Api/Program.cs", "class Program {}\n"),
         ("Api/Controllers/Home.cs", "class Home {}\n"),
         ("Api/wwwroot/js/site.js", "let a = 1;\n"),
+        ("Api/wwwroot/css/site.css", "body {}\n"),
+        ("Api/Components/Card.razor.css", "h1 {}\n"),
+        ("Mobile/Mobile.csproj", "<Project/>\n"),
+        ("Mobile/App.xaml", "<Application/>\n"),
         ("Api/Migrations/20240101_Init.cs", "class Init {}\n"),
         (
             "Api/Migrations/20240101_Init.Designer.cs",
@@ -234,6 +238,13 @@ fn dotnet_projects_claim_compile_items_and_test_projects_are_tests() {
                 "builtin:dotnet-module",
             ),
             ("Api/wwwroot/js/site.js", UNCLAIMED, "fallback"),
+            ("Api/wwwroot/css/site.css", UNCLAIMED, "fallback"),
+            (
+                "Api/Components/Card.razor.css",
+                PRODUCTION,
+                "builtin:dotnet-module",
+            ),
+            ("Mobile/App.xaml", PRODUCTION, "builtin:dotnet-module"),
             (
                 "Api/Migrations/20240101_Init.cs",
                 PRODUCTION,

@@ -260,12 +260,16 @@ pub static DETECTORS: &[&dyn ModuleDetector] = &[
         sources: &["app/**"],
     },
     // The SDK's default compile items and Razor files
-    // (https://learn.microsoft.com/dotnet/core/project-sdk/overview); static
-    // files in `wwwroot/` are not compiled and stay open.
+    // (https://learn.microsoft.com/dotnet/core/project-sdk/overview), Blazor's
+    // scoped `.razor.css`, which the build rewrites and bundles
+    // (https://learn.microsoft.com/aspnet/core/blazor/components/css-isolation),
+    // and XAML, compiled by MAUI and WPF
+    // (https://learn.microsoft.com/dotnet/maui/xaml/xamlc). Static files in
+    // `wwwroot/` are not built and stay open.
     &DefaultLayout {
         id: "dotnet",
         descriptors: &["*.csproj", "*.fsproj", "*.vbproj"],
-        sources: &["**/*.{cs,fs,vb,razor,cshtml}"],
+        sources: &["**/*.{cs,fs,vb,razor,cshtml,xaml}", "**/*.razor.css"],
     },
     // PSR-4's `src/`, which Symfony and most Composer packages use.
     &DefaultLayout {

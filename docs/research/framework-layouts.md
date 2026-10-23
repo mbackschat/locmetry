@@ -154,3 +154,5 @@ Three gaps leave code unclaimed, which reports show for review:
 - **.NET UI files:** Blazor CSS isolation files and MAUI or WPF XAML sit beside the compiled sources and are part of the application, but the `dotnet` layout claims only compile items and Razor files.
 - **A Django app named `docs`:** djangoproject.com's documentation app, 3,968 lines, is excluded by the flat layout's list of non-package names, which `django` shares with `python`.
 - **Root files of Next.js applications** that are neither documented conventions nor named tools, such as `env.mjs`.
+
+On the same day the owner decided to close the first gap before the `dotnet` layout ships: it also claims `*.xaml` and `*.razor.css`, after Microsoft's [CSS isolation](https://learn.microsoft.com/aspnet/core/blazor/components/css-isolation) and [XAML compilation](https://learn.microsoft.com/dotnet/maui/xaml/xamlc) documentation, read directly. No counterexample was found: WPF, Workflow Foundation and Avalonia use XAML inside .NET projects as built UI or workflow definitions, and UiPath's XAML workflows sit in projects without a `.csproj`.
