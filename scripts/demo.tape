@@ -22,6 +22,15 @@ Hide
 Type "clear"
 Enter
 Show
+Type "locmetry --show-folders --show-categories --tables-only"
+Sleep 400ms
+Enter
+Sleep 8s
+
+Hide
+Type "clear"
+Enter
+Show
 Type "locmetry explain packages/sdk/src/fetch-client.ts"
 Sleep 400ms
 Enter
