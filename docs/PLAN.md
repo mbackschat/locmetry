@@ -6,10 +6,6 @@
 
 - [ ] Publish the Scoop manifest from [packaging/scoop](../packaging/scoop) in a bucket repository and update it per release like the Homebrew tap; 0.9.0 ships the Windows zip, and `render-manifest.sh 0.9.0` renders a valid manifest. Add the update step to the release handback in `scripts/release.py` once the bucket exists.
 
-## Next Release
-
-- [ ] Settle the [2026-10-23 desk review](research/agent-regression-desk-review-2026-10-23.md) before the next release: it found no correctness regression, but the schemas grew 28%, so tasks 3 and 8 need a targeted agent run on the cost gates, preferably after the duplicated language list in the schemas is shared.
-
 ## Proposals — Under Discussion
 
 None at present.
