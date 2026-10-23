@@ -36,6 +36,8 @@ struct Line {
 struct AttributesFile {
     /// Root-relative directory, empty for the scan root.
     directory: String,
+    /// The prefix of the paths below `directory`: empty, or `directory/`.
+    prefix: String,
     path: String,
     lines: Vec<Line>,
 }
@@ -53,7 +55,11 @@ impl Attributes {
         let mut directories = BTreeSet::from([String::new()]);
         for file in files {
             let mut path = file.as_str();
+            // A collected folder's ancestors were collected with it.
             while let Some((parent, _)) = path.rsplit_once('/') {
+                if directories.contains(parent) {
+                    break;
+                }
                 directories.insert(parent.to_string());
                 path = parent;
             }
@@ -68,6 +74,7 @@ impl Attributes {
                     .filter_map(|line| parse(&directory, line))
                     .collect();
                 Some(AttributesFile {
+                    prefix: join(&directory, ""),
                     directory,
                     path,
                     lines,
@@ -88,7 +95,7 @@ impl Attributes {
     pub(super) fn declaration(&self, path: &str) -> Option<Declaration> {
         let mut decided: Option<(State, &AttributesFile, &Line)> = None;
         for file in &self.files {
-            if !(file.directory.is_empty() || path.starts_with(&format!("{}/", file.directory))) {
+            if !path.starts_with(&file.prefix) {
                 continue;
             }
             for line in &file.lines {

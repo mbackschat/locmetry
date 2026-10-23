@@ -1,7 +1,7 @@
 //! Which source a table view counts: purpose, category and language
 //! selections and the folding of language variants into their family's row.
 
-use super::{counted, plural, purpose_title};
+use super::{counted, listed, plural, purpose_title};
 use crate::{Counts, FileRecord, Kind, Purpose, ReportSummary};
 use std::collections::BTreeMap;
 
@@ -393,13 +393,4 @@ fn excluded_categories(
     let mut excluded: Vec<(String, u64)> = excluded.into_iter().collect();
     excluded.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
     (excluded, sliced)
-}
-
-/// `names` as prose: `A`, `A and B`, or `A, B and C`.
-fn listed(mut names: Vec<String>) -> String {
-    match names.pop() {
-        None => String::new(),
-        Some(last) if names.is_empty() => last,
-        Some(last) => format!("{} and {last}", names.join(", ")),
-    }
 }

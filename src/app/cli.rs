@@ -123,7 +123,7 @@ pub(crate) struct Cli {
     pub(crate) directory: Option<PathBuf>,
     /// Measure only this root-relative folder, under project policy
     #[arg(
-        long_help = long_help::TABLE_CATEGORY,
+        long_help = long_help::SUBFOLDER,
         long,
         value_name = "DIR",
         help_heading = "Selection and policy"
@@ -411,10 +411,7 @@ pub(crate) struct SharedArgs {
     /// Show only these categories in tables; comma-separated PURPOSE[:CATEGORY]
     #[arg(
         long = "table-category",
-        long_help = "Show only these categories' source in tables; comma-separated PURPOSE for \
-            all its categories or PURPOSE:CATEGORY. '*' matches any text; quote it in the \
-            shell. Test/prod gives way to Comment % when only part of Production or Test is \
-            shown. Table format only.",
+        long_help = long_help::TABLE_CATEGORY,
         value_delimiter = ',',
         value_name = "CATEGORIES",
         value_parser = locmetry::CategoryPattern::parse,

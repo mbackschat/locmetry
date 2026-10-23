@@ -112,7 +112,7 @@ pub fn inspect(root: &Path, path: &Path, policy: &mut Policy) -> Result<(String,
         reason: policy.correction_reason(id).map(String::from),
     });
     let result = if let Some(file) = scan.records(policy)?.into_iter().next() {
-        let decision = policy.decision(&path, file.kind, scan.generated.get(&path));
+        let decision = policy.decision(&path, file.kind, scan.marker(&file).as_ref());
         PathResult::Counted {
             file: Box::new(contract::File::from(&file)),
             decision,

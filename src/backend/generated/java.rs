@@ -29,13 +29,10 @@ pub(super) fn generated_annotation(text: &str) -> Option<String> {
     let mut index = 0;
     while index < tokens.len() {
         match tokens[index] {
-            Token::Word("package") | Token::Word("import") => {
+            Token::Word(keyword @ ("package" | "import")) => {
                 let end = statement_end(&tokens, index);
-                if tokens[index] == Token::Word("import") {
-                    let name = qualified_name(&tokens[index + 1..end]);
-                    imported |= PACKAGES
-                        .iter()
-                        .any(|package| name == format!("{package}.Generated"));
+                if keyword == "import" {
+                    imported |= is_documented(&qualified_name(&tokens[index + 1..end]));
                 }
                 annotations.clear();
                 index = end + 1;
@@ -64,13 +61,14 @@ pub(super) fn generated_annotation(text: &str) -> Option<String> {
     }
     annotations
         .into_iter()
-        .find(|name| {
-            (imported && name == "Generated")
-                || PACKAGES
-                    .iter()
-                    .any(|package| *name == format!("{package}.Generated"))
-        })
+        .find(|name| (imported && name == "Generated") || is_documented(name))
         .map(|name| format!("@{name}"))
+}
+
+/// Whether `name` is the qualified name of a documented `Generated`.
+fn is_documented(name: &str) -> bool {
+    name.strip_suffix(".Generated")
+        .is_some_and(|package| PACKAGES.contains(&package))
 }
 
 fn qualified_name(tokens: &[Token]) -> String {

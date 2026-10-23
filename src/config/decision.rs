@@ -3,7 +3,7 @@ use super::GeneratedEvidence;
 use schemars::JsonSchema;
 use serde::Serialize;
 
-#[derive(Serialize, JsonSchema)]
+#[derive(Clone, Copy, PartialEq, Eq, Serialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Stage {
     Override,
@@ -41,4 +41,14 @@ pub struct Decision {
     /// The generated-code marker that refined the module's claim to category `generated`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub generated: Option<GeneratedEvidence>,
+}
+
+/// One first-match decision about a counted file, see [`super::Policy::resolve`].
+pub(crate) struct Resolution {
+    pub(crate) classification: super::Classification,
+    /// The module credited with production source.
+    pub(crate) module: Option<crate::contract::Module>,
+    /// A module layout decided this source file, so a generated-code marker
+    /// may refine it.
+    pub(crate) markable: bool,
 }

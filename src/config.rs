@@ -1,13 +1,13 @@
 //! Measurement policy: which files are selected and how each one is classified.
 //!
 //! The input is the version-1 TOML contract in docs/PRODUCT.md.
-use crate::{modules::Module, Kind};
+use crate::{modules::Module, paths::ancestors, Kind};
 use anyhow::{anyhow, bail, ensure, Context, Result};
 use globset::{Glob, GlobBuilder, GlobSet, GlobSetBuilder};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::{
-    collections::{BTreeMap, BTreeSet},
+    collections::{BTreeMap, BTreeSet, HashMap},
     fmt,
     path::{Path, PathBuf},
 };
@@ -28,6 +28,7 @@ use builtin::{
 };
 pub use corrections::{CorrectedLanguage, UNRECOGNIZED};
 use corrections::{CorrectionConfig, LanguageCorrection};
+pub(crate) use decision::Resolution;
 pub use decision::{Decision, Stage};
 pub use file::*;
 use generated::GENERATED_CATEGORY;
@@ -285,6 +286,9 @@ pub struct Policy {
     /// One production entry per adopted module; applied after rules and
     /// before the fallback.
     module_entries: Vec<(Module, Entry)>,
+    /// Indices into `module_entries` by module folder, so a file's innermost
+    /// module is found by walking its folders rather than every module.
+    module_folders: HashMap<String, Vec<usize>>,
     fallback: Purpose,
     /// Literal exclusions of the policy files inside the scan root: the
     /// project configuration, user defaults, or a workspace file.
@@ -429,6 +433,7 @@ impl Policy {
             generated,
             modules: Vec::new(),
             module_entries: Vec::new(),
+            module_folders: HashMap::new(),
             fallback,
             configuration_exclusions: BTreeSet::new(),
             languages,
@@ -501,6 +506,13 @@ impl Policy {
                 Ok((module.clone(), entry))
             })
             .collect::<Result<_>>()?;
+        self.module_folders = HashMap::new();
+        for (index, module) in modules.iter().enumerate() {
+            self.module_folders
+                .entry(module.path.clone())
+                .or_default()
+                .push(index);
+        }
         self.modules = modules.to_vec();
         Ok(())
     }
@@ -519,13 +531,44 @@ impl Policy {
     }
 
     pub fn classify(&self, path: &str, kind: Kind) -> Classification {
-        self.deciding_entry(path, kind)
+        self.classification(self.deciding_entry(path, kind))
+    }
+
+    fn classification(&self, decided: Option<(Stage, &Entry, Option<&Module>)>) -> Classification {
+        decided
             .map(|(_, entry, _)| entry.classification())
             .unwrap_or_else(|| Classification {
                 purpose: self.fallback,
                 category: UNCLAIMED.into(),
                 rule: FALLBACK.into(),
             })
+    }
+
+    /// Classification, module credit and marker eligibility of a counted
+    /// file from one first-match decision.
+    ///
+    /// The credited module is the innermost module whose layout covers
+    /// production source, whichever stage decided it, so an entry that keeps
+    /// `production` and only names a category keeps the module's credit
+    /// (docs/PRODUCT.md, Module Detection). A marker refines only source a
+    /// module layout decided, so overrides, conventions and rules keep their
+    /// files (docs/PRODUCT.md, Matching and Precedence).
+    pub(crate) fn resolve(&self, path: &str, kind: Kind) -> Resolution {
+        let decided = self.deciding_entry(path, kind);
+        let by_module = matches!(decided, Some((Stage::Module, ..)));
+        let classification = self.classification(decided);
+        let module = (kind == Kind::Source && classification.purpose == Purpose::Production)
+            .then(|| match decided {
+                Some((Stage::Module, _, module)) => module,
+                _ => self.module_entry(path, kind).map(|(module, _)| module),
+            })
+            .flatten()
+            .map(crate::contract::Module::from);
+        Resolution {
+            classification,
+            module,
+            markable: self.generated && kind == Kind::Source && by_module,
+        }
     }
 
     fn deciding_entry(&self, path: &str, kind: Kind) -> Option<(Stage, &Entry, Option<&Module>)> {
@@ -546,39 +589,6 @@ impl Policy {
     /// module claims, so without modules nothing reads file content for them.
     pub(crate) fn reads_generated_markers(&self) -> bool {
         self.generated && self.detect_modules
-    }
-
-    /// The marker evidence that refines `path` to `production:generated`:
-    /// only source a module layout decided, so overrides, conventions and
-    /// rules keep their files (docs/PRODUCT.md, Matching and Precedence).
-    pub(crate) fn applied_marker<'a>(
-        &self,
-        path: &str,
-        kind: Kind,
-        evidence: Option<&'a GeneratedEvidence>,
-    ) -> Option<&'a GeneratedEvidence> {
-        let evidence = evidence.filter(|_| self.generated && kind == Kind::Source)?;
-        matches!(self.deciding_entry(path, kind), Some((Stage::Module, ..))).then_some(evidence)
-    }
-
-    /// The module credited with `path`: for production source, the innermost
-    /// module whose layout covers it, whichever stage decided the file, so an
-    /// entry that keeps `production` and only names a category keeps the
-    /// module's credit (docs/PRODUCT.md, Module Detection).
-    pub fn credited_module(
-        &self,
-        path: &str,
-        kind: Kind,
-        classification: &Classification,
-    ) -> Option<crate::contract::Module> {
-        if kind != Kind::Source || classification.purpose != Purpose::Production {
-            return None;
-        }
-        self.module_entry(path, kind)
-            .map(|(module, _)| crate::contract::Module {
-                path: module.path.clone(),
-                detector: module.detector.into(),
-            })
     }
 
     pub(crate) fn decision(
@@ -617,11 +627,10 @@ impl Policy {
                 .map(|&i| patterns[i].clone())
                 .collect(),
             reason: config.and_then(|config| config.reason.clone()),
-            module: module.map(|module| crate::contract::Module {
-                path: module.path.clone(),
-                detector: module.detector.into(),
-            }),
-            generated: self.applied_marker(path, kind, evidence).cloned(),
+            module: module.map(crate::contract::Module::from),
+            generated: evidence
+                .filter(|_| self.generated && kind == Kind::Source && stage == Stage::Module)
+                .cloned(),
         }
     }
 
@@ -630,17 +639,10 @@ impl Policy {
     /// nested module's files, while build systems sharing the innermost
     /// directory combine their layouts.
     fn module_entry(&self, path: &str, kind: Kind) -> Option<&(Module, Entry)> {
-        let innermost = self
-            .module_entries
+        let innermost = ancestors(path).find_map(|folder| self.module_folders.get(folder))?;
+        innermost
             .iter()
-            .map(|(module, _)| module)
-            .filter(|module| module.contains(path))
-            .max_by_key(|module| module.depth())?
-            .path
-            .as_str();
-        self.module_entries
-            .iter()
-            .filter(|(module, _)| module.path == innermost)
+            .map(|&index| &self.module_entries[index])
             .find(|(_, entry)| entry.matches(path, kind))
     }
 

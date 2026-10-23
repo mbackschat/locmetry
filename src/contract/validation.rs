@@ -272,6 +272,11 @@ impl MeasurementReport {
             return Ok(());
         }
         let shares = &self.summary.build_modules;
+        let owners = crate::modules::ModuleOwners::new(
+            modules
+                .iter()
+                .map(|m| (m.path.as_str(), m.detector.as_str())),
+        );
         for file in files {
             let Some(module) = &file.module else {
                 continue;
@@ -280,17 +285,10 @@ impl MeasurementReport {
                 file.kind == Kind::Source
                     && file.purpose == Purpose::Production
                     && below(&file.path, &module.path).is_some()
-                    && modules
-                        .iter()
-                        .any(|m| m.path == module.path && m.detector == module.detector),
+                    && owners.index(&module.path, &module.detector).is_some(),
                 "file module must be a recorded module containing production source"
             );
         }
-        let owners = crate::modules::ModuleOwners::new(
-            modules
-                .iter()
-                .map(|m| (m.path.as_str(), m.detector.as_str())),
-        );
         let mut contributions = BTreeMap::<(&str, &str), u64>::new();
         for file in files.iter().filter(|f| f.kind == Kind::Source) {
             let owner = match &file.module {

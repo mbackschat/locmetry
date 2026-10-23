@@ -169,26 +169,34 @@ pub struct Scan {
     pub unused_exclusions: Vec<String>,
     /// Counts of inline `#[cfg(test)]` items per counted Rust file that has any.
     pub inline_tests: BTreeMap<String, Counts>,
-    /// Generated-code marker per counted file that carries one; a marker
-    /// applies only where a module layout decides the file.
-    pub generated: BTreeMap<String, GeneratedEvidence>,
+    /// Generated-code markers of counted files, read on demand; `None` when
+    /// markers are off or no module was detected, since a marker refines
+    /// only what a module layout decides.
+    markers: Option<generated::Markers>,
 }
 
 impl Scan {
+    /// The generated-code marker evidence of a counted `file`, whether or not
+    /// a marker applies to it.
+    pub(crate) fn marker(&self, file: &FileRecord) -> Option<GeneratedEvidence> {
+        let recognized = file.language_mapping.is_none() && file.language_correction.is_none();
+        self.markers
+            .as_ref()?
+            .evidence(&file.path, &file.language, recognized)
+    }
+
     /// File records from backend and mapped statistics, sorted by path.
     pub fn records(&self, policy: &Policy) -> Result<Vec<FileRecord>> {
-        let mut rows = file_records(&self.payload, policy)?;
-        for mut row in file_records(&self.mapped, policy)? {
+        let marker = |recognized| {
+            move |path: &str, language: &str| {
+                self.markers.as_ref()?.evidence(path, language, recognized)
+            }
+        };
+        let mut rows = file_records_with(&self.payload, policy, marker(true))?;
+        for mut row in file_records_with(&self.mapped, policy, marker(false))? {
             row.language_mapping = self.mappings.get(&row.path).cloned();
             row.language_correction = self.corrections.get(&row.path).cloned();
             rows.push(row);
-        }
-        for row in &mut rows {
-            if let Some(evidence) =
-                policy.applied_marker(&row.path, row.kind, self.generated.get(&row.path))
-            {
-                row.classification = evidence.classification();
-            }
         }
         // In a test file, inline tests are already counted as test.
         for row in &mut rows {
@@ -341,12 +349,10 @@ pub(crate) fn scan_selection(
     }
     let mut mapped = serde_json::to_value(mapped)?;
     let mapped_names = normalize_reports(&mut mapped, &root, policy)?;
-    let generated = if policy.reads_generated_markers() {
+    let markers = (policy.reads_generated_markers() && !modules.is_empty()).then(|| {
         let all_counted = counted.iter().chain(&mapped_names).cloned().collect();
-        generated::evidence(&root, &paths, &all_counted, &config)?
-    } else {
-        BTreeMap::new()
-    };
+        generated::Markers::load(&root, &all_counted)
+    });
     coverage.mapped_files = mappings.len();
     coverage.counted_files = counted.len() + mappings.len() + corrected_files;
     coverage.unread.sort();
@@ -375,7 +381,7 @@ pub(crate) fn scan_selection(
             modules,
             unused_exclusions,
             inline_tests,
-            generated,
+            markers,
         },
         exclusion,
     ))

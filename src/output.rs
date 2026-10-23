@@ -182,6 +182,15 @@ pub(crate) fn counted(count: u64, noun: &str) -> String {
     format!("{} {}", grouped(count), plural(count, noun))
 }
 
+/// `names` as prose: `A`, `A and B`, or `A, B and C`.
+pub(crate) fn listed(mut names: Vec<String>) -> String {
+    match names.pop() {
+        None => String::new(),
+        Some(last) if names.is_empty() => last,
+        Some(last) => format!("{} and {last}", names.join(", ")),
+    }
+}
+
 /// A literal value inside a sentence, single-quoted as the human output
 /// wording rules require (docs/help-design.md, Human Output Wording).
 pub(crate) fn quoted(value: &str) -> String {

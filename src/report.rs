@@ -5,10 +5,7 @@ use crate::{
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize, Serializer};
-use std::{
-    collections::{BTreeMap, HashMap},
-    fmt,
-};
+use std::{collections::BTreeMap, fmt};
 
 #[derive(Clone, Copy, Debug, Default, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
@@ -497,17 +494,16 @@ pub fn module_shares(modules: &[Module], rows: &[FileRecord]) -> Vec<ModuleShare
             code: 0,
         })
         .collect();
-    let index: HashMap<(&str, &str), usize> = modules
-        .iter()
-        .enumerate()
-        .map(|(index, module)| ((module.path.as_str(), module.detector), index))
-        .collect();
+    let owners = ModuleOwners::new(
+        modules
+            .iter()
+            .map(|module| (module.path.as_str(), module.detector)),
+    );
     for row in rows.iter().filter(|row| row.kind == Kind::Source) {
-        let credited = row.module.as_ref().and_then(|module| {
-            index
-                .get(&(module.path.as_str(), module.detector.as_str()))
-                .copied()
-        });
+        let credited = row
+            .module
+            .as_ref()
+            .and_then(|module| owners.index(&module.path, &module.detector));
         if let Some(index) = credited {
             shares[index].files += 1;
             shares[index].lines += row.counts.lines;
@@ -616,17 +612,14 @@ pub fn submodule_shares(paths: &[String], rows: &[FileRecord]) -> Vec<SubmoduleS
         .collect()
 }
 
-/// IDs of `entries` that decided no file: a glob that matches nothing, or an
-/// entry an earlier stage always preempts, such as a rule behind a test
-/// convention.
+/// IDs of `entries` not among the `decided` ones: a glob that matches
+/// nothing, or an entry an earlier stage always preempts, such as a rule
+/// behind a test convention.
 pub fn unused_entries<'a>(
     entries: impl IntoIterator<Item = &'a str>,
-    rows: &[FileRecord],
+    decided: impl IntoIterator<Item = &'a str>,
 ) -> Vec<String> {
-    let decided: std::collections::BTreeSet<&str> = rows
-        .iter()
-        .map(|row| row.classification.rule.as_str())
-        .collect();
+    let decided: std::collections::BTreeSet<&str> = decided.into_iter().collect();
     entries
         .into_iter()
         .filter(|id| !decided.contains(id))

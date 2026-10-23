@@ -104,7 +104,9 @@ pub(super) const SHOW_BARS: &str = "Add charts to saved or printed tables, besid
 
 pub(super) const TABLE_LANGUAGE: &str = "Show only these source languages in tables; comma-separated, in any case. A variant such as TSX selects its family's row unless --split-languages. Table format only";
 
-pub(super) const TABLE_CATEGORY: &str = "Measure this root-relative folder and descendants, retaining project configuration and module context";
+pub(super) const SUBFOLDER: &str = "Measure this root-relative folder and descendants, retaining project configuration and module context";
+
+pub(super) const TABLE_CATEGORY: &str = "Show only these categories' source in tables; comma-separated PURPOSE for all its categories or PURPOSE:CATEGORY. '*' matches any text; quote it in the shell. Test/prod gives way to Comment % when only part of Production or Test is shown. Table format only.";
 
 pub(super) const FOLDER_ROWS: &str = "Show the folder table and split the largest folders within an N-row budget; no top-level folder's code is merged away. Table format only";
 

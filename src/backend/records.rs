@@ -117,6 +117,17 @@ pub(super) fn language_counts(
 }
 
 pub fn file_records(payload: &Value, policy: &Policy) -> Result<Vec<FileRecord>> {
+    file_records_with(payload, policy, |_, _| None)
+}
+
+/// File records, with `marker` asked for the generated-code evidence of each
+/// source file a module layout decided, given its path and language; files
+/// are read for markers in parallel and only when a marker could apply.
+pub(super) fn file_records_with(
+    payload: &Value,
+    policy: &Policy,
+    marker: impl Fn(&str, &str) -> Option<GeneratedEvidence> + Sync,
+) -> Result<Vec<FileRecord>> {
     let groups = payload
         .as_object()
         .context("Invalid backend language map")?
@@ -126,6 +137,7 @@ pub fn file_records(payload: &Value, policy: &Policy) -> Result<Vec<FileRecord>>
         .collect::<serde_json::Result<BTreeMap<String, Group>>>()
         .context("Invalid backend statistics")?;
     let mut rows = Vec::new();
+    let mut markable = Vec::new();
     let mut seen = BTreeSet::new();
     for (language, group) in groups {
         for report in group.reports {
@@ -143,10 +155,11 @@ pub fn file_records(payload: &Value, policy: &Policy) -> Result<Vec<FileRecord>>
                 counts.add(value);
             }
             counts.files = 1;
-            let classification = policy.classify(&path, kind);
+            let resolution = policy.resolve(&path, kind);
+            markable.push(resolution.markable);
             rows.push(FileRecord {
-                module: policy.credited_module(&path, kind, &classification),
-                classification,
+                module: resolution.module,
+                classification: resolution.classification,
                 path,
                 language: language.clone(),
                 kind,
@@ -158,6 +171,14 @@ pub fn file_records(payload: &Value, policy: &Policy) -> Result<Vec<FileRecord>>
             });
         }
     }
+    rows.par_iter_mut()
+        .zip(markable)
+        .filter(|(_, markable)| *markable)
+        .for_each(|(row, _)| {
+            if let Some(evidence) = marker(&row.path, &row.language) {
+                row.classification = evidence.classification();
+            }
+        });
     rows.sort_by(|a, b| a.path.cmp(&b.path));
     Ok(rows)
 }

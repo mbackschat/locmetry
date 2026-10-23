@@ -6,7 +6,7 @@
 //! lists that many and counts the rest.
 //! JSON keeps every finding.
 use super::{label, side_name, Entity, Finding, FindingContext, Side};
-use crate::output::{self, counted};
+use crate::output::{self, counted, listed};
 use crate::style::{Role, Theme};
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write;
@@ -73,16 +73,7 @@ impl Tally {
                 true => counted(count, &format!("more {noun}")),
                 false => counted(count, noun),
             });
-        and_list(words.collect())
-    }
-}
-
-/// `a`, `a and b`, or `a, b and c`.
-fn and_list(items: Vec<String>) -> String {
-    match items.split_last() {
-        Some((last, [])) => last.clone(),
-        Some((last, rest)) => format!("{} and {last}", rest.join(", ")),
-        None => String::new(),
+        listed(words.collect())
     }
 }
 

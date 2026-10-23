@@ -112,13 +112,9 @@ impl ModuleDetector for ComputedLayout {
     }
 
     fn production_sources(&self, directory: &str, files: &[&str]) -> Vec<String> {
-        let prefix = match directory {
-            "." => String::new(),
-            _ => format!("{directory}/"),
-        };
         let relative: Vec<&str> = files
             .iter()
-            .filter_map(|path| path.strip_prefix(prefix.as_str()))
+            .filter_map(|path| below(path, directory))
             .collect();
         (self.sources)(&relative)
     }
@@ -364,25 +360,6 @@ pub struct Module {
     pub excluded: Vec<String>,
 }
 
-impl Module {
-    /// Whether the root-relative `path` lies in this module's directory.
-    pub(crate) fn contains(&self, path: &str) -> bool {
-        below(path, &self.path).is_some()
-    }
-
-    /// Directory depth, `0` for the scan root; deeper modules nest in shallower ones.
-    pub(crate) fn depth(&self) -> usize {
-        depth(&self.path)
-    }
-}
-
-fn depth(folder: &str) -> usize {
-    match folder {
-        "." => 0,
-        path => path.split('/').count(),
-    }
-}
-
 /// Finds the module that owns a file: the innermost module of the detector
 /// that decided it. Borrowed identities keep live summaries and saved-report
 /// validation on the same ownership rule without requiring detection-only
@@ -409,17 +386,22 @@ impl<'a> ModuleOwners<'a> {
     /// profile of a synthetic 101k-file monorepo.
     pub(crate) fn owner(&self, path: &str, rule: &str) -> Option<usize> {
         let detector = module_detector(rule)?;
-        ancestors(path).find_map(|folder| self.modules.get(&(detector, folder)).copied())
+        ancestors(path).find_map(|folder| self.index(folder, detector))
+    }
+
+    /// Index of the module `detector` declared in `folder`.
+    pub(crate) fn index(&self, folder: &str, detector: &str) -> Option<usize> {
+        self.modules.get(&(detector, folder)).copied()
     }
 }
 
-/// Modules declared among the selected root-relative `files`, sorted by path, then detector ID.
 /// Detector IDs in detection order, which documentation checks compare with
 /// the built-in detection reference.
 pub fn detector_ids() -> impl Iterator<Item = &'static str> {
     DETECTORS.iter().map(|detector| detector.id())
 }
 
+/// Modules declared among the selected root-relative `files`, sorted by path, then detector ID.
 pub fn detect(files: &[&str]) -> Vec<Module> {
     let mut declared = BTreeSet::new();
     for path in files {

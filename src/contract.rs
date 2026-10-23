@@ -300,6 +300,15 @@ pub struct Module {
     pub detector: String,
 }
 
+impl From<&crate::modules::Module> for Module {
+    fn from(module: &crate::modules::Module) -> Self {
+        Self {
+            path: module.path.clone(),
+            detector: module.detector.into(),
+        }
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct Member {

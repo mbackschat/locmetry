@@ -392,16 +392,7 @@ fn metadata(results: &Results, location: Location, measured_at: u64) -> contract
                 .collect(),
         }),
         coverage: contract::Coverage::from(&results.coverage),
-        modules: Some(
-            results
-                .modules
-                .iter()
-                .map(|m| contract::Module {
-                    path: m.path.clone(),
-                    detector: m.detector.into(),
-                })
-                .collect(),
-        ),
+        modules: Some(results.modules.iter().map(contract::Module::from).collect()),
         root: None,
         scope: None,
         config_path: None,

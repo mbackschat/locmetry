@@ -2,61 +2,64 @@
 //! (docs/built-in-detection.md#generated-code-markers). Only position-bound,
 //! documented markers count: free-text checks claimed hand-written code in
 //! generators' own repositories (docs/research/generated-code-markers.md).
-use super::{decoded_text, relative_path, ParseFailureReason};
+use super::{decoded_text, ParseFailureReason};
 use crate::config::{GeneratedEvidence, GeneratedMarker};
-use anyhow::Result;
-use rayon::prelude::*;
-use std::collections::{BTreeMap, BTreeSet};
+use crate::paths::filesystem_path;
+use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 use tokei::LanguageType;
 
 mod gitattributes;
 mod java;
 
-/// Marker evidence for the counted files among `paths`, keyed by
-/// root-relative path. `counted` holds every counted file, whose
-/// `.gitattributes` declarations apply whatever their language.
-pub(super) fn evidence(
-    root: &Path,
-    paths: &[PathBuf],
-    counted: &BTreeSet<String>,
-    config: &tokei::Config,
-) -> Result<BTreeMap<String, GeneratedEvidence>> {
-    let attributes = gitattributes::Attributes::load(root, counted);
-    let content: BTreeMap<String, GeneratedEvidence> = paths
-        .iter()
-        .filter_map(|path| {
-            let language = LanguageType::from_path(path, config)?;
-            let name = relative_path(path.strip_prefix(root).ok()?).ok()?;
-            counted.contains(&name).then_some((name, language, path))
-        })
-        .collect::<Vec<_>>()
-        .into_par_iter()
-        .filter_map(|(name, language, path)| {
-            content_marker(language, &name, || {
-                decoded_text(path, ParseFailureReason::InvalidEncoding, "source").ok()
+/// Generated-code evidence of counted files, read on demand: content
+/// markers for files the counter recognized, whose language selects the
+/// marker, and `.gitattributes` declarations for every counted file.
+pub(super) struct Markers {
+    root: PathBuf,
+    attributes: gitattributes::Attributes,
+}
+
+impl Markers {
+    /// Loads the `.gitattributes` files that apply to the `counted` files.
+    pub(super) fn load(root: &Path, counted: &BTreeSet<String>) -> Self {
+        Self {
+            root: root.to_path_buf(),
+            attributes: gitattributes::Attributes::load(root, counted),
+        }
+    }
+
+    /// The marker evidence of the counted file `name`, counted in `language`;
+    /// a mapped or corrected language (`recognized` false) selects no content
+    /// marker, so only a declaration can mark such a file.
+    pub(super) fn evidence(
+        &self,
+        name: &str,
+        language: &str,
+        recognized: bool,
+    ) -> Option<GeneratedEvidence> {
+        let content = || {
+            let language = LanguageType::from_name(language).filter(|_| recognized)?;
+            content_marker(language, name, || {
+                decoded_text(
+                    &filesystem_path(&self.root, name),
+                    ParseFailureReason::InvalidEncoding,
+                    "source",
+                )
+                .ok()
             })
-            .map(|evidence| (name, evidence))
-        })
-        .collect();
-    let mut evidence = BTreeMap::new();
-    for name in counted {
-        let declared = attributes.declaration(name);
-        let found = match declared {
+        };
+        match self.attributes.declaration(name) {
             Some(gitattributes::Declaration::NotGenerated) => None,
             Some(gitattributes::Declaration::Generated(line)) => {
-                content.get(name).cloned().or(Some(GeneratedEvidence {
+                content().or(Some(GeneratedEvidence {
                     marker: GeneratedMarker::LinguistGenerated,
                     evidence: line,
                 }))
             }
-            None => content.get(name).cloned(),
-        };
-        if let Some(found) = found {
-            evidence.insert(name.clone(), found);
+            None => content(),
         }
     }
-    Ok(evidence)
 }
 
 /// The content marker of a file in `language`, reading its text only when
