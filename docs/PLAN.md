@@ -14,7 +14,7 @@ Decided 2026-10-23 by the owner: implement the accepted proposals in this order,
 
 1. [x] Framework layouts, implemented and verified on 2026-10-23; the [archived record](proposals/archive/framework-layouts.md) holds the design and links the [detector run](research/framework-layouts.md#detector-run).
 2. [x] Module credit by layout coverage, implemented and verified on 2026-10-23, including the `explain` note; the [archived record](proposals/archive/module-credit-by-coverage.md) holds the design.
-3. [ ] Implement [language corrections](proposals/language-corrections.md), then replace the explained Prolog row in the Immich showcase with a correction.
+3. [x] Language corrections, implemented and verified on 2026-10-23; the [archived record](proposals/archive/language-corrections.md) holds the design.
 4. [ ] Draft a proposal for detecting generated code inside claimed layouts. Across the framework measurements it was the largest silent false claim: MyBatis output 82% of one application's production, OpenAPI clients 16–30%, swag, Wire and MockGen 14%, Django migrations 20% ([precision pass](research/framework-layouts.md#shared-false-claims-not-specific-to-a-row)). Markers differ by generator and some output has none, so the design starts from that evidence and follows the [research rules](../CLAUDE.md#research-and-experiments). Decided 2026-10-23 by the owner: start from Linguist's generated-file checks as cited evidence, adapted rather than taken as a dependency, and evaluate reading Linguist's `.gitattributes` attributes; the [prior-art record](research/classification-prior-art.md) lists which measured generators they cover. Reconcile the design with the deferred [generated/minified evidence](plans/measurement-quality-and-net-change.md#conditional-follow-ups-and-preserved-rationales) item.
 
 ## Configuration — Follow-up
@@ -28,13 +28,14 @@ Decided 2026-10-23 by the owner: implement the accepted proposals in this order,
 
 ## Known Display Follow-up
 
-- [ ] Fold BASH into Shell in human language tables, as TSX folds into TypeScript; JSON keeps both names. Tokei counts extensionless Bash scripts as BASH and `.sh` scripts as Shell, which split one project's scripts over two rows in four projects measured on 2026-10-22 and 2026-10-23. A [language correction](proposals/language-corrections.md) does not fit: neither name is wrong, and globs cannot select files by shebang.
+- [ ] Fold BASH into Shell in human language tables, as TSX folds into TypeScript; JSON keeps both names. Tokei counts extensionless Bash scripts as BASH and `.sh` scripts as Shell, which split one project's scripts over two rows in four projects measured on 2026-10-22 and 2026-10-23. A [language correction](proposals/archive/language-corrections.md) does not fit: neither name is wrong, and globs cannot select files by shebang.
 - Folder-partition convergence remains deferred: adaptive folder detail and JSON `unclassified_folders` intentionally use different policies. Revisit only if a workflow demonstrates confusing divergence, with explicit compatibility review. The [adaptive-folder decision](proposals/archive/adaptive-folder-detail.md#existing-partition-and-feasibility) owns the rationale.
 
 ## Ideas — Not Scheduled
 
 - [Analytics cookbooks](plans/analytics-cookbooks.md): removed 2026-10-21; recreate them, refocused on questions native output cannot answer, only on the owner's decision. The design names the recovery commit and every removed file and pin.
 - [Conditional measurement/comparison capabilities](plans/measurement-quality-and-net-change.md#conditional-follow-ups-and-preserved-rationales): consumer-driven candidates and their triggers, including [per-file comparison](plans/measurement-quality-and-net-change.md#per-file-comparison), generated/minified evidence and duplicate evidence. Ancestor discovery remains outside accepted scope.
+- Built-in language corrections for project-independent names, such as `proguard-rules.pro`, in a set selected by `version`: add one only when the name recurs across measured projects; the first was observed once ([language corrections](proposals/archive/language-corrections.md)).
 - Revisit native file comparison only when recurring usage justifies expanding the CLI. The optional [file-transition helper](../scripts/compare-locmetry-files.sh) ships with releases and Homebrew, while its `jq` prerequisite remains a user-installed choice; avoiding that prerequisite alone does not activate native implementation.
 - JSON finding grammar, such as “1 unrecognized files”, remains an optional separate cleanup. The comparison-readability changes intentionally preserved JSON message text.
 - [Ineffective-option compatibility policy](proposals/archive/cli-option-clarity.md#deferred-compatibility-decision): blanket rejection remains deferred. Reopen only with a separate compatibility assessment of reusable option sets, terminal-to-pipe transitions and existing script expectations.

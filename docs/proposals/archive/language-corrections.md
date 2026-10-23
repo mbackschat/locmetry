@@ -2,20 +2,22 @@
 
 <!-- doc-status
 {
-  "status": "accepted",
+  "status": "implemented",
   "date": "2026-10-23",
   "summary": "Policy entries that correct a language the counter recognized wrongly, naming another counter language or leaving the file unrecognized.",
-  "evidence": "[Owner decision in PLAN](../PLAN.md#accepted-proposals--implementation-order)"
+  "evidence": "[PRODUCT](../../PRODUCT.md#project-configuration), [regressions](../../../tests/integration/language_corrections.rs)"
 }
 -->
 
-The Immich showcase found this gap on 2026-10-22, as its [measurement recording](../showcase/measure.md#look-at-the-code-around-the-product) shows. The [policy test drives](../research/policy-test-drives/README.md) of 2026-10-22 and 2026-10-23 found more cases.
+Status: historical decision record — implemented. The owner accepted the design on 2026-10-23, and it was implemented test-first and verified the same day in commit `285c8c2`. The Immich overlay corrects its ProGuard rules to `"unrecognized"`, which removed the Prolog row and changed no other count. The optional built-in corrections were not added; [PLAN](../../PLAN.md) keeps them as an unscheduled idea. Archived on 2026-10-23 under the [retirement procedure](../README.md#retirement-procedure). [PRODUCT](../../PRODUCT.md#project-configuration) and the [configure guide](../../guides/configure.md#correct-a-misrecognized-language) own the current behavior; the wording, examples and limits below describe the reviewed design, not current guarantees.
+
+The Immich showcase found this gap on 2026-10-22, as its [measurement recording](../../showcase/measure.md#look-at-the-code-around-the-product) shows. The [policy test drives](../../research/policy-test-drives/README.md) of 2026-10-22 and 2026-10-23 found more cases.
 
 ## Problem
 
 The counter recognizes languages by file name and extension, and some extensions belong to more than one format. Immich's `mobile/android/app/proguard-rules.pro` holds ProGuard keep rules, but `.pro` is Prolog to the counter, so the showcase reports a Prolog row that does not exist. Qt project files use the same extension.
 
-A policy cannot correct this. [Language mappings](../guides/configure.md#recognize-a-language-then-review-purpose) apply only to files the counter does not recognize. Classification entries set purpose and category, not language. An exclusion removes the file from every total and hides the question instead of answering it.
+A policy cannot correct this. [Language mappings](../../guides/configure.md#recognize-a-language-then-review-purpose) apply only to files the counter does not recognize. Classification entries set purpose and category, not language. An exclusion removes the file from every total and hides the question instead of answering it.
 
 ## Evidence
 
@@ -24,18 +26,18 @@ The counter assigns each extension to one language. These files were recognized 
 | Project | Files | Recognized as | Written in | Correction |
 | --- | ---: | --- | --- | --- |
 | Immich | 1 | Prolog (`.pro`) | ProGuard keep rules | `"unrecognized"` |
-| [a12-kernel-antlr4](../research/policy-test-drives/a12-kernel.md), an ANTLR fork | 172 | C Header (every `.h`) | C++ headers | `"C++ Header"`, which the tables then fold into C++ |
+| [a12-kernel-antlr4](../../research/policy-test-drives/a12-kernel.md), an ANTLR fork | 172 | C Header (every `.h`) | C++ headers | `"C++ Header"`, which the tables then fold into C++ |
 | The same project | 2 | Autoconf (`.in`) | CMake templates (`.cmake.in`) | `"CMake"` |
 | The same project | 1 | Autoconf (`.in`) | Python packaging manifest (`MANIFEST.in`) | `"unrecognized"` |
 | A private Java service | | Forge Config (`.cfg`) | INI-style tool configuration | `"INI"` |
 | The same service | | Pan (`.tpl`) | Helm Go templates | `"Go HTML"`, Go's template syntax with its `{{/* */}}` comments |
-| [Loki](../research/policy-test-drives/loki.md) | 32 | Pan (`.tpl`) | Helm and documentation Go templates | `"Go HTML"` |
+| [Loki](../../research/policy-test-drives/loki.md) | 32 | Pan (`.tpl`) | Helm and documentation Go templates | `"Go HTML"` |
 | The same project | 5 | Happy (`.y`) | goyacc grammars; Happy has no comment syntax, so comments count as code | `"unrecognized"` |
 | [NetBox](https://github.com/netbox-community/netbox) | 17 | Modelica (`.mo`) | Compiled gettext catalogs, binary | `"unrecognized"` |
 
 Corrections choose among the counter's languages. Go templates fit Go HTML, whose template comments are the same: in one Helm helpers file Pan counts 15 comment lines and Go HTML 179, so the correction also moves 164 lines out of code; grammars without a counter language become unrecognized and leave the source totals. The Go monorepo's assembler files, counted as GNU Style Assembly, need no correction: the label is approximate, but the comment syntax and therefore the counts are right.
 
-Two kinds of case look similar but are out of scope. Bash scripts appear as BASH when extensionless and as Shell when named `.sh`, in four projects; neither label is wrong, and globs cannot select files by their shebang, so a table fold of BASH into Shell, tracked in [PLAN](../PLAN.md), is the fitting change. Formats the counter does not know at all, such as yacc grammars, StringTemplate or Mermaid, need a language of their own; that is separate future scope.
+Two kinds of case look similar but are out of scope. Bash scripts appear as BASH when extensionless and as Shell when named `.sh`, in four projects; neither label is wrong, and globs cannot select files by their shebang, so a table fold of BASH into Shell, tracked in [PLAN](../../PLAN.md), is the fitting change. Formats the counter does not know at all, such as yacc grammars, StringTemplate or Mermaid, need a language of their own; that is separate future scope.
 
 ## Design
 

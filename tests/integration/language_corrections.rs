@@ -1,4 +1,4 @@
-//! Language corrections (docs/proposals/language-corrections.md): project
+//! Language corrections (docs/proposals/archive/language-corrections.md): project
 //! entries that replace the counter's language for files it recognized
 //! wrongly, with a counter language or `"unrecognized"`.
 use crate::cli::*;

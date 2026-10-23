@@ -6,9 +6,7 @@ Active designs live directly in this directory. Retired records live in `archive
 
 <!-- doc-index:start -->
 
-| Document | Status | Date | Summary |
-| --- | --- | --- | --- |
-| [Language Corrections](language-corrections.md) | accepted | 2026-10-23 | Policy entries that correct a language the counter recognized wrongly, naming another counter language or leaving the file unrecognized. |
+No documents in this directory.
 
 <!-- doc-index:end -->
 
