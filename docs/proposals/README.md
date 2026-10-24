@@ -9,6 +9,7 @@ Active designs live directly in this directory. Retired records live in `archive
 | Document | Status | Date | Summary |
 | --- | --- | --- | --- |
 | [Guide Sections and Task Index](guide-sections.md) | accepted | 2026-10-24 | Addressable guide sections and schema definitions, direct routes from help and a task index, so that agents read only what a task needs. |
+| [Manual Page, Completions and Reference Topic](manual-and-reference.md) | draft | 2026-10-24 | A man page and shell completions generated from the executable, and one reference topic for exit status, environment and files, so people and agents read the same facts in their usual places. |
 
 <!-- doc-index:end -->
 
