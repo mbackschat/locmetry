@@ -8,7 +8,7 @@ Active designs live directly in this directory. Retired records live in `archive
 
 | Document | Status | Date | Summary |
 | --- | --- | --- | --- |
-| [Guide Sections and Task Index](guide-sections.md) | draft | 2026-10-24 | Addressable guide sections and schema definitions, and a task index that routes to them, so that agents read only what a task needs. |
+| [Guide Sections and Task Index](guide-sections.md) | draft | 2026-10-24 | Addressable guide sections and schema definitions, direct routes from help and a task index, so that agents read only what a task needs. |
 
 <!-- doc-index:end -->
 

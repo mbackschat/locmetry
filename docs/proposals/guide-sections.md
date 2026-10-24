@@ -4,35 +4,40 @@
 {
   "status": "draft",
   "date": "2026-10-24",
-  "summary": "Addressable guide sections and schema definitions, and a task index that routes to them, so that agents read only what a task needs.",
+  "summary": "Addressable guide sections and schema definitions, direct routes from help and a task index, so that agents read only what a task needs.",
   "evidence": ""
 }
 -->
 
-The owner raised the idea on 2026-10-24 after the [category-guide correction run](../research/agent-regression-run-2026-10-24.md#correction-run-shorter-guide), and approved writing it as a proposal the same day.
+The owner raised the idea on 2026-10-24 after the [category-guide correction run](../research/agent-regression-run-2026-10-24.md#correction-run-shorter-guide), and approved writing it as a proposal the same day. An independent review the same day accepted it with changes; this revision adopts them: self-contained routes, exit status 1 for unknown sections, a precise schema namespace, corrected evidence, direct help routes, a wider guard, a reproducible acceptance manifest, and uncached input kept as the primary cost gate.
 
 ## Problem
 
-Configuration needs knowledge from guides and the schema, and the only way to get it is to read whole documents. In all 24 sessions of the first 2026-10-24 run and in 7 of 8 sessions of its correction, in both arms, the agent's first configuration read fetched the configure guide and `--schema config`, and usually the categories guide, in one parallel call. Codex cut the result to about 44–45K characters, roughly 11K tokens, from 12.7–20K tokens. The agents never saw the whole read and fetched the missing parts again, mostly as schema projections. Every addition to a guide or the schema therefore costs every configuration session, even when the task needs none of it: the category guide added 6.5 KB to a read that was already being cut off.
+Guides and schemas can be retrieved natively only as whole documents; projections need external tools such as `jq` or Python. Configuration sessions therefore read whole documents in one batch, as the agents' own instructions encourage for independent reads, and the batch outgrows what the agent harness shows. Counted from the raw session logs of the 2026-10-24 runs:
 
-A task-12 agent needs about 12 KB of that read: the refinement section of the configure guide, the vocabulary of the categories guide, the `Refinement` definition and the verification section. It reads 59.5 KB.
+- The first reference batch was truncated in 24 of 24 sessions of the first run and in 7 of 8 of the correction, in both arms, to about 40K characters of decoded text. It held the configure guide and `--schema config` together in 23 of the 24 first-run sessions; the categories guide was in it in 4 of 24, the candidate's task-12 sessions.
+- The configure guide was never fetched again. The configuration schema was fetched again in 20 of 24 and 5 of 8 sessions, often as a projection: partly to recover what truncation cut, partly as legitimate follow-up for the semantics the guides route to.
+
+Smaller native reads address the first cause and make the second cheaper. They also stop each addition to a guide or schema from costing every configuration session: the category guide added 6.5 KB to a batch that was already being cut off.
 
 ## Design
 
 ### Required
 
-**Section ids.** Each `##` and `###` heading of an embedded guide has an id: its GitHub heading slug, the fragment that repository links already use. The text is lowercased; characters other than letters, digits, spaces, hyphens and underscores are removed; spaces become hyphens. Ids are unique within a guide, without GitHub's numeric suffixes. One id serves a GitHub link and the CLI:
+**Section ids.** Each `##` and `###` heading of an embedded guide has an id: its GitHub heading slug, as `scripts/doc-indexes.py` computes it for fragment links. Ids are unique across all heading levels of a guide, so GitHub never adds numeric suffixes. The supported heading form is plain text with punctuation; a heading containing Markdown links, emphasis, inline code or closing hashes is rejected by the guard. Lines inside fenced code blocks and HTML comments are never headings, so a shell comment such as `# baseline` in a fence starts no section.
 
-```text
-docs/guides/configure.md#refine-a-category-without-changing-purpose
-locmetry --guide configure --section refine-a-category-without-changing-purpose
-```
+Long headings are shortened before their ids are first published, such as "Refine a Category Without Changing Purpose" to a shorter title. From then on an id is stable: removing or renaming a published id is a **Breaking** change recorded in CHANGELOG.
 
-**Section output.** `--section ID` is valid only with `--guide` or `--schema`, and stays a standalone query.
+**Section output.** `--section ID` requires exactly one `--guide` or `--schema` topic. It rejects positional roots, subcommands, measurement options and a repeated `--section`, and keeps `--no-color`, help and version behaviour.
 
 - With `--guide TOPIC`, it prints the usual source line, naming the section, followed by the heading and its text up to the next heading of the same or a higher level, so a `##` section includes its `###` subsections. Relative links stay as in the guide.
-- With `--schema TOPIC`, `ID` is a top-level property name or a `$defs` name, matched exactly, and the output is that value as pretty-printed JSON, without a source line, so it can still be piped. `$ref` values remain document pointers such as `#/$defs/Entry`, which name the next section to request.
-- An unknown id fails with exit status 2 and lists the topic's valid ids, so a mistyped id costs one call and returns the topic's contents.
+- With `--schema TOPIC`, `ID` is matched exactly against three namespaces:
+  - `overview` selects the root object, with `properties` and `$defs` reduced to lists of their names. It carries the root `description`, which guide recipes use for precedence and matching semantics, and doubles as the schema's contents.
+  - The name of a member of the root `properties` selects that property's schema, such as `rules`.
+  - The name of a `$defs` entry selects that definition, such as `Refinement`.
+
+  The output is a fragment, not a self-contained schema: `$ref` values such as `#/$defs/Purpose` resolve against the full topic schema and name the next section to request. It is pretty-printed JSON without a source line, so it can be piped.
+- An unknown id exits with status 1, as other invalid queries do ([PRODUCT](../PRODUCT.md#command-outcomes)), with empty stdout. Stderr names the unknown id and lists the topic's valid ids in document order, worded by the [human output wording rules](../help-design.md#human-output-wording).
 
 ```text
 $ locmetry --guide categories --section choose-a-name
@@ -48,51 +53,49 @@ $ locmetry --schema config --section Refinement
 }
 ```
 
-**Task index.** [docs/guides/README.md](../guides/README.md) becomes the routing table and is embedded verbatim as `locmetry --guide index`, so the GitHub page and the CLI are one document. Each row pairs a task with the exact commands that answer it; a task that needs a whole guide names the guide.
+**Self-contained routes.** PRODUCT already promises that a guide's essential instructions are self-contained. Sections extend that promise: a section the index or help names states its own prerequisites, or the route names the additional reads they need. For example, the owner-naming rule in the categories guide's opening moves into the section that chooses names, and a diagnostic subsection that depends on its parent's fixture or working directory is routed through its parent.
+
+**Help routes.** `--help` reaches every session first. The configuration route gains a few conditional direct section commands for the needs agents met in the recorded runs, such as refining conventional tests or naming categories, and names `locmetry --guide index` for the rest. Other whole-guide and schema routes in help are reconciled with them, so help does not offer two routes for one need. [Help-design](../help-design.md) prefers an example with its applicability over another navigation layer; direct routes follow that, and the index is the fallback. Text must fit the current [help budgets](../agent-regression-checks.md#help-size-guard), 288 bytes free in `--help` and 62 in `-h` when measured on 2026-10-24, by rewording existing routes; a raise is a reviewed decision, taken only if rewording loses applicability or verification guidance. Fixtures that preserve the wording of earlier experiments stay unchanged.
+
+**Task index.** [docs/guides/README.md](../guides/README.md) becomes the routing table and is embedded verbatim as `locmetry --guide index`, so the GitHub page and the CLI are one document. Each row pairs a task with every command it needs, prerequisites included; it keeps one whole-document link to each guide, as the documentation checker requires.
 
 ```markdown
 | When you want to | Read |
 | --- | --- |
-| Give conventional tests finer categories | `locmetry --guide configure --section refine-a-category-without-changing-purpose`, `locmetry --schema config --section Refinement` |
+| Give conventional tests finer categories | `locmetry --guide configure --section refine-categories`, `locmetry --schema config --section Refinement` |
 | Name a new category | `locmetry --guide categories --section choose-a-name` |
-| Diagnose why one file is missing | `locmetry --guide selection --section a-file-is-absent-from-the-counts` |
 ```
 
-**Routing from help.** `--help` already reaches every session first, and the [help-routing study](../research/agent-explorability-help-routing-study.md) found explicit conditional routes effective. The configuration route's sentence "Use --guide configure or --schema config for exclusions, overrides, intentional Other, or semantics not shown here" names `locmetry --guide index` as the way to find the section for a need not shown there. The `--guide` description lists `index` among the topics.
+**Guard.** Integration tests fail when:
 
-**Guard.** An integration test fails when:
+- a guide heading is outside the supported form, has an empty slug, or duplicates another id of the same guide;
+- a schema has `overview` as a property or definition name, or a property and a definition differ only in case;
+- a `--section` reference does not resolve, wherever it appears: rendered help, guides, schema descriptions, README, and the recorded guides under `docs/cli/` and `docs/showcase/`, including inline code and code blocks, which the link checker deliberately skips;
+- a guide section is neither named by an index row nor listed in the index's enumerated whole-guide exemptions;
+- an id in the committed list of published ids no longer resolves, unless CHANGELOG's `Unreleased` section records its removal as **Breaking**;
+- the Rust slug rule disagrees with `anchors()` in `scripts/doc-indexes.py` for any guide heading.
 
-- a guide has duplicate ids, or a heading whose slug is empty;
-- a `--section` reference in help, guides, schemas or README does not resolve;
-- the index omits a guide section or names a section that does not exist, except sections the index marks as covered by a whole-guide row;
-- the Rust slug rule disagrees with the fragment rule of the documentation link checker for any guide heading.
-
-Headings become a public contract: renaming one changes its id, which the guard reports in every reference.
-
-### Optional
-
-- Removing what the categories guide repeats from the configure guide: "Write a Reviewed Policy" (699 bytes) restates the configure workflow.
-- Shortening long headings when their ids are first published, such as `refine-a-category-without-changing-purpose`, while every reference is still local to this repository.
+Recorded Showboat output that changes is regenerated, never edited.
 
 ### Excluded
 
-- Splitting guides into more topics. Sections give the same small reads without more routing choices, and every extra topic is another place to look. The categories guide is already its own topic; `reports` (19 KB, 9 sections) is the only candidate worth revisiting if its sections prove too coarse.
-- A `#` fragment syntax on the command line. Measured on 2026-10-24: with zsh's `extendedglob`, `--guide configure#choose-a-name` fails with "no matches found", and an unquoted JSON pointer such as `config#/$defs/Refinement` loses `$defs` to variable expansion in every POSIX shell. `--section` avoids both.
-- JSON pointers into nested schema values; a definition is the unit an agent needs.
-- Changing how full guides and schemas print.
-- Size budgets for guides or schemas. Sections make document size matter less; [help budgets](../agent-regression-checks.md#help-size-guard) remain.
+- Splitting guides into more topics. Self-contained sections give the same small reads without more routing choices. `reports` (19 KB, 9 sections) is the only candidate worth revisiting if its sections prove too coarse.
+- A `TOPIC#ID` syntax. Measured on 2026-10-24: with zsh's `extendedglob`, `--guide configure#choose-a-name` fails with "no matches found", and an unquoted `config#/$defs/Refinement` loses `$defs` to variable expansion in POSIX shells. Quoting would avoid both, at a cost every routed command would carry.
+- JSON pointers into nested schema values, and bundling a definition with the definitions it references.
+- Changing how full guides and schemas print, and size budgets for guides or schemas.
+- Trimming the categories guide's "Write a Reviewed Policy". It would confound the navigation measurement, and its `kind = ["source"]` advice has no other home yet; it is a separate change.
 
 ## Acceptance
 
-- The guard passes; help stays within its budget, or a raise is reviewed as the help-size guard requires.
-- Following the index for task 12 reads, by an offline count, at most a third of today's 59.5 KB configuration read, `--help` excluded.
-- An agent run on tasks 3, 8 and 12, four AB/BA pairs each, on a new frozen protocol, finds no loss of correctness and no regression under the cost gates below.
-
-The protocol gates primary cost on the context each session builds, its last request's input less the instructions all sessions share from the provider's cache, read from the per-request token counts in the session logs. Uncached input stays a reported secondary figure: the correction run showed that one provider cache miss can decide a four-pair median of uncached input, which the binary does not influence. The calls gates are unchanged. This gate change applies to new protocols only; earlier results stand as recorded. The [agent regression checks](../agent-regression-checks.md) own the gates, so the change lands there with the harness support, before the protocol is frozen.
+- The guard passes, and help stays within its budgets or a raise is reviewed.
+- An offline manifest pins the baseline revision, the exact commands of each covered route with all prerequisites and the index where a route uses it, and counts UTF-8 bytes of stdout including source lines. Against today's 59,552-byte batch of configure guide, categories guide and configuration schema, the task-12 route reads at most a third, `--help` excluded. The manifest is committed with the implementation.
+- An agent run on a new frozen protocol finds no loss of correctness and no regression under the existing gates: tasks 3, 8 and 12, plus unrelated task 1 as the root-help reading guard that [help-design](../help-design.md) requires, four AB/BA pairs each, 32 sessions. Uncached input stays the primary cost gate. The protocol also reports, as a diagnostic, the context each session builds: the sum of the increases of per-request input after the first request, read from the session logs' per-request token counts, which does not depend on cache hits or on how much of the first request was cached. The protocol predeclares one confirmation sample and its stopping rule for a primary failure that the diagnostic does not reproduce; trials are never added until a gate passes. The [agent regression checks](../agent-regression-checks.md) own gates and diagnostics, so the harness support lands there before the protocol is frozen.
 
 ## Risks
 
-- **Calls.** Reading the index adds a call before the sections. The per-task gate allows one more call, but the overall gate allows none, so the index has to send agents to the right section on the first try, and sections have to replace rereads rather than add to them.
-- **Use.** Agents ignore options they are not told about: 310 sessions made 535 help calls and none used `-h`. Without the help route, the index would go unread.
-- **Help budget.** `--help` is at 12,662 of 12,950 bytes. The new option's description and the `index` topic must fit by rewording the configuration route, or need a reviewed raise.
-- **Evidence.** The help route is pinned by the agent-explorability fixture as measured evidence, so changing it requires the agent run above.
+- **Calls.** A route through the index adds a call, which the overall calls gate does not allow. Direct help routes avoid it for the common needs; the index serves the rest.
+- **Uptake.** Routing studies found explicit execution-first guidance effective; none tested navigation through an index. Agents never used `-h` in 310 sessions, so routes must sit in `--help`.
+- **Cache noise.** Uncached input remains exposed to provider cache misses; the predeclared confirmation sample bounds that risk without moving the gate.
+- **Evidence.** The configuration route in help is pinned by the agent-explorability fixture as measured evidence; changing it requires the run above.
+
+Implementation updates PRODUCT, the affected README and guide routes, help-design's inventory and CHANGELOG together.
