@@ -12,6 +12,8 @@ anstyle-query = "1"
 anyhow = "1"
 chrono = { version = "0.4", default-features = false, features = ["std"] }
 clap = { version = "4", features = ["derive", "wrap_help"] }
+clap_complete = "4"
+clap_mangen = "0.3"
 # std::fs::canonicalize returns verbatim \\?\C:\ paths on Windows, which reports
 # would show as roots; dunce returns the ordinary form where it is equivalent.
 dunce = "1"
@@ -50,6 +52,10 @@ assets = [
     ["README.md", "usr/share/doc/locmetry/", "644"],
     ["CHANGELOG.md", "usr/share/doc/locmetry/", "644"],
     ["THIRD-PARTY-NOTICES.md", "usr/share/doc/locmetry/", "644"],
+    ["target/generated/locmetry.1", "usr/share/man/man1/", "644"],
+    ["target/generated/complete/locmetry.bash", "usr/share/bash-completion/completions/locmetry", "644"],
+    ["target/generated/complete/_locmetry", "usr/share/zsh/vendor-completions/", "644"],
+    ["target/generated/complete/locmetry.fish", "usr/share/fish/vendor_completions.d/", "644"],
 ]
 
 # The automatic scan would only find the helper's Bash, declared here instead.
@@ -62,6 +68,10 @@ assets = [
     { source = "CHANGELOG.md", dest = "/usr/share/doc/locmetry/CHANGELOG.md", mode = "644", doc = true },
     { source = "THIRD-PARTY-NOTICES.md", dest = "/usr/share/doc/locmetry/THIRD-PARTY-NOTICES.md", mode = "644", doc = true },
     { source = "LICENSE", dest = "/usr/share/licenses/locmetry/LICENSE", mode = "644", doc = true },
+    { source = "target/generated/locmetry.1", dest = "/usr/share/man/man1/locmetry.1", mode = "644", doc = true },
+    { source = "target/generated/complete/locmetry.bash", dest = "/usr/share/bash-completion/completions/locmetry", mode = "644" },
+    { source = "target/generated/complete/_locmetry", dest = "/usr/share/zsh/site-functions/_locmetry", mode = "644" },
+    { source = "target/generated/complete/locmetry.fish", dest = "/usr/share/fish/vendor_completions.d/locmetry.fish", mode = "644" },
 ]
 
 [package.metadata.generate-rpm.requires]

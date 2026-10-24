@@ -7,6 +7,9 @@ use std::process::ExitCode;
 
 fn run(cli: Cli) -> Result<Outcome> {
     let styling = cli.styling;
+    if let Some(kind) = cli.generate {
+        return run_generate(kind);
+    }
     if let Some(guide) = cli.guide {
         return run_guide(guide, &cli.section);
     }

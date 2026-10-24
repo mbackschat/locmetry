@@ -3,7 +3,11 @@
     "description": "Measure source code by language, folder, and purpose",
     "homepage": "https://github.com/mbackschat/locmetry",
     "license": "MIT",
-    "notes": "compare-locmetry-files.sh is in $dir and needs Bash and jq.",
+    "notes": [
+        "compare-locmetry-files.sh is in $dir and needs Bash and jq.",
+        "For PowerShell completion, add this line to the file $PROFILE names:",
+        "locmetry --generate complete-powershell | Out-String | Invoke-Expression"
+    ],
     "architecture": {
         "64bit": {
             "url": "https://github.com/mbackschat/locmetry/releases/download/v{{version}}/locmetry-v{{version}}-x86_64-pc-windows-msvc.zip",

@@ -158,9 +158,9 @@ pub(super) const WORKSPACE_EXAMPLES: &str = "Examples:
   Explain a member file:
     locmetry explain web/src/index.ts --workspace-file repos.toml --format json
 
-repos.toml:
-  version = 1
-  roots = [\"web\", \"api\"]
+  repos.toml:
+    version = 1
+    roots = [\"web\", \"api\"]
 
 Paths are relative to the workspace file; it is used only when --workspace-file names it.
 Members need unique folder names and non-overlapping roots. Each scan uses

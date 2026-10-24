@@ -4,7 +4,7 @@
 
 ## Accepted — Awaiting Verification
 
-- [Manual page, completions and reference topic](proposals/manual-and-reference.md): accepted 2026-10-24 after two reviews; its prerequisites, the agents' context isolation and the guide-sections adoption, are complete, so implementation can start.
+- [Manual page, completions and reference topic](proposals/manual-and-reference.md): accepted 2026-10-24 and implemented the same day. Before retirement, its acceptance still needs the rendered page read on Linux, the [manual completion check](tokei-integration.md#man-page-and-completion-check) in zsh, fish and PowerShell (bash passed on macOS), and the desk review of the help surfaces, index rows and reference guide.
 
 The [proposal index](proposals/README.md) distinguishes active designs from historical decisions.
 

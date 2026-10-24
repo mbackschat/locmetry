@@ -44,6 +44,22 @@ jobs:
           tool: cargo-about@0.9.2
       - name: Generate third-party notices
         run: cargo about generate --locked -c packaging/licenses/about.toml packaging/licenses/notices.hbs -o THIRD-PARTY-NOTICES.md
+      # Each job generates them with the binary it packages, which runs
+      # natively on every release runner; Cargo.toml's package assets and the
+      # archives take them from target/generated.
+      - name: Generate the man page and completions
+        run: |
+          generated=target/generated/complete
+          mkdir -p "$generated"
+          if [ "$RUNNER_OS" = Windows ]; then
+            "target/${{ matrix.target }}/release/locmetry.exe" --generate complete-powershell > "$generated/_locmetry.ps1"
+          else
+            bin="target/${{ matrix.target }}/release/locmetry"
+            "$bin" --generate man > target/generated/locmetry.1
+            "$bin" --generate complete-bash > "$generated/locmetry.bash"
+            "$bin" --generate complete-zsh > "$generated/_locmetry"
+            "$bin" --generate complete-fish > "$generated/locmetry.fish"
+          fi
       - name: Package
         run: |
           version="${GITHUB_REF_NAME}"
@@ -54,6 +70,7 @@ jobs:
           mkdir "$name"
           cp "target/${{ matrix.target }}/release/$executable" README.md CHANGELOG.md LICENSE THIRD-PARTY-NOTICES.md "$name/"
           install -m 755 scripts/compare-locmetry-files.sh "$name/compare-locmetry-files.sh"
+          cp -R target/generated/. "$name/"
           if [ "$RUNNER_OS" = Windows ]; then 7z a -tzip "$name.zip" "$name" > /dev/null; else tar -czf "$name.tar.gz" "$name"; fi
           echo "BINARY=$PWD/$name/$executable" >> "$GITHUB_ENV"
       - name: Measure with an empty environment

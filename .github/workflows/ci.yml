@@ -36,6 +36,15 @@ jobs:
       - name: Gate source file sizes with Locmetry's own measurement
         if: matrix.os == 'ubuntu-24.04'
         run: python3 scripts/check-file-sizes.py
+      # Warnings and errors fail; mandoc's style notes, such as source lines
+      # longer than 80 bytes, are inherent in clap_mangen's output.
+      - name: Lint the generated man page
+        if: matrix.os == 'ubuntu-24.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes mandoc
+          target/debug/locmetry --generate man > "$RUNNER_TEMP/locmetry.1"
+          mandoc -T lint -W warning "$RUNNER_TEMP/locmetry.1"
       - name: Execute README CI recipes
         if: matrix.os == 'ubuntu-24.04'
         run: |

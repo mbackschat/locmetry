@@ -3,6 +3,8 @@
 mod cli;
 mod commands;
 mod destination;
+mod generate;
+mod manual;
 mod measure;
 mod parse;
 mod reference;
@@ -13,6 +15,8 @@ mod tests;
 pub(crate) use cli::*;
 pub(crate) use commands::*;
 use destination::*;
+pub(crate) use generate::*;
+use manual::*;
 use measure::*;
 pub(crate) use parse::*;
 pub(crate) use reference::*;

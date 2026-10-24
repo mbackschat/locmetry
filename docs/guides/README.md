@@ -31,6 +31,9 @@ Find the section that answers your task and read only that. This page is embedde
 | Compare two measurements | `locmetry --guide compare --section a-small-example --section comparable-scope-and-evidence --section compare-saved-measurements` |
 | Compare one workspace member | `locmetry --guide compare --section compare-saved-measurements --section inspect-one-workspace-member` |
 | Review what a configuration change moved | `locmetry --guide compare --section inspect-configuration-transitions` |
+| Know what an exit status means | `locmetry --guide reference --section exit-status` |
+| Know which environment variables and files Locmetry reads | `locmetry --guide reference --section environment --section files` |
+| Install the man page or shell completions | `locmetry --guide reference --section man-page-and-completions` |
 
 Whole guides, for reading a workflow end to end:
 
@@ -39,5 +42,6 @@ Whole guides, for reading a workflow end to end:
 - [Read reports](reports.md): interpret counts, coverage and workspace results.
 - [Compare measurements](compare.md): capture baselines and interpret net changes.
 - [Choose category names](categories.md): reference category names, worked cases and conventions for reviewed policies.
+- [Reference](reference.md): exit status, environment variables, files, man page and completions.
 
 See the [documentation index](../README.md) for contracts and contributor procedures.

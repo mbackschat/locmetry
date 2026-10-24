@@ -36,7 +36,9 @@ pub(crate) fn validate_query(
 }
 
 pub(crate) fn cli_command(args: &[std::ffi::OsString]) -> clap::Command {
-    let mut command = Cli::command().styles(locmetry::style::Palette::ANSI.cli_styles());
+    let mut command = Cli::command()
+        .arg(generate_arg())
+        .styles(locmetry::style::Palette::ANSI.cli_styles());
     // Clap exits on help and parse errors before producing Cli, so apply the
     // global presentation switch first. `--` makes subsequent tokens positional.
     if args
@@ -63,11 +65,17 @@ pub(crate) fn parse_cli() -> clap::error::Result<Cli> {
         .try_get_matches_from_mut(args)
         .map_err(|error| replace_misleading_tip(error, &command, named.as_deref()))?;
     let mut queried = false;
-    for query in ["schema", "guide"] {
+    for query in ["schema", "guide", "generate"] {
         if matches.value_source(query) == Some(clap::parser::ValueSource::CommandLine) {
             validate_query(&mut command, &matches, query)?;
             queried = true;
         }
+    }
+    if matches.contains_id("section") && matches.contains_id("generate") {
+        return Err(command.error(
+            clap::error::ErrorKind::ArgumentConflict,
+            "'--generate' is a standalone query and cannot be combined with '--section'",
+        ));
     }
     if matches.contains_id("section") && !queried {
         return Err(command.error(
@@ -97,6 +105,7 @@ pub(crate) fn parse_cli() -> clap::error::Result<Cli> {
         }
     }
     let mut cli = Cli::from_arg_matches(&matches)?;
+    cli.generate = matches.get_one::<Generate>("generate").copied();
     let shared_matches = match &mut cli.command {
         Some(Command::Workspace(args)) => Some((
             &mut args.shared,

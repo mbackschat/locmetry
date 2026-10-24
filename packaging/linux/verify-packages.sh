@@ -6,13 +6,17 @@ directory=$(cd "${1:?usage: verify-packages.sh DIRECTORY}" && pwd)
 
 # Runs inside the container after installation. The helper must report the
 # missing jq instead of failing obscurely, since packages only suggest it.
-# Slim images skip /usr/share/doc on installation, so the notices are checked
-# in the package's file list instead.
+# Slim images skip /usr/share/doc and /usr/share/man on installation, so the
+# notices and the man page are checked in the package's file list instead.
 smoke='
 mkdir -p /tmp/project
 printf "print(1)\n" > /tmp/project/main.py
 env -i /usr/bin/locmetry --root /tmp/project --no-user-config --format json | grep "\"Python\"" > /dev/null
 $contents | grep usr/share/doc/locmetry/THIRD-PARTY-NOTICES.md > /dev/null
+$contents | grep usr/share/man/man1/locmetry.1 > /dev/null
+test -s /usr/share/bash-completion/completions/locmetry
+test -s /usr/share/fish/vendor_completions.d/locmetry.fish
+ls /usr/share/zsh/*/_locmetry > /dev/null
 status=0
 env -i PATH=/usr/bin:/bin /usr/bin/compare-locmetry-files.sh a.json b.json 2> /tmp/err || status=$?
 test "$status" = 1

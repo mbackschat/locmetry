@@ -14,6 +14,8 @@ pub(crate) enum Guide {
     Compare,
     /// Reference category names, worked cases and naming conventions.
     Categories,
+    /// Exit status, environment, files, man page and completions.
+    Reference,
 }
 
 impl Guide {
@@ -42,6 +44,10 @@ impl Guide {
             Self::Categories => (
                 "docs/guides/categories.md",
                 include_str!("../docs/guides/categories.md"),
+            ),
+            Self::Reference => (
+                "docs/guides/reference.md",
+                include_str!("../docs/guides/reference.md"),
             ),
         }
     }

@@ -6,13 +6,13 @@ mod long_help;
 
 #[derive(Clone, Copy, Debug, PartialEq, ValueEnum)]
 pub(crate) enum Format {
-    /// Human-readable tables and evidence.
+    /// Tables and evidence.
     Table,
-    /// Complete JSON document; measurement reports can be compared later.
+    /// Complete JSON; measurement reports can be compared later.
     Json,
     /// Compact JSON for agents and scripts; not a comparison-ready measurement.
     Headline,
-    /// Markdown tables and evidence to save or paste into reviews.
+    /// Markdown tables and evidence for reviews.
     Markdown,
 }
 
@@ -167,6 +167,9 @@ pub(crate) struct Cli {
         help_heading = "Reference"
     )]
     pub(crate) section: Vec<String>,
+    /// Set from the parsing command's `--generate` (see `generate_arg`).
+    #[arg(skip)]
+    pub(crate) generate: Option<Generate>,
     #[command(flatten)]
     pub(crate) styling: Styling,
 }

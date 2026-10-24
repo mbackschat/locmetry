@@ -37,6 +37,11 @@ class Locmetry < Formula
       bin.install "locmetry", "compare-locmetry-files.sh"
       prefix.install "THIRD-PARTY-NOTICES.md"
     end
+    # From the installed binary, so they match its version; PowerShell is left
+    # out because the helper would ask for a complete-pwsh kind.
+    generate_completions_from_executable(bin/"locmetry", "--generate",
+                                         shells: [:bash, :zsh, :fish], shell_parameter_format: "complete-")
+    (man1/"locmetry.1").write Utils.safe_popen_read(bin/"locmetry", "--generate", "man")
   end
 
   test do
@@ -57,6 +62,8 @@ class Locmetry < Formula
     assert_equal 3, purposes["production"]["code"]
     assert_equal 4, purposes["test"]["code"]
     refute purposes.key?("other")
+    assert_match "locmetry", (man1/"locmetry.1").read
+    assert_match "--show-folders", (bash_completion/"locmetry").read
     assert_match "Usage: compare-locmetry-files.sh", shell_output("#{bin}/compare-locmetry-files.sh --help")
     error = with_env(PATH: "") do
       shell_output("/bin/bash #{bin}/compare-locmetry-files.sh before.json after.json 2>&1", 1)

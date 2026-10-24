@@ -38,6 +38,10 @@ guide categories choose-a-name
 guide categories worked-cases
 guide categories project-specific-names
 guide categories write-a-reviewed-policy
+guide reference exit-status
+guide reference environment
+guide reference files
+guide reference man-page-and-completions
 schema config overview
 schema config Backend
 schema config Scope

@@ -4,12 +4,13 @@ use crate::common;
 use serde_json::Value;
 use std::process::Output;
 
-pub(crate) const TOPICS: [&str; 6] = [
+pub(crate) const TOPICS: [&str; 7] = [
     "configure",
     "selection",
     "reports",
     "compare",
     "categories",
+    "reference",
     "index",
 ];
 pub(crate) const SCHEMAS: [&str; 6] = [

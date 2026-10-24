@@ -381,10 +381,10 @@ Output and content:
           an overview or headline for compact JSON
 
           Possible values:
-          - table:    Human-readable tables and evidence
-          - json:     Complete JSON document; measurement reports can be compared later
+          - table:    Tables and evidence
+          - json:     Complete JSON; measurement reports can be compared later
           - headline: Compact JSON for agents and scripts; not a comparison-ready measurement
-          - markdown: Markdown tables and evidence to save or paste into reviews
+          - markdown: Markdown tables and evidence for reviews
 
       --files
           Include per-file records in full JSON, saved or printed; headline omits them
@@ -394,10 +394,10 @@ Output and content:
           pipes]
 
           Possible values:
-          - table:    Human-readable tables and evidence
-          - json:     Complete JSON document; measurement reports can be compared later
+          - table:    Tables and evidence
+          - json:     Complete JSON; measurement reports can be compared later
           - headline: Compact JSON for agents and scripts; not a comparison-ready measurement
-          - markdown: Markdown tables and evidence to save or paste into reviews
+          - markdown: Markdown tables and evidence for reviews
 
 {
   "member": "web",
