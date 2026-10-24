@@ -4,7 +4,7 @@
   "effort": "xhigh",
   "conditions": {
     "A": "Accepted proposals and follow-ups with the language list shared in the schemas (bd820b7), the last ledger candidate",
-    "B": "The category reference shortened from 10,009 to 5,932 bytes, keeping owner-chosen names (09a0f7f)"
+    "B": "The category reference shortened from 10,009 to 5,981 bytes, leaving renames of declared names to the owner (87b3f5c)"
   },
   "control": {
     "source_revision": "bd820b7e2003172addba7169038de376634041ad",
@@ -105,7 +105,7 @@
   "task_roles": {
     "12": "Configuration of a Rust project whose test kinds and scripts need categories the agent names"
   },
-  "candidate_change": "The categories guide shortened from 10,009 to 5,932 bytes: tighter descriptions, fewer replaced names and worked cases, and conventions that link the configure guide; it now keeps names the owner chose or a policy declares and allows custom names that keep a distinction a reference row would merge. Vocabulary and order are unchanged.",
+  "candidate_change": "The categories guide shortened from 10,009 to 5,981 bytes: tighter descriptions, fewer replaced names and worked cases, and conventions that link the configure guide; renames of declared categories are proposed to the owner, and custom names may keep a distinction a reference row would merge. Vocabulary and order are unchanged.",
   "hypothesis": "In the first run, agents fetched the 10 KB guide in one batch with the configure guide and schema, overflowed the harness output cap and fetched it again; a guide about half that size should fit the batch and keep the median within 110% of the control's.",
   "coverage_boundary": "Evaluate only these eight freshly paired task-12 sessions. Do not pool the first run's trials into any correctness rate, median, total or gate. Category names are a diagnostic: report agreement with the reference names and between runs per arm, never as a gate."
 }
