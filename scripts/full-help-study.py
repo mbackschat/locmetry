@@ -210,6 +210,7 @@ def frozen_plan(destination, acknowledgement, *, ran=()):
 
 def run_pairs(destination, plan, pairs, marker, acknowledgement):
     catalog = codex_catalog(plan["model"], plan["effort"])
+    BENCH.retire_leftover_homes()
     with (destination / marker).open("x") as started:
         json.dump({"started": time.time(), "sessions": len(pairs) * 2,
                    "protocol_sha256": plan["protocol_sha256"], "acknowledged": acknowledgement,

@@ -162,6 +162,9 @@ class ExperimentTests(unittest.TestCase):
             # Unit tests must not depend on the installed Codex; the catalog check has its own tests.
             full.codex_catalog = lambda model, effort: {"codex_version": "codex-cli test", "model": model,
                                                          "efforts": [effort], "newer_in_family": []}
+        # Retiring leftover homes touches the operator's real subject homes and credentials; record the call instead.
+        full.retired = []
+        full.BENCH.retire_leftover_homes = lambda: full.retired.append(True)
         return full
 
     def test_launch_requires_the_owner_to_acknowledge_the_frozen_model_and_effort(self):
@@ -189,6 +192,7 @@ class ExperimentTests(unittest.TestCase):
                 self.assertEqual(started["acknowledged"], ACK)
                 self.assertEqual(started["codex_catalog"]["model"], "gpt-6.1-sol")
                 self.assertEqual(run.call_count, 8)
+                self.assertEqual(full.retired, [True])
 
     def test_codex_catalog_must_list_the_model_with_its_effort_and_names_newer_family_models(self):
         full = self.full_help_runner(catalog=False)
@@ -392,6 +396,21 @@ class ExperimentTests(unittest.TestCase):
             with BENCH.subject_home(source) as home:
                 (home / ".codex/auth.json").write_text(json.dumps({"last_refresh": "2026-10-20T00:00:00Z", "tokens": "stale"}))
             self.assertEqual(json.loads((source / "auth.json").read_text())["tokens"], "new")
+
+    def test_a_new_run_retires_homes_an_interrupted_run_left_and_keeps_their_newer_credentials(self):
+        with tempfile.TemporaryDirectory() as folder:
+            source, parent = Path(folder) / "codex", Path(folder) / "homes"
+            source.mkdir()
+            (source / "auth.json").write_text(json.dumps({"last_refresh": "2026-10-18T19:24:31Z", "tokens": "old"}))
+            # A killed runner skips the context manager's cleanup, leaving the home as it was mid-session.
+            session = BENCH.subject_home(source, parent)
+            home = session.__enter__()
+            (home / ".codex/auth.json").write_text(json.dumps({"last_refresh": "2026-10-25T08:00:00Z", "tokens": "rotated"}))
+            self.assertEqual(home.parent, parent)
+            BENCH.retire_leftover_homes(source, parent)
+            self.assertEqual(list(parent.iterdir()), [])
+            self.assertEqual(json.loads((source / "auth.json").read_text())["tokens"], "rotated")
+            BENCH.retire_leftover_homes(source, Path(folder) / "never-created")
 
     def test_context_audit_flags_injected_instructions_and_fingerprints_what_every_session_shares(self):
         def message(role, text):

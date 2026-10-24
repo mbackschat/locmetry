@@ -20,6 +20,8 @@ import time
 REPO = Path(__file__).resolve().parent.parent
 TASK = REPO / "tests/fixtures/agent-explorability/task1.json"
 CODEX_HOME = Path.home() / ".codex"
+# One parent for every subject home, so that a run can find what an interrupted run left.
+SUBJECT_HOMES = Path(tempfile.gettempdir()) / "locmetry-subject-homes"
 CREDENTIALS = threading.Lock()
 
 
@@ -295,7 +297,7 @@ def context_growth(rows):
 
 
 @contextlib.contextmanager
-def subject_home(source=CODEX_HOME):
+def subject_home(source=CODEX_HOME, parent=SUBJECT_HOMES):
     """A fresh home for one session, as after a new Codex install.
 
     Codex injects `$CODEX_HOME/AGENTS.md` into every session and lists the
@@ -303,25 +305,44 @@ def subject_home(source=CODEX_HOME):
     steer subjects, lengthen every prompt and change between campaigns. The
     home holds only a copy of the credentials, and Codex installs its bundled
     system skills there. It sits outside the campaign, which is archived, and
-    is removed afterwards. Codex rotates the refresh token when it refreshes,
-    so newer credentials are written back.
+    is retired afterwards.
     """
-    home = Path(tempfile.mkdtemp(prefix="locmetry-subject-home-"))
-    credentials = home / ".codex/auth.json"
+    parent.mkdir(mode=0o700, exist_ok=True)
+    home = Path(tempfile.mkdtemp(dir=parent))
     try:
+        credentials = home / ".codex/auth.json"
         credentials.parent.mkdir()
         shutil.copyfile(source / "auth.json", credentials)
         credentials.chmod(0o600)
         yield home
     finally:
-        with CREDENTIALS:
-            refreshed = lambda path: json.loads(path.read_text()).get("last_refresh", "")
-            if credentials.is_file() and refreshed(credentials) > refreshed(source / "auth.json"):
-                staged = source / f".auth.json.{os.getpid()}.{threading.get_ident()}"
-                shutil.copyfile(credentials, staged)
-                staged.chmod(0o600)
-                os.replace(staged, source / "auth.json")
-        shutil.rmtree(home)
+        retire_home(home, source)
+
+
+def retire_home(home, source=CODEX_HOME):
+    """Remove a subject home, first writing back its credentials if they are newer.
+
+    Codex rotates the refresh token when it refreshes, so the operator's copy
+    would stop working if a refreshed one were discarded.
+    """
+    credentials = home / ".codex/auth.json"
+    with CREDENTIALS:
+        refreshed = lambda path: json.loads(path.read_text()).get("last_refresh", "")
+        if credentials.is_file() and refreshed(credentials) > refreshed(source / "auth.json"):
+            staged = source / f".auth.json.{os.getpid()}.{threading.get_ident()}"
+            shutil.copyfile(credentials, staged)
+            staged.chmod(0o600)
+            os.replace(staged, source / "auth.json")
+    shutil.rmtree(home)
+
+
+def retire_leftover_homes(source=CODEX_HOME, parent=SUBJECT_HOMES):
+    """Retire the homes an interrupted run left; a killed runner never reaches its cleanup.
+
+    Campaigns run one at a time, so every home present before a run starts is a leftover.
+    """
+    for home in sorted(parent.iterdir()) if parent.is_dir() else []:
+        retire_home(home, source)
 
 
 def context_audit(rows):
