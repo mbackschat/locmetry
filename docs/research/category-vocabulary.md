@@ -26,16 +26,17 @@ Four projects not measured before were measured without configuration to see whi
 | [BurntSushi/ripgrep](https://github.com/BurntSushi/ripgrep) | `6892bc2b7efe` | The binary crate under `crates/core` that no `Cargo.toml` places, `benchsuite/` and `crates/*/benches`, `fuzz/fuzz_targets`, `crates/*/examples`, `pkg/brew`, `ci/` | `implementation`, `performance`, `fuzz`, `example`, `distribution`, `tooling` |
 | [caddyserver/caddy](https://github.com/caddyserver/caddy) | `2b47a1849f86` | Source files under Go `testdata/` folders, `*_fuzz.go` files built only with the `gofuzz` tag, file-server templates | `test-support`, `fuzz`, `implementation` |
 
-Every decision found a reference name, so the vocabulary covers these projects. It did not by itself make the choice unique: CI and development-container scripts fit both `tooling` and `deployment`, documentation-site configuration fits `tooling`, `build-tooling` and `documentation-site`, and benchmark drivers fit `performance` and `verification-tooling`. An independent review of the first draft found further overlaps, such as a CI script that builds, checks and publishes, and tests against a locally started server. The proposal therefore orders the names within each purpose instead of relying on descriptions alone. The decisions above, with the alternatives the order rejects:
+Every inspected decision found a reference name; this short inventory shows coverage of these cases, not of every project. Descriptions alone did not make the choice unique: development containers and CI scripts fit both `tooling` and `deployment`, documentation-site configuration fits `tooling`, `build-tooling` and `documentation-site`, and benchmark directories mix workloads with programs that run them. Two independent reviews of the drafts found further overlaps, such as a CI script that builds, checks and publishes, and suites against a locally started server. The proposal therefore orders names from narrow roles to broad activities and gives the broad ones explicit exclusions. Mappings under that order, with the alternatives it rejects; rows marked provisional rest on file names and layout, not on reading the code:
 
 | Decision | Name | Rejected alternatives |
 | --- | --- | --- |
-| documenso `.devcontainer/`, ripgrep `ci/` | `tooling` | `deployment`: they serve the people working on the project, not running the product |
-| fastapi documentation-site code under `docs/` | `documentation-site` | `tooling`, `build-tooling` |
-| fastapi `docs_src/` | `example` (production) | `test-support`: the files are examples first, which the tests import |
-| ripgrep `benchsuite/`, `crates/*/benches` | `performance` (test) | `verification-tooling`, which fits only a program that runs or scores benchmarks |
-| documenso `packages/app-tests` | `end-to-end` | `integration`, if the suites turn out to stub the application's services; their description, not the framework, decides |
-| caddy `*_fuzz.go` | `fuzz` | `unit`, `integration`: the order puts the technique first |
+| documenso `.devcontainer/`, ripgrep `ci/` | `tooling` | `deployment`, which excludes development and CI environments |
+| fastapi documentation-site code under `docs/` | `documentation-site` | `tooling`, `build-tooling`, which come later in the order |
+| fastapi `docs_src/` | `example` (production) | `test-support`: the files show how to use the product, and the tests import them |
+| ripgrep `crates/*/benches` | `performance` (test) | `unit`, `integration` |
+| ripgrep `benchsuite/` (provisional) | `verification-tooling` for a program that runs benchmarks, `performance` for workload definitions | One name for the whole directory |
+| documenso `packages/app-tests` (provisional) | `end-to-end` if the Playwright suites run against the application with its real services, otherwise `integration` | Deciding by the framework |
+| caddy `*_fuzz.go` | `fuzz` | `unit`, `integration`, which come later in the order |
 
 Next.js projects need no category of their own. The [framework layouts record](framework-layouts.md) found their code in `app/`, `components/` and `lib/`, which is `implementation`; route handlers, UI and middleware are layers of it, which folders and workspace members already separate.
 
