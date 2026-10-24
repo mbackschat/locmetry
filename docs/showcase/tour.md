@@ -131,7 +131,7 @@ Four entries resolve more than half of the review list. What remains is deployme
 
 ## Check what the policy changed
 
-Capture full reports with and without the reviewed policy. Native `compare` shows the aggregate effect: counts moving between purposes, and 47 lines leaving the source total, the ProGuard rules that the policy's language correction leaves uncounted. `sed` keeps the purpose table.
+Capture full reports with and without the reviewed policy. Native `compare` shows the aggregate effect: counts moving between purposes, and 58 lines leaving the source total: the ProGuard rules, which a language correction leaves uncounted, and the release-notes template, which another counts as Markdown documentation. `sed` keeps the purpose table.
 
 ```bash
 source scripts/showcase-env.sh
@@ -145,11 +145,11 @@ locmetry compare builtin.json reviewed.json --format table --no-color \
 ```output
  Purpose        before    after   change │  before    after   change
  ────────────────────────────────────────┼──────────────────────────
- Production    227,765  210,708  -17,057 │ 194,232  179,557  -14,675
+ Production    227,765  210,697  -17,068 │ 194,232  179,551  -14,681
  Test           99,381  103,432   +4,051 │  83,595   87,011   +3,416
  Other           6,214   19,173  +12,959 │   4,943   16,165  +11,222
  ────────────────────────────────────────┼──────────────────────────
- Source total  333,360  333,313      -47 │ 282,770  282,733      -37
+ Source total  333,360  333,302      -58 │ 282,770  282,727      -43
  Test/prod (Code): 0.43 → 0.48 (before → after)
 ```
 
@@ -215,6 +215,12 @@ bash "$repository/scripts/compare-locmetry-files.sh" builtin.json reviewed.json 
   },
   {
     "from": "production/implementation",
+    "to": "production/distribution",
+    "files": 5,
+    "code": 577
+  },
+  {
+    "from": "production/implementation",
     "to": "production/tooling",
     "files": 1,
     "code": 343
@@ -238,10 +244,16 @@ bash "$repository/scripts/compare-locmetry-files.sh" builtin.json reviewed.json 
     "code": 213
   },
   {
+    "from": "production/implementation",
+    "to": "production/documentation-site",
+    "files": 4,
+    "code": 169
+  },
+  {
     "from": "other/unclaimed",
     "to": "production/tooling",
-    "files": 10,
-    "code": 170
+    "files": 9,
+    "code": 164
   },
   {
     "from": "other/unclaimed",
@@ -254,8 +266,14 @@ bash "$repository/scripts/compare-locmetry-files.sh" builtin.json reviewed.json 
     "to": "production/build-tooling",
     "files": 4,
     "code": 54
+  },
+  {
+    "from": "other/unclaimed",
+    "to": "other/unclaimed",
+    "files": 1,
+    "code": 6
   }
 ]
 ```
 
-Counts stay identical; only purposes and categories move, and each row traces back to an entry with a recorded reason. From here, [Measure Immich](measure.md) reads the configured result, [the workspace recording](workspace.md) splits it by component, and [the release comparison](compare.md) follows it over time.
+Counts stay identical; only purposes and categories move, and each row traces back to an entry with a recorded reason. The last row is the release-notes template, which leaves source for documentation, so its purpose and category stay the same. From here, [Measure Immich](measure.md) reads the configured result, [the workspace recording](workspace.md) splits it by component, and [the release comparison](compare.md) follows it over time.

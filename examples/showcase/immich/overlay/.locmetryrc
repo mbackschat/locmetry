@@ -23,7 +23,8 @@ test-support = "Test code without test cases: helpers, fixtures, generators, moc
 performance = "Load workloads against a running service"
 native = "The iOS and Android shells around the Flutter app"
 deployment = "Container images, start scripts, infrastructure definitions and the installer"
-documentation-site = "Configuration of the documentation site"
+documentation-site = "Configuration, pages, components and theme of the documentation site"
+distribution = "The release command, which bumps versions across the checkout and drafts release notes"
 tooling = "Development containers and maintained developer commands"
 
 # Generated code. Purpose `other` takes it out of production totals.
@@ -160,7 +161,6 @@ match = [
     "mobile/ios/scripts/**",
     "mobile/scripts/**",
     "open-api/bin/**",
-    "misc/**",
 ]
 except = ["mobile/ios/scripts/xcode_flutter_build.sh"]
 kind = ["source"]
@@ -179,6 +179,24 @@ match = ["mobile/android/app/src/main/**"]
 kind = ["source"]
 category = "native"
 reason = "Kotlin, Java and C code of the Android runner, which the Gradle layout labels implementation"
+
+# The npm module layouts label these implementation, but neither is product
+# functionality: one publishes releases, the other is the documentation site.
+[[refinements]]
+id = "release-scripts"
+purpose = "production"
+match = ["packages/scripts/src/**"]
+kind = ["source"]
+category = "distribution"
+reason = "The repository's release command in packages/scripts/src/cli.ts: it bumps versions across the checkout and, in the showcase release, also drafts release notes"
+
+[[refinements]]
+id = "documentation-site-pages"
+purpose = "production"
+match = ["docs/src/**"]
+kind = ["source"]
+category = "documentation-site"
+reason = "Pages, components, styles and theme overrides of the Docusaurus documentation site"
 
 # The suites under e2e/src/specs/ drive the running server and web client
 # without mocks. Every web-client spec under e2e/src/ui/specs/ mocks the API
@@ -215,3 +233,9 @@ id = "proguard-rules"
 match = ["mobile/android/app/proguard-rules.pro"]
 language = "unrecognized"
 reason = "ProGuard keep rules, which the counter reads as Prolog by their .pro extension. No counter language shares their syntax"
+
+[[languages.corrections]]
+id = "release-notes-template"
+match = ["misc/release/notes.tmpl"]
+language = "Markdown"
+reason = "Markdown release-notes template with a placeholder, which the counter reads as Templ by its .tmpl extension"

@@ -89,7 +89,7 @@ locmetry explain packages/sdk/src/fetch-client.ts --root immich \
 
 ## Measure with the reviewed policy
 
-Without `--config`, the checkout's `.locmetryrc` applies. Its entries record what only the project knows: generated code, end-to-end support code, the platform code of the iOS and Android apps, deployment files and developer tooling. `--show-categories` adds the resulting categories.
+Without `--config`, the checkout's `.locmetryrc` applies. Its entries record what only the project knows: generated code, end-to-end support code, the platform code of the iOS and Android apps, deployment files, the release command, the documentation site and developer tooling. `--show-categories` adds the resulting categories.
 
 ```bash
 source scripts/showcase-env.sh
@@ -120,10 +120,9 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  HTML            1       74       66 │        2       6 │      66       0       0 │      0.00
  PostCSS         0       31       28 │        0       3 │      28       0       0 │      0.00
  CMake           1       13        9 │        0       4 │       9       0       0 │      0.00
- Templ           1       11        6 │        0       5 │       6       0       0 │      0.00
  C Header        1        1        1 │        0       0 │       1       0       0 │      0.00
  ────────────────────────────────────┼──────────────────┼─────────────────────────┼──────────
- Total       2,528  333,313  282,733 │    9,149  41,431 │ 179,557  87,011  16,165 │      0.48
+ Total       2,527  333,302  282,727 │    9,149  41,426 │ 179,551  87,011  16,165 │      0.48
  Lines = Code + Comments + Blanks · Production + Test + Other = Code · Test/prod = Test / Production (Code)
  Tests written in another language than the code they test skew per-language Test/prod.
  Folded: BASH → Shell, TSX → TypeScript.
@@ -131,7 +130,7 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  ──────────────────────────────────────────────────────
  Category                       Files    Lines     Code
  ──────────────────────────────────────────────────────
- production:implementation      1,837  199,093  170,113
+ production:implementation      1,828  198,194  169,367
  test:test                        450   87,800   73,710
  other:generated                   38   19,173   16,165
  test:end-to-end                   41    9,285    7,871
@@ -140,8 +139,9 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  test:integration                   8    2,296    2,014
  production:build-tooling          18      886      772
  production:deployment             28      938      740
- production:tooling                11      657      513
- production:documentation-site      2      264      213
+ production:distribution            5      695      577
+ production:tooling                10      646      507
+ production:documentation-site      6      468      382
  test:performance                   1       81       64
  Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
 
@@ -248,26 +248,26 @@ locmetry --root immich --format table --folder-rows 16 --no-color --no-bars --ta
 ```
 
 ```output
- Folder                   Lines     Code │   Prod.    Test   Other │ Test/prod
- ────────────────────────────────────────┼─────────────────────────┼──────────
- server/src             104,285   90,467 │  52,970  27,798   9,699 │      0.52
- mobile                 100,095   83,183 │  66,952  16,231       0 │      0.24
- web                     67,833   58,255 │  52,867   5,388       0 │      0.10
- server/test             24,611   21,157 │       0  21,157       0 │         -
- e2e/src                 15,300   13,003 │       0  13,003       0 │         -
- packages                12,893   10,065 │   2,345   1,254   6,466 │      0.53
- machine-learning         6,698    5,291 │   3,221   2,070       0 │      0.64
- docs                       492      401 │     401       0       0 │      0.00
- deployment                 262      225 │     225       0       0 │      0.00
- server (direct files)      243      200 │     200       0       0 │      0.00
- e2e (direct files)         191      171 │      61     110       0 │      1.80
- server/bin                 157      126 │     126       0       0 │      0.00
- (root files)               131      111 │     111       0       0 │      0.00
- .devcontainer/server        85       58 │      58       0       0 │      0.00
- open-api/bin                26       14 │      14       0       0 │      0.00
- misc/release                11        6 │       6       0       0 │      0.00
- ────────────────────────────────────────┼─────────────────────────┼──────────
- Total                  333,313  282,733 │ 179,557  87,011  16,165 │      0.48
+ Folder                           Lines     Code │   Prod.    Test   Other │ Test/prod
+ ────────────────────────────────────────────────┼─────────────────────────┼──────────
+ server/src                     104,285   90,467 │  52,970  27,798   9,699 │      0.52
+ web                             67,833   58,255 │  52,867   5,388       0 │      0.10
+ mobile/lib                      67,419   56,893 │  56,893       0       0 │      0.00
+ server/test                     24,611   21,157 │       0  21,157       0 │         -
+ mobile/test                     19,170   15,396 │       0  15,396       0 │         -
+ e2e                             15,491   13,174 │      61  13,113       0 │    214.97
+ mobile (7 more child folders)   13,506   10,894 │  10,059     835       0 │      0.08
+ packages                        12,893   10,065 │   2,345   1,254   6,466 │      0.53
+ machine-learning                 6,698    5,291 │   3,221   2,070       0 │      0.64
+ docs                               492      401 │     401       0       0 │      0.00
+ deployment                         262      225 │     225       0       0 │      0.00
+ server (direct files)              243      200 │     200       0       0 │      0.00
+ server/bin                         157      126 │     126       0       0 │      0.00
+ (root files)                       131      111 │     111       0       0 │      0.00
+ .devcontainer/server                85       58 │      58       0       0 │      0.00
+ open-api/bin                        26       14 │      14       0       0 │      0.00
+ ────────────────────────────────────────────────┼─────────────────────────┼──────────
+ Total                          333,302  282,727 │ 179,551  87,011  16,165 │      0.48
 ```
 
 ## Look at the code around the product
@@ -277,7 +277,7 @@ The category table answers what the project consists of. `--table-category` narr
 ```bash
 source scripts/showcase-env.sh
 locmetry --root immich --format table --show-categories --no-color --no-bars \
-  --table-category 'production:*tooling*,production:deployment,test:test-support' \
+  --table-category 'production:*tooling*,production:deployment,production:distribution,test:test-support' \
   | sed '/^Root:/d; /^Roots:/d; /^Project:/d; /^Measured at:/d' \
   | demo_wrap
 ```
@@ -286,7 +286,7 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  ─────────────────────────────────────────────────────────────────────────────
  Language    Files  Lines   Code │ Comments  Blanks │ Prod.   Test │ Comment %
  ────────────────────────────────┼──────────────────┼──────────────┼──────────
- TypeScript     29  4,076  3,453 │      205     418 │   111  3,342 │      5.6%
+ TypeScript     34  4,771  4,030 │      223     518 │   688  3,342 │      5.2%
  JavaScript     11    558    502 │       23      33 │   502      0 │      4.4%
  Shell          16    550    395 │       64      91 │   395      0 │     13.9%
  Dart            1    388    343 │        1      44 │   343      0 │      0.3%
@@ -295,13 +295,12 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  Groovy          3    173    139 │        7      27 │   139      0 │      4.8%
  Python          2     51     38 │        1      12 │    38      0 │      2.6%
  CMake           1     13      9 │        0       4 │     9      0 │      0.0%
- Templ           1     11      6 │        0       5 │     6      0 │      0.0%
  ────────────────────────────────┼──────────────────┼──────────────┼──────────
- Total          84  6,451  5,377 │      317     757 │ 2,025  3,352 │      5.6%
+ Total          88  7,135  5,948 │      335     852 │ 2,596  3,352 │      5.3%
  Lines = Code + Comments + Blanks · Production + Test = Code · Comment % = Comments / (Code + Comments)
  Folded: BASH → Shell.
  Not shown (categories): production:implementation, test:test, other:generated, test:end-to-end, production:native and 3
-more (277,356 code lines).
+more (276,779 code lines).
 
  ─────────────────────────────────────────────
  Category                  Files  Lines   Code
@@ -309,12 +308,13 @@ more (277,356 code lines).
  test:test-support            27  3,970  3,352
  production:build-tooling     18    886    772
  production:deployment        28    938    740
- production:tooling           11    657    513
+ production:distribution       5    695    577
+ production:tooling           10    646    507
  Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
 
 ```
 
-About 2% of the source code builds, ships and tests the product, yet it spans 10 languages: TypeScript support code for the end-to-end suites, JavaScript bundler and lint configuration, Shell and Dockerfile for deployment, HCL for the Terraform modules and Groovy for Gradle. Comment % replaces Test/prod because the selection holds only part of Production and Test, and the note names the categories left out.
+About 2% of the source code builds, ships and tests the product, yet it spans 9 languages: TypeScript support code for the end-to-end suites and the release command, JavaScript bundler and lint configuration, Shell and Dockerfile for deployment, HCL for the Terraform modules and Groovy for Gradle. Comment % replaces Test/prod because the selection holds only part of Production and Test, and the note names the categories left out.
 
 No Prolog row appears, although the counter reads `mobile/android/app/proguard-rules.pro` as Prolog by its extension: the file holds ProGuard keep rules, and the policy's language correction leaves it unrecognized, because no counter language shares their syntax.
 

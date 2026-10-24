@@ -91,10 +91,9 @@ cd immich && locmetry
  HTML            1       74       66 │        2       6 │      66       0       0 │      0.00 │   0.0%  ▏
  PostCSS         0       31       28 │        0       3 │      28       0       0 │      0.00 │   0.0%  ▏
  CMake           1       13        9 │        0       4 │       9       0       0 │      0.00 │   0.0%  ▏
- Templ           1       11        6 │        0       5 │       6       0       0 │      0.00 │   0.0%  ▏
  C Header        1        1        1 │        0       0 │       1       0       0 │      0.00 │   0.0%  ▏
  ────────────────────────────────────┼──────────────────┼─────────────────────────┼───────────┼─────────────────────────
- Total       2,528  333,313  282,733 │    9,149  41,431 │ 179,557  87,011  16,165 │      0.48 │ 100.0%
+ Total       2,527  333,302  282,727 │    9,149  41,426 │ 179,551  87,011  16,165 │      0.48 │ 100.0%
  Lines = Code + Comments + Blanks · Production + Test + Other = Code · Test/prod = Test / Production (Code)
  Tests written in another language than the code they test skew per-language Test/prod.
  Folded: BASH → Shell, TSX → TypeScript.
@@ -121,7 +120,7 @@ Built-in conventions already recognize the npm, Gradle, Python and Dart [build m
 <!-- showcase-policy -->
 | Source code | Built-in conventions | Reviewed policy |
 | --- | ---: | ---: |
-| Production | 194,232 | 179,557 |
+| Production | 194,232 | 179,551 |
 | Test | 83,595 | 87,011 |
 | Other: generated | 0 | 16,165 |
 | Other: unclaimed | 4,943 | 0 |
@@ -138,7 +137,7 @@ cd immich && locmetry --show-categories
  ────────────────────────────────────────────────────────────────────────────────────────────────────────
  Category                       Files    Lines     Code │ Share  Code share
  ───────────────────────────────────────────────────────┼────────────────────────────────────────────────
- production:implementation      1,837  199,093  170,113 │ 60.2%  ████████████████████████████████████████
+ production:implementation      1,828  198,194  169,367 │ 59.9%  ████████████████████████████████████████
  test:test                        450   87,800   73,710 │ 26.1%  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
  other:generated                   38   19,173   16,165 │  5.7%  ░░░░
  test:end-to-end                   41    9,285    7,871 │  2.8%  ▓▓
@@ -147,8 +146,9 @@ cd immich && locmetry --show-categories
  test:integration                   8    2,296    2,014 │  0.7%  ▏
  production:build-tooling          18      886      772 │  0.3%  ▏
  production:deployment             28      938      740 │  0.3%  ▏
- production:tooling                11      657      513 │  0.2%  ▏
- production:documentation-site      2      264      213 │  0.1%  ▏
+ production:distribution            5      695      577 │  0.2%  ▏
+ production:tooling                10      646      507 │  0.2%  ▏
+ production:documentation-site      6      468      382 │  0.1%  ▏
  test:performance                   1       81       64 │  0.0%  ▏
  Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
  Share = Code / total Code. Bars: █ Production  ▓ Test  ░ Other. The largest row fills the bar.
@@ -201,11 +201,11 @@ Compare saved reports of two releases, `v3.2.0` and `v3.3.4`:
                          Lines           │           Code
  Purpose        before    after   change │  before    after  change
  ────────────────────────────────────────┼─────────────────────────
- Production    208,007  210,708   +2,701 │ 177,458  179,557  +2,099
+ Production    207,996  210,697   +2,701 │ 177,452  179,551  +2,099
  Test           96,227  103,432   +7,205 │  81,161   87,011  +5,850
  Other          17,825   19,173   +1,348 │  14,910   16,165  +1,255
  ────────────────────────────────────────┼─────────────────────────
- Source total  322,059  333,313  +11,254 │ 273,529  282,733  +9,204
+ Source total  322,048  333,302  +11,254 │ 273,523  282,727  +9,204
  Test/prod (Code): 0.46 → 0.48 (before → after)
 ```
 

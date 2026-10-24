@@ -43,8 +43,10 @@ The overlay is meant as a model policy. Each entry uses the weakest stage that e
 | `documentation-site` | rule | Production / `documentation-site` | The Docusaurus configuration and sidebars exist only for the documentation site. |
 | `developer-tooling` | rule with `except` | Production / `tooling` | Development containers and maintained developer commands. The exception leaves the Flutter build phase in `mobile/ios/scripts/` to `build-scripts`. |
 | `android-app` | refinement | Production / `native` | The Gradle layout already counts the Android runner as production; a refinement relabels it without touching purpose or module credit. |
+| `release-scripts`, `documentation-site-pages` | refinements | Production / `distribution`, `documentation-site` | The npm layouts count the release command in `packages/scripts/` and the documentation site's pages and components as production, which they are, but label them `implementation`, which the category reference reserves for product functionality. |
 | `end-to-end`, `web-client-integration`, `end-to-end-support` | refinements | Test / `end-to-end`, `integration`, `test-support` | The suites under `e2e/src/specs/` drive the running server and web client without mocks; every web-client spec under `e2e/src/ui/specs/` mocks the API, so it tests short of the whole system; the remaining files hold no test cases. The refinements apply whether the convention or the `end-to-end-suites` rule made a file a test, and `except` states the split instead of entry order. |
 | `proguard-rules` | language correction | uncounted | The counter reads the ProGuard rules as Prolog, and no counter language shares their syntax. |
+| `release-notes-template` | language correction | Markdown documentation | The counter reads the Markdown release-notes template in `misc/release/` as Templ source by its `.tmpl` extension. |
 
 There are no overrides: no decision has to beat a test or build convention.
 
@@ -52,7 +54,7 @@ There are no overrides: no decision has to beat a test or build convention.
 
 Every entry restricts itself to source and records the evidence behind it, such as a generator header or a package's declared entry point. Measure without the overlay to see what built-in conventions decide alone; `locmetry explain PATH --root CHECKOUT` shows the deciding rule of any file. A policy change must leave no unused entries or exclusions and no unclaimed source without a recorded reason, on both pinned tags.
 
-Then read `summary.policy_entries` on both tags. Expect no `unused_patterns` or `unused_exceptions` anywhere, `preempted` only on `end-to-end-suites` (the e2e-spec convention), and `displaced` only where the table above explains it: production implementation on the generated, end-to-end, developer-tooling and Android entries, and `test:test` on the end-to-end refinements. `--verbose` names the entries that change a purpose, which should be the two generated-code rules and `end-to-end-suites`.
+Then read `summary.policy_entries` on both tags. Expect no `unused_patterns` or `unused_exceptions` anywhere, `preempted` only on `end-to-end-suites` (the e2e-spec convention), and `displaced` only where the table above explains it: production implementation on the generated, end-to-end, developer-tooling, Android, release-scripts and documentation-site-pages entries, and `test:test` on the end-to-end refinements. `--verbose` names the entries that change a purpose, which should be the two generated-code rules and `end-to-end-suites`.
 
 ## Move the pin
 
