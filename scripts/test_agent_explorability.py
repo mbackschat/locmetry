@@ -373,6 +373,38 @@ class ExperimentTests(unittest.TestCase):
         self.assertEqual(BENCH.context_growth(rows), {"context_growth": 110, "context_decreases": 1})
         self.assertEqual(BENCH.context_growth([]), {"context_growth": 0, "context_decreases": 0})
 
+    def test_sessions_get_a_fresh_codex_home_without_global_instructions_and_keep_refreshed_credentials(self):
+        with tempfile.TemporaryDirectory() as folder:
+            source = Path(folder) / "codex"
+            (source / "plugins/cache").mkdir(parents=True)
+            (source / "AGENTS.md").write_text("owner's global instructions")
+            (source / "auth.json").write_text(json.dumps({"last_refresh": "2026-10-18T19:24:31Z", "tokens": "old"}))
+            with BENCH.codex_home(source) as home:
+                self.assertFalse((home / "AGENTS.md").exists())
+                self.assertFalse(home.is_relative_to(Path(folder)))
+                self.assertEqual((home / "auth.json").stat().st_mode & 0o777, 0o600)
+                self.assertEqual((home / "plugins").resolve(), (source / "plugins").resolve())
+                # Codex rotates the refresh token when it refreshes, so the copy's newer credentials must survive it.
+                (home / "auth.json").write_text(json.dumps({"last_refresh": "2026-10-25T08:00:00Z", "tokens": "new"}))
+            self.assertFalse(home.exists())
+            self.assertEqual(json.loads((source / "auth.json").read_text())["tokens"], "new")
+            self.assertEqual((source / "auth.json").stat().st_mode & 0o777, 0o600)
+            with BENCH.codex_home(source) as home:
+                (home / "auth.json").write_text(json.dumps({"last_refresh": "2026-10-20T00:00:00Z", "tokens": "stale"}))
+            self.assertEqual(json.loads((source / "auth.json").read_text())["tokens"], "new")
+
+    def test_context_audit_flags_global_and_repository_instructions_and_records_configurations(self):
+        def message(role, text):
+            return {"type": "response_item", "payload": {"role": role, "content": [{"type": "input_text", "text": text}]}}
+        clean = [{"type": "turn_context", "payload": {"model": "gpt-6.1-sol", "effort": "xhigh"}},
+                 message("developer", "<skills_instructions>"), message("user", "<environment_context>"),
+                 {"type": "response_item", "payload": {"type": "function_call"}}]
+        self.assertEqual(BENCH.context_audit(clean), {"repository_context": False, "global_instructions": False,
+                                                      "configurations": [{"model": "gpt-6.1-sol", "effort": "xhigh"}]})
+        audit = BENCH.context_audit([*clean, message("user", "# AGENTS.md instructions\n\n<INSTRUCTIONS>")])
+        self.assertTrue(audit["global_instructions"])
+        self.assertTrue(BENCH.context_audit([message("user", "# Repository Guidelines")])["repository_context"])
+
     def test_sections_regression_adds_an_unrelated_reader_and_freezes_one_confirmation_sample(self):
         from collections import Counter
         full = self.full_help_runner()

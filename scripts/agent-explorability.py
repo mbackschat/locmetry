@@ -2,6 +2,7 @@
 
 import argparse
 from concurrent.futures import ThreadPoolExecutor
+import contextlib
 import difflib
 import hashlib
 import json
@@ -11,11 +12,16 @@ import shutil
 import signal
 import subprocess
 import tempfile
+import threading
 import time
 
 
 REPO = Path(__file__).resolve().parent.parent
 TASK = REPO / "tests/fixtures/agent-explorability/task1.json"
+CODEX_HOME = Path.home() / ".codex"
+# Plugins supply skills an ordinary Codex user has; Codex installs its own system skills in the fresh home.
+SHARED_CODEX_ENTRIES = ("plugins",)
+CREDENTIALS = threading.Lock()
 
 
 def sha(path):
@@ -289,6 +295,46 @@ def context_growth(rows):
     return {"context_growth": sum(step for step in steps if step > 0), "context_decreases": sum(step < 0 for step in steps)}
 
 
+@contextlib.contextmanager
+def codex_home(source=CODEX_HOME):
+    """A fresh Codex home for one session, without the owner's global AGENTS.md.
+
+    Codex injects `$CODEX_HOME/AGENTS.md` into every session, and the owner's
+    holds personal working instructions that would steer subjects. The home
+    sits outside the campaign, which is archived, because it holds credentials;
+    it shares only the plugins and is removed afterwards. Codex rotates the
+    refresh token when it refreshes, so newer credentials are written back.
+    """
+    home = Path(tempfile.mkdtemp(prefix="locmetry-codex-home-"))
+    credentials = home / "auth.json"
+    try:
+        shutil.copyfile(source / "auth.json", credentials)
+        credentials.chmod(0o600)
+        for name in SHARED_CODEX_ENTRIES:
+            if (source / name).exists():
+                (home / name).symlink_to(source / name)
+        yield home
+    finally:
+        with CREDENTIALS:
+            refreshed = lambda path: json.loads(path.read_text()).get("last_refresh", "")
+            if credentials.is_file() and refreshed(credentials) > refreshed(source / "auth.json"):
+                staged = source / f".auth.json.{os.getpid()}.{threading.get_ident()}"
+                shutil.copyfile(credentials, staged)
+                staged.chmod(0o600)
+                os.replace(staged, source / "auth.json")
+        shutil.rmtree(home)
+
+
+def context_audit(rows):
+    """What a session was given besides the task: injected instructions and the model configuration."""
+    contexts = [r["payload"] for r in rows if r["type"] == "turn_context"]
+    messages = [json.dumps(r["payload"]) for r in rows
+                if r["type"] == "response_item" and r["payload"].get("role") in ["user", "developer"]]
+    return dict(repository_context=any("Repository Guidelines" in m or "Agent Explorability Benchmark" in m for m in messages),
+                global_instructions=any("# AGENTS.md instructions" in m for m in messages),
+                configurations=[{"model": c.get("model"), "effort": c.get("effort")} for c in contexts])
+
+
 def run_agent(destination, run, model, effort):
     manifest = json.loads((destination / "manifest.json").read_text())
     task = manifest.get("task", json.loads(TASK.read_text()))
@@ -315,31 +361,33 @@ def run_agent(destination, run, model, effort):
         str(evidence / "answer.txt"), "-",
     ]
     settings = dict(command=invocation, binary_sha256=sha(executable), model=model, effort=effort,
-                    prompt_sha256=sha(evidence / "prompt.txt"), started=time.time())
+                    prompt_sha256=sha(evidence / "prompt.txt"),
+                    codex_home={"isolated": True, "shared": list(SHARED_CODEX_ENTRIES)}, started=time.time())
     (evidence / "invocation.json").write_text(json.dumps(settings, indent=2) + "\n")
     session = None
     stopped = None
     usage = {}
     tool_calls = 0
     thread = None
-    with (evidence / "prompt.txt").open() as prompt, events_path.open("w") as events, (evidence / "stderr.txt").open("w") as stderr:
-        process = subprocess.Popen(invocation, stdin=prompt, stdout=events, stderr=stderr, start_new_session=True)
+    with codex_home() as home, (evidence / "prompt.txt").open() as prompt, events_path.open("w") as events, \
+            (evidence / "stderr.txt").open("w") as stderr:
+        process = subprocess.Popen(invocation, stdin=prompt, stdout=events, stderr=stderr, start_new_session=True,
+                                   env=dict(os.environ, CODEX_HOME=str(home)))
         while True:
             stream = records(events_path)
             if not thread:
                 thread = next((r["thread_id"] for r in stream if r["type"] == "thread.started"), None)
             if thread and not session:
-                session = next((Path.home() / ".codex/sessions").rglob(f"*{thread}*.jsonl"), None)
+                session = next((home / "sessions").rglob(f"*{thread}*.jsonl"), None)
             if session:
                 rows = records(session)
-                contexts = [r["payload"] for r in rows if r["type"] == "turn_context"]
-                messages = [r["payload"] for r in rows if r["type"] == "response_item" and r["payload"].get("role") in ["user", "developer"]]
-                injected = any("Repository Guidelines" in json.dumps(m) or "Agent Explorability Benchmark" in json.dumps(m) for m in messages)
-                actual = [{"model": c.get("model"), "effort": c.get("effort")} for c in contexts]
-                (evidence / "context-audit.json").write_text(json.dumps(dict(repository_context=injected, configurations=actual), indent=2) + "\n")
-                if injected:
+                audit = context_audit(rows)
+                (evidence / "context-audit.json").write_text(json.dumps(audit, indent=2) + "\n")
+                if audit["repository_context"]:
                     stopped = "repository-context-contamination"
-                if any(c["model"] != model or c["effort"] != effort for c in actual):
+                if audit["global_instructions"]:
+                    stopped = "global-context-contamination"
+                if any(c["model"] != model or c["effort"] != effort for c in audit["configurations"]):
                     stopped = "model-configuration-mismatch"
                 counts = [r["payload"]["info"]["total_token_usage"] for r in rows if r["type"] == "event_msg" and r["payload"].get("type") == "token_count" and r["payload"].get("info")]
                 usage = counts[-1] if counts else {}
@@ -363,12 +411,14 @@ def run_agent(destination, run, model, effort):
             if process.poll() is not None:
                 break
             time.sleep(1)
+        # The home and the session in it are removed when the block ends.
+        if session:
+            shutil.copyfile(session, evidence / "session.jsonl")
     stream = records(events_path)
     final_usage = [r["usage"] for r in stream if r["type"] == "turn.completed"]
     if final_usage:
         usage = final_usage[-1]
     if session:
-        shutil.copyfile(session, evidence / "session.jsonl")
         rows = records(evidence / "session.jsonl")
         tool_calls = sum(r["type"] == "response_item" and r["payload"].get("type") in ["function_call", "custom_tool_call"] for r in rows)
     integrity = all((destination / run / p).is_file() and (destination / run / p).read_text() == content
