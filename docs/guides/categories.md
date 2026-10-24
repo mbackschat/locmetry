@@ -1,6 +1,6 @@
 # Choose Category Names
 
-Use this non-binding reference to name the categories of a `.locmetryrc` policy, so that projects, people and agents name the same kind of code alike. Locmetry accepts any declared name.
+Use this non-binding reference to name new categories of a `.locmetryrc` policy, so that projects, people and agents name the same kind of code alike. Locmetry accepts any declared name, and names the owner chose or a policy already declares stay as they are.
 
 ## What the Reference Decides
 
@@ -53,7 +53,7 @@ Give each file one category. Take the first row of its purpose that fits, readin
 
 ## Project-Specific Names
 
-Use one only when no row fits, such as proofs in a Lean project. Name the role relative to the product in lowercase kebab-case, without a purpose or content-kind suffix (`-test`, `-source`, `-code`, `-data`), location, layer, framework, language or replaced name, and declare it in `[categories]` with its meaning. The same name may serve several purposes when it means the same kind of code.
+Use one when no row fits, such as proofs in a Lean project, or when a row would merge kinds the owner wants to see apart, such as differential tests against a reference engine (`engine-oracle`) among integration tests. Name the role relative to the product in lowercase kebab-case, without a purpose or content-kind suffix (`-test`, `-source`, `-code`, `-data`), location, layer, framework, language, the project's own name or a replaced name, and declare it in `[categories]` with its meaning. The same name may serve several purposes when it means the same kind of code.
 
 ## Write a Reviewed Policy
 
