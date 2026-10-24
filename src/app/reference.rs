@@ -11,27 +11,38 @@ fn topic_name(topic: impl ValueEnum) -> String {
         .to_owned()
 }
 
-/// Rejects a repeated id and names the unknown ones, before anything is
-/// printed, so a failed request leaves stdout empty (proposal, Amendment 1).
-fn check_ids(
+/// The `valid` section each requested id names, ignoring case, in request
+/// order. A repeated or unknown id fails before anything is printed, so a
+/// failed request leaves stdout empty (proposal, Amendment 1).
+fn resolve<'a>(
     kind: &str,
     topic: String,
     ids: &[String],
-    valid: &[String],
-    known: impl Fn(&str) -> bool,
-) -> Result<()> {
+    valid: &'a [String],
+) -> Result<Vec<&'a str>> {
+    let key = |id: &str| id.to_lowercase();
     if let Some(id) = ids.iter().enumerate().find_map(|(index, id)| {
         ids[..index]
             .iter()
-            .any(|earlier| earlier.to_lowercase() == id.to_lowercase())
+            .any(|earlier| key(earlier) == key(id))
             .then_some(id)
     }) {
         anyhow::bail!("Section '{id}' is requested twice.");
     }
+    let found: Vec<Option<&str>> = ids
+        .iter()
+        .map(|id| {
+            valid
+                .iter()
+                .find(|name| key(name) == key(id))
+                .map(String::as_str)
+        })
+        .collect();
     let unknown: Vec<String> = ids
         .iter()
-        .filter(|id| !known(id))
-        .map(|id| format!("'{id}'"))
+        .zip(&found)
+        .filter(|(_, name)| name.is_none())
+        .map(|(id, _)| format!("'{id}'"))
         .collect();
     if !unknown.is_empty() {
         let noun = if unknown.len() == 1 {
@@ -45,7 +56,7 @@ fn check_ids(
             valid.join(", ")
         );
     }
-    Ok(())
+    Ok(found.into_iter().flatten().collect())
 }
 
 /// Prints a guide, or the requested sections of it in order, each after a line
@@ -58,19 +69,9 @@ pub(crate) fn run_guide(guide: Guide, sections: &[String]) -> Result<Outcome> {
         output = format!("Source: {path} (locmetry {version})\n\n{text}");
     } else {
         let valid = crate::guides::section_ids(text);
-        // Ids ignore case; the source line names the guide's own spelling.
-        let canonical = |id: &str| {
-            valid
-                .iter()
-                .find(|known| known.to_lowercase() == id.to_lowercase())
-                .cloned()
-        };
-        check_ids("Guide", topic_name(guide), sections, &valid, |id| {
-            canonical(id).is_some()
-        })?;
-        for id in sections {
-            let id = canonical(id).expect("checked above");
-            let section = crate::guides::section(text, &id).expect("checked above");
+        // The source line names the guide's own spelling of each id.
+        for id in resolve("Guide", topic_name(guide), sections, &valid)? {
+            let section = crate::guides::section(text, id).expect("a listed id has a section");
             output.push_str(&format!(
                 "Source: {path}#{id} (locmetry {version})\n\n{section}"
             ));
@@ -103,17 +104,10 @@ pub(crate) fn run_schema(schema: Schema, sections: &[String]) -> Result<Outcome>
     let selected = if sections.is_empty() {
         document
     } else {
-        check_ids(
-            "Schema",
-            topic_name(schema),
-            sections,
-            &schema_sections(&document),
-            |id| schema_section(&document, id).is_some(),
-        )?;
+        let valid = schema_sections(&document);
         let mut selected = Map::new();
-        for id in sections {
-            let (name, value) = schema_section(&document, id).expect("checked above");
-            selected.insert(name, value);
+        for name in resolve("Schema", topic_name(schema), sections, &valid)? {
+            selected.insert(name.to_owned(), schema_section(&document, name));
         }
         Value::Object(selected)
     };
@@ -144,9 +138,10 @@ fn schema_sections(document: &Value) -> Vec<String> {
     ids
 }
 
-/// The section an id selects, with the schema's own spelling of its name.
-fn schema_section(document: &Value, id: &str) -> Option<(String, Value)> {
-    if id.eq_ignore_ascii_case("overview") {
+/// The section a name from `schema_sections` selects; definitions come
+/// before the properties they shadow.
+fn schema_section(document: &Value, name: &str) -> Value {
+    if name == "overview" {
         let mut overview = document.clone();
         let names = definitions(document)
             .into_iter()
@@ -155,13 +150,11 @@ fn schema_section(document: &Value, id: &str) -> Option<(String, Value)> {
         if overview.get("$defs").is_some() {
             overview["$defs"] = Value::Array(names);
         }
-        return Some(("overview".to_owned(), overview));
+        return overview;
     }
-    ["$defs", "properties"].iter().find_map(|namespace| {
-        document[namespace]
-            .as_object()?
-            .iter()
-            .find(|(name, _)| name.eq_ignore_ascii_case(id))
-            .map(|(name, value)| (name.clone(), value.clone()))
-    })
+    ["$defs", "properties"]
+        .iter()
+        .find_map(|namespace| document[namespace].get(name))
+        .cloned()
+        .expect("a listed name has a section")
 }

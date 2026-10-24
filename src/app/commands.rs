@@ -355,14 +355,7 @@ pub(crate) fn run_workspace(args: &WorkspaceArgs, styling: Styling) -> Result<Ou
         let prefixed = |path: &str| locmetry::member_path(name, folder, path);
         let mut scope = scope_policy(&measurement.policy);
         scope.subfolder = member.folder.clone();
-        let (unused_entries, unused_exclusions, policy_entries) = match shared_policy {
-            true => (Vec::new(), Vec::new(), Vec::new()),
-            false => (
-                measurement.unused_entries.clone(),
-                measurement.unused_exclusions.clone(),
-                measurement.policy_entries.clone(),
-            ),
-        };
+        // A shared policy's findings are reported once, for the workspace.
         records.push(contract::Member {
             name: name.clone(),
             root: measurement.root.to_string_lossy().into(),
@@ -371,9 +364,9 @@ pub(crate) fn run_workspace(args: &WorkspaceArgs, styling: Styling) -> Result<Ou
                 .as_ref()
                 .map(|p| p.to_string_lossy().into()),
             scope,
-            unused_entries,
-            unused_exclusions,
-            policy_entries,
+            unused_entries: report::kept_if(!shared_policy, &measurement.unused_entries),
+            unused_exclusions: report::kept_if(!shared_policy, &measurement.unused_exclusions),
+            policy_entries: report::kept_if(!shared_policy, &measurement.policy_entries),
             coverage: (&measurement.coverage).into(),
             config: Some(measurement.policy.snapshot().clone()),
         });

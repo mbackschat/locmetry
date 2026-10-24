@@ -359,10 +359,6 @@ fn summary_document(
             (member.name.clone(), totals)
         })
         .collect();
-    let findings_if = |list: &Vec<String>| match findings {
-        true => list.clone(),
-        false => Vec::new(),
-    };
     contract::ReportSummary {
         top_folders: summary.top_folders(),
         totals: summary.totals,
@@ -374,12 +370,9 @@ fn summary_document(
             .collect(),
         submodules: results.submodules.clone(),
         largest_module_files: Some(module_files),
-        unused_entries: findings_if(&results.unused_entries),
-        unused_exclusions: findings_if(&results.unused_exclusions),
-        policy_entries: match findings {
-            true => results.policy_entries.clone(),
-            false => Vec::new(),
-        },
+        unused_entries: kept_if(findings, &results.unused_entries),
+        unused_exclusions: kept_if(findings, &results.unused_exclusions),
+        policy_entries: kept_if(findings, &results.policy_entries),
     }
 }
 
@@ -462,4 +455,12 @@ fn partial_counts(coverage: &Coverage) -> String {
         "Backend reported incomplete counts, so the output holds partial results. Unavailable files: {}",
         failures.join(", ")
     )
+}
+
+/// `list` when `keep` holds, else nothing: findings appear only where requested and owned.
+pub(crate) fn kept_if<T: Clone>(keep: bool, list: &[T]) -> Vec<T> {
+    match keep {
+        true => list.to_vec(),
+        false => Vec::new(),
+    }
 }
