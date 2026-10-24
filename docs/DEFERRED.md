@@ -30,6 +30,8 @@ Requests from three projects categorizing their tests on 2026-10-24; the [policy
 - Accepting reference category names without a declaration in `[categories]`, with reports recording their reference meaning. It would change validation and the effective-policy snapshot, as the [category reference](proposals/archive/category-reference.md#excluded) explains. Reopen when the vocabulary of `--guide categories` has held unchanged for a release and a contract defines which meaning wins when a project declares a reference name differently.
 - Hints in reports when a policy uses a name the category reference replaces, such as `benchmark` for `performance`. Reopen when the vocabulary has held unchanged for a release.
 - A display name for a language correction, so a DSL whose comment syntax matches a counter language is counted with that parser but reported under its own name. A counter of its own stays out of scope while Tokei counts. Reopen when a second project needs one.
+- A typed purpose in the policy audit's displacements, which today key and merge by the `purpose:category` string and parse the purpose back for notes. Custom serialization would keep the report's string unchanged. Reopen when a category may contain `:` or another consumer needs the purpose, weighing the conversion code against the parse.
+- Keeping the category a refinement replaced as runtime-only evidence on file records, which `contract::File` would not serialize, so the audit stops reclassifying each refined file. Reopen when timings show the audit's extra classification matters; the 2026-10-24 cleanup did not demonstrate that it warrants optimization.
 
 ## Guides and Help
 
