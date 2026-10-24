@@ -1,0 +1,111 @@
+{
+  "revision": "agent-regression-2026-10-24-correction-v1",
+  "model": "gpt-6.1-sol",
+  "effort": "xhigh",
+  "conditions": {
+    "A": "Accepted proposals and follow-ups with the language list shared in the schemas (bd820b7), the last ledger candidate",
+    "B": "The category reference shortened from 10,009 to 5,679 bytes (f77e68e)"
+  },
+  "control": {
+    "source_revision": "bd820b7e2003172addba7169038de376634041ad",
+    "binary_sha256": "c448807f7a6dc10ecce1abc3c4934acf1aabed921b590bc1d52a927c99660919",
+    "provenance": "Release build of the git archive of bd820b7, built 2026-10-24 for this run"
+  },
+  "task_ids": [
+    12
+  ],
+  "task_files": {},
+  "repetitions": 4,
+  "concurrent_pairs": 3,
+  "pairs": [
+    {
+      "task": 12,
+      "repetition": 1,
+      "order": "AB"
+    },
+    {
+      "task": 12,
+      "repetition": 2,
+      "order": "BA"
+    },
+    {
+      "task": 12,
+      "repetition": 3,
+      "order": "AB"
+    },
+    {
+      "task": 12,
+      "repetition": 4,
+      "order": "BA"
+    }
+  ],
+  "previous_trials_included": false,
+  "maximum_sessions": 8,
+  "limits": {
+    "wall_seconds": 600,
+    "cli_invocations": 60,
+    "agent_tool_calls": 40,
+    "uncached_input_tokens": 100000
+  },
+  "decision_rule": {
+    "correctness": {
+      "all_candidate_runs_must_pass": true,
+      "candidate_pass_count_no_lower_per_task": true,
+      "critical_errors_allowed": 0,
+      "discovery": {
+        "shared_coverage_required": 13,
+        "shared_coverage_total": 13,
+        "valid_minimal_workflows": [
+          "measure",
+          "workspace",
+          "compare",
+          "explain"
+        ],
+        "supplemental_semantic_families_required": 4
+      }
+    },
+    "per_task_medians": {
+      "agent_tool_calls": {
+        "maximum_absolute_increase": 1
+      },
+      "uncached_input_tokens": {
+        "maximum_ratio": 1.1
+      }
+    },
+    "overall_all_run_totals": {
+      "agent_tool_calls": {
+        "maximum_absolute_increase": 1
+      },
+      "uncached_input_tokens": {
+        "maximum_ratio": 1.05
+      }
+    },
+    "secondary": {
+      "maximum_median_ratio": 1.2,
+      "metrics": [
+        "cached_input_tokens",
+        "output_tokens_including_reasoning",
+        "shell_executions",
+        "cli_invocations",
+        "guide_invocations",
+        "schema_invocations",
+        "final_delivery_seconds"
+      ],
+      "application": "Compare each per-task candidate median against control. A strictly greater ratio flags a regression; candidate positive against control zero flags without division. Flags prevent blanket efficiency claims and require route analysis. They do not automatically discard improved functional coverage."
+    },
+    "zero_comparator": "For primary ratio gates, both zero passes; positive candidate against zero control fails.",
+    "interpretation": "Correctness precedes cost. Retain each valid failure, incomplete run, recovery and exhausted budget in all-run totals. Report per-task medians/ranges, paired directions and totals. These practical diagnostic gates do not establish statistical equivalence. Passing nonregression limits alone is not a speedup. Treat this as a combined help package; do not attribute effects to individual sentences. This correction reruns only task 12, whose median uncached input exceeded its bound in agent-regression-2026-10-24-v1; overall gates apply to these 8 sessions, and its total calls may exceed the control's by one, as for every single-task correction since 2026-10-22.",
+    "stopping": "Run only the first frozen 8 sessions. Never pool prior trials, replace valid failures or add repetitions. A correction requires a new candidate and frozen protocol before further trials. Invalid context, unsupported actual model/effort, missing/corrupt telemetry or fixture/instrumentation failures make affected evidence inadmissible; do not silently substitute trials."
+  },
+  "integrity": "Freeze exact protocol, schedule, tasks, expected artifacts/interpretations, native binary hashes and each arm source provenance before launching any explorer. Keep preparation repository snapshot provenance separate from prebuilt-binary source declarations. At most three pairs run concurrently and arms run sequentially inside each pair. Preserve identical inputs, locale, terminal/width behavior, isolated personal defaults and budgets across arms. Independent fresh MEDIUM agents receive no repository documentation, prior answers, telemetry or outside-scratch access.",
+  "review": "Independently grade artifacts and final answers with condition/resource labels concealed; audit actual model/effort, initial context, final cumulative counters, isolation, order, hashes and fixture integrity. Missing required work is incomplete; corrected mistakes may pass but retain recovery cost. Do not silently repair artifacts.",
+  "telemetry": "Record agent-facing calls, shell executions, CLI invocations, uncached input (input minus cached), cached input, output including reasoning without double counting, guide/schema retrievals and final-delivery duration separately. Evaluator/reviewer work is excluded. The duration field uses the existing harness elapsed-through-completion/copying measurement, not exact native final-message latency.",
+  "evidence": "Retain raw sessions and account/framework context only in Git-ignored docs/research/local/agent-explorability. Public results contain portable synthetic summaries and provenance, never raw session/account content.",
+  "correction_of": "agent-regression-2026-10-24-v1",
+  "task_roles": {
+    "12": "Configuration of a Rust project whose test kinds and scripts need categories the agent names"
+  },
+  "candidate_change": "The categories guide shortened from 10,009 to 5,679 bytes: tighter descriptions, fewer replaced names and worked cases, and conventions that link the configure guide; vocabulary, order and rules are unchanged.",
+  "hypothesis": "In the first run, agents fetched the 10 KB guide in one batch with the configure guide and schema, overflowed the harness output cap and fetched it again; a guide about half that size should fit the batch and keep the median within 110% of the control's.",
+  "coverage_boundary": "Evaluate only these eight freshly paired task-12 sessions. Do not pool the first run's trials into any correctness rate, median, total or gate. Category names are a diagnostic: report agreement with the reference names and between runs per arm, never as a gate."
+}

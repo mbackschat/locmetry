@@ -294,6 +294,28 @@ class ExperimentTests(unittest.TestCase):
         self.assertEqual({p["repetition"] for p in protocol["pairs"]}, {1, 2, 3, 4})
         full.validate_protocol(protocol)
 
+    def test_category_correction_reruns_only_the_naming_task_with_the_single_task_call_allowance(self):
+        from collections import Counter
+        full = self.full_help_runner()
+        regression = json.loads(full.PROTOCOL.with_name("regression-2026-10-24-study.json").read_text())
+        protocol = json.loads(full.PROTOCOL.with_name("regression-2026-10-24-correction-study.json").read_text())
+        # Task 12 alone failed its uncached-input gate on 2026-10-24; its control stays fixed.
+        self.assertEqual(protocol["task_ids"], [12])
+        self.assertEqual(protocol["maximum_sessions"], 8)
+        self.assertFalse(protocol["previous_trials_included"])
+        for key in ["control", "model", "effort", "limits", "repetitions", "concurrent_pairs", "task_files"]:
+            self.assertEqual(protocol[key], regression[key])
+        for key in ["correctness", "per_task_medians", "secondary", "zero_comparator"]:
+            self.assertEqual(protocol["decision_rule"][key], regression["decision_rule"][key])
+        # A single-task correction allows one call above the control's total
+        # (owner decision of 2026-10-22, docs/agent-regression-checks.md).
+        totals = protocol["decision_rule"]["overall_all_run_totals"]
+        self.assertEqual(totals["agent_tool_calls"], {"maximum_absolute_increase": 1})
+        self.assertEqual(totals["uncached_input_tokens"], regression["decision_rule"]["overall_all_run_totals"]["uncached_input_tokens"])
+        self.assertEqual(Counter(p["order"] for p in protocol["pairs"]), {"AB": 2, "BA": 2})
+        self.assertEqual({p["repetition"] for p in protocol["pairs"]}, {1, 2, 3, 4})
+        full.validate_protocol(protocol)
+
     def test_schema_growth_run_measures_the_configuration_tasks_against_the_last_ledger_candidate(self):
         from collections import Counter
         full = self.full_help_runner()
