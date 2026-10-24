@@ -56,6 +56,7 @@ One row per check, newest first. The outcome links the evidence.
 
 | Date | Candidate | Control | Level | Outcome |
 | --- | --- | --- | --- | --- |
+| 2026-10-24 | `e15e402` (`bd820b7` plus the policy entry audit, `except` lists, refinements and the category reference) | `bd820b7` | Targeted agent run, tasks 3, 8 and the new category-naming task 12, `gpt-6.1-sol` at `xhigh` | Correctness 24/24; tasks 3 and 8 and the totals pass every cost gate; task 12 median uncached input +11.2% fails the 10% bound, spent reading the category guide, while all candidate runs named its seven files alike with reference names against four different name sets in the control; [agent run](research/agent-regression-run-2026-10-24.md) |
 | 2026-10-23 | `bd820b7` (`be32810` plus the language list shared in the schemas) | `3bec0a3` | Targeted agent run, tasks 3 and 8, `gpt-6.1-sol` at `xhigh` | Correctness 16/16; all cost gates pass, median uncached input +4.0% and −0.9%; three secondary flags from agents' own checking; [agent run](research/agent-regression-run-2026-10-23.md) |
 | 2026-10-23 | `be32810` (`3bec0a3` plus framework layouts, module credit, language corrections, generated-code markers, the Go layout, `.locmetryrc` exclusion and the BASH fold) | `3bec0a3` | Desk review, `sonnet` at `xhigh` | No correctness regression; help +0.3%, guides +3.3%, schemas +28.1%, 41% of it a duplicated language list; targeted run of tasks 3 and 8 recommended for the cost gates; [desk review](research/agent-regression-desk-review-2026-10-23.md) |
 | 2026-10-22 | `3bec0a3` (`9a46ad3` plus `--table-category`, one-line `-h` summaries and the verification-tooling guidance) | `9a46ad3` | Desk review, `sonnet` at `xhigh` | No regression; help −15.8%, `-h` −40%; no `-h` call in 310 earlier sessions, so no agent run needed; three wording gaps fixed after review; [desk review](research/agent-regression-desk-review-help-split.md) |
@@ -96,5 +97,8 @@ Each row is one task in one paired check: medians of the control and candidate r
 | 2026-10-22 | gpt-6.1-sol `xhigh` | `c9098e2` → `81e7445` | 8 | 4/4 → 4/4 | 5.5 → 6 (×1.09) | 29,886 → 32,705 (×1.09) | `c9098e2` | ×1.09 | ×1.09 |
 | 2026-10-23 | gpt-6.1-sol `xhigh` | `3bec0a3` → `bd820b7` | 3 | 4/4 → 4/4 | 5.5 → 6 (×1.09) | 33,191 → 34,534 (×1.04) | `3bec0a3` | ×1.09 | ×1.04 |
 | 2026-10-23 | gpt-6.1-sol `xhigh` | `3bec0a3` → `bd820b7` | 8 | 4/4 → 4/4 | 7 → 7 (×1.00) | 30,876 → 30,604 (×0.99) | `3bec0a3` | ×1.00 | ×0.99 |
+| 2026-10-24 | gpt-6.1-sol `xhigh` | `bd820b7` → `e15e402` | 3 | 4/4 → 4/4 | 6 → 5.5 (×0.92) | 32,155 → 32,405 (×1.01) | `3bec0a3` | ×1.00 | ×1.05 |
+| 2026-10-24 | gpt-6.1-sol `xhigh` | `bd820b7` → `e15e402` | 8 | 4/4 → 4/4 | 6 → 6 (×1.00) | 35,316 → 32,560 (×0.92) | `3bec0a3` | ×1.00 | ×0.91 |
+| 2026-10-24 | gpt-6.1-sol `xhigh` | `bd820b7` → `e15e402` | 12 | 4/4 → 4/4 | 6.5 → 6.5 (×1.00) | 31,658 → 35,194 (×1.11) | `bd820b7` | ×1.00 | ×1.11 |
 
 <!-- agent-regression-trend:end -->
