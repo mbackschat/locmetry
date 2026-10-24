@@ -1,10 +1,10 @@
 # Category Vocabulary
 
-Measured 2026-10-24 with the development build after Locmetry 0.10.0 (`--no-user-config`, no project policy) on shallow clones, removed afterwards. Question: which categories do real policies need beyond the built-in ones, and does one shared vocabulary cover them without ambiguity? The [category reference proposal](../proposals/category-reference.md) uses these results.
+Measured 2026-10-24 with Locmetry built from commit `8a27b3c` (`--no-user-config`, no project policy) on shallow clones, removed afterwards. Question: which categories do real policies need beyond the built-in ones, and does one shared vocabulary cover them without ambiguity? The [category reference proposal](../proposals/category-reference.md) uses these results.
 
 ## Policies written so far
 
-24 policy files were surveyed: the [policy test drives](policy-test-drives/README.md#records) of public GitHub projects, the [Immich overlay](../../examples/showcase/immich/overlay/.locmetryrc), this repository's [.locmetryrc](../../.locmetryrc), the [demonstration fixture](../../examples/cli-workspace/README.md), and private projects whose policies stay in the Git-ignored local folder. They use about 75 distinct `purpose:category` names, and only a handful recur across projects: `tooling`, `implementation`, `example`, `test-support`, `build-tooling` and `test`.
+24 policy files were surveyed: the [policy test drives](policy-test-drives/README.md#records) of public GitHub projects, the [Immich overlay](../../examples/showcase/immich/overlay/.locmetryrc), this repository's [.locmetryrc](../../.locmetryrc), the [demonstration fixture](../../examples/cli-workspace/README.md), and private projects whose policies stay in the Git-ignored local folder. Counted from the entries of each file, each distinct `purpose:category` pair once, they assign about 70 pairs. Several files are agent and final snapshots, or earlier versions, of one project's policy, so how many files use a name overstates how many projects do. Only a handful recur across projects: `tooling`, `implementation`, `example`, `test-support`, `build-tooling` and `test`. The per-file inventory stays in the Git-ignored local folder, because most files are private.
 
 The rest drift in four recognizable ways:
 
@@ -13,7 +13,7 @@ The rest drift in four recognizable ways:
 - Placeholders that park undecided code under purpose `other` (`unmapped-source`, `fixture-review`, `configuration-or-data`), which hides it from the unclaimed review list instead of reporting it.
 - Domain-specific names with no general equivalent, such as machine-checked proofs in a Lean project.
 
-Mapped onto the draft vocabulary of the proposal, most uses match a reference name directly or as a listed synonym. The remainder are the layer names, which map to `implementation`, the placeholders, which a convention forbids, and the domain-specific names, which the proposal keeps as declared project categories.
+These labels are observations of what authors chose, not established ground truth: older records include unresolved classifications and workarounds. Mapped onto the draft vocabulary of the proposal, most uses match a reference name directly or as a listed synonym. The remainder are the layer names, which map to `implementation`, the placeholders, which a convention forbids, and the domain-specific names, which the proposal keeps as declared project categories.
 
 ## Fresh projects
 
@@ -22,11 +22,20 @@ Four projects not measured before were measured without configuration to see whi
 | Project | Commit | Decisions a policy needs | Reference categories that fit |
 | --- | --- | --- | --- |
 | [documenso/documenso](https://github.com/documenso/documenso), Next.js monorepo | `8707e33c124e` | Packages without a `src/` layout, a Playwright package `packages/app-tests`, `docker/`, `.devcontainer/`, `scripts/`, shared configuration packages | `implementation`, `end-to-end`, `deployment`, `tooling`, `build-tooling` |
-| [fastapi/fastapi](https://github.com/fastapi/fastapi) | `7a0a3f0b286c` | `docs_src/`, about 6,000 code lines of examples the documentation embeds and the tests import, the documentation site's code under `docs/`, `scripts/` | `example`, `documentation-site`, `tooling` |
+| [fastapi/fastapi](https://github.com/fastapi/fastapi) | `7a0a3f0b286c` | `docs_src/`, examples the documentation embeds and the tests import, the documentation site's code under `docs/`, `scripts/` | `example`, `documentation-site`, `tooling` |
 | [BurntSushi/ripgrep](https://github.com/BurntSushi/ripgrep) | `6892bc2b7efe` | The binary crate under `crates/core` that no `Cargo.toml` places, `benchsuite/` and `crates/*/benches`, `fuzz/fuzz_targets`, `crates/*/examples`, `pkg/brew`, `ci/` | `implementation`, `performance`, `fuzz`, `example`, `distribution`, `tooling` |
 | [caddyserver/caddy](https://github.com/caddyserver/caddy) | `2b47a1849f86` | Source files under Go `testdata/` folders, `*_fuzz.go` files built only with the `gofuzz` tag, file-server templates | `test-support`, `fuzz`, `implementation` |
 
-Each decision fits one name once three tie-breaks are stated: development containers and CI scripts are `tooling`, not `deployment`, because they serve the people who work on the project rather than running the product; code that exists only to build the documentation site is `documentation-site`, not `tooling` or `build-tooling`; and benchmark definitions are test `performance`, while a program that only runs or scores benchmarks is production `verification-tooling`, as the schema already says of test runners.
+Every decision found a reference name, so the vocabulary covers these projects. It did not by itself make the choice unique: CI and development-container scripts fit both `tooling` and `deployment`, documentation-site configuration fits `tooling`, `build-tooling` and `documentation-site`, and benchmark drivers fit `performance` and `verification-tooling`. An independent review of the first draft found further overlaps, such as a CI script that builds, checks and publishes, and tests against a locally started server. The proposal therefore orders the names within each purpose instead of relying on descriptions alone. The decisions above, with the alternatives the order rejects:
+
+| Decision | Name | Rejected alternatives |
+| --- | --- | --- |
+| documenso `.devcontainer/`, ripgrep `ci/` | `tooling` | `deployment`: they serve the people working on the project, not running the product |
+| fastapi documentation-site code under `docs/` | `documentation-site` | `tooling`, `build-tooling` |
+| fastapi `docs_src/` | `example` (production) | `test-support`: the files are examples first, which the tests import |
+| ripgrep `benchsuite/`, `crates/*/benches` | `performance` (test) | `verification-tooling`, which fits only a program that runs or scores benchmarks |
+| documenso `packages/app-tests` | `end-to-end` | `integration`, if the suites turn out to stub the application's services; their description, not the framework, decides |
+| caddy `*_fuzz.go` | `fuzz` | `unit`, `integration`: the order puts the technique first |
 
 Next.js projects need no category of their own. The [framework layouts record](framework-layouts.md) found their code in `app/`, `components/` and `lib/`, which is `implementation`; route handlers, UI and middleware are layers of it, which folders and workspace members already separate.
 
