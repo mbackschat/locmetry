@@ -143,7 +143,7 @@ def grade(pair, run):
                 check("unclaimed-counted", result["scratch"]["result"]["file"]["category"] == "unclaimed")
                 check("workspace-identity", result["workspace_tool"]["member"] == "web" and result["workspace_tool"]["path"] == "web/tools/release.py")
                 check("member-relative-pattern", result["workspace_tool"]["result"]["decision"]["matched_patterns"] == ["tools/**"])
-        elif number in [8, 9]:
+        elif number in [8, 9, 12]:
             oracle = task["oracle"]
             report = load("outputs/configured.json")
             result = command(["--root", oracle["root"], "--files", "--format", "json"])
@@ -164,6 +164,12 @@ def grade(pair, run):
                 check("decision:" + name, all(files[name][k] == v for k, v in expected.items()))
             for name in oracle["excluded"]:
                 check("excluded:" + name, name not in files)
+            # Kinds the task asks to tell apart need distinct, non-default
+            # categories; which names the agent chose is a diagnostic only.
+            for group in oracle.get("distinct_categories", []):
+                names = [files[name]["category"] for name in group]
+                check("distinct-categories:" + ",".join(group),
+                      len(set(names)) == len(names) and not set(names) & {"test", "implementation", "unclaimed"})
         else:
             check("supported-task", False)
     except (KeyError, TypeError, ValueError, subprocess.TimeoutExpired) as error:

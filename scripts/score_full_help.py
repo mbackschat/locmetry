@@ -60,7 +60,7 @@ def grade(pair, run):
     number = int(re.match(r"task(\d+)-", task["revision"])[1])
     root, evidence = pair / run, pair / "evidence" / run
     summary = json.loads((evidence / "summary.json").read_text())
-    if number in (1, 2, 3, 4, 5, 6, 8, 9):
+    if number in (1, 2, 3, 4, 5, 6, 8, 9, 12):
         result = LEGACY.grade(pair, run)
         result["explorer_cli_invocations"] = summary["cli_invocations"]
         (evidence / "artifact-grade.json").write_text(json.dumps(result, indent=2) + "\n")

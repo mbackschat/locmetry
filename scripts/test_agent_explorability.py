@@ -318,6 +318,45 @@ class ExperimentTests(unittest.TestCase):
             self.assertEqual({p["repetition"] for p in selected}, {1, 2, 3, 4})
         full.validate_protocol(protocol)
 
+    def test_configuration_regression_adds_the_category_naming_task_against_the_last_ledger_candidate(self):
+        from collections import Counter
+        full = self.full_help_runner()
+        regression = json.loads(full.PROTOCOL.with_name("regression-2026-10-23-study.json").read_text())
+        protocol = json.loads(full.PROTOCOL.with_name("regression-2026-10-24-study.json").read_text())
+        # Tasks 3 and 8 configure projects with category names the prompt
+        # gives; task 12 leaves the names to the agent, which the category
+        # reference of the candidate addresses.
+        self.assertEqual(protocol["task_ids"], [3, 8, 12])
+        self.assertEqual(protocol["maximum_sessions"], 24)
+        self.assertFalse(protocol["previous_trials_included"])
+        # The control is the last ledger candidate.
+        self.assertEqual(protocol["control"]["source_revision"], "bd820b7e2003172addba7169038de376634041ad")
+        for key in ["model", "effort", "limits", "repetitions", "concurrent_pairs", "task_files"]:
+            self.assertEqual(protocol[key], regression[key])
+        for key in ["correctness", "per_task_medians", "overall_all_run_totals", "secondary", "zero_comparator"]:
+            self.assertEqual(protocol["decision_rule"][key], regression["decision_rule"][key])
+        for number in protocol["task_ids"]:
+            selected = [p for p in protocol["pairs"] if p["task"] == number]
+            self.assertEqual(Counter(p["order"] for p in selected), {"AB": 2, "BA": 2})
+            self.assertEqual({p["repetition"] for p in selected}, {1, 2, 3, 4})
+        full.validate_protocol(protocol)
+
+    def test_full_help_grader_delegates_the_category_naming_task_to_the_artifact_checks(self):
+        spec = importlib.util.spec_from_file_location("full_help_score", Path(__file__).with_name("score_full_help.py"))
+        grader = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(grader)
+        with tempfile.TemporaryDirectory() as tmp:
+            pair = Path(tmp)
+            task = json.loads(BENCH.TASK.with_name("task12.json").read_text())
+            (pair / "manifest.json").write_text(json.dumps({"task": task}))
+            evidence = pair / "evidence/run-01"
+            evidence.mkdir(parents=True)
+            (evidence / "summary.json").write_text(json.dumps({"cli_invocations": 5}))
+            with patch.object(grader.LEGACY, "grade", return_value={"task": 12}) as legacy:
+                result = grader.grade(pair, "run-01")
+            legacy.assert_called_once_with(pair.resolve(), "run-01")
+            self.assertEqual(result, {"task": 12, "explorer_cli_invocations": 5})
+
     def test_full_help_grader_checks_the_configuration_layout_task_with_its_legacy_oracle(self):
         spec = importlib.util.spec_from_file_location("full_help_score", Path(__file__).with_name("score_full_help.py"))
         grader = importlib.util.module_from_spec(spec)
@@ -616,12 +655,24 @@ class ExperimentTests(unittest.TestCase):
     def test_simple_config_case_rejects_wrong_saved_decisions(self):
         self.check_configuration_case(9)
 
-    def check_configuration_case(self, number):
+    def test_category_naming_case_rejects_merged_or_default_categories(self):
+        # Task 12 grades purposes, counts and that the requested kinds stay
+        # apart; the names themselves are a diagnostic, not an oracle.
+        task = json.loads(BENCH.TASK.with_name("task12.json").read_text())
+        names = task["oracle"]["reference_categories"]
+        for file, category in [(None, None), ("tests/cli.rs", "unit"), ("ci/run-tests.sh", "implementation"),
+                               ("tests/common/mod.rs", "test")]:
+            categories = dict(names, **({file: category} if file else {}))
+            outcome = self.check_configuration_case(12, categories, expect_pass=file is None)
+            self.assertEqual(outcome, "artifact_checks_pass" if file is None else "needs_review", file)
+
+    def check_configuration_case(self, number, categories=None, expect_pass=None):
         task = json.loads(BENCH.TASK.with_name(f"task{number}.json").read_text())
         oracle = task["oracle"]
         report = {"summary": {"source": oracle["source"], "all_counted": oracle["all_counted"],
                               "source_purpose": {k: {"code": v} for k, v in oracle["purpose_code"].items()}},
-                  "files": [{"path": p, **v} for p, v in oracle["decisions"].items()],
+                  "files": [{"path": p, **v, **({"category": categories[p]} if categories and p in categories else {})}
+                            for p, v in oracle["decisions"].items()],
                   "review": [{"path": p} for p in oracle["review"]]}
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -637,6 +688,8 @@ class ExperimentTests(unittest.TestCase):
                 target.write_text(json.dumps(report) if name.endswith(".json") else "version = 1")
             actual = SCORING.subprocess.CompletedProcess([], 0, json.dumps(report), "")
             with patch.object(SCORING.subprocess, "run", return_value=actual):
+                if expect_pass is not None:
+                    return SCORING.grade(root, "run-02")["outcome"]
                 self.assertEqual(SCORING.grade(root, "run-02")["outcome"], "artifact_checks_pass")
                 report["files"][0]["category"] = "incorrect"
                 for bad in [report, {}, []]:

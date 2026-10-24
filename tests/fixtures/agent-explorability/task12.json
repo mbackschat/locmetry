@@ -1,0 +1,120 @@
+{
+ "revision": "task12-category-naming-v1",
+ "files": {
+  "projects/sync/Cargo.toml": "[package]\nname = \"ledger-sync\"\nversion = \"0.1.0\"\nedition = \"2024\"\n",
+  "projects/sync/README.md": "# Ledger sync\n\nSynthetic Rust tool with maintained scripts.\n",
+  "projects/sync/src/lib.rs": "pub mod parse;\n\npub fn ready() -> bool {\n    true\n}\n",
+  "projects/sync/src/parse.rs": "// Parses ledger lines.\npub fn amount(line: &str) -> usize {\n    line.len()\n}\n\n#[cfg(test)]\nmod tests;\n",
+  "projects/sync/src/parse/tests.rs": "use super::amount;\n\n#[test]\nfn measures_line() {\n    assert_eq!(amount(\"ab\"), 2);\n}\n",
+  "projects/sync/src/main.rs": "fn main() {\n    println!(\"{}\", ledger_sync::ready());\n}\n",
+  "projects/sync/tests/cli.rs": "mod common;\n\n#[test]\nfn binary_reports_ready() {\n    let output = common::run_binary();\n    assert!(output.status.success());\n}\n",
+  "projects/sync/tests/common/mod.rs": "// Shared helpers for the integration tests.\nuse std::process::{Command, Output};\n\npub fn run_binary() -> Output {\n    Command::new(env!(\"CARGO_BIN_EXE_ledger-sync\")).output().unwrap()\n}\n",
+  "projects/sync/benches/throughput.rs": "// Maintained benchmark of the parser.\nfn main() {\n    let line = \"x\".repeat(1000);\n    assert!(ledger_sync::parse::amount(&line) > 0);\n}\n",
+  "projects/sync/scripts/release.sh": "# Checks, tags and publishes the crate.\ncargo test\ngit tag \"v$1\"\ncargo publish\n",
+  "projects/sync/scripts/dev-setup.sh": "# Installs a developer's toolchain.\nrustup component add clippy rustfmt\n",
+  "projects/sync/ci/run-tests.sh": "# Runs the test suites in CI.\ncargo test --all-targets\n"
+ },
+ "prompt": "You have ./bin/locmetry and synthetic inputs in this scratch directory. Work only here. The executable and its built-in discovery material are your only product documentation; do not read other directories, implementation files, telemetry, or the launcher, and do not use the internet or other agents. You may inspect synthetic inputs and use ordinary shell/Python tools. You may create or edit only project configuration and files outside measured roots; leave all existing source/data/documentation files unchanged. Configure projects/sync. Keep every purpose that built-in detection already gives. The maintained scripts are Production: scripts/release.sh checks, tags and publishes the crate; scripts/dev-setup.sh installs a developer's toolchain; ci/run-tests.sh runs the test suites in CI. benches/ holds maintained benchmarks and counts as Test. Give the tests, the benchmark and the scripts finer categories, so that the category table tells apart unit tests, tests that run the built binary, shared test helpers, benchmarks, and each of the three kinds of script. Choose category names that a reviewer from another project would recognize. Leave no source unclaimed. Save a full verification report with per-file decisions to outputs/configured.json. Report source Code by purpose and the category you chose for each of these files, with a one-line reason per name.\n\nUse whatever built-in discovery you need. Give a concise final answer of at most 250 words, including supporting commands and any unresolved result. Create the requested working artifacts, but do not write an assessment document or a logging harness.\n",
+ "oracle": {
+  "root": "projects/sync",
+  "source": {
+   "files": 10,
+   "code": 36,
+   "comments": 6,
+   "blanks": 5,
+   "lines": 47
+  },
+  "all_counted": {},
+  "purpose_code": {
+   "production": 17,
+   "test": 19
+  },
+  "decisions": {
+   "Cargo.toml": {
+    "purpose": "other",
+    "category": "unclaimed",
+    "rule": "fallback"
+   },
+   "README.md": {
+    "purpose": "other",
+    "category": "unclaimed",
+    "rule": "fallback"
+   },
+   "src/lib.rs": {
+    "purpose": "production",
+    "category": "implementation",
+    "rule": "builtin:cargo-module"
+   },
+   "src/parse.rs": {
+    "purpose": "production",
+    "category": "implementation",
+    "rule": "builtin:cargo-module"
+   },
+   "src/main.rs": {
+    "purpose": "production",
+    "category": "implementation",
+    "rule": "builtin:cargo-module"
+   },
+   "src/parse/tests.rs": {
+    "purpose": "test"
+   },
+   "tests/cli.rs": {
+    "purpose": "test"
+   },
+   "tests/common/mod.rs": {
+    "purpose": "test"
+   },
+   "benches/throughput.rs": {
+    "purpose": "test"
+   },
+   "scripts/release.sh": {
+    "purpose": "production"
+   },
+   "scripts/dev-setup.sh": {
+    "purpose": "production"
+   },
+   "ci/run-tests.sh": {
+    "purpose": "production"
+   }
+  },
+  "distinct_categories": [
+   [
+    "src/parse/tests.rs",
+    "tests/cli.rs",
+    "tests/common/mod.rs",
+    "benches/throughput.rs"
+   ],
+   [
+    "scripts/release.sh",
+    "scripts/dev-setup.sh",
+    "ci/run-tests.sh"
+   ]
+  ],
+  "excluded": [],
+  "review": [],
+  "artifacts": [
+   "projects/sync/.locmetryrc",
+   "outputs/configured.json"
+  ],
+  "reference_categories": {
+   "src/parse/tests.rs": "unit",
+   "tests/cli.rs": "integration",
+   "tests/common/mod.rs": "test-support",
+   "benches/throughput.rs": "performance",
+   "scripts/release.sh": "distribution",
+   "scripts/dev-setup.sh": "tooling",
+   "ci/run-tests.sh": "verification-tooling"
+  }
+ },
+ "limits": {
+  "wall_seconds": 600,
+  "cli_invocations": 60,
+  "agent_tool_calls": 40,
+  "uncached_input_tokens": 100000
+ },
+ "grading": "Recovered mistakes may pass; record recovery cost. Required conclusions missing => incomplete. Wrong delivered figures, a changed built-in purpose, merged categories the task asks to tell apart, or unclaimed source => critical failure. Category names are not graded; reference_categories records the names of the category reference for the naming diagnostic only. Inspect fixture integrity and supporting calls.",
+ "mutable": [
+  "projects/sync/.locmetryrc"
+ ],
+ "generated": []
+}
