@@ -3,8 +3,9 @@
 //! `unused_entries` flags only an entry that decides nothing; these counts
 //! also expose an entry that decides fewer files than intended, loses files
 //! to an earlier stage, or replaces another stage's decision.
-use super::{Entry, Policy, Purpose};
+use super::{Classification, Entry, Policy, Purpose};
 use crate::FileRecord;
+use globset::GlobSet;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
@@ -93,12 +94,49 @@ struct Tally {
 }
 
 impl Tally {
-    fn new(patterns: usize, exceptions: usize) -> Self {
+    fn new(patterns: &[String], exceptions: &[String]) -> Self {
         Self {
-            patterns: vec![false; patterns],
-            exceptions: vec![false; exceptions],
+            patterns: vec![false; patterns.len()],
+            exceptions: vec![false; exceptions.len()],
             ..Self::default()
         }
+    }
+
+    /// Records the `except` globs that leave out a file the entry matches,
+    /// and whether any did.
+    fn excepted(&mut self, except: &GlobSet, path: &str) -> bool {
+        let excepted = except.matches(path);
+        for &i in &excepted {
+            self.exceptions[i] = true;
+        }
+        !excepted.is_empty()
+    }
+
+    /// Records a file the entry decided, with the decision it replaced.
+    fn decided(
+        &mut self,
+        matcher: &GlobSet,
+        path: &str,
+        code: u64,
+        replaced: Option<Classification>,
+    ) {
+        self.files += 1;
+        self.code += code;
+        for i in matcher.matches(path) {
+            self.patterns[i] = true;
+        }
+        if let Some(replaced) = replaced {
+            let counts = self
+                .displaced
+                .entry(format!("{}:{}", replaced.purpose, replaced.category))
+                .or_default();
+            counts.0 += 1;
+            counts.1 += code;
+        }
+    }
+
+    fn preempted_by(&mut self, by: &str) {
+        *self.preempted.entry(by.to_owned()).or_default() += 1;
     }
 
     fn entry(
@@ -163,67 +201,34 @@ impl Policy {
         rows: &[FileRecord],
         corrections: &BTreeMap<String, String>,
     ) -> Vec<PolicyEntry> {
-        let configuration = &self.snapshot.configuration;
-        let configs = configuration.overrides.iter().chain(&configuration.rules);
         let classifying: Vec<(&Entry, EntryStage)> = self
             .overrides
             .iter()
             .map(|entry| (entry, EntryStage::Override))
             .chain(self.rules.iter().map(|entry| (entry, EntryStage::Rule)))
             .collect();
-        let mut tallies: Vec<Tally> = configs
-            .clone()
-            .map(|config| {
-                Tally::new(
-                    config.patterns.len(),
-                    config.except.iter().flatten().count(),
-                )
-            })
-            .collect();
+        let mut tallies = tallies(classifying.iter().map(|(entry, _)| *entry));
         for row in rows {
             let (path, kind) = (row.path.as_str(), row.kind);
             for ((entry, _), tally) in classifying.iter().zip(&mut tallies) {
-                if !entry.has_kind(kind) || !entry.matcher.is_match(path) {
+                if !entry.has_kind(kind)
+                    || !entry.matcher.is_match(path)
+                    || tally.excepted(&entry.except, path)
+                {
                     continue;
                 }
-                let excepted = entry.except.matches(path);
-                if !excepted.is_empty() {
-                    excepted
-                        .into_iter()
-                        .for_each(|i| tally.exceptions[i] = true);
-                } else if entry.id == row.classification.rule {
-                    tally.files += 1;
-                    tally.code += row.counts.code;
-                    for i in entry.matcher.matches(path) {
-                        tally.patterns[i] = true;
-                    }
-                    if let Some(replaced) = self.decision_without(path, kind, &entry.id) {
-                        let decision = format!("{}:{}", replaced.purpose, replaced.category);
-                        let counts = tally.displaced.entry(decision).or_default();
-                        counts.0 += 1;
-                        counts.1 += row.counts.code;
-                    }
+                if entry.id == row.classification.rule {
+                    let replaced = self.decision_without(path, kind, &entry.id);
+                    tally.decided(&entry.matcher, path, row.counts.code, replaced);
                 } else {
-                    *tally
-                        .preempted
-                        .entry(row.classification.rule.clone())
-                        .or_default() += 1;
+                    tally.preempted_by(&row.classification.rule);
                 }
             }
         }
         let mut entries: Vec<PolicyEntry> = tallies
             .into_iter()
-            .zip(configs)
             .zip(&classifying)
-            .map(|((tally, config), (entry, stage))| {
-                tally.entry(
-                    &config.id,
-                    *stage,
-                    Some(entry.purpose),
-                    &config.patterns,
-                    config.except.as_deref().unwrap_or_default(),
-                )
-            })
+            .map(|(tally, (entry, stage))| finish(tally, entry, *stage, entry.purpose))
             .collect();
         entries.extend(self.refinement_entries(rows));
         entries.extend(self.correction_entries(rows, corrections));
@@ -231,59 +236,36 @@ impl Policy {
     }
 
     fn refinement_entries(&self, rows: &[FileRecord]) -> Vec<PolicyEntry> {
-        let configs = &self.snapshot.configuration.refinements;
-        let mut tallies: Vec<Tally> = configs
-            .iter()
-            .map(|config| {
-                Tally::new(
-                    config.patterns.len(),
-                    config.except.iter().flatten().count(),
-                )
-            })
-            .collect();
+        let mut tallies = tallies(&self.refinements);
         for row in rows.iter().filter(|row| !row.classification.is_fallback()) {
             let (path, kind) = (row.path.as_str(), row.kind);
             for (refinement, tally) in self.refinements.iter().zip(&mut tallies) {
                 if refinement.purpose != row.classification.purpose
                     || !refinement.has_kind(kind)
                     || !refinement.matcher.is_match(path)
+                    || tally.excepted(&refinement.except, path)
                 {
                     continue;
                 }
-                let excepted = refinement.except.matches(path);
-                if !excepted.is_empty() {
-                    excepted
-                        .into_iter()
-                        .for_each(|i| tally.exceptions[i] = true);
-                } else if row.refinement.as_ref() == Some(&refinement.id) {
-                    tally.files += 1;
-                    tally.code += row.counts.code;
-                    for i in refinement.matcher.matches(path) {
-                        tally.patterns[i] = true;
-                    }
-                    let decided = self.classify(path, kind);
-                    let decision = format!("{}:{}", decided.purpose, decided.category);
-                    let counts = tally.displaced.entry(decision).or_default();
-                    counts.0 += 1;
-                    counts.1 += row.counts.code;
+                if row.refinement.as_ref() == Some(&refinement.id) {
+                    let replaced = self.classify(path, kind);
+                    tally.decided(&refinement.matcher, path, row.counts.code, Some(replaced));
                 } else {
                     // An earlier refinement, or a generated-code marker that
                     // refinements leave alone.
-                    let by = row.refinement.as_ref().unwrap_or(&row.classification.rule);
-                    *tally.preempted.entry(by.clone()).or_default() += 1;
+                    tally.preempted_by(row.refinement.as_ref().unwrap_or(&row.classification.rule));
                 }
             }
         }
         tallies
             .into_iter()
-            .zip(configs)
-            .map(|(tally, config)| {
-                tally.entry(
-                    &config.id,
+            .zip(&self.refinements)
+            .map(|(tally, refinement)| {
+                finish(
+                    tally,
+                    refinement,
                     EntryStage::Refinement,
-                    Some(config.purpose),
-                    &config.patterns,
-                    config.except.as_deref().unwrap_or_default(),
+                    refinement.purpose,
                 )
             })
             .collect()
@@ -299,10 +281,10 @@ impl Policy {
             .filter(|row| row.language_correction.is_some())
             .map(|row| (row.path.as_str(), row.counts.code))
             .collect();
-        let configs = &self.snapshot.configuration.languages.corrections;
-        let mut tallies: Vec<Tally> = configs
+        let mut tallies: Vec<Tally> = self
+            .corrections
             .iter()
-            .map(|config| Tally::new(config.patterns.len(), 0))
+            .map(|correction| Tally::new(&correction.patterns, &[]))
             .collect();
         for (path, decider) in corrections {
             for (correction, tally) in self.corrections.iter().zip(&mut tallies) {
@@ -310,30 +292,56 @@ impl Policy {
                     continue;
                 }
                 if &correction.id == decider {
-                    tally.files += 1;
-                    tally.code += code.get(path.as_str()).copied().unwrap_or_default();
-                    for i in correction.matcher.matches(path) {
-                        tally.patterns[i] = true;
-                    }
+                    let code = code.get(path.as_str()).copied().unwrap_or_default();
+                    tally.decided(&correction.matcher, path, code, None);
                 } else {
-                    *tally.preempted.entry(decider.clone()).or_default() += 1;
+                    tally.preempted_by(decider);
                 }
             }
         }
         tallies
             .into_iter()
-            .zip(configs)
-            .map(|(tally, config)| {
+            .zip(&self.corrections)
+            .map(|(tally, correction)| {
                 tally.entry(
-                    &config.id,
+                    &correction.id,
                     EntryStage::Correction,
                     None,
-                    &config.patterns,
+                    &correction.patterns,
                     &[],
                 )
             })
             .collect()
     }
+}
+
+fn tallies<'a>(entries: impl IntoIterator<Item = &'a Entry>) -> Vec<Tally> {
+    entries
+        .into_iter()
+        .map(|entry| Tally::new(&entry.patterns, &entry.exceptions))
+        .collect()
+}
+
+fn finish(tally: Tally, entry: &Entry, stage: EntryStage, purpose: Purpose) -> PolicyEntry {
+    tally.entry(
+        &entry.id,
+        stage,
+        Some(purpose),
+        &entry.patterns,
+        &entry.exceptions,
+    )
+}
+
+/// IDs of the entries that decided no file: a glob that matches nothing, or
+/// an entry an earlier stage always preempts, such as a rule behind a test
+/// convention. A correction that decides no selected file contradicts the
+/// counter for nothing, so it is listed with them.
+pub fn unused_entries(entries: &[PolicyEntry]) -> Vec<String> {
+    entries
+        .iter()
+        .filter(|entry| entry.files == 0)
+        .map(|entry| entry.id.clone())
+        .collect()
 }
 
 /// The entries of one policy measured in several folders, as one list: counts

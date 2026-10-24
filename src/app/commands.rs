@@ -339,7 +339,6 @@ pub(crate) fn run_workspace(args: &WorkspaceArgs, styling: Styling) -> Result<Ou
     // Unused in every member folder means unused by the shared policy; an
     // independent member's findings name it instead.
     if shared_policy {
-        results.unused_entries = common(measurements.iter().map(|m| &m.unused_entries));
         results.unused_exclusions = common(measurements.iter().map(|m| &m.unused_exclusions));
         results.policy_entries = locmetry::merged_policy_entries(
             measurements
@@ -347,6 +346,7 @@ pub(crate) fn run_workspace(args: &WorkspaceArgs, styling: Styling) -> Result<Ou
                 .map(|m| m.policy_entries.clone())
                 .collect(),
         );
+        results.unused_entries = locmetry::unused_entries(&results.policy_entries);
     }
     let mut records = Vec::new();
     for (member, measurement) in members.iter().zip(measurements) {

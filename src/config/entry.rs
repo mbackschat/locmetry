@@ -6,16 +6,30 @@ use super::*;
 pub(super) struct Entry {
     pub(super) id: String,
     pub(super) matcher: GlobSet,
+    /// The globs `matcher` compiles, by its match indices.
+    pub(super) patterns: Vec<String>,
     /// Paths the entry leaves out although `matcher` matches them.
     pub(super) except: GlobSet,
+    /// The globs `except` compiles, by its match indices.
+    pub(super) exceptions: Vec<String>,
     pub(super) kinds: Option<Vec<Kind>>,
     pub(super) purpose: Purpose,
     pub(super) category: String,
+    pub(super) reason: Option<String>,
 }
 
 impl Entry {
     pub(super) fn matches(&self, path: &str, kind: Kind) -> bool {
         self.matcher.is_match(path) && !self.except.is_match(path) && self.has_kind(kind)
+    }
+
+    /// The entry's `match` globs that match `path`.
+    pub(super) fn matched_patterns(&self, path: &str) -> Vec<String> {
+        self.matcher
+            .matches(path)
+            .into_iter()
+            .map(|i| self.patterns[i].clone())
+            .collect()
     }
 
     pub(super) fn has_kind(&self, kind: Kind) -> bool {
@@ -43,6 +57,7 @@ impl Entry {
                 .category
                 .clone()
                 .unwrap_or_else(|| entry.purpose.to_string()),
+            entry.reason.clone(),
         )
     }
 
@@ -56,6 +71,7 @@ impl Entry {
             refinement.kind.clone(),
             refinement.purpose,
             refinement.category.clone(),
+            refinement.reason.clone(),
         )
     }
 
@@ -66,6 +82,7 @@ impl Entry {
         kinds: Option<Vec<Kind>>,
         purpose: Purpose,
         category: String,
+        reason: Option<String>,
     ) -> Result<Self> {
         ensure!(
             !patterns.is_empty(),
@@ -83,11 +100,14 @@ impl Entry {
             id: id.into(),
             matcher: glob_set(patterns.iter().map(String::as_str))
                 .with_context(|| format!("Invalid match in entry {id}"))?,
+            patterns: patterns.to_vec(),
             except: glob_set(except.into_iter().flatten().map(String::as_str))
                 .with_context(|| format!("Invalid except in entry {id}"))?,
+            exceptions: except.unwrap_or_default().to_vec(),
             kinds,
             purpose,
             category,
+            reason,
         })
     }
 }

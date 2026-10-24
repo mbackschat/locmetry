@@ -25,7 +25,9 @@ mod schema;
 mod scope;
 mod user;
 mod workspace;
-pub use audit::{merged_policy_entries, Displacement, EntryStage, PolicyEntry, Preemption};
+pub use audit::{
+    merged_policy_entries, unused_entries, Displacement, EntryStage, PolicyEntry, Preemption,
+};
 use builtin::{
     Convention, BUILTIN_BUILD_V1, BUILTIN_LANGUAGES_V1, BUILTIN_TESTS_V1, DEFAULT_EXCLUDES,
 };
@@ -247,10 +249,13 @@ impl Policy {
                 Ok(Entry {
                     id: format!("{BUILTIN}{}", convention.id),
                     matcher: glob_set(convention.patterns.iter().copied())?,
+                    patterns: convention.patterns.iter().map(|s| s.to_string()).collect(),
                     except: GlobSet::empty(),
+                    exceptions: Vec::new(),
                     kinds: None,
                     purpose: convention.purpose,
                     category: convention.category.into(),
+                    reason: None,
                 })
             })
             .collect::<Result<Vec<_>>>()?;
@@ -399,10 +404,13 @@ impl Policy {
                 let entry = Entry {
                     id: module_rule(module.detector),
                     matcher: glob_set(module.sources.iter().map(String::as_str))?,
+                    patterns: module.sources.clone(),
                     except: glob_set(module.excluded.iter().map(String::as_str))?,
+                    exceptions: module.excluded.clone(),
                     kinds: None,
                     purpose: Purpose::Production,
                     category: MODULE_CATEGORY.into(),
+                    reason: None,
                 };
                 Ok((module.clone(), entry))
             })
@@ -418,20 +426,17 @@ impl Policy {
         Ok(())
     }
 
-    /// IDs of the project's overrides, rules and refinements, in order.
-    pub fn entry_ids(&self) -> impl Iterator<Item = &str> {
-        self.overrides
-            .iter()
-            .chain(&self.rules)
-            .chain(&self.refinements)
-            .map(|entry| entry.id.as_str())
-    }
-
     /// The first refinement for a file decided as `decided`. Files that
     /// reached the fallback stay `unclaimed` for review, and files a
     /// generated-code marker refined keep that documented evidence.
     fn refinement_for(&self, path: &str, kind: Kind, decided: &Classification) -> Option<&Entry> {
-        if decided.is_fallback() || GeneratedMarker::V1.iter().any(|m| m.rule() == decided.rule) {
+        // Runs for every counted file, so the common case without refinements
+        // returns before comparing marker provenance.
+        let marked = || {
+            let id = decided.rule.strip_prefix(BUILTIN);
+            GeneratedMarker::V1.iter().any(|m| id == Some(m.id()))
+        };
+        if self.refinements.is_empty() || decided.is_fallback() || marked() {
             return None;
         }
         self.refinements.iter().find(|refinement| {
@@ -549,18 +554,6 @@ impl Policy {
                 refinement: None,
             };
         };
-        let config = self
-            .snapshot
-            .configuration
-            .overrides
-            .iter()
-            .chain(&self.snapshot.configuration.rules)
-            .chain(&self.snapshot.builtin_conventions)
-            .find(|config| config.id == entry.id);
-        let patterns = match module {
-            Some(module) => &module.sources,
-            None => &config.expect("compiled entry has configuration").patterns,
-        };
         let generated = evidence
             .filter(|_| self.generated && kind == Kind::Source && stage == Stage::Module)
             .cloned();
@@ -568,34 +561,15 @@ impl Policy {
             Some(_) => None,
             None => self.refinement_for(path, kind, &entry.classification()),
         }
-        .map(|refinement| {
-            let config = self
-                .snapshot
-                .configuration
-                .refinements
-                .iter()
-                .find(|config| config.id == refinement.id)
-                .expect("compiled refinement has configuration");
-            RefinementEvidence {
-                id: refinement.id.clone(),
-                matched_patterns: refinement
-                    .matcher
-                    .matches(path)
-                    .iter()
-                    .map(|&i| config.patterns[i].clone())
-                    .collect(),
-                reason: config.reason.clone(),
-            }
+        .map(|refinement| RefinementEvidence {
+            id: refinement.id.clone(),
+            matched_patterns: refinement.matched_patterns(path),
+            reason: refinement.reason.clone(),
         });
         Decision {
             stage,
-            matched_patterns: entry
-                .matcher
-                .matches(path)
-                .iter()
-                .map(|&i| patterns[i].clone())
-                .collect(),
-            reason: config.and_then(|config| config.reason.clone()),
+            matched_patterns: entry.matched_patterns(path),
+            reason: entry.reason.clone(),
             module: module.map(crate::contract::Module::from),
             generated,
             refinement,
@@ -625,11 +599,6 @@ impl Policy {
             .iter()
             .find(|correction| correction.matcher.is_match(path))
             .map(|correction| (correction.id.as_str(), correction.language))
-    }
-
-    /// IDs of the project's language corrections, in order.
-    pub fn correction_ids(&self) -> impl Iterator<Item = &str> {
-        self.corrections.iter().map(|c| c.id.as_str())
     }
 
     /// The stated reason of correction `id`, when supplied.

@@ -613,18 +613,3 @@ pub fn submodule_shares(paths: &[String], rows: &[FileRecord]) -> Vec<SubmoduleS
         .filter(|share| share.files > 0)
         .collect()
 }
-
-/// IDs of `entries` not among the `decided` ones: a glob that matches
-/// nothing, or an entry an earlier stage always preempts, such as a rule
-/// behind a test convention.
-pub fn unused_entries<'a>(
-    entries: impl IntoIterator<Item = &'a str>,
-    decided: impl IntoIterator<Item = &'a str>,
-) -> Vec<String> {
-    let decided: std::collections::BTreeSet<&str> = decided.into_iter().collect();
-    entries
-        .into_iter()
-        .filter(|id| !decided.contains(id))
-        .map(String::from)
-        .collect()
-}

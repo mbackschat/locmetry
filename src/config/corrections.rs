@@ -43,6 +43,8 @@ pub enum CorrectedLanguage {
 pub(super) struct LanguageCorrection {
     pub(super) id: String,
     pub(super) matcher: GlobSet,
+    /// The globs `matcher` compiles, by its match indices.
+    pub(super) patterns: Vec<String>,
     pub(super) language: CorrectedLanguage,
     pub(super) reason: Option<String>,
 }
@@ -67,6 +69,7 @@ impl LanguageCorrection {
             id: config.id.clone(),
             matcher: glob_set(config.patterns.iter().map(String::as_str))
                 .with_context(|| format!("Invalid match in language correction '{}'", config.id))?,
+            patterns: config.patterns.clone(),
             language: CorrectedLanguage::parse(&config.language).with_context(|| {
                 format!(
                     "Unknown language '{}' in language correction '{}'; name a counter language or '{UNRECOGNIZED}'",

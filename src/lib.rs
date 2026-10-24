@@ -18,7 +18,7 @@ pub use backend::{
     Scan, DATA_LANGUAGES, DOCUMENTATION_LANGUAGES,
 };
 pub use config::{
-    config_schema, merged_policy_entries, user_config_schema, user_defaults_file,
+    config_schema, merged_policy_entries, unused_entries, user_config_schema, user_defaults_file,
     workspace_definition, workspace_schema, Classification, Displacement, EffectiveConfig,
     EntryStage, Policy, PolicyEntry, Preemption, Purpose, Scope, ScopeOverrides,
     WorkspaceDefinition, CONFIG_FILE,
@@ -32,9 +32,9 @@ pub use output::{
 pub use paths::{filesystem_path, member_path, within};
 pub use report::{
     breakdown, build_report, build_systems, largest_module_files, module_shares, review,
-    submodule_shares, unclaimed_folders, unused_entries, BreakdownRow, BuildSystemShare, Counts,
-    FileRecord, FolderShare, Kind, ModuleFile, ModuleShare, ReportSummary, ReviewEntry,
-    SubmoduleShare, Summary,
+    submodule_shares, unclaimed_folders, BreakdownRow, BuildSystemShare, Counts, FileRecord,
+    FolderShare, Kind, ModuleFile, ModuleShare, ReportSummary, ReviewEntry, SubmoduleShare,
+    Summary,
 };
 pub use report_schema::report_schema;
 

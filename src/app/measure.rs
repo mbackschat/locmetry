@@ -79,22 +79,12 @@ pub(crate) fn measure(prepared: Prepared, subfolder: Option<&str>) -> Result<Mea
     if subfolder.is_some() {
         modules.retain(|module| module.files > 0);
     }
-    // A correction that decides no selected file contradicts the counter for
-    // nothing, so it is reported with the unused classification entries; one
-    // to `unrecognized` decides a file that has no record.
-    let unused = unused_entries(
-        policy.entry_ids().chain(policy.correction_ids()),
-        rows.iter()
-            .flat_map(|row| [Some(&row.classification.rule), row.refinement.as_ref()])
-            .flatten()
-            .map(String::as_str)
-            .chain(scan.corrections.values().map(String::as_str)),
-    );
+    let policy_entries = policy.policy_entries(&rows, &scan.corrections);
     Ok(Measurement {
-        policy_entries: policy.policy_entries(&rows, &scan.corrections),
+        unused_entries: locmetry::unused_entries(&policy_entries),
+        policy_entries,
         modules,
         submodules: submodule_shares(&git_submodules(&root), &rows),
-        unused_entries: unused,
         unused_exclusions: scan.unused_exclusions,
         coverage: scan.coverage,
         inaccurate: scan.inaccurate,
