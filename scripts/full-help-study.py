@@ -231,7 +231,8 @@ def run_frozen(destination, acknowledgement):
         raise ValueError("This bounded campaign already started; no replacement or extra trials are permitted")
     plan = frozen_plan(destination, acknowledgement)
     run_pairs(destination, plan, plan["pairs"], "started.json", acknowledgement)
-    (destination / "completed.json").write_text(json.dumps({"completed": time.time()}) + "\n")
+    (destination / "completed.json").write_text(json.dumps(
+        {"completed": time.time(), "context_fingerprints": BENCH.context_fingerprints(destination)}) + "\n")
 
 
 def run_confirmation(destination, acknowledgement, tasks):

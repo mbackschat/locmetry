@@ -373,37 +373,57 @@ class ExperimentTests(unittest.TestCase):
         self.assertEqual(BENCH.context_growth(rows), {"context_growth": 110, "context_decreases": 1})
         self.assertEqual(BENCH.context_growth([]), {"context_growth": 0, "context_decreases": 0})
 
-    def test_sessions_get_a_fresh_codex_home_without_global_instructions_and_keep_refreshed_credentials(self):
+    def test_sessions_get_a_fresh_home_like_a_new_install_and_keep_refreshed_credentials(self):
         with tempfile.TemporaryDirectory() as folder:
             source = Path(folder) / "codex"
             (source / "plugins/cache").mkdir(parents=True)
             (source / "AGENTS.md").write_text("owner's global instructions")
             (source / "auth.json").write_text(json.dumps({"last_refresh": "2026-10-18T19:24:31Z", "tokens": "old"}))
-            with BENCH.codex_home(source) as home:
-                self.assertFalse((home / "AGENTS.md").exists())
+            with BENCH.subject_home(source) as home:
                 self.assertFalse(home.is_relative_to(Path(folder)))
-                self.assertEqual((home / "auth.json").stat().st_mode & 0o777, 0o600)
-                self.assertEqual((home / "plugins").resolve(), (source / "plugins").resolve())
+                # Only the credentials: no instructions, plugins or personal skills.
+                self.assertEqual(sorted(p.relative_to(home).as_posix() for p in home.rglob("*")), [".codex", ".codex/auth.json"])
+                self.assertEqual((home / ".codex/auth.json").stat().st_mode & 0o777, 0o600)
                 # Codex rotates the refresh token when it refreshes, so the copy's newer credentials must survive it.
-                (home / "auth.json").write_text(json.dumps({"last_refresh": "2026-10-25T08:00:00Z", "tokens": "new"}))
+                (home / ".codex/auth.json").write_text(json.dumps({"last_refresh": "2026-10-25T08:00:00Z", "tokens": "new"}))
             self.assertFalse(home.exists())
             self.assertEqual(json.loads((source / "auth.json").read_text())["tokens"], "new")
             self.assertEqual((source / "auth.json").stat().st_mode & 0o777, 0o600)
-            with BENCH.codex_home(source) as home:
-                (home / "auth.json").write_text(json.dumps({"last_refresh": "2026-10-20T00:00:00Z", "tokens": "stale"}))
+            with BENCH.subject_home(source) as home:
+                (home / ".codex/auth.json").write_text(json.dumps({"last_refresh": "2026-10-20T00:00:00Z", "tokens": "stale"}))
             self.assertEqual(json.loads((source / "auth.json").read_text())["tokens"], "new")
 
-    def test_context_audit_flags_global_and_repository_instructions_and_records_configurations(self):
+    def test_context_audit_flags_injected_instructions_and_fingerprints_what_every_session_shares(self):
         def message(role, text):
             return {"type": "response_item", "payload": {"role": role, "content": [{"type": "input_text", "text": text}]}}
-        clean = [{"type": "turn_context", "payload": {"model": "gpt-6.1-sol", "effort": "xhigh"}},
-                 message("developer", "<skills_instructions>"), message("user", "<environment_context>"),
-                 {"type": "response_item", "payload": {"type": "function_call"}}]
-        self.assertEqual(BENCH.context_audit(clean), {"repository_context": False, "global_instructions": False,
-                                                      "configurations": [{"model": "gpt-6.1-sol", "effort": "xhigh"}]})
-        audit = BENCH.context_audit([*clean, message("user", "# AGENTS.md instructions\n\n<INSTRUCTIONS>")])
+        def session(home, prompt):
+            skills = f"<skills_instructions>\n- `r0` = `{home}/.codex/skills/.system`\n- imagegen: Images (file: r0/imagegen/SKILL.md)"
+            return [{"type": "session_meta", "payload": {"base_instructions": {"text": "You are Codex"}}},
+                    {"type": "turn_context", "payload": {"model": "gpt-6.1-sol", "effort": "xhigh"}},
+                    message("developer", skills), message("developer", f"<permissions instructions>\nwrite {home}"),
+                    message("user", f"<environment_context>{home}"), message("user", prompt),
+                    {"type": "response_item", "payload": {"type": "function_call"}}]
+        first, second = BENCH.context_audit(session("/tmp/a", "Task one")), BENCH.context_audit(session("/tmp/b", "Task two"))
+        self.assertEqual({k: first[k] for k in ["repository_context", "global_instructions", "configurations", "skills"]},
+                         {"repository_context": False, "global_instructions": False,
+                          "configurations": [{"model": "gpt-6.1-sol", "effort": "xhigh"}], "skills": ["imagegen"]})
+        # Paths and the task differ per session; the instructions and skills do not.
+        self.assertEqual(first["fingerprint"], second["fingerprint"])
+        changed = session("/tmp/a", "Task one")
+        changed[0]["payload"]["base_instructions"]["text"] = "You are Codex, revised"
+        self.assertNotEqual(BENCH.context_audit(changed)["fingerprint"], first["fingerprint"])
+        audit = BENCH.context_audit([*session("/tmp/a", "x"), message("user", "# AGENTS.md instructions\n\n<INSTRUCTIONS>")])
         self.assertTrue(audit["global_instructions"])
         self.assertTrue(BENCH.context_audit([message("user", "# Repository Guidelines")])["repository_context"])
+
+    def test_a_campaign_records_the_context_fingerprints_of_its_sessions(self):
+        with tempfile.TemporaryDirectory() as folder:
+            destination = Path(folder)
+            for run, fingerprint in [("task1-rep1/evidence/run-01", "a"), ("task1-rep1/evidence/run-02", "a"),
+                                     ("task3-rep1/evidence/run-01", "b")]:
+                (destination / run).mkdir(parents=True)
+                (destination / run / "context-audit.json").write_text(json.dumps({"fingerprint": fingerprint}))
+            self.assertEqual(BENCH.context_fingerprints(destination), {"a": 2, "b": 1})
 
     def test_sections_regression_adds_an_unrelated_reader_and_freezes_one_confirmation_sample(self):
         from collections import Counter

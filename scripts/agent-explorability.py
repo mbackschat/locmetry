@@ -8,6 +8,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import signal
 import subprocess
@@ -19,8 +20,6 @@ import time
 REPO = Path(__file__).resolve().parent.parent
 TASK = REPO / "tests/fixtures/agent-explorability/task1.json"
 CODEX_HOME = Path.home() / ".codex"
-# Plugins supply skills an ordinary Codex user has; Codex installs its own system skills in the fresh home.
-SHARED_CODEX_ENTRIES = ("plugins",)
 CREDENTIALS = threading.Lock()
 
 
@@ -296,23 +295,23 @@ def context_growth(rows):
 
 
 @contextlib.contextmanager
-def codex_home(source=CODEX_HOME):
-    """A fresh Codex home for one session, without the owner's global AGENTS.md.
+def subject_home(source=CODEX_HOME):
+    """A fresh home for one session, as after a new Codex install.
 
-    Codex injects `$CODEX_HOME/AGENTS.md` into every session, and the owner's
-    holds personal working instructions that would steer subjects. The home
-    sits outside the campaign, which is archived, because it holds credentials;
-    it shares only the plugins and is removed afterwards. Codex rotates the
-    refresh token when it refreshes, so newer credentials are written back.
+    Codex injects `$CODEX_HOME/AGENTS.md` into every session and lists the
+    skills of `~/.agents/skills` and of installed plugins; the operator's would
+    steer subjects, lengthen every prompt and change between campaigns. The
+    home holds only a copy of the credentials, and Codex installs its bundled
+    system skills there. It sits outside the campaign, which is archived, and
+    is removed afterwards. Codex rotates the refresh token when it refreshes,
+    so newer credentials are written back.
     """
-    home = Path(tempfile.mkdtemp(prefix="locmetry-codex-home-"))
-    credentials = home / "auth.json"
+    home = Path(tempfile.mkdtemp(prefix="locmetry-subject-home-"))
+    credentials = home / ".codex/auth.json"
     try:
+        credentials.parent.mkdir()
         shutil.copyfile(source / "auth.json", credentials)
         credentials.chmod(0o600)
-        for name in SHARED_CODEX_ENTRIES:
-            if (source / name).exists():
-                (home / name).symlink_to(source / name)
         yield home
     finally:
         with CREDENTIALS:
@@ -326,13 +325,32 @@ def codex_home(source=CODEX_HOME):
 
 
 def context_audit(rows):
-    """What a session was given besides the task: injected instructions and the model configuration."""
+    """What a session was given besides the task: injected instructions, skills and the model configuration.
+
+    The fingerprint covers what every session of a campaign must share: the
+    base instructions, the kind of each developer message and the skill names.
+    Paths, the environment and the task differ per session and are left out.
+    """
     contexts = [r["payload"] for r in rows if r["type"] == "turn_context"]
-    messages = [json.dumps(r["payload"]) for r in rows
-                if r["type"] == "response_item" and r["payload"].get("role") in ["user", "developer"]]
-    return dict(repository_context=any("Repository Guidelines" in m or "Agent Explorability Benchmark" in m for m in messages),
-                global_instructions=any("# AGENTS.md instructions" in m for m in messages),
-                configurations=[{"model": c.get("model"), "effort": c.get("effort")} for c in contexts])
+    texts = [(r["payload"]["role"], "".join(c.get("text", "") for c in r["payload"].get("content") or []))
+             for r in rows if r["type"] == "response_item" and r["payload"].get("role") in ["user", "developer"]]
+    skills = sorted(name for role, text in texts if text.startswith("<skills_instructions>")
+                    for name in re.findall(r"^- ([^:\n`]+): .*\(file: ", text, re.MULTILINE))
+    base = next((r["payload"].get("base_instructions") for r in rows if r["type"] == "session_meta"), None)
+    shared = dict(base=base, developer=[text.split("\n", 1)[0] for role, text in texts if role == "developer"], skills=skills)
+    return dict(repository_context=any("Repository Guidelines" in text or "Agent Explorability Benchmark" in text for _, text in texts),
+                global_instructions=any("# AGENTS.md instructions" in text for _, text in texts),
+                configurations=[{"model": c.get("model"), "effort": c.get("effort")} for c in contexts],
+                skills=skills, fingerprint=hashlib.sha256(json.dumps(shared, sort_keys=True).encode()).hexdigest())
+
+
+def context_fingerprints(destination):
+    """How many sessions of a campaign saw each context; an admissible campaign has one."""
+    found = {}
+    for audit in sorted(destination.glob("*/evidence/*/context-audit.json")):
+        fingerprint = json.loads(audit.read_text())["fingerprint"]
+        found[fingerprint] = found.get(fingerprint, 0) + 1
+    return found
 
 
 def run_agent(destination, run, model, effort):
@@ -362,23 +380,23 @@ def run_agent(destination, run, model, effort):
     ]
     settings = dict(command=invocation, binary_sha256=sha(executable), model=model, effort=effort,
                     prompt_sha256=sha(evidence / "prompt.txt"),
-                    codex_home={"isolated": True, "shared": list(SHARED_CODEX_ENTRIES)}, started=time.time())
+                    home="fresh, credentials only", started=time.time())
     (evidence / "invocation.json").write_text(json.dumps(settings, indent=2) + "\n")
     session = None
     stopped = None
     usage = {}
     tool_calls = 0
     thread = None
-    with codex_home() as home, (evidence / "prompt.txt").open() as prompt, events_path.open("w") as events, \
+    with subject_home() as home, (evidence / "prompt.txt").open() as prompt, events_path.open("w") as events, \
             (evidence / "stderr.txt").open("w") as stderr:
         process = subprocess.Popen(invocation, stdin=prompt, stdout=events, stderr=stderr, start_new_session=True,
-                                   env=dict(os.environ, CODEX_HOME=str(home)))
+                                   env=dict(os.environ, HOME=str(home), CODEX_HOME=str(home / ".codex")))
         while True:
             stream = records(events_path)
             if not thread:
                 thread = next((r["thread_id"] for r in stream if r["type"] == "thread.started"), None)
             if thread and not session:
-                session = next((home / "sessions").rglob(f"*{thread}*.jsonl"), None)
+                session = next((home / ".codex/sessions").rglob(f"*{thread}*.jsonl"), None)
             if session:
                 rows = records(session)
                 audit = context_audit(rows)
