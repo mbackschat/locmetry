@@ -29,6 +29,7 @@ STUDY_TASKS = {
     "agent-regression-2026-10-24-correction-v1": [12],
     "agent-regression-2026-10-24-sections-v1": [1, 3, 8, 12],
     "agent-regression-2026-10-24-sections-v2": [1, 3, 8, 12],
+    "agent-regression-2026-10-24-sections-correction-v1": [1],
 }
 
 

@@ -493,6 +493,25 @@ class ExperimentTests(unittest.TestCase):
         self.assertIn("2026-10-24-sections-v1", protocol["coverage_boundary"])
         full.validate_protocol(protocol)
 
+    def test_task1_correction_reruns_only_the_reader_with_the_single_task_call_allowance(self):
+        full = self.full_help_runner()
+        amendment = json.loads(full.PROTOCOL.with_name("regression-2026-10-24-sections-amendment-study.json").read_text())
+        protocol = json.loads(full.PROTOCOL.with_name("regression-2026-10-24-sections-correction-study.json").read_text())
+        self.assertEqual(full.STUDY_TASKS[protocol["revision"]], [1])
+        self.assertEqual(protocol["correction_of"], amendment["revision"])
+        self.assertEqual((protocol["task_ids"], protocol["maximum_sessions"]), ([1], 8))
+        self.assertEqual(protocol["pairs"], [p for p in amendment["pairs"] if p["task"] == 1])
+        for key in ["model", "effort", "control", "limits", "repetitions", "concurrent_pairs", "task_files", "integrity"]:
+            self.assertEqual(protocol[key], amendment[key], key)
+        rule, frozen = protocol["decision_rule"], amendment["decision_rule"]
+        for key in ["correctness", "per_task_medians", "secondary", "zero_comparator", "diagnostics"]:
+            self.assertEqual(rule[key], frozen[key], key)
+        # Single-task corrections allow total calls one above the control's (2026-10-22 owner decision).
+        self.assertEqual(rule["overall_all_run_totals"], {"agent_tool_calls": {"maximum_absolute_increase": 1},
+                                                          "uncached_input_tokens": {"maximum_ratio": 1.05}})
+        self.assertNotIn("confirmation", protocol)
+        full.validate_protocol(protocol)
+
     def test_a_confirmation_sample_runs_once_for_named_tasks_after_the_primary_sample(self):
         full = self.full_help_runner()
         with tempfile.TemporaryDirectory() as tmp:
