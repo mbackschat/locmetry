@@ -49,6 +49,25 @@ pub(crate) fn report(cwd: &Path, args: &[&str]) -> (bool, Value, String) {
     headline(cwd, &args)
 }
 
+/// The full report of a project with this `.locmetryrc` and these files.
+pub(crate) fn measured(config: &str, files: &[(&str, &str)]) -> Value {
+    let files = [&[(".locmetryrc", config)], files].concat();
+    let temp = project(&files);
+    let (success, document, stderr) = report(&temp.path().join("project"), &[]);
+    assert!(success, "{stderr}");
+    document
+}
+
+/// The record of `path` in a full report with per-file records.
+pub(crate) fn file<'a>(document: &'a Value, path: &str) -> &'a Value {
+    document["files"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|file| file["path"] == path)
+        .unwrap_or_else(|| panic!("{path} is not in the report"))
+}
+
 pub(crate) fn rules_by_path(document: &Value) -> Vec<(String, String)> {
     document["files"]
         .as_array()

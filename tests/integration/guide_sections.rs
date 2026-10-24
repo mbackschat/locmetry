@@ -2,7 +2,7 @@
 //! (docs/proposals/archive/guide-sections.md).
 use crate::common;
 use serde_json::Value;
-use std::{fs, path::Path, process::Output};
+use std::process::Output;
 
 pub(crate) const TOPICS: [&str; 6] = [
     "configure",
@@ -40,7 +40,7 @@ pub(crate) fn guide_path(topic: &str) -> String {
 }
 
 pub(crate) fn source(topic: &str) -> String {
-    fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join(guide_path(topic))).unwrap()
+    common::repository_file(&guide_path(topic))
 }
 
 /// GitHub's heading slug, as `anchors()` in scripts/doc-indexes.py computes it.
@@ -150,12 +150,13 @@ fn a_level_two_section_includes_its_subsections() {
 fn every_heading_outside_fences_is_a_section_and_nothing_else_is() {
     // compare.md's fenced shell scripts contain "# " comment lines, which a scanner
     // that ignored fences would take for headings.
+    // One command per topic requests every heading; an unknown one fails it and is named.
     for topic in TOPICS {
-        let text = source(topic);
-        for id in guide_ids(&text) {
-            let out = run(&["--guide", topic, "--section", &id]);
-            assert_eq!(out.status.code(), Some(0), "{topic} {id}: {}", stderr(&out));
-        }
+        let ids = guide_ids(&source(topic));
+        let mut args = vec!["--guide", topic];
+        args.extend(ids.iter().flat_map(|id| ["--section", id.as_str()]));
+        let out = run(&args);
+        assert_eq!(out.status.code(), Some(0), "{topic}: {}", stderr(&out));
     }
     let out = run(&["--guide", "compare", "--section", "baseline"]);
     assert_eq!(out.status.code(), Some(1));
@@ -326,7 +327,6 @@ fn schema_section_ids_select_exactly_one_value() {
                 );
             }
         }
-        // A property a definition shadows stays readable in full in the overview.
     }
 }
 

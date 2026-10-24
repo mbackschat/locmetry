@@ -5,13 +5,8 @@ use crate::common;
 use crate::guide_sections::{guide_ids, headings, slug, source, SCHEMAS, TOPICS};
 use serde_json::Value;
 use std::collections::BTreeSet;
-use std::{fs, path::Path};
 
 const PUBLISHED: &str = "tests/fixtures/guide-section-ids.txt";
-
-fn repository(path: &str) -> String {
-    fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join(path)).unwrap()
-}
 
 fn locmetry(args: &[&str]) -> std::process::Output {
     common::locmetry()
@@ -57,32 +52,27 @@ fn reference_sources() -> Vec<(String, String)> {
         vec!["compare", "--help"],
         vec!["explain", "--help"],
     ] {
-        let out = locmetry(&args);
-        texts.push((args.join(" "), String::from_utf8(out.stdout).unwrap()));
+        texts.push((args.join(" "), common::stdout(locmetry(&args))));
     }
     for topic in SCHEMAS {
-        let out = locmetry(&["--schema", topic]);
         texts.push((
             format!("--schema {topic}"),
-            String::from_utf8(out.stdout).unwrap(),
+            common::stdout(locmetry(&["--schema", topic])),
         ));
     }
-    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let mut files = vec![
         "README.md".to_owned(),
         "docs/PRODUCT.md".to_owned(),
         "docs/measurement.md".to_owned(),
     ];
-    for folder in ["docs/guides", "docs/cli", "docs/showcase", "docs/cookbooks"] {
-        for entry in fs::read_dir(root.join(folder)).unwrap() {
-            let path = entry.unwrap().path();
-            if path.extension().is_some_and(|extension| extension == "md") {
-                files.push(path.strip_prefix(root).unwrap().display().to_string());
-            }
-        }
-    }
+    files.extend(common::markdown_files(&[
+        "docs/guides",
+        "docs/cli",
+        "docs/showcase",
+        "docs/cookbooks",
+    ]));
     for file in files {
-        let text = repository(&file);
+        let text = common::repository_file(&file);
         texts.push((file, text));
     }
     texts
@@ -147,25 +137,32 @@ fn guide_headings_are_plain_text_with_unique_ids() {
 
 #[test]
 fn every_section_reference_resolves() {
-    let mut checked = 0;
+    // Documents repeat references; each distinct one runs once, named by its first context.
+    let mut distinct = std::collections::BTreeMap::new();
+    let mut found = 0;
     for (name, text) in reference_sources() {
         for (context, args) in references(&text) {
             assert!(
                 matches!(args[0].as_str(), "--guide" | "--schema"),
                 "{name}: '{context}' must name its topic as --guide TOPIC or --schema TOPIC"
             );
-            let args: Vec<&str> = args.iter().map(String::as_str).collect();
-            let out = locmetry(&args);
-            assert_eq!(
-                out.status.code(),
-                Some(0),
-                "{name}: '{context}': {}",
-                String::from_utf8_lossy(&out.stderr)
-            );
-            checked += 1;
+            distinct
+                .entry(args)
+                .or_insert(format!("{name}: '{context}'"));
+            found += 1;
         }
     }
-    assert!(checked >= 40, "only {checked} references found");
+    for (args, context) in distinct {
+        let args: Vec<&str> = args.iter().map(String::as_str).collect();
+        let out = locmetry(&args);
+        assert_eq!(
+            out.status.code(),
+            Some(0),
+            "{context}: {}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+    }
+    assert!(found >= 40, "only {found} references found");
 }
 
 #[test]
@@ -199,7 +196,7 @@ fn the_index_routes_to_every_guide_section() {
 #[test]
 fn published_ids_stay_requestable_unless_their_removal_is_breaking() {
     // Ids ignore case, so a published id stays requestable under any spelling.
-    let published: BTreeSet<String> = repository(PUBLISHED)
+    let published: BTreeSet<String> = common::repository_file(PUBLISHED)
         .lines()
         .filter(|line| !line.is_empty() && !line.starts_with('#'))
         .map(str::to_lowercase)
@@ -210,7 +207,7 @@ fn published_ids_stay_requestable_unless_their_removal_is_breaking() {
         unpublished.is_empty(),
         "add new section ids to {PUBLISHED}: {unpublished:?}"
     );
-    let changelog = repository("CHANGELOG.md");
+    let changelog = common::repository_file("CHANGELOG.md");
     let unreleased = changelog
         .split_once("## [Unreleased]")
         .unwrap()
@@ -233,8 +230,10 @@ fn published_ids_stay_requestable_unless_their_removal_is_breaking() {
 fn routed_reads_stay_within_a_third_of_the_whole_documents() {
     // The baseline is the batch every configuration session read whole before
     // sections existed, measured at its revision; tests/fixtures/guide-section-routes.json.
-    let manifest: Value =
-        serde_json::from_str(&repository("tests/fixtures/guide-section-routes.json")).unwrap();
+    let manifest: Value = serde_json::from_str(&common::repository_file(
+        "tests/fixtures/guide-section-routes.json",
+    ))
+    .unwrap();
     let limit = manifest["baseline"]["bytes"].as_f64().unwrap()
         * manifest["maximum_share"].as_f64().unwrap();
     for (name, commands) in manifest["routes"].as_object().unwrap() {

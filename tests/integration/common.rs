@@ -45,6 +45,29 @@ pub fn json(output: &Output, status: i32) -> Value {
     serde_json::from_slice(&output.stdout).unwrap()
 }
 
+/// A repository file's text; a failure names the path.
+pub fn repository_file(path: &str) -> String {
+    std::fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join(path))
+        .unwrap_or_else(|error| panic!("{path}: {error}"))
+}
+
+/// The Markdown files directly in each of `folders`, as repository paths,
+/// sorted by name within each folder.
+pub fn markdown_files(folders: &[&str]) -> Vec<String> {
+    let mut paths = Vec::new();
+    for folder in folders {
+        let mut names: Vec<_> =
+            std::fs::read_dir(Path::new(env!("CARGO_MANIFEST_DIR")).join(folder))
+                .unwrap()
+                .map(|entry| entry.unwrap().file_name().into_string().unwrap())
+                .filter(|name| name.ends_with(".md"))
+                .collect();
+        names.sort();
+        paths.extend(names.into_iter().map(|name| format!("{folder}/{name}")));
+    }
+    paths
+}
+
 /// Stdout of a successful run; stderr explains a failure.
 pub fn stdout(output: Output) -> String {
     assert!(

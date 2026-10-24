@@ -6,21 +6,8 @@ use crate::cli::*;
 use crate::common::locmetry;
 use serde_json::{json, Value};
 
-fn measured(config: &str, files: &[(&str, &str)]) -> Value {
-    let files = [&[(".locmetryrc", config)], files].concat();
-    let temp = project(&files);
-    let (success, document, stderr) = report(&temp.path().join("project"), &[]);
-    assert!(success, "{stderr}");
-    document
-}
-
 fn rule_of(document: &Value, path: &str) -> String {
-    let file = document["files"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .find(|file| file["path"] == path)
-        .unwrap_or_else(|| panic!("no record for {path}"));
+    let file = file(document, path);
     format!("{}:{}@{}", file["purpose"], file["category"], file["rule"]).replace('"', "")
 }
 
@@ -356,15 +343,6 @@ fn refined() -> tempfile::TempDir {
         ("src/laws/a.test.ts", "test();\ntest();\n"),
         ("src/laws/Field.test.ts", "test();\n"),
     ])
-}
-
-fn file<'a>(document: &'a Value, path: &str) -> &'a Value {
-    document["files"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .find(|file| file["path"] == path)
-        .unwrap_or_else(|| panic!("no record for {path}"))
 }
 
 /// A refinement relabels conventional tests without an override: purpose,

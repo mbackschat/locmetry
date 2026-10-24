@@ -6,14 +6,6 @@ use crate::common::locmetry;
 use serde_json::{json, Value};
 use std::{fs, process::Command};
 
-fn measured(config: &str, files: &[(&str, &str)]) -> Value {
-    let files = [&[(".locmetryrc", config)], files].concat();
-    let temp = project(&files);
-    let (success, document, stderr) = report(&temp.path().join("project"), &[]);
-    assert!(success, "{stderr}");
-    document
-}
-
 fn file<'a>(document: &'a Value, path: &str) -> Option<&'a Value> {
     document["files"]
         .as_array()

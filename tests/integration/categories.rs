@@ -81,7 +81,7 @@ struct Vocabulary {
 
 impl Vocabulary {
     fn read() -> Self {
-        let guide = read("docs/guides/categories.md");
+        let guide = common::repository_file("docs/guides/categories.md");
         let table = guide
             .split_once("<!-- category-vocabulary -->\n")
             .expect("the guide marks its vocabulary table")
@@ -123,11 +123,6 @@ impl Vocabulary {
     }
 }
 
-fn read(path: &str) -> String {
-    std::fs::read_to_string(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(path))
-        .unwrap_or_else(|error| panic!("{path}: {error}"))
-}
-
 /// TOML fences and `<<'TOML'` heredocs of a Markdown text, in document order.
 fn examples(text: &str) -> Vec<String> {
     let mut found = Vec::new();
@@ -165,9 +160,7 @@ fn help_examples(help: &str) -> Vec<String> {
 }
 
 fn output(args: &[&str]) -> String {
-    let out = common::locmetry().args(args).output().unwrap();
-    assert!(out.status.success(), "{args:?}");
-    String::from_utf8(out.stdout).unwrap()
+    common::stdout(common::locmetry().args(args).output().unwrap())
 }
 
 /// Every scanned source with its examples; sources without examples are kept
@@ -175,18 +168,9 @@ fn output(args: &[&str]) -> String {
 fn sources() -> Vec<(String, Vec<String>)> {
     let mut sources = Vec::new();
     let mut documents = vec!["README.md".to_string(), "docs/PRODUCT.md".to_string()];
-    for folder in DOCUMENT_FOLDERS {
-        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(folder);
-        let mut names: Vec<_> = std::fs::read_dir(root)
-            .unwrap()
-            .map(|entry| entry.unwrap().file_name().into_string().unwrap())
-            .filter(|name| name.ends_with(".md"))
-            .collect();
-        names.sort();
-        documents.extend(names.into_iter().map(|name| format!("{folder}/{name}")));
-    }
+    documents.extend(common::markdown_files(DOCUMENT_FOLDERS));
     for path in documents {
-        let found = examples(&read(&path));
+        let found = examples(&common::repository_file(&path));
         sources.push((path, found));
     }
     sources.push((
@@ -199,7 +183,7 @@ fn sources() -> Vec<(String, Vec<String>)> {
         examples(schema["description"].as_str().unwrap()),
     ));
     for path in POLICY_FILES {
-        sources.push((path.to_string(), vec![read(path)]));
+        sources.push((path.to_string(), vec![common::repository_file(path)]));
     }
     sources
 }
@@ -344,7 +328,7 @@ fn documents_help_and_policies_keep_their_example_inventory() {
 
 #[test]
 fn inventory_detects_a_lost_example_beside_a_remaining_one() {
-    let text = read("docs/cli/explain.md");
+    let text = common::repository_file("docs/cli/explain.md");
     let second = text.rfind("<<'TOML'\n").unwrap();
     let mutated = format!("{}<<'EOF'\n{}", &text[..second], &text[second + 9..]);
     assert!(source_error("docs/cli/explain.md", &examples(&text)).is_none());
@@ -452,7 +436,7 @@ fn documented_category_selectors_select_reference_names() {
         .iter()
         .filter(|(source, _)| source.ends_with(".md"))
     {
-        for selector in selectors(&read(source)) {
+        for selector in selectors(&common::repository_file(source)) {
             for item in selector.split(',') {
                 checked += 1;
                 let (purpose, category) = item.split_once(':').unwrap_or((item, "*"));

@@ -16,15 +16,6 @@ fn measured(files: &[(&str, &str)]) -> Value {
     document
 }
 
-fn file<'a>(document: &'a Value, path: &str) -> &'a Value {
-    document["files"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .find(|file| file["path"] == path)
-        .unwrap_or_else(|| panic!("{path} is not in the report"))
-}
-
 /// `(path, purpose:category, rule)` for each expected path.
 fn expect(document: &Value, expected: &[(&str, &str, &str)]) {
     let actual: Vec<(String, String, String)> = expected

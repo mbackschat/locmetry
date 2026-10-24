@@ -41,15 +41,6 @@ fn fixture() -> tempfile::TempDir {
     ])
 }
 
-fn file<'a>(document: &'a Value, path: &str) -> &'a Value {
-    document["files"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .find(|file| file["path"] == path)
-        .unwrap_or_else(|| panic!("{path} is not in the report"))
-}
-
 #[test]
 fn entries_that_keep_production_keep_the_modules_credit() {
     let temp = fixture();

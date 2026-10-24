@@ -17,10 +17,7 @@ fn document(root: &Path, args: &[&str], code: i32) -> Value {
 }
 
 fn source(topic: &str) -> String {
-    fs::read_to_string(
-        Path::new(env!("CARGO_MANIFEST_DIR")).join(format!("docs/guides/{topic}.md")),
-    )
-    .unwrap()
+    common::repository_file(&format!("docs/guides/{topic}.md"))
 }
 
 fn block<'a>(text: &'a str, marker: &str, language: &str) -> &'a str {
