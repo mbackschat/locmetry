@@ -93,27 +93,30 @@ def validate_protocol(protocol):
         raise ValueError("Unknown study; only the fixed protocols in STUDY_TASKS are supported")
     if protocol["task_ids"] != task_ids or protocol["repetitions"] != 4 or protocol["concurrent_pairs"] != 3:
         raise ValueError("The fixed protocol requires its task set, four pairs each and at most three concurrent pairs")
-    pairs = protocol["pairs"]
-    expected_pairs = len(task_ids) * 4
-    if len(pairs) != expected_pairs or protocol["maximum_sessions"] != expected_pairs * 2:
-        raise ValueError(f"The bounded study requires exactly {expected_pairs} pairs ({expected_pairs * 2} sessions)")
-    for task in task_ids:
-        selected = [p for p in pairs if p["task"] == task]
-        if {p["repetition"] for p in selected} != {1, 2, 3, 4} or Counter(p["order"] for p in selected) != {"AB": 2, "BA": 2}:
-            raise ValueError(f"Task {task} requires AB/BA twice each")
+    require_balanced(protocol, task_ids, {1, 2, 3, 4}, "The bounded study")
     # A predeclared confirmation sample: four more balanced pairs per task, frozen
     # with the primary sample and run at most once (docs/agent-regression-checks.md).
     confirmation = protocol.get("confirmation")
     if confirmation is None and protocol["revision"] not in FROZEN_WITHOUT_CONFIRMATION:
         raise ValueError("A new protocol must freeze a confirmation sample of four pairs per task")
     if confirmation is not None:
-        extra = confirmation["pairs"]
-        if len(extra) != len(task_ids) * 4 or confirmation["maximum_sessions"] != len(extra) * 2:
-            raise ValueError("A confirmation sample requires four pairs per task")
-        for task in task_ids:
-            selected = [p for p in extra if p["task"] == task]
-            if {p["repetition"] for p in selected} != {5, 6, 7, 8} or Counter(p["order"] for p in selected) != {"AB": 2, "BA": 2}:
-                raise ValueError(f"Task {task} requires confirmation pairs 5-8, AB/BA twice each")
+        require_balanced(confirmation, task_ids, {5, 6, 7, 8}, "A confirmation sample")
+
+
+def require_balanced(sample, task_ids, repetitions, label):
+    """Four pairs per task with these repetitions, AB and BA twice each, and the matching session bound."""
+    pairs = sample["pairs"]
+    expected = len(task_ids) * len(repetitions)
+    if len(pairs) != expected or sample["maximum_sessions"] != expected * 2:
+        raise ValueError(f"{label} requires exactly {expected} pairs ({expected * 2} sessions)")
+    for task in task_ids:
+        selected = [p for p in pairs if p["task"] == task]
+        if {p["repetition"] for p in selected} != repetitions or Counter(p["order"] for p in selected) != {"AB": 2, "BA": 2}:
+            raise ValueError(f"{label}: task {task} requires repetitions {sorted(repetitions)}, AB/BA twice each")
+
+
+def pair_folder(destination, pair):
+    return destination / f"task{pair['task']}-rep{pair['repetition']}"
 
 
 def all_pairs(protocol):
@@ -168,7 +171,7 @@ def campaign(destination, binaries, revisions, protocol_path=PROTOCOL, *, prepar
     }
     snapshot = None
     for item in all_pairs(protocol):
-        target = destination / f"task{item['task']}-rep{item['repetition']}"
+        target = pair_folder(destination, item)
         task_path = frozen_tasks / task_paths[item["task"]].name
         BENCH.prepare(target, task_path, [frozen_binaries / arm for arm in "AB"],
                       "supplied-binaries", arm_provenance=arms)
@@ -229,7 +232,7 @@ def run_pairs(destination, plan, pairs, marker, acknowledgement):
         started.write("\n")
 
     def pair(item):
-        target = destination / f"task{item['task']}-rep{item['repetition']}"
+        target = pair_folder(destination, item)
         for arm in item["order"]:
             BENCH.run_agent(target, {"A": "run-02", "B": "run-01"}[arm], plan["model"], plan["effort"])
         return target.name
@@ -260,7 +263,7 @@ def run_confirmation(destination, acknowledgement, tasks):
     if (destination / "confirmation-started.json").exists():
         raise ValueError("The confirmation sample already ran; no further trials are permitted")
     primary = json.loads((destination / "campaign.json").read_text())["pairs"]
-    plan = frozen_plan(destination, acknowledgement, ran={f"task{p['task']}-rep{p['repetition']}" for p in primary})
+    plan = frozen_plan(destination, acknowledgement, ran={pair_folder(destination, p).name for p in primary})
     unknown = sorted(set(tasks) - set(plan["task_ids"]))
     if unknown or "confirmation" not in plan:
         raise ValueError(f"Confirmation tasks not in this protocol: {unknown or 'no confirmation sample'}")

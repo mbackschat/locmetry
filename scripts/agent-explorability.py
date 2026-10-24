@@ -1,6 +1,7 @@
 """Prepare isolated CLI discovery experiments; never edit product sources."""
 
 import argparse
+import collections
 from concurrent.futures import ThreadPoolExecutor
 import contextlib
 import difflib
@@ -281,6 +282,12 @@ def records(path):
     return result
 
 
+def token_counts(rows):
+    """The usage records Codex logs after each model request."""
+    return [r["payload"]["info"] for r in rows
+            if r.get("type") == "event_msg" and r["payload"].get("type") == "token_count" and r["payload"].get("info")]
+
+
 def context_growth(rows):
     """The context a session built, independent of provider cache hits.
 
@@ -290,8 +297,7 @@ def context_growth(rows):
     first diagnostic of 2026-10-24 subtracted the first request's cached input,
     which cross-session cache hits make vary (docs/research/agent-regression-run-2026-10-24.md).
     """
-    inputs = [r["payload"]["info"]["last_token_usage"]["input_tokens"] for r in rows
-              if r.get("type") == "event_msg" and r["payload"].get("type") == "token_count" and r["payload"].get("info")]
+    inputs = [info["last_token_usage"]["input_tokens"] for info in token_counts(rows)]
     steps = [after - before for before, after in zip(inputs, inputs[1:])]
     return {"context_growth": sum(step for step in steps if step > 0), "context_decreases": sum(step < 0 for step in steps)}
 
@@ -354,13 +360,12 @@ def context_audit(rows):
     Paths, the environment and the task differ per session and are left out.
     """
     contexts = [r["payload"] for r in rows if r["type"] == "turn_context"]
-    texts = [(r["payload"]["role"], "".join(c.get("text", "") for c in r["payload"].get("content") or []))
-             for r in rows if r["type"] == "response_item" and r["payload"].get("role") in ["user", "developer"]]
+    messages = [r["payload"] for r in rows if r["type"] == "response_item" and r["payload"].get("role") in ["user", "developer"]]
+    texts = [(m["role"], "".join(c.get("text", "") for c in m.get("content") or [])) for m in messages]
     skills = sorted(name for role, text in texts if text.startswith("<skills_instructions>")
                     for name in re.findall(r"^- ([^:\n`]+): .*\(file: ", text, re.MULTILINE))
     base = next((r["payload"].get("base_instructions") for r in rows if r["type"] == "session_meta"), None)
-    kinds = [(c.get("text") or "").split("\n", 1)[0] for r in rows
-             if r["type"] == "response_item" and r["payload"].get("role") == "developer" for c in r["payload"].get("content") or []]
+    kinds = [(c.get("text") or "").split("\n", 1)[0] for m in messages if m["role"] == "developer" for c in m.get("content") or []]
     shared = dict(base=base, developer=kinds, skills=skills)
     return dict(repository_context=any("Repository Guidelines" in text or "Agent Explorability Benchmark" in text for _, text in texts),
                 global_instructions=any("# AGENTS.md instructions" in text for _, text in texts),
@@ -370,11 +375,8 @@ def context_audit(rows):
 
 def context_fingerprints(destination):
     """How many sessions of a campaign saw each context; an admissible campaign has one."""
-    found = {}
-    for audit in sorted(destination.glob("*/evidence/*/context-audit.json")):
-        fingerprint = json.loads(audit.read_text())["fingerprint"]
-        found[fingerprint] = found.get(fingerprint, 0) + 1
-    return found
+    return dict(collections.Counter(json.loads(audit.read_text())["fingerprint"]
+                                    for audit in destination.glob("*/evidence/*/context-audit.json")))
 
 
 def run_agent(destination, run, model, effort):
@@ -411,6 +413,7 @@ def run_agent(destination, run, model, effort):
     usage = {}
     tool_calls = 0
     thread = None
+    written = None
     with subject_home() as home, (evidence / "prompt.txt").open() as prompt, events_path.open("w") as events, \
             (evidence / "stderr.txt").open("w") as stderr:
         process = subprocess.Popen(invocation, stdin=prompt, stdout=events, stderr=stderr, start_new_session=True,
@@ -424,14 +427,16 @@ def run_agent(destination, run, model, effort):
             if session:
                 rows = records(session)
                 audit = context_audit(rows)
-                (evidence / "context-audit.json").write_text(json.dumps(audit, indent=2) + "\n")
+                if audit != written:
+                    (evidence / "context-audit.json").write_text(json.dumps(audit, indent=2) + "\n")
+                    written = audit
                 if audit["repository_context"]:
                     stopped = "repository-context-contamination"
                 if audit["global_instructions"]:
                     stopped = "global-context-contamination"
                 if any(c["model"] != model or c["effort"] != effort for c in audit["configurations"]):
                     stopped = "model-configuration-mismatch"
-                counts = [r["payload"]["info"]["total_token_usage"] for r in rows if r["type"] == "event_msg" and r["payload"].get("type") == "token_count" and r["payload"].get("info")]
+                counts = [info["total_token_usage"] for info in token_counts(rows)]
                 usage = counts[-1] if counts else {}
                 tool_calls = sum(r["type"] == "response_item" and r["payload"].get("type") in ["function_call", "custom_tool_call"] for r in rows)
             limits = manifest["limits"]
@@ -460,14 +465,15 @@ def run_agent(destination, run, model, effort):
     final_usage = [r["usage"] for r in stream if r["type"] == "turn.completed"]
     if final_usage:
         usage = final_usage[-1]
+    growth = {}
     if session:
         rows = records(evidence / "session.jsonl")
         tool_calls = sum(r["type"] == "response_item" and r["payload"].get("type") in ["function_call", "custom_tool_call"] for r in rows)
+        growth = context_growth(rows)
     integrity = all((destination / run / p).is_file() and (destination / run / p).read_text() == content
                     for p, content in task["files"].items() if p not in task.get("mutable", []))
     integrity = integrity and all((destination / run / p).is_file() and sha(destination / run / p) == digest
                                   for p, digest in generated_hashes.items())
-    growth = context_growth(records(evidence / "session.jsonl")) if session else {}
     summary = dict(condition=condition, run=run, thread_id=thread, session=str(session) if session else None,
                    elapsed=time.time()-settings["started"], returncode=process.returncode, stopped=stopped,
                    fixture_intact=integrity, usage=usage, agent_tool_calls=tool_calls,
