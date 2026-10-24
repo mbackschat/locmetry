@@ -4,7 +4,7 @@
 
 ## Accepted — Awaiting Verification
 
-- [Manual page, completions and reference topic](proposals/manual-and-reference.md): accepted 2026-10-24 and implemented the same day. On 2026-10-24 the page passed review under groff 1.23 on Debian 13 and mandoc on macOS, and the [manual completion check](tokei-integration.md#man-page-and-completion-check) passed in bash 5.3 (macOS), zsh 5.9 (Debian and macOS) and fish 4.0.2 (Debian), after fixes for zsh's command dispatch and groff's hyphenation. Before retirement, its acceptance still needs the PowerShell completion check and the desk review of the help surfaces, index rows and reference guide.
+- [Manual page, completions and reference topic](proposals/manual-and-reference.md): accepted 2026-10-24 and implemented the same day. On 2026-10-24 the page passed review under groff 1.23 on Debian 13 and mandoc on macOS, and the [manual completion check](tokei-integration.md#man-page-and-completion-check) passed in bash 5.3 (macOS), zsh 5.9 (Debian and macOS) and fish 4.0.2 (Debian), after fixes for zsh's command dispatch and groff's hyphenation. The [desk review](research/agent-regression-desk-review-2026-10-24.md) found no regression and needs no agent run. Before retirement, its acceptance still needs the PowerShell completion check.
 
 The [proposal index](proposals/README.md) distinguishes active designs from historical decisions.
 
