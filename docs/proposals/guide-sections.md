@@ -71,7 +71,7 @@ $ locmetry --schema config --section Refinement
 - a guide heading is outside the supported form, has an empty slug, or duplicates another id of the same guide;
 - a schema has `overview` as a property or definition name, or a property and a definition share a name;
 - a `--section` reference does not resolve, wherever it appears: rendered help, guides, schema descriptions, README, and the recorded guides under `docs/cli/` and `docs/showcase/`, including inline code and code blocks, which the link checker deliberately skips;
-- a guide section is neither named by an index row nor listed in the index's enumerated whole-guide exemptions;
+- a guide section is named by no index row, neither itself nor a parent section that prints it;
 - an id in the committed list of published ids no longer resolves, unless CHANGELOG's `Unreleased` section records its removal as **Breaking**;
 - the Rust slug rule disagrees with `anchors()` in `scripts/doc-indexes.py` for any guide heading.
 
@@ -102,4 +102,4 @@ Implementation updates PRODUCT, the affected README and guide routes, help-desig
 
 ## Review History
 
-A second independent review on 2026-10-24 accepted the revision and asked that the protocol fix the confirmation sample's rules and present context growth as whole-session growth; commit `23e0ce9` adopted both. The owner accepted the proposal for implementation the same day.
+A second independent review on 2026-10-24 accepted the revision and asked that the protocol fix the confirmation sample's rules and present context growth as whole-session growth; commit `23e0ce9` adopted both. The owner accepted the proposal for implementation the same day. During implementation the same day, two guard rules changed: a schema property and definition may differ only in case, as `scope` and its definition `Scope` do, because ids match exactly; and the index covers a subsection through its parent, so no exemption list was needed.
