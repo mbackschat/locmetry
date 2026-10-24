@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && python3 scripts/trim-tmp.py && python3 scripts/trim-target.py",
+            "async": true,
+            "timeout": 1200
+          }
+        ]
+      }
+    ]
+  }
+}

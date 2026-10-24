@@ -23,6 +23,16 @@ Before implementation, scan PLAN for relevant open work, then read only the appl
 
 Keep [Cargo.lock](Cargo.lock) with the application. Tokei is embedded with its default CLI feature disabled; do not add Python, Git, or Tokei executable requirements. Homebrew Rust dependencies are build-only, and Linux release binaries are static musl builds. Use `git status --short` and `git diff --check` before submission.
 
+## Disk Hygiene
+
+Keep only the current build and the newest temporary trees; on 2026-10-24 leftovers had grown to 54 GB in `target/`, over 18 GB of temporary trees and a 592 MB campaign archive. Three scripts do the cleanup. Each removes only what it can attribute to this repository and refuses anything else.
+
+- `python3 scripts/trim-target.py` removes every `target/` artifact that the current build, test and Clippy run do not report, and runs `cargo clean` above 6 GiB. Run it at the end of each task.
+- `python3 scripts/trim-tmp.py` keeps only the newest `locmetry-*` tree in `/tmp` and `$TMPDIR` and the newest Claude Code session scratch folder of this repository, never touching anything changed within the last hour, subject homes or unarchived campaigns.
+- `python3 scripts/compact-campaign.py CAMPAIGN` replaces an archived campaign's binaries with their hashes and compresses its logs; run it after moving a campaign into the archive.
+
+The SessionStart hook in [.claude/settings.json](.claude/settings.json) runs the first two in the background. Put temporary trees in the session scratchpad or name them `locmetry-*` below `/tmp` or `$TMPDIR`, delete your own when a task ends, and build into the repository's `target/` only.
+
 ## Coding Style & Naming Conventions
 
 Use rustfmt, four-space indentation, `snake_case` functions/modules, and `PascalCase` types. Keep source files within the [file-size limits](docs/self-measurement.md#file-sizes) that CI enforces with `python3 scripts/check-file-sizes.py`: split a file instead of raising its limit, and lower or remove a ceiling in the same commit that shrinks its file. Prefer enums and `match` for finite alternatives. Keep changes focused and avoid speculative adapter frameworks. Write Markdown with one paragraph per physical line and regular links to other documents.

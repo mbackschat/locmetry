@@ -47,11 +47,14 @@ match = [
     "scripts/refresh-readme-showcase.py",
     "scripts/record-demo.sh",
     "scripts/agent-regression-trend.py",
+    "scripts/trim-target.py",
+    "scripts/trim-tmp.py",
+    "scripts/compact-campaign.py",
 ]
 kind = ["source"]
 purpose = "production"
 category = "tooling"
-reason = "These commands maintain documentation and its showcase assets. See [documentation maintenance](docs/documentation-maintenance.md)"
+reason = "These commands maintain documentation, its showcase assets and the disk space builds and campaigns use. See [documentation maintenance](docs/documentation-maintenance.md) and the Disk Hygiene section of [CLAUDE.md](CLAUDE.md)"
 
 [[rules]]
 id = "distribution"
