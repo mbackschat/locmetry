@@ -1,0 +1,756 @@
+{
+  "revision": "agent-regression-2026-10-24-correction-v1",
+  "date": "2026-10-24",
+  "protocol": "tests/fixtures/agent-explorability/regression-2026-10-24-correction-study.json",
+  "model": "gpt-6.1-sol",
+  "effort": "xhigh",
+  "arms": {
+    "A": {
+      "source_revision": "bd820b7e2003172addba7169038de376634041ad",
+      "source_provenance": "operator-declared prebuilt binary",
+      "binary_sha256": "c448807f7a6dc10ecce1abc3c4934acf1aabed921b590bc1d52a927c99660919"
+    },
+    "B": {
+      "source_revision": "15b9c567129ed3ad6057ebdb08c8ea62958f1b12",
+      "source_provenance": "operator-declared prebuilt binary",
+      "binary_sha256": "271cfb747d7e2ac9198f653f467fa1c77b5a25449c66a323142a699fbbc9132e"
+    }
+  },
+  "preparation_revision": "c13dc377f9696d017dc25c9735d596f7f31d1e06",
+  "previous_trials_included": false,
+  "analysis": {
+    "per_task": {
+      "12": {
+        "A": {
+          "tools": {
+            "total": 27,
+            "median": 7.0,
+            "minimum": 5,
+            "maximum": 8
+          },
+          "shell": {
+            "total": 63,
+            "median": 16.0,
+            "minimum": 11,
+            "maximum": 20
+          },
+          "cli": {
+            "total": 31,
+            "median": 8.5,
+            "minimum": 5,
+            "maximum": 9
+          },
+          "fresh": {
+            "total": 149227,
+            "median": 28388.0,
+            "minimum": 27135,
+            "maximum": 65316
+          },
+          "cached": {
+            "total": 1009280,
+            "median": 257280.0,
+            "minimum": 185728,
+            "maximum": 308992
+          },
+          "output": {
+            "total": 22437,
+            "median": 5315.5,
+            "minimum": 4797,
+            "maximum": 7009
+          },
+          "seconds": {
+            "total": 589.0307002067566,
+            "median": 139.52788019180298,
+            "minimum": 127.27068781852722,
+            "maximum": 182.7042520046234
+          },
+          "guide_calls": {
+            "total": 4,
+            "median": 1.0,
+            "minimum": 1,
+            "maximum": 1
+          },
+          "schema_calls": {
+            "total": 6,
+            "median": 1.5,
+            "minimum": 1,
+            "maximum": 2
+          },
+          "passes": 4
+        },
+        "B": {
+          "tools": {
+            "total": 26,
+            "median": 6.5,
+            "minimum": 5,
+            "maximum": 8
+          },
+          "shell": {
+            "total": 49,
+            "median": 12.0,
+            "minimum": 11,
+            "maximum": 14
+          },
+          "cli": {
+            "total": 35,
+            "median": 8.5,
+            "minimum": 8,
+            "maximum": 10
+          },
+          "fresh": {
+            "total": 174092,
+            "median": 45576.5,
+            "minimum": 31805,
+            "maximum": 51134
+          },
+          "cached": {
+            "total": 991360,
+            "median": 244800.0,
+            "minimum": 185344,
+            "maximum": 316416
+          },
+          "output": {
+            "total": 19968,
+            "median": 5025.5,
+            "minimum": 4108,
+            "maximum": 5809
+          },
+          "seconds": {
+            "total": 544.6288642883301,
+            "median": 124.68770170211792,
+            "minimum": 109.05278086662292,
+            "maximum": 186.2006800174713
+          },
+          "guide_calls": {
+            "total": 10,
+            "median": 2.5,
+            "minimum": 2,
+            "maximum": 3
+          },
+          "schema_calls": {
+            "total": 7,
+            "median": 2.0,
+            "minimum": 1,
+            "maximum": 2
+          },
+          "passes": 4
+        }
+      }
+    },
+    "totals": {
+      "A": {
+        "tools": 27,
+        "shell": 63,
+        "cli": 31,
+        "fresh": 149227,
+        "cached": 1009280,
+        "output": 22437,
+        "seconds": 589.0307002067566,
+        "guide_calls": 4,
+        "schema_calls": 6
+      },
+      "B": {
+        "tools": 26,
+        "shell": 49,
+        "cli": 35,
+        "fresh": 174092,
+        "cached": 991360,
+        "output": 19968,
+        "seconds": 544.6288642883301,
+        "guide_calls": 10,
+        "schema_calls": 7
+      }
+    },
+    "paired": {
+      "12": {
+        "tools": {
+          "lower": 2,
+          "equal": 1,
+          "higher": 1,
+          "differences": [
+            0,
+            -1,
+            2,
+            -2
+          ]
+        },
+        "fresh": {
+          "lower": 1,
+          "equal": 0,
+          "higher": 3,
+          "differences": [
+            -20033,
+            4670,
+            21733,
+            18495
+          ]
+        }
+      }
+    },
+    "primary_failures": [
+      {
+        "scope": "task",
+        "task": 12,
+        "metric": "fresh",
+        "control": 28388.0,
+        "candidate": 45576.5,
+        "bound": 31226.800000000003
+      },
+      {
+        "scope": "overall",
+        "metric": "fresh",
+        "control": 149227,
+        "candidate": 174092,
+        "bound": 156688.35
+      }
+    ],
+    "secondary_flags": [
+      {
+        "task": 12,
+        "metric": "guide_calls",
+        "control": 1.0,
+        "candidate": 2.5
+      },
+      {
+        "task": 12,
+        "metric": "schema_calls",
+        "control": 1.5,
+        "candidate": 2.0
+      }
+    ],
+    "correctness": true,
+    "primary_cost_pass": false,
+    "peak_concurrency": 3
+  },
+  "runs": [
+    {
+      "task": 12,
+      "rep": 1,
+      "arm": "B",
+      "tools": 8,
+      "shell": 12,
+      "cli": 8,
+      "operator_probes": 0,
+      "fresh": 45283,
+      "cached": 316416,
+      "output": 5146,
+      "seconds": 117.18752217292786,
+      "guides": [
+        "configure",
+        "categories",
+        "categories"
+      ],
+      "schemas": [
+        "config",
+        "config"
+      ],
+      "first_cli": [
+        "--help"
+      ],
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "guide_calls": 3,
+      "schema_calls": 2,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 12,
+      "rep": 1,
+      "arm": "A",
+      "tools": 8,
+      "shell": 20,
+      "cli": 9,
+      "operator_probes": 0,
+      "fresh": 65316,
+      "cached": 293376,
+      "output": 5638,
+      "seconds": 131.21427822113037,
+      "guides": [
+        "configure"
+      ],
+      "schemas": [
+        "config",
+        "config"
+      ],
+      "first_cli": [
+        "--help"
+      ],
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "guide_calls": 1,
+      "schema_calls": 2,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 12,
+      "rep": 2,
+      "arm": "B",
+      "tools": 5,
+      "shell": 12,
+      "cli": 9,
+      "operator_probes": 0,
+      "fresh": 31805,
+      "cached": 185344,
+      "output": 4108,
+      "seconds": 109.05278086662292,
+      "guides": [
+        "configure",
+        "categories",
+        "categories"
+      ],
+      "schemas": [
+        "config",
+        "config"
+      ],
+      "first_cli": [
+        "--help"
+      ],
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "guide_calls": 3,
+      "schema_calls": 2,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 12,
+      "rep": 2,
+      "arm": "A",
+      "tools": 6,
+      "shell": 11,
+      "cli": 5,
+      "operator_probes": 0,
+      "fresh": 27135,
+      "cached": 221184,
+      "output": 4797,
+      "seconds": 147.8414821624756,
+      "guides": [
+        "configure"
+      ],
+      "schemas": [
+        "config"
+      ],
+      "first_cli": [
+        "--help"
+      ],
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "guide_calls": 1,
+      "schema_calls": 1,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 12,
+      "rep": 3,
+      "arm": "B",
+      "tools": 7,
+      "shell": 11,
+      "cli": 10,
+      "operator_probes": 0,
+      "fresh": 51134,
+      "cached": 272896,
+      "output": 5809,
+      "seconds": 186.2006800174713,
+      "guides": [
+        "categories",
+        "configure"
+      ],
+      "schemas": [
+        "config",
+        "config"
+      ],
+      "first_cli": [
+        "--help"
+      ],
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "guide_calls": 2,
+      "schema_calls": 2,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 12,
+      "rep": 3,
+      "arm": "A",
+      "tools": 5,
+      "shell": 16,
+      "cli": 8,
+      "operator_probes": 0,
+      "fresh": 29401,
+      "cached": 185728,
+      "output": 4993,
+      "seconds": 127.27068781852722,
+      "guides": [
+        "configure"
+      ],
+      "schemas": [
+        "config",
+        "config"
+      ],
+      "first_cli": [
+        "--help"
+      ],
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "guide_calls": 1,
+      "schema_calls": 2,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 12,
+      "rep": 4,
+      "arm": "B",
+      "tools": 6,
+      "shell": 14,
+      "cli": 8,
+      "operator_probes": 0,
+      "fresh": 45870,
+      "cached": 216704,
+      "output": 4905,
+      "seconds": 132.18788123130798,
+      "guides": [
+        "configure",
+        "categories"
+      ],
+      "schemas": [
+        "config"
+      ],
+      "first_cli": [
+        "--help"
+      ],
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "guide_calls": 2,
+      "schema_calls": 1,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    },
+    {
+      "task": 12,
+      "rep": 4,
+      "arm": "A",
+      "tools": 8,
+      "shell": 16,
+      "cli": 9,
+      "operator_probes": 0,
+      "fresh": 27375,
+      "cached": 308992,
+      "output": 7009,
+      "seconds": 182.7042520046234,
+      "guides": [
+        "configure"
+      ],
+      "schemas": [
+        "config"
+      ],
+      "first_cli": [
+        "--help"
+      ],
+      "cli_nonzero": 0,
+      "returncode": 0,
+      "stopped": null,
+      "fixture_intact": true,
+      "guide_calls": 1,
+      "schema_calls": 1,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass"
+    }
+  ],
+  "review": {
+    "cases": 8,
+    "passed": 8,
+    "incomplete": 0,
+    "critical_failures": 0,
+    "passes_by_arm": {
+      "A": 4,
+      "B": 4
+    }
+  },
+  "audit": {
+    "status": "admissible_primary_cost_gate_failed",
+    "checks": 142,
+    "integrity_failures": 0,
+    "peak_explorer_concurrency": 3,
+    "limits": [
+      "Prebuilt arm source revisions are operator declarations, separately recorded from preparation-repository source hashes; binary hashes are verified, but this audit does not reproduce binary builds.",
+      "Read-scope verification combines complete native tool names, nested tool methods and shell-command pattern inspection. OS and shell startup reads are outside the explorer-directed command audit; the sandbox itself permits root reads, so prompt scope is verified from recorded actions rather than enforced by a read-denying sandbox.",
+      "Generated pre-session baseline files are protected by the harness completion-time in-memory digest check; that initial digest is not separately persisted. Frozen generation specifications, summary fixture-integrity results and final task artifact checks remain available.",
+      "The seconds metric is harness elapsed time from invocation setup through completion/copying, rather than exact native final-message latency. It exceeds native task_complete by 0.75\u20131.64 seconds in this run; answers match both native sessions and CLI events. Gates use the recorded elapsed metric."
+    ]
+  },
+  "naming_diagnostic": {
+    "task": 12,
+    "reference": {
+      "src/parse/tests.rs": "unit",
+      "tests/cli.rs": "integration",
+      "tests/common/mod.rs": "test-support",
+      "benches/throughput.rs": "performance",
+      "scripts/release.sh": "distribution",
+      "scripts/dev-setup.sh": "tooling",
+      "ci/run-tests.sh": "verification-tooling"
+    },
+    "summary": {
+      "A": {
+        "reference_matches": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "distinct_names_per_file": {
+          "src/parse/tests.rs": 1,
+          "tests/cli.rs": 1,
+          "tests/common/mod.rs": 1,
+          "benches/throughput.rs": 1,
+          "scripts/release.sh": 2,
+          "scripts/dev-setup.sh": 2,
+          "ci/run-tests.sh": 3
+        },
+        "files_named_alike_in_all_runs": 4,
+        "names": {
+          "src/parse/tests.rs": {
+            "unit-tests": 4
+          },
+          "tests/cli.rs": {
+            "integration-tests": 4
+          },
+          "tests/common/mod.rs": {
+            "test-support": 4
+          },
+          "benches/throughput.rs": {
+            "benchmarks": 4
+          },
+          "scripts/release.sh": {
+            "release-automation": 3,
+            "release-tooling": 1
+          },
+          "scripts/dev-setup.sh": {
+            "developer-setup": 3,
+            "developer-tooling": 1
+          },
+          "ci/run-tests.sh": {
+            "ci-automation": 1,
+            "ci-tooling": 2,
+            "ci-test-runner": 1
+          }
+        },
+        "identical_name_sets": 4
+      },
+      "B": {
+        "reference_matches": [
+          7,
+          7,
+          7,
+          7
+        ],
+        "distinct_names_per_file": {
+          "src/parse/tests.rs": 1,
+          "tests/cli.rs": 1,
+          "tests/common/mod.rs": 1,
+          "benches/throughput.rs": 1,
+          "scripts/release.sh": 1,
+          "scripts/dev-setup.sh": 1,
+          "ci/run-tests.sh": 1
+        },
+        "files_named_alike_in_all_runs": 7,
+        "names": {
+          "src/parse/tests.rs": {
+            "unit": 4
+          },
+          "tests/cli.rs": {
+            "integration": 4
+          },
+          "tests/common/mod.rs": {
+            "test-support": 4
+          },
+          "benches/throughput.rs": {
+            "performance": 4
+          },
+          "scripts/release.sh": {
+            "distribution": 4
+          },
+          "scripts/dev-setup.sh": {
+            "tooling": 4
+          },
+          "ci/run-tests.sh": {
+            "verification-tooling": 4
+          }
+        },
+        "identical_name_sets": 1
+      }
+    },
+    "runs": [
+      {
+        "rep": 1,
+        "arm": "B",
+        "chosen": {
+          "src/parse/tests.rs": "unit",
+          "tests/cli.rs": "integration",
+          "tests/common/mod.rs": "test-support",
+          "benches/throughput.rs": "performance",
+          "scripts/release.sh": "distribution",
+          "scripts/dev-setup.sh": "tooling",
+          "ci/run-tests.sh": "verification-tooling"
+        },
+        "reference_matches": 7,
+        "stages": {
+          "overrides": 0,
+          "rules": 4,
+          "refinements": 3
+        }
+      },
+      {
+        "rep": 1,
+        "arm": "A",
+        "chosen": {
+          "src/parse/tests.rs": "unit-tests",
+          "tests/cli.rs": "integration-tests",
+          "tests/common/mod.rs": "test-support",
+          "benches/throughput.rs": "benchmarks",
+          "scripts/release.sh": "release-automation",
+          "scripts/dev-setup.sh": "developer-setup",
+          "ci/run-tests.sh": "ci-automation"
+        },
+        "reference_matches": 1,
+        "stages": {
+          "overrides": 3,
+          "rules": 4,
+          "refinements": 0
+        }
+      },
+      {
+        "rep": 2,
+        "arm": "B",
+        "chosen": {
+          "src/parse/tests.rs": "unit",
+          "tests/cli.rs": "integration",
+          "tests/common/mod.rs": "test-support",
+          "benches/throughput.rs": "performance",
+          "scripts/release.sh": "distribution",
+          "scripts/dev-setup.sh": "tooling",
+          "ci/run-tests.sh": "verification-tooling"
+        },
+        "reference_matches": 7,
+        "stages": {
+          "overrides": 0,
+          "rules": 4,
+          "refinements": 3
+        }
+      },
+      {
+        "rep": 2,
+        "arm": "A",
+        "chosen": {
+          "src/parse/tests.rs": "unit-tests",
+          "tests/cli.rs": "integration-tests",
+          "tests/common/mod.rs": "test-support",
+          "benches/throughput.rs": "benchmarks",
+          "scripts/release.sh": "release-tooling",
+          "scripts/dev-setup.sh": "developer-tooling",
+          "ci/run-tests.sh": "ci-tooling"
+        },
+        "reference_matches": 1,
+        "stages": {
+          "overrides": 3,
+          "rules": 4,
+          "refinements": 0
+        }
+      },
+      {
+        "rep": 3,
+        "arm": "B",
+        "chosen": {
+          "src/parse/tests.rs": "unit",
+          "tests/cli.rs": "integration",
+          "tests/common/mod.rs": "test-support",
+          "benches/throughput.rs": "performance",
+          "scripts/release.sh": "distribution",
+          "scripts/dev-setup.sh": "tooling",
+          "ci/run-tests.sh": "verification-tooling"
+        },
+        "reference_matches": 7,
+        "stages": {
+          "overrides": 0,
+          "rules": 4,
+          "refinements": 3
+        }
+      },
+      {
+        "rep": 3,
+        "arm": "A",
+        "chosen": {
+          "src/parse/tests.rs": "unit-tests",
+          "tests/cli.rs": "integration-tests",
+          "tests/common/mod.rs": "test-support",
+          "benches/throughput.rs": "benchmarks",
+          "scripts/release.sh": "release-automation",
+          "scripts/dev-setup.sh": "developer-setup",
+          "ci/run-tests.sh": "ci-tooling"
+        },
+        "reference_matches": 1,
+        "stages": {
+          "overrides": 3,
+          "rules": 4,
+          "refinements": 0
+        }
+      },
+      {
+        "rep": 4,
+        "arm": "B",
+        "chosen": {
+          "src/parse/tests.rs": "unit",
+          "tests/cli.rs": "integration",
+          "tests/common/mod.rs": "test-support",
+          "benches/throughput.rs": "performance",
+          "scripts/release.sh": "distribution",
+          "scripts/dev-setup.sh": "tooling",
+          "ci/run-tests.sh": "verification-tooling"
+        },
+        "reference_matches": 7,
+        "stages": {
+          "overrides": 0,
+          "rules": 4,
+          "refinements": 3
+        }
+      },
+      {
+        "rep": 4,
+        "arm": "A",
+        "chosen": {
+          "src/parse/tests.rs": "unit-tests",
+          "tests/cli.rs": "integration-tests",
+          "tests/common/mod.rs": "test-support",
+          "benches/throughput.rs": "benchmarks",
+          "scripts/release.sh": "release-automation",
+          "scripts/dev-setup.sh": "developer-setup",
+          "ci/run-tests.sh": "ci-test-runner"
+        },
+        "reference_matches": 1,
+        "stages": {
+          "overrides": 3,
+          "rules": 4,
+          "refinements": 0
+        }
+      }
+    ]
+  }
+}
