@@ -1,5 +1,5 @@
 //! The `--generate` query: the man page and shell completion scripts, built
-//! from the clap definitions (docs/proposals/manual-and-reference.md).
+//! from the clap definitions (docs/proposals/archive/manual-and-reference.md).
 use super::*;
 use clap_complete::Shell;
 

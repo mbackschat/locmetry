@@ -27,7 +27,7 @@ fn generation_queries_reject_explicit_unrelated_inputs_in_either_order() {
 
 /// `--section` belongs to `--guide` and `--schema`, and the standalone check
 /// accepts it for every query, so `--generate` rejects it by name
-/// (docs/proposals/manual-and-reference.md, Generation query).
+/// (docs/proposals/archive/manual-and-reference.md, Generation query).
 #[test]
 fn generation_queries_reject_sections_and_the_other_queries_in_either_order() {
     let root = tempfile::tempdir().unwrap();

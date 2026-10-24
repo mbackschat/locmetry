@@ -1,6 +1,6 @@
 //! The combined `locmetry(1)` man page. Every part comes from text that
 //! `--help` or a guide already shows, so the page cannot drift from them
-//! (docs/proposals/manual-and-reference.md, The man page).
+//! (docs/proposals/archive/manual-and-reference.md, The man page).
 use super::*;
 use clap_mangen::roff::{bold, roman, Inline, Roff};
 use clap_mangen::Man;

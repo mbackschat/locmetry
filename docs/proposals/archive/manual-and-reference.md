@@ -2,18 +2,20 @@
 
 <!-- doc-status
 {
-  "status": "accepted",
-  "date": "2026-10-24",
+  "status": "implemented",
+  "date": "2026-10-25",
   "summary": "A man page and shell completions generated from the executable, and one reference topic for exit status, environment and files, so people and agents read the same facts in their usual places.",
-  "evidence": "[second review and owner acceptance](manual-and-reference.md#review-history)"
+  "evidence": "[Man page and completion check](../../tokei-integration.md#man-page-and-completion-check), [desk review](../../research/agent-regression-desk-review-2026-10-24.md)"
 }
 -->
+
+Status: historical decision record — implemented. The owner accepted the design on 2026-10-24, and its required scope was implemented the same day and verified by 2026-10-25. The page was read under groff 1.23 on Debian 13 and mandoc on macOS. The [manual completion check](../../tokei-integration.md#man-page-and-completion-check) passed in bash 5.3 (macOS), zsh 5.9 (Debian and macOS) and fish 4.0.2 (Debian) on 2026-10-24, and in PowerShell 7.6.8 on 2026-10-25, run on Debian 13 with a Linux build because no Windows host was available; the Windows build's script differs only in its help text. The [desk review](../../research/agent-regression-desk-review-2026-10-24.md) of `28213f9` found no regression, and its findings were fixed in `c57cec3`. No release had shipped the feature yet. Archived on 2026-10-25 under the [retirement procedure](../README.md#retirement-procedure). [PRODUCT](../../PRODUCT.md#man-page-and-completions), the [reference guide](../../guides/reference.md) and [distribution](../../tokei-integration.md#distribution) own the current behavior; imperative wording, examples and limitations below describe the reviewed design, not current guarantees. The excluded items with reopening conditions moved to [DEFERRED](../../DEFERRED.md#manual-page-and-completions).
 
 The owner raised the idea on 2026-10-24, comparing Locmetry's help with Homebrew's `tree`, and asked for a survey of what other tools do. People and agents both use Locmetry and count equally: a change must not make either one's reading worse to improve the other's.
 
 ## Problem
 
-People on macOS and Linux look for `man locmetry` and shell completion; Locmetry ships neither. No recorded agent session used `man`, while agents read `--help`, and often guides, in every session. Some reference facts have no single home for either audience: exit status, the environment variables Locmetry reads and the files it looks for are spread over notes in `--help`, the guides and [PRODUCT](../PRODUCT.md#command-outcomes).
+People on macOS and Linux look for `man locmetry` and shell completion; Locmetry ships neither. No recorded agent session used `man`, while agents read `--help`, and often guides, in every session. Some reference facts have no single home for either audience: exit status, the environment variables Locmetry reads and the files it looks for are spread over notes in `--help`, the guides and [PRODUCT](../../PRODUCT.md#command-outcomes).
 
 A man page written by hand would also be a third body of text beside `--help` and the guides, and a reader could not tell which one is current or which to read.
 
@@ -128,7 +130,7 @@ A designated Linux CI job also runs `mandoc -T lint` on the generated page and f
 - The guards pass, and help stays within its budgets, offsetting the topic line by rewording; a reviewed raise only if rewording loses meaning. The first candidates are the `--format` value descriptions, repeated in both root listings; routing, automation and verification notes stay.
 - The rendered page is reviewed on macOS and Linux with `man ./locmetry.1` for command grouping, examples and wrapped lists.
 - A documented manual procedure, run before release and recorded with each shell's version, loads each completion script and completes a command, an option of that command, a possible value (except in PowerShell), and checks that an option of another command is not offered. CI runs the shells it has.
-- A desk review under the [agent regression checks](../agent-regression-checks.md#desk-review) covers every help surface, the index rows and the reference guide and finds no correctness or routing regression. It decides whether targeted discovery or report tasks are needed; it does not establish that agent cost is unchanged.
+- A desk review under the [agent regression checks](../../agent-regression-checks.md#desk-review) covers every help surface, the index rows and the reference guide and finds no correctness or routing regression. It decides whether targeted discovery or report tasks are needed; it does not establish that agent cost is unchanged.
 
 ## Risks
 

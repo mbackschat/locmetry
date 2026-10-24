@@ -1,6 +1,6 @@
 //! `--generate`: the man page and each completion script list, per command,
 //! what that command's `--help` shows, as far as each format promises
-//! (docs/proposals/manual-and-reference.md, Guards). `--help` is the oracle,
+//! (docs/proposals/archive/manual-and-reference.md, Guards). `--help` is the oracle,
 //! parsed independently of the generators.
 use crate::common;
 use std::collections::BTreeMap;

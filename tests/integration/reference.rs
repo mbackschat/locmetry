@@ -1,6 +1,6 @@
 //! The reference topic: exit status, environment, files and generated
 //! documents in one guide that the man page renders
-//! (docs/proposals/manual-and-reference.md).
+//! (docs/proposals/archive/manual-and-reference.md).
 use crate::common;
 use crate::guide_sections::{section, source};
 use std::collections::BTreeSet;

@@ -6,9 +6,7 @@ Active designs live directly in this directory. Retired records live in `archive
 
 <!-- doc-index:start -->
 
-| Document | Status | Date | Summary |
-| --- | --- | --- | --- |
-| [Manual Page, Completions and Reference Topic](manual-and-reference.md) | accepted | 2026-10-24 | A man page and shell completions generated from the executable, and one reference topic for exit status, environment and files, so people and agents read the same facts in their usual places. |
+No documents in this directory.
 
 <!-- doc-index:end -->
 

@@ -4,7 +4,7 @@
 
 ## Accepted — Awaiting Verification
 
-- [Manual page, completions and reference topic](proposals/manual-and-reference.md): accepted 2026-10-24 and implemented the same day. On 2026-10-24 the page passed review under groff 1.23 on Debian 13 and mandoc on macOS, and the [manual completion check](tokei-integration.md#man-page-and-completion-check) passed in bash 5.3 (macOS), zsh 5.9 (Debian and macOS) and fish 4.0.2 (Debian), after fixes for zsh's command dispatch and groff's hyphenation. The [desk review](research/agent-regression-desk-review-2026-10-24.md) found no regression and needs no agent run. Before retirement, its acceptance still needs the PowerShell completion check.
+None at present.
 
 The [proposal index](proposals/README.md) distinguishes active designs from historical decisions.
 
@@ -18,6 +18,7 @@ The [proposal index](proposals/README.md) distinguishes active designs from hist
 - [Default report output decision](proposals/archive/default-report-output-proposal-redacted.md): reviewed design and acceptance evidence.
 - [Development and release snapshot through 2026-10-16](plans/archive/development-plan-2026-10-16.md): completed work, published releases and their verification links.
 - [Measurement quality and subsequent implementation checkpoints](plans/archive/measurement-quality-and-net-change.md): S1–S5, reviews, accepted decisions and completion evidence.
+- [Manual page, completions and reference topic](proposals/archive/manual-and-reference.md): `--generate`, the man page, shell completions and the reference guide, implemented 2026-10-24 and verified 2026-10-25; the record links the shell checks and the desk review.
 - [Guide sections and task index](proposals/archive/guide-sections.md): `--section`, the task index and direct help routes, adopted 2026-10-24 with the category reference after three agent runs; the record links the runs and the decision.
 - [Category reference](proposals/archive/category-reference.md): the embedded category guide, its guards and the aligned model policies, implemented 2026-10-24.
 - [Reviewable policy entries and category refinements](proposals/archive/policy-entry-review.md): `except`, per-entry audit and refinements, implemented 2026-10-24 from three projects' test-categorization feedback.

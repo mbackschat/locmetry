@@ -4,7 +4,6 @@ Items here are deferred or not scheduled; each names the condition or decision t
 
 ## Windows
 
-- Generate PowerShell tab completion, together with the other shells; deferred by the owner on 2026-10-21.
 - Accept UTF-16 configuration and workspace files, and add PowerShell equivalents of the `jq` recipes, only when Windows users ask for them. Windows on ARM stays excluded while x86_64 emulation serves it. The [Windows support record](proposals/archive/windows-support.md) owns the rationale.
 
 ## Built-in Detection
@@ -40,6 +39,14 @@ Excluded by the [guide sections proposal](proposals/archive/guide-sections.md#ex
 - Splitting the reports guide (19 KB, 9 sections) into more topics. Self-contained sections give small reads without more routing choices. Reopen if routed reads of its sections prove too coarse.
 - Trimming the categories guide's "Write a Reviewed Policy". Its `kind = ["source"]` advice has no other home yet. Reopen when that advice has one.
 - One command that reads guide sections and schema definitions together. Routes read them in separate commands, which cost the configuration tasks about one call per session in the [adoption decision](research/agent-regression-run-2026-10-24-sections-v2.md#decision). Reopen if calls, rather than uncached input or time, become the binding cost.
+
+## Manual Page and Completions
+
+Excluded by the [manual page proposal](proposals/archive/manual-and-reference.md#excluded).
+
+- Guides as man pages in section 7, as git does (`man locmetry-configure`). Their tables, such as the category vocabulary and the index, need a Markdown-to-roff converter with table support; `--guide` remains their home. Reopen if people ask for `man` access to the guides, with a table-capable renderer checked on narrow terminals.
+- Separate man pages per command. Reopen if commands gain nested subcommands.
+- Condensing each option's text in `--help` to one line, with detail moved elsewhere. It would change what agents read; reopen only with a measured experiment of its own.
 
 ## Display
 
