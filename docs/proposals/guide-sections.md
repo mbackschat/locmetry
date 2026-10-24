@@ -100,6 +100,43 @@ Recorded Showboat output that changes is regenerated, never edited.
 
 Implementation updates PRODUCT, the affected README and guide routes, help-design's inventory and CHANGELOG together.
 
+## Amendment 1: Several Sections per Command
+
+Status: draft, written 2026-10-24 at the owner's request after the [agent run](../research/agent-regression-run-2026-10-24-sections.md). It changes the accepted design and needs the owner's approval before implementation.
+
+**Problem.** The run kept correctness and cut uncached input by 11.8%, but total calls rose from 80 to 91 against a bound of 80. Agents requested one section per command, often one after another, and tasks 3 and 8 first opened the index: about one call more per session, where the control fetched the configure guide and the schema in one batch. Because one id per command was a rule of this design, the cost is the design's, not the agents'.
+
+**Required.**
+
+- `--section` may be repeated, with every id for the one `--guide` or `--schema` topic. Ids are printed in the order given; a repeated id fails.
+- For a guide, the output is the single-section outputs in that order, each with its own source line, so every block reads as it does alone.
+- For a schema, the output is always one JSON object whose keys are the requested ids, in order, and whose values are the selected fragments, also for a single id. This replaces the bare fragment of the accepted design, which is unreleased, so one shape serves every request and the output stays one JSON document for pipes.
+- If any id is unknown, the command fails with exit status 1 and empty stdout, and stderr names every unknown id and lists the topic's valid ids.
+- Each index row needs one command per topic: its guide sections in one command and its schema definitions in another, such as `locmetry --schema config --section Entry --section scope --section Scope`.
+- The configuration route in `--help` adds the broad-configuration need, purposes, rules, overrides and scope, as one guide command and one schema command, so tasks like 3 and 8 need not open the index. It must fit the current help budgets by rewording; a raise is a reviewed decision.
+- The guard reads repeated `--section` options after one topic, and checks the new schema shape and the unknown-id message.
+
+```text
+$ locmetry --schema config --section Entry --section scope
+{
+  "Entry": { ... },
+  "scope": { ... }
+}
+$ locmetry --guide configure --section start-with-evidence --section refine-categories
+Source: docs/guides/configure.md#start-with-evidence (locmetry 0.10.0)
+
+## Start with Evidence
+...
+Source: docs/guides/configure.md#refine-categories (locmetry 0.10.0)
+
+## Refine Categories
+...
+```
+
+**Excluded.** Sections of several topics in one command; one source line shared by several guide sections; deduplicating a section requested together with one of its own subsections; accepting `--no-user-config` with reference queries, which one candidate run tried.
+
+**Acceptance.** The guard passes and help stays within its budgets. A new frozen protocol repeats the run's design against the same control: tasks 1, 3, 8 and 12, four AB/BA pairs each, the same gates, the same context-growth diagnostic and the same confirmation rule. The candidate passes only if every gate passes, or the confirmation sample's pooled result does. The previous run's sessions are not pooled.
+
 ## Review History
 
 A second independent review on 2026-10-24 accepted the revision and asked that the protocol fix the confirmation sample's rules and present context growth as whole-session growth; commit `23e0ce9` adopted both. The owner accepted the proposal for implementation the same day. During implementation the same day, two guard rules changed: a schema property and definition may differ only in case, as `scope` and its definition `Scope` do, because ids match exactly; and the index covers a subsection through its parent, so no exemption list was needed.
