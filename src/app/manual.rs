@@ -35,6 +35,9 @@ pub(crate) fn manual() -> Result<Vec<u8>> {
     let mut page = Page::default();
     page.man(|w| man.render_title(w))?;
     let mut name = Roff::new();
+    // groff hyphenates at line ends and split option names such as
+    // `--workspace-file` (groff 1.23, 2026-10-24).
+    name.control("nh", []);
     name.control("SH", ["NAME"]);
     let about = root
         .get_about()

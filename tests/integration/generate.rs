@@ -241,6 +241,57 @@ fn zsh_spec(spec: &str, options: &mut Options) {
     options.insert(name, Spec { value, values });
 }
 
+/// zsh fills positional slots in order, so a root positional before the
+/// command slot takes the command name as a directory and completes root
+/// options after it: `locmetry compare --m` offered `--markdown-depth`
+/// (manual completion check, zsh 5.9, 2026-10-24). A command name is
+/// reserved and never a directory, so the command is the first slot.
+#[test]
+fn zsh_dispatches_on_the_first_word_as_the_command() {
+    let script = generate("complete-zsh");
+    let root = block(
+        &script,
+        "local context curcontext=\"$curcontext\" state line",
+        |line| line.trim() == "&& ret=0",
+    );
+    let positionals: Vec<&str> = root
+        .iter()
+        .map(|line| line.trim())
+        .filter(|line| line.starts_with("'::") || line.starts_with("\"::"))
+        .collect();
+    assert_eq!(positionals, [r#"":: :_locmetry_commands" \"#]);
+    assert!(script.contains("        case $line[1] in\n"));
+}
+
+/// A first word that names no command is the directory, so the dispatch's
+/// default branch completes the root's options after it, as before the
+/// command became the first slot.
+#[test]
+fn zsh_completes_root_options_after_a_directory() {
+    let script = generate("complete-zsh");
+    let function = &script[..script.find("\n}\n").unwrap()];
+    let default = &function[function.rfind("(?*)\n").expect("a default branch")..];
+    assert_eq!(zsh_options(default.lines()), help_options(""));
+}
+
+/// The option specs among `lines`, some of which span several lines.
+fn zsh_options<'a>(lines: impl IntoIterator<Item = &'a str>) -> Options {
+    let mut options = Options::new();
+    let mut spec = String::new();
+    for line in lines {
+        if line.starts_with('\'') {
+            spec.clear();
+        }
+        spec.push_str(line);
+        spec.push('\n');
+        if line.ends_with("' \\") {
+            zsh_spec(spec.trim_end().trim_end_matches(" \\"), &mut options);
+            spec.clear();
+        }
+    }
+    options
+}
+
 #[test]
 fn zsh_completes_each_commands_options_value_names_and_possible_values() {
     let script = generate("complete-zsh");
@@ -254,20 +305,7 @@ fn zsh_completes_each_commands_options_value_names_and_possible_values() {
             ),
             name => block(&script, &format!("({name})"), |l| l.trim() == "&& ret=0"),
         };
-        let mut options = Options::new();
-        let mut spec = String::new();
-        for line in lines {
-            if line.starts_with('\'') {
-                spec.clear();
-            }
-            spec.push_str(line);
-            spec.push('\n');
-            if line.ends_with("' \\") {
-                zsh_spec(spec.trim_end().trim_end_matches(" \\"), &mut options);
-                spec.clear();
-            }
-        }
-        scripts.insert(command, options);
+        scripts.insert(command, zsh_options(lines));
     }
     agrees_with_help("zsh", scripts, true, true);
 }
@@ -461,4 +499,15 @@ fn completion_scripts_leave_out_the_generation_query() {
     for shell in ["bash", "zsh", "fish", "powershell"] {
         assert!(!generate(&format!("complete-{shell}")).contains("generate"));
     }
+}
+
+/// groff hyphenates words at line ends, which split option names such as
+/// `--workspace-file` into `--work-` and `space-file` (groff 1.23, 2026-10-24);
+/// `.nh` after the title turns hyphenation off for the whole page.
+#[test]
+fn the_man_page_turns_off_hyphenation() {
+    let page = generate("man");
+    let mut lines = page.lines().skip_while(|line| !line.starts_with(".TH "));
+    lines.next();
+    assert_eq!(lines.next(), Some(".nh"));
 }
