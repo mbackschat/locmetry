@@ -4,7 +4,7 @@
 
 ## Proposals — Under Discussion
 
-- [Manual page, completions and reference topic](proposals/manual-and-reference.md): draft of 2026-10-24, to be reviewed; implementation follows the agents' context isolation and the guide-sections rerun.
+- [Manual page, completions and reference topic](proposals/manual-and-reference.md): draft of 2026-10-24, revised after an independent review; implementation follows the agents' context isolation and the guide-sections rerun.
 
 ## Accepted — Awaiting Verification
 
