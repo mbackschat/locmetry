@@ -421,9 +421,9 @@ Output and content:
           Stdout format [default: table on a terminal, json otherwise]
 
           Possible values:
-          - table:    Human-readable tables and evidence
+          - table:    Tables and evidence
           - json:     Complete JSON explanation
-          - markdown: Markdown tables and evidence
+          - markdown: Markdown tables and evidence for reviews
 
 {
   "title": "Explanation",

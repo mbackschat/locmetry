@@ -438,21 +438,45 @@ fn the_man_page_lists_each_commands_options_value_names_and_possible_values() {
     agrees_with_help("man", scripts, true, true);
 }
 
+/// `--help` lists positional arguments under their own heading, before the
+/// options; clap_mangen 0.3.3 lists them among the options.
 #[test]
-fn the_man_page_shows_each_commands_positional_arguments() {
+fn the_man_page_lists_each_commands_positional_arguments_before_its_options() {
     let page = man_text();
     for command in COMMANDS {
         let lines = man_scope(&page, command);
         let positionals = help_positionals(command);
         assert!(command.is_empty() || !positionals.is_empty() || command == "workspace");
+        let (arguments, options) = match command {
+            "" => (".SH ARGUMENTS", ".SH OPTIONS"),
+            _ => (".B \"Arguments\"", ".B \"Options\""),
+        };
+        let start = lines.iter().position(|line| line == arguments);
+        if positionals.is_empty() {
+            assert_eq!(start, None, "'{command}' has no positional arguments");
+            continue;
+        }
+        let start = start.unwrap_or_else(|| panic!("'{command}' lacks {arguments}"));
+        let heading = |line: &String| line.starts_with(".SH ") || line.starts_with(".B \"");
+        let end = start + 1 + lines[start + 1..].iter().position(heading).unwrap();
+        assert_eq!(
+            lines[end], options,
+            "'{command}' lists its options after its arguments"
+        );
         for (syntax, description) in positionals {
             assert!(
-                lines
+                lines[start..end]
                     .windows(3)
                     .any(|w| w[0] == ".TP" && w[1] == syntax && w[2].starts_with(&description)),
-                "'{command}' lacks {syntax}: {description}"
+                "'{command}' lacks {syntax} under {arguments}: {description}"
             );
         }
+        assert!(
+            !lines[end..]
+                .windows(2)
+                .any(|w| w[0] == ".TP" && (w[1].starts_with('<') || w[1].starts_with('['))),
+            "'{command}' lists positional arguments among its options"
+        );
     }
 }
 

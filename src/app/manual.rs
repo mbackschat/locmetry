@@ -48,7 +48,8 @@ pub(crate) fn manual() -> Result<Vec<u8>> {
     page.roff(&name);
     page.man(|w| man.render_synopsis_section(w))?;
     page.man(|w| man.render_description_section(w))?;
-    page.man(|w| man.render_options_section(w))?;
+    page.man(|w| Man::new(arguments(&root)).render_options_section(w))?;
+    page.man(|w| Man::new(options(&root)).render_options_section(w))?;
 
     let mut notes_section = Roff::new();
     notes_section.control("SH", ["EXAMPLES AND NOTES"]);
@@ -61,13 +62,15 @@ pub(crate) fn manual() -> Result<Vec<u8>> {
         let mut heading = Roff::new();
         heading.control("SS", [command.get_bin_name().unwrap_or_default()]);
         page.roff(&heading);
-        for render in [
-            Man::render_description_section,
-            Man::render_synopsis_section,
-            Man::render_options_section,
-        ] {
-            page.labeled(&command, |w| render(&man, w))?;
-        }
+        page.labeled(&command, |w| man.render_description_section(w))?;
+        page.labeled(&command, |w| man.render_synopsis_section(w))?;
+        let arguments = arguments(&command);
+        page.labeled(&arguments, |w| {
+            Man::new(arguments.clone()).render_options_section(w)
+        })?;
+        page.labeled(&command, |w| {
+            Man::new(options(&command)).render_options_section(w)
+        })?;
         let mut examples = Roff::new();
         notes(&mut examples, &after_help(&command));
         page.roff(&examples);
@@ -103,6 +106,23 @@ fn with_usage(mut command: clap::Command) -> clap::Command {
     let usage = command.render_usage().to_string();
     let usage = usage.trim_start_matches("Usage: ").to_owned();
     command.override_usage(usage)
+}
+
+/// The command with only its positional arguments, under the heading
+/// `--help` gives them; clap_mangen 0.3.3 lists them among the options.
+fn arguments(command: &clap::Command) -> clap::Command {
+    command.clone().mut_args(|arg| match arg.is_positional() {
+        true => arg.help_heading("Arguments"),
+        false => arg.hide(true),
+    })
+}
+
+/// The command without its positional arguments, which `arguments` lists.
+fn options(command: &clap::Command) -> clap::Command {
+    command.clone().mut_args(|arg| match arg.is_positional() {
+        true => arg.hide(true),
+        false => arg,
+    })
 }
 
 /// The page as it is assembled from clap_mangen's section renderers and

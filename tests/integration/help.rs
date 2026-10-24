@@ -462,8 +462,8 @@ fn compare_help_drills_into_a_workspace_member_with_scoped_folder_totals() {
     }
 }
 
-/// Help sizes in bytes at `COLUMNS=100`, measured 2026-10-22 plus about 3%,
-/// never above the earlier budget.
+/// Help sizes in bytes at `COLUMNS=100`, measured 2026-10-22 (`compare
+/// --help` 2026-10-24) plus about 3%, never above the earlier budget.
 /// Agents read help before ordinary use, so growth beyond a budget must be a
 /// reviewed decision (docs/agent-regression-checks.md#help-size-guard); size
 /// alone does not measure efficiency, so a budget is a stop, not a target.
@@ -473,7 +473,7 @@ const HELP_BUDGETS: [(&[&str], usize); 8] = [
     (&["workspace", "-h"], 2_500),
     (&["workspace", "--help"], 6_900),
     (&["compare", "-h"], 990),
-    (&["compare", "--help"], 4_875),
+    (&["compare", "--help"], 4_830),
     (&["explain", "-h"], 1_460),
     (&["explain", "--help"], 3_400),
 ];

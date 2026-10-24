@@ -18,11 +18,11 @@ pub(crate) enum Format {
 
 #[derive(Clone, Copy, ValueEnum)]
 pub(crate) enum ExplainFormat {
-    /// Human-readable tables and evidence.
+    /// Tables and evidence.
     Table,
     /// Complete JSON explanation.
     Json,
-    /// Markdown tables and evidence.
+    /// Markdown tables and evidence for reviews.
     Markdown,
 }
 

@@ -16,7 +16,7 @@ Locmetry itself reads these variables; variables that only its libraries read ar
 
 - `NO_COLOR`: when set and not empty, turns off colors and emphasis, as `--no-color` does. Share bars and Markdown emphasis stay.
 - `TERM`: `dumb` turns off colors and emphasis.
-- `COLUMNS`: a positive integer sets the width for share bars in tables, saved ones included. Otherwise the width of a stdout terminal applies, else 80.
+- `COLUMNS`: a positive integer sets the width for share bars in tables, saved ones included, and the width help wraps to. Otherwise the width of a stdout terminal applies, else 80.
 - `XDG_CONFIG_HOME`: when it is an absolute path, personal defaults are read from `$XDG_CONFIG_HOME/locmetry/config.toml`, on every platform. A relative value is ignored.
 - `HOME`: on macOS and Linux, personal defaults are otherwise read from `$HOME/.config/locmetry/config.toml`.
 - `APPDATA`: on Windows, personal defaults are otherwise read from `%APPDATA%\locmetry\config.toml`, when it is an absolute path.
@@ -27,7 +27,7 @@ Locmetry itself reads these variables; variables that only its libraries read ar
 - `--config FILE`: replaces that discovery with this file; the scan root stays as selected.
 - Personal defaults: the first of `$XDG_CONFIG_HOME/locmetry/config.toml`, then `~/.config/locmetry/config.toml` on macOS and Linux or `%APPDATA%\locmetry\config.toml` on Windows. They only narrow scope and teach languages; `--no-user-config` ignores them, and `locmetry --schema user-config` describes them.
 - Workspace files: read only when named with `--workspace-file FILE`, never discovered; `locmetry --schema workspace` describes them.
-- Reports and comparisons are written only where `--output` names a file, which must lie outside every measured root.
+- Reports are written only where `--output` names a file. A measurement's file must lie outside the scan root, or outside every member of a workspace, and must not overwrite the configuration or workspace file; a comparison's must not overwrite either input.
 
 ## Man Page and Completions
 
@@ -40,7 +40,7 @@ locmetry --generate complete-fish > ~/.config/fish/completions/locmetry.fish
 locmetry --generate complete-zsh > ~/.zfunc/_locmetry
 ```
 
-For zsh, add `fpath=(~/.zfunc $fpath)` before `compinit` in `~/.zshrc`. Completions offer commands, options and the values Locmetry knows, such as `--format` and `--guide` topics, but not section ids or category names.
+For zsh, add `fpath=(~/.zfunc $fpath)` before `compinit` in `~/.zshrc`. If `man locmetry` then finds no entry, as on macOS, add `export MANPATH="$HOME/.local/share/man:"` to your shell profile; the trailing colon keeps the system's pages. Completions offer commands, options and the values Locmetry knows, such as `--format` and `--guide` topics, but not section ids or category names.
 
 On Windows, PowerShell completes commands and options, not values. Scoop installs no profile changes; add this line to the file `$PROFILE` names:
 
