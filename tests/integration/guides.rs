@@ -489,7 +489,7 @@ fn comparison_example_and_scope_refusal_match_documented_evidence() {
 #[test]
 fn long_help_offers_the_tested_configuration_route_without_changing_short_help() {
     // help-routing.txt keeps the route wording the 2026-10-20 routing study measured;
-    // the route now sends other needs to sections (docs/proposals/guide-sections.md).
+    // the route now sends other needs to sections (docs/proposals/archive/guide-sections.md).
     let root = tempfile::tempdir().unwrap();
     let routing = include_str!("../fixtures/agent-explorability/help-routing.txt");
     let kept = routing.split(" Use --guide configure").next().unwrap();

@@ -4,8 +4,7 @@
 
 ## Accepted — Awaiting Verification
 
-- [Manual page, completions and reference topic](proposals/manual-and-reference.md): accepted 2026-10-24 after two reviews; implementation follows the agents' context isolation, the guide-sections rerun and the owner's adoption decision.
-- [Guide sections and task index](proposals/guide-sections.md): implemented 2026-10-24 in `a0faf26`, with the harness support in `a418305`. Its [agent run](research/agent-regression-run-2026-10-24-sections.md) kept correctness and cut uncached input but failed task 8's uncached-input gate and the total-calls gate. The [rerun after Amendment 1](research/agent-regression-run-2026-10-24-sections-v2.md), the first in fresh homes, kept correctness, cut uncached input by 20.9% and passed task 8, but failed task 1's calls, task 12's uncached input and total calls. The owner's decision on adoption, a correction or the gates is open, and it also decides whether the category reference is adopted.
+- [Manual page, completions and reference topic](proposals/manual-and-reference.md): accepted 2026-10-24 after two reviews; its prerequisites, the agents' context isolation and the guide-sections adoption, are complete, so implementation can start.
 
 The [proposal index](proposals/README.md) distinguishes active designs from historical decisions.
 
@@ -19,6 +18,7 @@ The [proposal index](proposals/README.md) distinguishes active designs from hist
 - [Default report output decision](proposals/archive/default-report-output-proposal-redacted.md): reviewed design and acceptance evidence.
 - [Development and release snapshot through 2026-10-16](plans/archive/development-plan-2026-10-16.md): completed work, published releases and their verification links.
 - [Measurement quality and subsequent implementation checkpoints](plans/archive/measurement-quality-and-net-change.md): S1–S5, reviews, accepted decisions and completion evidence.
+- [Guide sections and task index](proposals/archive/guide-sections.md): `--section`, the task index and direct help routes, adopted 2026-10-24 with the category reference after three agent runs; the record links the runs and the decision.
 - [Category reference](proposals/archive/category-reference.md): the embedded category guide, its guards and the aligned model policies, implemented 2026-10-24.
 - [Reviewable policy entries and category refinements](proposals/archive/policy-entry-review.md): `except`, per-entry audit and refinements, implemented 2026-10-24 from three projects' test-categorization feedback.
 - [Test/production ratio design](plans/archive/test-production-ratios.md): research behind neutral, unbanded ratios.

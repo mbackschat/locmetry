@@ -2,14 +2,16 @@
 
 <!-- doc-status
 {
-  "status": "accepted",
+  "status": "implemented",
   "date": "2026-10-24",
   "summary": "Addressable guide sections and schema definitions, direct routes from help and a task index, so that agents read only what a task needs.",
-  "evidence": "[second review and owner acceptance](guide-sections.md#review-history)"
+  "evidence": "[acceptance runs and adoption](../../research/agent-regression-run-2026-10-24-sections-v2.md#decision), [guards](../../../tests/integration/guide_references.rs)"
 }
 -->
 
-The owner raised the idea on 2026-10-24 after the [category-guide correction run](../research/agent-regression-run-2026-10-24.md#correction-run-shorter-guide), and approved writing it as a proposal the same day. An independent review the same day accepted it with changes; this revision adopts them: self-contained routes, exit status 1 for unknown sections, a precise schema namespace, corrected evidence, direct help routes, a wider guard, a reproducible acceptance manifest, and uncached input kept as the primary cost gate.
+Status: historical decision record — implemented. Implemented test-first on 2026-10-24 in `a0faf26`, with the harness support in `a418305`, Amendment 1 in `7c63005`, and the conditional closing pointer to the task index restored in `47a1081` after the rerun showed the imperative one doubled an unrelated task's calls. Its [first agent run](../../research/agent-regression-run-2026-10-24-sections.md), [rerun and correction](../../research/agent-regression-run-2026-10-24-sections-v2.md) kept correctness and cut uncached input but did not pass every cost gate; the owner delegated the decision, and guide sections were adopted with the category reference on 2026-10-24, with the residuals recorded in the [decision](../../research/agent-regression-run-2026-10-24-sections-v2.md#decision). The excluded split of the reports guide and the trimming of the categories guide's policy advice moved to [DEFERRED](../../DEFERRED.md#guides-and-help). Archived on 2026-10-24 under the [retirement procedure](../README.md#retirement-procedure). [PRODUCT](../../PRODUCT.md) owns the current `--section` contract and the [task index](../../guides/README.md) the current routes; the wording, examples and limits below describe the reviewed design, not current guarantees.
+
+The owner raised the idea on 2026-10-24 after the [category-guide correction run](../../research/agent-regression-run-2026-10-24.md#correction-run-shorter-guide), and approved writing it as a proposal the same day. An independent review the same day accepted it with changes; this revision adopts them: self-contained routes, exit status 1 for unknown sections, a precise schema namespace, corrected evidence, direct help routes, a wider guard, a reproducible acceptance manifest, and uncached input kept as the primary cost gate.
 
 ## Problem
 
@@ -37,7 +39,7 @@ Long headings are shortened before their ids are first published, such as "Refin
   - The name of a `$defs` entry selects that definition, such as `Refinement`.
 
   The output is a fragment, not a self-contained schema: `$ref` values such as `#/$defs/Purpose` resolve against the full topic schema and name the next section to request. It is pretty-printed JSON without a source line, so it can be piped.
-- An unknown id exits with status 1, as other invalid queries do ([PRODUCT](../PRODUCT.md#command-outcomes)), with empty stdout. Stderr names the unknown id and lists the topic's valid ids in document order, worded by the [human output wording rules](../help-design.md#human-output-wording).
+- An unknown id exits with status 1, as other invalid queries do ([PRODUCT](../../PRODUCT.md#command-outcomes)), with empty stdout. Stderr names the unknown id and lists the topic's valid ids in document order, worded by the [human output wording rules](../../help-design.md#human-output-wording).
 
 ```text
 $ locmetry --guide categories --section choose-a-name
@@ -55,9 +57,9 @@ $ locmetry --schema config --section Refinement
 
 **Self-contained routes.** PRODUCT already promises that a guide's essential instructions are self-contained. Sections extend that promise: a section the index or help names states its own prerequisites, or the route names the additional reads they need. For example, the owner-naming rule in the categories guide's opening moves into the section that chooses names, and a diagnostic subsection that depends on its parent's fixture or working directory is routed through its parent.
 
-**Help routes.** `--help` reaches every session first. The configuration route gains a few conditional direct section commands for the needs agents met in the recorded runs, such as refining conventional tests or naming categories, and names `locmetry --guide index` for the rest. Other whole-guide and schema routes in help are reconciled with them, so help does not offer two routes for one need. [Help-design](../help-design.md) prefers an example with its applicability over another navigation layer; direct routes follow that, and the index is the fallback. Text must fit the current [help budgets](../agent-regression-checks.md#help-size-guard), 288 bytes free in `--help` and 62 in `-h` when measured on 2026-10-24, by rewording existing routes; a raise is a reviewed decision, taken only if rewording loses applicability or verification guidance. Fixtures that preserve the wording of earlier experiments stay unchanged.
+**Help routes.** `--help` reaches every session first. The configuration route gains a few conditional direct section commands for the needs agents met in the recorded runs, such as refining conventional tests or naming categories, and names `locmetry --guide index` for the rest. Other whole-guide and schema routes in help are reconciled with them, so help does not offer two routes for one need. [Help-design](../../help-design.md) prefers an example with its applicability over another navigation layer; direct routes follow that, and the index is the fallback. Text must fit the current [help budgets](../../agent-regression-checks.md#help-size-guard), 288 bytes free in `--help` and 62 in `-h` when measured on 2026-10-24, by rewording existing routes; a raise is a reviewed decision, taken only if rewording loses applicability or verification guidance. Fixtures that preserve the wording of earlier experiments stay unchanged.
 
-**Task index.** [docs/guides/README.md](../guides/README.md) becomes the routing table and is embedded verbatim as `locmetry --guide index`, so the GitHub page and the CLI are one document. Each row pairs a task with every command it needs, prerequisites included; it keeps one whole-document link to each guide, as the documentation checker requires.
+**Task index.** [docs/guides/README.md](../../guides/README.md) becomes the routing table and is embedded verbatim as `locmetry --guide index`, so the GitHub page and the CLI are one document. Each row pairs a task with every command it needs, prerequisites included; it keeps one whole-document link to each guide, as the documentation checker requires.
 
 ```markdown
 | When you want to | Read |
@@ -89,7 +91,7 @@ Recorded Showboat output that changes is regenerated, never edited.
 
 - The guard passes, and help stays within its budgets or a raise is reviewed.
 - An offline manifest pins the baseline revision, the exact commands of each covered route with all prerequisites and the index where a route uses it, and counts UTF-8 bytes of stdout including source lines. Against today's 59,552-byte batch of configure guide, categories guide and configuration schema, the task-12 route reads at most a third, `--help` excluded. The manifest is committed with the implementation.
-- An agent run on a new frozen protocol finds no loss of correctness and no regression under the existing gates: tasks 3, 8 and 12, plus unrelated task 1 as the root-help reading guard that [help-design](../help-design.md) requires, four AB/BA pairs each, 32 sessions. Uncached input stays the primary cost gate. The protocol also reports, as a diagnostic, the context each session builds: the sum of the increases of per-request input after the first request, read from the session logs' per-request token counts, which does not depend on cache hits or on how much of the first request was cached; a request smaller than its predecessor, as after compaction, adds nothing, and the protocol reports such decreases. It measures whole-session growth, not the isolated cost of any one document. For a primary failure that the diagnostic does not reproduce, the protocol predeclares one confirmation sample: its size, the condition that activates it, whether it is pooled with the first sample, and the final decision rule. Trials are never added until a gate passes. The [agent regression checks](../agent-regression-checks.md) own gates and diagnostics, so the harness support lands there before the protocol is frozen.
+- An agent run on a new frozen protocol finds no loss of correctness and no regression under the existing gates: tasks 3, 8 and 12, plus unrelated task 1 as the root-help reading guard that [help-design](../../help-design.md) requires, four AB/BA pairs each, 32 sessions. Uncached input stays the primary cost gate. The protocol also reports, as a diagnostic, the context each session builds: the sum of the increases of per-request input after the first request, read from the session logs' per-request token counts, which does not depend on cache hits or on how much of the first request was cached; a request smaller than its predecessor, as after compaction, adds nothing, and the protocol reports such decreases. It measures whole-session growth, not the isolated cost of any one document. For a primary failure that the diagnostic does not reproduce, the protocol predeclares one confirmation sample: its size, the condition that activates it, whether it is pooled with the first sample, and the final decision rule. Trials are never added until a gate passes. The [agent regression checks](../../agent-regression-checks.md) own gates and diagnostics, so the harness support lands there before the protocol is frozen.
 
 ## Risks
 
@@ -102,7 +104,7 @@ Implementation updates PRODUCT, the affected README and guide routes, help-desig
 
 ## Amendment 1: Several Sections per Command
 
-Status: approved 2026-10-24. Written the same day at the owner's request after the [agent run](../research/agent-regression-run-2026-10-24-sections.md); an independent review recommended approval with the consistent object shape for schema output, and the owner approved it for implementation.
+Status: approved 2026-10-24. Written the same day at the owner's request after the [agent run](../../research/agent-regression-run-2026-10-24-sections.md); an independent review recommended approval with the consistent object shape for schema output, and the owner approved it for implementation.
 
 **Problem.** The run kept correctness and cut uncached input by 11.8%, but total calls rose from 80 to 91 against a bound of 80. Agents requested one section per command, often one after another, and tasks 3 and 8 first opened the index: about one call more per session, where the control fetched the configure guide and the schema in one batch. One id per command did not force separate calls, since agents can batch commands, but it made every combined read a batch the agent had to assemble; several sections per command and a direct help route should reduce that friction, which the rerun must establish.
 

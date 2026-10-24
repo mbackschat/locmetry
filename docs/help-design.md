@@ -27,7 +27,7 @@ Use command help for workspace, comparison and explanation workflows. Root help 
 | User task | Supported features and material interpretation | Help destination | Verification |
 | --- | --- | --- | --- |
 | Discover what is possible | Measure, workspace, compare, explain; command help; standalone guides, six schemas and version | Root capability overview and reference options | CLI option inventory; discovery task |
-| Read only what a task needs | `--guide index`, `--section` for guide sections and schema definitions | Root configuration route and closing pointer; `--section` option | Guide-section guards; agent run of the [guide sections proposal](proposals/guide-sections.md) |
+| Read only what a task needs | `--guide index`, `--section` for guide sections and schema definitions | Root configuration route and closing pointer; `--section` option | Guide-section guards; agent run of the [guide sections proposal](proposals/archive/guide-sections.md) |
 | Understand a measurement | Files, Lines versus Code, purpose/category/kind, source versus all-counted, Code-based Test/prod, unclaimed versus intentionally Other, unavailable versus zero | Root result notes | Report-understanding task |
 | Query or save machine evidence | Full JSON versus headline, `--files`, summary/breakdown/review/coverage, `--output -`, destination protection | Root output recipes and options | JSON/automation task; executable help |
 | Save and show one measurement | `--output FILE --print table`, explicit Markdown, extension does not choose format, silent exports | Root output recipes | JSON/automation task; executable help |

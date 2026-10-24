@@ -1,6 +1,6 @@
 //! Guards that keep guide and schema sections addressable: heading form,
 //! resolving references, a complete index and stable published ids
-//! (docs/proposals/guide-sections.md, Guard).
+//! (docs/proposals/archive/guide-sections.md, Guard).
 use crate::common;
 use crate::guide_sections::{guide_ids, headings, slug, source, SCHEMAS, TOPICS};
 use serde_json::Value;

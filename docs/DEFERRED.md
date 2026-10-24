@@ -31,6 +31,14 @@ Requests from three projects categorizing their tests on 2026-10-24; the [policy
 - Hints in reports when a policy uses a name the category reference replaces, such as `benchmark` for `performance`. Reopen when the vocabulary has held unchanged for a release.
 - A display name for a language correction, so a DSL whose comment syntax matches a counter language is counted with that parser but reported under its own name. A counter of its own stays out of scope while Tokei counts. Reopen when a second project needs one.
 
+## Guides and Help
+
+Excluded by the [guide sections proposal](proposals/archive/guide-sections.md#excluded) and its agent runs.
+
+- Splitting the reports guide (19 KB, 9 sections) into more topics. Self-contained sections give small reads without more routing choices. Reopen if routed reads of its sections prove too coarse.
+- Trimming the categories guide's "Write a Reviewed Policy". Its `kind = ["source"]` advice has no other home yet. Reopen when that advice has one.
+- One command that reads guide sections and schema definitions together. Routes read them in separate commands, which cost the configuration tasks about one call per session in the [adoption decision](research/agent-regression-run-2026-10-24-sections-v2.md#decision). Reopen if calls, rather than uncached input or time, become the binding cost.
+
 ## Display
 
 - Folder-partition convergence remains deferred: adaptive folder detail and JSON `unclassified_folders` intentionally use different policies. Revisit only if a workflow demonstrates confusing divergence, with explicit compatibility review. The [adaptive-folder decision](proposals/archive/adaptive-folder-detail.md#existing-partition-and-feasibility) owns the rationale.

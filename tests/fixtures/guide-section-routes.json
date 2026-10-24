@@ -1,5 +1,5 @@
 {
-  "description": "Offline acceptance manifest of docs/proposals/guide-sections.md: UTF-8 bytes of stdout, source lines included, at COLUMNS=100 and NO_COLOR=1.",
+  "description": "Offline acceptance manifest of docs/proposals/archive/guide-sections.md: UTF-8 bytes of stdout, source lines included, at COLUMNS=100 and NO_COLOR=1.",
   "baseline": {
     "revision": "23e0ce9",
     "commands": [

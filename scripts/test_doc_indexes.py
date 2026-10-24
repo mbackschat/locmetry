@@ -132,7 +132,7 @@ class DocIndexesTests(unittest.TestCase):
 
 
 class GuideSectionIdTests(unittest.TestCase):
-    """The CLI's guide section ids are the fragments this checker accepts (docs/proposals/guide-sections.md)."""
+    """The CLI's guide section ids are the fragments this checker accepts (docs/proposals/archive/guide-sections.md)."""
 
     def test_published_guide_ids_are_link_anchors(self):
         spec = importlib.util.spec_from_file_location("doc_indexes", SCRIPT)

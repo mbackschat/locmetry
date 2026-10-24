@@ -1,5 +1,5 @@
 //! Addressable guide sections and schema definitions
-//! (docs/proposals/guide-sections.md).
+//! (docs/proposals/archive/guide-sections.md).
 use crate::common;
 use serde_json::Value;
 use std::{fs, path::Path, process::Output};
