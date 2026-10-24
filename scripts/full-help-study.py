@@ -27,6 +27,7 @@ STUDY_TASKS = {
     "agent-regression-2026-10-23-v1": [3, 8],
     "agent-regression-2026-10-24-v1": [3, 8, 12],
     "agent-regression-2026-10-24-correction-v1": [12],
+    "agent-regression-2026-10-24-sections-v1": [1, 3, 8, 12],
 }
 
 
@@ -90,6 +91,21 @@ def validate_protocol(protocol):
         selected = [p for p in pairs if p["task"] == task]
         if {p["repetition"] for p in selected} != {1, 2, 3, 4} or Counter(p["order"] for p in selected) != {"AB": 2, "BA": 2}:
             raise ValueError(f"Task {task} requires AB/BA twice each")
+    # A predeclared confirmation sample: four more balanced pairs per task, frozen
+    # with the primary sample and run at most once (docs/agent-regression-checks.md).
+    confirmation = protocol.get("confirmation")
+    if confirmation is not None:
+        extra = confirmation["pairs"]
+        if len(extra) != len(task_ids) * 4 or confirmation["maximum_sessions"] != len(extra) * 2:
+            raise ValueError("A confirmation sample requires four pairs per task")
+        for task in task_ids:
+            selected = [p for p in extra if p["task"] == task]
+            if {p["repetition"] for p in selected} != {5, 6, 7, 8} or Counter(p["order"] for p in selected) != {"AB": 2, "BA": 2}:
+                raise ValueError(f"Task {task} requires confirmation pairs 5-8, AB/BA twice each")
+
+
+def all_pairs(protocol):
+    return protocol["pairs"] + protocol.get("confirmation", {}).get("pairs", [])
 
 
 def campaign(destination, binaries, revisions, protocol_path=PROTOCOL, *, prepare_only=False, acknowledgement=None):
@@ -139,7 +155,7 @@ def campaign(destination, binaries, revisions, protocol_path=PROTOCOL, *, prepar
         for arm, revision in zip("AB", revisions)
     }
     snapshot = None
-    for item in protocol["pairs"]:
+    for item in all_pairs(protocol):
         target = destination / f"task{item['task']}-rep{item['repetition']}"
         task_path = frozen_tasks / task_paths[item["task"]].name
         BENCH.prepare(target, task_path, [frozen_binaries / arm for arm in "AB"],
@@ -164,15 +180,20 @@ def campaign(destination, binaries, revisions, protocol_path=PROTOCOL, *, prepar
         run_frozen(destination, acknowledgement)
 
 
-def run_frozen(destination, acknowledgement):
+def frozen_plan(destination, acknowledgement, *, ran=()):
+    """The frozen campaign plan, after checking that nothing it froze has changed.
+
+    Pairs that already ran are skipped: their sessions may edit the files a
+    task declares mutable.
+    """
     require_explorer_writable(destination)
-    if (destination / "started.json").exists():
-        raise ValueError("This bounded campaign already started; no replacement or extra trials are permitted")
     if BENCH.sha(destination / "campaign.json") != (destination / "campaign.sha256").read_text().strip():
         raise ValueError("Frozen campaign manifest changed")
     plan = json.loads((destination / "campaign.json").read_text())
     validate_protocol(plan)
     for name, expected in plan["frozen_files"].items():
+        if Path(name).parts[0] in ran:
+            continue
         path = destination / name
         if not path.is_file() or BENCH.sha(path) != expected:
             raise ValueError(f"Frozen input changed: {name}")
@@ -183,9 +204,13 @@ def run_frozen(destination, acknowledgement):
         if BENCH.sha(path) != expected:
             raise ValueError(f"Study code changed after freezing: {path.name}")
     require_acknowledgement(plan, acknowledgement)
+    return plan
+
+
+def run_pairs(destination, plan, pairs, marker, acknowledgement):
     catalog = codex_catalog(plan["model"], plan["effort"])
-    with (destination / "started.json").open("x") as started:
-        json.dump({"started": time.time(), "sessions": len(plan["pairs"]) * 2,
+    with (destination / marker).open("x") as started:
+        json.dump({"started": time.time(), "sessions": len(pairs) * 2,
                    "protocol_sha256": plan["protocol_sha256"], "acknowledged": acknowledgement,
                    "codex_catalog": catalog}, started, indent=2)
         started.write("\n")
@@ -197,8 +222,36 @@ def run_frozen(destination, acknowledgement):
         return target.name
 
     with ThreadPoolExecutor(max_workers=plan["concurrent_pairs"]) as pool:
-        for done in pool.map(pair, plan["pairs"]):
+        for done in pool.map(pair, pairs):
             print("Completed pair:", done, flush=True)
+
+
+def run_frozen(destination, acknowledgement):
+    if (destination / "started.json").exists():
+        raise ValueError("This bounded campaign already started; no replacement or extra trials are permitted")
+    plan = frozen_plan(destination, acknowledgement)
+    run_pairs(destination, plan, plan["pairs"], "started.json", acknowledgement)
+    (destination / "completed.json").write_text(json.dumps({"completed": time.time()}) + "\n")
+
+
+def run_confirmation(destination, acknowledgement, tasks):
+    """Runs the frozen confirmation pairs of the named tasks, once per campaign.
+
+    The protocol's activation and decision rules decide whether to call this;
+    the runner only enforces that the primary sample finished and that it runs
+    at most once.
+    """
+    if not (destination / "completed.json").exists():
+        raise ValueError("The confirmation sample runs only after the primary sample completed")
+    if (destination / "confirmation-started.json").exists():
+        raise ValueError("The confirmation sample already ran; no further trials are permitted")
+    primary = json.loads((destination / "campaign.json").read_text())["pairs"]
+    plan = frozen_plan(destination, acknowledgement, ran={f"task{p['task']}-rep{p['repetition']}" for p in primary})
+    unknown = sorted(set(tasks) - set(plan["task_ids"]))
+    if unknown or "confirmation" not in plan:
+        raise ValueError(f"Confirmation tasks not in this protocol: {unknown or 'no confirmation sample'}")
+    pairs = [p for p in plan["confirmation"]["pairs"] if p["task"] in tasks]
+    run_pairs(destination, plan, pairs, "confirmation-started.json", acknowledgement)
 
 
 def main():
@@ -212,14 +265,19 @@ def main():
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--prepare-only", action="store_true")
     mode.add_argument("--run-frozen", action="store_true")
+    mode.add_argument("--run-confirmation", type=int, nargs="+", metavar="TASK",
+                      help="run the frozen confirmation pairs of these tasks, once, when the protocol's activation rule holds")
     parser.add_argument("--acknowledge", metavar="MODEL:EFFORT",
                         help="the owner's acknowledgement of the frozen model and effort; required to launch")
     args = parser.parse_args()
     supplied = [args.control, args.candidate, args.control_revision, args.candidate_revision]
-    if args.run_frozen:
+    if args.run_frozen or args.run_confirmation:
         if any(supplied):
-            parser.error("--run-frozen uses the already frozen binaries and revisions")
-        run_frozen(args.destination.resolve(), args.acknowledge)
+            parser.error("--run-frozen and --run-confirmation use the already frozen binaries and revisions")
+        if args.run_confirmation:
+            run_confirmation(args.destination.resolve(), args.acknowledge, args.run_confirmation)
+        else:
+            run_frozen(args.destination.resolve(), args.acknowledge)
     else:
         if not all(supplied):
             parser.error("--control, --candidate, --control-revision and --candidate-revision are required")

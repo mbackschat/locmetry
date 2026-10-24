@@ -274,6 +274,21 @@ def records(path):
     return result
 
 
+def context_growth(rows):
+    """The context a session built, independent of provider cache hits.
+
+    Summed increases of per-request input after the first request, which holds
+    the instructions every session shares; a request smaller than its
+    predecessor, as after compaction, adds nothing and is counted instead. The
+    first diagnostic of 2026-10-24 subtracted the first request's cached input,
+    which cross-session cache hits make vary (docs/research/agent-regression-run-2026-10-24.md).
+    """
+    inputs = [r["payload"]["info"]["last_token_usage"]["input_tokens"] for r in rows
+              if r.get("type") == "event_msg" and r["payload"].get("type") == "token_count" and r["payload"].get("info")]
+    steps = [after - before for before, after in zip(inputs, inputs[1:])]
+    return {"context_growth": sum(step for step in steps if step > 0), "context_decreases": sum(step < 0 for step in steps)}
+
+
 def run_agent(destination, run, model, effort):
     manifest = json.loads((destination / "manifest.json").read_text())
     task = manifest.get("task", json.loads(TASK.read_text()))
@@ -360,11 +375,12 @@ def run_agent(destination, run, model, effort):
                     for p, content in task["files"].items() if p not in task.get("mutable", []))
     integrity = integrity and all((destination / run / p).is_file() and sha(destination / run / p) == digest
                                   for p, digest in generated_hashes.items())
+    growth = context_growth(records(evidence / "session.jsonl")) if session else {}
     summary = dict(condition=condition, run=run, thread_id=thread, session=str(session) if session else None,
                    elapsed=time.time()-settings["started"], returncode=process.returncode, stopped=stopped,
                    fixture_intact=integrity, usage=usage, agent_tool_calls=tool_calls,
                    shell_executions=sum(r["type"] == "item.completed" and r.get("item", {}).get("type") == "command_execution" for r in stream),
-                   cli_invocations=len(records(evidence / "calls.jsonl")))
+                   cli_invocations=len(records(evidence / "calls.jsonl")), **growth)
     (evidence / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
     print(json.dumps(summary, indent=2))
 

@@ -363,6 +363,75 @@ class ExperimentTests(unittest.TestCase):
             self.assertEqual({p["repetition"] for p in selected}, {1, 2, 3, 4})
         full.validate_protocol(protocol)
 
+    def test_context_growth_sums_input_increases_after_the_first_request_and_counts_decreases(self):
+        def request(tokens):
+            return {"type": "event_msg", "payload": {"type": "token_count", "info": {"last_token_usage": {"input_tokens": tokens}}}}
+        # The first request carries the shared instructions; a smaller request, as
+        # after compaction, adds nothing but is counted.
+        rows = [request(100), {"type": "event_msg", "payload": {"type": "token_count", "info": None}},
+                request(150), request(140), request(200), {"type": "response_item", "payload": {}}]
+        self.assertEqual(BENCH.context_growth(rows), {"context_growth": 110, "context_decreases": 1})
+        self.assertEqual(BENCH.context_growth([]), {"context_growth": 0, "context_decreases": 0})
+
+    def test_sections_regression_adds_an_unrelated_reader_and_freezes_one_confirmation_sample(self):
+        from collections import Counter
+        full = self.full_help_runner()
+        regression = json.loads(full.PROTOCOL.with_name("regression-2026-10-24-study.json").read_text())
+        protocol = json.loads(full.PROTOCOL.with_name("regression-2026-10-24-sections-study.json").read_text())
+        # Task 1 guards root-help reading for an unrelated task (docs/help-design.md);
+        # tasks 3, 8 and 12 read configuration references.
+        self.assertEqual(protocol["task_ids"], [1, 3, 8, 12])
+        self.assertEqual(protocol["maximum_sessions"], 32)
+        self.assertFalse(protocol["previous_trials_included"])
+        self.assertEqual(protocol["control"], regression["control"])
+        for key in ["model", "effort", "limits", "repetitions", "concurrent_pairs", "task_files"]:
+            self.assertEqual(protocol[key], regression[key])
+        for key in ["correctness", "per_task_medians", "overall_all_run_totals", "secondary", "zero_comparator"]:
+            self.assertEqual(protocol["decision_rule"][key], regression["decision_rule"][key])
+        self.assertIn("context_growth", protocol["decision_rule"]["diagnostics"])
+        confirmation = protocol["confirmation"]
+        self.assertTrue(confirmation["pooled"])
+        self.assertEqual(confirmation["maximum_sessions"], 32)
+        for number in protocol["task_ids"]:
+            selected = [p for p in confirmation["pairs"] if p["task"] == number]
+            self.assertEqual(Counter(p["order"] for p in selected), {"AB": 2, "BA": 2})
+            self.assertEqual({p["repetition"] for p in selected}, {5, 6, 7, 8})
+        full.validate_protocol(protocol)
+        unbalanced = json.loads(json.dumps(protocol))
+        unbalanced["confirmation"]["pairs"][0]["order"] = "BA" if unbalanced["confirmation"]["pairs"][0]["order"] == "AB" else "AB"
+        with self.assertRaises(ValueError):
+            full.validate_protocol(unbalanced)
+
+    def test_a_confirmation_sample_runs_once_for_named_tasks_after_the_primary_sample(self):
+        full = self.full_help_runner()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            binaries = [root / arm for arm in "AB"]
+            for arm, binary in zip("AB", binaries):
+                binary.write_text(arm)
+            protocol = json.loads(full.PROTOCOL.with_name("regression-2026-10-24-sections-study.json").read_text())
+            protocol["control"] = {"source_revision": "control-revision", "binary_sha256": BENCH.sha(binaries[0])}
+            protocol_path = root / "protocol.json"
+            protocol_path.write_text(json.dumps(protocol))
+            destination = root / "campaign"
+            with patch.object(full.BENCH, "REPO", BENCH.REPO), patch.object(full.BENCH, "run_agent") as run:
+                full.campaign(destination, binaries, ["control-revision", "candidate-revision"], protocol_path, prepare_only=True)
+                self.assertEqual(len(list(destination.glob("task*-rep*/manifest.json"))), 32)
+                with self.assertRaisesRegex(ValueError, "primary sample"):
+                    full.run_confirmation(destination, ACK, [12])
+                full.run_frozen(destination, ACK)
+                self.assertEqual(run.call_count, 32)
+                self.assertFalse(any(call.args[0].name.endswith(("rep5", "rep6", "rep7", "rep8")) for call in run.call_args_list))
+                with self.assertRaisesRegex(ValueError, "not in this protocol"):
+                    full.run_confirmation(destination, ACK, [2])
+                full.run_confirmation(destination, ACK, [12])
+                confirmed = [call.args[0].name for call in run.call_args_list[32:]]
+                self.assertEqual(sorted(set(confirmed)), [f"task12-rep{n}" for n in [5, 6, 7, 8]])
+                self.assertEqual(run.call_count, 40)
+                with self.assertRaisesRegex(ValueError, "already ran"):
+                    full.run_confirmation(destination, ACK, [3])
+                self.assertEqual(run.call_count, 40)
+
     def test_full_help_grader_delegates_the_category_naming_task_to_the_artifact_checks(self):
         spec = importlib.util.spec_from_file_location("full_help_score", Path(__file__).with_name("score_full_help.py"))
         grader = importlib.util.module_from_spec(spec)
