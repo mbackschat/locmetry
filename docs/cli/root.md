@@ -405,18 +405,20 @@ contained language. Production + Test + Other = Code · Test/prod = Test / Produ
 
 ## Discover syntax and contracts
 
-Help lists syntax; guides explain workflows; schemas define machine-readable fields. These are standalone queries. Their projections keep the transcript short. The version query is deliberately recorded, so a release version change requires refreshing this example.
+Help lists syntax; guides explain workflows; schemas define machine-readable fields. These are standalone queries. `--section` prints one guide section or schema definition, and `--guide index` names the section for each task. Their projections keep the transcript short. The version query is deliberately recorded, so a release version change requires refreshing this example.
 
 ```bash
 source scripts/cli-demo-env.sh
 locmetry --no-color --help | sed -n '1,16p'
 locmetry --version
-for topic in configure selection reports compare categories; do
+for topic in index configure selection reports compare categories; do
   locmetry --guide "$topic" | sed -n '1p'
 done
+locmetry --guide categories --section choose-a-name | sed -n '1,3p'
 for schema in config report workspace comparison explanation; do
   locmetry --schema "$schema" | jq -r '.title'
 done
+locmetry --schema config --section overview | jq -c '."$defs"[:4]'
 ```
 
 ```output
@@ -437,16 +439,21 @@ Arguments:
           Directory to measure, instead of --root [default: the current directory]
 
 locmetry 0.10.0
+Source: docs/guides/README.md (locmetry 0.10.0)
 Source: docs/guides/configure.md (locmetry 0.10.0)
 Source: docs/guides/selection.md (locmetry 0.10.0)
 Source: docs/guides/reports.md (locmetry 0.10.0)
 Source: docs/guides/compare.md (locmetry 0.10.0)
 Source: docs/guides/categories.md (locmetry 0.10.0)
+Source: docs/guides/categories.md#choose-a-name (locmetry 0.10.0)
+
+## Choose a Name
 Configuration
 MeasurementReport
 Workspace
 Comparison
 Explanation
+["Backend","Scope","Classification","Purpose"]
 ```
 
 ## Find stale configuration

@@ -1,0 +1,26 @@
+{
+  "description": "Offline acceptance manifest of docs/proposals/guide-sections.md: UTF-8 bytes of stdout, source lines included, at COLUMNS=100 and NO_COLOR=1.",
+  "baseline": {
+    "revision": "23e0ce9",
+    "commands": [
+      ["--guide", "configure"],
+      ["--guide", "categories"],
+      ["--schema", "config"]
+    ],
+    "bytes": 59552
+  },
+  "maximum_share": 0.3333,
+  "routes": {
+    "task 12 from help": [
+      ["--guide", "configure", "--section", "refine-categories"],
+      ["--guide", "categories", "--section", "choose-a-name"],
+      ["--schema", "config", "--section", "Refinement"]
+    ],
+    "task 12 through the index": [
+      ["--guide", "index"],
+      ["--guide", "configure", "--section", "refine-categories"],
+      ["--guide", "categories", "--section", "choose-a-name"],
+      ["--schema", "config", "--section", "Refinement"]
+    ]
+  }
+}

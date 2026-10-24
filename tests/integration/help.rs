@@ -104,6 +104,7 @@ fn every_visible_option_has_a_workflow_in_the_inventory() {
                     "--folder-rows",
                     "--schema",
                     "--guide",
+                    "--section",
                     "--version",
                 ],
             ]

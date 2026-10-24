@@ -17,7 +17,7 @@ The Immich showcase found this gap on 2026-10-22, as its [measurement recording]
 
 The counter recognizes languages by file name and extension, and some extensions belong to more than one format. Immich's `mobile/android/app/proguard-rules.pro` holds ProGuard keep rules, but `.pro` is Prolog to the counter, so the showcase reports a Prolog row that does not exist. Qt project files use the same extension.
 
-A policy cannot correct this. [Language mappings](../../guides/configure.md#recognize-a-language-then-review-purpose) apply only to files the counter does not recognize. Classification entries set purpose and category, not language. An exclusion removes the file from every total and hides the question instead of answering it.
+A policy cannot correct this. [Language mappings](../../guides/configure.md#recognize-a-language) apply only to files the counter does not recognize. Classification entries set purpose and category, not language. An exclusion removes the file from every total and hides the question instead of answering it.
 
 ## Evidence
 

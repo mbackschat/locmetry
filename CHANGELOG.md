@@ -6,6 +6,7 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 
 ### Added
 
+- `--section ID` prints one section of a guide or schema instead of the whole document: `locmetry --guide configure --section refine-categories` prints that heading's section, and `locmetry --schema config --section Refinement` one definition, with `overview` for the schema's root description and section names. `locmetry --guide index` routes each task to the sections and definitions it needs, and `--help` names the sections for common configuration needs. A section id is its heading's GitHub anchor and stays stable.
 - Overrides and rules accept an `except` list of globs: files it names are left out of the entry and fall through to later entries and stages, so an exception such as `FieldAgreementTest` among `*AgreementTest` laws no longer depends on entry order.
 - Reports list every override, rule and language correction in `summary.policy_entries` with the files and code it decided, the earlier entries or conventions that took some of its files, globs and exceptions that did nothing, and the decisions it replaced. An entry that decides only a few of its intended files, or moves production code into tests, now shows in the report instead of only an entry that decides nothing; `--verbose` notes entries that change a purpose a later stage would give.
 - `[[refinements]]` in the project configuration give files a finer category without touching their purpose: a refinement applies to files whose decided purpose it names, such as conventional tests relabeled `property-law`, keeps purpose totals, module credit and `rule`, and leaves unclaimed and generated files alone. File records and `explain` name the refinement, and the configure guide now recommends refinements instead of overrides for category-only changes.
@@ -25,6 +26,7 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 
 ### Changed
 
+- Six guide headings are shorter, so their section ids are too, such as `refine-categories` in the configure guide; links to their old GitHub anchors no longer jump to the heading.
 - `--schema config`, `report` and `comparison` list the counter's language names once, shared by language mappings and corrections, which makes them 12.7 KB shorter each; they accept the same files as before.
 - Tables and Markdown show BASH scripts in the Shell row, with a `Folded: BASH → Shell.` note, because the counter names extensionless bash scripts BASH and `.sh` scripts Shell whatever their shebang, which split one project's scripts over two rows. `--split-languages` shows them apart, and JSON keeps both names.
 - Every `.locmetryrc` in the measured tree is excluded as policy, not only the loaded one, so trying a draft policy with `--config` or measuring a tree with nested projects no longer lists `.locmetryrc` files as unrecognized. The effective exclusions show `**/.locmetryrc` instead of `.locmetryrc`.

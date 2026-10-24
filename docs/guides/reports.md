@@ -68,7 +68,7 @@ For one path, use `locmetry --guide selection`. For historical evidence and part
 
 These queries use a small synthetic project named `acme-orders`, with a `prototypes/` folder, run from the directory containing it. They require the optional external `jq` tool, not a Locmetry runtime dependency. Personal defaults are disabled for the synthetic examples. These are interactive inspection pipelines; the [CI recipe](#continuous-integration) demonstrates preserving partial status.
 
-### “Unclaimed source”: which files make up that folder total?
+### Which files are unclaimed source?
 
 The files were counted, but no rule, convention or module claimed their purpose. The full report's `review` list already contains every unclaimed source file, largest first; no `--files` is needed. List code lines, language and path for `prototypes/`, including descendants:
 
@@ -95,7 +95,7 @@ locmetry acme-orders --no-user-config --files --output - | jq -r '.files[] | sel
 locmetry acme-orders --no-user-config --output - | jq '.metadata.coverage'
 ```
 
-### “Not source code”: which files are data or documentation?
+### Which files are not source code?
 
 Content kind is separate from purpose: these files contribute to `all_counted`, but not source totals. Code embedded in them, such as fenced snippets in Markdown, stays documentation; the verbose note counts its code lines, and each file's `languages` splits them by language. List their kinds, physical line counts and paths:
 
@@ -162,7 +162,7 @@ The members are named after the folders' last segments, and files outside every 
 
 ## Query a Saved Report
 
-Save full JSON outside the measured root. These queries require `jq` and use the same sample as the interactive queries above; a headline cannot supply the full `breakdown` and `review` sections.
+Save full JSON outside the measured root. These queries require `jq` and use the synthetic `acme-orders` project of `locmetry --guide reports --section common-issues-and-useful-queries`, run from the directory containing it; a headline cannot supply the full `breakdown` and `review` sections.
 
 ```sh
 locmetry acme-orders --no-user-config --output report.json

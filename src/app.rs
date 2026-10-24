@@ -5,6 +5,7 @@ mod commands;
 mod destination;
 mod measure;
 mod parse;
+mod reference;
 mod report;
 #[cfg(test)]
 mod tests;
@@ -14,6 +15,7 @@ pub(crate) use commands::*;
 use destination::*;
 use measure::*;
 pub(crate) use parse::*;
+pub(crate) use reference::*;
 use report::*;
 
 use crate::guides::Guide;

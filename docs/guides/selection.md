@@ -102,7 +102,7 @@ This command is a current-filesystem diagnostic, not a historical explanation of
 
 These diagnostic examples use the [README sample project](../../README.md#what-you-see), from its parent directory. Personal defaults are disabled to isolate the sample policy.
 
-### A subdirectory scan unexpectedly reports production files as unclaimed
+### Unclaimed production in a subfolder scan
 
 `locmetry acme-orders/web/src` treats `src` as an independent root. It does not discover the repository's `.locmetryrc` or the parent `web/package.json`. Supplying `--config` alone does not restore the project's path base or ancestor module evidence. Keep the project root and restrict the measurement explicitly:
 
@@ -112,7 +112,7 @@ locmetry acme-orders --no-user-config --subfolder web/src --format table --show-
 
 This retains project-relative rules and module context while counting only the selected folder. `--show-folders` adds rows for its children. A target excluded, ignored or hidden by policy fails clearly instead of reporting an empty measurement. [Subfolder semantics](../PRODUCT.md#subfolder-measurement) explains context traversal, coverage, diagnostics and comparison compatibility. Ancestor configuration discovery is not automatic.
 
-### A counted file has an unexpected purpose
+### A file has an unexpected purpose
 
 An earlier classification stage may win over your rule. Explain the file using the same project root and policy as the measurement; inspect `result.file.rule` and `result.decision` before editing configuration:
 

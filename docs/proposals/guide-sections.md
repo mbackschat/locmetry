@@ -2,10 +2,10 @@
 
 <!-- doc-status
 {
-  "status": "draft",
+  "status": "accepted",
   "date": "2026-10-24",
   "summary": "Addressable guide sections and schema definitions, direct routes from help and a task index, so that agents read only what a task needs.",
-  "evidence": ""
+  "evidence": "[second review and owner acceptance](guide-sections.md#review-history)"
 }
 -->
 
@@ -69,7 +69,7 @@ $ locmetry --schema config --section Refinement
 **Guard.** Integration tests fail when:
 
 - a guide heading is outside the supported form, has an empty slug, or duplicates another id of the same guide;
-- a schema has `overview` as a property or definition name, or a property and a definition differ only in case;
+- a schema has `overview` as a property or definition name, or a property and a definition share a name;
 - a `--section` reference does not resolve, wherever it appears: rendered help, guides, schema descriptions, README, and the recorded guides under `docs/cli/` and `docs/showcase/`, including inline code and code blocks, which the link checker deliberately skips;
 - a guide section is neither named by an index row nor listed in the index's enumerated whole-guide exemptions;
 - an id in the committed list of published ids no longer resolves, unless CHANGELOG's `Unreleased` section records its removal as **Breaking**;
@@ -99,3 +99,7 @@ Recorded Showboat output that changes is regenerated, never edited.
 - **Evidence.** The configuration route in help is pinned by the agent-explorability fixture as measured evidence; changing it requires the run above.
 
 Implementation updates PRODUCT, the affected README and guide routes, help-design's inventory and CHANGELOG together.
+
+## Review History
+
+A second independent review on 2026-10-24 accepted the revision and asked that the protocol fix the confirmation sample's rules and present context growth as whole-session growth; commit `23e0ce9` adopted both. The owner accepted the proposal for implementation the same day.

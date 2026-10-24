@@ -3,33 +3,15 @@ mod guides;
 
 use anyhow::Result;
 use app::*;
-use std::io::{self, Write};
 use std::process::ExitCode;
 
 fn run(cli: Cli) -> Result<Outcome> {
     let styling = cli.styling;
     if let Some(guide) = cli.guide {
-        let (path, text) = guide.document();
-        let mut stdout = io::stdout().lock();
-        writeln!(
-            stdout,
-            "Source: {path} (locmetry {})\n",
-            env!("CARGO_PKG_VERSION")
-        )?;
-        stdout.write_all(text.as_bytes())?;
-        return Ok(Outcome::Complete);
+        return run_guide(guide, cli.section.as_deref());
     }
     if let Some(schema) = cli.schema {
-        let schema = match schema {
-            Schema::Config => locmetry::config_schema(),
-            Schema::UserConfig => locmetry::user_config_schema(),
-            Schema::Report => locmetry::report_schema(),
-            Schema::Comparison => locmetry::compare::schema(),
-            Schema::Explanation => locmetry::explain::schema(),
-            Schema::Workspace => locmetry::workspace_schema(),
-        };
-        println!("{}", serde_json::to_string_pretty(&schema)?);
-        return Ok(Outcome::Complete);
+        return run_schema(schema, cli.section.as_deref());
     }
     match cli.command {
         Some(Command::Workspace(workspace)) => run_workspace(&workspace, styling),

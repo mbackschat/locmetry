@@ -24,6 +24,8 @@ mod folder_rows;
 mod folders;
 mod framework_layouts;
 mod generated_markers;
+mod guide_references;
+mod guide_sections;
 mod guides;
 mod help;
 mod inline_tests;

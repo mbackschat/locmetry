@@ -1,6 +1,6 @@
 # Choose Category Names
 
-Use this non-binding reference to name new categories of a `.locmetryrc` policy, so that projects, people and agents name the same kind of code alike. Locmetry accepts any declared name. Use the names the owner asks for, and propose rather than apply a rename of a category an existing policy uses.
+Use this non-binding reference to name new categories of a `.locmetryrc` policy, so that projects, people and agents name the same kind of code alike. Locmetry accepts any declared name.
 
 ## What the Reference Decides
 
@@ -8,7 +8,7 @@ It chooses a category inside a purpose that is already decided; `$defs.Purpose` 
 
 ## Choose a Name
 
-Give each file one category. Take the first row of its purpose that fits, reading "Not for"; rows run from narrow roles to broad ones. Prefer a row's name over the names it replaces, unless the owner wants a finer distinction, as [Project-Specific Names](#project-specific-names) describes.
+Use the names the owner asks for, and propose rather than apply a rename of a category an existing policy uses. Give each file one category. Take the first row of its purpose that fits, reading "Not for"; rows run from narrow roles to broad ones. Prefer a row's name over the names it replaces, unless the owner wants a finer distinction, as [Project-Specific Names](#project-specific-names) describes.
 
 <!-- category-vocabulary -->
 | Purpose | Name | Use for | Not for | Instead of |

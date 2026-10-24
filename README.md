@@ -247,7 +247,7 @@ Most of the change is test code. [Folder reporting](docs/guides/reports.md#look-
 | Measure an explicit workspace definition | `locmetry workspace --workspace-file repos.toml --files --output workspace.json --print table` |
 | Compare two saved full reports | `locmetry compare before.json after.json --format table` |
 
-`locmetry --help` includes the same commands, plus a working configuration example for maintained scripts with applicability and verification instructions. Verbose tables total data and documentation files under “Not source code”; to list them, [filter full JSON by `kind`](docs/guides/reports.md#not-source-code-which-files-are-data-or-documentation).
+`locmetry --help` includes the same commands, plus a working configuration example for maintained scripts with applicability and verification instructions. Verbose tables total data and documentation files under “Not source code”; to list them, [filter full JSON by `kind`](docs/guides/reports.md#which-files-are-not-source-code).
 
 Without explicit options, a terminal gets a table and a pipe gets a compact JSON headline. `--output` defaults to full JSON; choose `--format table` or `--format markdown` explicitly for those exports. File exports are silent on stdout, and the extension does not select the format. For tables alone, add `--tables-only`: it drops legends, notes and the closing location and date lines, as for transcripts and scripts that need only rows. [Output routing and reports](docs/guides/reports.md#choose-content-and-destination) explains the choices and protected destinations.
 
@@ -437,12 +437,13 @@ The [configuration guide](docs/guides/configure.md) covers overrides, refinement
 
 Locmetry's own [.locmetryrc](.locmetryrc) is a maintained example: it excludes the synthetic demonstration workspace, distinguishes operational tooling, distribution and verification infrastructure, and splits its tests into unit, integration and test support with refinements, all named from the category reference. The [Immich policy](examples/showcase/immich/overlay/.locmetryrc) is the larger example, and [its README](examples/showcase/immich/README.md#how-the-policy-is-built) explains why each entry uses its stage. [Self-measurement design](docs/self-measurement.md) explains the decisions and how to verify them.
 
-For a production-rule change covered by the example in `locmetry --help`, inspect existing configuration and measure current decisions, adapt the paths and category, then run the displayed verification command. Reading a guide or schema first is optional for that route. Use `locmetry --guide configure` or `locmetry --schema config` for exclusions, overrides, intentional Other, or semantics not shown there. Verify per-file decisions and unresolved review items before concluding. Guides and schemas are available from the installed binary without a network connection.
+For a production-rule change covered by the example in `locmetry --help`, inspect existing configuration and measure current decisions, adapt the paths and category, then run the displayed verification command. Reading a guide or schema first is optional for that route. For other needs, read only the section that answers them: `locmetry --guide index` routes each task to its guide sections and schema definitions, such as `locmetry --guide configure --section refine-categories`. Verify per-file decisions and unresolved review items before concluding. Guides and schemas are available from the installed binary without a network connection.
 
 ## Guides and reference
 
 | Task | Guide in the executable | Repository copy |
 | --- | --- | --- |
+| Find the section for a task | `locmetry --guide index` | [Task index](docs/guides/README.md) |
 | Configure or review classification | `locmetry --guide configure` | [Configure](docs/guides/configure.md) |
 | Diagnose a file or subfolder | `locmetry --guide selection` | [Selection and explanations](docs/guides/selection.md) |
 | Read coverage, query reports or apply a CI policy | `locmetry --guide reports` | [Reports](docs/guides/reports.md) |

@@ -117,7 +117,7 @@ fn guide_errors_are_actionable_and_queries_are_exclusive() {
     let root = tempfile::tempdir().unwrap();
     for args in [
         vec!["--guide"],
-        vec!["--guide", "index"],
+        vec!["--guide", "contents"],
         vec!["--guide", "Configure"],
         vec!["--guide", "./configure.md"],
     ] {
@@ -488,15 +488,19 @@ fn comparison_example_and_scope_refusal_match_documented_evidence() {
 
 #[test]
 fn long_help_offers_the_tested_configuration_route_without_changing_short_help() {
+    // help-routing.txt keeps the route wording the 2026-10-20 routing study measured;
+    // the route now sends other needs to sections (docs/proposals/guide-sections.md).
     let root = tempfile::tempdir().unwrap();
-    let addition = concat!(
-        include_str!("../fixtures/agent-explorability/help-routing.txt"),
-        include_str!("../fixtures/agent-explorability/help-recipe.txt")
-    );
+    let routing = include_str!("../fixtures/agent-explorability/help-routing.txt");
+    let kept = routing.split(" Use --guide configure").next().unwrap();
+    let addition = include_str!("../fixtures/agent-explorability/help-recipe.txt");
     for args in [vec!["--help"], vec!["help"]] {
         let output = run(root.path(), &args);
         let help = String::from_utf8(output.stdout).unwrap();
         assert_eq!(help.matches(addition).count(), 1);
+        assert_eq!(help.matches(kept).count(), 1);
+        let flat = help.split_whitespace().collect::<Vec<_>>().join(" ");
+        assert!(flat.contains("the rest via --guide index. Verify the reported per-file decisions"));
     }
     for args in [
         vec!["-h"],

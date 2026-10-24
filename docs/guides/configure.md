@@ -19,14 +19,14 @@ To review what a configuration edit changes, save a full baseline with `--files`
 
 Decide whether submodules, vendored dependencies and reference material belong in the intended measurement. Exclude out-of-scope trees through scope policy; keep maintained project code measured and classify it from evidence. A submodule hint does not establish ownership. Report uncertain scope to the owner instead of assuming that all external-looking code should be excluded.
 
-Retrieve `locmetry --help` when command syntax is unclear, or `locmetry --schema config` when the intended edit needs keys, defaults, exact built-ins or accepted language names not shown here. These are optional references, not prerequisites for the first measurement. To retrieve smaller schema sections, an optional external tool such as `jq` can help:
+Retrieve `locmetry --help` when command syntax is unclear, or the configuration schema when the intended edit needs keys, defaults, exact built-ins or accepted language names not shown here. These are optional references, not prerequisites for the first measurement. Read only the part you need: the overview carries the precedence and matching semantics and names every other section, such as a definition:
 
 ```sh
-locmetry --schema config | jq -r .description
-locmetry --schema config | jq '."$defs".Classification'
+locmetry --schema config --section overview
+locmetry --schema config --section Classification
 ```
 
-Locmetry does not require `jq`. Request `locmetry --guide reports` for evidence meanings and narrow report queries, or `locmetry --guide selection` for a missing or surprising file. Do not fetch every guide, schema or file record before you have a question.
+`locmetry --guide index` names the section for other needs. Request `locmetry --guide reports` for evidence meanings and narrow report queries, or `locmetry --guide selection` for a missing or surprising file. Do not fetch every guide, schema or file record before you have a question.
 
 ## Decide Purpose, Not Just Coverage
 
@@ -46,7 +46,7 @@ Substitute an existing root-relative path. Inspect `result.file.rule`, `result.d
 
 Globs match root-relative file paths. `docs/**` covers descendants; `docs` does not mean the directory. `*.py` matches root files only; `**/*.py` also covers deeper paths. Patterns are case-sensitive. Use `[[rules]]` for decisions after conventions, and `[[overrides]]` only when the evidence requires winning before conventions. To keep particular files out of an entry, list them in its `except` array: they fall through to later entries and stages, so the exception is stated instead of depending on entry order. An optional `[categories]` table documents permitted custom categories and catches typos. The schema supplies the complete matching contract.
 
-## Recognize a Language, Then Review Purpose
+## Recognize a Language
 
 A language mapping makes an otherwise unrecognized selected file countable; it does not assign purpose. For example, after inspecting an extensionless `bin/launch` and establishing that it contains JavaScript, use this minimal configuration. In an existing configuration, merge only the mapping entry and preserve its single top-level `version`:
 
@@ -93,7 +93,7 @@ reason = "ProGuard keep rules; no counter language shares their syntax"
 
 Choose a counter language only when its comment syntax matches the file's, because the counts follow that syntax; otherwise use `"unrecognized"`, which leaves the file selected but uncounted. Remeasure and explain a corrected file: `result.file.language_correction` and `result.correction` name the correction, and an unused correction appears in `summary.unused_entries`. Corrections are project knowledge, so personal defaults cannot set them.
 
-## Refine a Category Without Changing Purpose
+## Refine Categories
 
 Classification selects a whole entry, not a separate winner for purpose and category. For a helper at `__test__/helpers/setup.js`, this ordinary rule loses to the built-in test-directory convention, leaving both purpose and category as `test`:
 
@@ -128,7 +128,7 @@ Use an override only when the purpose itself must change, such as archived tests
 
 ## Test Support or Verification Tooling
 
-Purpose, not category, decides Test/prod: the ratio divides all Test code by all Production code and ignores categories. The `Purpose` definitions in `locmetry --schema config` (`$defs.Purpose`) say which code is test and which is production: tests and the support that exists only for them are test, while programs that run, prepare or score tests are production. Built-in test conventions label named test-runner configuration as test; keep such defaults unless evidence justifies an override. Run `locmetry --guide categories` for the category names within each purpose, such as `test-support` or `verification-tooling`.
+Purpose, not category, decides Test/prod: the ratio divides all Test code by all Production code and ignores categories. The `Purpose` definitions (`locmetry --schema config --section Purpose`) say which code is test and which is production: tests and the support that exists only for them are test, while programs that run, prepare or score tests are production. Built-in test conventions label named test-runner configuration as test; keep such defaults unless evidence justifies an override. Run `locmetry --guide categories` for the category names within each purpose, such as `test-support` or `verification-tooling`.
 
 ## Worked Configuration
 

@@ -17,7 +17,7 @@ pub(crate) fn validate_query(
     let conflict = command
         .get_arguments()
         .find(|arg| {
-            arg.get_id().as_str() != query
+            !matches!(arg.get_id().as_str(), id if id == query || id == "section")
                 && !arg.is_global_set()
                 && matches.value_source(arg.get_id().as_str())
                     == Some(clap::parser::ValueSource::CommandLine)
@@ -62,10 +62,18 @@ pub(crate) fn parse_cli() -> clap::error::Result<Cli> {
     let matches = command
         .try_get_matches_from_mut(args)
         .map_err(|error| replace_misleading_tip(error, &command, named.as_deref()))?;
+    let mut queried = false;
     for query in ["schema", "guide"] {
         if matches.value_source(query) == Some(clap::parser::ValueSource::CommandLine) {
             validate_query(&mut command, &matches, query)?;
+            queried = true;
         }
+    }
+    if matches.contains_id("section") && !queried {
+        return Err(command.error(
+            clap::error::ErrorKind::MissingRequiredArgument,
+            "'--section' selects part of a reference query, so it needs '--guide' or '--schema'",
+        ));
     }
     // Clap's args_conflicts_with_subcommands disables command recognition after
     // root flags, allowing a reserved name to become DIR. Validate after parsing

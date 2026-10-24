@@ -78,7 +78,7 @@ exit "$status"
 
 ## Inspect one workspace member
 
-After capturing `before-workspace.json` and `after-workspace.json` with the workspace recipe above, select one root by its exact, case-sensitive member name:
+After capturing `before-workspace.json` and `after-workspace.json` with the workspace recipe of `locmetry --guide compare --section compare-saved-measurements`, select one root by its exact, case-sensitive member name:
 
 ```sh
 locmetry compare before-workspace.json after-workspace.json --member service --format table

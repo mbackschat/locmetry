@@ -1,5 +1,6 @@
 """Regression checks for the documentation index command."""
 
+import importlib.util
 import json
 from pathlib import Path
 import subprocess
@@ -128,6 +129,25 @@ class DocIndexesTests(unittest.TestCase):
         self.run_command("update")
         self.run_command("check")
         self.assertIn("| historical |", (self.root / "docs/plans/archive/README.md").read_text())
+
+
+class GuideSectionIdTests(unittest.TestCase):
+    """The CLI's guide section ids are the fragments this checker accepts (docs/proposals/guide-sections.md)."""
+
+    def test_published_guide_ids_are_link_anchors(self):
+        spec = importlib.util.spec_from_file_location("doc_indexes", SCRIPT)
+        checker = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(checker)
+        repository = SCRIPT.parent.parent
+        unreleased = (repository / "CHANGELOG.md").read_text().split("## [Unreleased]")[1].split("\n## [")[0]
+        published = (repository / "tests/fixtures/guide-section-ids.txt").read_text().splitlines()
+        guides = [line.split() for line in published if line.startswith("guide ")]
+        self.assertTrue(guides)
+        for _, topic, section in guides:
+            if any("**Breaking**" in line and f"`{section}`" in line for line in unreleased.splitlines()):
+                continue
+            anchors = checker.anchors((repository / f"docs/guides/{topic}.md").read_text())
+            self.assertIn(section, anchors, f"{topic}: the CLI id differs from the link anchor")
 
 
 if __name__ == "__main__":
