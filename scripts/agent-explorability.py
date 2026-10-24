@@ -328,7 +328,8 @@ def context_audit(rows):
     """What a session was given besides the task: injected instructions, skills and the model configuration.
 
     The fingerprint covers what every session of a campaign must share: the
-    base instructions, the kind of each developer message and the skill names.
+    base instructions, the kind of each developer instruction, which Codex
+    sends as the first line of a message item, and the skill names.
     Paths, the environment and the task differ per session and are left out.
     """
     contexts = [r["payload"] for r in rows if r["type"] == "turn_context"]
@@ -337,7 +338,9 @@ def context_audit(rows):
     skills = sorted(name for role, text in texts if text.startswith("<skills_instructions>")
                     for name in re.findall(r"^- ([^:\n`]+): .*\(file: ", text, re.MULTILINE))
     base = next((r["payload"].get("base_instructions") for r in rows if r["type"] == "session_meta"), None)
-    shared = dict(base=base, developer=[text.split("\n", 1)[0] for role, text in texts if role == "developer"], skills=skills)
+    kinds = [(c.get("text") or "").split("\n", 1)[0] for r in rows
+             if r["type"] == "response_item" and r["payload"].get("role") == "developer" for c in r["payload"].get("content") or []]
+    shared = dict(base=base, developer=kinds, skills=skills)
     return dict(repository_context=any("Repository Guidelines" in text or "Agent Explorability Benchmark" in text for _, text in texts),
                 global_instructions=any("# AGENTS.md instructions" in text for _, text in texts),
                 configurations=[{"model": c.get("model"), "effort": c.get("effort")} for c in contexts],

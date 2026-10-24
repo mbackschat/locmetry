@@ -412,6 +412,10 @@ class ExperimentTests(unittest.TestCase):
         changed = session("/tmp/a", "Task one")
         changed[0]["payload"]["base_instructions"]["text"] = "You are Codex, revised"
         self.assertNotEqual(BENCH.context_audit(changed)["fingerprint"], first["fingerprint"])
+        # Codex sends several instructions as items of one message; each item counts.
+        joined = session("/tmp/a", "Task one")
+        joined[2]["payload"]["content"].append({"type": "input_text", "text": "<collaboration_mode>Default"})
+        self.assertNotEqual(BENCH.context_audit(joined)["fingerprint"], first["fingerprint"])
         audit = BENCH.context_audit([*session("/tmp/a", "x"), message("user", "# AGENTS.md instructions\n\n<INSTRUCTIONS>")])
         self.assertTrue(audit["global_instructions"])
         self.assertTrue(BENCH.context_audit([message("user", "# Repository Guidelines")])["repository_context"])
