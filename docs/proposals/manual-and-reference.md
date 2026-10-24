@@ -132,7 +132,7 @@ A designated Linux CI job also runs `mandoc -T lint` on the generated page and f
 
 ## Risks
 
-- **Help budget.** `--help` is at 12,947 of 12,950 bytes after the guide-sections amendment, so the `reference` topic line needs rewording elsewhere or a reviewed raise.
+- **Help budget.** `--help` is at 13,005 of 13,010 bytes after the conditional index pointer was restored on 2026-10-24, so the `reference` topic line needs rewording elsewhere or a reviewed raise.
 - **Rendering.** The combined page depends on Locmetry's composition of `clap_mangen`'s section renderers; long help with wrapped lists and example blocks may need adjustments to read well in roff, which presence guards cannot detect.
 - **Platform text.** Help text differs by platform: it names `~/.config/locmetry/config.toml` on Unix and `%APPDATA%\locmetry\config.toml` on Windows. Man pages are packaged only for macOS and Linux, whose text agrees; FILES states every platform's path. Per-platform pages become necessary only if Unix platforms diverge.
 - **Sequencing.** It changes neither guide sections nor configuration routes, but the reference topic and index rows change what agents read, so it lands after the guide-sections rerun and the owner's adoption decision establish the baseline.

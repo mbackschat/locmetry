@@ -390,6 +390,18 @@ fn routine_comparison_recipes_make_extra_reference_reading_optional() {
     assert!(compare.contains("Additional guide/schema reading is optional for this route"));
 }
 
+/// The imperative "start with locmetry --guide index" sent every unrelated
+/// task-1 session through the index and doubled its calls; the conditional
+/// pointer kept them at the control's (docs/research/agent-regression-run-2026-10-24-sections-v2.md).
+#[test]
+fn the_closing_pointer_offers_the_task_index_only_beyond_the_examples() {
+    let root = help("").split_whitespace().collect::<Vec<_>>().join(" ");
+    assert!(root.contains(
+        "For workflows and recipes beyond these examples, locmetry --guide index names the guide section or schema definition to read."
+    ));
+    assert!(!root.contains("start with locmetry --guide index"));
+}
+
 #[test]
 fn compare_help_drills_into_a_workspace_member_with_scoped_folder_totals() {
     let root = tempfile::tempdir().unwrap();
@@ -457,7 +469,7 @@ fn compare_help_drills_into_a_workspace_member_with_scoped_folder_totals() {
 /// alone does not measure efficiency, so a budget is a stop, not a target.
 const HELP_BUDGETS: [(&[&str], usize); 8] = [
     (&["-h"], 4_450),
-    (&["--help"], 12_950),
+    (&["--help"], 13_010),
     (&["workspace", "-h"], 2_500),
     (&["workspace", "--help"], 6_900),
     (&["compare", "-h"], 990),

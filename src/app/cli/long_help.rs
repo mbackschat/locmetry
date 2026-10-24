@@ -98,7 +98,8 @@ Automation:
 For routine capture-and-compare tasks, start with locmetry compare --help and execute
 its recipes. Extra guide/schema reading is optional for that route; inspect summary
 and findings before drawing conclusions.
-For other workflows and recipes, start with locmetry --guide index."
+For workflows and recipes beyond these examples, locmetry --guide index names the
+guide section or schema definition to read."
     };
 }
 
