@@ -5,7 +5,7 @@
 ## Accepted — Awaiting Verification
 
 - [Manual page, completions and reference topic](proposals/manual-and-reference.md): accepted 2026-10-24 after two reviews; implementation follows the agents' context isolation, the guide-sections rerun and the owner's adoption decision.
-- [Guide sections and task index](proposals/guide-sections.md): implemented 2026-10-24 in `a0faf26`, with the harness support in `a418305`. Its [agent run](research/agent-regression-run-2026-10-24-sections.md) kept correctness and cut uncached input but failed task 8's uncached-input gate and the total-calls gate; the owner's decision on adoption, a correction or the gates is open, and it also decides whether the category reference is adopted.
+- [Guide sections and task index](proposals/guide-sections.md): implemented 2026-10-24 in `a0faf26`, with the harness support in `a418305`. Its [agent run](research/agent-regression-run-2026-10-24-sections.md) kept correctness and cut uncached input but failed task 8's uncached-input gate and the total-calls gate. The [rerun after Amendment 1](research/agent-regression-run-2026-10-24-sections-v2.md), the first in fresh homes, kept correctness, cut uncached input by 20.9% and passed task 8, but failed task 1's calls, task 12's uncached input and total calls. The owner's decision on adoption, a correction or the gates is open, and it also decides whether the category reference is adopted.
 
 The [proposal index](proposals/README.md) distinguishes active designs from historical decisions.
 
