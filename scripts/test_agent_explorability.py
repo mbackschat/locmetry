@@ -512,6 +512,20 @@ class ExperimentTests(unittest.TestCase):
         self.assertNotIn("confirmation", protocol)
         full.validate_protocol(protocol)
 
+    def test_new_protocols_must_freeze_a_confirmation_sample_including_corrections(self):
+        full = self.full_help_runner()
+        protocol = json.loads(full.PROTOCOL.with_name("regression-2026-10-24-sections-correction-study.json").read_text())
+        # Frozen before the rule (owner decision, 2026-10-24); its evidence stays valid.
+        full.validate_protocol(protocol)
+        protocol["revision"] = "agent-regression-next-correction-v1"
+        with patch.dict(full.STUDY_TASKS, {protocol["revision"]: [1]}):
+            with self.assertRaisesRegex(ValueError, "confirmation"):
+                full.validate_protocol(protocol)
+            protocol["confirmation"] = {"pairs": [{"task": 1, "repetition": r, "order": o}
+                                                  for r, o in zip([5, 6, 7, 8], ["AB", "BA", "AB", "BA"])],
+                                        "maximum_sessions": 8}
+            full.validate_protocol(protocol)
+
     def test_a_confirmation_sample_runs_once_for_named_tasks_after_the_primary_sample(self):
         full = self.full_help_runner()
         with tempfile.TemporaryDirectory() as tmp:

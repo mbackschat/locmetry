@@ -31,6 +31,14 @@ STUDY_TASKS = {
     "agent-regression-2026-10-24-sections-v2": [1, 3, 8, 12],
     "agent-regression-2026-10-24-sections-correction-v1": [1],
 }
+# Every protocol frozen after these freezes a confirmation sample, corrections
+# included, because one provider cache miss decided the sections correction
+# (owner decision, 2026-10-24; docs/agent-regression-checks.md).
+FROZEN_WITHOUT_CONFIRMATION = {
+    "full-help-coverage-v1", "compare-help-routing-v1", "agent-regression-0.8-v1",
+    "agent-regression-0.8-correction-v1", "agent-regression-2026-10-23-v1", "agent-regression-2026-10-24-v1",
+    "agent-regression-2026-10-24-correction-v1", "agent-regression-2026-10-24-sections-correction-v1",
+}
 
 
 # Codex's workspace-write sandbox lets an explorer write only below its run
@@ -96,6 +104,8 @@ def validate_protocol(protocol):
     # A predeclared confirmation sample: four more balanced pairs per task, frozen
     # with the primary sample and run at most once (docs/agent-regression-checks.md).
     confirmation = protocol.get("confirmation")
+    if confirmation is None and protocol["revision"] not in FROZEN_WITHOUT_CONFIRMATION:
+        raise ValueError("A new protocol must freeze a confirmation sample of four pairs per task")
     if confirmation is not None:
         extra = confirmation["pairs"]
         if len(extra) != len(task_ids) * 4 or confirmation["maximum_sessions"] != len(extra) * 2:
