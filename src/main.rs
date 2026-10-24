@@ -8,10 +8,10 @@ use std::process::ExitCode;
 fn run(cli: Cli) -> Result<Outcome> {
     let styling = cli.styling;
     if let Some(guide) = cli.guide {
-        return run_guide(guide, cli.section.as_deref());
+        return run_guide(guide, &cli.section);
     }
     if let Some(schema) = cli.schema {
-        return run_schema(schema, cli.section.as_deref());
+        return run_schema(schema, &cli.section);
     }
     match cli.command {
         Some(Command::Workspace(workspace)) => run_workspace(&workspace, styling),

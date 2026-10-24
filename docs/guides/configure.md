@@ -19,11 +19,10 @@ To review what a configuration edit changes, save a full baseline with `--files`
 
 Decide whether submodules, vendored dependencies and reference material belong in the intended measurement. Exclude out-of-scope trees through scope policy; keep maintained project code measured and classify it from evidence. A submodule hint does not establish ownership. Report uncertain scope to the owner instead of assuming that all external-looking code should be excluded.
 
-Retrieve `locmetry --help` when command syntax is unclear, or the configuration schema when the intended edit needs keys, defaults, exact built-ins or accepted language names not shown here. These are optional references, not prerequisites for the first measurement. Read only the part you need: the overview carries the precedence and matching semantics and names every other section, such as a definition:
+Retrieve `locmetry --help` when command syntax is unclear, or the configuration schema when the intended edit needs keys, defaults, exact built-ins or accepted language names not shown here. These are optional references, not prerequisites for the first measurement. Read only the parts you need, in one command: the overview carries the precedence and matching semantics and names every other section, such as a definition:
 
 ```sh
-locmetry --schema config --section overview
-locmetry --schema config --section Classification
+locmetry --schema config --section overview --section Classification
 ```
 
 `locmetry --guide index` names the section for other needs. Request `locmetry --guide reports` for evidence meanings and narrow report queries, or `locmetry --guide selection` for a missing or surprising file. Do not fetch every guide, schema or file record before you have a question.

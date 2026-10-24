@@ -157,15 +157,16 @@ pub(crate) struct Cli {
         help_heading = "Reference"
     )]
     pub(crate) guide: Option<Guide>,
-    /// Print only this section of the guide or schema
+    /// Print only these sections of the guide or schema
     #[arg(
         long_help = long_help::SECTION,
         long,
         value_name = "ID",
+        action = clap::ArgAction::Append,
         hide_short_help = true,
         help_heading = "Reference"
     )]
-    pub(crate) section: Option<String>,
+    pub(crate) section: Vec<String>,
     #[command(flatten)]
     pub(crate) styling: Styling,
 }

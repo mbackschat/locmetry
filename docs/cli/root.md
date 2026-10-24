@@ -418,7 +418,7 @@ locmetry --guide categories --section choose-a-name | sed -n '1,3p'
 for schema in config report workspace comparison explanation; do
   locmetry --schema "$schema" | jq -r '.title'
 done
-locmetry --schema config --section overview | jq -c '."$defs"[:4]'
+locmetry --schema config --section overview --section Entry | jq -c '[.overview."$defs"[:4], (.Entry.required)]'
 ```
 
 ```output
@@ -453,7 +453,7 @@ MeasurementReport
 Workspace
 Comparison
 Explanation
-["Backend","Scope","Classification","Purpose"]
+[["Backend","Scope","Classification","Purpose"],["id","match","purpose"]]
 ```
 
 ## Find stale configuration

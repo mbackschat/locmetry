@@ -43,9 +43,11 @@ macro_rules! root_examples {
   For a production-rule change covered by the example below, inspect existing
   configuration and measure current decisions, then adapt the paths and category
   and run the verification command. Reading a guide or schema first is optional
-  for this route. For another need, read the section that answers it: test or
-  script categories in --guide configure --section refine-categories, category
-  names in --guide categories --section choose-a-name, the rest via --guide index.
+  for this route. Otherwise read only what you need. Purposes, rules and scope:
+  --guide configure --section decide-purpose-not-just-coverage and
+  --schema config --section Entry --section Scope. Test or script categories:
+  --guide configure --section refine-categories. Category names:
+  --guide categories --section choose-a-name. Anything else: --guide index.
   Verify the reported per-file decisions and unresolved review items before concluding.
 
   Classify maintained scripts in service/.locmetryrc (TOML):
@@ -96,8 +98,7 @@ Automation:
 For routine capture-and-compare tasks, start with locmetry compare --help and execute
 its recipes. Extra guide/schema reading is optional for that route; inspect summary
 and findings before drawing conclusions.
-For workflows and recipes beyond these examples, locmetry --guide index names the
-guide section or schema definition to read."
+For other workflows and recipes, start with locmetry --guide index."
     };
 }
 
@@ -112,8 +113,8 @@ pub(super) const TABLE_CATEGORY: &str = "Show only these categories' source in t
 pub(super) const FOLDER_ROWS: &str = "Show the folder table and split the largest folders within an N-row budget; no top-level folder's code is merged away. Table format only";
 
 pub(super) const SECTION: &str =
-    "Print one section of the guide or schema; an unknown ID lists the valid ones";
-pub(super) const GUIDE: &str = "Read a task guide. Use --help for syntax, --guide for workflows and caveats, and --schema for machine-readable contracts. Standalone query";
+    "Print only this section; repeat for several. An unknown ID lists the valid ones";
+pub(super) const GUIDE: &str = "Read a task guide: workflows and caveats. --schema gives machine-readable contracts. Standalone query";
 
 pub(super) const COMPARE_OUTPUT: &str =
     "Write only to FILE; - selects stdout. Defaults to full JSON; --format overrides it";

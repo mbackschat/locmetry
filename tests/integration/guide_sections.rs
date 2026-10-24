@@ -177,7 +177,6 @@ fn an_unknown_section_fails_and_lists_the_topics_sections() {
 fn a_section_needs_exactly_one_topic_and_nothing_to_measure() {
     for args in [
         vec!["--section", "choose-a-name"],
-        vec!["--guide", "categories", "--section", "a", "--section", "b"],
         vec!["--guide", "categories", "--section", "choose-a-name", "src"],
         vec![
             "--guide",
@@ -227,75 +226,216 @@ fn schema(topic: &str) -> Value {
 }
 
 #[test]
-fn a_schema_section_selects_a_property_or_a_definition() {
+fn a_schema_section_selects_a_definition_or_a_property_ignoring_case() {
     let full = schema("config");
-    for (id, expected) in [
-        ("rules", &full["properties"]["rules"]),
-        ("Refinement", &full["$defs"]["Refinement"]),
+    // A definition wins over a property that differs only in case: the property
+    // `scope` refers to the definition `Scope`, and the overview keeps its default.
+    for (id, key, expected) in [
+        ("rules", "rules", &full["properties"]["rules"]),
+        ("Refinement", "Refinement", &full["$defs"]["Refinement"]),
+        ("refinement", "Refinement", &full["$defs"]["Refinement"]),
+        ("scope", "Scope", &full["$defs"]["Scope"]),
+        ("OVERVIEW", "overview", &Value::Null),
     ] {
         let out = run(&["--schema", "config", "--section", id]);
-        assert_eq!(common::json(&out, 0), *expected, "{id}");
+        let document = common::json(&out, 0);
+        // A single section keeps the keyed shape, under the schema's own spelling (proposal, Amendment 1).
+        assert_eq!(
+            document.as_object().unwrap().keys().collect::<Vec<_>>(),
+            [key],
+            "{id}"
+        );
+        if !expected.is_null() {
+            assert_eq!(document[key], *expected, "{id}");
+        }
         assert!(out.stderr.is_empty());
     }
 }
 
 #[test]
-fn the_schema_overview_keeps_root_semantics_and_names_every_section() {
+fn the_schema_overview_keeps_root_semantics_properties_and_definition_names() {
     for topic in SCHEMAS {
         let full = schema(topic);
-        let overview = common::json(&run(&["--schema", topic, "--section", "overview"]), 0);
+        let overview = common::json(&run(&["--schema", topic, "--section", "overview"]), 0)
+            ["overview"]
+            .clone();
         let mut expected = full.clone();
-        let object = expected.as_object_mut().unwrap();
-        for key in ["properties", "$defs"] {
-            if let Some(Value::Object(members)) = object.get(key) {
-                let names = members.keys().cloned().map(Value::String).collect();
-                object.insert(key.to_owned(), Value::Array(names));
-            }
+        if let Some(Value::Object(members)) = full.get("$defs") {
+            expected["$defs"] = Value::Array(members.keys().cloned().map(Value::String).collect());
         }
         assert_eq!(overview, expected, "{topic}");
-        assert_eq!(overview["description"], full["description"], "{topic}");
+        assert_eq!(overview["properties"], full["properties"], "{topic}");
     }
 }
 
 #[test]
 fn an_unknown_schema_section_fails_and_lists_the_schemas_sections() {
-    let out = run(&["--schema", "workspace", "--section", "Roots"]);
+    let out = run(&["--schema", "config", "--section", "Roots"]);
     assert_eq!(out.status.code(), Some(1));
     assert!(out.stdout.is_empty());
-    let full = schema("workspace");
-    let mut ids = vec!["overview".to_owned()];
-    for key in ["properties", "$defs"] {
-        if let Some(members) = full[key].as_object() {
-            ids.extend(members.keys().cloned());
-        }
-    }
     assert_eq!(
         stderr(&out),
         format!(
-            "error: Schema 'workspace' has no section 'Roots'. Sections: {}\n",
-            ids.join(", ")
+            "error: Schema 'config' has no section 'Roots'. Sections: {}\n",
+            schema_ids(&schema("config")).join(", ")
         )
     );
+}
+
+/// The ids a schema accepts: `overview`, every definition, then each property
+/// no definition shadows when case is ignored.
+pub(crate) fn schema_ids(full: &Value) -> Vec<String> {
+    let definitions: Vec<String> = full["$defs"]
+        .as_object()
+        .into_iter()
+        .flat_map(|m| m.keys().cloned())
+        .collect();
+    let mut ids = vec!["overview".to_owned()];
+    ids.extend(definitions.iter().cloned());
+    ids.extend(
+        full["properties"]
+            .as_object()
+            .into_iter()
+            .flat_map(|m| m.keys())
+            .filter(|name| !definitions.iter().any(|d| d.eq_ignore_ascii_case(name)))
+            .cloned(),
+    );
+    ids
 }
 
 #[test]
 fn schema_section_ids_select_exactly_one_value() {
     for topic in SCHEMAS {
         let full = schema(topic);
-        // Ids match exactly, so a property `scope` and its definition `Scope` stay apart.
-        let mut seen = std::collections::BTreeSet::new();
         for namespace in ["properties", "$defs"] {
-            for name in full[namespace]
+            let names: Vec<String> = full[namespace]
                 .as_object()
                 .into_iter()
-                .flat_map(|m| m.keys())
-            {
-                assert_ne!(name, "overview", "{topic}: 'overview' is reserved");
+                .flat_map(|m| m.keys().cloned())
+                .collect();
+            for (index, name) in names.iter().enumerate() {
                 assert!(
-                    seen.insert(name.clone()),
-                    "{topic}: {name} names two sections"
+                    !name.eq_ignore_ascii_case("overview"),
+                    "{topic}: 'overview' is reserved"
+                );
+                assert!(
+                    !names[..index]
+                        .iter()
+                        .any(|other| other.eq_ignore_ascii_case(name)),
+                    "{topic}: {name} differs from another {namespace} entry only in case"
                 );
             }
         }
+        // A property a definition shadows stays readable in full in the overview.
     }
+}
+
+#[test]
+fn guide_section_ids_ignore_case() {
+    let out = run(&["--guide", "categories", "--section", "Choose-A-Name"]);
+    assert_eq!(out.status.code(), Some(0), "{}", stderr(&out));
+    assert_eq!(
+        out.stdout,
+        run(&["--guide", "categories", "--section", "choose-a-name"]).stdout
+    );
+    let out = run(&[
+        "--guide",
+        "categories",
+        "--section",
+        "choose-a-name",
+        "--section",
+        "CHOOSE-A-NAME",
+    ]);
+    assert_eq!(out.status.code(), Some(1));
+    assert!(out.stdout.is_empty());
+}
+
+#[test]
+fn several_guide_sections_print_in_the_requested_order_each_as_it_reads_alone() {
+    let ids = ["refine-categories", "start-with-evidence"];
+    let out = run(&[
+        "--guide",
+        "configure",
+        "--section",
+        ids[0],
+        "--section",
+        ids[1],
+    ]);
+    assert_eq!(out.status.code(), Some(0), "{}", stderr(&out));
+    let alone: String = ids
+        .iter()
+        .map(|id| {
+            String::from_utf8(run(&["--guide", "configure", "--section", id]).stdout).unwrap()
+        })
+        .collect();
+    assert_eq!(String::from_utf8(out.stdout).unwrap(), alone);
+}
+
+#[test]
+fn several_schema_sections_print_one_object_keyed_in_the_requested_order() {
+    let full = schema("config");
+    let out = run(&[
+        "--schema",
+        "config",
+        "--section",
+        "scope",
+        "--section",
+        "Entry",
+        "--section",
+        "overview",
+    ]);
+    let document = common::json(&out, 0);
+    let keys: Vec<&String> = document.as_object().unwrap().keys().collect();
+    assert_eq!(keys, ["Scope", "Entry", "overview"]);
+    assert_eq!(document["Scope"], full["$defs"]["Scope"]);
+    assert_eq!(document["Entry"], full["$defs"]["Entry"]);
+    // Fragments keep references into the full schema.
+    assert!(document.to_string().contains("#/$defs/"));
+}
+
+#[test]
+fn a_repeated_or_unknown_id_fails_before_printing_anything() {
+    let out = run(&[
+        "--guide",
+        "categories",
+        "--section",
+        "choose-a-name",
+        "--section",
+        "choose-a-name",
+    ]);
+    assert_eq!(out.status.code(), Some(1));
+    assert!(out.stdout.is_empty());
+    assert_eq!(
+        stderr(&out),
+        "error: Section 'choose-a-name' is requested twice.\n"
+    );
+    let ids = guide_ids(&source("categories")).join(", ");
+    let out = run(&[
+        "--guide",
+        "categories",
+        "--section",
+        "choose-a-name",
+        "--section",
+        "naming",
+        "--section",
+        "cases",
+    ]);
+    assert_eq!(out.status.code(), Some(1));
+    assert!(out.stdout.is_empty());
+    assert_eq!(
+        stderr(&out),
+        format!("error: Guide 'categories' has no sections 'naming', 'cases'. Sections: {ids}\n")
+    );
+    let out = run(&[
+        "--schema",
+        "config",
+        "--section",
+        "Entry",
+        "--section",
+        "Entries",
+    ]);
+    assert_eq!(out.status.code(), Some(1));
+    assert!(out.stdout.is_empty());
+    assert!(stderr(&out)
+        .starts_with("error: Schema 'config' has no section 'Entries'. Sections: overview, "));
 }

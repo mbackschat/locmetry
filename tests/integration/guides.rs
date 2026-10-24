@@ -500,7 +500,9 @@ fn long_help_offers_the_tested_configuration_route_without_changing_short_help()
         assert_eq!(help.matches(addition).count(), 1);
         assert_eq!(help.matches(kept).count(), 1);
         let flat = help.split_whitespace().collect::<Vec<_>>().join(" ");
-        assert!(flat.contains("the rest via --guide index. Verify the reported per-file decisions"));
+        assert!(
+            flat.contains("Anything else: --guide index. Verify the reported per-file decisions")
+        );
     }
     for args in [
         vec!["-h"],

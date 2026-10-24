@@ -102,19 +102,20 @@ Implementation updates PRODUCT, the affected README and guide routes, help-desig
 
 ## Amendment 1: Several Sections per Command
 
-Status: draft, written 2026-10-24 at the owner's request after the [agent run](../research/agent-regression-run-2026-10-24-sections.md). It changes the accepted design and needs the owner's approval before implementation.
+Status: approved 2026-10-24. Written the same day at the owner's request after the [agent run](../research/agent-regression-run-2026-10-24-sections.md); an independent review recommended approval with the consistent object shape for schema output, and the owner approved it for implementation.
 
-**Problem.** The run kept correctness and cut uncached input by 11.8%, but total calls rose from 80 to 91 against a bound of 80. Agents requested one section per command, often one after another, and tasks 3 and 8 first opened the index: about one call more per session, where the control fetched the configure guide and the schema in one batch. Because one id per command was a rule of this design, the cost is the design's, not the agents'.
+**Problem.** The run kept correctness and cut uncached input by 11.8%, but total calls rose from 80 to 91 against a bound of 80. Agents requested one section per command, often one after another, and tasks 3 and 8 first opened the index: about one call more per session, where the control fetched the configure guide and the schema in one batch. One id per command did not force separate calls, since agents can batch commands, but it made every combined read a batch the agent had to assemble; several sections per command and a direct help route should reduce that friction, which the rerun must establish.
 
 **Required.**
 
 - `--section` may be repeated, with every id for the one `--guide` or `--schema` topic. Ids are printed in the order given; a repeated id fails.
 - For a guide, the output is the single-section outputs in that order, each with its own source line, so every block reads as it does alone.
 - For a schema, the output is always one JSON object whose keys are the requested ids, in order, and whose values are the selected fragments, also for a single id. This replaces the bare fragment of the accepted design, which is unreleased, so one shape serves every request and the output stays one JSON document for pipes.
-- If any id is unknown, the command fails with exit status 1 and empty stdout, and stderr names every unknown id and lists the topic's valid ids.
+- All ids, including repeats, are validated before anything is printed. If any id is unknown, the command fails with exit status 1 and empty stdout, and stderr names every unknown id and lists the topic's valid ids. Schema fragments keep `$ref` values that resolve against the full topic schema.
 - Each index row needs one command per topic: its guide sections in one command and its schema definitions in another, such as `locmetry --schema config --section Entry --section scope --section Scope`.
 - The configuration route in `--help` adds the broad-configuration need, purposes, rules, overrides and scope, as one guide command and one schema command, so tasks like 3 and 8 need not open the index. It must fit the current help budgets by rewording; a raise is a reviewed decision.
-- The guard reads repeated `--section` options after one topic, and checks the new schema shape and the unknown-id message.
+- Ids ignore case, at the owner's request during implementation: `overview` and a definition such as `Classification` were spelled differently. A definition wins over a property whose name differs only in case, as `Scope` over the property `scope`, which only refers to it; the overview keeps `properties` in full instead of their names, so such a property's default stays readable. Output keys and source lines use the schema's and the guide's own spelling, and a repeated id is detected regardless of case.
+- The guard reads repeated `--section` options after one topic, and checks the new schema shape, the unknown-id message and that no two names of one namespace differ only in case.
 
 ```text
 $ locmetry --schema config --section Entry --section scope

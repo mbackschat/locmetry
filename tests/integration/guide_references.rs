@@ -27,17 +27,7 @@ fn guides() -> impl Iterator<Item = &'static str> {
 }
 
 fn schema_ids(topic: &str) -> Vec<String> {
-    let full: Value = common::json(&locmetry(&["--schema", topic]), 0);
-    let mut ids = vec!["overview".to_owned()];
-    for namespace in ["properties", "$defs"] {
-        ids.extend(
-            full[namespace]
-                .as_object()
-                .into_iter()
-                .flat_map(|m| m.keys().cloned()),
-        );
-    }
-    ids
+    crate::guide_sections::schema_ids(&common::json(&locmetry(&["--schema", topic]), 0))
 }
 
 /// Every id that can be requested now, as "guide TOPIC ID" or "schema TOPIC ID".
@@ -118,15 +108,20 @@ fn references(text: &str) -> Vec<(String, Vec<String>)> {
         {
             continue;
         }
+        // Repeated sections share the topic before the first: skip earlier `--section ID` pairs.
+        let mut topic = index;
+        while topic >= 2 && words[topic - 2].trim_start_matches('`') == "--section" {
+            topic -= 2;
+        }
         let before = |back: usize| {
-            index
+            topic
                 .checked_sub(back)
                 .map(|at| words[at].trim_start_matches('`'))
                 .unwrap_or_default()
                 .to_owned()
         };
         found.push((
-            words[index.saturating_sub(2)..=index + 1].join(" "),
+            words[topic.saturating_sub(2)..=index + 1].join(" "),
             vec![before(2), before(1), "--section".to_owned(), id.to_owned()],
         ));
     }
@@ -203,12 +198,13 @@ fn the_index_routes_to_every_guide_section() {
 
 #[test]
 fn published_ids_stay_requestable_unless_their_removal_is_breaking() {
+    // Ids ignore case, so a published id stays requestable under any spelling.
     let published: BTreeSet<String> = repository(PUBLISHED)
         .lines()
         .filter(|line| !line.is_empty() && !line.starts_with('#'))
-        .map(str::to_owned)
+        .map(str::to_lowercase)
         .collect();
-    let current = current_ids();
+    let current: BTreeSet<String> = current_ids().iter().map(|id| id.to_lowercase()).collect();
     let unpublished: Vec<_> = current.difference(&published).collect();
     assert!(
         unpublished.is_empty(),

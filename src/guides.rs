@@ -99,18 +99,23 @@ fn headings(text: &str) -> Vec<Heading> {
     found
 }
 
+/// A guide's section ids in document order.
+pub(crate) fn section_ids(text: &str) -> Vec<String> {
+    headings(text)
+        .into_iter()
+        .map(|heading| heading.id)
+        .collect()
+}
+
 /// One section of a guide: its heading through the line before the next
 /// heading of the same or a higher level, so it includes its subsections.
-/// An unknown id yields the guide's ids in document order.
-pub(crate) fn section<'a>(text: &'a str, id: &str) -> Result<&'a str, Vec<String>> {
+pub(crate) fn section<'a>(text: &'a str, id: &str) -> Option<&'a str> {
     let all = headings(text);
-    let Some(index) = all.iter().position(|heading| heading.id == id) else {
-        return Err(all.into_iter().map(|heading| heading.id).collect());
-    };
+    let index = all.iter().position(|heading| heading.id == id)?;
     let level = all[index].level;
     let end = all[index + 1..]
         .iter()
         .find(|heading| heading.level <= level)
         .map_or(text.len(), |heading| heading.start);
-    Ok(&text[all[index].start..end])
+    Some(&text[all[index].start..end])
 }
