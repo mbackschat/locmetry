@@ -56,6 +56,7 @@ reason = "These commands maintain documentation and its showcase assets. See [do
 [[rules]]
 id = "distribution"
 match = ["packaging/**", "scripts/release.py"]
+except = ["packaging/linux/verify-packages.sh"]
 kind = ["source"]
 purpose = "production"
 category = "distribution"
@@ -81,15 +82,15 @@ purpose = "production"
 category = "verification-tooling"
 reason = "These programs run, prepare or score documentation and agent-workflow checks, and their own unit tests test them. See [self-measurement design](docs/self-measurement.md)"
 
-# The documentation check fails on a mismatch, as a test does, but no test
-# convention recognizes its name, so a rule decides both purpose and category.
+# These checks fail on a mismatch, as tests do, but no test convention
+# recognizes their names, so a rule decides both purpose and category.
 [[rules]]
-id = "documentation-checks"
-match = ["scripts/check-doc-examples.sh"]
+id = "executable-checks"
+match = ["scripts/check-doc-examples.sh", "packaging/linux/verify-packages.sh"]
 kind = ["source"]
 purpose = "test"
 category = "integration"
-reason = "Runs the documented examples with the built executable and fails on a mismatch, as an integration test does. See [self-measurement design](docs/self-measurement.md)"
+reason = "Run the documented examples with the built executable, or install each Linux package in a clean container and run it, and fail on a mismatch, as integration tests do. See [self-measurement design](docs/self-measurement.md)"
 
 # The test conventions decide that these files are tests; refinements only say
 # which kind of test, so Test/prod stays exactly what the conventions give.
