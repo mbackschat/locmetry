@@ -27,6 +27,8 @@ Requests from three projects categorizing their tests on 2026-10-24; the [policy
 - Orthogonal tags beside the category, which must not break the guarantee that categories add up to purpose totals. Reopen when a second project needs a second axis.
 - Test/prod between two chosen categories rather than purposes. Reopen with a second request.
 - `decision.also_matched` in `explain`, listing the entries that match a file without deciding it. `summary.policy_entries` reports such files per entry as `preempted`, and `--files` shows which entry decided each one. Reopen when reviewers need the per-file view to untangle entry order.
+- Accepting reference category names without a declaration in `[categories]`, with reports recording their reference meaning. It would change validation and the effective-policy snapshot, as the [category reference](proposals/archive/category-reference.md#excluded) explains. Reopen when the vocabulary of `--guide categories` has held unchanged for a release and a contract defines which meaning wins when a project declares a reference name differently.
+- Hints in reports when a policy uses a name the category reference replaces, such as `benchmark` for `performance`. Reopen when the vocabulary has held unchanged for a release.
 - A display name for a language correction, so a DSL whose comment syntax matches a counter language is counted with that parser but reported under its own name. A counter of its own stays out of scope while Tokei counts. Reopen when a second project needs one.
 
 ## Display

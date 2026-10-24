@@ -4,7 +4,7 @@
 
 ## Proposals — Under Discussion
 
-- [Category reference](proposals/category-reference.md): draft of 2026-10-24, awaiting the owner's decision on its vocabulary. The owner chose its shape: an embedded guide with names and policy conventions, a guard over Locmetry's own documents, and aligned model policies.
+None at present.
 
 The [proposal index](proposals/README.md) distinguishes active designs from historical decisions.
 
@@ -18,6 +18,7 @@ The [proposal index](proposals/README.md) distinguishes active designs from hist
 - [Default report output decision](proposals/archive/default-report-output-proposal-redacted.md): reviewed design and acceptance evidence.
 - [Development and release snapshot through 2026-10-16](plans/archive/development-plan-2026-10-16.md): completed work, published releases and their verification links.
 - [Measurement quality and subsequent implementation checkpoints](plans/archive/measurement-quality-and-net-change.md): S1–S5, reviews, accepted decisions and completion evidence.
+- [Category reference](proposals/archive/category-reference.md): the embedded category guide, its guards and the aligned model policies, implemented 2026-10-24.
 - [Reviewable policy entries and category refinements](proposals/archive/policy-entry-review.md): `except`, per-entry audit and refinements, implemented 2026-10-24 from three projects' test-categorization feedback.
 - [Test/production ratio design](plans/archive/test-production-ratios.md): research behind neutral, unbanded ratios.
 - [Research index](research/README.md): dated findings and source provenance.

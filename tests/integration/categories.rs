@@ -1,6 +1,6 @@
 //! Locmetry's own documents, help and policies name categories from the
 //! reference in docs/guides/categories.md, so they model what the guide
-//! recommends (docs/proposals/category-reference.md). The guards parse TOML
+//! recommends (docs/proposals/archive/category-reference.md). The guards parse TOML
 //! instead of searching text, so reasons and captured output never trigger them.
 use crate::common;
 use globset::Glob;

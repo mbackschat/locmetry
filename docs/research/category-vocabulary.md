@@ -1,6 +1,6 @@
 # Category Vocabulary
 
-Measured 2026-10-24 with Locmetry built from commit `8a27b3c` (`--no-user-config`, no project policy) on shallow clones, removed afterwards. Question: which categories do real policies need beyond the built-in ones, and does one shared vocabulary cover them without ambiguity? The [category reference proposal](../proposals/category-reference.md) uses these results.
+Measured 2026-10-24 with Locmetry built from commit `8a27b3c` (`--no-user-config`, no project policy) on shallow clones, removed afterwards. Question: which categories do real policies need beyond the built-in ones, and does one shared vocabulary cover them without ambiguity? The [category reference proposal](../proposals/archive/category-reference.md) uses these results.
 
 ## Policies written so far
 
