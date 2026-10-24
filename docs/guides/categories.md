@@ -1,6 +1,6 @@
 # Choose Category Names
 
-Use this non-binding reference to name new categories of a `.locmetryrc` policy, so that projects, people and agents name the same kind of code alike. Locmetry accepts any declared name, and names the owner chose or a policy already declares stay as they are.
+Use this non-binding reference to name new categories of a `.locmetryrc` policy, so that projects, people and agents name the same kind of code alike. Locmetry accepts any declared name. Renaming a category a policy already declares is the owner's decision: propose the reference name instead of applying it.
 
 ## What the Reference Decides
 
