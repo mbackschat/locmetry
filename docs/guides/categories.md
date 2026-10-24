@@ -53,7 +53,7 @@ Give each file one category. Take the first row of its purpose that fits, readin
 
 ## Project-Specific Names
 
-Use one when no row fits, such as proofs in a Lean project, or when a row would merge kinds the owner wants to see apart, such as differential tests against a reference engine (`engine-oracle`) among integration tests. Name the role relative to the product in lowercase kebab-case, without a purpose or content-kind suffix (`-test`, `-source`, `-code`, `-data`), location, layer, framework, language, the project's own name or a replaced name, and declare it in `[categories]` with its meaning. The same name may serve several purposes when it means the same kind of code.
+Use one when no row fits, such as proofs in a Lean project, or when a row would merge kinds the owner wants to see apart, such as differential tests against a reference engine among integration tests. Name the role relative to the product in lowercase kebab-case, without a purpose or content-kind suffix (`-test`, `-source`, `-code`, `-data`), location, layer, framework, language, product, project or replaced name. Declare it in `[categories]` with a meaning that carries those specifics: `oracle = "Differential tests against <engine> as the reference"`. The same name may serve several purposes when it means the same kind of code.
 
 ## Write a Reviewed Policy
 
