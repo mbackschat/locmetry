@@ -458,6 +458,22 @@ class ExperimentTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             full.validate_protocol(unbalanced)
 
+    def test_amendment_rerun_repeats_the_sections_protocol_in_fresh_homes(self):
+        full = self.full_help_runner()
+        sections = json.loads(full.PROTOCOL.with_name("regression-2026-10-24-sections-study.json").read_text())
+        protocol = json.loads(full.PROTOCOL.with_name("regression-2026-10-24-sections-amendment-study.json").read_text())
+        self.assertEqual(full.STUDY_TASKS[protocol["revision"]], [1, 3, 8, 12])
+        # Only the candidate and the session environment change; gates, tasks,
+        # schedule, confirmation sample and control stay those of the first run.
+        for key in ["model", "effort", "control", "task_ids", "task_files", "repetitions", "concurrent_pairs", "pairs",
+                    "previous_trials_included", "maximum_sessions", "limits", "decision_rule", "confirmation", "task_roles"]:
+            self.assertEqual(protocol[key], sections[key], key)
+        self.assertEqual(protocol["conditions"]["A"], sections["conditions"]["A"])
+        self.assertIn("fresh home", protocol["integrity"])
+        self.assertIn("fingerprint", protocol["review"])
+        self.assertIn("2026-10-24-sections-v1", protocol["coverage_boundary"])
+        full.validate_protocol(protocol)
+
     def test_a_confirmation_sample_runs_once_for_named_tasks_after_the_primary_sample(self):
         full = self.full_help_runner()
         with tempfile.TemporaryDirectory() as tmp:
