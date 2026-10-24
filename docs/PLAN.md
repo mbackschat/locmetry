@@ -6,6 +6,10 @@
 
 None at present.
 
+## Accepted — Awaiting Verification
+
+- [Guide sections and task index](proposals/guide-sections.md): implemented 2026-10-24 in `a0faf26`, with the harness support in `a418305`. Its acceptance needs the frozen agent run of tasks 1, 3, 8 and 12 against `bd820b7` ([protocol](../tests/fixtures/agent-explorability/regression-2026-10-24-sections-study.json)), which waits for the owner's acknowledgement of model and effort. Its result also decides whether the category reference, which failed its uncached-input gates on its own, is adopted.
+
 The [proposal index](proposals/README.md) distinguishes active designs from historical decisions.
 
 ## Historical Evidence
