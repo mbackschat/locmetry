@@ -2,10 +2,10 @@
 
 <!-- doc-status
 {
-  "status": "draft",
+  "status": "accepted",
   "date": "2026-10-24",
   "summary": "A man page and shell completions generated from the executable, and one reference topic for exit status, environment and files, so people and agents read the same facts in their usual places.",
-  "evidence": ""
+  "evidence": "[second review and owner acceptance](manual-and-reference.md#review-history)"
 }
 -->
 
@@ -28,7 +28,7 @@ Checked on 2026-10-24 with the tools installed on the owner's machine:
 | ripgrep | `rg --generate man` and `rg --generate complete-zsh` (also bash, fish, PowerShell), listed in its help; Homebrew's formula runs them at install | The installed binary produces its own man page and completions, always matching its version |
 | gh | `gh help environment`, `gh help exit-codes`, `gh help formatting` are topics beside the commands; `gh completion` is a visible command | Cross-cutting reference gets one topic each |
 | kubectl | `kubectl explain type.field`, with nested paths and schema from the server | Schema documentation by path; Locmetry's `--schema … --section` is analogous for top-level properties and definitions |
-| uv | A short `-h` and a long `--help`, and `uv help <command>` with a pager | Its short/long split matches Locmetry's `-h`/`--help`; nothing here shows that a pager would help or hurt Locmetry's readers |
+| uv | `uv -h` and `uv --help` print the same 3 KB summary; `uv help` prints longer help, in a pager unless `--no-pager` | A short form under the flags and a longer one under a help command, the split Locmetry makes with `-h` and `--help`; nothing here shows that a pager would help or hurt Locmetry's readers |
 
 The design follows the common rule: **one source, several renderings, and a split by question.** "What does this option do, and when does it apply?" is answered by `--help` and the man page, rendered from the same clap definitions. "How do I do this task?" is answered by the guides, through `locmetry --guide index`. The man page reuses the examples and notes `--help` already has, and no other workflow; it points to the guides for those. Ripgrep and gh show their generators in help; hiding Locmetry's is a deliberate departure, explained below.
 
@@ -96,7 +96,7 @@ Homebrew installs no PowerShell completion: its helper would ask for `complete-p
 
 **Guards.** Public tests, run without external executables:
 
-- For the man page and each completion script, the options listed per command equal that command's visible options in the clap tree, inherited globals and positional arguments included, with their value names and possible values where the format carries them; a command-scoped negative case, an option of one command absent from another's, is part of each check. SEE ALSO lists every guide topic.
+- For the man page and each completion script, the options listed per command equal that command's visible options in the clap tree, inherited globals included, with their value names and possible values where the shell's row in the completion table promises them; a command-scoped negative case, an option of one command absent from another's, is part of each check. The man page also shows each command's positional arguments with their syntax and descriptions; completion scripts are not required to name positional arguments their generators do not emit. SEE ALSO lists every guide topic.
 - The reference guide's `environment` section names every variable Locmetry reads directly and through the defaults-file lookup on both platform branches, and nothing else.
 - The reference guide stays within the Markdown subset above.
 - The `--help` automation note and the `exit-status` section state the same statuses.
@@ -140,3 +140,5 @@ A designated Linux CI job also runs `mandoc -T lint` on the generated page and f
 ## Review History
 
 An independent review on 2026-10-24 accepted the draft with changes, and this revision adopts them: a per-shell completion matrix and an explicit policy for hidden options; man-page reuse of each command's notes, not only its examples, with the composition `clap_mangen` lacks; explicit `--section` rejection, help precedence, no configuration loading and a public contract for `--generate`, with offline discovery from the index; file names and destinations per channel and a PowerShell profile line instead of a README note; the defaults-file precedence on Windows and the conditions on `NO_COLOR` and `COLUMNS`; executable guards and a required `mandoc` check in CI; and narrower survey and audience claims. It confirmed that `clap_mangen` 0.3.3 and `clap_complete` 4.6.11 accept the locked clap 4.6.7 and fit the license allowlist. Release jobs generate their own files rather than one Linux job, because every runner executes its target natively and no artifact transfer is needed.
+
+A second review the same day accepted the revision and asked for two wording corrections, both adopted: the uv row, whose `-h` and `--help` are identical, and the guards' separation of positional arguments, which the man page shows and completion scripts need not name. The owner accepted the proposal the same day; implementation follows the agents' context isolation, the guide-sections Amendment 1 rerun and the owner's adoption decision.

@@ -2,12 +2,9 @@
 
 [PRODUCT](PRODUCT.md) owns supported requirements. This file indexes open work and decision gates; it is not a checkpoint log. Read the relevant linked design only when working on that item. Deferred and unscheduled items live in [DEFERRED](DEFERRED.md) and do not authorize implementation.
 
-## Proposals — Under Discussion
-
-- [Manual page, completions and reference topic](proposals/manual-and-reference.md): draft of 2026-10-24, revised after an independent review; implementation follows the agents' context isolation and the guide-sections rerun.
-
 ## Accepted — Awaiting Verification
 
+- [Manual page, completions and reference topic](proposals/manual-and-reference.md): accepted 2026-10-24 after two reviews; implementation follows the agents' context isolation, the guide-sections rerun and the owner's adoption decision.
 - [Guide sections and task index](proposals/guide-sections.md): implemented 2026-10-24 in `a0faf26`, with the harness support in `a418305`. Its [agent run](research/agent-regression-run-2026-10-24-sections.md) kept correctness and cut uncached input but failed task 8's uncached-input gate and the total-calls gate; the owner's decision on adoption, a correction or the gates is open, and it also decides whether the category reference is adopted.
 
 The [proposal index](proposals/README.md) distinguishes active designs from historical decisions.
