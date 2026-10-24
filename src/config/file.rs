@@ -204,7 +204,7 @@ pub(super) struct ConfigFile {
     pub(super) classification: ClassificationSettings,
     #[serde(default)]
     pub(super) languages: LanguageSettings,
-    /// Optional list of the categories entries may use, each mapped to its meaning, such as `proof = "Machine-checked theorems behind the assurance claim"`. When present, an entry's `category` must be listed here or be built in: a purpose name, `implementation`, or a built-in convention's category. Declaring categories catches typos and keeps names consistent; reports record the meanings in the effective configuration. `locmetry --guide categories` lists reference names; declare a project-specific name only when none fits.
+    /// Optional list of the categories entries may use, each mapped to its meaning, such as `proof = "Machine-checked theorems behind the assurance claim"`. When present, an entry's `category` must be listed here or be built in: a purpose name, `implementation`, or a built-in convention's category. Declaring categories catches typos and keeps names consistent; reports record the meanings in the effective configuration. `locmetry --guide categories` lists reference names; declare a project-specific name when none fits or the owner wants a finer distinction, and put specifics such as a product name in its meaning.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub(super) categories: BTreeMap<String, String>,
     /// Entries checked first, before the built-in conventions; the first matching entry decides. Use them only for decisions that must beat a convention, such as a test-support package whose build scripts are test support, or archived code with test file names that must stay `other`.

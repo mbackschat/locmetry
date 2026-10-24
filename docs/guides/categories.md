@@ -1,6 +1,6 @@
 # Choose Category Names
 
-Use this non-binding reference to name new categories of a `.locmetryrc` policy, so that projects, people and agents name the same kind of code alike. Locmetry accepts any declared name. Renaming a category a policy already declares is the owner's decision: propose the reference name instead of applying it.
+Use this non-binding reference to name new categories of a `.locmetryrc` policy, so that projects, people and agents name the same kind of code alike. Locmetry accepts any declared name. Use the names the owner asks for, and propose rather than apply a rename of a category an existing policy uses.
 
 ## What the Reference Decides
 
@@ -8,34 +8,34 @@ It chooses a category inside a purpose that is already decided; `$defs.Purpose` 
 
 ## Choose a Name
 
-Give each file one category. Take the first row of its purpose that fits, reading "Not for"; rows run from narrow roles to broad ones. Prefer a row's name over the names it replaces.
+Give each file one category. Take the first row of its purpose that fits, reading "Not for"; rows run from narrow roles to broad ones. Prefer a row's name over the names it replaces, unless the owner wants a finer distinction, as [Project-Specific Names](#project-specific-names) describes.
 
 <!-- category-vocabulary -->
 | Purpose | Name | Use for | Not for | Instead of |
 | --- | --- | --- | --- | --- |
-| production | `generated` | Generator output counted as product | | `generated-source` |
+| production | `generated` | Generator output counted as product | | `generated-source`, `generated-implementation` |
 | production | `native` | Platform shell of a cross-platform or web app: iOS and Android runners, an Electron main process | A fully native app | |
-| production | `example` | Examples, samples, demos | Examples in test files | `sample`, `demo` |
-| production | `documentation-site` | Code and build scripts only for the documentation site | | `docs`, `site-config` |
-| production | `implementation` | The product's functionality in any layer, including migrations and schemas | Code that builds, checks, ships or runs it | `frontend`, `core` |
-| production | `distribution` | Publishing releases: package manifests, formulas, release scripts | | `packaging`, `release-tooling` |
-| production | `deployment` | Running the product for its users: images, infrastructure, installers, start scripts | Development, CI and test environments | `infrastructure` |
+| production | `example` | Examples, samples, demos | Examples in test files | `sample`, `demo`, `playground` |
+| production | `documentation-site` | Code and build scripts only for the documentation site | | `docs`, `site-config`, `api-docs` |
+| production | `implementation` | The product's functionality in any layer, including migrations and schemas | Code that builds, checks, ships or runs it | `frontend`, `core`, `library-source`, `migration` |
+| production | `distribution` | Publishing releases: package manifests, formulas, release scripts | | `packaging`, `release-tooling`, `plugin-distribution` |
+| production | `deployment` | Running the product for its users: images, infrastructure, installers, start scripts | Development, CI and test environments | `infrastructure`, `deployment-source` |
 | production | `build-tooling` | Building artifacts: build scripts, compiler, bundler and linter configuration, code generators the build runs | | |
-| production | `verification-tooling` | Running, preparing or scoring tests and checks: runners, harnesses, graders, source gates | | `ci-tooling`, `runner` |
-| production | `tooling` | Anything else for working on the project: development environments, setup and maintenance scripts | | `developer-tooling` |
+| production | `verification-tooling` | Running, preparing or scoring tests and checks: runners, harnesses, graders, source gates | | `ci-tooling`, `runner`, `validation-tooling` |
+| production | `tooling` | Anything else for working on the project: development environments, setup and maintenance scripts | | `developer-tooling`, `repository-tooling` |
 | test | `generated` | Generated code only for tests, such as snapshot baselines | | |
-| test | `test-support` | Test code without test cases: helpers, fixtures, mocks, stand-in services | | `fixture`, `test-helpers` |
+| test | `test-support` | Test code without test cases: helpers, fixtures, mocks, stand-in services | | `fixture`, `test-helpers`, `test-infrastructure`, `test-data` |
 | test | `fuzz` | Fuzz targets | | |
-| test | `performance` | Benchmarks and load tests | | `benchmark`, `load-test` |
-| test | `end-to-end` | Workflows through the whole system with its real services | Suites that mock the system's own services | `e2e` |
-| test | `integration` | Components together, or the built artifact through its interface: a CLI run as a process, a UI against mocked APIs | | `integration-tests` |
+| test | `performance` | Benchmarks and load tests | | `benchmark`, `load-test`, `performance-test` |
+| test | `end-to-end` | Workflows through the whole system with its real services | Suites that mock the system's own services | `e2e`, `acceptance` |
+| test | `integration` | Components together, or the built artifact through its interface: a CLI run as a process, a UI against mocked APIs | | `integration-tests`, `consumer-test` |
 | test | `unit` | Units in process, with temporary files or in-process mocks | Tests that start processes or use the network | `unit-tests` |
 | test | `test` | Tests of undecided kind | | |
 | other | `generated` | Generated code excluded from product totals | | |
 | other | `vendored` | Third-party code kept and measured; prefer excluding it | | |
-| other | `archived` | Retired code and frozen copies | | `historical` |
-| other | `prototype` | Unmaintained experiments | | `research` |
-| other | `example` | Unmaintained examples and snippets | | `snippet` |
+| other | `archived` | Retired code and frozen copies | | `historical`, `archived-evidence` |
+| other | `prototype` | Unmaintained experiments | | `research`, `incubator` |
+| other | `example` | Unmaintained examples and snippets | | `snippet`, `doc-snippet` |
 
 `third-party-wrapper` and `unclaimed` are assigned by Locmetry, never by a policy. Leave undecided code unclaimed, so it stays on the review list. A test file spanning several kinds takes the widest.
 
