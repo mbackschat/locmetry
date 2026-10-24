@@ -13,7 +13,7 @@ The owner raised the idea on 2026-10-24, comparing Locmetry's help with Homebrew
 
 ## Problem
 
-People on macOS and Linux look for `man locmetry` and shell completion; Locmetry ships neither. Agents never use `man`, but read `--help` and guides in every session. Some reference facts have no single home for either audience: exit status, the environment variables Locmetry reads and the files it looks for are spread over notes in `--help`, the guides and [PRODUCT](../PRODUCT.md#command-outcomes).
+People on macOS and Linux look for `man locmetry` and shell completion; Locmetry ships neither. No recorded agent session used `man`, while agents read `--help`, and often guides, in every session. Some reference facts have no single home for either audience: exit status, the environment variables Locmetry reads and the files it looks for are spread over notes in `--help`, the guides and [PRODUCT](../PRODUCT.md#command-outcomes).
 
 A man page written by hand would also be a third body of text beside `--help` and the guides, and a reader could not tell which one is current or which to read.
 
@@ -51,7 +51,7 @@ PRODUCT stays the owner of these guarantees; the guide states them for readers a
 | `man` | The `locmetry(1)` man page in roff |
 | `complete-bash`, `complete-zsh`, `complete-fish`, `complete-powershell` | A completion script for that shell |
 
-It is hidden from `--help` and `-h`, so neither people nor agents pay reading cost for a packaging feature, and PRODUCT and the README's installation section document it. An unknown kind fails with exit status 1 and lists the kinds.
+It is hidden from `--help` and `-h`, so neither people nor agents pay reading cost for a packaging feature, and PRODUCT and the README's installation section document it. It follows the standalone-query rule of `--schema` and `--guide`: it accepts global `--no-color`, conflicts with `--guide`, `--schema` and `--section`, and rejects roots, measurement and presentation options and commands with exit status 1 before writing anything. Success exits 0 with the document on stdout and nothing on stderr. An unknown kind fails with exit status 1, empty stdout and the valid kinds.
 
 **The man page.** One page, `locmetry(1)`, rendered from these sources only:
 
@@ -63,7 +63,7 @@ It is hidden from `--help` and `-h`, so neither people nor agents pay reading co
 | EXIT STATUS, ENVIRONMENT, FILES | The sections of the reference guide |
 | SEE ALSO | `locmetry --guide index` and every guide topic with its description, from the guide list |
 
-Nothing in the page is written only for it, so it cannot disagree with `--help` or the guides.
+Nothing in the page is written only for it, so no separately maintained text can drift from `--help` or the guides. Shared sources do not stop a renderer from omitting or misrepresenting something; the guards check that.
 
 **Completions.** Generated from the clap definitions: commands, options, and the values clap knows, such as `--format`, `--guide` and `--schema` topics. Section ids are not completed.
 
@@ -77,8 +77,9 @@ Nothing in the page is written only for it, so it cannot disagree with `--help` 
 
 - Every environment variable the source reads appears in the reference guide's `environment` section.
 - The reference guide stays within the Markdown subset the man renderer supports.
-- `--generate man` contains every visible option of every command and every guide topic, and renders without roff warnings where `mandoc -T lint` is available; public tests do not require it.
-- Each completion script names every visible option.
+- `--generate man` lists, within each command's own section, exactly that command's visible options with their value names and possible values, and every guide topic in SEE ALSO; it renders without roff warnings where `mandoc -T lint` is available, which public tests do not require.
+- Each completion script offers, for each command, exactly that command's visible options and the possible values clap knows for them.
+- `--generate` follows the standalone-query rule, with the exit statuses above.
 
 ### Excluded
 
@@ -100,12 +101,12 @@ Nothing in the page is written only for it, so it cannot disagree with `--help` 
 ## Acceptance
 
 - The guards pass, and help stays within its budgets, offsetting the topic line by rewording or through a reviewed raise.
-- `man ./locmetry.1` renders on macOS and Linux, and the completion scripts load in bash, zsh and fish.
+- `man ./locmetry.1` renders on macOS and Linux, and the completion scripts load and complete a command, an option and a possible value in bash, zsh, fish and PowerShell. Checked by a documented manual procedure on each platform before release; CI runs the shells it has.
 - A desk review under the [agent regression checks](../agent-regression-checks.md#desk-review) finds no correctness or routing regression. Help changes only by a topic line, so no agent run is planned; the desk review decides whether one is needed.
 
 ## Risks
 
 - **Help budget.** `--help` is at 12,947 of 12,950 bytes after the guide-sections amendment, so the `reference` topic line needs rewording elsewhere or a reviewed raise.
 - **Rendering.** `clap_mangen` renders one command per page; composing the commands into one page uses its section renderers directly. Long help texts with wrapped lists may need small adjustments to render cleanly in roff.
-- **Platform text.** Help names the personal defaults file per platform; the page is generated on Linux and names the Unix paths, with the Windows path stated in its FILES section.
+- **Platform text.** Help text differs by platform: it names `~/.config/locmetry/config.toml` on Unix and `%APPDATA%\locmetry\config.toml` on Windows. Every packaged page is generated on Linux, so it names the Unix path in its options; its FILES section, from the reference guide, states every platform's path. `--generate man` on Windows produces the Windows text, which no package installs.
 - **Sequencing.** It changes neither guide sections nor configuration routes, so it does not confound the pending guide-sections rerun, but it should land after that run so the run measures one change.

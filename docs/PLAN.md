@@ -4,7 +4,7 @@
 
 ## Proposals — Under Discussion
 
-None at present.
+- [Manual page, completions and reference topic](proposals/manual-and-reference.md): draft of 2026-10-24, to be reviewed; implementation follows the agents' context isolation and the guide-sections rerun.
 
 ## Accepted — Awaiting Verification
 
