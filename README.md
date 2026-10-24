@@ -108,7 +108,7 @@ Line counters are good at counting, and Locmetry counts with Tokei too. Their to
 | Tool | Reported code | of which JSON | Production / test split |
 | --- | ---: | ---: | --- |
 | Tokei 15.0.0 | 518,920 | 209,607 (40%) | none |
-| cloc 2.10 | 529,921 | 209,931 (40%) | none |
+| cloc 2.10 | 530,430 | 209,931 (40%) | none |
 | scc 4.1.0 | 510,075 | 209,867 (41%) | none |
 
 ### A reviewed policy answers "what does this project consist of"
@@ -132,19 +132,21 @@ cd immich && locmetry --show-categories
 
 <!-- showcase-categories -->
 ```text
- ────────────────────────────────────────────────────────────────────────────────────────────────────
- Category                   Files    Lines     Code │ Share  Code share
- ───────────────────────────────────────────────────┼────────────────────────────────────────────────
- production:implementation  1,837  199,093  170,113 │ 60.2%  ████████████████████████████████████████
- test:test                    450   87,800   73,710 │ 26.1%  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
- other:generated               38   19,173   16,165 │  5.7%  ░░░░
- test:end-to-end               72   15,300   13,003 │  4.6%  ▓▓▓
- production:native             67    8,870    7,206 │  2.5%  ██
- production:deployment         31    1,023      798 │  0.3%  ▏
- production:tooling            14      909      722 │  0.3%  ▏
- production:build-tooling      14      813      718 │  0.3%  ▏
- test:test-infrastructure       4      251      234 │  0.1%  ▏
- test:performance-test          1       81       64 │  0.0%  ▏
+ ────────────────────────────────────────────────────────────────────────────────────────────────────────
+ Category                       Files    Lines     Code │ Share  Code share
+ ───────────────────────────────────────────────────────┼────────────────────────────────────────────────
+ production:implementation      1,837  199,093  170,113 │ 60.2%  ████████████████████████████████████████
+ test:test                        450   87,800   73,710 │ 26.1%  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+ other:generated                   38   19,173   16,165 │  5.7%  ░░░░
+ test:end-to-end                   41    9,285    7,871 │  2.8%  ▓▓
+ production:native                 67    8,870    7,206 │  2.5%  ██
+ test:test-support                 27    3,970    3,352 │  1.2%  ▓
+ test:integration                   8    2,296    2,014 │  0.7%  ▏
+ production:build-tooling          18      886      772 │  0.3%  ▏
+ production:deployment             28      938      740 │  0.3%  ▏
+ production:tooling                11      657      513 │  0.2%  ▏
+ production:documentation-site      2      264      213 │  0.1%  ▏
+ test:performance                   1       81       64 │  0.0%  ▏
  Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
  Share = Code / total Code. Bars: █ Production  ▓ Test  ░ Other. The largest row fills the bar.
 ```
@@ -212,7 +214,7 @@ Most of the change is test code. [Folder reporting](docs/guides/reports.md#look-
 | --- | --- |
 | Content kind | Each counted file is source, data such as JSON, or documentation such as Markdown, decided by its language. Tables and totals count source; data and documentation are reported separately. |
 | Purpose | `production`, `test` or `other`. Production is maintained non-test source, including build scripts and tooling; `other` is source that counts as neither, such as generated code a policy sets aside or code nothing claimed. |
-| Category | A finer label inside a purpose, written `purpose:category`, such as `production:implementation`, `production:build-tooling` or `test:test`. It changes no totals; `--show-categories` breaks tables down by it. |
+| Category | A finer label inside a purpose, written `purpose:category`, such as `production:implementation`, `production:build-tooling` or `test:test`. It changes no totals; `--show-categories` breaks tables down by it. `locmetry --guide categories` lists the [reference names](docs/guides/categories.md) and how to choose one. |
 | Unclaimed | Source that no convention, module or policy entry classified, reported as `other:unclaimed` and listed by folder for review. Its lines are counted; only its purpose is open. |
 | Build module | A folder with a build or framework file, such as `package.json`, `Cargo.toml` or `next.config.ts`; its conventional source folders are production. See [build modules](#build-modules). |
 | Convention | A built-in classification, such as files in `test/` being tests or `vite.config.ts` being build tooling. Conventions apply before the project's own rules; [built-in detection](docs/built-in-detection.md#test-conventions) lists them. |
@@ -337,7 +339,7 @@ These Immich files show each kind of decision, from module layout and test conve
 | `mobile/lib/main.dart` | production / implementation | `builtin:dart-module` |
 | `server/src/services/asset.service.spec.ts` | test / test | `builtin:js-test-file` |
 | `e2e/src/specs/web/album.e2e-spec.ts` | test / end-to-end | `builtin:js-e2e-spec-file`, refined by `end-to-end` |
-| `e2e/src/utils.ts` | test / end-to-end | `end-to-end-suites` (project entry), refined by `end-to-end` |
+| `e2e/src/utils.ts` | test / test-support | `end-to-end-suites` (project entry), refined by `end-to-end-support` |
 | `mobile/ios/Runner/AppDelegate.swift` | production / native | `ios-app` (project entry) |
 | `packages/sdk/src/fetch-client.ts` | other / generated | `generated-sdk-client` (project entry) |
 
@@ -429,11 +431,11 @@ category = "native"
 reason = "Kotlin, Java and C code of the Android runner, which the Gradle layout labels implementation"
 ```
 
-Tests still win over ordinary rules; an override is needed only to change the purpose a convention gives. To give tests or other decided files a finer category, such as `property-law`, use a refinement, which cannot move code between production and test. Reports list each entry with the files and code it decided and the decisions it replaced as `summary.policy_entries`, so an entry that misses most of its files or moves production code into tests shows up. Entries without evidence belong in the review list as unclaimed source, not in the policy. A clean review list alone does not establish correct classification.
+Tests still win over ordinary rules; an override is needed only to change the purpose a convention gives. To give tests or other decided files a finer category, such as `unit`, use a refinement, which cannot move code between production and test. Choose names from the [category reference](docs/guides/categories.md) (`locmetry --guide categories`) before declaring custom ones, so that policies and agents name the same kind of code alike. Reports list each entry with the files and code it decided and the decisions it replaced as `summary.policy_entries`, so an entry that misses most of its files or moves production code into tests shows up. Entries without evidence belong in the review list as unclaimed source, not in the policy. A clean review list alone does not establish correct classification.
 
 The [configuration guide](docs/guides/configure.md) covers overrides, refinements, `except` lists, custom categories, language mappings and evidence-based review. [Personal defaults](docs/PRODUCT.md#user-defaults) can supply exclusions and language mappings across projects; they cannot assign purposes or categories.
 
-Locmetry's own [.locmetryrc](.locmetryrc) is a maintained example: it excludes the synthetic demonstration workspace, distinguishes operational tooling, distribution and verification infrastructure, and splits its tests into unit, integration, tooling and documentation checks with refinements. The [Immich policy](examples/showcase/immich/overlay/.locmetryrc) is the larger example, and [its README](examples/showcase/immich/README.md#how-the-policy-is-built) explains why each entry uses its stage. [Self-measurement design](docs/self-measurement.md) explains the decisions and how to verify them.
+Locmetry's own [.locmetryrc](.locmetryrc) is a maintained example: it excludes the synthetic demonstration workspace, distinguishes operational tooling, distribution and verification infrastructure, and splits its tests into unit, integration and test support with refinements, all named from the category reference. The [Immich policy](examples/showcase/immich/overlay/.locmetryrc) is the larger example, and [its README](examples/showcase/immich/README.md#how-the-policy-is-built) explains why each entry uses its stage. [Self-measurement design](docs/self-measurement.md) explains the decisions and how to verify them.
 
 For a production-rule change covered by the example in `locmetry --help`, inspect existing configuration and measure current decisions, adapt the paths and category, then run the displayed verification command. Reading a guide or schema first is optional for that route. Use `locmetry --guide configure` or `locmetry --schema config` for exclusions, overrides, intentional Other, or semantics not shown there. Verify per-file decisions and unresolved review items before concluding. Guides and schemas are available from the installed binary without a network connection.
 
@@ -445,6 +447,7 @@ For a production-rule change covered by the example in `locmetry --help`, inspec
 | Diagnose a file or subfolder | `locmetry --guide selection` | [Selection and explanations](docs/guides/selection.md) |
 | Read coverage, query reports or apply a CI policy | `locmetry --guide reports` | [Reports](docs/guides/reports.md) |
 | Capture baselines and interpret net change | `locmetry --guide compare` | [Compare](docs/guides/compare.md) |
+| Name categories and follow policy conventions | `locmetry --guide categories` | [Categories](docs/guides/categories.md) |
 | Gate source file sizes by purpose in CI | — | [File-size gate cookbook](docs/cookbooks/file-size-gate.md) |
 
 - [Changelog](CHANGELOG.md): user-visible changes per release, with breaking changes marked.

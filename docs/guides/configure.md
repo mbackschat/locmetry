@@ -128,7 +128,7 @@ Use an override only when the purpose itself must change, such as archived tests
 
 ## Test Support or Verification Tooling
 
-Purpose, not category, decides Test/prod: the ratio divides all Test code by all Production code and ignores categories. Classify as `test` the code that verifies and the support that exists only inside tests, such as helpers, fixtures and stand-in services. Classify as `production`, with a category such as `tooling`, the programs that run, prepare or score verification: test-runner configuration, harnesses, graders and CI gates. A program with its own tests is code under test. Classified as `test`, its tests would count as tests of tests and inflate Test/prod.
+Purpose, not category, decides Test/prod: the ratio divides all Test code by all Production code and ignores categories. The `Purpose` definitions in `locmetry --schema config` (`$defs.Purpose`) say which code is test and which is production: tests and the support that exists only for them are test, while programs that run, prepare or score tests are production. Built-in test conventions label named test-runner configuration as test; keep such defaults unless evidence justifies an override. Run `locmetry --guide categories` for the category names within each purpose, such as `test-support` or `verification-tooling`.
 
 ## Worked Configuration
 
@@ -152,7 +152,7 @@ version = 1
 
 [categories]
 tooling = "Maintained project tools"
-historical = "Historical demonstrations outside maintained implementation"
+archived = "Historical demonstrations kept for reference, not maintained"
 
 [[rules]]
 id = "tooling"
@@ -165,7 +165,7 @@ reason = "The owner confirms these scripts maintain the project"
 id = "historical-sample"
 match = ["src/sample.js"]
 purpose = "other"
-category = "historical"
+category = "archived"
 reason = "The owner confirms this is a historical demonstration"
 ```
 

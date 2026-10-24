@@ -1,6 +1,6 @@
 # Measuring Locmetry Itself
 
-The root [.locmetryrc](../.locmetryrc) defines how Locmetry measures its own implementation, verification code and supporting tools. It expresses repository intent where built-in conventions cannot know it, and it is meant as a model policy: each entry uses the weakest stage that expresses its decision, comments in the file say why, and every entry's report figures are intended. The [configuration guide](guides/configure.md) explains the review workflow; [PRODUCT](PRODUCT.md#matching-and-precedence) owns configuration semantics.
+The root [.locmetryrc](../.locmetryrc) defines how Locmetry measures its own implementation, verification code and supporting tools. It expresses repository intent where built-in conventions cannot know it, and it is meant as a model policy: each entry uses the weakest stage that expresses its decision, comments in the file say why, its categories come from the [category reference](guides/categories.md), and every entry's report figures are intended. The [configuration guide](guides/configure.md) explains the review workflow; [PRODUCT](PRODUCT.md#matching-and-precedence) owns configuration semantics.
 
 ## Scope
 
@@ -15,13 +15,14 @@ The synthetic workspace remains independently measurable. Configuration discover
 | Area | Purpose and category | Design reason |
 | --- | --- | --- |
 | Rust implementation under `src/` | Production / `implementation`, through Cargo inference | Existing module detection already expresses its role. |
-| Rust unit test modules `src/**/tests.rs` | Test / `unit`, through the `rust-test-module` convention and the `unit-tests` refinement | The convention decides the purpose; the refinement only names the kind of test. |
-| The integration-test binary under `tests/integration/` | Test / `integration`, through the test-directory convention and the `integration-tests` refinement | These tests run the built executable on synthetic projects, which is a different kind of evidence from unit tests. |
-| Conventional `scripts/test_*.py` files | Test / `tooling-test`, through the Python test convention and the `tooling-tests` refinement | They test the repository's own scripts, not the product, so they get their own label. |
-| Documentation maintenance (indexes, the README's Immich excerpts and demo GIF, and the agent-regression trend table), release preparation and saved-measurement review | Production / `tooling` | These maintained commands operate the repository, prepare distribution and inspect measurement evidence. |
-| Source under `packaging/` | Production / `distribution` | Formula generation, installation definitions and notice templates are maintained distribution code. |
+| Rust unit test modules `src/**/tests.rs`, and the two script tests that import their module and mock every process | Test / `unit`, through the `rust-test-module` and Python test conventions and the `unit-tests` refinement | The conventions decide the purpose; the refinement only names the kind of test. |
+| The integration-test binary under `tests/integration/`, and the script tests that run their script or Git as a process | Test / `integration`, through the test-directory and Python test conventions and the `integration-tests` refinement | These tests run the built executable, a script or Git as a process, which is a different kind of evidence from unit tests. |
+| `tests/integration/common.rs` | Test / `test-support`, through the `integration-test-helpers` refinement | It holds helpers shared by the integration tests and no test of its own. |
+| The documentation-example check | Test / `integration` | It runs documented examples with the built executable and fails on a mismatch, as an integration test does, but no test convention recognizes its name, so a rule decides it. |
+| The comparison helper `scripts/compare-locmetry-files.sh` | Production / `implementation` | It ships in release archives and Homebrew installations, so it is part of the product although no build descriptor declares it. |
+| Documentation maintenance (indexes, the README's Immich excerpts and demo GIF, and the agent-regression trend table) | Production / `tooling` | These maintained commands serve the people working on the repository. |
+| Source under `packaging/` and the release command | Production / `distribution` | Formula generation, installation definitions, notice templates and the command that checks, commits, tags and pushes a release publish Locmetry. |
 | Agent-evaluation harnesses and graders, the recorded-guide replay, the file-size gate, and demo and showcase environments | Production / `verification-tooling` | They are programs that run, prepare or score verification, and most have their own unit tests. |
-| The documentation-example check | Test / `documentation-check` | It runs documented examples and fails on a mismatch, as an integration test does, but no test convention recognizes its name, so a rule decides it. |
 
 The configuration owns the exact path lists and category descriptions. Script entries name known responsibilities rather than assigning every future file under `scripts/` to production or test. New unrecognized responsibilities should surface as unclaimed source and prompt a review.
 

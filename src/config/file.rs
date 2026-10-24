@@ -112,7 +112,7 @@ pub(super) struct EntryConfig {
     #[schemars(length(min = 1))]
     pub(super) kind: Option<Vec<Kind>>,
     pub(super) purpose: Purpose,
-    /// Free-form subcategory reported with the purpose, such as `implementation`, `tooling`, `generated`, `example`, or `test-support`; defaults to the purpose.
+    /// Free-form subcategory reported with the purpose, such as `implementation`, `tooling`, `generated`, `example`, or `test-support`; defaults to the purpose. `locmetry --guide categories` lists reference names and how to choose one.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(super) category: Option<String>,
     /// Why the entry exists, for reviewers; recorded in the report's effective configuration.
@@ -204,7 +204,7 @@ pub(super) struct ConfigFile {
     pub(super) classification: ClassificationSettings,
     #[serde(default)]
     pub(super) languages: LanguageSettings,
-    /// Optional list of the categories entries may use, each mapped to its meaning, such as `proof = "Machine-checked theorems behind the assurance claim"`. When present, an entry's `category` must be listed here or be built in: a purpose name, `implementation`, or a built-in convention's category. Declaring categories catches typos and keeps names consistent; reports record the meanings in the effective configuration.
+    /// Optional list of the categories entries may use, each mapped to its meaning, such as `proof = "Machine-checked theorems behind the assurance claim"`. When present, an entry's `category` must be listed here or be built in: a purpose name, `implementation`, or a built-in convention's category. Declaring categories catches typos and keeps names consistent; reports record the meanings in the effective configuration. `locmetry --guide categories` lists reference names; declare a project-specific name only when none fits.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub(super) categories: BTreeMap<String, String>,
     /// Entries checked first, before the built-in conventions; the first matching entry decides. Use them only for decisions that must beat a convention, such as a test-support package whose build scripts are test support, or archived code with test file names that must stay `other`.
@@ -213,7 +213,7 @@ pub(super) struct ConfigFile {
     /// Entries checked after the built-in conventions and before build modules; the first matching entry decides. Use them for ordinary project knowledge: maintained tooling or examples as `production` with a category, unmaintained prototypes as `other`, or source no build file declares; conventional tests, build scripts, and build-tool wrappers inside a matched tree keep their built-in classification, but build-module source does not.
     #[serde(default)]
     pub(super) rules: Vec<EntryConfig>,
-    /// Entries that change only the category of files a stage already decided, checked after every classification stage and generated-code marker; the first matching refinement decides. Use them to give tests or production code a finer category, such as `property-law`, without the risk of an override, which can also change the purpose.
+    /// Entries that change only the category of files a stage already decided, checked after every classification stage and generated-code marker; the first matching refinement decides. Use them to give tests or production code a finer category, such as `unit` or `test-support`, without the risk of an override, which can also change the purpose.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub(super) refinements: Vec<RefinementConfig>,
 }

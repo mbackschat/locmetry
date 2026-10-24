@@ -58,10 +58,9 @@ fallback = "other"
 builtin = true
 
 [categories]
-evidence = "Archived probes kept for provenance, not maintained."
+archived = "Archived probes kept for provenance, not maintained."
 test-support = "Helpers that exist only for tests."
-tooling = "Maintained scripts that build, check, or release the project."
-unmapped-source = "Source no entry claims yet."
+tooling = "Maintained scripts that check or release the project."
 
 [[languages.mappings]]
 id = "runbooks"
@@ -73,7 +72,7 @@ id = "archived-evidence"
 match = ["docs/archive/**"]
 kind = ["source"]
 purpose = "other"
-category = "evidence"
+category = "archived"
 reason = "Archived probes are kept for provenance, not maintained."
 
 [[overrides]]
@@ -93,13 +92,6 @@ id = "application-source"
 match = ["src/**", "packages/*/{src,bin}/**"]
 purpose = "production"
 category = "implementation"
-
-[[rules]]
-id = "unmapped-source"
-match = ["**"]
-kind = ["source"]
-purpose = "other"
-category = "unmapped-source"
 ```
 
 ### Subfolder Measurement
@@ -228,7 +220,7 @@ Reports serve aggregation: totals by purpose, category, kind, language, and fold
 
 ### Embedded Task Guides
 
-Available since v0.4.0: `--guide configure|selection|reports|compare` prints one task-oriented Markdown guide with a source-path and producer-version header. The rest of stdout equals the repository Markdown source; successful output has no stderr, styling, paging, project/configuration reads or network dependency. Relative links remain unchanged and supplementary; essential instructions are self-contained, and cross-guide navigation names executable commands. The four [guide sources](guides/configure.md) cover configuration, selection, report interpretation and comparison.
+Available since v0.4.0: `--guide configure|selection|reports|compare|categories` prints one task-oriented Markdown guide with a source-path and producer-version header. The rest of stdout equals the repository Markdown source; successful output has no stderr, styling, paging, project/configuration reads or network dependency. Relative links remain unchanged and supplementary; essential instructions are self-contained, and cross-guide navigation names executable commands. The five [guide sources](guides/configure.md) cover configuration, selection, report interpretation, comparison and the non-binding [category reference](guides/categories.md).
 
 Root long/short/help-command output leads with source counts by language, names `--show-folders` for folder rows and `--verbose` for classification/scope/coverage notes, and presents `locmetry --guide configure` as optional configuration. Long help describes all topics and includes common-command examples, which the README task table mirrors, followed by a maintained-scripts TOML rule and a command that saves per-file JSON and prints a verbose table. For production-rule changes covered by that example, help directs the reader to inspect existing configuration, measure current decisions, adapt the example and verify decisions and unresolved review items; initial guide/schema reading is optional. Exclusions, overrides, intentional Other and uncovered semantics are directed to the configuration guide or schema. Root long help also supplies selection, JSON, adaptive table and Markdown recipes, with compact notes on result interpretation, policy precedence, personal defaults and automation status. Explain, compare and workspace long help each include executable task recipes and consequential input, scope and output constraints; their reference queries use the root-level guide/schema syntax. For routine capture-and-compare work, root help directs readers to the executable comparison recipes; additional guide/schema reading is optional for their covered input contract, with summary and findings verification still required. Short help omits the extended examples and notes. Topics are required, case-sensitive enum values. Missing/unknown topics fail with exit 1, accepted names and a help remedy. `--guide` follows the same standalone-query rule as `--schema`, and the two conflict. Save guide text by shell redirection.
 

@@ -275,8 +275,8 @@ category = "unit"
 id = "order-tests"
 purpose = "test"
 match = ["web/src/orders/**"]
-category = "order-rules"
-reason = "Tests of the order pricing rules"
+category = "integration"
+reason = "Tests of the order view together with its API client"
 TOML
 locmetry explain web/src/orders/Order.test.ts --root acme-orders --config proposed.toml \
   --no-user-config --no-color --format table \
@@ -293,13 +293,13 @@ State: counted
 Language: TypeScript
 Kind: source
 Purpose: test
-Category: order-rules
+Category: integration
 Rule: builtin:js-test-file
 Stage: convention
 Counts: 3 code, 1 comment, 0 blanks, 4 lines
 Matching patterns: **/*.{test,spec}.{js,jsx,mjs,cjs,ts,tsx,mts,cts}
 Refinement: order-tests, matching web/src/orders/**
-Refinement reason: Tests of the order pricing rules
+Refinement reason: Tests of the order view together with its API client
 ```
 
 ## Use a workspace and save Markdown

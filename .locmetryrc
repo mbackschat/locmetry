@@ -1,7 +1,8 @@
 version = 1
 
 # Locmetry's policy for measuring itself; docs/self-measurement.md explains
-# every decision and how to verify it.
+# every decision and how to verify it. Category names come from the category
+# reference (locmetry --guide categories).
 #
 # Built-in detection already decides most files: Cargo inference makes src/
 # production, and the test conventions make tests/, src/**/tests.rs and
@@ -19,23 +20,30 @@ version = 1
 exclude = ["examples/cli-workspace/**"]
 
 [categories]
-tooling = "Commands that maintain the repository, prepare releases and review measurements"
-distribution = "Packaging, installation and third-party notice generation"
-verification-tooling = "Programs that run, prepare or score verification workflows"
-unit = "Rust unit tests of the library's modules"
-integration = "Tests that run the built executable on synthetic projects"
-tooling-test = "Unit tests of the repository's own scripts"
-documentation-check = "Checks that documented examples still produce what the documents say"
+tooling = "Commands that serve the people working on the repository: documentation maintenance and measurement review"
+distribution = "Publishing releases: packaging, installation definitions, notice generation and the release command"
+verification-tooling = "Programs that run, prepare or score tests and checks without being one"
+unit = "Tests of one module in process"
+integration = "Tests that run the built executable, a script or Git as a process"
+test-support = "Test code without test cases"
 
 # Maintained programs are production even though the executable does not ship
 # them. A program with unit tests of its own is code under test.
+
+# The comparison helper ships in release archives and Homebrew installations,
+# so it is part of the product, although no build descriptor declares it.
+[[rules]]
+id = "comparison-helper"
+match = ["scripts/compare-locmetry-files.sh"]
+kind = ["source"]
+purpose = "production"
+category = "implementation"
+reason = "Installed with the executable for file-level report comparison. See [comparison](docs/guides/compare.md#inspect-configuration-transitions) and the release archives in [distribution](docs/tokei-integration.md)"
 
 [[rules]]
 id = "repository-tooling"
 match = [
     "scripts/doc-indexes.py",
-    "scripts/release.py",
-    "scripts/compare-locmetry-files.sh",
     "scripts/refresh-readme-showcase.py",
     "scripts/record-demo.sh",
     "scripts/agent-regression-trend.py",
@@ -43,15 +51,15 @@ match = [
 kind = ["source"]
 purpose = "production"
 category = "tooling"
-reason = "These commands maintain documentation, prepare releases or review saved measurements. See [documentation maintenance](docs/documentation-maintenance.md), [distribution](docs/tokei-integration.md) and [comparison](docs/guides/compare.md)"
+reason = "These commands maintain documentation and its showcase assets. See [documentation maintenance](docs/documentation-maintenance.md)"
 
 [[rules]]
 id = "distribution"
-match = ["packaging/**"]
+match = ["packaging/**", "scripts/release.py"]
 kind = ["source"]
 purpose = "production"
 category = "distribution"
-reason = "Maintained packaging and notice-generation source supports installation and distribution. See [distribution](docs/tokei-integration.md)"
+reason = "Packaging, notice generation and the release command, which checks, commits, tags and pushes a release. See [distribution](docs/tokei-integration.md)"
 
 [[rules]]
 id = "verification-tooling"
@@ -80,32 +88,43 @@ id = "documentation-checks"
 match = ["scripts/check-doc-examples.sh"]
 kind = ["source"]
 purpose = "test"
-category = "documentation-check"
-reason = "Runs the documented examples and fails on a mismatch, as an integration test does. See [self-measurement design](docs/self-measurement.md)"
+category = "integration"
+reason = "Runs the documented examples with the built executable and fails on a mismatch, as an integration test does. See [self-measurement design](docs/self-measurement.md)"
 
 # The test conventions decide that these files are tests; refinements only say
 # which kind of test, so Test/prod stays exactly what the conventions give.
+# The exceptions state which files belong to another refinement, instead of
+# relying on refinement order.
 
 [[refinements]]
 id = "unit-tests"
 purpose = "test"
-match = ["src/**/tests.rs"]
+match = [
+    "src/**/tests.rs",
+    "scripts/test_agent_regression_trend.py",
+    "scripts/test_score_full_help.py",
+]
 kind = ["source"]
 category = "unit"
-reason = "Out-of-line unit test modules of the library, which the rust-test-module convention recognizes"
+reason = "Rust unit test modules, which the rust-test-module convention recognizes, and the two script tests that import their module and mock every process"
 
 [[refinements]]
 id = "integration-tests"
 purpose = "test"
-match = ["tests/integration/**"]
+match = ["tests/integration/**", "scripts/test_*.py"]
+except = [
+    "tests/integration/common.rs",
+    "scripts/test_agent_regression_trend.py",
+    "scripts/test_score_full_help.py",
+]
 kind = ["source"]
 category = "integration"
-reason = "The single integration-test binary, which runs the built executable on synthetic projects"
+reason = "The integration-test binary runs the built executable on synthetic projects; the other script tests run their script or Git as a process"
 
 [[refinements]]
-id = "tooling-tests"
+id = "integration-test-helpers"
 purpose = "test"
-match = ["scripts/test_*.py"]
+match = ["tests/integration/common.rs"]
 kind = ["source"]
-category = "tooling-test"
-reason = "Unit tests of the maintenance and verification scripts above"
+category = "test-support"
+reason = "Helpers shared by the integration tests, with no test of their own"

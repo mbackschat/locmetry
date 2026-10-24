@@ -411,7 +411,7 @@ Help lists syntax; guides explain workflows; schemas define machine-readable fie
 source scripts/cli-demo-env.sh
 locmetry --no-color --help | sed -n '1,16p'
 locmetry --version
-for topic in configure selection reports compare; do
+for topic in configure selection reports compare categories; do
   locmetry --guide "$topic" | sed -n '1p'
 done
 for schema in config report workspace comparison explanation; do
@@ -441,6 +441,7 @@ Source: docs/guides/configure.md (locmetry 0.10.0)
 Source: docs/guides/selection.md (locmetry 0.10.0)
 Source: docs/guides/reports.md (locmetry 0.10.0)
 Source: docs/guides/compare.md (locmetry 0.10.0)
+Source: docs/guides/categories.md (locmetry 0.10.0)
 Configuration
 MeasurementReport
 Workspace

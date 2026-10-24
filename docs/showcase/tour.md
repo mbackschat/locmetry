@@ -180,8 +180,8 @@ bash "$repository/scripts/compare-locmetry-files.sh" builtin.json reviewed.json 
   {
     "from": "test/test",
     "to": "test/end-to-end",
-    "files": 49,
-    "code": 9885
+    "files": 41,
+    "code": 7871
   },
   {
     "from": "production/implementation",
@@ -191,7 +191,7 @@ bash "$repository/scripts/compare-locmetry-files.sh" builtin.json reviewed.json 
   },
   {
     "from": "production/implementation",
-    "to": "test/end-to-end",
+    "to": "test/test-support",
     "files": 23,
     "code": 3118
   },
@@ -202,16 +202,16 @@ bash "$repository/scripts/compare-locmetry-files.sh" builtin.json reviewed.json 
     "code": 3104
   },
   {
-    "from": "other/unclaimed",
-    "to": "production/deployment",
-    "files": 31,
-    "code": 798
+    "from": "test/test",
+    "to": "test/integration",
+    "files": 8,
+    "code": 2014
   },
   {
     "from": "other/unclaimed",
-    "to": "production/tooling",
-    "files": 13,
-    "code": 379
+    "to": "production/deployment",
+    "files": 28,
+    "code": 740
   },
   {
     "from": "production/implementation",
@@ -227,15 +227,33 @@ bash "$repository/scripts/compare-locmetry-files.sh" builtin.json reviewed.json 
   },
   {
     "from": "other/unclaimed",
-    "to": "test/test-infrastructure",
+    "to": "test/test-support",
     "files": 4,
     "code": 234
   },
   {
     "from": "other/unclaimed",
-    "to": "test/performance-test",
+    "to": "production/documentation-site",
+    "files": 2,
+    "code": 213
+  },
+  {
+    "from": "other/unclaimed",
+    "to": "production/tooling",
+    "files": 10,
+    "code": 170
+  },
+  {
+    "from": "other/unclaimed",
+    "to": "test/performance",
     "files": 1,
     "code": 64
+  },
+  {
+    "from": "other/unclaimed",
+    "to": "production/build-tooling",
+    "files": 4,
+    "code": 54
   }
 ]
 ```

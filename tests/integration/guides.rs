@@ -44,7 +44,7 @@ fn guides_print_their_exact_sources_without_loading_configuration() {
     let root = tempfile::tempdir().unwrap();
     write(root.path(), ".locmetryrc", "invalid toml");
     write(root.path(), "personal/locmetry/config.toml", "invalid toml");
-    for topic in ["configure", "selection", "reports", "compare"] {
+    for topic in ["configure", "selection", "reports", "compare", "categories"] {
         let out = run(root.path(), &["--guide", topic]);
         assert_eq!(
             out.status.code(),
@@ -126,7 +126,7 @@ fn guide_errors_are_actionable_and_queries_are_exclusive() {
         assert!(out.stdout.is_empty());
         let error = String::from_utf8_lossy(&out.stderr);
         assert!(error.contains("--help"), "{error}");
-        for topic in ["configure", "selection", "reports", "compare"] {
+        for topic in ["configure", "selection", "reports", "compare", "categories"] {
             assert!(error.contains(topic), "{error}");
         }
     }
@@ -347,6 +347,10 @@ fn documented_discovery_path_and_topic_destinations_are_executable() {
                 "locmetry --schema comparison",
                 "locmetry --guide reports",
             ],
+        ),
+        (
+            "categories",
+            vec!["locmetry --schema config", "locmetry --guide configure"],
         ),
     ] {
         let text = source(topic);

@@ -406,7 +406,7 @@ fn product_example_configuration_is_valid() {
         rule(&policy, "docs/archive/notes.md", Kind::Documentation),
         "fallback"
     );
-    assert_eq!(rule(&policy, "other/a.ts", Kind::Source), "unmapped-source");
+    assert_eq!(rule(&policy, "other/a.ts", Kind::Source), "fallback");
 }
 
 #[cfg(unix)]

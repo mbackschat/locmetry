@@ -128,24 +128,26 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  Tests written in another language than the code they test skew per-language Test/prod.
  Folded: BASH → Shell, TSX → TypeScript.
 
- ──────────────────────────────────────────────────
- Category                   Files    Lines     Code
- ──────────────────────────────────────────────────
- production:implementation  1,837  199,093  170,113
- test:test                    450   87,800   73,710
- other:generated               38   19,173   16,165
- test:end-to-end               72   15,300   13,003
- production:native             67    8,870    7,206
- production:deployment         31    1,023      798
- production:tooling            14      909      722
- production:build-tooling      14      813      718
- test:test-infrastructure       4      251      234
- test:performance-test          1       81       64
+ ──────────────────────────────────────────────────────
+ Category                       Files    Lines     Code
+ ──────────────────────────────────────────────────────
+ production:implementation      1,837  199,093  170,113
+ test:test                        450   87,800   73,710
+ other:generated                   38   19,173   16,165
+ test:end-to-end                   41    9,285    7,871
+ production:native                 67    8,870    7,206
+ test:test-support                 27    3,970    3,352
+ test:integration                   8    2,296    2,014
+ production:build-tooling          18      886      772
+ production:deployment             28      938      740
+ production:tooling                11      657      513
+ production:documentation-site      2      264      213
+ test:performance                   1       81       64
  Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
 
 ```
 
-Generated code moves from production to Other with category `generated`, end-to-end helpers join the tests, the whole end-to-end suite shares one category, and nothing remains unclaimed. Test/prod divides test code by production code; it describes volume, not coverage.
+Generated code moves from production to Other with category `generated`, end-to-end helpers join the tests, the end-to-end suites split into `end-to-end`, `integration` and `test-support` by what each file does, and nothing remains unclaimed. Test/prod divides test code by production code; it describes volume, not coverage.
 
 ## Trace a policy decision
 
@@ -223,13 +225,13 @@ locmetry --root immich --format json \
   "id": "end-to-end",
   "stage": "refinement",
   "purpose": "test",
-  "files": 72,
-  "code": 13003,
+  "files": 41,
+  "code": 7871,
   "displaced": [
     {
       "decision": "test:test",
-      "files": 72,
-      "code": 13003
+      "files": 41,
+      "code": 7871
     }
   ]
 }
@@ -275,44 +277,44 @@ The category table answers what the project consists of. `--table-category` narr
 ```bash
 source scripts/showcase-env.sh
 locmetry --root immich --format table --show-categories --no-color --no-bars \
-  --table-category 'production:*tooling*,production:deployment,test:*infra*' \
+  --table-category 'production:*tooling*,production:deployment,test:test-support' \
   | sed '/^Root:/d; /^Roots:/d; /^Project:/d; /^Measured at:/d' \
   | demo_wrap
 ```
 
 ```output
- ────────────────────────────────────────────────────────────────────────────
- Language    Files  Lines   Code │ Comments  Blanks │ Prod.  Test │ Comment %
- ────────────────────────────────┼──────────────────┼─────────────┼──────────
- JavaScript     13    822    715 │       62      45 │   715     0 │      8.0%
- Shell          16    550    395 │       64      91 │   395     0 │     13.9%
- Dart            1    388    343 │        1      44 │   343     0 │      0.3%
- TypeScript      6    357    335 │        5      17 │   111   224 │      1.5%
- Dockerfile      4    369    267 │       12      90 │   257    10 │      4.3%
- HCL            16    262    225 │        4      33 │   225     0 │      1.7%
- Groovy          3    173    139 │        7      27 │   139     0 │      4.8%
- Python          2     51     38 │        1      12 │    38     0 │      2.6%
- CMake           1     13      9 │        0       4 │     9     0 │      0.0%
- Templ           1     11      6 │        0       5 │     6     0 │      0.0%
- ────────────────────────────────┼──────────────────┼─────────────┼──────────
- Total          63  2,996  2,472 │      156     368 │ 2,238   234 │      5.9%
+ ─────────────────────────────────────────────────────────────────────────────
+ Language    Files  Lines   Code │ Comments  Blanks │ Prod.   Test │ Comment %
+ ────────────────────────────────┼──────────────────┼──────────────┼──────────
+ TypeScript     29  4,076  3,453 │      205     418 │   111  3,342 │      5.6%
+ JavaScript     11    558    502 │       23      33 │   502      0 │      4.4%
+ Shell          16    550    395 │       64      91 │   395      0 │     13.9%
+ Dart            1    388    343 │        1      44 │   343      0 │      0.3%
+ Dockerfile      4    369    267 │       12      90 │   257     10 │      4.3%
+ HCL            16    262    225 │        4      33 │   225      0 │      1.7%
+ Groovy          3    173    139 │        7      27 │   139      0 │      4.8%
+ Python          2     51     38 │        1      12 │    38      0 │      2.6%
+ CMake           1     13      9 │        0       4 │     9      0 │      0.0%
+ Templ           1     11      6 │        0       5 │     6      0 │      0.0%
+ ────────────────────────────────┼──────────────────┼──────────────┼──────────
+ Total          84  6,451  5,377 │      317     757 │ 2,025  3,352 │      5.6%
  Lines = Code + Comments + Blanks · Production + Test = Code · Comment % = Comments / (Code + Comments)
  Folded: BASH → Shell.
- Not shown (categories): production:implementation, test:test, other:generated, test:end-to-end, production:native and
-test:performance-test (280,261 code lines).
+ Not shown (categories): production:implementation, test:test, other:generated, test:end-to-end, production:native and 3
+more (277,356 code lines).
 
- ────────────────────────────────────────────
- Category                  Files  Lines  Code
- ────────────────────────────────────────────
- production:deployment        31  1,023   798
- production:tooling           14    909   722
- production:build-tooling     14    813   718
- test:test-infrastructure      4    251   234
+ ─────────────────────────────────────────────
+ Category                  Files  Lines   Code
+ ─────────────────────────────────────────────
+ test:test-support            27  3,970  3,352
+ production:build-tooling     18    886    772
+ production:deployment        28    938    740
+ production:tooling           11    657    513
  Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
 
 ```
 
-Less than 1% of the source code builds, ships and tests the product, yet it spans 11 languages: JavaScript bundler and lint configuration, Shell and Dockerfile for deployment, HCL for the Terraform modules and Groovy for Gradle. Comment % replaces Test/prod because the selection holds only part of Production and Test, and the note names the categories left out.
+About 2% of the source code builds, ships and tests the product, yet it spans 10 languages: TypeScript support code for the end-to-end suites, JavaScript bundler and lint configuration, Shell and Dockerfile for deployment, HCL for the Terraform modules and Groovy for Gradle. Comment % replaces Test/prod because the selection holds only part of Production and Test, and the note names the categories left out.
 
 No Prolog row appears, although the counter reads `mobile/android/app/proguard-rules.pro` as Prolog by its extension: the file holds ProGuard keep rules, and the policy's language correction leaves it unrecognized, because no counter language shares their syntax.
 
@@ -352,8 +354,8 @@ locmetry --root immich --subfolder mobile --format table --show-categories --no-
  production:implementation    668  70,213  59,152
  test:test                    154  20,270  16,231
  production:native             67   8,870   7,206
- production:tooling             6     556     446
- production:build-tooling       4     186     148
+ production:tooling             5     511     414
+ production:build-tooling       5     231     180
  Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
 
 ```

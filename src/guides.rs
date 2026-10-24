@@ -10,6 +10,8 @@ pub(crate) enum Guide {
     Reports,
     /// Capture full baselines and interpret saved-report net change.
     Compare,
+    /// Reference category names, worked cases and naming conventions.
+    Categories,
 }
 
 impl Guide {
@@ -30,6 +32,10 @@ impl Guide {
             Self::Compare => (
                 "docs/guides/compare.md",
                 include_str!("../docs/guides/compare.md"),
+            ),
+            Self::Categories => (
+                "docs/guides/categories.md",
+                include_str!("../docs/guides/categories.md"),
             ),
         }
     }
