@@ -23,6 +23,7 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 
 ### Fixed
 
+- A policy glob with an empty alternative, such as `run{,.cmd}`, now also matches the path without it, `run`, as `{a,b}` matching any listed alternative promises. Before, it silently matched only `run.cmd`, and the policy audit raised nothing because the glob still matched a file.
 - The man page lists the possible values of an option on consecutive lines, as `--help` does, instead of with an empty line between each.
 
 ## [0.11.0] - 2026-10-25

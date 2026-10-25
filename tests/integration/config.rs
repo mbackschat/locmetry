@@ -148,6 +148,39 @@ purpose = "production"
     }
 }
 
+/// `{a,b}` matches any listed alternative (docs/PRODUCT.md), the empty one
+/// included, as shell brace expansion reads `gradlew{,.bat}`. An agent's
+/// policy on 2026-10-25 silently missed the unsuffixed file, and the audit
+/// stayed quiet because the glob still matched its suffixed sibling.
+#[test]
+fn an_empty_alternative_matches_the_path_without_it() {
+    let policy = policy(
+        r#"version = 1
+[classification]
+builtin_tests = false
+[[rules]]
+id = "launchers"
+match = ["bin/run{,.cmd}"]
+purpose = "production"
+[[rules]]
+id = "specs"
+match = ["e2e/**"]
+except = ["e2e/spec{,-*}.ts"]
+purpose = "test"
+"#,
+    );
+    for (path, expected) in [
+        ("bin/run", "launchers"),
+        ("bin/run.cmd", "launchers"),
+        ("bin/run.sh", "fallback"),
+        ("e2e/spec.ts", "fallback"),
+        ("e2e/spec-form.ts", "fallback"),
+        ("e2e/helper.ts", "specs"),
+    ] {
+        assert_eq!(rule(&policy, path, Kind::Source), expected, "{path}");
+    }
+}
+
 #[test]
 fn stages_apply_overrides_then_builtin_tests_then_rules_then_fallback() {
     let policy = policy(

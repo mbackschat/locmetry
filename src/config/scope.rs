@@ -14,8 +14,10 @@ pub(crate) fn literal_glob(path: &str) -> String {
 
 /// Compiles a root-relative glob with the separator semantics of docs/PRODUCT.md.
 ///
-/// globset lets `*` cross `/` and makes `\` platform-dependent by default
-/// (globset 0.4 `GlobBuilder` docs), so both options are set explicitly.
+/// globset lets `*` cross `/`, makes `\` platform-dependent and drops the
+/// empty alternative of `run{,.cmd}` by default (globset 0.4 `GlobBuilder`
+/// docs), so each option is set explicitly: `{a,b}` matches any listed
+/// alternative, the empty one included.
 pub(super) fn glob(pattern: &str) -> Result<Glob> {
     ensure!(
         !pattern.starts_with('!'),
@@ -31,6 +33,7 @@ pub(super) fn glob(pattern: &str) -> Result<Glob> {
     GlobBuilder::new(pattern)
         .literal_separator(true)
         .backslash_escape(true)
+        .empty_alternates(true)
         .build()
         .map_err(|error| {
             anyhow!(
