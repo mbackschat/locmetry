@@ -17,6 +17,7 @@ mod audit;
 mod builtin;
 mod corrections;
 mod decision;
+mod diagnostics;
 mod entry;
 mod exclusions;
 mod file;
@@ -64,12 +65,13 @@ fn parse_toml<T: serde::de::DeserializeOwned>(input: &str) -> Result<T> {
                 let before = &input[..span.start];
                 let line = before.matches('\n').count() + 1;
                 let column = before.rsplit('\n').next().unwrap_or(before).chars().count() + 1;
+                let source = input.lines().nth(line - 1);
                 anyhow!(
                     "line {line}, column {column}: {}",
-                    crate::output::single_quoted(message)
+                    diagnostics::toml_message(message, source)
                 )
             }
-            None => anyhow!("{}", crate::output::single_quoted(message)),
+            None => anyhow!("{}", diagnostics::toml_message(message, None)),
         }
     })
 }
@@ -213,8 +215,9 @@ impl Policy {
         let generated = *config.classification.builtin_generated.get_or_insert(true);
         ensure!(
             config.version == 1,
-            "Unsupported configuration version {}",
-            config.version
+            "Unsupported configuration version {}. Locmetry {} reads version 1. A newer release may read this file.",
+            config.version,
+            env!("CARGO_PKG_VERSION")
         );
         check_entry_ids(&config)?;
         check_categories(&config)?;
@@ -279,12 +282,13 @@ impl Policy {
                 Ok(LanguageMapping {
                     id: mapping.id.clone(),
                     matcher: glob_set(mapping.patterns.iter().map(String::as_str)).with_context(
-                        || format!("Invalid match in language mapping '{}'", mapping.id),
+                        || format!("In 'match' of language mapping '{}'", mapping.id),
                     )?,
                     language: LanguageType::from_name(&mapping.language).with_context(|| {
                         format!(
-                            "Unknown language '{}' in language mapping '{}'",
-                            mapping.language, mapping.id
+                            "Language mapping '{}': {}",
+                            mapping.id,
+                            diagnostics::unknown_language(&mapping.language)
                         )
                     })?,
                 })

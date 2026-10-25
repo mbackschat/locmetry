@@ -100,10 +100,10 @@ impl Entry {
         Ok(Self {
             id: id.into(),
             matcher: glob_set(patterns.iter().map(String::as_str))
-                .with_context(|| format!("Invalid match in entry {id}"))?,
+                .with_context(|| format!("In 'match' of entry '{id}'"))?,
             patterns: patterns.to_vec(),
             except: glob_set(except.into_iter().flatten().map(String::as_str))
-                .with_context(|| format!("Invalid except in entry {id}"))?,
+                .with_context(|| format!("In 'except' of entry '{id}'"))?,
             exceptions: except.unwrap_or_default().to_vec(),
             kinds,
             purpose,
@@ -200,13 +200,14 @@ pub(super) fn check_entry_ids(config: &ConfigFile) -> Result<()> {
 pub(super) fn check_ids<'a>(ids: impl IntoIterator<Item = &'a str>) -> Result<()> {
     let mut seen = BTreeSet::new();
     for id in ids {
+        ensure!(!id.is_empty(), "An entry has an empty ID.");
         ensure!(
-            !id.is_empty() && seen.insert(id),
-            "Entry ID '{id}' is empty or not unique"
+            seen.insert(id),
+            "Entry ID '{id}' is used more than once. IDs are unique across overrides, rules, refinements and language corrections."
         );
         ensure!(
             id != FALLBACK && !id.starts_with(BUILTIN),
-            "Entry ID '{id}' is reserved for '{FALLBACK}' or '{BUILTIN}' provenance"
+            "Entry ID '{id}' is reserved. '{FALLBACK}' and IDs starting with '{BUILTIN}' name Locmetry's own stages."
         );
     }
     Ok(())

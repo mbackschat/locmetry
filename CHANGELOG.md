@@ -12,6 +12,7 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 
 ### Changed
 
+- Configuration errors name the likely fix: the field, value or language name meant (`json` → `JSON`, `tests` → `test`, `exclude` → `except`, `language_mappings` → `[[languages.mappings]]`), `[[rules]]` for a single `[rules]` table, the configuration version this release reads, and, for an unknown field, that a newer release may define it. They use TOML's words and single quotes, say whether an entry ID is empty, repeated or reserved, and name an invalid glob once with its entry.
 - **Breaking:** without `--format` and `--output`, an option that shapes only one format selects it, on a terminal and in pipes: `--show-categories`, `--show-folders`, `--folder-rows`, `--verbose`, the bar options, the `--table-*` filters and `--tables-only` print a table, `--markdown-depth` Markdown and `--files` full JSON. Before, such an option in a pipe printed the JSON headline with a warning, which agents' output filters often hid. Options of different formats select none, and `--output` still saves full JSON.
 - The category table's legend says it counts source files only, so data such as test fixtures is not mistaken for missing from a category.
 - A configuration that uses a reference category name from `--guide categories` without declaring it in `[categories]` now fails with an error that says it is a reference name, what the reference uses it for and that it needs a declaration.

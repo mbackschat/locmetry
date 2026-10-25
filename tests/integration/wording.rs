@@ -64,6 +64,18 @@ fn fixture(root: &Path) {
     );
     write(&project, "ignored.py", "print(3)\n");
     write(&root.join("badconfig"), ".locmetryrc", "not valid toml\n");
+    for (name, config) in [
+        ("badlanguage", "version = 1\n[[languages.mappings]]\nid = \"m\"\nmatch = [\"*.x\"]\nlanguage = \"json\"\n"),
+        ("badversion", "version = 2\n"),
+        ("badfield", "version = 1\n[[rules]]\nid = \"r\"\nmatch = [\"a/**\"]\nexclude = [\"a/b/**\"]\npurpose = \"test\"\n"),
+        ("newfield", "version = 1\n[[rules]]\nid = \"r\"\nmatch = [\"a/**\"]\ncontent = \"x\"\npurpose = \"test\"\n"),
+        ("badtable", "version = 1\n[rules]\nid = \"r\"\nmatch = [\"a/**\"]\npurpose = \"test\"\n"),
+        ("badtype", "version = 1\n[[rules]]\nid = \"r\"\nmatch = \"a/**\"\npurpose = \"test\"\n"),
+        ("badglob", "version = 1\n[[rules]]\nid = \"r\"\nmatch = [\"a/{b\"]\npurpose = \"test\"\n"),
+        ("badid", "version = 1\n[[rules]]\nid = \"r\"\nmatch = [\"a/**\"]\npurpose = \"test\"\n[[rules]]\nid = \"r\"\nmatch = [\"b/**\"]\npurpose = \"test\"\n"),
+    ] {
+        write(&root.join(name), ".locmetryrc", config);
+    }
     write(
         &root.join("badcategory"),
         ".locmetryrc",
@@ -229,6 +241,14 @@ fn scenarios() -> Vec<Vec<&'static str>> {
         ],
         vec!["--root", "badconfig"],
         vec!["--root", "badcategory"],
+        vec!["--root", "badlanguage"],
+        vec!["--root", "badversion"],
+        vec!["--root", "badfield"],
+        vec!["--root", "newfield"],
+        vec!["--root", "badtable"],
+        vec!["--root", "badtype"],
+        vec!["--root", "badglob"],
+        vec!["--root", "badid"],
         vec!["--root", "badmapping"],
         vec!["--root", "project", "--subfolder", "skipped"],
         vec!["compare", "bad.json", "bad.json"],

@@ -33,3 +33,16 @@ Implication: a `content` regex on refinements that matches when any line matches
 ## Content kind of mapped files
 
 Mapping `.tsv` to Plain Text counts every line as a comment and the files as documentation. Mapping them to JSON, a data language without comment syntax, counts them as data with every non-blank line as code, at the cost of reporting the language as JSON; YAML would read `#` lines as comments. A `kind` field alone on mappings would fix the kind but keep Plain Text's all-comment split, so a display name on a mapping counted by another counter is the closer fit.
+
+## Configuration errors
+
+The owner asked whether an incompatible or invalid `.locmetryrc` gets feedback good enough to repair it. A corpus of 26 broken files, from TOML syntax through unknown fields, wrong types, unknown values, globs and IDs, showed that every error failed fast with exit 1, empty stdout and the file named, but in the parser's wording: `expected a sequence`, `expected u32`, double quotes in a message about TOML strings, and no hint for a likely fix. An unknown field listed the valid ones but did not say that `language_mappings` is written `[[languages.mappings]]`, that `exclude` in an entry is `except`, or that a field may come from a newer release; `[rules]` instead of `[[rules]]` produced `invalid type: map, expected a sequence`.
+
+Two fresh agents (Sonnet at `xhigh`, no terminal) per arm then repaired ten broken configurations, each with a stated intent, using only Locmetry's output and help. The candidate added the hints listed in [PRODUCT](../PRODUCT.md): synonyms and near typos for unknown fields and values, a newer-release note otherwise, case-insensitive language suggestions, the `[[table]]` hint, TOML wording for types, the configuration version Locmetry reads, and which entry and field an invalid glob or ID belongs to.
+
+| Arm | Agents | Read the whole `--schema config` | Cases where the agent judged the message not enough or only mostly enough |
+| --- | ---: | --- | --- |
+| Control, without the hints | 2 | 2 of 2 | 6 of 10: the mappings table, the `[rules]` table, a lowercase language name, version 2, a duplicate ID, `exclude` in an entry |
+| Candidate | 2 | 0 of 2 | 2 of 10, both semantic: whether version 2 means the same as version 1, and a content-tag rule this release cannot express |
+
+Every configuration of all four agents loads with the candidate; whether each matched its stated intent was judged by reading, not graded. The remaining two need knowledge of a future format and a feature this release lacks, which no message can supply.

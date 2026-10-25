@@ -29,7 +29,7 @@ fn invalid_configurations_fail_with_specific_messages() {
         ("version = 1\n[[rules]]\nid = \"a\"\nmatch = []\npurpose = \"test\"", "nonempty"),
         ("version = 1\n[[rules]]\nid = \"a\"\nmatch = [\"**\"]\nkind = []\npurpose = \"test\"", "nonempty"),
         ("version = 1\n[[rules]]\nid = \"a\"\nmatch = [\"**\"]\nkind = [\"code\"]\npurpose = \"test\"", "unknown variant"),
-        ("version = 1\n[[rules]]\nid = \"a\"\nmatch = [\"src/[\"]\npurpose = \"test\"", "Invalid glob"),
+        ("version = 1\n[[rules]]\nid = \"a\"\nmatch = [\"src/[\"]\npurpose = \"test\"", "invalid glob 'src/['"),
         ("version = 1\n[[rules]]\nid = \"a\"\nmatch = [\"/src/**\"]\npurpose = \"test\"", "relative"),
         ("version = 1\n[[rules]]\nid = \"a\"\nmatch = [\"!src/**\"]\npurpose = \"test\"", "negation"),
         ("version = 1\n[[rules]]\nid = \"a\"\nmatch = [\"../src/**\"]\npurpose = \"test\"", "relative"),

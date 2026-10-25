@@ -62,7 +62,7 @@ fn explain_shows_the_stage_an_excepted_file_falls_through_to() {
 fn an_empty_or_invalid_except_list_is_rejected() {
     for (except, message) in [
         ("[]", "needs a nonempty except array"),
-        ("[\"a/{b\"]", "Invalid except in entry"),
+        ("[\"a/{b\"]", "In 'except' of entry 'app'"),
     ] {
         let config =
             format!("version = 1\n[[rules]]\nid = \"app\"\nmatch = [\"src/**\"]\nexcept = {except}\npurpose = \"production\"\n");
@@ -474,7 +474,7 @@ fn invalid_refinements_are_rejected() {
         ),
         (
             "[[rules]]\nid = \"a\"\nmatch = [\"x/**\"]\npurpose = \"test\"\n[[refinements]]\nid = \"a\"\npurpose = \"test\"\nmatch = [\"**\"]\ncategory = \"x\"\n",
-            "Entry ID 'a' is empty or not unique",
+            "Entry ID 'a' is used more than once",
         ),
     ] {
         let config = format!("version = 1\n{config}");

@@ -68,12 +68,13 @@ impl LanguageCorrection {
         Ok(Self {
             id: config.id.clone(),
             matcher: glob_set(config.patterns.iter().map(String::as_str))
-                .with_context(|| format!("Invalid match in language correction '{}'", config.id))?,
+                .with_context(|| format!("In 'match' of language correction '{}'", config.id))?,
             patterns: config.patterns.clone(),
             language: CorrectedLanguage::parse(&config.language).with_context(|| {
                 format!(
-                    "Unknown language '{}' in language correction '{}'; name a counter language or '{UNRECOGNIZED}'",
-                    config.language, config.id
+                    "Language correction '{}': {} A correction may also name '{UNRECOGNIZED}'.",
+                    config.id,
+                    super::diagnostics::unknown_language(&config.language)
                 )
             })?,
             reason: config.reason.clone(),

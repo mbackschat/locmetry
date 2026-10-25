@@ -18,6 +18,7 @@ mod compare_member;
 mod compare_presence;
 mod compare_render;
 mod config;
+mod config_diagnostics;
 mod contracts;
 mod explain;
 mod folder_rows;

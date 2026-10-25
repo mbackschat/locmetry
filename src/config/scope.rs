@@ -32,7 +32,12 @@ pub(super) fn glob(pattern: &str) -> Result<Glob> {
         .literal_separator(true)
         .backslash_escape(true)
         .build()
-        .with_context(|| format!("Invalid glob '{pattern}'"))
+        .map_err(|error| {
+            anyhow!(
+                "invalid glob '{pattern}': {}",
+                error.kind().to_string().replace("; ", ", ")
+            )
+        })
 }
 
 pub(super) fn glob_set<'a>(patterns: impl IntoIterator<Item = &'a str>) -> Result<GlobSet> {
@@ -58,7 +63,7 @@ impl Scope {
     pub(super) fn new(settings: ScopeSettings) -> Result<Self> {
         let patterns = Self::patterns(&settings);
         let excludes =
-            glob_set(patterns.iter().map(String::as_str)).context("Invalid scope exclusion")?;
+            glob_set(patterns.iter().map(String::as_str)).context("In 'exclude' of '[scope]'")?;
         let (pruning_patterns, directories): (Vec<usize>, Vec<&str>) = patterns
             .iter()
             .enumerate()
