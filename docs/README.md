@@ -12,6 +12,7 @@ Start with the workflow or contract relevant to your task. Status tables in the 
 - [Current work](PLAN.md): open tasks and decision gates.
 - [Deferred work](DEFERRED.md): deferred and unscheduled items, each with the condition that would reopen it.
 - [Maintain these docs](documentation-maintenance.md): index ownership, status/date rules and automated checks.
+- [Agent-facing design lessons](agent-lessons.md): rules agents' behavior has established for help, guides, options, output and errors, each with its evidence; read before changing them.
 - [Design CLI help](help-design.md): what belongs in help, examples and references, with experimental rationale and evaluation criteria.
 - [Check agent use for regressions](agent-regression-checks.md): when and how to verify that interface changes keep agents correct and efficient, with a ledger of checks.
 - [Task guides](guides/README.md): configure, explain, read and compare measurements.

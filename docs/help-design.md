@@ -58,6 +58,8 @@ Use command help for workspace, comparison and explanation workflows. Root help 
 
 ## Evidence and Its Limits
 
+The [agent-facing design lessons](agent-lessons.md) distill these and later studies into rules across help, options, output and errors; the summaries below keep the help studies' details.
+
 The [guide-removal study](research/agent-explorability-six-task-study.md) found no consistent efficiency advantage from removing guides and included an interpretation failure without them. Retain optional guides; this does not prove they are necessary for every task.
 
 The [configuration-example study](research/agent-explorability-help-recipe-study.md) did not show that an example alone reduced reference retrieval or task cost. This is evidence about that example and those tasks, not a rejection of usage examples generally.
