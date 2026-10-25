@@ -445,14 +445,14 @@ Arguments:
   [DIR]
           Directory to measure, instead of --root [default: the current directory]
 
-locmetry 0.11.0
-Source: docs/guides/README.md (locmetry 0.11.0)
-Source: docs/guides/configure.md (locmetry 0.11.0)
-Source: docs/guides/selection.md (locmetry 0.11.0)
-Source: docs/guides/reports.md (locmetry 0.11.0)
-Source: docs/guides/compare.md (locmetry 0.11.0)
-Source: docs/guides/categories.md (locmetry 0.11.0)
-Source: docs/guides/categories.md#choose-a-name (locmetry 0.11.0)
+locmetry 0.11.1
+Source: docs/guides/README.md (locmetry 0.11.1)
+Source: docs/guides/configure.md (locmetry 0.11.1)
+Source: docs/guides/selection.md (locmetry 0.11.1)
+Source: docs/guides/reports.md (locmetry 0.11.1)
+Source: docs/guides/compare.md (locmetry 0.11.1)
+Source: docs/guides/categories.md (locmetry 0.11.1)
+Source: docs/guides/categories.md#choose-a-name (locmetry 0.11.1)
 
 ## Choose a Name
 Configuration

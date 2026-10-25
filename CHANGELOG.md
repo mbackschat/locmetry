@@ -4,6 +4,8 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 
 ## [Unreleased]
 
+## [0.11.1] - 2026-10-25
+
 ### Added
 
 - The Markdown report, and `--verbose` category tables, list the meanings the policy declares in `[categories]` for the categories shown, so a shared report explains its own names. A workspace lists a meaning only when every member declaring the name gives the same one.
@@ -149,7 +151,8 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 - **Breaking:** presentation options are named for what they show: `--folders`, `--categories`, `--bars`, `--purpose` and `--depth` became `--show-folders`, `--show-categories`, `--show-bars`, `--table-purpose` and `--markdown-depth`. `workspace --file` and `explain --workspace` became `--workspace-file`. The former spellings are rejected.
 - `--files` adds per-file records to every full JSON view, whether saved or printed.
 
-[Unreleased]: https://github.com/mbackschat/locmetry/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/mbackschat/locmetry/compare/v0.11.1...HEAD
+[0.11.1]: https://github.com/mbackschat/locmetry/compare/v0.11.0...v0.11.1
 [0.11.0]: https://github.com/mbackschat/locmetry/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/mbackschat/locmetry/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/mbackschat/locmetry/compare/v0.8.0...v0.9.0
