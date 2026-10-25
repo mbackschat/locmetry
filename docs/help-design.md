@@ -68,7 +68,11 @@ The [routing study](research/agents/explorability-help-routing-study.md) found t
 
 The [full-feature study](research/agents/explorability-full-help-study.md) extended this approach across the inventory above. Its 80-session campaign passed all correctness checks but missed the comparison call guard; the recorded correction then passed correctness and cost gates in 32 fresh sessions. Adopt the complete help package with that correction, without erasing the original failure or claiming uniform savings. Discovery required more input tokens, and the correction did not remeasure six of the original ten tasks. These results support actionable coverage plus bounded execution routing; they do not show that adding more examples indefinitely improves exploration.
 
+The [report-interpretation route](research/agents/regression-run-2026-10-26.md) of 2026-10-26 added one conditional sentence to root help naming the two reports-guide sections that interpret counts and coverage. All four Codex candidates read those 3.4 KB instead of the whole 19 KB guide, and the interpretation task cost 38% less uncached input at equal correctness and calls; one session of the report-saving guard task took three more agent calls through the index route both arms offer, a residual adopted with the change. It supports naming sections for a frequent task, not routing every topic.
+
 ## Evaluating Future Additions
+
+Before designing a change for efficiency, locate the cost: bucket the calls and output of recorded sessions by purpose, as the [same run](research/agents/regression-run-2026-10-26.md#where-the-cost-goes) did, and weigh a saving by how often its task occurs.
 
 For a material new example or routing change, define the task, applicability boundary, expected artifacts and required interpretation before editing. Include a covered task, a task beyond the example's scope and an unrelated task that still reads root help. Freeze correctness and critical-error definitions before resource thresholds; the [benchmark](plans/agent-explorability-benchmark.md#proposed-scoring-rule) supplies the reusable contract.
 
