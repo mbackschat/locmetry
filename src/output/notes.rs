@@ -273,6 +273,8 @@ pub(super) fn unused_globs_notes(
 pub(super) fn preempted_entries_note(entries: &[crate::PolicyEntry]) -> Option<String> {
     let found: Vec<String> = entries
         .iter()
+        // A mapping has no `except`; its first match decides.
+        .filter(|entry| entry.stage != crate::EntryStage::Mapping)
         .flat_map(|entry| {
             entry
                 .preempted
@@ -286,6 +288,31 @@ pub(super) fn preempted_entries_note(entries: &[crate::PolicyEntry]) -> Option<S
             "Entries that lost matching files to an earlier entry: {}. An {} list on the earlier entry states such a split without relying on order.",
             found.join(", "),
             quoted("except")
+        )
+    })
+}
+
+/// Names language mappings that matched files the counter recognizes, which
+/// they cannot change: a mapping of `*.spec` to Plain Text counted nothing,
+/// because the counter reads such files as RPM Specfile, and nothing said so
+/// (docs/research/agent-feedback-2026-10-25-b.md).
+pub(super) fn recognized_mappings_note(entries: &[crate::PolicyEntry]) -> Option<String> {
+    let found: Vec<String> = entries
+        .iter()
+        .filter(|entry| entry.stage == crate::EntryStage::Mapping)
+        .flat_map(|entry| {
+            entry
+                .preempted
+                .iter()
+                .filter(|by| by.by == crate::RECOGNITION)
+                .map(move |by| format!("{} ({})", entry.id, counted(by.files, "file")))
+        })
+        .collect();
+    (!found.is_empty()).then(|| {
+        format!(
+            "Language mappings that matched files the counter already recognizes: {}. A mapping applies only to unrecognized files; a {} entry changes the language of a recognized file.",
+            found.join(", "),
+            quoted("[[languages.corrections]]")
         )
     })
 }

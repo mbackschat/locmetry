@@ -96,7 +96,7 @@ impl Default for ClassificationSettings {
 #[serde(deny_unknown_fields)]
 #[schemars(rename = "Entry")]
 pub(super) struct EntryConfig {
-    /// Unique across `overrides` and `rules`; must not be `fallback` or start with `builtin:`. Files this entry decides record the ID as their `rule`.
+    /// Unique among overrides, rules, refinements and the project's language mappings and corrections; must not be `fallback` or start with `builtin:`. Files this entry decides record the ID as their `rule`.
     #[schemars(length(min = 1))]
     pub(super) id: String,
     /// Root-relative globs; the entry matches a file when any of them matches.
@@ -150,7 +150,7 @@ impl Default for LanguageSettings {
 #[serde(deny_unknown_fields)]
 #[schemars(rename = "LanguageMapping")]
 pub(super) struct MappingConfig {
-    /// Unique among mappings; reports name it for files it counted.
+    /// Unique among a project's overrides, rules, refinements, mappings and corrections, while a personal mapping needs only differ from the project's mappings; reports name it for files it counted, and list a project mapping that counts none in `summary.unused_entries`.
     #[schemars(length(min = 1))]
     pub(super) id: String,
     /// Root-relative globs; the mapping matches a file when any of them matches.
@@ -166,6 +166,7 @@ pub(super) struct MappingConfig {
 pub(super) struct LanguageMapping {
     pub(super) id: String,
     pub(super) matcher: GlobSet,
+    pub(super) patterns: Vec<String>,
     pub(super) language: LanguageType,
 }
 
@@ -223,7 +224,7 @@ pub(super) struct ConfigFile {
 #[serde(deny_unknown_fields)]
 #[schemars(rename = "Refinement")]
 pub(super) struct RefinementConfig {
-    /// Unique among overrides, rules, refinements and corrections.
+    /// Unique among overrides, rules, refinements and the project's language mappings and corrections.
     #[schemars(length(min = 1))]
     pub(super) id: String,
     /// The decided purpose of the files this refinement applies to.
@@ -276,7 +277,10 @@ impl EffectiveConfig {
             "Unsupported effective configuration version {}",
             config.version
         );
-        check_entry_ids(config)?;
+        // The snapshot merges personal mappings into the project's, and reports
+        // of earlier releases let a mapping reuse an entry ID, so mapping IDs
+        // are checked only among themselves below.
+        check_entry_ids(config, 0)?;
         for correction in &config.languages.corrections {
             LanguageCorrection::from_config(correction)?;
         }

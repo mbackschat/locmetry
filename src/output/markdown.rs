@@ -450,6 +450,7 @@ pub(super) fn render_coverage(output: &mut String, findings: &Findings) {
             findings.subfolder,
         ))
         .chain(preempted_entries_note(findings.policy_entries))
+        .chain(recognized_mappings_note(findings.policy_entries))
         .chain(purpose_changes_note(findings.policy_entries))
         .chain(members_note(findings.members, MemberNotes::All))
     {

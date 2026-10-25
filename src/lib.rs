@@ -21,7 +21,7 @@ pub use config::{
     config_schema, merged_policy_entries, unused_entries, user_config_schema, user_defaults_file,
     workspace_definition, workspace_schema, Classification, Displacement, EffectiveConfig,
     EntryStage, Policy, PolicyEntry, Preemption, Purpose, Scope, ScopeOverrides,
-    WorkspaceDefinition, CONFIG_FILE,
+    WorkspaceDefinition, CONFIG_FILE, RECOGNITION,
 };
 pub use modules::{detect as detect_modules, detector_ids as module_detector_ids, Module};
 pub use output::{

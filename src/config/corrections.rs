@@ -17,7 +17,7 @@ pub const UNRECOGNIZED: &str = "unrecognized";
 #[serde(deny_unknown_fields)]
 #[schemars(rename = "LanguageCorrection")]
 pub(super) struct CorrectionConfig {
-    /// Unique among overrides, rules and corrections; reports name it for files it decided, and list it in `summary.unused_entries` when it decides none.
+    /// Unique among overrides, rules, refinements and the project's language mappings and corrections; reports name it for files it decided, and list it in `summary.unused_entries` when it decides none.
     #[schemars(length(min = 1))]
     pub(super) id: String,
     /// Root-relative globs; the correction matches a file when any of them matches.

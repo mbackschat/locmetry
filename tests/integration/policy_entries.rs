@@ -525,3 +525,93 @@ category = "reference"
     let plain = crate::common::stdout(run(&root, &["--format", "table"]));
     assert!(!plain.contains("Patterns that decided"), "{plain}");
 }
+
+const MAPPINGS: &str = r#"version = 1
+[[languages.mappings]]
+id = "launchers"
+match = ["bin/*"]
+language = "JavaScript"
+[[languages.mappings]]
+id = "spec-as-text"
+match = ["**/*.spec", "bin/*"]
+language = "Plain Text"
+"#;
+
+const MAPPED: &[(&str, &str)] = &[
+    ("bin/launch", "console.log(1)\n"),
+    ("pkg/app.spec", "Name: app\n"),
+];
+
+/// Feedback of 2026-10-25 on 0.11.1: a mapping of `*.spec` files, which the
+/// counter already reads as RPM Specfile, counted nothing, and neither the
+/// audit nor the verbose notes said so.
+#[test]
+fn mappings_report_their_files_and_the_files_the_counter_already_recognizes() {
+    let summary = &measured(MAPPINGS, MAPPED)["summary"];
+    assert_eq!(
+        entry(summary, "launchers"),
+        &json!({"id": "launchers", "stage": "mapping", "files": 1, "code": 1})
+    );
+    assert_eq!(
+        entry(summary, "spec-as-text"),
+        &json!({
+            "id": "spec-as-text", "stage": "mapping", "files": 0, "code": 0,
+            "preempted": [{"by": "builtin:recognition", "files": 1}, {"by": "launchers", "files": 1}],
+            "unused_patterns": ["**/*.spec", "bin/*"]
+        })
+    );
+    assert_eq!(summary["unused_entries"], json!(["spec-as-text"]));
+}
+
+#[test]
+fn verbose_output_names_mappings_of_files_the_counter_already_recognizes() {
+    let mut files = MAPPED.to_vec();
+    files.push((".locmetryrc", MAPPINGS));
+    let temp = project(&files);
+    let root = temp.path().join("project");
+    let note = "Language mappings that matched files the counter already recognizes: spec-as-text (1 file). A mapping applies only to unrecognized files; a '[[languages.corrections]]' entry changes the language of a recognized file.";
+    for format in ["table", "markdown"] {
+        let text = crate::common::stdout(run(&root, &["--format", format, "--verbose"]));
+        assert!(text.contains(note), "{text}");
+        // Mappings have no `except`, so the advice for entries that lost files does not apply.
+        assert!(!text.contains("lost matching files"), "{text}");
+    }
+}
+
+/// Personal mappings apply to every project, so one that matches nothing in
+/// this project is expected and stays out of the project's audit.
+#[test]
+fn personal_mappings_stay_out_of_the_audit() {
+    let temp = project(&[("pkg/app.spec", "Name: app\n")]);
+    let home = temp.path().join("home");
+    std::fs::create_dir_all(home.join("locmetry")).unwrap();
+    std::fs::write(
+        home.join("locmetry/config.toml"),
+        "version = 1\n[[languages.mappings]]\nid = \"spec\"\nmatch = [\"**/*.spec\"]\nlanguage = \"Plain Text\"\n",
+    )
+    .unwrap();
+    let output = locmetry()
+        .current_dir(temp.path().join("project"))
+        .env("XDG_CONFIG_HOME", &home)
+        .args(["--format", "json"])
+        .output()
+        .unwrap();
+    let document = crate::common::json(&output, 0);
+    assert!(
+        document["summary"].get("policy_entries").is_none(),
+        "{document}"
+    );
+    assert!(
+        document["summary"].get("unused_entries").is_none(),
+        "{document}"
+    );
+}
+
+#[test]
+fn a_mapping_shares_the_id_space_of_project_entries() {
+    let config = "version = 1\n[[rules]]\nid = \"x\"\nmatch = [\"a/**\"]\npurpose = \"production\"\ncategory = \"tooling\"\n[[languages.mappings]]\nid = \"x\"\nmatch = [\"bin/*\"]\nlanguage = \"JavaScript\"\n";
+    let temp = project(&[(".locmetryrc", config), ("src/a.rs", "fn a() {}\n")]);
+    let (success, _, stderr) = report(&temp.path().join("project"), &[]);
+    assert!(!success);
+    assert!(stderr.contains("Entry ID 'x' is used more than once. IDs are unique across overrides, rules, refinements and language mappings and corrections."), "{stderr}");
+}

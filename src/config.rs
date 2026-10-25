@@ -28,6 +28,7 @@ mod user;
 mod workspace;
 pub use audit::{
     merged_policy_entries, unused_entries, Displacement, EntryStage, PolicyEntry, Preemption,
+    RECOGNITION,
 };
 use builtin::{
     Convention, BUILTIN_BUILD_V1, BUILTIN_LANGUAGES_V1, BUILTIN_TESTS_V1, DEFAULT_EXCLUDES,
@@ -192,8 +193,12 @@ pub struct Policy {
     /// Literal exclusions of the policy files inside the scan root: the
     /// project configuration, user defaults, or a workspace file.
     configuration_exclusions: BTreeSet<String>,
-    /// Project mappings first, then built-in ones.
+    /// Project mappings first, then personal and built-in ones.
     languages: Vec<LanguageMapping>,
+    /// How many leading `languages` the project configuration defines. Only
+    /// these are audited: personal mappings apply to every project, so one
+    /// that matches nothing here is expected.
+    project_mappings: usize,
     /// Project corrections, applied before the counter recognizes a file.
     corrections: Vec<LanguageCorrection>,
     snapshot: EffectiveConfig,
@@ -206,10 +211,12 @@ impl Policy {
     }
 
     pub fn from_toml(input: &str) -> Result<Self> {
-        Self::from_config(parse_toml(input).context("Invalid TOML configuration")?)
+        let config: ConfigFile = parse_toml(input).context("Invalid TOML configuration")?;
+        let project_mappings = config.languages.mappings.len();
+        Self::from_config(config, project_mappings)
     }
 
-    fn from_config(mut config: ConfigFile) -> Result<Self> {
+    fn from_config(mut config: ConfigFile, project_mappings: usize) -> Result<Self> {
         // Defaults belong to a new measurement, not to historical receipt decoding.
         let detect_modules = *config.classification.builtin_modules.get_or_insert(true);
         let generated = *config.classification.builtin_generated.get_or_insert(true);
@@ -219,7 +226,7 @@ impl Policy {
             config.version,
             env!("CARGO_PKG_VERSION")
         );
-        check_entry_ids(&config)?;
+        check_entry_ids(&config, project_mappings)?;
         check_categories(&config)?;
         let entries = |list: &[EntryConfig]| {
             list.iter()
@@ -284,6 +291,7 @@ impl Policy {
                     matcher: glob_set(mapping.patterns.iter().map(String::as_str)).with_context(
                         || format!("In 'match' of language mapping '{}'", mapping.id),
                     )?,
+                    patterns: mapping.patterns.clone(),
                     language: LanguageType::from_name(&mapping.language).with_context(|| {
                         format!(
                             "Language mapping '{}': {}",
@@ -302,6 +310,7 @@ impl Policy {
             languages.push(LanguageMapping {
                 id: format!("{BUILTIN}{id}"),
                 matcher: glob_set(patterns.iter().copied())?,
+                patterns: patterns.iter().map(|s| s.to_string()).collect(),
                 language: *language,
             });
         }
@@ -347,6 +356,7 @@ impl Policy {
             fallback,
             configuration_exclusions: BTreeSet::new(),
             languages,
+            project_mappings,
             corrections,
             snapshot,
         })
@@ -376,6 +386,7 @@ impl Policy {
             }
             None => toml::from_str("version = 1").expect("built-in configuration is valid"),
         };
+        let project_mappings = config.languages.mappings.len();
         if let Some(path) = user {
             UserDefaults::load(path)?.merge_into(&mut config, path)?;
         }
@@ -384,7 +395,7 @@ impl Policy {
             .flatten()
             .map(|path| format!("'{}'", path.display()))
             .collect();
-        Self::from_config(config)
+        Self::from_config(config, project_mappings)
             .with_context(|| format!("Invalid configuration {}", sources.join(" with ")))
     }
 

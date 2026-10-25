@@ -37,6 +37,7 @@ Sensitive project analyses, candidate rules, raw measurements, and breakdowns of
 - [Agent regression run, 0.8.0](agent-regression-run-2026-10-22.md): tasks 3, 4 and 8 against `c9098e2`; a comparison-cost regression traced to the missing comparison `detail`, its correction and the recorded one-call residual.
 
 - [Agent feedback on two workspaces, 2026-10-25](agent-feedback-2026-10-25.md): Codex agents updated two workspaces' policies with 0.11.1 cold and reported on the tool; each finding verified, with the glob fix and DEFERRED evidence it led to.
+- [Agent feedback on categorizing tests with 0.11.1, 2026-10-25](agent-feedback-2026-10-25-b.md): the three test-categorizing projects again, each claim verified, the silent-mapping fix, and experiments on discovering refinements and on a field-sized project with Claude and Codex agents.
 - [Experiments on the categorization feedback, 2026-10-25](agent-experiments-2026-10-25.md): table options in pipes reproduced and an A/B of six fresh agents, configuration errors repaired by four fresh agents, the shape of content predicates, and a workaround for the content kind of mapped files.
 
 - [Report analytics assessment](report-analytics.md): DuckDB, pandas, Polars and simpler alternatives; schema-3 and Showboat decisions.

@@ -321,6 +321,7 @@ pub fn render_table_with_options(
                 .map(TerminalNote::Text),
         );
         notes.extend(preempted_entries_note(findings.policy_entries).map(TerminalNote::Text));
+        notes.extend(recognized_mappings_note(findings.policy_entries).map(TerminalNote::Text));
         notes.extend(purpose_changes_note(findings.policy_entries).map(TerminalNote::Text));
         notes
             .extend(members_note(findings.members, MemberNotes::Unclaimed).map(TerminalNote::Text));

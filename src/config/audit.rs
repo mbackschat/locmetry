@@ -8,7 +8,7 @@ use crate::FileRecord;
 use globset::GlobSet;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 /// The list of the configuration an entry belongs to.
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
@@ -18,7 +18,12 @@ pub enum EntryStage {
     Rule,
     Refinement,
     Correction,
+    Mapping,
 }
+
+/// What `preempted` names for files the counter recognized, which a language
+/// mapping cannot change.
+pub const RECOGNITION: &str = "builtin:recognition";
 
 /// What one project entry decided among the measured files.
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
@@ -26,13 +31,13 @@ pub enum EntryStage {
 pub struct PolicyEntry {
     pub id: String,
     pub stage: EntryStage,
-    /// The purpose an override or rule assigns, or the decided purpose a refinement applies to; absent for language corrections, which decide a language.
+    /// The purpose an override or rule assigns, or the decided purpose a refinement applies to; absent for language corrections and mappings, which decide a language.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub purpose: Option<Purpose>,
     /// Files the entry decided, of every kind. A correction to `unrecognized` decides files that count no lines.
     pub files: u64,
     pub code: u64,
-    /// Files the entry matches that an earlier entry, built-in convention, refinement or generated-code marker decided, by its ID, largest first.
+    /// Files the entry matches that an earlier entry, built-in convention, refinement or generated-code marker decided, by its ID, largest first. For a language mapping, an earlier mapping, a correction, or `builtin:recognition` for files the counter recognized: a mapping applies only to unrecognized files.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub preempted: Vec<Preemption>,
     /// The entry's `match` globs that decided no file.
@@ -193,9 +198,10 @@ fn displacements(by_decision: BTreeMap<String, (u64, u64)>) -> Vec<Displacement>
 }
 
 impl Policy {
-    /// The project's overrides, rules, refinements and language corrections,
-    /// in that order, with what each decided among `rows`; `corrections` maps every
-    /// selected file a correction decided, counted or not, to its ID.
+    /// The project's overrides, rules, refinements, language corrections and
+    /// language mappings, in that order, with what each decided among `rows`;
+    /// `corrections` maps every selected file a correction decided, counted or
+    /// not, to its ID.
     pub fn policy_entries(
         &self,
         rows: &[FileRecord],
@@ -232,6 +238,7 @@ impl Policy {
             .collect();
         entries.extend(self.refinement_entries(rows));
         entries.extend(self.correction_entries(rows, corrections));
+        entries.extend(self.mapping_entries(rows, corrections));
         entries
     }
 
@@ -308,6 +315,63 @@ impl Policy {
                     EntryStage::Correction,
                     None,
                     &correction.patterns,
+                    &[],
+                )
+            })
+            .collect()
+    }
+
+    /// A mapping decides the files it counted; it loses every other file it
+    /// matches to whatever settled that file's language first.
+    fn mapping_entries(
+        &self,
+        rows: &[FileRecord],
+        corrections: &BTreeMap<String, String>,
+    ) -> Vec<PolicyEntry> {
+        let mappings = &self.languages[..self.project_mappings];
+        let mut tallies: Vec<Tally> = mappings
+            .iter()
+            .map(|mapping| Tally::new(&mapping.patterns, &[]))
+            .collect();
+        let counted: BTreeSet<&str> = rows.iter().map(|row| row.path.as_str()).collect();
+        // A correction to `unrecognized` leaves no row, but still preempts.
+        let uncounted = corrections
+            .iter()
+            .filter(|(path, _)| !counted.contains(path.as_str()))
+            .map(|(path, id)| (path.as_str(), Some(id), 0));
+        let decisions = rows
+            .iter()
+            .map(|row| {
+                let settled = row
+                    .language_mapping
+                    .as_ref()
+                    .or(row.language_correction.as_ref());
+                (row.path.as_str(), settled, row.counts.code)
+            })
+            .chain(uncounted);
+        for (path, settled, code) in decisions {
+            for (mapping, tally) in mappings.iter().zip(&mut tallies) {
+                if !mapping.matcher.is_match(path) {
+                    continue;
+                }
+                match settled {
+                    Some(id) if *id == mapping.id => {
+                        tally.decided(&mapping.matcher, path, code, None)
+                    }
+                    Some(id) => tally.preempted_by(id),
+                    None => tally.preempted_by(RECOGNITION),
+                }
+            }
+        }
+        tallies
+            .into_iter()
+            .zip(mappings)
+            .map(|(tally, mapping)| {
+                tally.entry(
+                    &mapping.id,
+                    EntryStage::Mapping,
+                    None,
+                    &mapping.patterns,
                     &[],
                 )
             })

@@ -111,7 +111,7 @@ fn id_errors_say_which_rule_an_id_breaks() {
         "{RULE}match = [\"a/**\"]\npurpose = \"test\"\n[[rules]]\nid = \"r\"\nmatch = [\"b/**\"]\npurpose = \"test\"\n"
     ));
     assert!(
-        stderr.contains("Entry ID 'r' is used more than once. IDs are unique across overrides, rules, refinements and language corrections."),
+        stderr.contains("Entry ID 'r' is used more than once. IDs are unique across overrides, rules, refinements and language mappings and corrections."),
         "{stderr}"
     );
     let stderr =

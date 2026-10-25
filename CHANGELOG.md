@@ -4,6 +4,14 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking:** a project's language mappings share the ID space of overrides, rules, refinements and corrections, because reports now list them together; a mapping whose ID repeats one of theirs fails with the repeated-ID error. Personal mappings are unaffected.
+
+### Fixed
+
+- A language mapping that matches files the counter already recognizes, such as `*.spec` mapped to Plain Text while the counter reads RPM Specfile, no longer does nothing silently. `--verbose` and the Markdown report name it and point to `[[languages.corrections]]`, `summary.policy_entries` reports each project mapping with the files it counted and those the counter recognized (`builtin:recognition`), and a mapping that counts no file appears in `summary.unused_entries`.
+
 ## [0.11.1] - 2026-10-25
 
 ### Added

@@ -183,9 +183,10 @@ fn reference_use(purpose: Purpose, name: &str) -> Option<&'static str> {
 }
 
 /// Rejects empty, duplicate, and reserved entry IDs across all stages.
-/// Overrides, rules, refinements and language corrections share one ID
-/// space, because `summary.unused_entries` lists them together.
-pub(super) fn check_entry_ids(config: &ConfigFile) -> Result<()> {
+/// Overrides, rules, refinements and the project's language mappings and
+/// corrections share one ID space, because `summary.unused_entries` lists them
+/// together; personal mappings stay out of that list and this check.
+pub(super) fn check_entry_ids(config: &ConfigFile, project_mappings: usize) -> Result<()> {
     check_ids(
         config
             .overrides
@@ -193,6 +194,11 @@ pub(super) fn check_entry_ids(config: &ConfigFile) -> Result<()> {
             .chain(&config.rules)
             .map(|entry| entry.id.as_str())
             .chain(config.refinements.iter().map(|r| r.id.as_str()))
+            .chain(
+                config.languages.mappings[..project_mappings]
+                    .iter()
+                    .map(|m| m.id.as_str()),
+            )
             .chain(config.languages.corrections.iter().map(|c| c.id.as_str())),
     )
 }
@@ -203,7 +209,7 @@ pub(super) fn check_ids<'a>(ids: impl IntoIterator<Item = &'a str>) -> Result<()
         ensure!(!id.is_empty(), "An entry has an empty ID.");
         ensure!(
             seen.insert(id),
-            "Entry ID '{id}' is used more than once. IDs are unique across overrides, rules, refinements and language corrections."
+            "Entry ID '{id}' is used more than once. IDs are unique across overrides, rules, refinements and language mappings and corrections."
         );
         ensure!(
             id != FALLBACK && !id.starts_with(BUILTIN),
