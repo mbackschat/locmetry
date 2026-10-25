@@ -535,3 +535,26 @@ fn the_man_page_turns_off_hyphenation() {
     lines.next();
     assert_eq!(lines.next(), Some(".nh"));
 }
+
+/// clap_mangen 0.3.3 sets each possible value as an `.IP` paragraph, and
+/// `.IP` keeps the paragraph gap, so every value list was double-spaced in
+/// `man` (reported 2026-10-25) while `--help` lists them line by line.
+#[test]
+fn the_man_page_lists_possible_values_without_gaps_between_them() {
+    let page = generate("man");
+    let lines: Vec<&str> = page.lines().collect();
+    let lists: Vec<usize> = (1..lines.len())
+        .filter(|&at| lines[at - 1] == "\\fIPossible values:\\fR")
+        .collect();
+    assert!(!lists.is_empty());
+    for at in lists {
+        assert!(lines[at].starts_with(".RS "), "{}", lines[at]);
+        assert_eq!(lines[at + 1], ".PD 0", "after {}", lines[at - 1]);
+        let end = at + lines[at..].iter().position(|line| *line == ".RE").unwrap();
+        assert_eq!(
+            lines.get(end + 1),
+            Some(&".PD"),
+            "after the list at line {at}"
+        );
+    }
+}

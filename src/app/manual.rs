@@ -185,16 +185,27 @@ impl Page {
     /// The preamble once, and two repairs that keep `mandoc -T lint` free of
     /// warnings: a paragraph macro directly after a heading is redundant, and
     /// clap_mangen 0.3.3 separates help from possible values by two breaks
-    /// around a blank line, which is one vertical space.
+    /// around a blank line, which is one vertical space. A third keeps
+    /// possible values on consecutive lines, as `--help` lists them:
+    /// clap_mangen sets each as an `.IP` paragraph, which keeps the paragraph
+    /// gap, so the list sets it to zero and restores it after `.RE`.
     fn finish(self) -> String {
         let text = self.text.replace(".br\n\n.br\n", ".sp\n");
         let mut page = Roff::new().render();
         let mut previous = "";
+        let mut values = false;
         for line in text.lines() {
             let heading = previous.starts_with(".SH ") || previous.starts_with(".SS ");
             if !(heading && line == ".PP") {
                 page += line;
                 page += "\n";
+            }
+            if previous == "\\fIPossible values:\\fR" && line.starts_with(".RS ") {
+                page += ".PD 0\n";
+                values = true;
+            } else if values && line == ".RE" {
+                page += ".PD\n";
+                values = false;
             }
             previous = line;
         }

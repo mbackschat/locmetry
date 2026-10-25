@@ -4,6 +4,10 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 
 ## [Unreleased]
 
+### Fixed
+
+- The man page lists the possible values of an option on consecutive lines, as `--help` does, instead of with an empty line between each.
+
 ## [0.11.0] - 2026-10-25
 
 ### Added
