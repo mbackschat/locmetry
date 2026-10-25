@@ -14,7 +14,7 @@ from pathlib import Path
 import sys
 
 REPO = Path(__file__).resolve().parents[1]
-RESULTS = REPO / "docs/research"
+RESULTS = REPO / "docs/research/agents"
 DOCUMENT = REPO / "docs/agent-regression-checks.md"
 START = "<!-- agent-regression-trend:start -->"
 END = "<!-- agent-regression-trend:end -->"

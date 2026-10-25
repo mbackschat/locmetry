@@ -1,6 +1,6 @@
 //! Wording and hints for configuration errors. Agents repairing broken
 //! `.locmetryrc` files read the schema or guessed after the parser's bare
-//! messages (docs/research/agent-experiments-2026-10-25.md), so each error
+//! messages (docs/research/agents/experiments-2026-10-25.md), so each error
 //! names the likely fix where the fault allows one.
 use tokei::LanguageType;
 

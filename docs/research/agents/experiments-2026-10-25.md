@@ -1,10 +1,10 @@
 # Experiments on the Categorization Feedback, 2026-10-25
 
-Three projects categorized their tests with Locmetry 0.11.0 and reported friction: a12-rulekit, bpmn-lean-experiment and a private Lean project. Their agents then answered follow-up questions from their session evidence. These experiments checked the claims before deciding. They are informal: Claude agents in this repository's session, not the Codex runner and frozen protocol of the [agent regression checks](../agent-regression-checks.md), and the samples are small. Private projects' figures stay in the Git-ignored local folder.
+Three projects categorized their tests with Locmetry 0.11.0 and reported friction: a12-rulekit, bpmn-lean-experiment and a private Lean project. Their agents then answered follow-up questions from their session evidence. These experiments checked the claims before deciding. They are informal: Claude agents in this repository's session, not the Codex runner and frozen protocol of the [agent regression checks](../../agent-regression-checks.md), and the samples are small. Private projects' figures stay in the Git-ignored local folder.
 
 ## Table options in pipes
 
-The agents had piped table options such as `--show-categories` into `head` or `sed` with stderr merged and received the JSON headline. On the [synthetic workspace](../../examples/cli-workspace/README.md) with 0.11.0:
+The agents had piped table options such as `--show-categories` into `head` or `sed` with stderr merged and received the JSON headline. On the [synthetic workspace](../../../examples/cli-workspace/README.md) with 0.11.0:
 
 | Pattern | Result |
 | --- | --- |
@@ -15,7 +15,7 @@ The agents had piped table options such as `--show-categories` into `head` or `s
 
 Every table-only option warned alone in a pipe; `--sort` is silent because Markdown uses it too. No environment variable or personal default sets the format.
 
-A blind A/B then gave six fresh agents (Sonnet at `xhigh`, no terminal) the same task: print the category table and the test-only folder table of a copy of the workspace, learning only from Locmetry's own help. Control was `44c5c9f`, the candidate the [single-format option rule](../proposals/archive/single-format-options.md).
+A blind A/B then gave six fresh agents (Sonnet at `xhigh`, no terminal) the same task: print the category table and the test-only folder table of a copy of the workspace, learning only from Locmetry's own help. Control was `44c5c9f`, the candidate the [single-format option rule](../../proposals/archive/single-format-options.md).
 
 | Arm | Agents | First table command without `--format` | Extra calls from it | Correct tables |
 | --- | ---: | --- | ---: | --- |
@@ -38,7 +38,7 @@ Mapping `.tsv` to Plain Text counts every line as a comment and the files as doc
 
 The owner asked whether an incompatible or invalid `.locmetryrc` gets feedback good enough to repair it. A corpus of 26 broken files, from TOML syntax through unknown fields, wrong types, unknown values, globs and IDs, showed that every error failed fast with exit 1, empty stdout and the file named, but in the parser's wording: `expected a sequence`, `expected u32`, double quotes in a message about TOML strings, and no hint for a likely fix. An unknown field listed the valid ones but did not say that `language_mappings` is written `[[languages.mappings]]`, that `exclude` in an entry is `except`, or that a field may come from a newer release; `[rules]` instead of `[[rules]]` produced `invalid type: map, expected a sequence`.
 
-Two fresh agents (Sonnet at `xhigh`, no terminal) per arm then repaired ten broken configurations, each with a stated intent, using only Locmetry's output and help. The candidate added the hints listed in [PRODUCT](../PRODUCT.md): synonyms and near typos for unknown fields and values, a newer-release note otherwise, case-insensitive language suggestions, the `[[table]]` hint, TOML wording for types, the configuration version Locmetry reads, and which entry and field an invalid glob or ID belongs to.
+Two fresh agents (Sonnet at `xhigh`, no terminal) per arm then repaired ten broken configurations, each with a stated intent, using only Locmetry's output and help. The candidate added the hints listed in [PRODUCT](../../PRODUCT.md): synonyms and near typos for unknown fields and values, a newer-release note otherwise, case-insensitive language suggestions, the `[[table]]` hint, TOML wording for types, the configuration version Locmetry reads, and which entry and field an invalid glob or ID belongs to.
 
 | Arm | Agents | Read the whole `--schema config` | Cases where the agent judged the message not enough or only mostly enough |
 | --- | ---: | --- | --- |

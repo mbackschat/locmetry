@@ -1,6 +1,6 @@
 # Agent Regression Desk Review: Help Split and Category Filter
 
-Evaluated 2026-10-22 under the [agent regression checks](../agent-regression-checks.md#desk-review) by one fresh MEDIUM agent (Claude Code `sonnet` at `xhigh`), acknowledged by the owner. Control: `9a46ad3`, the last ledger candidate. Candidate: `3bec0a3`, which adds `--table-category`, one-line `-h` summaries with the full text kept in `--help` and lowered help budgets, the corrected `test` purpose description in the schemas, the configure guide's section on test support and verification tooling, and "categories" in counted notes. Both were built from `git archive` and run with `NO_COLOR=1`, `COLUMNS=100` and empty personal defaults against a copy of the synthetic [CLI workspace](../../examples/cli-workspace/README.md) and a partial fixture the reviewer created. A desk review does not measure calls or tokens; sizes are bytes.
+Evaluated 2026-10-22 under the [agent regression checks](../../agent-regression-checks.md#desk-review) by one fresh MEDIUM agent (Claude Code `sonnet` at `xhigh`), acknowledged by the owner. Control: `9a46ad3`, the last ledger candidate. Candidate: `3bec0a3`, which adds `--table-category`, one-line `-h` summaries with the full text kept in `--help` and lowered help budgets, the corrected `test` purpose description in the schemas, the configure guide's section on test support and verification tooling, and "categories" in counted notes. Both were built from `git archive` and run with `NO_COLOR=1`, `COLUMNS=100` and empty personal defaults against a copy of the synthetic [CLI workspace](../../../examples/cli-workspace/README.md) and a partial fixture the reviewer created. A desk review does not measure calls or tokens; sizes are bytes.
 
 ## Verdict
 
@@ -55,7 +55,7 @@ The Git-ignored session records of eleven admissible campaigns from 2026-10-20 t
 | C13 | Improvement | The README option table did not list `--table-category`. | Fixed after the review |
 | C14 | Improvement | Schemas and the configure guide agree that runners, harnesses, graders and CI gates are production tooling. | — |
 | C15 | Neutral | Only `category` changed plural form. | — |
-| C16 | Neutral | The gaps of the [0.9.0 review](agent-regression-desk-review-0.9.0.md#findings), B2 and B7, are unchanged and tracked in [PLAN](../PLAN.md); standalone-query errors such as `--guide is a standalone query and cannot be combined with --verbose` left both flags unquoted. | Quoting and B7 fixed after the review; B2 stays accepted |
+| C16 | Neutral | The gaps of the [0.9.0 review](regression-desk-review-0.9.0.md#findings), B2 and B7, are unchanged and tracked in [PLAN](../../PLAN.md); standalone-query errors such as `--guide is a standalone query and cannot be combined with --verbose` left both flags unquoted. | Quoting and B7 fixed after the review; B2 stays accepted |
 | C17 | Neutral | `locmetry help -h` is rejected by clap in both revisions. | — |
 
 ## Limits

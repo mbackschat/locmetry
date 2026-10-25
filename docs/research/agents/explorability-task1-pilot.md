@@ -1,6 +1,6 @@
 # Agent Explorability: First Task 1 Pilot
 
-Evaluated on 2026-10-20 after the owner requested the first experiment using the recommended approach. This is one paired MEDIUM-agent pilot, not a completed benchmark campaign. The [working specification](../plans/agent-explorability-benchmark.md) owns remaining task-oracle and experiment decisions.
+Evaluated on 2026-10-20 after the owner requested the first experiment using the recommended approach. This is one paired MEDIUM-agent pilot, not a completed benchmark campaign. The [working specification](../../plans/agent-explorability-benchmark.md) owns remaining task-oracle and experiment decisions.
 
 ## Finding
 
@@ -12,7 +12,7 @@ Recommendation after checking both answers, reports, and telemetry: leave the pr
 
 ## Frozen Pilot Inputs
 
-Pilot revision: `task1-pilot-v1`. The [task definition](../../tests/fixtures/agent-explorability/task1.json) contains exact fixture contents, prompt, expected values, provisional grading rule, and limits. The [harness](../../scripts/agent-explorability.py) prepares isolated source copies and task directories, verifies the treatment, invokes the explorers, and captures telemetry. Product source files were not edited.
+Pilot revision: `task1-pilot-v1`. The [task definition](../../../tests/fixtures/agent-explorability/task1.json) contains exact fixture contents, prompt, expected values, provisional grading rule, and limits. The [harness](../../../scripts/agent-explorability.py) prepares isolated source copies and task directories, verifies the treatment, invokes the explorers, and captures telemetry. Product source files were not edited.
 
 Both explorers were fresh outside-repository sessions using actual model `gpt-6.1-sol` with `xhigh` effort. The harness inspected the session context and confirmed the requested model/effort and absence of Locmetry repository instructions. General user/framework instructions remained identical in kind and contribute to token usage. Both agents received identical prompts and fixture contents, had empty isolated personal configuration, and used nonterminal output with `COLUMNS=100`, `NO_COLOR=1`, and `LC_ALL=C`. The command transcripts contained only local fixture inventory and permitted binary invocations; no product source or external documentation was consulted.
 

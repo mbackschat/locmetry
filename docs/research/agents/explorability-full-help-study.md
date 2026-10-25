@@ -1,10 +1,10 @@
 # Full-Feature Help Study
 
-The owner clarified that the desired result is a complete agent-facing help experience across supported features, rather than one successful configuration example. This study evaluates the combined interface against the adopted configuration-route baseline. It follows the [feature inventory](../help-design.md#current-feature-inventory), [help-design guidelines](../help-design.md) and reusable [benchmark](../plans/agent-explorability-benchmark.md).
+The owner clarified that the desired result is a complete agent-facing help experience across supported features, rather than one successful configuration example. This study evaluates the combined interface against the adopted configuration-route baseline. It follows the [feature inventory](../../help-design.md#current-feature-inventory), [help-design guidelines](../../help-design.md) and reusable [benchmark](../../plans/agent-explorability-benchmark.md).
 
 ## Design Fixed Before Trials
 
-The [protocol](../../tests/fixtures/agent-explorability/full-help-study.json) freezes ten tasks, four independent pairs per task, AB and BA twice each, and 80 sessions in total. Each session uses fresh MEDIUM (`gpt-6.1-sol`, `xhigh`) context, isolated synthetic files and personal defaults, and only the executable's own product documentation. No historical trial is pooled. Three pairs can run concurrently; the two arms within each pair run sequentially.
+The [protocol](../../../tests/fixtures/agent-explorability/full-help-study.json) freezes ten tasks, four independent pairs per task, AB and BA twice each, and 80 sessions in total. Each session uses fresh MEDIUM (`gpt-6.1-sol`, `xhigh`) context, isolated synthetic files and personal defaults, and only the executable's own product documentation. No historical trial is pooled. Three pairs can run concurrently; the two arms within each pair run sequentially.
 
 Control A is `c17fece1c4415f3b871ff9694ef6c30d70ae0074`: the adopted configuration example/routing plus a factual correction shared by both arms, changing workspace-ratio documentation from Lines to Code. Candidate B is `6fdaef3`: task-oriented root notes and additional measurement examples, plus workspace, compare and explain recipes and constraints. Guides, schemas, counting and report behavior remain the same. The candidate is one combined package; this experiment cannot attribute an effect to an individual sentence.
 
@@ -15,16 +15,16 @@ Control A is `c17fece1c4415f3b871ff9694ef6c30d70ae0074`: the adopted configurati
 
 | Task | Frozen definition | Main oracle |
 | --- | --- | --- |
-| 1: report interpretation | [Task 1](../../tests/fixtures/agent-explorability/task1.json) | Source/all-counted totals, Code ratio, unknown size |
-| 2: JSON and CI | [Task 2](../../tests/fixtures/agent-explorability/task2.json) | One scan, full per-file data, human output, correct complete/partial/failure status |
-| 3: broader configuration | [Task 3](../../tests/fixtures/agent-explorability/task3.json) | Exclusion, maintained source, intentional Other, preserved inference and unresolved review |
-| 4: saved comparison | [Task 4](../../tests/fixtures/agent-explorability/task4.json) | Captured full baselines, exact mutation/delta, rejected headline, net-change interpretation |
-| 5: workspaces | [Task 5](../../tests/fixtures/agent-explorability/task5.json) | File/direct equivalence, member contributions, weighted Code ratio, departure interpretation |
-| 6: explanation | [Task 6](../../tests/fixtures/agent-explorability/task6.json) | Selection and classification states, module/rule evidence, member-relative policy |
-| 7: discovery | [Revised Task 7](../../tests/fixtures/agent-explorability/task7-full-help.json) | Unchanged 13-family coverage rubric, four valid workflows and four explicitly requested semantic families |
-| 9: simple configuration | [Task 9](../../tests/fixtures/agent-explorability/task9.json) | Narrow production rule, preserved test/module decisions and unresolved source |
-| 10: scope and views | [Task 10](../../tests/fixtures/agent-explorability/task10.json) | Retained root context, CLI exclusions, hidden/ignore behavior, filtered table and recursive Markdown |
-| 11: advanced and personal policy | [Task 11](../../tests/fixtures/agent-explorability/task11.json) | Override precedence, project/personal mappings, opt-out effects and preserved existing policy |
+| 1: report interpretation | [Task 1](../../../tests/fixtures/agent-explorability/task1.json) | Source/all-counted totals, Code ratio, unknown size |
+| 2: JSON and CI | [Task 2](../../../tests/fixtures/agent-explorability/task2.json) | One scan, full per-file data, human output, correct complete/partial/failure status |
+| 3: broader configuration | [Task 3](../../../tests/fixtures/agent-explorability/task3.json) | Exclusion, maintained source, intentional Other, preserved inference and unresolved review |
+| 4: saved comparison | [Task 4](../../../tests/fixtures/agent-explorability/task4.json) | Captured full baselines, exact mutation/delta, rejected headline, net-change interpretation |
+| 5: workspaces | [Task 5](../../../tests/fixtures/agent-explorability/task5.json) | File/direct equivalence, member contributions, weighted Code ratio, departure interpretation |
+| 6: explanation | [Task 6](../../../tests/fixtures/agent-explorability/task6.json) | Selection and classification states, module/rule evidence, member-relative policy |
+| 7: discovery | [Revised Task 7](../../../tests/fixtures/agent-explorability/task7-full-help.json) | Unchanged 13-family coverage rubric, four valid workflows and four explicitly requested semantic families |
+| 9: simple configuration | [Task 9](../../../tests/fixtures/agent-explorability/task9.json) | Narrow production rule, preserved test/module decisions and unresolved source |
+| 10: scope and views | [Task 10](../../../tests/fixtures/agent-explorability/task10.json) | Retained root context, CLI exclusions, hidden/ignore behavior, filtered table and recursive Markdown |
+| 11: advanced and personal policy | [Task 11](../../../tests/fixtures/agent-explorability/task11.json) | Override precedence, project/personal mappings, opt-out effects and preserved existing policy |
 
 The new scope and advanced-policy oracles were independently hand-calculated and checked against the control before launch. Their artifact grader passed live synthetic replays with 154 and 263 checks respectively. Eleven scorer regressions include rejected wrong counts, paths, decisions, policy changes and read-only discovery violations. Seventeen harness regressions cover isolated defaults, explicit prebuilt provenance, frozen inputs, balanced scheduling, concurrency and rejection of altered graders or repeated launches.
 
@@ -42,7 +42,7 @@ Before freezing the candidate, 91 focused help, guide, README, query, comparison
 
 ## Results
 
-Both conditions passed **40/40** artifact and independently reviewed final-answer checks. All eight discovery maps covered **13/13** families, supplied four valid workflows and correctly covered all four requested semantic families. The independent native-session audit completed 1,137 checks without an integrity failure. See the [portable per-run results](agent-explorability-full-help-results.json).
+Both conditions passed **40/40** artifact and independently reviewed final-answer checks. All eight discovery maps covered **13/13** families, supplied four valid workflows and correctly covered all four requested semantic families. The independent native-session audit completed 1,137 checks without an integrity failure. See the [portable per-run results](explorability-full-help-results.json).
 
 | Task | Median calls A → B | Median uncached input A → B |
 | --- | ---: | ---: |
@@ -67,13 +67,13 @@ Elapsed time is measured through harness completion and copying, not exact final
 
 ## Targeted Comparison-Routing Correction
 
-The [separate correction protocol](../../tests/fixtures/agent-explorability/compare-help-routing-study.json) fixes 32 fresh sessions before launch: Tasks 1, 4, 5 and 7, with four balanced pairs each against the original control. The candidate adds explicit optional-reference execution routing in root and comparison help while retaining the full feature inventory and recipes.
+The [separate correction protocol](../../../tests/fixtures/agent-explorability/compare-help-routing-study.json) fixes 32 fresh sessions before launch: Tasks 1, 4, 5 and 7, with four balanced pairs each against the original control. The candidate adds explicit optional-reference execution routing in root and comparison help while retaining the full feature inventory and recipes.
 
 The corrected candidate is `c9098e20a3dade541c61ca8ca2bc347943e672be`, native SHA-256 `882fe74a64f6df405f47deaa9cfc6f88190bbd337f4c7531183e36b926f35a05`. Its routing regression fails against the earlier help and passes with the correction; 61 focused Rust tests, formatting and Clippy pass.
 
 The same correctness and numeric cost limits apply. No original trial is replaced or pooled; the other six tasks are not remeasured by this correction.
 
-Independent answer review passed **16/16 candidate runs and 15/16 control runs**, with no critical error. All 32 artifact checks passed. All eight discovery maps covered 13/13 capability families and supplied valid workflow commands; one control answer omitted that unrecognized files have unavailable counts. Every candidate answer covered all four required semantic families. The independent audit completed 484 checks without an integrity failure; all primary cost gates pass with no secondary flags. See the [portable correction results](agent-explorability-compare-routing-results.json).
+Independent answer review passed **16/16 candidate runs and 15/16 control runs**, with no critical error. All 32 artifact checks passed. All eight discovery maps covered 13/13 capability families and supplied valid workflow commands; one control answer omitted that unrecognized files have unavailable counts. Every candidate answer covered all four required semantic families. The independent audit completed 484 checks without an integrity failure; all primary cost gates pass with no secondary flags. See the [portable correction results](explorability-compare-routing-results.json).
 
 | Task | Median calls A → B | Median uncached input A → B |
 | --- | ---: | ---: |
@@ -88,12 +88,12 @@ The original 80-session failure and secondary flags remain unchanged. The six ta
 
 ## Adoption Decision
 
-Adopt the full-feature help with the comparison-routing correction. The 16-family inventory now has actionable routes and executable guards; the broad 80-session study establishes coverage across ten tasks, and the separate correction passes its frozen correctness and cost gates. Keep root help task-oriented, put workspace/compare/explain recipes in command help, and retain guides and schemas as optional deeper references. The [help-design guidelines](../help-design.md) own future additions, placement rationales and the current inventory. The [completed implementation record](../plans/archive/full-help-coverage.md) closes this scope.
+Adopt the full-feature help with the comparison-routing correction. The 16-family inventory now has actionable routes and executable guards; the broad 80-session study establishes coverage across ten tasks, and the separate correction passes its frozen correctness and cost gates. Keep root help task-oriented, put workspace/compare/explain recipes in command help, and retain guides and schemas as optional deeper references. The [help-design guidelines](../../help-design.md) own future additions, placement rationales and the current inventory. The [completed implementation record](../../plans/archive/full-help-coverage.md) closes this scope.
 
 This is a complete feature-coverage change with bounded experimental support, not proof of perfect help or a universal speedup. There is no unresolved correctness or discovery defect in the candidate sample. The original cost failure, advanced-policy secondary flags, discovery token increase and six-task remeasurement boundary remain part of the evidence. Do not repeat unchanged trials to improve the headline result; future feature or model changes need a new frozen campaign.
 
 ## Replay and Evidence
 
-Use the committed [runner](../../scripts/full-help-study.py), [artifact grader](../../scripts/score_full_help.py), task definitions and protocol. Build exact source revisions into separate scratch directories without changing the working tree, or supply the recorded native binaries. Freeze with `--prepare-only`, inspect the manifests, then launch with `--run-frozen`. The runner refuses a second launch of a started campaign. Source declarations for prebuilt arms are separate from preparation-repository hashes; neither is presented as a source tree copied from the other arm.
+Use the committed [runner](../../../scripts/full-help-study.py), [artifact grader](../../../scripts/score_full_help.py), task definitions and protocol. Build exact source revisions into separate scratch directories without changing the working tree, or supply the recorded native binaries. Freeze with `--prepare-only`, inspect the manifests, then launch with `--run-frozen`. The runner refuses a second launch of a started campaign. Source declarations for prebuilt arms are separate from preparation-repository hashes; neither is presented as a source tree copied from the other arm.
 
 Raw sessions, account/framework context, delivered artifacts, blinded review packets and telemetry audits are retained only in ignored `docs/research/local/agent-explorability/2026-10-20-full-help-v1/` and `docs/research/local/agent-explorability/2026-10-20-compare-help-routing-v1/`. Public summaries must contain only portable synthetic results and provenance. Final cumulative usage is checked against native session/events; output already includes reasoning and must not be added twice. Evaluator probes are excluded by the recorded explorer-completion boundary.

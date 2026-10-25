@@ -295,7 +295,7 @@ def context_growth(rows):
     the instructions every session shares; a request smaller than its
     predecessor, as after compaction, adds nothing and is counted instead. The
     first diagnostic of 2026-10-24 subtracted the first request's cached input,
-    which cross-session cache hits make vary (docs/research/agent-regression-run-2026-10-24.md).
+    which cross-session cache hits make vary (docs/research/agents/regression-run-2026-10-24.md).
     """
     inputs = [info["last_token_usage"]["input_tokens"] for info in token_counts(rows)]
     steps = [after - before for before, after in zip(inputs, inputs[1:])]

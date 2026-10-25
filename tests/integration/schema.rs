@@ -264,7 +264,7 @@ fn config_schema_lists_language_names() {
 
 /// Mappings and corrections share one list of language names: a second copy
 /// cost every schema that embeds the configuration 7.5 KB of reading
-/// (docs/research/agent-regression-desk-review-2026-10-23.md, D1).
+/// (docs/research/agents/regression-desk-review-2026-10-23.md, D1).
 #[test]
 fn schemas_define_language_names_once() {
     for name in ["config", "report", "comparison"] {

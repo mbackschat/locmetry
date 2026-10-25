@@ -4,7 +4,7 @@
 
 ## Next
 
-1. **Per-file comparison**, activated by the owner on 2026-10-25 as the next item: native per-file transitions in `compare`, so a policy review no longer needs its own join of two `--files` reports. Every agent session reviewing a workspace policy change wrote one ([feedback round](research/agent-feedback-2026-10-25.md#findings-as-verified)), and the file-transition helper accepts single-root reports only. Start from the [retained design](plans/measurement-quality-and-net-change.md#per-file-comparison), which adds `compare --files`.
+1. **Per-file comparison**, activated by the owner on 2026-10-25 as the next item: native per-file transitions in `compare`, so a policy review no longer needs its own join of two `--files` reports. Every agent session reviewing a workspace policy change wrote one ([feedback round](research/agents/feedback-2026-10-25.md#findings-as-verified)), and the file-transition helper accepts single-root reports only. Start from the [retained design](plans/measurement-quality-and-net-change.md#per-file-comparison), which adds `compare --files`.
    - Proposal first, settling the human summary of transitions, matching workspace members, and paths counted or known on one side only.
    - Implement test-first, with workspace reports covered.
    - Run a targeted [agent regression check](agent-regression-checks.md) with a per-file review task before the release, as a new flag and report section require.
@@ -29,7 +29,7 @@ The [proposal index](proposals/README.md) distinguishes active designs from hist
 - [Manual page, completions and reference topic](proposals/archive/manual-and-reference.md): `--generate`, the man page, shell completions and the reference guide, implemented 2026-10-24 and verified 2026-10-25; the record links the shell checks and the desk review.
 - [Guide sections and task index](proposals/archive/guide-sections.md): `--section`, the task index and direct help routes, adopted 2026-10-24 with the category reference after three agent runs; the record links the runs and the decision.
 - [Category reference](proposals/archive/category-reference.md): the embedded category guide, its guards and the aligned model policies, implemented 2026-10-24.
-- [Single-format options select their format](proposals/archive/single-format-options.md): table, Markdown and file-detail options choose their format without `--format` or `--output`, decided 2026-10-25 from the categorization feedback and [experiments](research/agent-experiments-2026-10-25.md).
+- [Single-format options select their format](proposals/archive/single-format-options.md): table, Markdown and file-detail options choose their format without `--format` or `--output`, decided 2026-10-25 from the categorization feedback and [experiments](research/agents/experiments-2026-10-25.md).
 - [Reviewable policy entries and category refinements](proposals/archive/policy-entry-review.md): `except`, per-entry audit and refinements, implemented 2026-10-24 from three projects' test-categorization feedback.
 - [Test/production ratio design](plans/archive/test-production-ratios.md): research behind neutral, unbanded ratios.
 - [Research index](research/README.md): dated findings and source provenance.

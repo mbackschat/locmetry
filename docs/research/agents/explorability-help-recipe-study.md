@@ -1,6 +1,6 @@
 # Agent Explorability: Configuration Recipe in Help
 
-Study started 2026-10-20. This directly revisits the owner's earlier proposal to put usage examples at the end of help, as man pages do. The assistant had argued against that proposal and subsequently recommended a similar experiment without crediting it; that earlier dismissal was too broad. The owner authorized this follow-up after the [guide-removal study](agent-explorability-six-task-study.md). This record tests the example's effect rather than assuming it helps or hurts.
+Study started 2026-10-20. This directly revisits the owner's earlier proposal to put usage examples at the end of help, as man pages do. The assistant had argued against that proposal and subsequently recommended a similar experiment without crediting it; that earlier dismissal was too broad. The owner authorized this follow-up after the [guide-removal study](explorability-six-task-study.md). This record tests the example's effect rather than assuming it helps or hurts.
 
 ## Finding
 
@@ -8,15 +8,15 @@ Do not adopt this particular help addition. All 32 fresh MEDIUM sessions passed,
 
 ## Frozen Design
 
-The [study definition](../../tests/fixtures/agent-explorability/help-recipe-study.json) fixes two conditions: A is the current executable; B adds the exact [435-byte recipe](../../tests/fixtures/agent-explorability/help-recipe.txt) at the end of root long help's examples, immediately before the existing guide-reference paragraph. Both retain all guides, schemas, options, and output behavior. The recipe shows a valid TOML production rule for maintained `scripts/**`, a custom category, root-relative matching and test/build precedence, followed by a per-file JSON export plus human overview command. It does not supply the full solution for either configuration case. Short help and subcommand help are unchanged.
+The [study definition](../../../tests/fixtures/agent-explorability/help-recipe-study.json) fixes two conditions: A is the current executable; B adds the exact [435-byte recipe](../../../tests/fixtures/agent-explorability/help-recipe.txt) at the end of root long help's examples, immediately before the existing guide-reference paragraph. Both retain all guides, schemas, options, and output behavior. The recipe shows a valid TOML production rule for maintained `scripts/**`, a custom category, root-relative matching and test/build precedence, followed by a per-file JSON export plus human overview command. It does not supply the full solution for either configuration case. Short help and subcommand help are unchanged.
 
 The study runs 24 fresh MEDIUM sessions: three tasks × two conditions × four repetitions. Actual configuration is `gpt-6.1-sol` with `xhigh` effort. No previous sessions count toward this sample. Pairs alternate A-first/B-first, with two of each order per task. Up to three pairs run concurrently, arms sequentially within pairs. Task prompts, fixtures, treatment, budgets, runner, and grader hashes are frozen before launch.
 
 | Task | Purpose | Oracle |
 | --- | --- | --- |
-| [Task 3](../../tests/fixtures/agent-explorability/task3.json) | Original npm/Python configuration task; direct comparison with current help, using fresh controls. | Production tooling, intentional Other examples, vendor exclusion, preserved inference/tests, unresolved scratch retained for review. |
-| [Task 8](../../tests/fixtures/agent-explorability/task8.json) | Independently designed Cargo/Rust/shell layout; tests transfer beyond the fixture used to motivate the recipe. | Source Files 6, Lines 21, Code 16; Production/Test/Other Code 8/4/4. All-counted Files 9, Lines 30, Code 22. Only `scratch/probe.rs` remains review. |
-| [Task 1](../../tests/fixtures/agent-explorability/task1.json) | Unrelated report-understanding task; measures the reading cost of longer help. | Original source/all-counted figures, Code-based Test/prod, non-source interpretation, and unknown unrecognized counts. |
+| [Task 3](../../../tests/fixtures/agent-explorability/task3.json) | Original npm/Python configuration task; direct comparison with current help, using fresh controls. | Production tooling, intentional Other examples, vendor exclusion, preserved inference/tests, unresolved scratch retained for review. |
+| [Task 8](../../../tests/fixtures/agent-explorability/task8.json) | Independently designed Cargo/Rust/shell layout; tests transfer beyond the fixture used to motivate the recipe. | Source Files 6, Lines 21, Code 16; Production/Test/Other Code 8/4/4. All-counted Files 9, Lines 30, Code 22. Only `scratch/probe.rs` remains review. |
+| [Task 1](../../../tests/fixtures/agent-explorability/task1.json) | Unrelated report-understanding task; measures the reading cost of longer help. | Original source/all-counted figures, Code-based Test/prod, non-source interpretation, and unknown unrecognized counts. |
 
 Task 8 was independently authored and validated before trial execution. Its author did not inspect the recipe; a broad search incidentally exposed only the generic verification-command heading after the layout had been selected. The fixture has different languages, files, counts, module inference, and no unrecognized asset. Its counts and exact per-file decisions were validated with both executables. The configuration tasks retain the same substantive difficulty; Task 8 explicitly requests all-counted figures as well, so comparisons are within each task, never directly between tasks.
 
@@ -38,7 +38,7 @@ The runner gained an explicit treatment selector and configurable task/repetitio
 
 ## Supplementary Simple-Rule Probe
 
-The primary configuration cases need exclusions and intentional Other rules beyond the displayed example. A separate [Task 9](../../tests/fixtures/agent-explorability/task9.json) tests a single production rule, custom category, retained conventional tests and unresolved review work; its required syntax is covered by the recipe. This limitation and the [supplementary definition](../../tests/fixtures/agent-explorability/help-recipe-simple-study.json) were recorded before primary aggregate results were inspected, although individual primary runs and artifact results had been observed. Its eight new sessions are not pooled with the primary sample and cannot override the original adoption gate. Four pairs alternate launch order; at most two pairs run concurrently. Both frozen native binaries are reused.
+The primary configuration cases need exclusions and intentional Other rules beyond the displayed example. A separate [Task 9](../../../tests/fixtures/agent-explorability/task9.json) tests a single production rule, custom category, retained conventional tests and unresolved review work; its required syntax is covered by the recipe. This limitation and the [supplementary definition](../../../tests/fixtures/agent-explorability/help-recipe-simple-study.json) were recorded before primary aggregate results were inspected, although individual primary runs and artifact results had been observed. Its eight new sessions are not pooled with the primary sample and cannot override the original adoption gate. Four pairs alternate launch order; at most two pairs run concurrently. Both frozen native binaries are reused.
 
 The supplementary gate requires all B runs to pass and at least three of four paired wins on the improved metric: either one fewer median agent call with uncached input no more than 5% higher, or at least 10% lower median uncached input with calls no higher. The source oracle is Files 3, Lines 5, Code 4; Production/Test/Other Code 2/1/1, with only `notes/probe.py` unresolved. Both native binaries independently reproduce it.
 
@@ -68,7 +68,7 @@ A is current help; B adds the example. Output includes reasoning and must not ha
 
 Every run started with `--help`. All sixteen configuration runs still read `--guide configure` and `--schema config`; the example did not eliminate either retrieval in this sample. Across all primary runs A made 18 guide calls and B 19; each made 10 config-schema calls, including repeats. B made fewer CLI calls overall but consumed more uncached input. These are observed routes, not proof that guide references caused the additional reading.
 
-The [machine-readable results](agent-explorability-help-recipe-results.json) retain per-run costs, medians, ranges, paired wins, guide/schema retrievals and outcomes. Durations are through final delivery, not first verified success. Concurrent execution makes timing diagnostic, and token caching is reported separately rather than treated as a fixed price.
+The [machine-readable results](explorability-help-recipe-results.json) retain per-run costs, medians, ranges, paired wins, guide/schema retrievals and outcomes. Durations are through final delivery, not first verified success. Concurrent execution makes timing diagnostic, and token caching is reported separately rather than treated as a fixed price.
 
 ## Supplementary Results
 
@@ -104,13 +104,13 @@ This tests one 435-byte configuration example appended to existing root long hel
 
 The simple probe was designed after individual primary runs had been observed, although before primary aggregate analysis. Its separate protocol and decision gate preserve that provenance; it is not a replacement confirmatory sample. The small synthetic cases and prompts requesting precise evidence can encourage more verification than ordinary minimal requests. No general statistical significance or production reliability claim follows from these runs.
 
-Uncached input varies with cache behavior and agent trajectories; the observed percentages are not stable token or monetary forecasts. Cached input and output sometimes move in different directions, which is why all resource dimensions remain visible. No token price or aggregate monetary saving was inferred. For subsequent work, use the [benchmark continuation rules](../plans/agent-explorability-benchmark.md#current-state-and-next-session), freeze a genuinely new variable before trials, and preserve these outcomes instead of selecting only favorable repetitions.
+Uncached input varies with cache behavior and agent trajectories; the observed percentages are not stable token or monetary forecasts. Cached input and output sometimes move in different directions, which is why all resource dimensions remain visible. No token price or aggregate monetary saving was inferred. For subsequent work, use the [benchmark continuation rules](../../plans/agent-explorability-benchmark.md#current-state-and-next-session), freeze a genuinely new variable before trials, and preserve these outcomes instead of selecting only favorable repetitions.
 
 ## Evidence and Replay
 
 The primary definition and harness were committed before launch as `d2b4723`; the supplementary definition and Task 9 support were committed before its launch as `7e661eb`. Extending the grader to Task 9 happened only after primary artifact checks completed. The primary archive retains the original grader and its matching hash; the supplementary manifest identifies the extended grader. Neither change modifies Locmetry's runtime. A separate documentation correction (`878e1f6`) changed PRODUCT's fallback category wording to `unclaimed`, matching the existing schema and behavior; it did not alter either binary or any embedded guide.
 
-The [results JSON](agent-explorability-help-recipe-results.json) records both native binary hashes and each protocol's hashes. Replaying changed sources, prompts, models or fixtures creates a new campaign. For a replay from the recorded sources, prepare temporary native copies and verify the exact treatment before launching fresh agents. Build the two targets sequentially, retaining build logs:
+The [results JSON](explorability-help-recipe-results.json) records both native binary hashes and each protocol's hashes. Replaying changed sources, prompts, models or fixtures creates a new campaign. For a replay from the recorded sources, prepare temporary native copies and verify the exact treatment before launching fresh agents. Build the two targets sequentially, retaining build logs:
 
 ```sh
 experiment_root=/tmp/locmetry-help-recipe-replay-build

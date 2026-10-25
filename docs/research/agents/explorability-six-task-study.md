@@ -1,6 +1,6 @@
 # Agent Explorability: Six-Task Guide-Removal Study
 
-Study conducted 2026-10-20 after the owner authorized autonomous experiment design, recording, and a final assessment. The owner requested that recommendations be double-checked. This record extends the [first Task 1 pilot](agent-explorability-task1-pilot.md); the [working benchmark](../plans/agent-explorability-benchmark.md) retains the earlier discussion and historical evidence.
+Study conducted 2026-10-20 after the owner authorized autonomous experiment design, recording, and a final assessment. The owner requested that recommendations be double-checked. This record extends the [first Task 1 pilot](explorability-task1-pilot.md); the [working benchmark](../../plans/agent-explorability-benchmark.md) retains the earlier discussion and historical evidence.
 
 ## Finding
 
@@ -16,12 +16,12 @@ Task definitions were frozen before launching the campaign. The machine-readable
 
 | Task | Frozen definition | Required outcome and principal error risks |
 | --- | --- | --- |
-| 1 — Report understanding | [Task 1](../../tests/fixtures/agent-explorability/task1.json) | Correct source/all-counted figures, purpose Code, Code-based Test/prod, and unknown unrecognized counts. Identical task to the earlier pilot. |
-| 2 — JSON automation | [Task 2](../../tests/fixtures/agent-explorability/task2.json) | A replayable collector saves full per-file JSON and displays a human view from one measurement. Complete, partial, and invalid-configuration probes must preserve statuses 0, 2, and 1. Distinguish an empty file's measured zero from a parse failure's unknown counts and a headline from a baseline. |
-| 3 — Configuration | [Task 3](../../tests/fixtures/agent-explorability/task3.json) | Classify tools and intentional Other, exclude vendor, preserve inference/tests, and leave unresolved scratch counted and in review. Reject blanket classification or exclusion to eliminate uncertainty. |
-| 4 — Comparison | [Task 4](../../tests/fixtures/agent-explorability/task4.json) | Preserve the baseline, apply an exact one-line mutation, produce valid full reports and +1 Code/+1 Line comparison, reject a supplied headline, and explain net change and unrecoverable omitted historical detail. |
-| 5 — Workspace | [Task 5](../../tests/fixtures/agent-explorability/task5.json) | Reconcile file/direct-root measurements and member policies. Compute a deliberately nontrivial aggregate ratio: Test 6 / Production 4 = 1.50. Explain a -5 Code departure as changed measurement membership, not proof of deleted source. |
-| 6 — Explanation | [Task 6](../../tests/fixtures/agent-explorability/task6.json) | Save six complete explanations; distinguish counted, excluded, unrecognized, and counted-but-unclaimed; identify module/rule evidence and member-relative workspace patterns. |
+| 1 — Report understanding | [Task 1](../../../tests/fixtures/agent-explorability/task1.json) | Correct source/all-counted figures, purpose Code, Code-based Test/prod, and unknown unrecognized counts. Identical task to the earlier pilot. |
+| 2 — JSON automation | [Task 2](../../../tests/fixtures/agent-explorability/task2.json) | A replayable collector saves full per-file JSON and displays a human view from one measurement. Complete, partial, and invalid-configuration probes must preserve statuses 0, 2, and 1. Distinguish an empty file's measured zero from a parse failure's unknown counts and a headline from a baseline. |
+| 3 — Configuration | [Task 3](../../../tests/fixtures/agent-explorability/task3.json) | Classify tools and intentional Other, exclude vendor, preserve inference/tests, and leave unresolved scratch counted and in review. Reject blanket classification or exclusion to eliminate uncertainty. |
+| 4 — Comparison | [Task 4](../../../tests/fixtures/agent-explorability/task4.json) | Preserve the baseline, apply an exact one-line mutation, produce valid full reports and +1 Code/+1 Line comparison, reject a supplied headline, and explain net change and unrecoverable omitted historical detail. |
+| 5 — Workspace | [Task 5](../../../tests/fixtures/agent-explorability/task5.json) | Reconcile file/direct-root measurements and member policies. Compute a deliberately nontrivial aggregate ratio: Test 6 / Production 4 = 1.50. Explain a -5 Code departure as changed measurement membership, not proof of deleted source. |
+| 6 — Explanation | [Task 6](../../../tests/fixtures/agent-explorability/task6.json) | Save six complete explanations; distinguish counted, excluded, unrecognized, and counted-but-unclaimed; identify module/rule evidence and member-relative workspace patterns. |
 
 All cases use synthetic data. Existing project files are immutable except the one explicitly requested source mutation in Task 4 and newly created configuration in Task 3. Each task starts independently, with any necessary preexisting policy supplied as fixture data. Task 2 introduces a deterministic invalid-notebook parse failure; Task 5 introduces unequal member ratios and a departing member, extending the earlier exploratory scenarios.
 
@@ -29,13 +29,13 @@ All cases use synthetic data. Existing project files are immutable except the on
 
 Correctness remains the gate. A corrected mistake can pass while its recovery cost remains visible. Missing required work is incomplete; a delivered materially wrong artifact or interpretation is a critical failure. Deliberately requested invalid inputs are negative tests rather than accidental failures. Do not discard failed runs when reporting aggregate resource use.
 
-[Artifact checks](../../scripts/score_agent_explorability.py) validate saved data, remeasure configurations, rerun comparisons, and replay collector scripts on complete, partial, and invalid inputs. Evaluator probes are separated from explorer costs using the recorded completion boundary. Structured checks are not a semantic grader: final claims still need independent review. Missing telemetry, contamination, unsupported model configuration, and harness failures invalidate a trial rather than silently becoming successful executions.
+[Artifact checks](../../../scripts/score_agent_explorability.py) validate saved data, remeasure configurations, rerun comparisons, and replay collector scripts on complete, partial, and invalid inputs. Evaluator probes are separated from explorer costs using the recorded completion boundary. Structured checks are not a semantic grader: final claims still need independent review. Missing telemetry, contamination, unsupported model configuration, and harness failures invalidate a trial rather than silently becoming successful executions.
 
 The decision will distinguish necessity from efficiency. Successful guide-free runs establish feasibility for the tested cases. They do not establish that removing guides improves the interface. A guide-removal recommendation needs preserved correctness and a consistent resource advantage; conflicting tool/token results or task-specific regressions must remain visible. Conversely, retaining optional guides does not require claiming they are indispensable.
 
 ## Harness Changes
 
-The [runner](../../scripts/agent-explorability.py) now accepts a frozen task definition, permitted fixture mutations, generated baseline inputs, and prebuilt A/B binaries. It captures final session logs and counterbalances 18 pairs with bounded concurrency. The prior telemetry reader could silently skip a malformed completed JSONL line, potentially undercounting calls; it now tolerates only an unfinished final line. [Regression tests](../../scripts/test_agent_explorability.py) demonstrated the failure before the fix and verify task-specific seeding. No production CLI behavior changed.
+The [runner](../../../scripts/agent-explorability.py) now accepts a frozen task definition, permitted fixture mutations, generated baseline inputs, and prebuilt A/B binaries. It captures final session logs and counterbalances 18 pairs with bounded concurrency. The prior telemetry reader could silently skip a malformed completed JSONL line, potentially undercounting calls; it now tolerates only an unfinished final line. [Regression tests](../../../scripts/test_agent_explorability.py) demonstrated the failure before the fix and verify task-specific seeding. No production CLI behavior changed.
 
 ## Six-Task Results
 
@@ -70,7 +70,7 @@ Every explorer started with `--help`. All eighteen A runs read at least one guid
 
 ## Separate Initial-Discovery Track
 
-A further six fresh sessions use [Task 7](../../tests/fixtures/agent-explorability/task7.json): three repetitions per condition, with a frozen thirteen-family capability inventory, up to 800 words, and no project measurement or mutation. This track was specified before its own trials and is not pooled with the six-task sample. It tests capability discovery rather than task execution. The inventory covers measurement, workspace, comparison, explanation, output, scope, configuration, folders, purpose views, sorting, charts, schemas, and output defaults. Each family earns 1 for full correct coverage, 0.5 for partial correct coverage, and 0 for absent or wrong coverage. Minimal workflow commands and materially false claims are checked separately; guide availability is excluded from shared coverage.
+A further six fresh sessions use [Task 7](../../../tests/fixtures/agent-explorability/task7.json): three repetitions per condition, with a frozen thirteen-family capability inventory, up to 800 words, and no project measurement or mutation. This track was specified before its own trials and is not pooled with the six-task sample. It tests capability discovery rather than task execution. The inventory covers measurement, workspace, comparison, explanation, output, scope, configuration, folders, purpose views, sorting, charts, schemas, and output defaults. Each family earns 1 for full correct coverage, 0.5 for partial correct coverage, and 0 for absent or wrong coverage. Minimal workflow commands and materially false claims are checked separately; guide availability is excluded from shared coverage.
 
 The same binaries, model, effort, isolation, and per-run budgets were reused. Two discovery pairs ran concurrently; each pair's arms ran sequentially, with A first in repetitions 1 and 3 and B first in repetition 2. Timing remains diagnostic. All six started with `--help`, stayed within their budgets, preserved fixtures, and issued only help/version/schema/guide queries. All four minimal workflow commands were valid in every answer, and independent review found no critical errors.
 
@@ -96,7 +96,7 @@ Three repetitions per task are diagnostic evidence, not a powered reliability es
 
 ## Next Variable: Information Placement
 
-Follow-up: the [configuration-recipe study](agent-explorability-help-recipe-study.md) records the subsequently authorized test of the owner's usage-example proposal. The proposal below preserves the reasoning before that experiment; consult the follow-up for its result.
+Follow-up: the [configuration-recipe study](explorability-help-recipe-study.md) records the subsequently authorized test of the owner's usage-example proposal. The proposal below preserves the reasoning before that experiment; consult the follow-up for its result.
 
 After seeing interim results, the owner asked whether another variable would be more useful than guide availability. The recommended next experiment keeps guides and schemas available in both conditions and varies how much task-relevant information the first help response supplies. For configuration, the control is current help; a candidate treatment puts a minimal valid configuration recipe and its essential constraints beside the configuration entry point. This is an untested hypothesis, not a product change or an established improvement.
 
@@ -115,13 +115,13 @@ Freeze the help treatment before testing it on configuration and an independentl
 | 5 | 6–7 / 7–7 | 40,547–45,126 / 40,708–68,158 |
 | 6 | 5–6 / 3–5 | 28,696–31,165 / 30,058–32,947 |
 
-The [per-run results](agent-explorability-six-task-results.json) preserve every task/discovery metric, outcome, guide/schema route, coverage subscore, and frozen campaign hash. In particular, comparison and workspace input costs vary substantially; neither one favorable run nor the small aggregate difference is a stable cost forecast.
+The [per-run results](explorability-six-task-results.json) preserve every task/discovery metric, outcome, guide/schema route, coverage subscore, and frozen campaign hash. In particular, comparison and workspace input costs vary substantially; neither one favorable run nor the small aggregate difference is a stable cost forecast.
 
 ## Evidence and Replay
 
 Final session token totals were reconciled with the CLI's completion event rather than summed across cumulative updates. Agent tool counts were independently recounted from session calls, and CLI counts were checked against the pre-grading invocation boundary. All contexts reported the requested model/effort and no repository instructions. Task 2 evaluator replay calls are preserved separately and excluded from explorer costs. Review agents and evaluator work are also excluded: these are costs of assessing the interface, not costs incurred by an explorer using it.
 
-Run only the native binary preparation and parity-check block from the [first pilot](agent-explorability-task1-pilot.md#evidence-and-replay), retaining its `experiment_root` variable, then execute the six-task runner against fresh scratch paths. The fixtures and runner are versioned; no API key, private source checkout, or hosted artifact service is required by Locmetry. The experimental runner itself requires an authenticated Codex CLI and the recorded model/effort.
+Run only the native binary preparation and parity-check block from the [first pilot](explorability-task1-pilot.md#evidence-and-replay), retaining its `experiment_root` variable, then execute the six-task runner against fresh scratch paths. The fixtures and runner are versioned; no API key, private source checkout, or hosted artifact service is required by Locmetry. The experimental runner itself requires an authenticated Codex CLI and the recorded model/effort.
 
 ```sh
 python3 scripts/agent-explorability.py campaign /tmp/locmetry-study-replay \
@@ -130,7 +130,7 @@ python3 scripts/agent-explorability.py campaign /tmp/locmetry-study-replay \
 python3 scripts/score_agent_explorability.py /tmp/locmetry-study-replay
 ```
 
-Artifact checks deliberately leave semantic interpretation pending. Independently grade final answers against their frozen prompts and oracles before assigning final outcomes. A process exiting successfully is not a benchmark pass. To add or revise a case, follow the [revision contract](../plans/agent-explorability-benchmark.md#revising-or-adding-a-use-case); preserve old results and rerun both conditions for the changed case.
+Artifact checks deliberately leave semantic interpretation pending. Independently grade final answers against their frozen prompts and oracles before assigning final outcomes. A process exiting successfully is not a benchmark pass. To add or revise a case, follow the [revision contract](../../plans/agent-explorability-benchmark.md#revising-or-adding-a-use-case); preserve old results and rerun both conditions for the changed case.
 
 For an individual discovery pair or a new case, prepare with `--task`, then run each fresh arm. `run-02` is A and `run-01` is B; reverse their launch order for the next pair. The study's archived orchestration records its exact three-pair schedule.
 

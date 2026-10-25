@@ -5,7 +5,7 @@
   "status": "implemented",
   "date": "2026-10-25",
   "summary": "Without --format and --output, an option that shapes only one format selects that format instead of warning in pipes.",
-  "evidence": "[PRODUCT](../../PRODUCT.md#output-routing), [regressions](../../../tests/integration/cli_options.rs), [experiments](../../research/agent-experiments-2026-10-25.md)"
+  "evidence": "[PRODUCT](../../PRODUCT.md#output-routing), [regressions](../../../tests/integration/cli_options.rs), [experiments](../../research/agents/experiments-2026-10-25.md)"
 }
 -->
 
@@ -42,5 +42,5 @@ The break: a command that passes one of these options without `--format` or `--o
 
 - Regressions: [cli_options](../../../tests/integration/cli_options.rs) locks every option's selected format, the `--output` boundary, disagreeing options and `--split-languages`; unit tests lock the selection rule.
 - Help stays within its byte budgets; two help examples dropped their now redundant `--format table`.
-- [Experiments](../../research/agent-experiments-2026-10-25.md): the agents' filters reproduced on the synthetic workspace, and a blind A/B of six fresh agents on one table task. Two of three control agents first received the headline and spent a call; all three candidate agents got their tables on the first try.
+- [Experiments](../../research/agents/experiments-2026-10-25.md): the agents' filters reproduced on the synthetic workspace, and a blind A/B of six fresh agents on one table task. Two of three control agents first received the headline and spent a call; all three candidate agents got their tables on the first try.
 - An [agent regression check](../../agent-regression-checks.md) before the next release remains required, since flags' defaults changed.

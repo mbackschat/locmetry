@@ -1,7 +1,7 @@
 //! Configuration errors name the fix, not only the fault. Each case comes from
 //! the broken-configuration corpus of 2026-10-25, where agents repairing a
 //! `.locmetryrc` had to read the schema or guess after these messages
-//! (docs/research/agent-experiments-2026-10-25.md).
+//! (docs/research/agents/experiments-2026-10-25.md).
 use crate::cli::{project, run};
 
 /// Stderr of a measurement whose `.locmetryrc` is `config`, which must fail

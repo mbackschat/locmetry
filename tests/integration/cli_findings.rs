@@ -434,7 +434,7 @@ fn dominant_unclaimed_folders_split_beyond_the_row_limit() {
 
 /// A script inside HTML counts under JavaScript without a JavaScript file, so
 /// its row shows 0 files. All six agents of the 2026-10-25 A/B flagged such a
-/// row and two guessed a wrong cause (docs/research/agent-experiments-2026-10-25.md).
+/// row and two guessed a wrong cause (docs/research/agents/experiments-2026-10-25.md).
 #[test]
 fn rows_of_embedded_code_alone_say_why_they_have_no_files() {
     let temp = project(&[

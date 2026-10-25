@@ -392,7 +392,7 @@ fn routine_comparison_recipes_make_extra_reference_reading_optional() {
 
 /// The imperative "start with locmetry --guide index" sent every unrelated
 /// task-1 session through the index and doubled its calls; the conditional
-/// pointer kept them at the control's (docs/research/agent-regression-run-2026-10-24-sections-v2.md).
+/// pointer kept them at the control's (docs/research/agents/regression-run-2026-10-24-sections-v2.md).
 #[test]
 fn the_closing_pointer_offers_the_task_index_only_beyond_the_examples() {
     let root = help("").split_whitespace().collect::<Vec<_>>().join(" ");

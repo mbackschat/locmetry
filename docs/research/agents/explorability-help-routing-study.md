@@ -1,10 +1,10 @@
 # Agent Explorability: Execution-First Help Routing
 
-Study started 2026-10-20 after the owner authorized testing whether help can make the direct execution path clear enough to avoid unnecessary reference reading. The [previous help-example experiment](agent-explorability-help-recipe-study.md) found that every configuration explorer still read the guide and schema. This study tests explicit conditional routing; it does not assume those references caused the earlier behavior.
+Study started 2026-10-20 after the owner authorized testing whether help can make the direct execution path clear enough to avoid unnecessary reference reading. The [previous help-example experiment](explorability-help-recipe-study.md) found that every configuration explorer still read the guide and schema. This study tests explicit conditional routing; it does not assume those references caused the earlier behavior.
 
 ## Finding
 
-Follow-up: the [bounded replication](agent-explorability-routing-replication.md#finding) subsequently passed both adverse cost checks and supports narrow adoption of this unchanged candidate. The original results and recommendation below remain historical evidence.
+Follow-up: the [bounded replication](explorability-routing-replication.md#finding) subsequently passed both adverse cost checks and supports narrow adoption of this unchanged candidate. The original results and recommendation below remain historical evidence.
 
 Explicit conditional routing improved the covered task: all four C agents skipped both configuration references, compared with none in either control, while delivering correct results. Median agent calls fell from 7.5 in current help and 6.5 with the example alone to 5; median uncached input fell by 37.4% and 34.7%, respectively. All 36 sessions passed artifact checks and independent interpretation review.
 
@@ -12,15 +12,15 @@ Keep this direction as a supported candidate, but do not adopt this exact root-h
 
 ## Frozen Design
 
-The [protocol](../../tests/fixtures/agent-explorability/help-routing-study.json) fixes 36 new MEDIUM sessions: three tasks × three conditions × four repetitions. Actual model and effort are `gpt-6.1-sol` / `xhigh`. Earlier runs are excluded. A is current help; B is the previous [configuration example](../../tests/fixtures/agent-explorability/help-recipe.txt); C is exactly B plus the [routing paragraph](../../tests/fixtures/agent-explorability/help-routing.txt) immediately before that example. Guides, schemas, short help, subcommand help and all measurement behavior remain unchanged. C−B isolates the complete routing paragraph; C−A compares the complete candidate with current help.
+The [protocol](../../../tests/fixtures/agent-explorability/help-routing-study.json) fixes 36 new MEDIUM sessions: three tasks × three conditions × four repetitions. Actual model and effort are `gpt-6.1-sol` / `xhigh`. Earlier runs are excluded. A is current help; B is the previous [configuration example](../../../tests/fixtures/agent-explorability/help-recipe.txt); C is exactly B plus the [routing paragraph](../../../tests/fixtures/agent-explorability/help-routing.txt) immediately before that example. Guides, schemas, short help, subcommand help and all measurement behavior remain unchanged. C−B isolates the complete routing paragraph; C−A compares the complete candidate with current help.
 
 The paragraph tells an agent whose change is covered to inspect existing configuration, measure current decisions, adapt the example and verify the result. It explicitly makes initial guide/schema reading optional for that route, while directing exclusions, overrides, intentional Other and uncovered semantics to references. Baseline measurement preserves the existing configure workflow's evidence requirement. This is an explicit exception to guide-first advice for a covered task; the guide itself is unchanged. No new guide-navigation interface is introduced.
 
 | Task | Role | Oracle |
 | --- | --- | --- |
-| [9: simple rule](../../tests/fixtures/agent-explorability/task9.json) | Primary efficiency/mechanism test; the example covers its configuration syntax. | Source Files 3, Lines 5, Code 4; Production/Test/Other Code 2/1/1; only `notes/probe.py` unresolved. |
-| [8: broader configuration](../../tests/fixtures/agent-explorability/task8.json) | Guard against bypassing references when the recipe is insufficient. | Preserve inferred Production and conventional tests, classify operations and intentional Other, exclude vendor, retain unresolved scratch; exact saved decisions and counts. |
-| [1: report understanding](../../tests/fixtures/agent-explorability/task1.json) | Unrelated-task correctness and help-reading cost guard. | Source/all-counted totals, Code-based Test/prod, non-source contributions and unavailable unrecognized counts. |
+| [9: simple rule](../../../tests/fixtures/agent-explorability/task9.json) | Primary efficiency/mechanism test; the example covers its configuration syntax. | Source Files 3, Lines 5, Code 4; Production/Test/Other Code 2/1/1; only `notes/probe.py` unresolved. |
+| [8: broader configuration](../../../tests/fixtures/agent-explorability/task8.json) | Guard against bypassing references when the recipe is insufficient. | Preserve inferred Production and conventional tests, classify operations and intentional Other, exclude vendor, retain unresolved scratch; exact saved decisions and counts. |
+| [1: report understanding](../../../tests/fixtures/agent-explorability/task1.json) | Unrelated-task correctness and help-reading cost guard. | Source/all-counted totals, Code-based Test/prod, non-source contributions and unavailable unrecognized counts. |
 
 The prompts, fixtures and oracles are unchanged. Correctness depends on artifacts and delivered interpretation, never on whether a guide was read. Each triad uses identical task inputs across its three fresh sessions. Arms execute sequentially within a triad; up to three triads run concurrently. Every arm permutation appears twice across the twelve triads. Within-task order balance is imperfect: Task 1 places B first twice and last twice, never in the middle; the other task/arm combinations occupy each position once or twice. This corrects the preregistration prose's erroneous once-or-twice claim without changing the exact frozen schedule. No outcome-dependent reordering occurred.
 
@@ -38,7 +38,7 @@ These are practical diagnostic thresholds, not statistical significance tests. A
 
 ## Verification and Replay
 
-The [runner](../../scripts/agent-routing-study.py) records protocol, harness, runner, grader, task, recipe, routing and binary hashes before sessions launch. The shared harness adds a third isolated arm; `run-02` is A, `run-01` B and `run-03` C. Red/green regressions verify that C differs from B only by routing text, each binary maps to the intended arm, other product sources remain unchanged, and the frozen schedule runs each arm exactly once per triad. The [parity verifier](../../scripts/verify_help_recipe.py) checks exact help additions, all guides/schemas, four report formats, independent counts and executable recipe behavior.
+The [runner](../../../scripts/agent-routing-study.py) records protocol, harness, runner, grader, task, recipe, routing and binary hashes before sessions launch. The shared harness adds a third isolated arm; `run-02` is A, `run-01` B and `run-03` C. Red/green regressions verify that C differs from B only by routing text, each binary maps to the intended arm, other product sources remain unchanged, and the frozen schedule runs each arm exactly once per triad. The [parity verifier](../../../scripts/verify_help_recipe.py) checks exact help additions, all guides/schemas, four report formats, independent counts and executable recipe behavior.
 
 Preflight verification passed ten Python regressions, exact B/C help parity, unchanged guides/schemas and report formats, the executable example, and both configuration oracles. A/B binary hashes and product source inputs match the previous experiment. C was built once with locked offline dependencies in 38.83 seconds, retaining the log.
 
@@ -57,11 +57,11 @@ python3 scripts/agent-routing-study.py /tmp/locmetry-routing-replay \
 python3 scripts/score_agent_explorability.py /tmp/locmetry-routing-replay
 ```
 
-Executable artifact checks leave interpretation pending. Independently grade all final answers before assigning outcomes; process success alone is insufficient. Reconcile cumulative final session counters with completion events, count agent calls independently, and exclude evaluator probes using the recorded completion boundary. Evaluator/reviewer work is not explorer usage. Preserve all cases and their costs, not only successful or favorable repetitions. A changed model, task, treatment or source revision is a new campaign; follow the [benchmark revision contract](../plans/agent-explorability-benchmark.md#revising-or-adding-a-use-case).
+Executable artifact checks leave interpretation pending. Independently grade all final answers before assigning outcomes; process success alone is insufficient. Reconcile cumulative final session counters with completion events, count agent calls independently, and exclude evaluator probes using the recorded completion boundary. Evaluator/reviewer work is not explorer usage. Preserve all cases and their costs, not only successful or favorable repetitions. A changed model, task, treatment or source revision is a new campaign; follow the [benchmark revision contract](../../plans/agent-explorability-benchmark.md#revising-or-adding-a-use-case).
 
 ## Results
 
-All 36 sessions completed within budget: **12/12 passes in each condition**, with no incomplete or critical-failure runs. Three independent MEDIUM reviewers each graded twelve shuffled answers for one task, with condition/resource labels hidden. Recorded model/effort, context isolation, prompt/task/source/binary hashes, actual arm order and final counters were reconciled. No previous sessions were pooled; no new runs were excluded or replaced. The routing paragraph appeared in the returned tool content of 12 of twelve C sessions. Artifact and semantic outcomes are recorded separately in the [per-run results](agent-explorability-help-routing-results.json).
+All 36 sessions completed within budget: **12/12 passes in each condition**, with no incomplete or critical-failure runs. Three independent MEDIUM reviewers each graded twelve shuffled answers for one task, with condition/resource labels hidden. Recorded model/effort, context isolation, prompt/task/source/binary hashes, actual arm order and final counters were reconciled. No previous sessions were pooled; no new runs were excluded or replaced. The routing paragraph appeared in the returned tool content of 12 of twelve C sessions. Artifact and semantic outcomes are recorded separately in the [per-run results](explorability-help-routing-results.json).
 
 | Task | Median agent calls A / B / C | Median uncached input A / B / C | Median CLI calls A / B / C |
 | --- | --- | --- | --- |

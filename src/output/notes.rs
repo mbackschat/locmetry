@@ -295,7 +295,7 @@ pub(super) fn preempted_entries_note(entries: &[crate::PolicyEntry]) -> Option<S
 /// Names language mappings that matched files the counter recognizes, which
 /// they cannot change: a mapping of `*.spec` to Plain Text counted nothing,
 /// because the counter reads such files as RPM Specfile, and nothing said so
-/// (docs/research/agent-feedback-2026-10-25-b.md).
+/// (docs/research/agents/feedback-2026-10-25-b.md).
 pub(super) fn recognized_mappings_note(entries: &[crate::PolicyEntry]) -> Option<String> {
     let found: Vec<String> = entries
         .iter()
@@ -320,7 +320,7 @@ pub(super) fn recognized_mappings_note(entries: &[crate::PolicyEntry]) -> Option
 /// Names language rows whose code is all embedded in files of other
 /// languages, such as a script in HTML: a row of 0 files otherwise reads as an
 /// error, and agents guessed wrong causes for one
-/// (docs/research/agent-experiments-2026-10-25.md).
+/// (docs/research/agents/experiments-2026-10-25.md).
 pub(super) fn embedded_only_legend<'a>(
     rows: impl IntoIterator<Item = (&'a str, &'a Counts)>,
 ) -> Option<String> {

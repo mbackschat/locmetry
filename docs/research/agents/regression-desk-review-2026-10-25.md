@@ -1,6 +1,6 @@
 # Agent Regression Desk Review: Fixes to the Man Page and Reference Guide
 
-Evaluated 2026-10-25 under the [agent regression checks](../agent-regression-checks.md#desk-review) by one fresh MEDIUM agent (Claude Code `sonnet` at `xhigh`), acknowledged by the owner. Control: `28213f9`, the last ledger candidate and the subject of the [previous desk review](agent-regression-desk-review-2026-10-24.md). Candidate: `8d668ce`. The range is three commits and 18 files: the record of that review, the fixes for its findings (`c57cec3`) and the retirement of the [man page proposal](../proposals/archive/manual-and-reference.md). The fixes group positional arguments under their own heading before the options in the man page, reword the `explain --format` values, correct three passages of the [reference guide](../guides/reference.md) and lower the `compare --help` size budget. Both revisions were built with `cargo build --release --locked` from `git archive` into separate scratch directories and run with `NO_COLOR=1`, `COLUMNS=100` and an empty `XDG_CONFIG_HOME` on macOS, on the synthetic [CLI workspace](../../examples/cli-workspace/README.md). The reviewer also ran the 46 public tests that the `generate::`, `reference::`, `help::`, `queries::` and `guides::` filters select, in release mode on the candidate source. A desk review does not measure calls or tokens.
+Evaluated 2026-10-25 under the [agent regression checks](../../agent-regression-checks.md#desk-review) by one fresh MEDIUM agent (Claude Code `sonnet` at `xhigh`), acknowledged by the owner. Control: `28213f9`, the last ledger candidate and the subject of the [previous desk review](regression-desk-review-2026-10-24.md). Candidate: `8d668ce`. The range is three commits and 18 files: the record of that review, the fixes for its findings (`c57cec3`) and the retirement of the [man page proposal](../../proposals/archive/manual-and-reference.md). The fixes group positional arguments under their own heading before the options in the man page, reword the `explain --format` values, correct three passages of the [reference guide](../../guides/reference.md) and lower the `compare --help` size budget. Both revisions were built with `cargo build --release --locked` from `git archive` into separate scratch directories and run with `NO_COLOR=1`, `COLUMNS=100` and an empty `XDG_CONFIG_HOME` on macOS, on the synthetic [CLI workspace](../../../examples/cli-workspace/README.md). The reviewer also ran the 46 public tests that the `generate::`, `reference::`, `help::`, `queries::` and `guides::` filters select, in release mode on the candidate source. A desk review does not measure calls or tokens.
 
 ## Verdict
 
@@ -26,7 +26,7 @@ The size budgets follow the stated rule, the measured size plus about 3% and nev
 
 ## Findings
 
-Findings of the [previous review](agent-regression-desk-review-2026-10-24.md#findings), checked against the candidate.
+Findings of the [previous review](regression-desk-review-2026-10-24.md#findings), checked against the candidate.
 
 | Id | Result | Evidence |
 | --- | --- | --- |
@@ -35,7 +35,7 @@ Findings of the [previous review](agent-regression-desk-review-2026-10-24.md#fin
 | F3 | Fixed | The man page has ARGUMENTS before OPTIONS for the root and an Arguments heading before Options under `compare` and `explain`, as `--help` orders them; `workspace` has no positional arguments and shows none. The guard test `the_man_page_lists_each_commands_positional_arguments_before_its_options` passes. |
 | F4 | Fixed, with a caveat | `COLUMNS` is now documented as the help wrap width too; `--help` is 380 lines at `COLUMNS=60`, 279 at 100. See N1 for its fallback. |
 | O1 | Fixed | `explain --help`, the zsh and fish scripts, the man page and the recorded explain guide say `Tables and evidence` and `Markdown tables and evidence for reviews`, as the other commands' `--format` does. No other text keeps `Human-readable tables`. |
-| O2 | Fixed | The [feature inventory](../help-design.md#current-feature-inventory) has a row for exit statuses, environment variables and files; the index rows it names exist and the three sections resolve. |
+| O2 | Fixed | The [feature inventory](../../help-design.md#current-feature-inventory) has a row for exit statuses, environment variables and files; the index rows it names exist and the three sections resolve. |
 
 New findings.
 
@@ -46,7 +46,7 @@ New findings.
 | N3 | Improvement | "If `man locmetry` then finds no entry" sits in the zsh sentence's paragraph, so "then" reads as a consequence of the `fpath` step instead of the man page install, and the macOS caveat is easy to miss for a reader who skips the zsh instruction. | `docs/guides/reference.md`, last paragraph before the PowerShell note | No |
 | N4 | Improvement | A workspace made of project folders refuses a destination anywhere in the project root, beside the members as well, while the Files bullet says "outside every member". The error names the rule and the safe side is the same as before; it only makes the bullet less exact than the folder case. | `workspace --workspace-file folders.toml --output acme-orders/r2.json` fails with "must be outside the read-only scan root" | No |
 
-Smaller notes needing no action: [DEFERRED](../DEFERRED.md#manual-page-and-completions) carries three of the retired proposal's six exclusions, the ones with reopening conditions; section-id and category-name completion, PowerShell value completion and the unchanged `--help` notes stay only in the archived record. The retired record's body is unchanged apart from link relocation, and its status, dates and evidence agree with the ledger, the PLAN entry and the archive index. `python3 scripts/doc-indexes.py check` reports no stale index, `git diff --check` is clean and no relative link or fragment in the 11 changed Markdown files is broken. `--generate man compare` still reports clap's missing-argument error before the standalone-query message, as in the control.
+Smaller notes needing no action: [DEFERRED](../../DEFERRED.md#manual-page-and-completions) carries three of the retired proposal's six exclusions, the ones with reopening conditions; section-id and category-name completion, PowerShell value completion and the unchanged `--help` notes stay only in the archived record. The retired record's body is unchanged apart from link relocation, and its status, dates and evidence agree with the ledger, the PLAN entry and the archive index. `python3 scripts/doc-indexes.py check` reports no stale index, `git diff --check` is clean and no relative link or fragment in the 11 changed Markdown files is broken. `--generate man compare` still reports clap's missing-argument error before the standalone-query message, as in the control.
 
 ## Not Checked
 

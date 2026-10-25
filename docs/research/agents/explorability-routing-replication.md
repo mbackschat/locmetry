@@ -1,8 +1,8 @@
 # Agent Explorability: Routing Cost Replication
 
-Started 2026-10-20. The owner asked to finish the uncertainty left by the [routing study](agent-explorability-help-routing-study.md). Its four broader-task repetitions failed the practical cost guard, but that did not establish a repeatable penalty. The assistant's earlier “isn't ready to ship” wording was too categorical. This replication fixes the sample and decision rule before execution, keeps the candidate unchanged, and ends with a bounded recommendation rather than extending trials until a favorable result appears.
+Started 2026-10-20. The owner asked to finish the uncertainty left by the [routing study](explorability-help-routing-study.md). Its four broader-task repetitions failed the practical cost guard, but that did not establish a repeatable penalty. The assistant's earlier “isn't ready to ship” wording was too categorical. This replication fixes the sample and decision rule before execution, keeps the candidate unchanged, and ends with a bounded recommendation rather than extending trials until a favorable result appears.
 
-Subsequent adoption, authorized 2026-10-20: the tested wording is now in production root long help, with contributor rationale in the [help-design guidelines](../help-design.md). The study's recommendation-only scope and results below remain historical evidence. Follow the [pre-adoption replay instructions](../plans/agent-explorability-benchmark.md#replaying-pre-adoption-studies) when reproducing these treatments.
+Subsequent adoption, authorized 2026-10-20: the tested wording is now in production root long help, with contributor rationale in the [help-design guidelines](../../help-design.md). The study's recommendation-only scope and results below remain historical evidence. Follow the [pre-adoption replay instructions](../../plans/agent-explorability-benchmark.md#replaying-pre-adoption-studies) when reproducing these treatments.
 
 ## Finding
 
@@ -10,15 +10,15 @@ Recommend adopting the unchanged example plus conditional execution-first routin
 
 Broader configuration used 6.5 median agent calls versus 7 with current help, and 32,801.5 median uncached input tokens versus 35,070.5, a 6.5% reduction. C used more calls in five of twelve pairs and more uncached input in three, so the fresh sample did not meet the frozen criterion for a consistent penalty. Report understanding used 2.5 median calls versus 3, with similar uncached input; C's cached-input median was only 0.8% above the example-only control, within the 20% guard.
 
-The positive reason to adopt still comes from the [original covered-task result](agent-explorability-help-routing-study.md#finding): explicit routing reduced reference retrievals and cost when the example was sufficient. This replication checks the adverse guards; it does not newly replicate that benefit or justify removing guides. Keep guides available and navigation unchanged. Production help remains unchanged because the frozen protocol ends at a recommendation, not automatic installation.
+The positive reason to adopt still comes from the [original covered-task result](explorability-help-routing-study.md#finding): explicit routing reduced reference retrievals and cost when the example was sufficient. This replication checks the adverse guards; it does not newly replicate that benefit or justify removing guides. Keep guides available and navigation unchanged. Production help remains unchanged because the frozen protocol ends at a recommendation, not automatic installation.
 
 ## Frozen Decision Process
 
 The three arms remain A current help, B the previous example alone, and C that example plus conditional execution-first routing. Reuse the exact native binary hashes from the prior study after verifying unchanged product source inputs. All prompts, task fixtures, oracles, guide/schema content, model/effort (`gpt-6.1-sol` / `xhigh`) and per-run budgets remain unchanged. No prior sessions are pooled with the new sample.
 
-Stage 1 uses [the broader-configuration protocol](../../tests/fixtures/agent-explorability/help-routing-replication-broad.json): Task 8, twelve fresh triads, thirty-six sessions. Each of the six arm permutations appears twice in two complete blocks. Each arm therefore occupies each position four times. Arms run sequentially inside a triad, with at most three triads active. The exact order is frozen in the protocol.
+Stage 1 uses [the broader-configuration protocol](../../../tests/fixtures/agent-explorability/help-routing-replication-broad.json): Task 8, twelve fresh triads, thirty-six sessions. Each of the six arm permutations appears twice in two complete blocks. Each arm therefore occupies each position four times. Arms run sequentially inside a triad, with at most three triads active. The exact order is frozen in the protocol.
 
-Stage 2 uses [the report-understanding protocol](../../tests/fixtures/agent-explorability/help-routing-replication-report.json): Task 1, six fresh triads, eighteen sessions, every permutation once and each arm in each position twice. It runs only if Stage 1 is admissible and passes correctness and both resource guards. Its purpose is to check the prior cached-input regression with balanced positions. Its entire schedule and definition are frozen before Stage 1; Stage 1 records its hash. If Stage 1 fails, Stage 2 is not run because adoption is already blocked by the bounded decision rule.
+Stage 2 uses [the report-understanding protocol](../../../tests/fixtures/agent-explorability/help-routing-replication-report.json): Task 1, six fresh triads, eighteen sessions, every permutation once and each arm in each position twice. It runs only if Stage 1 is admissible and passes correctness and both resource guards. Its purpose is to check the prior cached-input regression with balanced positions. Its entire schedule and definition are frozen before Stage 1; Stage 1 records its hash. If Stage 1 fails, Stage 2 is not run because adoption is already blocked by the bounded decision rule.
 
 For each stage:
 
@@ -35,9 +35,9 @@ An independent MEDIUM preflight checked this bounded design and required exact s
 
 ## Verification and Replay
 
-The [runner](../../scripts/agent-routing-study.py) now accepts an explicit protocol file while retaining its original default. A red/green regression checks that a supplied protocol controls the selected task, arm order and recorded protocol hash. Eleven Python tests passed. Native product inputs are unchanged, so the prior native parity and oracle checks remain applicable; binary/source hashes are rechecked before use, without rebuilding or rerunning unrelated Rust suites.
+The [runner](../../../scripts/agent-routing-study.py) now accepts an explicit protocol file while retaining its original default. A red/green regression checks that a supplied protocol controls the selected task, arm order and recorded protocol hash. Eleven Python tests passed. Native product inputs are unchanged, so the prior native parity and oracle checks remain applicable; binary/source hashes are rechecked before use, without rebuilding or rerunning unrelated Rust suites.
 
-Run against fresh scratch directories and the three native binaries prepared by the [previous study's replay instructions](agent-explorability-help-routing-study.md#verification-and-replay):
+Run against fresh scratch directories and the three native binaries prepared by the [previous study's replay instructions](explorability-help-routing-study.md#verification-and-replay):
 
 ```sh
 python3 scripts/agent-routing-study.py /tmp/locmetry-routing-replication-broad \
@@ -141,7 +141,7 @@ Neither primary metric failed its guard. Neither had at least nine strict C>A pa
 | Schema calls | 0 | 0 | 0 |
 | Duration, seconds | 167.3 | 141 | 147 |
 
-The [machine-readable results](agent-explorability-routing-replication-results.json) preserve all per-run costs, paired differences, medians, totals, ranges, reference retrievals, outcomes, frozen manifests and gate decisions. Agent calls, shell executions and CLI invocations are distinct units. Uncached input is input minus cached input; output includes reasoning and must not have reasoning added again. Time runs through final delivery, not first verified success. Evaluator/reviewer work is excluded.
+The [machine-readable results](explorability-routing-replication-results.json) preserve all per-run costs, paired differences, medians, totals, ranges, reference retrievals, outcomes, frozen manifests and gate decisions. Agent calls, shell executions and CLI invocations are distinct units. Uncached input is input minus cached input; output includes reasoning and must not have reasoning added again. Time runs through final delivery, not first verified success. Evaluator/reviewer work is excluded.
 
 ## Evidence and Limits
 
