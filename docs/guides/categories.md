@@ -37,7 +37,7 @@ Use the names the owner asks for, and propose rather than apply a rename of a ca
 | other | `prototype` | Unmaintained experiments | | `research`, `incubator` |
 | other | `example` | Unmaintained examples and snippets | | `snippet`, `doc-snippet` |
 
-`third-party-wrapper` and `unclaimed` are assigned by Locmetry, never by a policy. Leave undecided code unclaimed, so it stays on the review list. A test file spanning several kinds takes the widest.
+`third-party-wrapper` and `unclaimed` are assigned by Locmetry, never by a policy. Leave undecided code unclaimed, so it stays on the review list. A test file spanning several kinds takes the widest. A check written as a test case, such as a JUnit class that guards the repository's structure, is a test by convention, so give it a test category through a refinement; `verification-tooling` is for programs that run checks without being one.
 
 ## Worked Cases
 
