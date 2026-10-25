@@ -423,8 +423,8 @@ locmetry --schema config --section overview --section Entry | jq -c '[.overview.
 
 ```output
 Measure source code by language, folder, and purpose: production, test, or other. Defaults to a
-table on a terminal, a JSON headline in pipes. --output FILE saves only to that file, defaulting to
-full JSON; --format overrides the format.
+table on a terminal, a JSON headline in pipes. An option of one format selects it. --output FILE
+saves only to that file, defaulting to full JSON; --format overrides the format.
 
 Usage: locmetry [OPTIONS] [DIR] [COMMAND]
 

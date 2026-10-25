@@ -24,7 +24,7 @@ macro_rules! root_examples {
   Measure repositories together, each with its own policy:
     locmetry workspace --root ../web --root ../api
   Show production source in the table, with its comment density:
-    locmetry --format table --table-purpose production
+    locmetry --table-purpose production
   Inspect the configuration contract:
     locmetry --schema config
   Read full JSON on stdout:
@@ -32,7 +32,7 @@ macro_rules! root_examples {
   Measure selected source, including ignored files, except vendor:
     locmetry --root service --subfolder src --exclude 'src/vendor/**' --hidden true --respect-ignore-files false --format json
   Show adaptive folder detail and production categories:
-    locmetry --root service --format table --folder-rows 30 --table-purpose production --show-categories --show-bars=comments --sort name
+    locmetry --root service --folder-rows 30 --table-purpose production --show-categories --show-bars=comments --sort name
   Save a sorted Markdown tree to depth 3:
     locmetry --root service --format markdown --markdown-depth 3 --sort name --output report.md
   Measure an explicit workspace definition:

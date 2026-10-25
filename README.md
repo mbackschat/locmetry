@@ -241,18 +241,18 @@ Most of the change is test code. [Folder reporting](docs/guides/reports.md#look-
 | Save full JSON and print the table from one scan, as for agents | `locmetry --output ../report.json --print table` |
 | Save a Markdown report | `locmetry --format markdown --output ../report.md` |
 | Measure repositories together, each with its own policy | `locmetry workspace --root ../web --root ../api` |
-| Show production source in the table, with its comment density | `locmetry --format table --table-purpose production` |
+| Show production source in the table, with its comment density | `locmetry --table-purpose production` |
 | Inspect the configuration contract | `locmetry --schema config` |
 | Read full JSON on stdout | `locmetry --root service --format json --files` |
 | Measure selected source, including ignored files, except vendor | `locmetry --root service --subfolder src --exclude 'src/vendor/**' --hidden true --respect-ignore-files false --format json` |
-| Show adaptive folder detail and production categories | `locmetry --root service --format table --folder-rows 30 --table-purpose production --show-categories --show-bars=comments --sort name` |
+| Show adaptive folder detail and production categories | `locmetry --root service --folder-rows 30 --table-purpose production --show-categories --show-bars=comments --sort name` |
 | Save a sorted Markdown tree to depth 3 | `locmetry --root service --format markdown --markdown-depth 3 --sort name --output report.md` |
 | Measure an explicit workspace definition | `locmetry workspace --workspace-file repos.toml --files --output workspace.json --print table` |
 | Compare two saved full reports | `locmetry compare before.json after.json --format table` |
 
 `locmetry --help` includes the same commands, plus a working configuration example for maintained scripts with applicability and verification instructions. Verbose tables total data and documentation files under “Not source code”; to list them, [filter full JSON by `kind`](docs/guides/reports.md#which-files-are-not-source-code).
 
-Without explicit options, a terminal gets a table and a pipe gets a compact JSON headline. `--output` defaults to full JSON; choose `--format table` or `--format markdown` explicitly for those exports. File exports are silent on stdout, and the extension does not select the format. For tables alone, add `--tables-only`: it drops legends, notes and the closing location and date lines, as for transcripts and scripts that need only rows. [Output routing and reports](docs/guides/reports.md#choose-content-and-destination) explains the choices and protected destinations.
+Without explicit options, a terminal gets a table and a pipe gets a compact JSON headline. An option of one format, such as `--show-categories` for tables, selects that format in a pipe too. `--output` defaults to full JSON; choose `--format table` or `--format markdown` explicitly for those exports. File exports are silent on stdout, and the extension does not select the format. For tables alone, add `--tables-only`: it drops legends, notes and the closing location and date lines, as for transcripts and scripts that need only rows. [Output routing and reports](docs/guides/reports.md#choose-content-and-destination) explains the choices and protected destinations.
 
 ### Selected options
 

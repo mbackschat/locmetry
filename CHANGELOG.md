@@ -11,6 +11,7 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 
 ### Changed
 
+- **Breaking:** without `--format` and `--output`, an option that shapes only one format selects it, on a terminal and in pipes: `--show-categories`, `--show-folders`, `--folder-rows`, `--verbose`, the bar options, the `--table-*` filters and `--tables-only` print a table, `--markdown-depth` Markdown and `--files` full JSON. Before, such an option in a pipe printed the JSON headline with a warning, which agents' output filters often hid. Options of different formats select none, and `--output` still saves full JSON.
 - The category table's legend says it counts source files only, so data such as test fixtures is not mistaken for missing from a category.
 - A configuration that uses a reference category name from `--guide categories` without declaring it in `[categories]` now fails with an error that says it is a reference name, what the reference uses it for and that it needs a declaration.
 - The configure guide ends its refine-categories section with the checks of the whole policy, and states that the three purposes are fixed while categories carry the detail.

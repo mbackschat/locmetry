@@ -115,8 +115,28 @@ fn emphasis_needs_a_windows_console_that_accepts_escape_sequences() {
 
 #[test]
 fn explicit_exports_default_to_full_json_and_ordinary_pipes_to_headlines() {
-    assert_eq!(default_format(true, false), Format::Table);
-    assert_eq!(default_format(false, false), Format::Headline);
-    assert_eq!(default_format(true, true), Format::Json);
-    assert_eq!(default_format(false, true), Format::Json);
+    assert_eq!(default_format(true, false, None), Format::Table);
+    assert_eq!(default_format(false, false, None), Format::Headline);
+    assert_eq!(default_format(true, true, None), Format::Json);
+    assert_eq!(default_format(false, true, None), Format::Json);
+    for terminal in [true, false] {
+        assert_eq!(
+            default_format(terminal, false, Some(Format::Markdown)),
+            Format::Markdown
+        );
+        assert_eq!(
+            default_format(terminal, true, Some(Format::Table)),
+            Format::Json
+        );
+    }
+}
+
+#[test]
+fn only_options_that_agree_imply_a_format() {
+    let table = ("--verbose", true, Format::Table);
+    let markdown = ("--markdown-depth", true, Format::Markdown);
+    let absent = ("--files", false, Format::Json);
+    assert_eq!(implied_format(&[table, absent]), Some(Format::Table));
+    assert_eq!(implied_format(&[table, markdown]), None);
+    assert_eq!(implied_format(&[absent]), None);
 }

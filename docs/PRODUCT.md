@@ -236,7 +236,7 @@ Configuration guidance distinguishes evidence-based classification, intentional 
 
 ### Output Routing
 
-Output contract since v0.4.0. Measurement, workspace and comparison produce one result at one destination; measurement and workspace runs may add one printed view with `--print`. An explicit `--format table|markdown|json|headline` always wins. Without it, any `--output` selects full JSON; otherwise stdout selects a table on a terminal and a compact JSON headline in pipes. File extensions never infer the format.
+Output contract since v0.4.0. Measurement, workspace and comparison produce one result at one destination; measurement and workspace runs may add one printed view with `--print`. An explicit `--format table|markdown|json|headline` always wins. Without it, any `--output` selects full JSON. Otherwise an option that shapes only one format selects that format, on a terminal and in pipes alike: the table presentation options listed under applicability, `--show-folders`, `--folder-rows` and `--tables-only` select a table, `--markdown-depth` Markdown and `--files` full JSON. Options of different formats select none, and `--split-languages` and `--sort`, which shape tables and Markdown, select neither. Failing that, stdout selects a table on a terminal and a compact JSON headline in pipes. Changed after 0.11.0: before, such an option in a pipe left the headline and a warning, which agents, running without a terminal, often missed behind their own output filters. File extensions never infer the format.
 
 | Destination | Behavior |
 | --- | --- |
@@ -257,7 +257,7 @@ View options apply to every supporting saved or printed view of the same measure
 
 ### Option Names and Applicability
 
-Help groups selection and policy, output and content, and presentation. Selection options change what is measured; presentation options change a view. Use explicit `--format table` for table recipes in pipes, where the default is a headline. `--table-purpose`, `--table-category` and `--table-language` filter tables only; they do not restrict JSON or Markdown measurement totals.
+Help groups selection and policy, output and content, and presentation. Selection options change what is measured; presentation options change a view. In pipes, where the default is a headline, a table presentation option selects a table; explicit `--format table` keeps a recipe's format independent of its options. `--table-purpose`, `--table-category` and `--table-language` filter tables only; they do not restrict JSON or Markdown measurement totals.
 
 The following are exact option names. Former spellings are rejected, not aliases, with exit 1 and an error that names the current option; command names and unrelated options are unchanged.
 
@@ -282,7 +282,7 @@ For options accepted by a measurement command, applicability is evaluated across
 | `--sort code\|name` | Root/workspace table or Markdown. | Accept silently. |
 | `--files` | Root/workspace full JSON, saved or printed. | Fail with exit 1 before scanning or writing. |
 
-Implicit defaults do not warn or fail; explicit default-valued depth still warns without Markdown. `--sort code` (default) orders human rows by descending Code and `--sort name` alphabetically; Markdown folders retain hierarchy and review rows remain largest first. Global `--no-color` is accepted for all formats and standalone queries. Applicability does not require a visible change on a particular dataset: sorting empty tables or suppressing already-absent bars remains valid.
+Without `--format` and `--output`, a single-format option selects its own view ([Output Routing](#output-routing)), so the outcomes above arise when an explicit format, a saved report or an option of another format decides the view. Implicit defaults do not warn or fail; explicit default-valued depth still warns without Markdown. `--sort code` (default) orders human rows by descending Code and `--sort name` alphabetically; Markdown folders retain hierarchy and review rows remain largest first. Global `--no-color` is accepted for all formats and standalone queries. Applicability does not require a visible change on a particular dataset: sorting empty tables or suppressing already-absent bars remains valid.
 
 Applicability warnings/errors identify the option and supporting format and offer a valid `--format` remedy, or `--print` when there is a real saved-file destination. Unsupported-command options and parser/query conflicts remain separate errors; changing formats does not make an unsupported command option valid. `--print` without a real file destination fails before scanning or writing. These validation failures leave stdout empty and neither create nor modify Locmetry-managed output files; shell redirection is outside this guarantee.
 

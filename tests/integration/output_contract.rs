@@ -295,11 +295,16 @@ fn explicit_formats_control_files_and_stdout_for_all_exporting_commands() {
 #[test]
 fn file_detail_requires_full_json_before_scanning_or_creating_a_file() {
     let dir = fixture();
-    for format in [None, Some("headline"), Some("table"), Some("markdown")] {
-        let mut args = vec!["missing-root", "--files"];
-        if let Some(format) = format {
-            args.extend(["--format", format, "--output", "invalid.out"]);
-        }
+    // Without '--format', '--files' selects full JSON itself.
+    for format in ["headline", "table", "markdown"] {
+        let args = vec![
+            "missing-root",
+            "--files",
+            "--format",
+            format,
+            "--output",
+            "invalid.out",
+        ];
         let out = run(dir.path(), &args);
         assert_eq!(out.status.code(), Some(1));
         assert!(out.stdout.is_empty());

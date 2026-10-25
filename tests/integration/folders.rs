@@ -99,10 +99,6 @@ fn folders_warn_without_changing_non_table_measurements() {
             assert_eq!(original, requested);
         }
     }
-    let output = run(temp.path(), &["project", "--show-folders"]);
-    assert!(output.status.success());
-    assert!(serde_json::from_slice::<Value>(&output.stdout).is_ok());
-    assert!(String::from_utf8_lossy(&output.stderr).contains("'--show-folders' has no effect here"));
 }
 
 #[test]

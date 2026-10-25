@@ -91,14 +91,34 @@ pub(crate) enum Schema {
 
 /// Select the format when no explicit format was supplied.
 ///
-/// Explicit exports default to complete JSON so saved baselines remain comparable;
-/// ordinary pipes retain compact agent output (docs/PRODUCT.md, Output Routing).
-pub(crate) fn default_format(stdout_is_terminal: bool, output_given: bool) -> Format {
-    match (output_given, stdout_is_terminal) {
-        (true, _) => Format::Json,
-        (false, false) => Format::Headline,
-        (false, true) => Format::Table,
+/// Explicit exports default to complete JSON so saved baselines remain comparable.
+/// Otherwise an option that shapes only one format selects it, because naming
+/// it states the view wanted: agents, which run without a terminal, otherwise
+/// got a headline and a warning their output filters hid (feedback of three
+/// projects, 2026-10-25). Ordinary pipes retain compact agent output
+/// (docs/PRODUCT.md, Output Routing).
+pub(crate) fn default_format(
+    stdout_is_terminal: bool,
+    output_given: bool,
+    implied: Option<Format>,
+) -> Format {
+    match (output_given, implied, stdout_is_terminal) {
+        (true, _, _) => Format::Json,
+        (false, Some(format), _) => format,
+        (false, None, false) => Format::Headline,
+        (false, None, true) => Format::Table,
     }
+}
+
+/// The one format that every given option of `options` applies to; `None`
+/// when none is given or they apply to different formats.
+pub(crate) fn implied_format(options: &[(&str, bool, Format)]) -> Option<Format> {
+    let mut formats = options
+        .iter()
+        .filter(|(_, given, _)| *given)
+        .map(|(_, _, format)| *format);
+    let first = formats.next()?;
+    formats.all(|format| format == first).then_some(first)
 }
 
 // A macro rather than a const because `concat!` accepts only literals.
@@ -111,7 +131,7 @@ macro_rules! root_after_help {
 #[derive(Parser)]
 #[command(
     version,
-    about = "Measure source code by language, folder, and purpose: production, test, or other. Defaults to a table on a terminal, a JSON headline in pipes. --output FILE saves only to that file, defaulting to full JSON; --format overrides the format.",
+    about = "Measure source code by language, folder, and purpose: production, test, or other. Defaults to a table on a terminal, a JSON headline in pipes. An option of one format selects it. --output FILE saves only to that file, defaulting to full JSON; --format overrides the format.",
     after_help = root_after_help!(),
     after_long_help = concat!(root_after_help!(), root_examples!())
 )]
@@ -178,7 +198,7 @@ pub(crate) struct Cli {
 pub(crate) enum Command {
     /// Measure several repositories or one project's folders as one virtual monorepo.
     ///
-    /// Defaults to a table on a terminal, a JSON headline in pipes.
+    /// Defaults to a table on a terminal, a JSON headline in pipes. An option of one format selects it.
     /// --output FILE saves only to that file, defaulting to full JSON; --format overrides the format.
     #[command(
         after_help = "Add --verbose to inspect classification, scope and coverage notes. For optional configuration, use locmetry --guide configure; for results, use locmetry --guide reports.",
@@ -187,7 +207,7 @@ pub(crate) enum Command {
     Workspace(WorkspaceArgs),
     /// Compare two saved full reports: net change is after minus before.
     ///
-    /// Defaults to a table on a terminal, a JSON headline in pipes.
+    /// Defaults to a table on a terminal, a JSON headline in pipes. An option of one format selects it.
     /// --output FILE saves only to that file, defaulting to full JSON; --format overrides the format.
     #[command(
         after_help = "For baselines and interpretation, use locmetry --guide compare.",
@@ -283,9 +303,16 @@ impl ViewArgs {
         }
     }
 
+    /// Options of this group that apply to a single format.
+    pub(crate) fn single_format_options(self) -> [(&'static str, bool, Format); 1] {
+        [("--tables-only", self.tables_only, Format::Table)]
+    }
+
     pub(crate) fn warn_ineffective(self, destination: &Destination, styling: Styling) {
-        if self.tables_only {
-            destination.warn_ineffective("--tables-only", &[Format::Table], styling);
+        for (option, given, format) in self.single_format_options() {
+            if given {
+                destination.warn_ineffective(option, &[format], styling);
+            }
         }
         if self.split_languages {
             let formats = [Format::Table, Format::Markdown];

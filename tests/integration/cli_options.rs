@@ -423,8 +423,13 @@ fn invalid_view_combinations_preserve_files_and_fail_before_root_preparation() {
     );
 }
 
+/// Agents run without a terminal, where an option of one format used to leave
+/// a JSON headline and a warning their own `2>&1 | sed` filters hid (feedback
+/// of three projects, 2026-10-25). Such an option now selects its format
+/// unless `--format` or `--output` decides; a saved report keeps full JSON and
+/// the warning names `--print`.
 #[test]
-fn ineffective_preferences_keep_success_and_offer_only_valid_format_remedies() {
+fn an_option_of_one_format_selects_it_unless_format_or_output_decides() {
     let temp = fixture();
     for (option, format) in [
         ("--show-folders", "table"),
@@ -432,33 +437,89 @@ fn ineffective_preferences_keep_success_and_offer_only_valid_format_remedies() {
         ("--show-bars", "table"),
         ("--no-bars", "table"),
         ("--verbose", "table"),
+        ("--tables-only", "table"),
         ("--table-purpose", "table"),
+        ("--table-category", "table"),
         ("--table-language", "table"),
+        ("--folder-rows", "table"),
         ("--markdown-depth", "markdown"),
+        ("--files", "json"),
     ] {
         let mut args = vec!["--root", "project", option];
-        if option == "--table-purpose" {
-            args.push("production");
-        }
-        if option == "--table-language" {
-            args.push("Rust");
-        }
-        if option == "--markdown-depth" {
-            args.push("2");
+        match option {
+            "--table-purpose" | "--table-category" => args.push("production"),
+            "--table-language" => args.push("Rust"),
+            "--folder-rows" => args.push("10"),
+            "--markdown-depth" => args.push("2"),
+            _ => {}
         }
         let output = run(temp.path(), &args);
-        assert_eq!(common::json(&output, 0)["detail"], "headline");
-        let error = String::from_utf8_lossy(&output.stderr);
-        assert!(error.contains(&format!("--format {format}")), "{error}");
-        assert!(!error.contains("--print"), "{error}");
+        let text = success(&output);
+        assert!(
+            output.stderr.is_empty(),
+            "{option}: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        match format {
+            "table" => assert!(text.contains(" Language "), "{option}: {text}"),
+            "markdown" => assert!(text.starts_with("# "), "{option}: {text}"),
+            _ => assert_eq!(common::json(&output, 0)["detail"], "full"),
+        }
+        if option == "--files" {
+            continue;
+        }
         args.extend(["--output", "full.json"]);
         let output = run(temp.path(), &args);
+        if option == "--folder-rows" {
+            // Folder detail cannot shape a saved JSON report, so it still fails.
+            assert_eq!(output.status.code(), Some(1));
+            assert!(String::from_utf8_lossy(&output.stderr).contains("--print table"));
+            continue;
+        }
         success(&output);
+        let saved: Value =
+            serde_json::from_str(&fs::read_to_string(temp.path().join("full.json")).unwrap())
+                .unwrap();
+        assert_eq!(saved["detail"], "full", "{option}");
         assert!(String::from_utf8_lossy(&output.stderr).contains(&format!("--print {format}")));
     }
-    let output = run(temp.path(), &["--root", "project", "--sort", "code"]);
+    for args in [
+        vec!["--root", "project", "--sort", "code"],
+        vec!["--root", "project", "--output", "-", "--verbose"],
+    ] {
+        let output = run(temp.path(), &args);
+        assert_ne!(output.stdout.first(), Some(&b' '), "{args:?}");
+        common::json(&output, 0);
+    }
+    // Options of different formats imply none of them, so both still warn.
+    let output = run(
+        temp.path(),
+        &["--root", "project", "--verbose", "--markdown-depth", "2"],
+    );
     assert_eq!(common::json(&output, 0)["detail"], "headline");
-    assert!(output.stderr.is_empty());
+    let error = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        error.contains("'--verbose' has no effect here")
+            && error.contains("'--markdown-depth' has no effect here"),
+        "{error}"
+    );
+    // Table and Markdown both apply '--split-languages', so it implies neither.
+    let output = run(temp.path(), &["--root", "project", "--split-languages"]);
+    assert_eq!(common::json(&output, 0)["detail"], "headline");
+    stdout_of_compare_tables_only(temp.path());
+}
+
+fn stdout_of_compare_tables_only(root: &Path) {
+    success(&run(root, &["--root", "project", "--output", "saved.json"]));
+    let output = run(
+        root,
+        &["compare", "saved.json", "saved.json", "--tables-only"],
+    );
+    let text = success(&output);
+    assert!(
+        text.contains(" Kind ") && output.stderr.is_empty(),
+        "{text}"
+    );
 }
 
 #[test]

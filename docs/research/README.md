@@ -35,6 +35,8 @@ Sensitive project analyses, candidate rules, raw measurements, and breakdowns of
 - [Agent regression desk review, human output wording](agent-regression-desk-review-2026-10-22.md): help and schemas unchanged, JSON changes only in message texts; quoted whole commands omit the invocation's scope.
 - [Agent regression run, 0.8.0](agent-regression-run-2026-10-22.md): tasks 3, 4 and 8 against `c9098e2`; a comparison-cost regression traced to the missing comparison `detail`, its correction and the recorded one-call residual.
 
+- [Experiments on the categorization feedback, 2026-10-25](agent-experiments-2026-10-25.md): table options in pipes reproduced and an A/B of six fresh agents, the shape of content predicates, and a workaround for the content kind of mapped files.
+
 - [Report analytics assessment](report-analytics.md): DuckDB, pandas, Polars and simpler alternatives; schema-3 and Showboat decisions.
 - [Policy test drives](policy-test-drives/README.md): policies written for public GitHub projects, what configuration could not express, and the experiments behind the 2026-10-23 proposals.
 - [Generated-code markers](generated-code-markers.md): documented markers, `.gitattributes` declarations and heuristics measured for coverage and false claims on applications and generators' own repositories.

@@ -21,6 +21,7 @@ The [proposal index](proposals/README.md) distinguishes active designs from hist
 - [Manual page, completions and reference topic](proposals/archive/manual-and-reference.md): `--generate`, the man page, shell completions and the reference guide, implemented 2026-10-24 and verified 2026-10-25; the record links the shell checks and the desk review.
 - [Guide sections and task index](proposals/archive/guide-sections.md): `--section`, the task index and direct help routes, adopted 2026-10-24 with the category reference after three agent runs; the record links the runs and the decision.
 - [Category reference](proposals/archive/category-reference.md): the embedded category guide, its guards and the aligned model policies, implemented 2026-10-24.
+- [Single-format options select their format](proposals/archive/single-format-options.md): table, Markdown and file-detail options choose their format without `--format` or `--output`, decided 2026-10-25 from the categorization feedback and [experiments](research/agent-experiments-2026-10-25.md).
 - [Reviewable policy entries and category refinements](proposals/archive/policy-entry-review.md): `except`, per-entry audit and refinements, implemented 2026-10-24 from three projects' test-categorization feedback.
 - [Test/production ratio design](plans/archive/test-production-ratios.md): research behind neutral, unbanded ratios.
 - [Research index](research/README.md): dated findings and source provenance.

@@ -127,7 +127,11 @@ pub(crate) fn explain_path(
 }
 
 pub(crate) fn run_compare(args: &CompareArgs, styling: Styling) -> Result<Outcome> {
-    let destination = output_destination(&args.output, args.format);
+    let destination = output_destination(
+        &args.output,
+        args.format,
+        &args.view.single_format_options(),
+    );
     args.view.warn_ineffective(&destination, styling);
     let before = locmetry::compare::read_input(&args.before)?;
     let after = locmetry::compare::read_input(&args.after)?;
@@ -177,7 +181,13 @@ pub(crate) fn run_root(
     styling: Styling,
 ) -> Result<Outcome> {
     let root = args.root.as_deref().unwrap_or(Path::new("."));
-    let mut destination = destination(shared)?;
+    let mut destination = destination(
+        shared,
+        &[
+            ("--show-folders", folders, Format::Table),
+            ("--folder-rows", folder_rows.is_some(), Format::Table),
+        ],
+    )?;
     if folder_rows.is_some() {
         anyhow::ensure!(
             destination.shows(Format::Table),
@@ -265,7 +275,7 @@ pub(crate) fn run_root(
 
 pub(crate) fn run_workspace(args: &WorkspaceArgs, styling: Styling) -> Result<Outcome> {
     let shared = &args.shared;
-    let destination = destination(shared)?;
+    let destination = destination(shared, &[])?;
     warn_ineffective_options(shared, &destination, styling);
     let workspace_path = args
         .file

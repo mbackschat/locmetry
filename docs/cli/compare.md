@@ -461,8 +461,8 @@ metadata.kinds, metadata.modules, metadata.coverage.unrecognized, metadata.confi
 current tree.
 Compare two saved full reports: net change is after minus before.
 
-Defaults to a table on a terminal, a JSON headline in pipes. --output FILE saves only to that file,
-defaulting to full JSON; --format overrides the format.
+Defaults to a table on a terminal, a JSON headline in pipes. An option of one format selects it.
+--output FILE saves only to that file, defaulting to full JSON; --format overrides the format.
 
 Usage: locmetry compare [OPTIONS] <BEFORE> <AFTER>
 
