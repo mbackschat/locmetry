@@ -124,7 +124,7 @@ pub(crate) fn implied_format(options: &[(&str, bool, Format)]) -> Option<Format>
 // A macro rather than a const because `concat!` accepts only literals.
 macro_rules! root_after_help {
     () => {
-        "Run locmetry for source counts by language. Add --show-folders for the folder table, or --verbose to inspect classification, scope and coverage notes. For optional project configuration, use locmetry --guide configure.\n\nCommand names are reserved. To measure a directory named compare, use ./compare or --root compare."
+        "Run locmetry for source counts by language. Add --show-folders for the folder table, or --verbose to inspect classification, scope and coverage notes. To interpret counts and coverage, read locmetry --guide reports --section interpret-the-numbers --section unavailable-is-not-zero. For optional project configuration, use locmetry --guide configure.\n\nCommand names are reserved. To measure a directory named compare, use ./compare or --root compare."
     };
 }
 

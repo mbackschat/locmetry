@@ -6,6 +6,8 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 
 ### Changed
 
+- Root help names the two reports-guide sections that interpret counts and coverage, so reading the whole guide is no longer needed for that.
+
 - **Breaking:** a project's language mappings share the ID space of overrides, rules, refinements and corrections, because reports now list them together; a mapping whose ID repeats one of theirs fails with the repeated-ID error. Personal mappings are unaffected.
 
 ### Fixed

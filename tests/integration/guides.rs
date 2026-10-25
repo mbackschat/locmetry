@@ -72,7 +72,7 @@ fn help_supplies_the_starting_instruction_and_root_level_next_commands() {
             .collect::<Vec<_>>()
             .join(" ");
         assert!(
-            help.contains("Run locmetry for source counts by language. Add --show-folders for the folder table, or --verbose to inspect classification, scope and coverage notes. For optional project configuration, use locmetry --guide configure."),
+            help.contains("Run locmetry for source counts by language. Add --show-folders for the folder table, or --verbose to inspect classification, scope and coverage notes. To interpret counts and coverage, read locmetry --guide reports --section interpret-the-numbers --section unavailable-is-not-zero. For optional project configuration, use locmetry --guide configure."),
             "{args:?}: {help}"
         );
         if args != ["-h"] {

@@ -463,13 +463,14 @@ fn compare_help_drills_into_a_workspace_member_with_scoped_folder_totals() {
 }
 
 /// Help sizes in bytes at `COLUMNS=100`, measured 2026-10-22 (`compare
-/// --help` 2026-10-24) plus about 3%, never above the earlier budget.
+/// --help` 2026-10-24, root help 2026-10-26 with the interpretation route)
+/// plus about 3%, raised only after an agent check.
 /// Agents read help before ordinary use, so growth beyond a budget must be a
 /// reviewed decision (docs/agent-regression-checks.md#help-size-guard); size
 /// alone does not measure efficiency, so a budget is a stop, not a target.
 const HELP_BUDGETS: [(&[&str], usize); 8] = [
-    (&["-h"], 4_450),
-    (&["--help"], 13_010),
+    (&["-h"], 4_710),
+    (&["--help"], 13_540),
     (&["workspace", "-h"], 2_500),
     (&["workspace", "--help"], 6_900),
     (&["compare", "-h"], 990),
@@ -501,6 +502,30 @@ fn help_stays_within_its_reading_budget() {
             size <= budget,
             "`locmetry {}` prints {size} bytes, over its budget of {budget}; run an agent regression check before raising it",
             args.join(" ")
+        );
+    }
+}
+
+/// Every graded report-interpretation session read the reports guide, most
+/// of them whole (35 of 40, 2026-10-24/25 campaigns), although two sections of
+/// a fifth of its size answer the task; root help routes there, as a condition.
+#[test]
+fn root_help_routes_interpretation_to_its_guide_sections() {
+    for flag in ["-h", "--help"] {
+        let flat = common::locmetry()
+            .env("COLUMNS", "100")
+            .arg(flag)
+            .output()
+            .unwrap()
+            .stdout;
+        let flat = String::from_utf8(flat)
+            .unwrap()
+            .split_whitespace()
+            .collect::<Vec<_>>()
+            .join(" ");
+        assert!(
+            flat.contains("To interpret counts and coverage, read locmetry --guide reports --section interpret-the-numbers --section unavailable-is-not-zero."),
+            "{flag}: {flat}"
         );
     }
 }
