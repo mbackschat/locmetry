@@ -169,9 +169,10 @@ its own policy: each member's .locmetryrc and the personal defaults unless
 workspace-wide --config/--exclude/--hidden/--respect-ignore-files are unsupported.
 For one repository's components, a file can name project and folders instead of
 roots: each folder is measured like --subfolder under the project's .locmetryrc.
-Save outputs outside every member. JSON paths are member-prefixed; summary.members
-holds per-member totals. Workspace Test/prod is sum(Test Code) / sum(Production Code),
-not an average of member ratios. --verbose exposes member coverage and policy findings.
+Save outputs outside every member's root, which is the project for folders.
+JSON paths are member-prefixed; summary.members holds per-member totals.
+Workspace Test/prod is sum(Test Code) / sum(Production Code), not an average of
+member ratios. --verbose exposes member coverage and policy findings.
 
 Save before.json and after.json using the same workspace command around a change,
 then run locmetry compare before.json after.json --format table. Member names match
