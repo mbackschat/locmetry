@@ -41,6 +41,14 @@ Net change: acme-orders → acme-orders
  Source total      37     38      +1 │     29     30      +1
  Test/prod (Code): 0.35 → 0.33 (before → after)
 
+ ────────────────────────────────────────────────────────────────────────
+                                    Lines         │         Code
+ Category                   before  after  change │ before  after  change
+ ─────────────────────────────────────────────────┼──────────────────────
+ production:implementation      19     20      +1 │     16     17      +1
+ ─────────────────────────────────────────────────┼──────────────────────
+ Source total                   37     38      +1 │     29     30      +1
+
  ───────────────────────────────────────────────────────────
                        Lines         │         Code
  Language      before  after  change │ before  after  change
@@ -127,7 +135,7 @@ locmetry compare before.json after.json --format headline --output - \
 
 *Test/prod (Code): 0.35 → 0.33 (before → after)*
 
-## Languages
+## Categories
 {
   "document_type": "comparison",
   "source": {
@@ -186,6 +194,14 @@ locmetry compare before.json after.json --no-color --format table --tables-only
  Production        24     25      +1 │     20     21      +1
  ────────────────────────────────────┼──────────────────────
  Source total      37     38      +1 │     29     30      +1
+
+ ────────────────────────────────────────────────────────────────────────
+                                    Lines         │         Code
+ Category                   before  after  change │ before  after  change
+ ─────────────────────────────────────────────────┼──────────────────────
+ production:implementation      19     20      +1 │     16     17      +1
+ ─────────────────────────────────────────────────┼──────────────────────
+ Source total                   37     38      +1 │     29     30      +1
 
  ───────────────────────────────────────────────────────────
                        Lines         │         Code
@@ -270,6 +286,14 @@ Input metadata, measurement notes, report-level findings and partial status cove
  ────────────────────────────────────┼──────────────────────
  Source total      19     20      +1 │     16     17      +1
  Test/prod (Code): 0.25 → 0.23 (before → after)
+
+ ────────────────────────────────────────────────────────────────────────
+                                    Lines         │         Code
+ Category                   before  after  change │ before  after  change
+ ─────────────────────────────────────────────────┼──────────────────────
+ production:implementation      13     14      +1 │     12     13      +1
+ ─────────────────────────────────────────────────┼──────────────────────
+ Source total                   19     20      +1 │     16     17      +1
 
  ───────────────────────────────────────────────────────────
                        Lines         │         Code

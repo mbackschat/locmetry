@@ -785,3 +785,42 @@ fn older_measurement_schemas_are_invalid() {
         );
     }
 }
+
+/// A refinement moves code between categories and leaves every purpose and
+/// language total unchanged. Feedback of 2026-10-25 found such a
+/// reclassification invisible in human comparisons, which showed only
+/// `policy_changed`.
+#[test]
+fn human_comparisons_show_category_transfers() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("project");
+    common::write(&root, "tests/helpers/h.rs", "fn h() {}\nfn i() {}\n");
+    common::write(&root, "tests/a_test.rs", "fn a() {}\n");
+    let before = save(temp.path(), "before.json", &measure(&root));
+    common::write(
+        &root,
+        ".locmetryrc",
+        "version = 1\n[[refinements]]\nid = \"helpers\"\npurpose = \"test\"\nmatch = [\"tests/helpers/**\"]\ncategory = \"test-support\"\n",
+    );
+    let after = save(temp.path(), "after.json", &measure(&root));
+    for format in ["table", "markdown"] {
+        let text = common::stdout(compare(&before, &after, &["--format", format]));
+        let line = |label: &str| {
+            text.lines().find(|line| {
+                line.trim_start_matches(['|', ' '])
+                    .starts_with(&format!("{label} "))
+            })
+        };
+        let row = |label: &str| -> Vec<String> {
+            line(label)
+                .unwrap_or_else(|| panic!("no {label} row\n{text}"))
+                .split(['|', '│', ' '])
+                .filter(|cell| !cell.is_empty())
+                .map(String::from)
+                .collect()
+        };
+        assert_eq!(row("test:test")[1..4], ["3", "1", "-2"], "{text}");
+        assert_eq!(row("test:test-support")[1..4], ["0", "2", "+2"], "{text}");
+        assert_eq!(line("Test"), None, "purpose rows stay unchanged\n{text}");
+    }
+}

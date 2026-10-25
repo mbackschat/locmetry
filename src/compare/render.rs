@@ -289,6 +289,21 @@ fn grids(c: &Comparison, markdown: bool, variants: LanguageVariants) -> (Vec<Gri
             secondary: false,
             legend: Some(purpose_ratio(dimensions)),
         },
+        // A reclassification within a purpose changes no purpose or language
+        // row, so only this grid shows it.
+        Grid {
+            title: "Categories",
+            label: "Category",
+            rows: dimensions
+                .source_categories
+                .iter()
+                .filter(|(_, v)| changed(v))
+                .map(|(k, v)| Row::new(k.as_str(), v))
+                .collect(),
+            total: source_total(),
+            secondary: false,
+            legend: None,
+        },
         Grid {
             title: "Languages",
             label: "Language",

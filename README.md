@@ -15,7 +15,7 @@ Line counters such as Tokei, cloc and scc report how many lines of each language
 | Production, test and other code | Not built in; scc can map file patterns to custom categories | Built in from build modules and test conventions, refined by a reviewed policy |
 | Data and documentation | Counted next to source: JSON counts as code | Reported apart from source code |
 | Why a file counts where it does | No classification to explain | `locmetry explain PATH` names the deciding rule |
-| Change between two measurements | cloc `--diff` compares source trees | `locmetry compare` compares saved reports by purpose, language and folder |
+| Change between two measurements | cloc `--diff` compares source trees | `locmetry compare` compares saved reports by purpose, category, language and folder |
 
 The [comparison on Immich](#compared-with-a-line-counter-how-much-text-per-language) shows what that changes: the counters count its database schemas, OpenAPI specification and translations as code.
 

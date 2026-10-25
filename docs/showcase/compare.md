@@ -42,6 +42,20 @@ Net change: immich → immich
  Source total  322,048  333,302  +11,254 │ 273,523  282,727  +9,204
  Test/prod (Code): 0.46 → 0.48 (before → after)
 
+ ───────────────────────────────────────────────────────────────────────────────
+                                      Lines           │           Code
+ Category                    before    after   change │  before    after  change
+ ─────────────────────────────────────────────────────┼─────────────────────────
+ other:generated             17,825   19,173   +1,348 │  14,910   16,165  +1,255
+ production:build-tooling       864      886      +22 │     749      772     +23
+ production:deployment          893      938      +45 │     704      740     +36
+ production:distribution        337      695     +358 │     264      577    +313
+ production:implementation  196,005  198,194   +2,189 │ 167,715  169,367  +1,652
+ production:native            8,783    8,870      +87 │   7,131    7,206     +75
+ test:test                   80,595   87,800   +7,205 │  67,860   73,710  +5,850
+ ─────────────────────────────────────────────────────┼─────────────────────────
+ Source total               322,048  333,302  +11,254 │ 273,523  282,727  +9,204
+
  ──────────────────────────────────────────────────────────────────
                          Lines           │           Code
  Language       before    after   change │  before    after  change
@@ -176,6 +190,17 @@ Input metadata, measurement notes, report-level findings and partial status cove
  ──────────────────────────────────────┼───────────────────────
  Source total  98,947  100,095  +1,148 │ 82,619  83,183    +564
  Test/prod (Code): 0.21 → 0.24 (before → after)
+
+ ───────────────────────────────────────────────────────────────────────────
+                                     Lines          │          Code
+ Category                   before    after  change │ before   after  change
+ ───────────────────────────────────────────────────┼───────────────────────
+ production:build-tooling      229      231      +2 │    178     180      +2
+ production:implementation  71,490   70,213  -1,277 │ 60,456  59,152  -1,304
+ production:native           8,783    8,870     +87 │  7,131   7,206     +75
+ test:test                  17,934   20,270  +2,336 │ 14,440  16,231  +1,791
+ ───────────────────────────────────────────────────┼───────────────────────
+ Source total               98,947  100,095  +1,148 │ 82,619  83,183    +564
 
  ──────────────────────────────────────────────────────────────
                         Lines          │          Code
