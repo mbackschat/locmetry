@@ -4,11 +4,7 @@
 
 ## Next
 
-1. **Per-file comparison**, activated by the owner on 2026-10-25 as the next item: native per-file transitions in `compare`, so a policy review no longer needs its own join of two `--files` reports. Every agent session reviewing a workspace policy change wrote one ([feedback round](research/agents/feedback-2026-10-25.md#findings-as-verified)), and the file-transition helper accepts single-root reports only. Start from the [retained design](plans/measurement-quality-and-net-change.md#per-file-comparison), which adds `compare --files`.
-   - Proposal first, settling the human summary of transitions, matching workspace members, and paths counted or known on one side only.
-   - Implement test-first, with workspace reports covered.
-   - Run a targeted [agent regression check](agent-regression-checks.md) with a per-file review task before the release, as a new flag and report section require.
-   - Release it as 0.12.0. Another release that changes commands, reports or configuration goes ahead of it only by the owner's decision.
+None at present.
 
 ## Accepted — Awaiting Verification
 
