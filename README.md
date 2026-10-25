@@ -150,7 +150,7 @@ cd immich && locmetry --show-categories
  production:tooling                10      646      507 │  0.2%  ▏
  production:documentation-site      6      468      382 │  0.1%  ▏
  test:performance                   1       81       64 │  0.0%  ▏
- Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
+ Source files only. Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
  Share = Code / total Code. Bars: █ Production  ▓ Test  ░ Other. The largest row fills the bar.
 ```
 

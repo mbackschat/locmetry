@@ -9,7 +9,8 @@ use std::path::Path;
 /// A project and a second workspace member that trigger most notes: build
 /// modules, inline tests, folded languages, unclaimed source, data and
 /// documentation, unrecognized files, unused entries, an entry changing a
-/// module's purpose, a refinement, a Git submodule and folder rows with more detail than fits.
+/// module's purpose, refinements with an unused pattern and a preempted
+/// refinement, a Git submodule and folder rows with more detail than fits.
 fn fixture(root: &Path) {
     let project = root.join("project");
     write(
@@ -48,7 +49,7 @@ fn fixture(root: &Path) {
     write(
         &project,
         ".locmetryrc",
-        "version = 1\n[scope]\nexclude = [\"nothing-here/**\", \"skipped/**\"]\n[[rules]]\nid = \"ghost\"\nmatch = [\"ghost/**\"]\npurpose = \"production\"\n[[overrides]]\nid = \"model-fixture\"\nmatch = [\"web/src/model.ts\"]\npurpose = \"test\"\n[[refinements]]\nid = \"core-lib\"\npurpose = \"production\"\nmatch = [\"src/lib.rs\"]\ncategory = \"core\"\nreason = \"Library entry point\"\n",
+        "version = 1\n[scope]\nexclude = [\"nothing-here/**\", \"skipped/**\"]\n[[rules]]\nid = \"ghost\"\nmatch = [\"ghost/**\"]\npurpose = \"production\"\n[[overrides]]\nid = \"model-fixture\"\nmatch = [\"web/src/model.ts\"]\npurpose = \"test\"\n[[refinements]]\nid = \"core-lib\"\npurpose = \"production\"\nmatch = [\"src/lib.rs\", \"src/gone/**\"]\ncategory = \"core\"\nreason = \"Library entry point\"\n[[refinements]]\nid = \"library\"\npurpose = \"production\"\nmatch = [\"src/**\"]\ncategory = \"library\"\n",
     );
     let worker = root.join("worker");
     write(&worker, "go.mod", "module worker\n\ngo 1.21\n");
@@ -63,6 +64,11 @@ fn fixture(root: &Path) {
     );
     write(&project, "ignored.py", "print(3)\n");
     write(&root.join("badconfig"), ".locmetryrc", "not valid toml\n");
+    write(
+        &root.join("badcategory"),
+        ".locmetryrc",
+        "version = 1\n[categories]\nproof = \"Proofs\"\n[[refinements]]\nid = \"old\"\npurpose = \"test\"\nmatch = [\"old/**\"]\ncategory = \"test-support\"\n",
+    );
     write(
         &root.join("badmapping"),
         ".locmetryrc",
@@ -222,6 +228,7 @@ fn scenarios() -> Vec<Vec<&'static str>> {
             "3",
         ],
         vec!["--root", "badconfig"],
+        vec!["--root", "badcategory"],
         vec!["--root", "badmapping"],
         vec!["--root", "project", "--subfolder", "skipped"],
         vec!["compare", "bad.json", "bad.json"],

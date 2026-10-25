@@ -29,7 +29,7 @@ locmetry --schema config --section overview --section Classification
 
 ## Decide Purpose, Not Just Coverage
 
-Each file has one content kind, one purpose and one category. Classification uses first match: overrides → built-in test/build conventions → rules → inferred build modules, refined by generated-code markers → fallback. Refinements then change only the category of decided files. List order matters within overrides, rules and refinements. A rule cannot beat a convention; an override can, and a refinement relabels a convention's files without beating it. Scope exclusions run before classification and do not reclassify files.
+Each file has one content kind, one purpose and one category. The purposes are fixed, `production`, `test` and `other`; categories carry the finer distinctions within each. Classification uses first match: overrides → built-in test/build conventions → rules → inferred build modules, refined by generated-code markers → fallback. Refinements then change only the category of decided files. List order matters within overrides, rules and refinements. A rule cannot beat a convention; an override can, and a refinement relabels a convention's files without beating it. Scope exclusions run before classification and do not reclassify files.
 
 Review representative already-classified source as well as the unclaimed list. Module inference can mark fixtures or historical samples as production, so zero unclaimed code is not proof of correctness. Names suggest inspection, not a verdict. Use a targeted explanation before changing policy:
 
@@ -122,6 +122,8 @@ reason = "Shared setup for the test suites"
 ```
 
 Verify with `locmetry explain __test__/helpers/setup.js --root . --format json`: `result.file.rule` still names the test-directory convention, `result.file.category` becomes `test-support`, and `result.decision.refinement` names the refinement with its matching patterns and reason. The first matching refinement decides; use `except` to leave files to a later one. Refinements never change files that reached the fallback, which stay `unclaimed` for review, or files a generated-code marker refined, which stay `generated`. `summary.policy_entries` reports for each refinement the files it relabeled, under `displaced` the categories it replaced, and under `preempted` the earlier refinements that took matching files. A category subtotal covers files assigned that label; it is not proof that all conceptual helper code has been identified.
+
+Then check the whole policy rather than one file. Measure the unrestricted project with `--format table --verbose`, which lists entries that decided nothing and the unused patterns and exceptions of the others, or read `summary.policy_entries` in full JSON. To list which files changed category, capture full reports with `--files` before and after the policy change and run the file-transition helper in `locmetry --guide compare --section inspect-configuration-transitions`. Finish with `locmetry --guide configure --section validate-and-hand-back`.
 
 Use an override only when the purpose itself must change, such as archived tests counted as `other`.
 

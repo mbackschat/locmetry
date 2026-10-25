@@ -293,9 +293,19 @@ pub fn render_table_with_options(
                 .map(TerminalNote::Text),
         );
         notes.extend(
+            unused_globs_notes(
+                findings.policy_entries,
+                findings.unused_entries,
+                findings.subfolder,
+            )
+            .into_iter()
+            .map(TerminalNote::Text),
+        );
+        notes.extend(
             unused_exclusions_note(findings.unused_exclusions, findings.subfolder)
                 .map(TerminalNote::Text),
         );
+        notes.extend(preempted_entries_note(findings.policy_entries).map(TerminalNote::Text));
         notes.extend(purpose_changes_note(findings.policy_entries).map(TerminalNote::Text));
         notes
             .extend(members_note(findings.members, MemberNotes::Unclaimed).map(TerminalNote::Text));

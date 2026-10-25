@@ -87,7 +87,7 @@ locmetry acme-orders --no-user-config --no-color --no-bars --format table --fold
  production:implementation      5     19    16
  production:tooling             1      3     2
  test:test                      2      9     7
- Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
+ Source files only. Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
 
  Not source code: 2 data files (2 lines), 1 documentation file (3 lines). '--files --output -' lists each file's kind.
  Production from build modules: 4 code lines in 1 'go' module, 12 code lines in 1 'npm' module.
@@ -218,7 +218,7 @@ code lines).
  ──────────────────────────────────────
  test:test               2      9     7
  production:tooling      1      3     2
- Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
+ Source files only. Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
 
 ```
 

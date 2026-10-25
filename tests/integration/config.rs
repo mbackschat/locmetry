@@ -74,6 +74,28 @@ fn declared_categories_restrict_entry_categories() {
     );
 }
 
+/// A reference name from the categories guide still needs a declaration, so
+/// the error says it is one and what the reference uses it for, instead of
+/// leaving the reader to suspect a typo.
+#[test]
+fn undeclared_reference_category_names_the_reference() {
+    let error = Policy::from_toml(
+        "version = 1\n[categories]\nproof = \"Proofs\"\n[[rules]]\nid = \"old\"\nmatch = [\"old/**\"]\npurpose = \"other\"\ncategory = \"archived\"\n",
+    )
+    .unwrap_err();
+    let message = format!("{error:#}");
+    assert!(
+        message.contains("The reference in '--guide categories' uses 'archived' in Other for retired code and frozen copies.")
+            && message.contains("Declare it in [categories] to use it."),
+        "{message}"
+    );
+    let typo = Policy::from_toml(
+        "version = 1\n[categories]\nproof = \"Proofs\"\n[[rules]]\nid = \"old\"\nmatch = [\"old/**\"]\npurpose = \"other\"\ncategory = \"archve\"\n",
+    )
+    .unwrap_err();
+    assert!(!format!("{typo:#}").contains("reference"), "{typo:#}");
+}
+
 #[test]
 fn globs_follow_the_root_relative_contract() {
     let policy = policy(

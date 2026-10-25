@@ -247,7 +247,7 @@ fn categories_table_is_shown_on_request() {
  other:unclaimed         1      2     2
  production:tooling      1      1     1
  test:test               1      1     1
- Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
+ Source files only. Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
 ";
     assert!(table.contains(expected), "{table}");
 }

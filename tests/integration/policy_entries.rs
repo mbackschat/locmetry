@@ -484,3 +484,44 @@ fn invalid_refinements_are_rejected() {
         assert!(stderr.contains(message), "{stderr}");
     }
 }
+
+/// Feedback of 2026-10-25: a partly dead entry and files an earlier entry took
+/// from a later one appeared only in JSON, so a mistyped glob went unnoticed in
+/// the table a reviewer was reading.
+#[test]
+fn verbose_output_names_unused_globs_and_entries_an_earlier_entry_preempted() {
+    let temp = project(&[
+        (
+            ".locmetryrc",
+            r#"version = 1
+[[rules]]
+id = "locks"
+match = ["ref/locks/**"]
+purpose = "test"
+category = "lock"
+[[rules]]
+id = "reference"
+match = ["ref/**", "gone/**"]
+except = ["ref/attic/**"]
+purpose = "test"
+category = "reference"
+"#,
+        ),
+        ("ref/locks/a.py", "x = 1\n"),
+        ("ref/b.py", "x = 1\n"),
+    ]);
+    let root = temp.path().join("project");
+    let notes = [
+        "Patterns that decided no file: reference (gone/**).",
+        "Exceptions that left out no file: reference (ref/attic/**).",
+        "Entries that lost matching files to an earlier entry: reference (1 file to locks). An 'except' list on the earlier entry states such a split without relying on order.",
+    ];
+    for format in ["table", "markdown"] {
+        let text = crate::common::stdout(run(&root, &["--format", format, "--verbose"]));
+        for note in notes {
+            assert!(text.contains(note), "{note}\n{text}");
+        }
+    }
+    let plain = crate::common::stdout(run(&root, &["--format", "table"]));
+    assert!(!plain.contains("Patterns that decided"), "{plain}");
+}

@@ -204,6 +204,61 @@ pub(super) fn unused_entries_note(entries: &[String], subfolder: Option<&str>) -
     })
 }
 
+/// Names, per entry, the `match` or `except` globs that did nothing, which an
+/// entry that still decides files would otherwise hide: a mistyped glob in a
+/// partly working entry. Entries that decided no file have their own note.
+pub(super) fn unused_globs_notes(
+    entries: &[crate::PolicyEntry],
+    unused_entries: &[String],
+    subfolder: Option<&str>,
+) -> Vec<String> {
+    let partly_used = || entries.iter().filter(|e| !unused_entries.contains(&e.id));
+    let listed = |globs: fn(&crate::PolicyEntry) -> &Vec<String>| -> Vec<String> {
+        partly_used()
+            .filter(|entry| !globs(entry).is_empty())
+            .map(|entry| format!("{} ({})", entry.id, globs(entry).join(", ")))
+            .collect()
+    };
+    [
+        (
+            "Patterns that decided no file",
+            listed(|e| &e.unused_patterns),
+        ),
+        (
+            "Exceptions that left out no file",
+            listed(|e| &e.unused_exceptions),
+        ),
+    ]
+    .into_iter()
+    .filter(|(_, found)| !found.is_empty())
+    .map(|(label, found)| format!("{label}{}: {}.", subtree(subfolder), found.join(", ")))
+    .collect()
+}
+
+/// Names entries whose matching files an earlier entry of the policy decided.
+/// Built-in conventions are left out: their precedence is the stage order, and
+/// `except` on an entry cannot change it. The configure guide recommends
+/// `except` over relying on entry order (docs/guides/configure.md).
+pub(super) fn preempted_entries_note(entries: &[crate::PolicyEntry]) -> Option<String> {
+    let found: Vec<String> = entries
+        .iter()
+        .flat_map(|entry| {
+            entry
+                .preempted
+                .iter()
+                .filter(|by| entries.iter().any(|earlier| earlier.id == by.by))
+                .map(move |by| format!("{} ({} to {})", entry.id, counted(by.files, "file"), by.by))
+        })
+        .collect();
+    (!found.is_empty()).then(|| {
+        format!(
+            "Entries that lost matching files to an earlier entry: {}. An {} list on the earlier entry states such a split without relying on order.",
+            found.join(", "),
+            quoted("except")
+        )
+    })
+}
+
 /// Names entries whose files a later stage would give another purpose, such
 /// as an override turning module production into tests. Such moves are often
 /// intended, as for test runners classified as tooling, so the note asks for

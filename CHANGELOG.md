@@ -4,6 +4,16 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 
 ## [Unreleased]
 
+### Added
+
+- `--verbose` tables and the Markdown report name the `match` and `except` globs that did nothing in entries that still decide files, and the entries that lost matching files to an earlier entry of the policy, which an `except` list can make explicit. Before, a mistyped glob in a partly working entry showed only in the JSON `summary.policy_entries`.
+
+### Changed
+
+- The category table's legend says it counts source files only, so data such as test fixtures is not mistaken for missing from a category.
+- A configuration that uses a reference category name from `--guide categories` without declaring it in `[categories]` now fails with an error that says it is a reference name, what the reference uses it for and that it needs a declaration.
+- The configure guide ends its refine-categories section with the checks of the whole policy, and states that the three purposes are fixed while categories carry the detail.
+
 ### Fixed
 
 - The man page lists the possible values of an option on consecutive lines, as `--help` does, instead of with an empty line between each.

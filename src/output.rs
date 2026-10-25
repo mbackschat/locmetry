@@ -117,8 +117,10 @@ pub struct MemberView {
 /// tests for Java code; docs/plans/archive/test-production-ratios.md requires the note.
 const LANGUAGE_RATIO_NOTE: &str =
     "Tests written in another language than the code they test skew per-language Test/prod.";
+/// Fixtures and other data files often outweigh their category's source, and
+/// readers took the table for all counted files (feedback of 2026-10-25).
 const CATEGORY_LEGEND: &str =
-    "Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.";
+    "Source files only. Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.";
 
 /// Sorts labelled rows by `order`, where `code` gives a row's code lines.
 fn ordered<T>(

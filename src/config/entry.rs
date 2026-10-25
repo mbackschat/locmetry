@@ -1,6 +1,7 @@
 //! Classification entries: overrides, rules and refinements compiled from
 //! the configuration, and the checks every entry list must pass.
 use super::*;
+use crate::output::purpose_title;
 
 #[derive(Debug)]
 pub(super) struct Entry {
@@ -133,22 +134,52 @@ pub(super) fn check_categories(config: &ConfigFile) -> Result<()> {
         .overrides
         .iter()
         .chain(&config.rules)
-        .filter_map(|entry| Some((&entry.id, entry.category.as_ref()?)))
+        .filter_map(|entry| Some((&entry.id, entry.purpose, entry.category.as_ref()?)))
         .chain(
             config
                 .refinements
                 .iter()
-                .map(|refinement| (&refinement.id, &refinement.category)),
+                .map(|refinement| (&refinement.id, refinement.purpose, &refinement.category)),
         );
-    for (id, category) in categories {
-        ensure!(
-            config.categories.contains_key(category) || builtin.contains(category),
-            "Entry '{id}' uses category '{category}', which [categories] does not declare. Declared: {}. Built in: {}.",
+    for (id, purpose, category) in categories {
+        if config.categories.contains_key(category) || builtin.contains(category) {
+            continue;
+        }
+        let reference = reference_use(purpose, category).map_or(String::new(), |use_for| {
+            let (first, rest) = use_for.split_at(use_for.chars().next().map_or(0, char::len_utf8));
+            format!(
+                " The reference in '--guide categories' uses '{category}' in {} for {}{}. Declare it in [categories] to use it.",
+                purpose_title(purpose),
+                first.to_lowercase(),
+                rest
+            )
+        });
+        bail!(
+            "Entry '{id}' uses category '{category}', which [categories] does not declare.{reference} Declared: {}. Built in: {}.",
             config.categories.keys().cloned().collect::<Vec<_>>().join(", "),
             builtin.into_iter().collect::<Vec<_>>().join(", ")
         );
     }
     Ok(())
+}
+
+/// The category reference, whose vocabulary table owns the reference names;
+/// the binary embeds the same file as `--guide categories`.
+const CATEGORY_GUIDE: &str = include_str!("../../docs/guides/categories.md");
+
+/// What the reference uses `name` for under `purpose`, read from the guide's
+/// marked vocabulary table, which tests/integration/categories.rs also parses.
+fn reference_use(purpose: Purpose, name: &str) -> Option<&'static str> {
+    let (_, table) = CATEGORY_GUIDE.split_once("<!-- category-vocabulary -->\n")?;
+    let (purpose, name) = (purpose.to_string(), format!("`{name}`"));
+    table
+        .lines()
+        .take_while(|line| line.starts_with('|'))
+        .skip(2)
+        .find_map(|row| {
+            let cells: Vec<_> = row.trim_matches('|').split('|').map(str::trim).collect();
+            (cells.len() > 2 && cells[0] == purpose && cells[1] == name).then(|| cells[2])
+        })
 }
 
 /// Rejects empty, duplicate, and reserved entry IDs across all stages.

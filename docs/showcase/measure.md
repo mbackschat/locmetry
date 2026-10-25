@@ -143,7 +143,7 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  production:tooling                10      646      507
  production:documentation-site      6      468      382
  test:performance                   1       81       64
- Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
+ Source files only. Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
 
 ```
 
@@ -310,7 +310,7 @@ more (276,779 code lines).
  production:deployment        28    938    740
  production:distribution       5    695    577
  production:tooling           10    646    507
- Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
+ Source files only. Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
 
 ```
 
@@ -356,7 +356,7 @@ locmetry --root immich --subfolder mobile --format table --show-categories --no-
  production:native             67   8,870   7,206
  production:tooling             5     511     414
  production:build-tooling       5     231     180
- Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
+ Source files only. Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
 
 ```
 

@@ -51,7 +51,7 @@ locmetry workspace --workspace-file workspace.toml --no-user-config --no-color -
  production:implementation      5     19    16
  production:tooling             1      3     2
  test:test                      2      9     7
- Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
+ Source files only. Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
 
  Not source code: 2 data files (2 lines), 1 documentation file (3 lines). '--files --output -' lists each file's kind.
  Production from build modules: 4 code lines in 1 'go' module, 12 code lines in 1 'npm' module.

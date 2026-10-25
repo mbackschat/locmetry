@@ -416,10 +416,16 @@ pub(super) fn render_coverage(output: &mut String, findings: &Findings) {
             findings.unused_entries,
             findings.subfolder,
         ))
+        .chain(unused_globs_notes(
+            findings.policy_entries,
+            findings.unused_entries,
+            findings.subfolder,
+        ))
         .chain(unused_exclusions_note(
             findings.unused_exclusions,
             findings.subfolder,
         ))
+        .chain(preempted_entries_note(findings.policy_entries))
         .chain(purpose_changes_note(findings.policy_entries))
         .chain(members_note(findings.members, MemberNotes::All))
     {
