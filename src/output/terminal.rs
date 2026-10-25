@@ -215,6 +215,13 @@ pub fn render_table_with_options(
             order,
         );
         let codes: Vec<RowCode> = categories.iter().map(|(_, (_, code))| *code).collect();
+        let meanings = match verbose {
+            true => meanings_note(&shown_meanings(
+                findings.category_meanings,
+                categories.iter().map(|(category, _)| category.as_str()),
+            )),
+            false => None,
+        };
         let body: Vec<Vec<String>> = categories
             .into_iter()
             .map(|(category, (counts, _))| {
@@ -238,6 +245,9 @@ pub fn render_table_with_options(
             output += &text.top_rule(theme);
             output += &text.text;
             output += &legend(CATEGORY_LEGEND);
+            if let Some(meanings) = &meanings {
+                output += &legend(meanings);
+            }
             output += &after;
         }
     }

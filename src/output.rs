@@ -99,6 +99,9 @@ pub struct Findings<'a> {
     pub unused_entries: &'a [String],
     pub unused_exclusions: &'a [String],
     pub policy_entries: &'a [crate::PolicyEntry],
+    /// Meanings the policy declares for categories, by name; a workspace keeps
+    /// those its members agree on.
+    pub category_meanings: &'a BTreeMap<String, String>,
     /// Workspace members in name order; empty for a single root.
     pub members: &'a [MemberView],
 }

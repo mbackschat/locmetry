@@ -1,5 +1,6 @@
 //! Preparing and scanning roots, and resolving workspace members.
 use super::*;
+use std::collections::BTreeMap;
 
 /// One root measured as a regular run measures it.
 pub(crate) struct Measurement {
@@ -104,6 +105,29 @@ pub(crate) fn common<'a>(mut lists: impl Iterator<Item = &'a Vec<String>>) -> Ve
             .filter(|item| list.contains(item))
             .collect()
     })
+}
+
+/// The category meanings every policy declaring a name agrees on. Members may
+/// declare one name differently, and the merged row would carry a meaning
+/// that holds for one member only.
+pub(crate) fn shared_meanings<'a>(
+    policies: impl Iterator<Item = &'a BTreeMap<String, String>>,
+) -> BTreeMap<String, String> {
+    let mut meanings: BTreeMap<&str, Option<&str>> = BTreeMap::new();
+    for (name, meaning) in policies.flatten() {
+        meanings
+            .entry(name)
+            .and_modify(|kept| {
+                if *kept != Some(meaning.as_str()) {
+                    *kept = None;
+                }
+            })
+            .or_insert(Some(meaning));
+    }
+    meanings
+        .into_iter()
+        .filter_map(|(name, meaning)| Some((name.to_string(), meaning?.to_string())))
+        .collect()
 }
 
 /// A workspace member: an independent root measured with its own policy, or

@@ -17,6 +17,8 @@ pub(crate) struct Results {
     /// What each project entry decided; in a workspace of independent roots,
     /// IDs name their member as human notes do.
     pub(crate) policy_entries: Vec<locmetry::PolicyEntry>,
+    /// Declared category meanings the human reports show beside the rows.
+    pub(crate) category_meanings: BTreeMap<String, String>,
     /// Workspace members in name order; empty for a single root.
     pub(crate) members: Vec<MemberView>,
 }
@@ -297,6 +299,7 @@ impl HumanView<'_> {
             unused_entries: &results.unused_entries,
             unused_exclusions: &results.unused_exclusions,
             policy_entries: &results.policy_entries,
+            category_meanings: &results.category_meanings,
             members: &results.members,
         }
     }

@@ -53,7 +53,7 @@ Use the names the owner asks for, and propose rather than apply a rename of a ca
 
 ## Project-Specific Names
 
-Use one when no row fits, such as proofs in a Lean project, or when a row would merge kinds the owner wants to see apart, such as differential tests against a reference engine among integration tests. Name the role relative to the product in lowercase kebab-case, without a purpose or content-kind suffix (`-test`, `-source`, `-code`, `-data`), location, layer, framework, language, product, project or replaced name. Declare it in `[categories]` with a meaning that carries those specifics: `oracle = "Differential tests against <engine> as the reference"`. The same name may serve several purposes when it means the same kind of code.
+Use one when no row fits, such as proofs in a Lean project, or when a row would merge kinds the owner wants to see apart, such as differential tests against a reference engine among integration tests. Name the role relative to the product in lowercase kebab-case, without a purpose or content-kind suffix (`-test`, `-source`, `-code`, `-data`), location, layer, framework, language, product, project or replaced name. Declare it in `[categories]` with a meaning that carries those specifics: `oracle = "Differential tests against <engine> as the reference"`. The Markdown report and `--verbose` category tables show the meaning below the rows, so write it for a reader of the report. The same name may serve several purposes when it means the same kind of code.
 
 ## Write a Reviewed Policy
 

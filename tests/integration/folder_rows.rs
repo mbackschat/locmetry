@@ -391,6 +391,7 @@ fn adaptive_styling_preserves_plain_alignment_and_mutes_the_legend() {
         unused_entries: &[],
         unused_exclusions: &[],
         policy_entries: &[],
+        category_meanings: &Default::default(),
         members: &[],
     };
     let render = |theme| {

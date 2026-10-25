@@ -106,22 +106,25 @@ pub(super) fn member_grid(
     }
 }
 
+/// Writes a counts table and returns its row labels in the order shown.
 pub(super) fn table(
     output: &mut String,
     title: &str,
     label: &'static str,
     counts: &BTreeMap<String, Counts>,
     order: RowOrder,
-) {
+) -> Vec<String> {
     let header = Columns::of(&count_columns(label)).markdown_header();
     writeln!(output, "\n## {title}\n\n{header}").unwrap();
     let rows = counts
         .iter()
         .map(|(label, counts)| (label.clone(), counts))
         .collect();
-    for (label, counts) in ordered(rows, |counts| counts.code, order) {
-        count_row(output, &label, counts);
+    let rows = ordered(rows, |counts| counts.code, order);
+    for (label, counts) in &rows {
+        count_row(output, label, counts);
     }
+    rows.into_iter().map(|(label, _)| label).collect()
 }
 
 pub fn render_markdown(
@@ -195,13 +198,28 @@ pub fn render_markdown(
             order,
         );
     }
-    table(
+    let categories = table(
         &mut output,
         "Source categories",
         "Category",
         &summary.totals.source_categories,
         order,
     );
+    let meanings = shown_meanings(
+        findings.category_meanings,
+        categories.iter().map(String::as_str),
+    );
+    if !meanings.is_empty() {
+        writeln!(
+            output,
+            "\n{}\n\n| Category | Meaning |\n| --- | --- |",
+            Theme::MARKDOWN.paint(Role::Muted, MEANINGS_INTRO)
+        )
+        .unwrap();
+        for (name, meaning) in meanings {
+            writeln!(output, "| {} | {} |", cell(name), cell(meaning)).unwrap();
+        }
+    }
     let non_source = summary
         .totals
         .by_kind_purpose

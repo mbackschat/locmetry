@@ -256,6 +256,7 @@ fn unreadable_counts_and_member_failures_are_separate_from_optional_findings() {
         unused_entries: &[],
         unused_exclusions: &[],
         policy_entries: &[],
+        category_meanings: &Default::default(),
         members: &members,
     };
     for verbose in [false, true] {

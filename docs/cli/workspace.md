@@ -53,6 +53,9 @@ locmetry workspace --workspace-file workspace.toml --no-user-config --no-color -
  production:tooling             1      3     2
  test:test                      2      9     7
  Source files only. Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
+ Category meanings declared in the policy:
+   generated  Committed generator output, regenerated rather than edited
+   tooling    Maintained developer commands
 
  Not source code: 2 data files (2 lines), 1 documentation file (3 lines). '--files --output -' lists each file's kind.
  Production from build modules: 4 code lines in 1 'go' module, 12 code lines in 1 'npm' module.

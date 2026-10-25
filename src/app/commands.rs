@@ -243,6 +243,7 @@ pub(crate) fn run_root(
     let mut scope = scope_policy(&measurement.policy);
     scope.subfolder = subfolder;
 
+    let category_meanings = measurement.policy.snapshot().categories().clone();
     let location = Location::Root {
         root: measurement.root,
         scope,
@@ -261,6 +262,7 @@ pub(crate) fn run_root(
         coverage: measurement.coverage,
         inaccurate: measurement.inaccurate,
         rows: measurement.rows,
+        category_meanings,
         members: Vec::new(),
     };
     report(
@@ -344,6 +346,11 @@ pub(crate) fn run_workspace(args: &WorkspaceArgs, styling: Styling) -> Result<Ou
         unused_entries: Vec::new(),
         unused_exclusions: Vec::new(),
         policy_entries: Vec::new(),
+        category_meanings: shared_meanings(
+            measurements
+                .iter()
+                .map(|m| m.policy.snapshot().categories()),
+        ),
         members: Vec::new(),
     };
     // Unused in every member folder means unused by the shared policy; an

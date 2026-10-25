@@ -1,6 +1,37 @@
 //! Notes and findings shared by the terminal and Markdown reports.
 use super::*;
 
+/// Introduces the meanings below a category table.
+pub(super) const MEANINGS_INTRO: &str = "Category meanings declared in the policy:";
+
+/// The declared meanings of the categories `keys` show, as `purpose:category`
+/// keys in row order; each name once, since one meaning covers its purposes.
+pub(super) fn shown_meanings<'m, 'k>(
+    meanings: &'m BTreeMap<String, String>,
+    keys: impl Iterator<Item = &'k str>,
+) -> Vec<(&'m str, &'m str)> {
+    let mut shown: Vec<(&str, &str)> = Vec::new();
+    for key in keys {
+        let name = key.split_once(':').map_or(key, |(_, name)| name);
+        if let Some((name, meaning)) = meanings.get_key_value(name) {
+            if !shown.iter().any(|(seen, _)| *seen == name) {
+                shown.push((name, meaning));
+            }
+        }
+    }
+    shown
+}
+
+/// The terminal legend of `shown` meanings, names padded to one column.
+pub(super) fn meanings_note(shown: &[(&str, &str)]) -> Option<String> {
+    let width = shown.iter().map(|(name, _)| name.chars().count()).max()?;
+    let mut note = String::from(MEANINGS_INTRO);
+    for (name, meaning) in shown {
+        write!(note, "\n   {name:<width$}  {meaning}").unwrap();
+    }
+    Some(note)
+}
+
 pub(super) enum MemberNotes {
     All,
     Unclaimed,

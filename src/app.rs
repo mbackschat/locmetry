@@ -36,6 +36,7 @@ use locmetry::{
     CONFIG_FILE, DATA_LANGUAGES, DOCUMENTATION_LANGUAGES,
 };
 use std::{
+    collections::BTreeMap,
     io::{self, IsTerminal, Write},
     path::{Path, PathBuf},
     time::{SystemTime, UNIX_EPOCH},
