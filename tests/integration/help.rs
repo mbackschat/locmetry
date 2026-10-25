@@ -488,6 +488,14 @@ fn help_stays_within_its_reading_budget() {
             .output()
             .unwrap();
         assert!(out.status.success(), "{args:?}");
+        // Windows help is a few bytes longer than the macOS help the budgets
+        // were measured on (`--help` 13,013 against 13,009 bytes, 2026-10-25),
+        // so the owner gave Windows 5% more the same day.
+        let budget = if cfg!(windows) {
+            budget * 105 / 100
+        } else {
+            budget
+        };
         let size = out.stdout.len();
         assert!(
             size <= budget,
