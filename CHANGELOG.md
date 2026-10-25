@@ -4,6 +4,8 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-10-25
+
 ### Added
 
 - A `locmetry(1)` man page and shell completions: Homebrew and the Linux packages install the man page and the bash, zsh and fish completions, release archives include them, and `locmetry --generate KIND` prints each one (`man`, `complete-bash`, `complete-zsh`, `complete-fish`, `complete-powershell`) for other installations. The page shows every command's options and help examples, exit statuses, environment variables and files. Completions offer commands, options and, except in PowerShell, values such as `--format` and `--guide` topics.
@@ -128,7 +130,8 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 - **Breaking:** presentation options are named for what they show: `--folders`, `--categories`, `--bars`, `--purpose` and `--depth` became `--show-folders`, `--show-categories`, `--show-bars`, `--table-purpose` and `--markdown-depth`. `workspace --file` and `explain --workspace` became `--workspace-file`. The former spellings are rejected.
 - `--files` adds per-file records to every full JSON view, whether saved or printed.
 
-[Unreleased]: https://github.com/mbackschat/locmetry/compare/v0.10.0...HEAD
+[Unreleased]: https://github.com/mbackschat/locmetry/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/mbackschat/locmetry/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/mbackschat/locmetry/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/mbackschat/locmetry/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/mbackschat/locmetry/compare/v0.7.6...v0.8.0
