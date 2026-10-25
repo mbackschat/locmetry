@@ -9,7 +9,7 @@ Set TypingSpeed 45ms
 Set Framerate 24
 
 Hide
-Type "cd /tmp/locmetry-demo/immich && clear"
+Type 'cd "$LOCMETRY_DEMO_STAGE/immich" && clear'
 Enter
 Show
 

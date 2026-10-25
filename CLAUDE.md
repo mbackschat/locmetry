@@ -25,13 +25,14 @@ Keep [Cargo.lock](Cargo.lock) with the application. Tokei is embedded with its d
 
 ## Disk Hygiene
 
-Keep only the current build and the newest temporary trees; on 2026-10-24 leftovers had grown to 54 GB in `target/`, over 18 GB of temporary trees and a 592 MB campaign archive. Three scripts do the cleanup. Each removes only what it can attribute to this repository and refuses anything else.
+Temporary files belong to the command that creates them. Use `TemporaryDirectory` in Python or `mktemp -d` with an exit trap in shell scripts; remove only that invocation's directory. Do not sweep `/tmp`, `$TMPDIR`, agent session folders or arbitrary `locmetry-*` paths. There are no session cleanup hooks or registration steps.
 
-- `python3 scripts/trim-target.py` removes every `target/` artifact that the current build, test and Clippy run do not report, and runs `cargo clean` above 6 GiB. Run it at the end of each task.
-- `python3 scripts/trim-tmp.py` keeps only the newest `locmetry-*` tree in `/tmp` and `$TMPDIR` and the newest Claude Code session scratch folder of this repository, never touching anything changed within the last hour, subject homes or unarchived campaigns.
-- `python3 scripts/compact-campaign.py CAMPAIGN` replaces an archived campaign's binaries with their hashes and compresses its logs; run it after moving a campaign into the archive.
+- [Recorded-guide verification](scripts/check-recorded-guides.py) discards its default temporary files when the run ends, including on failure. Diagnostics remain in the terminal. Use `--artifacts-dir PATH` to retain evidence deliberately; CI uses its own artifact retention.
+- [Demo recording](scripts/record-demo.sh) creates a unique staging directory and removes it on exit. The example helpers and parity verifiers likewise own and clean their temporary directories.
+- Keep campaign evidence until it is archived. [Campaign preparation](scripts/agent-explorability.py) owns subject-home retirement, including credential refresh handling. After moving a campaign into the archive, `python3 scripts/compact-campaign.py CAMPAIGN` replaces its binaries with hashes and compresses its logs.
+- Build into the repository's `target/` for normal development. Cargo owns this reusable cache; it is not automatically pruned by project scripts. For disposable revision builds, scope their temporary build directories to the invoking command and keep campaign evidence outside that scope.
 
-The SessionStart hook in [.claude/settings.json](.claude/settings.json) runs the first two in the background. Put temporary trees in the session scratchpad or name them `locmetry-*` below `/tmp` or `$TMPDIR`, delete your own when a task ends, and build into the repository's `target/` only.
+Exit cleanup cannot run after a forced kill or power loss. Existing temporary trees are not deleted by these writers.
 
 ## Coding Style & Naming Conventions
 

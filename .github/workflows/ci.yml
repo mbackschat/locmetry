@@ -29,10 +29,9 @@ jobs:
           python3 scripts/test_release.py
           python3 scripts/test_doc_indexes.py
           python3 scripts/test_recorded_guides.py
+          python3 scripts/test_record_demo.py
           python3 scripts/test_file_sizes.py
           python3 scripts/test_agent_regression_trend.py
-          python3 scripts/test_trim_target.py
-          python3 scripts/test_trim_tmp.py
           python3 scripts/test_compact_campaign.py
           python3 scripts/doc-indexes.py check
           python3 scripts/agent-regression-trend.py check

@@ -17,6 +17,46 @@ spec.loader.exec_module(recorded)
 HEADER = "# Demo\n\n*2026-10-20T00:00:00Z by Showboat 0.6.1*\n<!-- showboat-id: demo -->\n"
 
 
+class ArtifactLifetimeTests(unittest.TestCase):
+    def test_default_artifacts_are_removed_after_success_failure_and_interruption(self):
+        for outcome in [True, False, KeyboardInterrupt()]:
+            with self.subTest(outcome=outcome), tempfile.TemporaryDirectory() as parent:
+                seen = []
+
+                def check(artifacts, *args, **kwargs):
+                    seen.append(artifacts)
+                    (artifacts / "diagnostic.log").write_text("evidence")
+                    if isinstance(outcome, BaseException):
+                        raise outcome
+                    return outcome
+
+                with patch.object(recorded.tempfile, "tempdir", parent), \
+                        patch.object(recorded, "check", side_effect=check), \
+                        contextlib.redirect_stdout(io.StringIO()):
+                    if isinstance(outcome, BaseException):
+                        with self.assertRaises(KeyboardInterrupt):
+                            recorded.main([])
+                    else:
+                        self.assertEqual(recorded.main([]), 0 if outcome else 1)
+                self.assertEqual(len(seen), 1)
+                self.assertFalse(seen[0].exists())
+                self.assertEqual(list(Path(parent).iterdir()), [])
+
+    def test_explicit_artifacts_survive_success_and_failure(self):
+        with tempfile.TemporaryDirectory() as parent:
+            artifacts = Path(parent) / "evidence"
+            artifacts.mkdir()
+
+            def check(destination, *args, **kwargs):
+                (destination / "diagnostic.log").write_text("evidence")
+                return passed
+
+            for passed in [True, False]:
+                with patch.object(recorded, "check", side_effect=check):
+                    self.assertEqual(recorded.main(["--artifacts-dir", str(artifacts)]), 0 if passed else 1)
+                self.assertEqual((artifacts / "diagnostic.log").read_text(), "evidence")
+
+
 class RecordedGuideTests(unittest.TestCase):
     def test_new_option_needs_an_executable_example_not_prose_or_output(self):
         text = HEADER + "Use --new.\n```bash\nlocmetry --root .\n```\n```output\n--new\n```\n"

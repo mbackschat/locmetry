@@ -47,8 +47,6 @@ match = [
     "scripts/refresh-readme-showcase.py",
     "scripts/record-demo.sh",
     "scripts/agent-regression-trend.py",
-    "scripts/trim-target.py",
-    "scripts/trim-tmp.py",
     "scripts/compact-campaign.py",
 ]
 kind = ["source"]

@@ -104,7 +104,7 @@ def replay(path, artifacts, command=None):
     return record(path, artifacts, status, diagnostic, passed)
 
 
-def check(artifacts, selection="all"):
+def check(artifacts, selection="all", *, retain=True):
     os.chdir(REPOSITORY)
     artifacts = artifacts.resolve()
     artifacts.mkdir(parents=True, exist_ok=True)
@@ -139,16 +139,25 @@ def check(artifacts, selection="all"):
         summary = f"Total: {len(documents)} documents, {elapsed:.2f}s; {'PASS' if passed else 'FAIL'}."
         (artifacts / "summary.log").write_text(summary + "\n")
         print(summary, flush=True)
-        if not passed:
+        if not passed and retain:
             print(f"Replay evidence: {artifacts}", flush=True)
     return passed
 
 
-if __name__ == "__main__":
+def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--artifacts-dir", type=Path, help="Evidence directory outside the checkout; default: a new temporary directory")
+    parser.add_argument("--artifacts-dir", type=Path, help="Retain evidence outside the checkout; default: discard temporary files when the run ends")
     parser.add_argument("--set", choices=SELECTIONS, default="all",
                         help="reference: guides on the checked-in fixture; showcase: recordings of the pinned Immich checkouts")
-    args = parser.parse_args()
-    artifacts = args.artifacts_dir or Path(tempfile.mkdtemp(prefix="locmetry-showboat-"))
-    raise SystemExit(0 if check(artifacts, args.set) else 1)
+    args = parser.parse_args(argv)
+    if args.artifacts_dir is not None:
+        return 0 if check(args.artifacts_dir, args.set) else 1
+    with tempfile.TemporaryDirectory(prefix="locmetry-showboat-") as temporary:
+        passed = check(Path(temporary), args.set, retain=False)
+    if not passed:
+        print("Temporary replay files discarded; use --artifacts-dir PATH to retain evidence.", flush=True)
+    return 0 if passed else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

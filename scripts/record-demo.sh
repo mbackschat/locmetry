@@ -14,12 +14,11 @@ export LOCMETRY_BIN="$repository/target/release/locmetry"
 source scripts/showcase-env.sh
 
 # Reports print their canonical root, so the measured copy lives in a neutral
-# folder that the tape names, keeping local checkout paths out of the GIF.
+# folder below /tmp, keeping local checkout paths out of the GIF.
 # Its .git stays because ignore-file selection depends on the Git work tree.
-stage=/tmp/locmetry-demo
-rm -rf "$stage"
-mkdir "$stage"
+stage=$(mktemp -d /tmp/locmetry-demo.XXXXXXXX)
 trap 'rm -rf "$demo_directory" "$stage"' EXIT
+export LOCMETRY_DEMO_STAGE="$stage"
 if [[ $(uname -s) == Darwin ]]; then
     cp -cR "$showcase_tag/immich/" "$stage/immich"
 else
