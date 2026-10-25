@@ -64,6 +64,36 @@ fn the_environment_section_lists_exactly_the_variables_the_source_reads() {
     assert_eq!(listed, read);
 }
 
+/// Help's width comes from clap 4.6.7 (`HelpTemplate::term_w`), not from the
+/// share-bar width: a terminal on stdout, stderr or stdin wins over `COLUMNS`,
+/// and without either help wraps at 100. Only the last two can be locked
+/// without a terminal; the guide must state the 100, not the bars' 80.
+#[test]
+fn help_wraps_to_columns_and_otherwise_to_100_columns() {
+    let widest = |columns: Option<&str>| {
+        let mut command = common::locmetry();
+        command.env("NO_COLOR", "1").env_remove("COLUMNS");
+        if let Some(columns) = columns {
+            command.env("COLUMNS", columns);
+        }
+        let output = command
+            .arg("--help")
+            .stdin(std::process::Stdio::null())
+            .output()
+            .unwrap();
+        let help = common::stdout(output);
+        help.lines().map(|line| line.chars().count()).max().unwrap()
+    };
+    assert_eq!(widest(Some("60")), 60);
+    assert_eq!(widest(None), 100);
+    let reference = source("reference");
+    let bullet = section(&reference, "environment")
+        .lines()
+        .find(|line| line.starts_with("- `COLUMNS`"))
+        .unwrap();
+    assert!(bullet.contains("100"), "{bullet}");
+}
+
 #[test]
 fn help_and_the_reference_name_the_same_exit_statuses() {
     let help = help().split_whitespace().collect::<Vec<_>>().join(" ");
