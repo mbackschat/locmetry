@@ -47,7 +47,7 @@ Reviewed with the owner on 2026-10-16; these recommendations guide scope decisio
 
 ### Per-file Comparison
 
-**Trigger:** a consumer needs per-file deltas that aggregate/topology comparison cannot answer. This is deferred, not accepted implementation scope. The [historical S4 decision record](../proposals/archive/net-change.md#optional-file-detail) records why aggregate comparison shipped first; this section now owns the retained extension design.
+**Trigger:** a consumer needs per-file deltas that aggregate/topology comparison cannot answer. Met on 2026-10-25, when the owner made it the next item in [PLAN](../PLAN.md#next); the design below is its starting point and needs a proposal before implementation. The [historical S4 decision record](../proposals/archive/net-change.md#optional-file-detail) records why aggregate comparison shipped first; this section now owns the retained extension design.
 
 Retained design for assessment, not supported behavior: keep file detail optional so the required comparison works with ordinary full exports. If included, `compare --files` requires both inputs to contain file records and fails clearly if either lacks them. Match by member name where applicable and root-relative path over the union of paths, including relevant unreadable/unrecognized coverage paths. Each side distinguishes counted, not present in the report, unreadable, and unrecognized; unavailable counts are `null`, not fabricated zero source measurements.
 
