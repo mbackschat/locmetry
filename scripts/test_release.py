@@ -287,6 +287,10 @@ class PackageTests(unittest.TestCase):
                 (root / name).write_text(name)
             (root / "scripts").mkdir()
             shutil.copy2(repository / "scripts/compare-locmetry-files.sh", root / "scripts")
+            # The Generate step writes the man page and completions here; Package ships them.
+            (root / "target/generated/complete").mkdir(parents=True)
+            (root / "target/generated/locmetry.1").write_text("man page\n")
+            (root / "target/generated/complete/locmetry.bash").write_text("bash completion\n")
             env = dict(os.environ, GITHUB_REF_NAME="v0.0.0", GITHUB_EVENT_NAME="push", RUNNER_OS="Linux",
                        GITHUB_ENV=str(root / "github-env"))
             subprocess.run(["bash", "-eu", "-c", package], cwd=root, env=env, check=True, capture_output=True)
@@ -296,6 +300,8 @@ class PackageTests(unittest.TestCase):
                 self.assertTrue(helper.mode & 0o111)
                 self.assertEqual(archive.extractfile(helper).read(),
                                  (repository / "scripts/compare-locmetry-files.sh").read_bytes())
+                self.assertEqual(archive.extractfile(f"{name}/locmetry.1").read(), b"man page\n")
+                self.assertEqual(archive.extractfile(f"{name}/complete/locmetry.bash").read(), b"bash completion\n")
             result = subprocess.run(
                 ["/bin/bash", str(root / name / "compare-locmetry-files.sh"), "before.json", "after.json"],
                 env=dict(os.environ, PATH=""), text=True, capture_output=True,
