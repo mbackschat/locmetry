@@ -222,8 +222,18 @@ pub fn render_markdown(
             .chain([ALL_PURPOSES.ratio_column()])
             .collect(),
     );
+    let language_rows = ordered(
+        source_languages(rows).into_iter().collect(),
+        |(counts, _)| counts.code,
+        order,
+    );
     let notes: Vec<String> = std::iter::once(LANGUAGE_RATIO_NOTE.to_string())
         .chain(folded_note(&folds))
+        .chain(embedded_only_legend(
+            language_rows
+                .iter()
+                .map(|(language, (counts, _))| (language.as_str(), counts)),
+        ))
         .map(|note| Theme::MARKDOWN.paint(Role::Muted, &note))
         .collect();
     writeln!(
@@ -233,11 +243,7 @@ pub fn render_markdown(
         languages.markdown_header()
     )
     .unwrap();
-    for (language, (counts, code)) in ordered(
-        source_languages(rows).into_iter().collect(),
-        |(counts, _)| counts.code,
-        order,
-    ) {
+    for (language, (counts, code)) in language_rows {
         writeln!(
             output,
             "| {} | {} | {} |",

@@ -126,6 +126,7 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  Lines = Code + Comments + Blanks · Production + Test + Other = Code · Test/prod = Test / Production (Code)
  Tests written in another language than the code they test skew per-language Test/prod.
  Folded: BASH → Shell, TSX → TypeScript.
+ Rows with 0 files count code embedded in files of other languages, such as scripts in HTML: PostCSS.
 
  ──────────────────────────────────────────────────────
  Category                       Files    Lines     Code

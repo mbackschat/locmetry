@@ -31,6 +31,7 @@ locmetry --root acme-orders --no-user-config --no-color --no-bars --format table
  Lines = Code + Comments + Blanks · Production + Test + Other = Code · Test/prod = Test / Production (Code)
  Tests written in another language than the code they test skew per-language Test/prod.
  Folded: TSX → TypeScript.
+ Rows with 0 files count code embedded in files of other languages, such as scripts in HTML: JavaScript.
 
 ```
 
@@ -61,6 +62,7 @@ locmetry acme-orders --no-user-config --no-color --no-bars --format table --fold
  Lines = Code + Comments + Blanks · Production + Test + Other = Code · Test/prod = Test / Production (Code)
  Tests written in another language than the code they test skew per-language Test/prod.
  Folded: TSX → TypeScript.
+ Rows with 0 files count code embedded in files of other languages, such as scripts in HTML: JavaScript.
 
  ────────────────────────────────────────────────────────────────────
  Folder                  Lines  Code │ Prod.  Test  Other │ Test/prod
@@ -129,6 +131,7 @@ locmetry --root acme-orders --subfolder web/src --no-user-config --no-color --fo
  Total           4     13    12 │        1       0 │      7.7%
  Lines = Code + Comments + Blanks · Comment % = Comments / (Code + Comments)
  Folded: TSX → TypeScript.
+ Rows with 0 files count code embedded in files of other languages, such as scripts in HTML: JavaScript.
  Not shown (purposes): Test and Other (4 code lines).
  Bars: ▓ Comment %. The densest row fills the bar.
 
@@ -325,6 +328,7 @@ jq '{
  Lines = Code + Comments + Blanks · Production + Test + Other = Code · Test/prod = Test / Production (Code)
  Tests written in another language than the code they test skew per-language Test/prod.
  Folded: TSX → TypeScript.
+ Rows with 0 files count code embedded in files of other languages, such as scripts in HTML: JavaScript.
 
  Code share  █ Production  ▓ Test  ░ Other
  TypeScript  34.5%  ████████████████████████▓▓▓▓▓▓▓▓▓▓▓▓░░░░

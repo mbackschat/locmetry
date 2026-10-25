@@ -431,3 +431,27 @@ fn dominant_unclaimed_folders_split_beyond_the_row_limit() {
     );
     assert_eq!(folders.len(), 11);
 }
+
+/// A script inside HTML counts under JavaScript without a JavaScript file, so
+/// its row shows 0 files. All six agents of the 2026-10-25 A/B flagged such a
+/// row and two guessed a wrong cause (docs/research/agent-experiments-2026-10-25.md).
+#[test]
+fn rows_of_embedded_code_alone_say_why_they_have_no_files() {
+    let temp = project(&[
+        (
+            "web/index.html",
+            "<html>\n<script>\nlet a = 1;\n</script>\n</html>\n",
+        ),
+        ("app.py", "x = 1\n"),
+    ]);
+    let root = temp.path().join("project");
+    let legend = "Rows with 0 files count code embedded in files of other languages, such as scripts in HTML: JavaScript.";
+    for format in ["table", "markdown"] {
+        let text = String::from_utf8(run(&root, &["--format", format]).stdout).unwrap();
+        assert!(text.contains(legend), "{text}");
+    }
+    let plain = project(&[("app.py", "x = 1\n")]);
+    let text = String::from_utf8(run(&plain.path().join("project"), &["--format", "table"]).stdout)
+        .unwrap();
+    assert!(!text.contains("Rows with 0 files"), "{text}");
+}

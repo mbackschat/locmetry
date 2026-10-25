@@ -6,6 +6,7 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 
 ### Added
 
+- Language tables explain rows with 0 files: their code is embedded in files of other languages, such as a script in an HTML file, and a legend line now names those rows.
 - `locmetry compare` table and Markdown output add a Category table of the source categories whose lines or code changed, so a reclassification that moves code between categories within a purpose, such as a new refinement, is visible. Before, it left every human table unchanged.
 - `--verbose` tables and the Markdown report name the `match` and `except` globs that did nothing in entries that still decide files, and the entries that lost matching files to an earlier entry of the policy, which an `except` list can make explicit. Before, a mistyped glob in a partly working entry showed only in the JSON `summary.policy_entries`.
 

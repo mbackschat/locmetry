@@ -259,6 +259,26 @@ pub(super) fn preempted_entries_note(entries: &[crate::PolicyEntry]) -> Option<S
     })
 }
 
+/// Names language rows whose code is all embedded in files of other
+/// languages, such as a script in HTML: a row of 0 files otherwise reads as an
+/// error, and agents guessed wrong causes for one
+/// (docs/research/agent-experiments-2026-10-25.md).
+pub(super) fn embedded_only_legend<'a>(
+    rows: impl IntoIterator<Item = (&'a str, &'a Counts)>,
+) -> Option<String> {
+    let names: Vec<&str> = rows
+        .into_iter()
+        .filter(|(_, counts)| counts.files == 0 && counts.lines > 0)
+        .map(|(language, _)| language)
+        .collect();
+    (!names.is_empty()).then(|| {
+        format!(
+            "Rows with 0 files count code embedded in files of other languages, such as scripts in HTML: {}.",
+            names.join(", ")
+        )
+    })
+}
+
 /// Names entries whose files a later stage would give another purpose, such
 /// as an override turning module production into tests. Such moves are often
 /// intended, as for test runners classified as tooling, so the note asks for

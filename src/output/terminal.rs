@@ -138,6 +138,11 @@ pub fn render_table_with_options(
     }
     legends.extend(inline_tests_legend(rows));
     legends.extend(folded_note(&folds));
+    legends.extend(embedded_only_legend(
+        languages
+            .iter()
+            .map(|(language, (counts, _))| (language.as_str(), counts)),
+    ));
     legends.extend(selection.notes(&purposes));
     for text in legends {
         output += &legend(&text);
