@@ -170,6 +170,39 @@ def grade(pair, run):
                 names = [files[name]["category"] for name in group]
                 check("distinct-categories:" + ",".join(group),
                       len(set(names)) == len(names) and not set(names) & {"test", "implementation", "unclaimed"})
+        elif number == 13:
+            oracle = task["oracle"]
+
+            def printed(name):
+                path = root / name
+                if not path.is_file():
+                    missing.append(name)
+                    return None
+                text = path.read_text()
+                check("printed-table:" + name, not text.lstrip().startswith("{") and " Code" in text)
+                return {line.split()[0]: line.split() for line in text.splitlines() if line.split()}
+
+            categories = printed("outputs/categories.txt")
+            if categories:
+                for row in oracle["category_rows"]:
+                    check("category-row:" + row, row in categories)
+                # Category rows read: label, Files, Lines, Code.
+                for row, code in oracle["test_code"].items():
+                    check("test-code:" + row, categories.get(row, [None] * 4)[3] == str(code))
+            folders = printed("outputs/test-folders.txt")
+            if folders:
+                for row in oracle["folder_rows"]:
+                    check("folder-row:" + row, row in folders)
+                for row in oracle["absent_folder_rows"]:
+                    check("test-only-folders:" + row, row not in folders)
+        elif number == 14:
+            for name, decisions in task["oracle"]["projects"].items():
+                result = command(["--root", f"projects/{name}", "--files", "--format", "json"])
+                check("configuration-loads:" + name, result.returncode == 0)
+                if result.returncode == 0:
+                    files = {f["path"]: f for f in json.loads(result.stdout)["files"]}
+                    for path, expected in decisions.items():
+                        check(f"decision:{name}/{path}", all(files[path][k] == v for k, v in expected.items()))
         else:
             check("supported-task", False)
     except (KeyError, TypeError, ValueError, subprocess.TimeoutExpired) as error:

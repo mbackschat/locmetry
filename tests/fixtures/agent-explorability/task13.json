@@ -1,0 +1,44 @@
+{
+ "revision": "task13-table-views-v1",
+ "files": {
+  "projects/shop/.locmetryrc": "version = 1\n\n[[rules]]\nid = \"src\"\nmatch = [\"src/**\"]\npurpose = \"production\"\n\n[[rules]]\nid = \"tools\"\nmatch = [\"tools/**\"]\npurpose = \"production\"\ncategory = \"tooling\"\n\n[[refinements]]\nid = \"helpers\"\npurpose = \"test\"\nmatch = [\"tests/helpers/**\"]\ncategory = \"test-support\"\n",
+  "projects/shop/src/shop/cart.py": "def total(items):\n    return sum(items)\n\nTAX = 0.2\n",
+  "projects/shop/src/shop/pricing.py": "# Prices in cents.\ndef price(cents):\n    return cents / 100\n",
+  "projects/shop/tests/test_cart.py": "from shop.cart import total\n\ndef test_total():\n    assert total([1, 2]) == 3\n",
+  "projects/shop/tests/helpers/fixtures.py": "# Shared test data.\nITEMS = [1, 2, 3]\nEMPTY = []\n",
+  "projects/shop/tools/release.py": "print('release')\n"
+ },
+ "prompt": "You have ./bin/locmetry and synthetic inputs in this scratch directory. Work only here. The executable and its built-in discovery material are your only product documentation; do not read other directories, implementation files, telemetry, or the launcher, and do not use the internet or other agents. You may inspect synthetic inputs and use ordinary shell/Python tools. You may create files only below outputs/; leave projects/shop unchanged. For projects/shop, save two tables exactly as Locmetry prints them for people, not JSON: the table of the project's source code by category to outputs/categories.txt, and the folder table restricted to test code to outputs/test-folders.txt. Report the test code lines of each test category.\n\nUse whatever built-in discovery you need. Give a concise final answer of at most 250 words, including supporting commands and any unresolved result. Create the requested working artifacts, but do not write an assessment document or a logging harness.\n",
+ "oracle": {
+  "artifacts": [
+   "outputs/categories.txt",
+   "outputs/test-folders.txt"
+  ],
+  "category_rows": [
+   "production:production",
+   "production:tooling",
+   "test:test",
+   "test:test-support"
+  ],
+  "test_code": {
+   "test:test": 3,
+   "test:test-support": 2
+  },
+  "folder_rows": [
+   "tests"
+  ],
+  "absent_folder_rows": [
+   "src",
+   "tools"
+  ]
+ },
+ "limits": {
+  "wall_seconds": 600,
+  "cli_invocations": 60,
+  "agent_tool_calls": 40,
+  "uncached_input_tokens": 100000
+ },
+ "grading": "Recovered mistakes may pass; record recovery cost. A missing table file, a file holding JSON instead of the printed table, or wrong test code by category => incomplete or critical failure. Inspect fixture integrity and supporting calls.",
+ "mutable": [],
+ "generated": []
+}

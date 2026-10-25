@@ -1,0 +1,78 @@
+{
+ "revision": "task14-config-repair-v1",
+ "files": {
+  "projects/fixtures/.locmetryrc": "# Intent: count the *.tsv fixture tables under fixtures/ with the JSON counter, so they are data.\nversion = 1\n\n[[language_mappings]]\nid = \"tsv\"\nmatch = [\"fixtures/**/*.tsv\"]\nlanguage = \"JSON\"\n",
+  "projects/fixtures/fixtures/rates.tsv": "a\tb\n1\t2\n",
+  "projects/fixtures/app.py": "x = 1\n",
+  "projects/attic/.locmetryrc": "# Intent: everything under attic/ is retired code, counted as other.\nversion = 1\n\n[rules]\nid = \"attic\"\nmatch = [\"attic/**\"]\npurpose = \"other\"\ncategory = \"archived\"\n",
+  "projects/attic/attic/old.py": "x = 1\n",
+  "projects/attic/app.py": "y = 2\n",
+  "projects/configs/.locmetryrc": "# Intent: count *.cfgjson files as JSON.\nversion = 1\n\n[[languages.mappings]]\nid = \"cfgjson\"\nmatch = [\"**/*.cfgjson\"]\nlanguage = \"json\"\n",
+  "projects/configs/conf/app.cfgjson": "{}\n",
+  "projects/configs/app.py": "z = 3\n",
+  "projects/colleague/.locmetryrc": "# Intent: written by a colleague for a newer locmetry. Keep their policy working here if this locmetry can express it.\nversion = 2\n\n[[rules]]\nid = \"tools\"\nmatch = [\"tools/**\"]\npurpose = \"production\"\ncategory = \"tooling\"\n",
+  "projects/colleague/tools/sync.py": "print(1)\n",
+  "projects/colleague/app.py": "w = 4\n",
+  "projects/generated/.locmetryrc": "# Intent: everything under src/ is production, except the generated code in src/gen/, which should be left to the later stages.\nversion = 1\n\n[[rules]]\nid = \"src\"\nmatch = [\"src/**\"]\nexclude = [\"src/gen/**\"]\npurpose = \"production\"\n",
+  "projects/generated/src/main.py": "v = 5\n",
+  "projects/generated/src/gen/model.py": "u = 6\n"
+ },
+ "prompt": "You have ./bin/locmetry and synthetic inputs in this scratch directory. Work only here. The executable and its built-in discovery material are your only product documentation; do not read other directories, implementation files, telemetry, or the launcher, and do not use the internet or other agents. You may inspect synthetic inputs and use ordinary shell/Python tools. You may edit only the .locmetryrc files of the five projects under projects/; leave every other file unchanged. In each project, locmetry fails because of its .locmetryrc, whose first line states what its author intended. Make locmetry succeed in each project while keeping the author's intent as far as this locmetry can express it. Do not delete an entry just to make an error go away. Report, per project, the error, your change and whether the intent is fully kept.\n\nUse whatever built-in discovery you need. Give a concise final answer of at most 250 words, including supporting commands and any unresolved result. Create the requested working artifacts, but do not write an assessment document or a logging harness.\n",
+ "oracle": {
+  "artifacts": [],
+  "projects": {
+   "fixtures": {
+    "fixtures/rates.tsv": {
+     "language": "JSON",
+     "kind": "data"
+    }
+   },
+   "attic": {
+    "attic/old.py": {
+     "purpose": "other",
+     "category": "archived",
+     "rule": "attic"
+    }
+   },
+   "configs": {
+    "conf/app.cfgjson": {
+     "language": "JSON",
+     "kind": "data"
+    }
+   },
+   "colleague": {
+    "tools/sync.py": {
+     "purpose": "production",
+     "category": "tooling",
+     "rule": "tools"
+    }
+   },
+   "generated": {
+    "src/main.py": {
+     "purpose": "production",
+     "rule": "src"
+    },
+    "src/gen/model.py": {
+     "purpose": "other",
+     "category": "unclaimed",
+     "rule": "fallback"
+    }
+   }
+  }
+ },
+ "limits": {
+  "wall_seconds": 600,
+  "cli_invocations": 60,
+  "agent_tool_calls": 40,
+  "uncached_input_tokens": 100000
+ },
+ "grading": "Recovered mistakes may pass; record recovery cost. A project whose configuration does not load, an entry deleted instead of repaired, or a decision against the stated intent => critical failure. Inspect fixture integrity and supporting calls.",
+ "mutable": [
+  "projects/fixtures/.locmetryrc",
+  "projects/attic/.locmetryrc",
+  "projects/configs/.locmetryrc",
+  "projects/colleague/.locmetryrc",
+  "projects/generated/.locmetryrc"
+ ],
+ "generated": []
+}

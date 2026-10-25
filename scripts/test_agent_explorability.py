@@ -367,6 +367,30 @@ class ExperimentTests(unittest.TestCase):
             self.assertEqual({p["repetition"] for p in selected}, {1, 2, 3, 4})
         full.validate_protocol(protocol)
 
+    def test_feedback_regression_measures_the_two_new_tasks_against_the_last_ledger_candidate(self):
+        from collections import Counter
+        full = self.full_help_runner()
+        sections = json.loads(full.PROTOCOL.with_name("regression-2026-10-24-sections-amendment-study.json").read_text())
+        protocol = json.loads(full.PROTOCOL.with_name("regression-2026-10-25-study.json").read_text())
+        # Task 13 saves human tables without a terminal and task 14 repairs
+        # broken configurations, the behaviors the candidate changes.
+        self.assertEqual(protocol["task_ids"], [13, 14])
+        self.assertEqual(protocol["maximum_sessions"], 16)
+        self.assertEqual(protocol["confirmation"]["maximum_sessions"], 16)
+        self.assertFalse(protocol["previous_trials_included"])
+        # The control is the last ledger candidate.
+        self.assertEqual(protocol["control"]["source_revision"], "361f8cf5e87b777ac6bc0193d4b8666528c4aa0b")
+        for key in ["model", "effort", "limits", "repetitions", "concurrent_pairs", "task_files", "decision_rule"]:
+            self.assertEqual(protocol[key], sections[key], key)
+        for key in ["activation", "tasks", "pooled", "decision"]:
+            self.assertEqual(protocol["confirmation"][key], sections["confirmation"][key], key)
+        for number in protocol["task_ids"]:
+            selected = [p for p in protocol["pairs"] if p["task"] == number]
+            self.assertEqual(Counter(p["order"] for p in selected), {"AB": 2, "BA": 2})
+            task = json.loads(full.PROTOCOL.with_name(f"task{number}.json").read_text())
+            self.assertEqual(task["limits"], protocol["limits"])
+        full.validate_protocol(protocol)
+
     def test_context_growth_sums_input_increases_after_the_first_request_and_counts_decreases(self):
         def request(tokens):
             return {"type": "event_msg", "payload": {"type": "token_count", "info": {"last_token_usage": {"input_tokens": tokens}}}}
