@@ -1,0 +1,185 @@
+{
+  "revision": "agent-regression-2026-10-26-report-routes-v1",
+  "model": "gpt-6.1-sol",
+  "effort": "xhigh",
+  "conditions": {
+    "A": "main at aca3fba: 0.11.1 plus audited language mappings",
+    "B": "aca3fba plus a root-help route to the reports-guide sections that interpret counts and coverage (b8222e4)"
+  },
+  "control": {
+    "source_revision": "aca3fbaf791c4f5007f5ba2d2a504e231b1578cf",
+    "binary_sha256": "cb3cbad40cc7b5ff811f8bf4c316073ccd2169f6b4b48b155595257e0e179a24",
+    "provenance": "Release build of the git archive of aca3fba, built 2026-10-26 for this run"
+  },
+  "task_ids": [
+    1,
+    13
+  ],
+  "task_files": {},
+  "repetitions": 4,
+  "concurrent_pairs": 3,
+  "pairs": [
+    {
+      "task": 1,
+      "repetition": 1,
+      "order": "AB"
+    },
+    {
+      "task": 1,
+      "repetition": 2,
+      "order": "BA"
+    },
+    {
+      "task": 1,
+      "repetition": 3,
+      "order": "AB"
+    },
+    {
+      "task": 1,
+      "repetition": 4,
+      "order": "BA"
+    },
+    {
+      "task": 13,
+      "repetition": 1,
+      "order": "AB"
+    },
+    {
+      "task": 13,
+      "repetition": 2,
+      "order": "BA"
+    },
+    {
+      "task": 13,
+      "repetition": 3,
+      "order": "AB"
+    },
+    {
+      "task": 13,
+      "repetition": 4,
+      "order": "BA"
+    }
+  ],
+  "previous_trials_included": false,
+  "maximum_sessions": 16,
+  "limits": {
+    "wall_seconds": 600,
+    "cli_invocations": 60,
+    "agent_tool_calls": 40,
+    "uncached_input_tokens": 100000
+  },
+  "decision_rule": {
+    "correctness": {
+      "all_candidate_runs_must_pass": true,
+      "candidate_pass_count_no_lower_per_task": true,
+      "critical_errors_allowed": 0,
+      "discovery": {
+        "shared_coverage_required": 13,
+        "shared_coverage_total": 13,
+        "valid_minimal_workflows": [
+          "measure",
+          "workspace",
+          "compare",
+          "explain"
+        ],
+        "supplemental_semantic_families_required": 4
+      }
+    },
+    "per_task_medians": {
+      "agent_tool_calls": {
+        "maximum_absolute_increase": 1
+      },
+      "uncached_input_tokens": {
+        "maximum_ratio": 1.1
+      }
+    },
+    "overall_all_run_totals": {
+      "agent_tool_calls": {
+        "maximum_ratio": 1.0
+      },
+      "uncached_input_tokens": {
+        "maximum_ratio": 1.05
+      }
+    },
+    "secondary": {
+      "maximum_median_ratio": 1.2,
+      "metrics": [
+        "cached_input_tokens",
+        "output_tokens_including_reasoning",
+        "shell_executions",
+        "cli_invocations",
+        "guide_invocations",
+        "schema_invocations",
+        "final_delivery_seconds"
+      ],
+      "application": "Compare each per-task candidate median against control. A strictly greater ratio flags a regression; candidate positive against control zero flags without division. Flags prevent blanket efficiency claims and require route analysis. They do not automatically discard improved functional coverage."
+    },
+    "zero_comparator": "For primary ratio gates, both zero passes; positive candidate against zero control fails.",
+    "interpretation": "Correctness precedes cost. Retain each valid failure, incomplete run, recovery and exhausted budget in all-run totals. Report per-task medians/ranges, paired directions and totals. These practical diagnostic gates do not establish statistical equivalence. Passing nonregression limits alone is not a speedup. Treat this as a combined package of the category reference and guide sections; do not attribute effects to individual sentences or documents. Task 1 guards root-help reading for an unrelated task, as docs/help-design.md requires for root help changes.",
+    "stopping": "Run the frozen 32 primary sessions, then the confirmation sample only when its activation rule holds. Never pool trials of other protocols, replace valid failures or add repetitions beyond the frozen confirmation pairs. Invalid context, unsupported actual model/effort, missing/corrupt telemetry or fixture/instrumentation failures make affected evidence inadmissible; do not silently substitute trials.",
+    "diagnostics": {
+      "context_growth": "Per session, the summed increases of per-request input tokens after the first request, read from the session log; a smaller request, as after compaction, adds nothing and is counted as context_decreases. Report per-task medians and ranges, paired differences and all-run totals per arm beside uncached input. It measures whole-session growth, not the cost of one document, and is not a gate.",
+      "category_names": "For task 12, report agreement with the reference names and between runs per arm, never as a gate."
+    }
+  },
+  "confirmation": {
+    "activation": "Only when every correctness and calls gate passes, an uncached-input gate fails, and the context-growth diagnostic of the failing scope stays within that gate's bound: per-task medians for a per-task failure, all-run totals for an overall failure. A failure the diagnostic reproduces is the result.",
+    "tasks": "Every task whose per-task uncached-input gate failed; when only the overall gate failed, every task.",
+    "pooled": true,
+    "decision": "Re-evaluate every gate once on the pooled sample: per-task medians over the eight pairs of each confirmed task, four pairs of the others, and all-run totals over every session run. The candidate passes only if every gate passes on the pooled sample; otherwise the pooled result is the failure. No further trials.",
+    "pairs": [
+      {
+        "task": 1,
+        "repetition": 5,
+        "order": "AB"
+      },
+      {
+        "task": 1,
+        "repetition": 6,
+        "order": "BA"
+      },
+      {
+        "task": 1,
+        "repetition": 7,
+        "order": "AB"
+      },
+      {
+        "task": 1,
+        "repetition": 8,
+        "order": "BA"
+      },
+      {
+        "task": 13,
+        "repetition": 5,
+        "order": "AB"
+      },
+      {
+        "task": 13,
+        "repetition": 6,
+        "order": "BA"
+      },
+      {
+        "task": 13,
+        "repetition": 7,
+        "order": "AB"
+      },
+      {
+        "task": 13,
+        "repetition": 8,
+        "order": "BA"
+      }
+    ],
+    "maximum_sessions": 16
+  },
+  "integrity": "Freeze exact protocol, schedule, tasks, expected artifacts/interpretations, native binary hashes and each arm source provenance before launching any explorer. Keep preparation repository snapshot provenance separate from prebuilt-binary source declarations. At most three pairs run concurrently and arms run sequentially inside each pair. Preserve identical inputs, locale, terminal/width behavior, isolated personal defaults and budgets across arms. Independent fresh MEDIUM agents receive no repository documentation, prior answers, telemetry or outside-scratch access. Each session runs in a fresh home, as after a new Codex install, holding only a copy of the credentials: no operator instructions, personal skills or plugins.",
+  "review": "Independently grade artifacts and final answers with condition/resource labels concealed; audit actual model/effort, initial context, final cumulative counters, isolation, order, hashes and fixture integrity. Missing required work is incomplete; corrected mistakes may pass but retain recovery cost. Do not silently repair artifacts. The context fingerprint, of the base instructions, each developer instruction kind and the skill names, must be the same for every session; differing sessions make the campaign inadmissible.",
+  "telemetry": "Record agent-facing calls, shell executions, CLI invocations, uncached input (input minus cached), cached input, output including reasoning without double counting, guide/schema retrievals and final-delivery duration separately, and the context-growth diagnostic with its decreases. Evaluator/reviewer work is excluded. The duration field uses the existing harness elapsed-through-completion/copying measurement, not exact native final-message latency.",
+  "evidence": "Retain raw sessions and account/framework context only in Git-ignored docs/research/local/agent-explorability. Public results contain portable synthetic summaries and provenance, never raw session/account content.",
+  "task_roles": {
+    "1": "Interpret a measurement's counts and coverage, the daily case the route serves",
+    "13": "Save two human tables of a configured project, a report task the route should not divert"
+  },
+  "candidate_change": "Root help adds one conditional sentence: to interpret counts and coverage, read locmetry --guide reports --section interpret-the-numbers --section unavailable-is-not-zero.",
+  "hypothesis": "In the 2026-10-24/25 campaigns every graded interpretation session read the reports guide, 35 of 40 whole (19 KB), while the five that read the two sections (3.4 KB) passed alike. Task 1 should need less uncached input at no more calls; task 13 should not read more.",
+  "coverage_boundary": "Tasks 1 and 13 only; no earlier campaign's trials are pooled. Evaluate this protocol's sessions alone."
+}

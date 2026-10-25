@@ -31,6 +31,7 @@ STUDY_TASKS = {
     "agent-regression-2026-10-24-sections-v2": [1, 3, 8, 12],
     "agent-regression-2026-10-24-sections-correction-v1": [1],
     "agent-regression-2026-10-25-v1": [13, 14],
+    "agent-regression-2026-10-26-report-routes-v1": [1, 13],
 }
 # Every protocol frozen after these freezes a confirmation sample, corrections
 # included, because one provider cache miss decided the sections correction
