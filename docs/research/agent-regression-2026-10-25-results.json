@@ -1,0 +1,893 @@
+{
+  "revision": "97ff0de",
+  "date": "2026-10-25",
+  "protocol": "tests/fixtures/agent-explorability/regression-2026-10-25-study.json",
+  "model": "gpt-6.1-sol",
+  "effort": "xhigh",
+  "arms": {
+    "A": {
+      "source_revision": "361f8cf5e87b777ac6bc0193d4b8666528c4aa0b",
+      "source_provenance": "operator-declared prebuilt binary",
+      "binary_sha256": "973b290c413e097c98342cba0d41b8ec81e8eba5c802fb9f276162b4f4d906a0"
+    },
+    "B": {
+      "source_revision": "97ff0def9938f61c1e5236650665a85f6ded18c7",
+      "source_provenance": "operator-declared prebuilt binary",
+      "binary_sha256": "3fcf7f49eaac9c35ab3f2e8112a7feb2dce7fbebfe12a2542912a0debbd56f1b"
+    }
+  },
+  "preparation_revision": "97ff0def9938f61c1e5236650665a85f6ded18c7",
+  "previous_trials_included": false,
+  "analysis": {
+    "sample": "pooled: primary plus the confirmation sample of task 13",
+    "per_task": {
+      "13": {
+        "A": {
+          "tools": {
+            "total": 38,
+            "median": 5.0,
+            "minimum": 4,
+            "maximum": 6
+          },
+          "fresh": {
+            "total": 134899,
+            "median": 15173.0,
+            "minimum": 10893,
+            "maximum": 26233
+          },
+          "growth": {
+            "total": 79073,
+            "median": 9638.0,
+            "minimum": 8959,
+            "maximum": 11417
+          },
+          "seconds": {
+            "total": 620.2722401618958,
+            "median": 71.0165364742279,
+            "minimum": 54.400879859924316,
+            "maximum": 140.8304181098938
+          },
+          "passes": 8
+        },
+        "B": {
+          "tools": {
+            "total": 36,
+            "median": 4.5,
+            "minimum": 3,
+            "maximum": 6
+          },
+          "fresh": {
+            "total": 131589,
+            "median": 13566.5,
+            "minimum": 11136,
+            "maximum": 29907
+          },
+          "growth": {
+            "total": 75566,
+            "median": 9404.5,
+            "minimum": 9119,
+            "maximum": 9970
+          },
+          "seconds": {
+            "total": 2479.373647212982,
+            "median": 304.5624223947525,
+            "minimum": 53.39378094673157,
+            "maximum": 589.1930501461029
+          },
+          "passes": 8
+        }
+      },
+      "14": {
+        "A": {
+          "tools": {
+            "total": 26,
+            "median": 6.5,
+            "minimum": 6,
+            "maximum": 7
+          },
+          "fresh": {
+            "total": 120701,
+            "median": 31788.5,
+            "minimum": 21802,
+            "maximum": 35322
+          },
+          "growth": {
+            "total": 106149,
+            "median": 26257.5,
+            "minimum": 20607,
+            "maximum": 33027
+          },
+          "seconds": {
+            "total": 2214.090980052948,
+            "median": 561.550379037857,
+            "minimum": 489.889554977417,
+            "maximum": 601.1006669998169
+          },
+          "passes": 3
+        },
+        "B": {
+          "tools": {
+            "total": 23,
+            "median": 5.5,
+            "minimum": 5,
+            "maximum": 7
+          },
+          "fresh": {
+            "total": 104362,
+            "median": 25915.5,
+            "minimum": 22024,
+            "maximum": 30507
+          },
+          "growth": {
+            "total": 99053,
+            "median": 24051.0,
+            "minimum": 22014,
+            "maximum": 28937
+          },
+          "seconds": {
+            "total": 962.6218571662903,
+            "median": 136.8775964975357,
+            "minimum": 92.73184704780579,
+            "maximum": 596.1348171234131
+          },
+          "passes": 4
+        }
+      }
+    },
+    "totals": {
+      "A": {
+        "tools": 64,
+        "fresh": 255600,
+        "growth": 185222
+      },
+      "B": {
+        "tools": 59,
+        "fresh": 235951,
+        "growth": 174619
+      }
+    },
+    "failures": [],
+    "correctness": true,
+    "passes": true
+  },
+  "primary_analysis": {
+    "per_task": {
+      "13": {
+        "A": {
+          "tools": {
+            "total": 18,
+            "median": 4.5,
+            "minimum": 4,
+            "maximum": 5
+          },
+          "shell": {
+            "total": 23,
+            "median": 6.0,
+            "minimum": 5,
+            "maximum": 6
+          },
+          "cli": {
+            "total": 25,
+            "median": 6.0,
+            "minimum": 6,
+            "maximum": 7
+          },
+          "fresh": {
+            "total": 59308,
+            "median": 13059.0,
+            "minimum": 10893,
+            "maximum": 22297
+          },
+          "cached": {
+            "total": 396544,
+            "median": 97856.0,
+            "minimum": 88320,
+            "maximum": 112512
+          },
+          "output": {
+            "total": 7519,
+            "median": 1796.5,
+            "minimum": 1689,
+            "maximum": 2237
+          },
+          "seconds": {
+            "total": 275.0313730239868,
+            "median": 68.04614806175232,
+            "minimum": 54.400879859924316,
+            "maximum": 84.53819704055786
+          },
+          "guide_calls": {
+            "total": 5,
+            "median": 1.0,
+            "minimum": 1,
+            "maximum": 2
+          },
+          "schema_calls": {
+            "total": 0,
+            "median": 0.0,
+            "minimum": 0,
+            "maximum": 0
+          },
+          "passes": 4
+        },
+        "B": {
+          "tools": {
+            "total": 19,
+            "median": 4.5,
+            "minimum": 4,
+            "maximum": 6
+          },
+          "shell": {
+            "total": 25,
+            "median": 5.5,
+            "minimum": 5,
+            "maximum": 9
+          },
+          "cli": {
+            "total": 22,
+            "median": 6.0,
+            "minimum": 4,
+            "maximum": 6
+          },
+          "fresh": {
+            "total": 77962,
+            "median": 18459.5,
+            "minimum": 11136,
+            "maximum": 29907
+          },
+          "cached": {
+            "total": 399744,
+            "median": 101120.0,
+            "minimum": 78464,
+            "maximum": 119040
+          },
+          "output": {
+            "total": 7797,
+            "median": 1874.0,
+            "minimum": 1783,
+            "maximum": 2266
+          },
+          "seconds": {
+            "total": 1269.0959894657135,
+            "median": 305.6742035150528,
+            "minimum": 68.554532289505,
+            "maximum": 589.1930501461029
+          },
+          "guide_calls": {
+            "total": 4,
+            "median": 1.0,
+            "minimum": 1,
+            "maximum": 1
+          },
+          "schema_calls": {
+            "total": 0,
+            "median": 0.0,
+            "minimum": 0,
+            "maximum": 0
+          },
+          "passes": 4
+        }
+      },
+      "14": {
+        "A": {
+          "tools": {
+            "total": 26,
+            "median": 6.5,
+            "minimum": 6,
+            "maximum": 7
+          },
+          "shell": {
+            "total": 69,
+            "median": 18.0,
+            "minimum": 12,
+            "maximum": 21
+          },
+          "cli": {
+            "total": 68,
+            "median": 16.0,
+            "minimum": 16,
+            "maximum": 20
+          },
+          "fresh": {
+            "total": 120701,
+            "median": 31788.5,
+            "minimum": 21802,
+            "maximum": 35322
+          },
+          "cached": {
+            "total": 746240,
+            "median": 192128.0,
+            "minimum": 137984,
+            "maximum": 224000
+          },
+          "output": {
+            "total": 13750,
+            "median": 3321.5,
+            "minimum": 3157,
+            "maximum": 3950
+          },
+          "seconds": {
+            "total": 2214.090980052948,
+            "median": 561.550379037857,
+            "minimum": 489.889554977417,
+            "maximum": 601.1006669998169
+          },
+          "guide_calls": {
+            "total": 6,
+            "median": 1.5,
+            "minimum": 1,
+            "maximum": 2
+          },
+          "schema_calls": {
+            "total": 9,
+            "median": 2.0,
+            "minimum": 2,
+            "maximum": 3
+          },
+          "passes": 3
+        },
+        "B": {
+          "tools": {
+            "total": 23,
+            "median": 5.5,
+            "minimum": 5,
+            "maximum": 7
+          },
+          "shell": {
+            "total": 64,
+            "median": 16.0,
+            "minimum": 14,
+            "maximum": 18
+          },
+          "cli": {
+            "total": 67,
+            "median": 15.5,
+            "minimum": 14,
+            "maximum": 22
+          },
+          "fresh": {
+            "total": 104362,
+            "median": 25915.5,
+            "minimum": 22024,
+            "maximum": 30507
+          },
+          "cached": {
+            "total": 642432,
+            "median": 150144.0,
+            "minimum": 134400,
+            "maximum": 207744
+          },
+          "output": {
+            "total": 14419,
+            "median": 3623.0,
+            "minimum": 2708,
+            "maximum": 4465
+          },
+          "seconds": {
+            "total": 962.6218571662903,
+            "median": 136.8775964975357,
+            "minimum": 92.73184704780579,
+            "maximum": 596.1348171234131
+          },
+          "guide_calls": {
+            "total": 4,
+            "median": 1.0,
+            "minimum": 0,
+            "maximum": 2
+          },
+          "schema_calls": {
+            "total": 9,
+            "median": 2.0,
+            "minimum": 2,
+            "maximum": 3
+          },
+          "passes": 4
+        }
+      }
+    },
+    "totals": {
+      "A": {
+        "tools": 44,
+        "shell": 92,
+        "cli": 93,
+        "fresh": 180009,
+        "cached": 1142784,
+        "output": 21269,
+        "seconds": 2489.122353076935,
+        "guide_calls": 11,
+        "schema_calls": 9
+      },
+      "B": {
+        "tools": 42,
+        "shell": 89,
+        "cli": 89,
+        "fresh": 182324,
+        "cached": 1042176,
+        "output": 22216,
+        "seconds": 2231.717846632004,
+        "guide_calls": 8,
+        "schema_calls": 9
+      }
+    },
+    "paired": {
+      "13": {
+        "tools": {
+          "lower": 1,
+          "equal": 2,
+          "higher": 1,
+          "differences": [
+            2,
+            -1,
+            0,
+            0
+          ]
+        },
+        "fresh": {
+          "lower": 1,
+          "equal": 0,
+          "higher": 3,
+          "differences": [
+            17208,
+            -11161,
+            2854,
+            9753
+          ]
+        }
+      },
+      "14": {
+        "tools": {
+          "lower": 2,
+          "equal": 1,
+          "higher": 1,
+          "differences": [
+            -2,
+            -2,
+            1,
+            0
+          ]
+        },
+        "fresh": {
+          "lower": 3,
+          "equal": 0,
+          "higher": 1,
+          "differences": [
+            5671,
+            -3526,
+            -5186,
+            -13298
+          ]
+        }
+      }
+    },
+    "primary_failures": [
+      {
+        "scope": "task",
+        "task": 13,
+        "metric": "fresh",
+        "control": 13059.0,
+        "candidate": 18459.5,
+        "bound": 14364.900000000001
+      }
+    ],
+    "secondary_flags": [
+      {
+        "task": 13,
+        "metric": "seconds",
+        "control": 68.04614806175232,
+        "candidate": 305.6742035150528
+      }
+    ],
+    "correctness": true,
+    "primary_cost_pass": false,
+    "peak_concurrency": 3,
+    "context_growth": {
+      "per_task": {
+        "13": {
+          "A": {
+            "median": 9331.0,
+            "minimum": 8959,
+            "maximum": 10967,
+            "decreases": 0,
+            "sections": 0
+          },
+          "B": {
+            "median": 9443.0,
+            "minimum": 9390,
+            "maximum": 9970,
+            "decreases": 0,
+            "sections": 0
+          }
+        },
+        "14": {
+          "A": {
+            "median": 26257.5,
+            "minimum": 20607,
+            "maximum": 33027,
+            "decreases": 0,
+            "sections": 8
+          },
+          "B": {
+            "median": 24051.0,
+            "minimum": 22014,
+            "maximum": 28937,
+            "decreases": 0,
+            "sections": 5
+          }
+        }
+      },
+      "totals": {
+        "A": 144737,
+        "B": 137299
+      }
+    },
+    "confirmation": {
+      "activate": true,
+      "tasks": [
+        13
+      ],
+      "reproduced": []
+    }
+  },
+  "runs": [
+    {
+      "task": 13,
+      "rep": 1,
+      "arm": "B",
+      "tools": 6,
+      "fresh": 29907,
+      "growth": 9970,
+      "seconds": 83.5293538570404,
+      "first": 5,
+      "without_format": 0,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass",
+      "stopped": null
+    },
+    {
+      "task": 13,
+      "rep": 1,
+      "arm": "A",
+      "tools": 4,
+      "fresh": 12699,
+      "growth": 10967,
+      "seconds": 58.488407135009766,
+      "first": 7,
+      "without_format": 0,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass",
+      "stopped": null
+    },
+    {
+      "task": 13,
+      "rep": 2,
+      "arm": "B",
+      "tools": 4,
+      "fresh": 11136,
+      "growth": 9467,
+      "seconds": 68.554532289505,
+      "first": 7,
+      "without_format": 0,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass",
+      "stopped": null
+    },
+    {
+      "task": 13,
+      "rep": 2,
+      "arm": "A",
+      "tools": 5,
+      "fresh": 22297,
+      "growth": 9352,
+      "seconds": 84.53819704055786,
+      "first": 6,
+      "without_format": 0,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass",
+      "stopped": null
+    },
+    {
+      "task": 13,
+      "rep": 3,
+      "arm": "B",
+      "tools": 5,
+      "fresh": 13747,
+      "growth": 9419,
+      "seconds": 589.1930501461029,
+      "first": 531,
+      "without_format": 0,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass",
+      "stopped": null
+    },
+    {
+      "task": 13,
+      "rep": 3,
+      "arm": "A",
+      "tools": 5,
+      "fresh": 10893,
+      "growth": 8959,
+      "seconds": 77.60388898849487,
+      "first": 7,
+      "without_format": 0,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass",
+      "stopped": null
+    },
+    {
+      "task": 13,
+      "rep": 4,
+      "arm": "B",
+      "tools": 4,
+      "fresh": 23172,
+      "growth": 9390,
+      "seconds": 527.8190531730652,
+      "first": 465,
+      "without_format": 0,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass",
+      "stopped": null
+    },
+    {
+      "task": 13,
+      "rep": 4,
+      "arm": "A",
+      "tools": 4,
+      "fresh": 13419,
+      "growth": 9310,
+      "seconds": 54.400879859924316,
+      "first": 5,
+      "without_format": 0,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass",
+      "stopped": null
+    },
+    {
+      "task": 14,
+      "rep": 1,
+      "arm": "B",
+      "tools": 5,
+      "fresh": 27473,
+      "growth": 25997,
+      "seconds": 596.1348171234131,
+      "first": 492,
+      "without_format": 0,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass",
+      "stopped": null
+    },
+    {
+      "task": 14,
+      "rep": 1,
+      "arm": "A",
+      "tools": 7,
+      "fresh": 21802,
+      "growth": 20649,
+      "seconds": 566.2189319133759,
+      "first": 457,
+      "without_format": 0,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass",
+      "stopped": null
+    },
+    {
+      "task": 14,
+      "rep": 2,
+      "arm": "B",
+      "tools": 5,
+      "fresh": 30507,
+      "growth": 28937,
+      "seconds": 92.73184704780579,
+      "first": 6,
+      "without_format": 5,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass",
+      "stopped": null
+    },
+    {
+      "task": 14,
+      "rep": 2,
+      "arm": "A",
+      "tools": 7,
+      "fresh": 34033,
+      "growth": 33027,
+      "seconds": 556.8818261623383,
+      "first": 452,
+      "without_format": 0,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass",
+      "stopped": null
+    },
+    {
+      "task": 14,
+      "rep": 3,
+      "arm": "B",
+      "tools": 7,
+      "fresh": 24358,
+      "growth": 22105,
+      "seconds": 148.94477796554565,
+      "first": 8,
+      "without_format": 0,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass",
+      "stopped": null
+    },
+    {
+      "task": 14,
+      "rep": 3,
+      "arm": "A",
+      "tools": 6,
+      "fresh": 29544,
+      "growth": 20607,
+      "seconds": 601.1006669998169,
+      "first": 487,
+      "without_format": 5,
+      "artifacts": "needs_review",
+      "outcome": "incomplete",
+      "stopped": "wall-limit"
+    },
+    {
+      "task": 14,
+      "rep": 4,
+      "arm": "B",
+      "tools": 6,
+      "fresh": 22024,
+      "growth": 22014,
+      "seconds": 124.81041502952576,
+      "first": 12,
+      "without_format": 5,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass",
+      "stopped": null
+    },
+    {
+      "task": 14,
+      "rep": 4,
+      "arm": "A",
+      "tools": 6,
+      "fresh": 35322,
+      "growth": 31866,
+      "seconds": 489.889554977417,
+      "first": 371,
+      "without_format": 5,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass",
+      "stopped": null
+    },
+    {
+      "task": 13,
+      "rep": 5,
+      "arm": "B",
+      "tools": 4,
+      "fresh": 11929,
+      "growth": 9331,
+      "seconds": 93.57320499420166,
+      "first": 20,
+      "without_format": 0,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass",
+      "stopped": null
+    },
+    {
+      "task": 13,
+      "rep": 5,
+      "arm": "A",
+      "tools": 6,
+      "fresh": 16927,
+      "growth": 9026,
+      "seconds": 84.5847339630127,
+      "first": 6,
+      "without_format": 0,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass",
+      "stopped": null
+    },
+    {
+      "task": 13,
+      "rep": 6,
+      "arm": "B",
+      "tools": 5,
+      "fresh": 11550,
+      "growth": 9119,
+      "seconds": 53.39378094673157,
+      "first": 6,
+      "without_format": 0,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass",
+      "stopped": null
+    },
+    {
+      "task": 13,
+      "rep": 6,
+      "arm": "A",
+      "tools": 4,
+      "fresh": 11585,
+      "growth": 10118,
+      "seconds": 55.396531105041504,
+      "first": 5,
+      "without_format": 0,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass",
+      "stopped": null
+    },
+    {
+      "task": 13,
+      "rep": 7,
+      "arm": "B",
+      "tools": 3,
+      "fresh": 13386,
+      "growth": 9361,
+      "seconds": 515.5516397953033,
+      "first": 466,
+      "without_format": 0,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass",
+      "stopped": null
+    },
+    {
+      "task": 13,
+      "rep": 7,
+      "arm": "A",
+      "tools": 5,
+      "fresh": 20846,
+      "growth": 9924,
+      "seconds": 140.8304181098938,
+      "first": 6,
+      "without_format": 0,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass",
+      "stopped": null
+    },
+    {
+      "task": 13,
+      "rep": 8,
+      "arm": "B",
+      "tools": 5,
+      "fresh": 16762,
+      "growth": 9509,
+      "seconds": 547.7590320110321,
+      "first": 498,
+      "without_format": 0,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass",
+      "stopped": null
+    },
+    {
+      "task": 13,
+      "rep": 8,
+      "arm": "A",
+      "tools": 5,
+      "fresh": 26233,
+      "growth": 11417,
+      "seconds": 64.42918395996094,
+      "first": 6,
+      "without_format": 0,
+      "artifacts": "artifact_checks_pass",
+      "outcome": "pass",
+      "stopped": null
+    }
+  ],
+  "review": {
+    "cases": 24,
+    "passed": 23,
+    "incomplete": 1,
+    "critical_failures": 0,
+    "passes_by_arm": {
+      "A": 11,
+      "B": 12
+    }
+  },
+  "audit": {
+    "status": "admissible_primary_cost_gate_failed",
+    "checks": 252,
+    "sample": "primary",
+    "integrity_failures": 0,
+    "budget_failures": 2,
+    "peak_explorer_concurrency": 3,
+    "limits": [
+      "Prebuilt arm source revisions are operator declarations, separately recorded from preparation-repository source hashes; binary hashes are verified, but this audit does not reproduce binary builds.",
+      "Read-scope verification combines complete native tool names, nested tool methods and shell-command pattern inspection. OS and shell startup reads are outside the explorer-directed command audit; the sandbox itself permits root reads, so prompt scope is verified from recorded actions rather than enforced by a read-denying sandbox.",
+      "Generated pre-session baseline files are protected by the harness completion-time in-memory digest check; that initial digest is not separately persisted. Frozen generation specifications, summary fixture-integrity results and final task artifact checks remain available.",
+      "The seconds metric is harness elapsed time from invocation setup through completion/copying, rather than exact native final-message latency. It exceeds native task_complete by 0.59\u20131.53 seconds in this run; answers match both native sessions and CLI events. Gates use the recorded elapsed metric."
+    ]
+  }
+}
