@@ -11,7 +11,7 @@
 
 Status: historical decision record — implemented. Aggregate and topology net change was implemented on 2026-10-15 as `0.2.0-dev.1` and released in v0.2.0. Archived on 2026-10-16 under the [retirement procedure](../README.md#retirement-procedure). [PRODUCT](../../PRODUCT.md#net-change) owns the supported contract; the [work plan](../../plans/archive/measurement-quality-and-net-change.md#completion-evidence-and-ongoing-review) records verification.
 
-The sections below preserve the reviewed design and acceptance criteria. Their imperative wording, examples and stated limitations are historical evidence, not current guarantees. Do not update this body to track behavior. The deferred per-file design belongs to the [conditional follow-up](../../plans/measurement-quality-and-net-change.md#per-file-comparison); this record carries no live scope.
+The sections below preserve the reviewed design and acceptance criteria. Their imperative wording, examples and stated limitations are historical evidence, not current guarantees. Do not update this body to track behavior. The deferred per-file design belongs to the [conditional follow-up](../../plans/archive/measurement-follow-ups.md#per-file-comparison); this record carries no live scope.
 
 ## Purpose and Scope
 
@@ -20,7 +20,7 @@ Compare two saved Locmetry measurements and explain how their recorded counts di
 | Original scope | S4 design record |
 | --- | --- |
 | Required | Compare full JSON reports for two single roots or two workspaces; counts by purpose, kind, category, language, and folder; workspace member totals and membership changes; package detection changes; JSON, terminal tables, and Markdown; a discoverable, described comparison schema; explicit measurement and coverage findings. |
-| Deferred at S4 | Per-file comparison was not implemented. Its design and activation trigger now live in the plan's [conditional follow-up](../../plans/measurement-quality-and-net-change.md#per-file-comparison). |
+| Deferred at S4 | Per-file comparison was not implemented. Its design and activation trigger now live in the plan's [conditional follow-up](../../plans/archive/measurement-follow-ups.md#per-file-comparison). |
 | Excluded | Git invocation, checkouts, source-content diffs, churn, automatic commit identification, rename detection, matching a single-root report to a workspace report, arbitrary member remapping, history storage, charts, and a generic schema/plugin framework. |
 
 The comparison reads only the two report files. It neither rescans their roots nor reloads current configuration or ignore files. Source checkouts need not exist. Reports can be named after Git revisions by the caller; their filenames do not constitute verified Git provenance.
@@ -137,7 +137,7 @@ Counts remain exact JSON integers. Arithmetic must be checked: if a sum exceeds 
 | `presence_summary` | Fixed keys `members`, `folders`, and `packages`, each holding `before_only: u64` and `after_only: u64` entity counts. Always present in headline and full output, including zeros; single-root member counts are zero. These are presence counts, not LOC contributions. |
 | `breakdown` | Union of the measurement breakdown keys `(folder, kind, purpose, category, language)` with `CountChange` values; workspace folder paths retain their member prefix. |
 | `findings` | Structured findings with a stable code, human-readable message, before/after applicability, optional member, and affected metadata/report paths. Agents branch on codes rather than parsing prose. |
-| `files` | Proposed extension, not part of the implemented S4 output; design moved to the plan's [per-file follow-up](../../plans/measurement-quality-and-net-change.md#per-file-comparison). |
+| `files` | Proposed extension, not part of the implemented S4 output; design moved to the plan's [per-file follow-up](../../plans/archive/measurement-follow-ups.md#per-file-comparison). |
 | `report` | Headline only when `--output FILE` was supplied: the destination of the full comparison. |
 
 The recommended headline projection omits `folders`, `packages`, `breakdown`, `files`, and individual `presence_changed` findings, and projects input metadata to the same compact metadata view used by measurement headlines. It retains summary, member changes, other findings, and `presence_summary`, so zero-code arrivals/departures stay visible without one headline finding per changed folder/package. Only this topology-summary portion is fixed-size; member rows and coverage findings still scale with their evidence. The full comparison retains all rows, including unchanged ones, and every individual finding. S4 adopts this projection and defines its schema with the typed result. Maps and row arrays have deterministic identity ordering, and findings sort by code, member, side, and path. Human folder views retain the hierarchy.
@@ -168,7 +168,7 @@ JSON Schema validates structure and numeric bounds. Shared semantic validation e
 
 ## Optional File Detail
 
-Deferred at S4. The design is retained in the work plan's [per-file comparison follow-up](../../plans/measurement-quality-and-net-change.md#per-file-comparison), with a consumer-demand trigger. This heading remains for historical links; it defines no active scope.
+Deferred at S4. The design is retained in the work plan's [per-file comparison follow-up](../../plans/archive/measurement-follow-ups.md#per-file-comparison), with a consumer-demand trigger. This heading remains for historical links; it defines no active scope.
 
 ## Acceptance Criteria and Decisions
 

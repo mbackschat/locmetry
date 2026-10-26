@@ -63,7 +63,7 @@ Published 2026-10-16: [v0.2.0](https://github.com/mbackschat/locmetry/releases/t
 
 Implemented 2026-10-16: distinguish Handlebars access failures (`unread`) from readable but undecodable content (`parse_failures`, reason `invalid_encoding`). Handlebars and notebooks share the BOM-aware decoding boundary and failure type, preserving notebook reason codes. Submodule hints now parse named sections, quoted/escaped values, inline comments and continuations, instead of collecting every literal `path =` line. [Measurement semantics](../../measurement.md#counting) and [submodule hint semantics](../../measurement.md#git-submodule-hints) own the supported boundaries; includes are not followed and malformed entries remain best-effort omissions.
 
-Verification: encoding and submodule fixtures failed before the corrections. Detected/mapped templates, BOM preservation, unreadable files, explanation schema/results, quoted submodule report attribution and malformed/unrelated entries now pass. Git's own parser independently confirmed the valid synthetic submodule fixture. Full public tests, Clippy, formatting, README workflows and the private frozen-count replay pass; the private replay guards existing records, while new scanning fixtures establish the fixes. These follow-ups do not activate the [conditional follow-ups](../measurement-quality-and-net-change.md#conditional-follow-ups-and-preserved-rationales).
+Verification: encoding and submodule fixtures failed before the corrections. Detected/mapped templates, BOM preservation, unreadable files, explanation schema/results, quoted submodule report attribution and malformed/unrelated entries now pass. Git's own parser independently confirmed the valid synthetic submodule fixture. Full public tests, Clippy, formatting, README workflows and the private frozen-count replay pass; the private replay guards existing records, while new scanning fixtures establish the fixes. These follow-ups do not activate the [conditional follow-ups](measurement-follow-ups.md#conditional-follow-ups-and-preserved-rationales).
 
 ## Release for macOS and Linux — Initial Distribution Complete
 
@@ -154,7 +154,7 @@ The [proposal index and retirement procedure](../../proposals/README.md) disting
 
 - [Subtree measurement — historical decision record](../../proposals/archive/subtree-measurement.md): retained design rationale and acceptance criteria; [PRODUCT](../../PRODUCT.md#subfolder-measurement) owns the implemented contract.
 
-- [Net change between measurement reports — historical decision record](../../proposals/archive/net-change.md): aggregate/topology comparison implemented as `0.2.0-dev.1`; retained for S4 acceptance evidence and design rationale. [PRODUCT](../../PRODUCT.md#net-change) owns supported behavior. The [conditional per-file follow-up](../measurement-quality-and-net-change.md#per-file-comparison) owns the deferred design and consumer-demand trigger.
+- [Net change between measurement reports — historical decision record](../../proposals/archive/net-change.md): aggregate/topology comparison implemented as `0.2.0-dev.1`; retained for S4 acceptance evidence and design rationale. [PRODUCT](../../PRODUCT.md#net-change) owns supported behavior. The [conditional per-file follow-up](measurement-follow-ups.md#per-file-comparison) owns the deferred design and consumer-demand trigger.
 
 ## Ideas — Not Scheduled
 

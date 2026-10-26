@@ -63,7 +63,17 @@ Excluded by the [manual page proposal](proposals/archive/manual-and-reference.md
 
 ## Measurement and Comparison
 
-- [Conditional measurement/comparison capabilities](plans/measurement-quality-and-net-change.md#conditional-follow-ups-and-preserved-rationales): consumer-driven candidates and their triggers, generated/minified evidence and duplicate evidence.
+Candidates from the 2026-10-16 measurement review; the [retired follow-up record](plans/archive/measurement-follow-ups.md#conditional-follow-ups-and-preserved-rationales) keeps their prior-art references.
+
+- Minified-code evidence: report suspicion with the exact property or threshold that triggered it, keeping totals and selection unchanged; generated-code markers shipped on 2026-10-23 ([generated-code markers](proposals/archive/generated-code-markers.md)). Reopen with a real scope problem, after agreeing on sample inputs, false-positive checks and scan cost.
+- Duplicate-content evidence: exact-content groups that keep physical totals, since equal bytes can serve different purposes or members; no fuzzy clone detection or unique-content metric without its own contract. Reopen when a consumer needs to locate copied content.
+- Binary and encoding policy: establish current-source fixtures before changing defaults, since a NUL heuristic can reject text encodings. Reopen by reproducing the weaker existing-binary observation.
+- Git history analytics such as hotspots, coupling and authorship, which bring history-window and identity semantics beyond saved measurements. Reopen with a concrete history workflow existing tools cannot serve.
+- Complexity, unique-line and cost metrics, which need independent definitions and validation and do not establish effort or quality. Reopen with a named decision that needs one and an agreed validation corpus.
+- An MCP interface, which would have to share policy and result semantics with the CLI. Reopen when a client cannot use the CLI, JSON and schemas adequately.
+- HTML, CSV, SQL and OpenMetrics output. Reopen with a named consumer whose needs existing output cannot meet.
+- Streaming and resource limits, which change ordering and detail and must never truncate scope silently. Reopen with a reproducible memory, latency or oversized-file problem on a representative corpus.
+- Archive or remote input, custom lexers and more platforms. Reopen with a representative use case and a feasible test and release matrix.
 
 ## Command-Line Options
 

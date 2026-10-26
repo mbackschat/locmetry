@@ -2,7 +2,7 @@
 
 Evaluated 2026-10-20 using synthetic Locmetry reports, DuckDB 1.5.6, Python 3.11.14, pandas 3.0.6, Polars 2.0.0 and Showboat 0.6.1. The initial spike used measurement schema 2; the published recipes and their executable checks use schema 3. Installed tools, raw reports and benchmark scratch data are local-only. This published assessment contains no private project data.
 
-Update 2026-10-21: the owner removed the cookbooks, their loaders and the demo; links below address their last version, and the [deferred cookbook design](../plans/analytics-cookbooks.md) describes their recreation.
+Update 2026-10-21: the owner removed the cookbooks, their loaders and the demo; links below address their last version, and the [deferred cookbook design](../plans/rejected/analytics-cookbooks.md) describes their recreation.
 
 ## Recommendation
 

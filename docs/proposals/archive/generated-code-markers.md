@@ -48,7 +48,7 @@ Module layouts claim every file in a source folder as hand-written implementatio
 - Free-text heuristics, such as "generated" near "do not edit": they claimed hand-written production in sqlc, protobuf-go and gopls. Linguist's looser Go check, any `// Code generated` line in the first 40 lines, claimed gopls's hand-written generator.
 - MyBatis Generator's `@mbg.generated` tag, which marks elements rather than files, claimed the generator's own source, and is absent from mall's generated code.
 - Naming a generator in a header, such as OpenAPI Generator, which claimed Immich's hand-written SDK script.
-- Changing the purpose. Generated code is shipped and often maintained; a project that counts it as Other says so with an entry, as Immich does. The deferred [generated and minified evidence](../../plans/measurement-quality-and-net-change.md#conditional-follow-ups-and-preserved-rationales) keeps its rationale: generated does not mean disposable.
+- Changing the purpose. Generated code is shipped and often maintained; a project that counts it as Other says so with an entry, as Immich does. The deferred [generated and minified evidence](../../plans/archive/measurement-follow-ups.md#conditional-follow-ups-and-preserved-rationales) keeps its rationale: generated does not mean disposable.
 - Files no module layout claims. Unclaimed files are already listed for review, and entries, conventions and tests decide the rest.
 - Generators without a documented marker, such as mall's MyBatis output and Immich's SQL snapshots: they need policy entries.
 

@@ -10,12 +10,13 @@ Designs decided against, each with the reason and the evidence that settled it. 
 
 ## Removed
 
-- [Analytics cookbooks](plans/analytics-cookbooks.md): removed 2026-10-21; recreate them, refocused on questions native output cannot answer, only on the owner's decision. The design names the recovery commit and every removed file and pin.
+- [Analytics cookbooks](plans/rejected/analytics-cookbooks.md): removed 2026-10-21; recreate them, refocused on questions native output cannot answer, only on the owner's decision. The design names the recovery commit and every removed file and pin.
 
 ## Out of Scope by Decision
 
 - Ratio checks that fail the exit status, such as `support <= theory`: ratios are neutral and unbanded by the [test/production ratio design](plans/archive/test-production-ratios.md), so a threshold belongs to the caller; `jq -e` over the JSON gates.
 - A counter of Locmetry's own, including a mapping that counts every line as code for a DSL without a matching counter: out of scope while Tokei counts. Language mappings and corrections choose among Tokei's counters.
-- Ancestor configuration discovery: outside accepted scope, as the [measurement plan](plans/measurement-quality-and-net-change.md#conditional-follow-ups-and-preserved-rationales) records; configuration is read from the scan root only.
+- Replacing the Tokei backend: Locmetry keeps Tokei and strengthens independent adapter checks, since no equal-scope benchmark ranked an alternative ([Tokei integration](tokei-integration.md)). Reopen with a demonstrated architectural limit or representative evidence that an alternative materially improves correctness or deployment.
+- Ancestor configuration discovery: outside accepted scope, as the [measurement plan](plans/archive/measurement-follow-ups.md#conditional-follow-ups-and-preserved-rationales) records; configuration is read from the scan root only.
 - A `catch_all` flag that silences the verbose note on entries that lost files to an earlier entry: it would hide duplicated globs instead of removing them. [DEFERRED](DEFERRED.md#configuration-and-categories) keeps entry references in `except`, which would remove them.
 - Windows on ARM builds, excluded while x86_64 emulation serves it; the [Windows support record](proposals/archive/windows-support.md) owns the rationale.

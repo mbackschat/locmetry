@@ -30,7 +30,7 @@ All four fields are required strings. Use a nonempty, single-line summary and si
 | Document type | Allowed statuses and meanings |
 | --- | --- |
 | Proposal | `draft`: under discussion; `accepted`: owner-approved scope, implementation not yet verified; `implemented`: accepted scope verified; `rejected`: declined by the owner; `superseded`: replaced by a linked decision. |
-| Plan | `planned`: agreed future work; `active`: execution underway; `deferred`: on hold or conditional; `completed`: the plan's entire accepted scope verified; `historical`: retired snapshot whose body can include unresolved historical items. |
+| Plan | `planned`: agreed future work; `active`: execution underway; `deferred`: on hold or conditional; `completed`: the plan's entire accepted scope verified; `historical`: retired snapshot whose body can include unresolved historical items; `rejected`: a design decided against, kept in `plans/rejected/` with its reason. |
 
 Dates use `YYYY-MM-DD` and record when the current status took effect. For `historical`, this is the snapshot retirement date. An implementation date remains an implementation date even if publication happens later. Do not derive dates from filesystem timestamps or refresh them on wording changes. Backfill from dated records; if no reliable date exists, resolve and record that evidence gap before assigning one.
 
