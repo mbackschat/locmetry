@@ -2,16 +2,16 @@
 
 <!-- doc-status
 {
-  "status": "deferred",
+  "status": "completed",
   "date": "2026-10-20",
-  "summary": "Reusable benchmark; completed help studies retained for future feature or model changes.",
-  "evidence": "[Full-help study](../research/agents/explorability-full-help-study.md)"
+  "summary": "Benchmark contract, harness and frozen tasks, built and used through the help studies; later interface changes reuse them in agent regression checks.",
+  "evidence": "[Full-help study](../research/agents/explorability-full-help-study.md), [agent regression checks](../agent-regression-checks.md)"
 }
 -->
 
 This is the working specification and continuation record for an experiment-driven assessment of Locmetry's agent-facing interface. It preserves the discussion and exploratory evidence from 2026-10-19 and the subsequent experiments from 2026-10-20. After the first pilot, the owner delegated experiment design, recording, and evaluation. The [six-task study](../research/agents/explorability-six-task-study.md) owns the frozen campaign definitions, results, separate discovery track, and recommendation. The draft prompts below preserve design context; use the linked executable task definitions to replay the measured campaign. The experiments used temporary binaries; the owner subsequently authorized production adoption of the tested help routing, as recorded below.
 
-[PLAN](../PLAN.md) owns the open-work index. [PRODUCT](../PRODUCT.md) owns supported behavior; this document owns the experiment, not a competing product contract. The earlier [embedded-guidance checkpoint](archive/measurement-quality-and-net-change.md#embedded-guidance-implementation--2026-10-16) preserves prior implementation evidence.
+It stays outside the archive although complete, because its metrics, scoring rule and replay contract are the live contract the [agent regression checks](../agent-regression-checks.md) reuse. [PLAN](../PLAN.md) owns the open-work index. [PRODUCT](../PRODUCT.md) owns supported behavior; this document owns the experiment, not a competing product contract. The earlier [embedded-guidance checkpoint](archive/measurement-quality-and-net-change.md#embedded-guidance-implementation--2026-10-16) preserves prior implementation evidence.
 
 ## Objective and Agreed Direction
 
@@ -39,7 +39,7 @@ The authorized [execution-first routing study](../research/agents/explorability-
 
 The [bounded routing-cost replication](../research/agents/explorability-routing-replication.md) completed both frozen stages: 36 broader-configuration sessions and 18 report-understanding sessions, all correct and all cost guards passing. The earlier penalties did not recur. Its narrow adoption recommendation was subsequently authorized by the owner on 2026-10-20: root long help now includes the exact tested example plus conditional execution-first routing, with guides and navigation retained. The [help-design guidelines](../help-design.md) preserve the rationale for future work.
 
-The owner subsequently clarified that completion requires every supported feature/use case. The [full-help study](../research/agents/explorability-full-help-study.md) completed the combined interface evaluation across ten tasks, including scope/views and personal-policy cases, then a separate bounded comparison-routing correction. Its final adoption decision closes the current help task; retain the original cost failure and correction limits. The benchmark is deferred for future feature/model changes, with no further trial scheduled. Do not pool the historical samples or treat the adverse-guard replication as a new covered-task benefit test.
+The owner subsequently clarified that completion requires every supported feature/use case. The [full-help study](../research/agents/explorability-full-help-study.md) completed the combined interface evaluation across ten tasks, including scope/views and personal-policy cases, then a separate bounded comparison-routing correction. Its final adoption decision closes the current help task; retain the original cost failure and correction limits. The benchmark's scope was complete with that decision; its contract, harness and frozen tasks remain in use for later feature and model changes. Do not pool the historical samples or treat the adverse-guard replication as a new covered-task benefit test.
 
 On-demand regression checks of later interface changes follow the [agent regression checks](../agent-regression-checks.md), which reuse this contract and keep a ledger of checked versions. For a later session:
 
@@ -345,6 +345,6 @@ The owner delegated design after the first pilot; these completed checks describ
 - [x] Verify the guide-free treatment isolates guide access/references and preserves measurement behavior.
 - [x] Capture actual model/effort, tool calls, token totals, fixture integrity, and durable evidence.
 - [x] Check artifacts and independently review final interpretation before comparing outcomes and costs.
-- [ ] Evaluate any proposed interface improvement as a new treatment with an independent fixture variant; no such product change is authorized by this benchmark record.
+- [x] Evaluate any proposed interface improvement as a new treatment: a standing rule that the [agent regression checks](../agent-regression-checks.md) carry out for each change, with new tasks added as revisions (tasks 12–14 by 2026-10-25); no product change is authorized by this benchmark record.
 
 Decision interpretation: successful guide-free execution establishes feasibility for the tested task, not that removal improves the product. Preserve task-specific resource tradeoffs and critical failures. The present study supports keeping optional guides without adding navigation. A future change needs its own observed mechanism, oracle, and comparative evidence.
