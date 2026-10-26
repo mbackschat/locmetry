@@ -7,6 +7,7 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 ### Changed
 
 - Terminal tables, including comparison tables, leave a blank line between their last row and their legend.
+- `locmetry --guide reports --section continuous-integration` includes a file-size gate by purpose, which was previously only in the repository's cookbook.
 
 ## [0.11.2] - 2026-10-26
 

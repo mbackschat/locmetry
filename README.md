@@ -326,7 +326,7 @@ locmetry compare before-workspace.json after-workspace.json --member service --f
 
 Check `Member: service` and its `Source total`; the folder table shows changes in immediate subfolders. The name must occur in either report. Totals and detail cover that member; input metadata and partial status still cover the whole workspace inputs. See [workspace capture and member selection](docs/guides/compare.md#inspect-one-workspace-member) for baseline commands and JSON scope.
 
-The [comparison guide](docs/guides/compare.md) covers changed scope, producer versions, partial inputs and workspace changes. Reports describe measured working copies, not Git commits. For automated policies, use the [CI recipe](docs/guides/reports.md#continuous-integration), which preserves measurement failure and partial-result status before querying JSON; to limit file sizes by purpose, use the [file-size gate cookbook](docs/cookbooks/file-size-gate.md).
+The [comparison guide](docs/guides/compare.md) covers changed scope, producer versions, partial inputs and workspace changes. Reports describe measured working copies, not Git commits. For automated policies, use the [CI recipes](docs/guides/reports.md#continuous-integration), which preserve measurement failure and partial-result status before querying JSON, including a file-size gate by purpose; the [file-size gate cookbook](docs/cookbooks/file-size-gate.md) adds soft limits and frozen sizes for existing large files.
 
 For file-level recognition and classification changes, run `compare-locmetry-files.sh before.json after.json`. This optional Bash [helper](scripts/compare-locmetry-files.sh) accepts two full `--files` reports and ships in release archives and Homebrew installations starting with 0.7.3. Only the helper requires `jq`; install it separately if needed. Locmetry's native commands remain independent of `jq`. See the [transition workflow](docs/guides/compare.md#inspect-configuration-transitions) for setup, output and evidence limits.
 
@@ -457,7 +457,7 @@ For a production-rule change covered by the example in `locmetry --help`, inspec
 | Read coverage, query reports or apply a CI policy | `locmetry --guide reports` | [Reports](docs/guides/reports.md) |
 | Capture baselines and interpret net change | `locmetry --guide compare` | [Compare](docs/guides/compare.md) |
 | Name categories and follow policy conventions | `locmetry --guide categories` | [Categories](docs/guides/categories.md) |
-| Gate source file sizes by purpose in CI | — | [File-size gate cookbook](docs/cookbooks/file-size-gate.md) |
+| Gate source file sizes by purpose in CI | `locmetry --guide reports --section continuous-integration` | [Reports](docs/guides/reports.md#continuous-integration); soft limits and ceilings: [file-size gate cookbook](docs/cookbooks/file-size-gate.md) |
 
 - [Changelog](CHANGELOG.md): user-visible changes per release, with breaking changes marked.
 - [Product contract](docs/PRODUCT.md): supported settings, fields and guarantees.

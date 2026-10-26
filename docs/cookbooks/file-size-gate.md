@@ -6,19 +6,7 @@ The recipes need `jq` and a full report with per-file records. Each record carri
 
 ## Limit file sizes by purpose
 
-This script fails on every production file over 1,000 code lines and every test file over 2,000, listing them on stderr. It captures the measurement first, so a failed or partial measurement keeps Locmetry's exit status instead of passing as "no oversized files":
-
-```sh
-set -eu
-report=$(locmetry --files --output -) || exit "$?"
-printf '%s\n' "$report" | jq -e '
-  {production: 1000, test: 2000} as $limit |
-  [.files[] | select(.kind == "source" and $limit[.purpose] != null and .counts.code > $limit[.purpose])
-   | "\(.path): \(.counts.code) code lines over the \(.purpose) limit of \($limit[.purpose])"] |
-  if length == 0 then true else (join("\n") + "\n" | halt_error(1)) end'
-```
-
-A purpose without a limit is not checked. Other holds generated and unclaimed code, so a generated client never fails the gate; name `other` in `$limit` to check it too.
+The basic gate, a hard limit per purpose, is in the reports guide, where the installed executable serves it: `locmetry --guide reports --section continuous-integration`. A purpose without a limit is not checked; name `other` in `$limit` to check generated and unclaimed code too. The recipe below extends it.
 
 ## Warn before failing and freeze existing large files
 
@@ -63,6 +51,6 @@ Lower a ceiling in the same change that shrinks its file, and remove it once the
 
 ## Locmetry's own gate
 
-Locmetry gates its repository with a Python version of the second recipe that also reports stale ceilings; [self-measurement](../self-measurement.md#file-sizes) records its limits and ceiling policy.
+Locmetry gates its repository with a Python version of the soft-limit and ceiling recipe that also reports stale ceilings; [self-measurement](../self-measurement.md#file-sizes) records its limits and ceiling policy.
 
-[CI executes both recipes](../../scripts/check-doc-examples.sh) against synthetic projects: within limits, over a limit, a larger test file under the test limit, a soft-limit warning, a ceiling that holds and one that is exceeded, and a partial measurement.
+[CI executes this recipe and the guide's](../../scripts/check-doc-examples.sh) against synthetic projects: within limits, over a limit, a larger test file under the test limit, a soft-limit warning, a ceiling that holds and one that is exceeded, and a partial measurement.

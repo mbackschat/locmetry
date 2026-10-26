@@ -267,7 +267,7 @@ check_recipe unclaimed 1 'false' ''
 
 # The file-size gate limits each purpose separately: a production file over 1,000 code lines fails,
 # a test file of 1,500 passes, and a partial measurement keeps Locmetry's exit status.
-extract_blocks 'Limit file sizes by purpose' "$temporary/recipe.sh" 1 0 "$repository/docs/cookbooks/file-size-gate.md"
+extract_blocks 'Continuous integration' "$temporary/recipe.sh" 2 0 "$repository/docs/guides/reports.md"
 mkdir -p "$temporary/oversized" "$temporary/large-tests/tests"
 cp "$temporary/healthy/.locmetryrc" "$temporary/oversized/.locmetryrc"
 repeat_line 1001 'print(1)' > "$temporary/oversized/main.py"

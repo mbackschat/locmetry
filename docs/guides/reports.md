@@ -203,9 +203,21 @@ printf '%s\n' "$report" | jq -r '
   end'
 ```
 
-To gate source file sizes by purpose, such as production files over 1,000 code lines, apply limits to per-file records from `--files`; the [file-size gate cookbook](../cookbooks/file-size-gate.md) has tested recipes, including soft limits and frozen sizes for existing large files.
+To gate source file sizes by purpose, apply limits to the per-file records of `--files`. This script fails on every production file over 1,000 code lines and every test file over 2,000, listing them on stderr. A purpose without a limit is not checked, so generated and unclaimed code in Other never fails the gate:
 
-[CI executes this block and the comparison/explanation workflows](../../scripts/check-doc-examples.sh) against synthetic projects. The policy scenarios check stdout and stderr as well as status, so invalid configuration cannot masquerade as an unclaimed-code rejection. The Cargo tests separately guard its JSON and exit-code assumptions without requiring `jq`.
+```sh
+set -eu
+report=$(locmetry --files --output -) || exit "$?"
+printf '%s\n' "$report" | jq -e '
+  {production: 1000, test: 2000} as $limit |
+  [.files[] | select(.kind == "source" and $limit[.purpose] != null and .counts.code > $limit[.purpose])
+   | "\(.path): \(.counts.code) code lines over the \(.purpose) limit of \($limit[.purpose])"] |
+  if length == 0 then true else (join("\n") + "\n" | halt_error(1)) end'
+```
+
+Add `.language == "Rust"` to the selection to limit one language. The [file-size gate cookbook](../cookbooks/file-size-gate.md) adds soft limits and frozen sizes for existing large files.
+
+[CI executes these blocks and the comparison/explanation workflows](../../scripts/check-doc-examples.sh) against synthetic projects. The policy scenarios check stdout and stderr as well as status, so invalid configuration cannot masquerade as an unclaimed-code rejection. The Cargo tests separately guard its JSON and exit-code assumptions without requiring `jq`.
 
 [Command outcomes](../PRODUCT.md#command-outcomes) defines exit statuses for measurement, comparison and explanation, including backend inaccuracy without identified failure paths.
 
