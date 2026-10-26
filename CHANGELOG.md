@@ -4,6 +4,8 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 
 ## [Unreleased]
 
+## [0.11.2] - 2026-10-26
+
 ### Changed
 
 - Root help names the two reports-guide sections that interpret counts and coverage, so reading the whole guide is no longer needed for that.
@@ -162,7 +164,8 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 - **Breaking:** presentation options are named for what they show: `--folders`, `--categories`, `--bars`, `--purpose` and `--depth` became `--show-folders`, `--show-categories`, `--show-bars`, `--table-purpose` and `--markdown-depth`. `workspace --file` and `explain --workspace` became `--workspace-file`. The former spellings are rejected.
 - `--files` adds per-file records to every full JSON view, whether saved or printed.
 
-[Unreleased]: https://github.com/mbackschat/locmetry/compare/v0.11.1...HEAD
+[Unreleased]: https://github.com/mbackschat/locmetry/compare/v0.11.2...HEAD
+[0.11.2]: https://github.com/mbackschat/locmetry/compare/v0.11.1...v0.11.2
 [0.11.1]: https://github.com/mbackschat/locmetry/compare/v0.11.0...v0.11.1
 [0.11.0]: https://github.com/mbackschat/locmetry/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/mbackschat/locmetry/compare/v0.9.0...v0.10.0
