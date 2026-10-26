@@ -94,6 +94,7 @@ cd immich && locmetry
  C Header        1        1        1 │        0       0 │       1       0       0 │      0.00 │   0.0%  ▏
  ────────────────────────────────────┼──────────────────┼─────────────────────────┼───────────┼─────────────────────────
  Total       2,527  333,302  282,727 │    9,149  41,426 │ 179,551  87,011  16,165 │      0.48 │ 100.0%
+
  Lines = Code + Comments + Blanks · Production + Test + Other = Code · Test/prod = Test / Production (Code)
  Tests written in another language than the code they test skew per-language Test/prod.
  Folded: BASH → Shell, TSX → TypeScript.
@@ -151,6 +152,7 @@ cd immich && locmetry --show-categories
  production:tooling                10      646      507 │  0.2%  ▏
  production:documentation-site      6      468      382 │  0.1%  ▏
  test:performance                   1       81       64 │  0.0%  ▏
+
  Source files only. Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
  Share = Code / total Code. Bars: █ Production  ▓ Test  ░ Other. The largest row fills the bar.
 ```
@@ -190,6 +192,7 @@ locmetry workspace --workspace-file immich/workspace.toml
  machine-learning    6,698    5,291 │   3,221   2,070       0 │      0.64 │   1.9%  █▓
  ───────────────────────────────────┼─────────────────────────┼───────────┼─────────────────────────────────────────────
  Total             332,306  281,918 │ 178,742  87,011  16,165 │      0.49 │ 100.0%
+
  Production + Test + Other = Code · Test/prod = Test / Production (Code) · Share = Code / workspace Code
  Bars: █ Production  ▓ Test  ░ Other. The largest row fills the bar.
 ```
@@ -207,6 +210,7 @@ Compare saved reports of two releases, `v3.2.0` and `v3.3.4`:
  Other          17,825   19,173   +1,348 │  14,910   16,165  +1,255
  ────────────────────────────────────────┼─────────────────────────
  Source total  322,048  333,302  +11,254 │ 273,523  282,727  +9,204
+
  Test/prod (Code): 0.46 → 0.48 (before → after)
 ```
 

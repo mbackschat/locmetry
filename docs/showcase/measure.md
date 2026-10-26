@@ -123,6 +123,7 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  C Header        1        1        1 │        0       0 │       1       0       0 │      0.00
  ────────────────────────────────────┼──────────────────┼─────────────────────────┼──────────
  Total       2,527  333,302  282,727 │    9,149  41,426 │ 179,551  87,011  16,165 │      0.48
+
  Lines = Code + Comments + Blanks · Production + Test + Other = Code · Test/prod = Test / Production (Code)
  Tests written in another language than the code they test skew per-language Test/prod.
  Folded: BASH → Shell, TSX → TypeScript.
@@ -144,6 +145,7 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  production:tooling                10      646      507
  production:documentation-site      6      468      382
  test:performance                   1       81       64
+
  Source files only. Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
 
 ```
@@ -298,6 +300,7 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  CMake           1     13      9 │        0       4 │     9      0 │      0.0%
  ────────────────────────────────┼──────────────────┼──────────────┼──────────
  Total          88  7,135  5,948 │      335     852 │ 2,596  3,352 │      5.3%
+
  Lines = Code + Comments + Blanks · Production + Test = Code · Comment % = Comments / (Code + Comments)
  Folded: BASH → Shell.
  Not shown (categories): production:implementation, test:test, other:generated, test:end-to-end, production:native and 3
@@ -311,6 +314,7 @@ more (276,779 code lines).
  production:deployment        28    938    740
  production:distribution       5    695    577
  production:tooling           10    646    507
+
  Source files only. Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
 
 ```
@@ -346,6 +350,7 @@ locmetry --root immich --subfolder mobile --format table --show-categories --no-
  C Header      1        1       1 │        0       0 │      1       0      0 │      0.00
  ─────────────────────────────────┼──────────────────┼───────────────────────┼──────────
  Total       899  100,095  83,183 │    3,285  13,627 │ 66,952  16,231      0 │      0.24
+
  Lines = Code + Comments + Blanks · Production + Test + Other = Code · Test/prod = Test / Production (Code)
  Tests written in another language than the code they test skew per-language Test/prod.
 
@@ -357,6 +362,7 @@ locmetry --root immich --subfolder mobile --format table --show-categories --no-
  production:native             67   8,870   7,206
  production:tooling             5     511     414
  production:build-tooling       5     231     180
+
  Source files only. Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
 
 ```

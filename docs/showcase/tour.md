@@ -150,6 +150,7 @@ locmetry compare builtin.json reviewed.json --format table --no-color \
  Other           6,214   19,173  +12,959 │   4,943   16,165  +11,222
  ────────────────────────────────────────┼──────────────────────────
  Source total  333,360  333,302      -58 │ 282,770  282,727      -43
+
  Test/prod (Code): 0.43 → 0.48 (before → after)
 ```
 

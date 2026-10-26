@@ -37,9 +37,18 @@ def showcase(script):
 
 
 def grid(text, heading):
-    """Return the box-drawn table whose header row starts with `heading`."""
-    for part in text.split("\n\n"):
+    """Return the box-drawn table whose header row starts with `heading`, with its legends.
+
+    A blank line separates a table from its legends. In these non-verbose views,
+    the block after a table is its legend exactly when it is indented and is not
+    the next table's rule.
+    """
+    parts = text.split("\n\n")
+    for index, part in enumerate(parts):
         if part.startswith(" ─") and re.search(rf"^ {heading} ", part, re.MULTILINE):
+            following = parts[index + 1] if index + 1 < len(parts) else ""
+            if following.startswith(" ") and not following.startswith(" ─"):
+                part = part.rstrip("\n") + "\n\n" + following
             # Comparison headers pad their group titles with trailing spaces,
             # which `git diff --check` rejects in Markdown.
             return "\n".join(line.rstrip() for line in part.rstrip("\n").split("\n")) + "\n"

@@ -39,6 +39,7 @@ Net change: acme-orders → acme-orders
  Production        24     25      +1 │     20     21      +1
  ────────────────────────────────────┼──────────────────────
  Source total      37     38      +1 │     29     30      +1
+
  Test/prod (Code): 0.35 → 0.33 (before → after)
 
  ────────────────────────────────────────────────────────────────────────
@@ -56,6 +57,7 @@ Net change: acme-orders → acme-orders
  TypeScript        13     14      +1 │     10     11      +1
  ────────────────────────────────────┼──────────────────────
  Source total      37     38      +1 │     29     30      +1
+
  Folded: TSX → TypeScript.
 
  ───────────────────────────────────────────────────────────
@@ -65,6 +67,7 @@ Net change: acme-orders → acme-orders
  web (both)        19     20      +1 │     16     17      +1
  ────────────────────────────────────┼──────────────────────
  Source total      37     38      +1 │     29     30      +1
+
  Folders are recursive. Do not sum parents and children.
 
 ▸ Measurement notes
@@ -241,6 +244,7 @@ locmetry compare before.json after.json --no-color --format table --split-langua
  TypeScript        13     14      +1 │     10     11      +1
  ────────────────────────────────────┼──────────────────────
  Source total      37     38      +1 │     29     30      +1
+
  Folded: TSX → TypeScript.
  Language      before  after  change │ before  after  change
  ────────────────────────────────────┼──────────────────────
@@ -285,6 +289,7 @@ Input metadata, measurement notes, report-level findings and partial status cove
  Production        13     14      +1 │     12     13      +1
  ────────────────────────────────────┼──────────────────────
  Source total      19     20      +1 │     16     17      +1
+
  Test/prod (Code): 0.25 → 0.23 (before → after)
 
  ────────────────────────────────────────────────────────────────────────
@@ -302,6 +307,7 @@ Input metadata, measurement notes, report-level findings and partial status cove
  TypeScript        13     14      +1 │     10     11      +1
  ────────────────────────────────────┼──────────────────────
  Source total      19     20      +1 │     16     17      +1
+
  Folded: TSX → TypeScript.
 
 Member source lines: matched +1, entering 0, leaving 0. Total +1.
@@ -317,6 +323,7 @@ Member all-counted code: matched +1, entering 0, leaving 0. Total +1.
  src (both)        19     20      +1 │     16     17      +1
  ────────────────────────────────────┼──────────────────────
  Source total      19     20      +1 │     16     17      +1
+
  Folders are recursive. Do not sum parents and children.
 
 ▸ Measurement notes

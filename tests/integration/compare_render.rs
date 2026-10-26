@@ -60,7 +60,8 @@ fn purpose_ratio_uses_source_code_and_handles_missing_purposes_on_each_side() {
             if text.starts_with("# ") {
                 assert!(text.contains(&format!("\n\n*{expected}*\n")), "{text}");
             } else {
-                assert_eq!(between.lines().count(), 2, "{text}");
+                assert_eq!(between.lines().count(), 3, "{text}");
+                assert!(between.ends_with("\n\n "), "{text}");
             }
         }
         for text in human_comparisons(&snapshots[1], &snapshots[1], 0) {
@@ -845,8 +846,7 @@ fn totals_split_all_counted_by_kind_and_grids_end_in_their_source_total() {
     assert!(
         purpose
             .lines()
-            .rev()
-            .nth(1)
+            .last()
             .unwrap()
             .starts_with(" Source total "),
         "{purpose}"
@@ -859,8 +859,10 @@ fn totals_split_all_counted_by_kind_and_grids_end_in_their_source_total() {
         "{folders}"
     );
     assert!(
-        folders.contains("Folders are recursive. Do not sum parents and children."),
-        "{folders}"
+        table.contains(&format!(
+            "{folders}\n\n Folders are recursive. Do not sum parents and children."
+        )),
+        "{table}"
     );
     assert!(!folders.contains(". (both)"), "{folders}");
     let markdown =

@@ -28,6 +28,7 @@ locmetry --root acme-orders --no-user-config --no-color --no-bars --format table
  JavaScript      0      1     1 │        0       0 │     1     0      0 │      0.00
  ───────────────────────────────┼──────────────────┼────────────────────┼──────────
  Total          11     37    29 │        6       2 │    20     7      2 │      0.35
+
  Lines = Code + Comments + Blanks · Production + Test + Other = Code · Test/prod = Test / Production (Code)
  Tests written in another language than the code they test skew per-language Test/prod.
  Folded: TSX → TypeScript.
@@ -59,6 +60,7 @@ locmetry acme-orders --no-user-config --no-color --no-bars --format table --fold
  TypeScript      4     13    10 │        3       0 │     6     3      1 │      0.50
  ───────────────────────────────┼──────────────────┼────────────────────┼──────────
  Total          11     37    29 │        6       2 │    20     7      2 │      0.35
+
  Lines = Code + Comments + Blanks · Production + Test + Other = Code · Test/prod = Test / Production (Code)
  Tests written in another language than the code they test skew per-language Test/prod.
  Folded: TSX → TypeScript.
@@ -77,6 +79,7 @@ locmetry acme-orders --no-user-config --no-color --no-bars --format table --fold
  web/src/orders             12    10 │     7     3      0 │      0.43
  ────────────────────────────────────┼────────────────────┼──────────
  Total                      37    29 │    20     7      2 │      0.35
+
  Production + Test + Other = Code · Test/prod = Test / Production (Code)
  Adaptive folder detail: rows cover measured source once.
 
@@ -89,6 +92,7 @@ locmetry acme-orders --no-user-config --no-color --no-bars --format table --fold
  production:implementation      5     19    16
  production:tooling             1      3     2
  test:test                      2      9     7
+
  Source files only. Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
  Category meanings declared in the policy:
    generated  Committed generator output, regenerated rather than edited
@@ -132,6 +136,7 @@ locmetry --root acme-orders --subfolder web/src --no-user-config --no-color --fo
  JavaScript      0      1     1 │        0       0 │      0.0%
  ───────────────────────────────┼──────────────────┼────────────────────────────────────────────────
  Total           4     13    12 │        1       0 │      7.7%
+
  Lines = Code + Comments + Blanks · Comment % = Comments / (Code + Comments)
  Folded: TSX → TypeScript.
  Rows with 0 files count code embedded in files of other languages, such as scripts in HTML: JavaScript.
@@ -145,6 +150,7 @@ locmetry --root acme-orders --subfolder web/src --no-user-config --no-color --fo
  web/src (direct files)      5     5 │      0.0%
  ────────────────────────────────────┼────────────────────────────────────────────────────
  Total                      13    12 │      7.7%
+
  Comment % = Comments / (Code + Comments)
  Bars: ▓ Comment %. The densest row fills the bar.
 
@@ -169,6 +175,7 @@ locmetry --root acme-orders --no-user-config --no-color --format table \
  TypeScript      4     13    10 │        3       0 │     6     3      1 │      0.50
  ───────────────────────────────┼──────────────────┼────────────────────┼──────────
  Total           4     13    10 │        3       0 │     6     3      1 │      0.50
+
  Lines = Code + Comments + Blanks · Production + Test + Other = Code · Test/prod = Test / Production (Code)
  Tests written in another language than the code they test skew per-language Test/prod.
  Folded: TSX → TypeScript.
@@ -215,6 +222,7 @@ locmetry --root acme-orders --no-user-config --no-color --format table \
  Python          1      3     2 │        1       0 │     2     0 │     33.3%
  ───────────────────────────────┼──────────────────┼─────────────┼──────────
  Total           3     12     9 │        2       1 │     2     7 │     18.2%
+
  Lines = Code + Comments + Blanks · Production + Test = Code · Comment % = Comments / (Code + Comments)
  Not shown (categories): production:implementation, production:build-tooling, other:generated and other:unclaimed (20
 code lines).
@@ -224,6 +232,7 @@ code lines).
  ──────────────────────────────────────
  test:test               2      9     7
  production:tooling      1      3     2
+
  Source files only. Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.
 
 ```
@@ -328,6 +337,7 @@ jq '{
  JavaScript      0      1     1 │        0       0 │     1     0      0 │      0.00
  ───────────────────────────────┼──────────────────┼────────────────────┼──────────
  Total          11     37    29 │        6       2 │    20     7      2 │      0.35
+
  Lines = Code + Comments + Blanks · Production + Test + Other = Code · Test/prod = Test / Production (Code)
  Tests written in another language than the code they test skew per-language Test/prod.
  Folded: TSX → TypeScript.

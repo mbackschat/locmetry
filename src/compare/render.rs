@@ -153,11 +153,13 @@ impl Grid {
         } else {
             output::shared_table(&columns, &body, total.as_deref(), markdown, theme)
         });
+        // Markdown needs the blank line to end the table, and the terminal
+        // keeps the last row apart from the legend (owner review, 2026-10-26).
         if let Some(legend) = self.legend {
             writeln!(
                 output,
-                "{}{}",
-                if markdown { "\n" } else { " " },
+                "\n{}{}",
+                if markdown { "" } else { " " },
                 theme.paint(Role::Muted, &legend)
             )
             .unwrap();

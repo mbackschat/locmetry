@@ -40,6 +40,7 @@ Net change: immich → immich
  Other          17,825   19,173   +1,348 │  14,910   16,165  +1,255
  ────────────────────────────────────────┼─────────────────────────
  Source total  322,048  333,302  +11,254 │ 273,523  282,727  +9,204
+
  Test/prod (Code): 0.46 → 0.48 (before → after)
 
  ───────────────────────────────────────────────────────────────────────────────
@@ -76,6 +77,7 @@ Net change: immich → immich
  TypeScript    164,598  171,956   +7,358 │ 139,669  145,943  +6,274
  ────────────────────────────────────────┼─────────────────────────
  Source total  322,048  333,302  +11,254 │ 273,523  282,727  +9,204
+
  Folded: BASH → Shell, TSX → TypeScript.
 
  ─────────────────────────────────────────────────────────────────────────────
@@ -91,6 +93,7 @@ Net change: immich → immich
  web (both)                67,048   67,833     +785 │  57,577   58,255    +678
  ───────────────────────────────────────────────────┼─────────────────────────
  Source total             322,048  333,302  +11,254 │ 273,523  282,727  +9,204
+
  Folders are recursive. Do not sum parents and children.
 
 Only in one report: 2 folders only before, 16 folders only after.
@@ -189,6 +192,7 @@ Input metadata, measurement notes, report-level findings and partial status cove
  Test          17,934   20,270  +2,336 │ 14,440  16,231  +1,791
  ──────────────────────────────────────┼───────────────────────
  Source total  98,947  100,095  +1,148 │ 82,619  83,183    +564
+
  Test/prod (Code): 0.21 → 0.24 (before → after)
 
  ───────────────────────────────────────────────────────────────────────────
@@ -232,6 +236,7 @@ Member all-counted code: matched +11,434, entering 0, leaving 0. Total +11,434.
  test (both)              16,843   19,170  +2,327 │ 13,613  15,396  +1,783
  ─────────────────────────────────────────────────┼───────────────────────
  Source total             98,947  100,095  +1,148 │ 82,619  83,183    +564
+
  Folders are recursive. Do not sum parents and children.
 
 Only in one report: 2 folders only before, 15 folders only after.

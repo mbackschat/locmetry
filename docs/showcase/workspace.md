@@ -40,6 +40,7 @@ locmetry workspace --workspace-file v3.3.4/immich/workspace.toml --format table 
  C Header        1        1        1 │        0       0 │       1       0       0 │      0.00
  ────────────────────────────────────┼──────────────────┼─────────────────────────┼──────────
  Total       2,497  332,306  281,918 │    9,072  41,316 │ 178,742  87,011  16,165 │      0.49
+
  Lines = Code + Comments + Blanks · Production + Test + Other = Code · Test/prod = Test / Production (Code)
  Tests written in another language than the code they test skew per-language Test/prod.
  Folded: BASH → Shell, TSX → TypeScript.
@@ -56,6 +57,7 @@ locmetry workspace --workspace-file v3.3.4/immich/workspace.toml --format table 
  machine-learning    6,698    5,291 │   3,221   2,070       0 │      0.64 │   1.9%
  ───────────────────────────────────┼─────────────────────────┼───────────┼───────
  Total             332,306  281,918 │ 178,742  87,011  16,165 │      0.49 │ 100.0%
+
  Production + Test + Other = Code · Test/prod = Test / Production (Code) · Share = Code / workspace Code
 
 ```

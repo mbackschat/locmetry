@@ -4,6 +4,10 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 
 ## [Unreleased]
 
+### Changed
+
+- Terminal tables, including comparison tables, leave a blank line between their last row and their legend.
+
 ## [0.11.2] - 2026-10-26
 
 ### Changed

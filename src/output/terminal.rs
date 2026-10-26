@@ -105,9 +105,13 @@ pub fn render_table_with_options(
     total.extend(count_cells(&summary.totals.source));
     total.extend(columns.cells(total_code));
     let mut output = String::new();
-    let legend = |text: &str| match tables_only {
+    // A blank line keeps a table's last row apart from its legends (owner
+    // review, 2026-10-26).
+    let legends = |texts: &[String]| match tables_only || texts.is_empty() {
         true => String::new(),
-        false => format!(" {}\n", theme.paint(Role::Muted, text)),
+        false => texts.iter().fold("\n".to_string(), |block, text| {
+            block + &format!(" {}\n", theme.paint(Role::Muted, text))
+        }),
     };
     // With bars, a table returns what follows its legends: an inline bar key
     // or the chart below it.
@@ -132,21 +136,19 @@ pub fn render_table_with_options(
     );
     output += &language_table.top_rule(theme);
     output += &language_table.text;
-    let mut legends = vec![columns.legend(Some("Lines = Code + Comments + Blanks"), None)];
+    let mut legend_lines = vec![columns.legend(Some("Lines = Code + Comments + Blanks"), None)];
     if columns.ratio() == Ratio::TestPerProduction {
-        legends.push(LANGUAGE_RATIO_NOTE.into());
+        legend_lines.push(LANGUAGE_RATIO_NOTE.into());
     }
-    legends.extend(inline_tests_legend(rows));
-    legends.extend(folded_note(&folds));
-    legends.extend(embedded_only_legend(
+    legend_lines.extend(inline_tests_legend(rows));
+    legend_lines.extend(folded_note(&folds));
+    legend_lines.extend(embedded_only_legend(
         languages
             .iter()
             .map(|(language, (counts, _))| (language.as_str(), counts)),
     ));
-    legends.extend(selection.notes(&purposes));
-    for text in legends {
-        output += &legend(&text);
-    }
+    legend_lines.extend(selection.notes(&purposes));
+    output += &legends(&legend_lines);
     output += &after;
 
     // A workspace's top-level folders are its members, so member rows,
@@ -157,7 +159,7 @@ pub fn render_table_with_options(
         output += "\n";
         output += &text.top_rule(theme);
         output += &text.text;
-        output += &legend(&columns.legend(None, Some("Share = Code / workspace Code")));
+        output += &legends(&[columns.legend(None, Some("Share = Code / workspace Code"))]);
         output += &after;
     }
     if findings.members.is_empty() && (show_folders || folder_rows.is_some()) {
@@ -198,13 +200,13 @@ pub fn render_table_with_options(
             output += "\n";
             output += &text.top_rule(theme);
             output += &text.text;
-            output += &legend(&columns.legend(None, None));
+            let mut legend_lines = vec![columns.legend(None, None)];
             if let Some(view) = &adaptive {
-                output += &legend("Adaptive folder detail: rows cover measured source once.");
-                if let Some(hint) = &view.budget_hint {
-                    output += &legend(&plain(hint));
-                }
+                legend_lines
+                    .push("Adaptive folder detail: rows cover measured source once.".into());
+                legend_lines.extend(view.budget_hint.as_deref().map(plain));
             }
+            output += &legends(&legend_lines);
             output += &after;
         }
     }
@@ -244,10 +246,10 @@ pub fn render_table_with_options(
             output += "\n";
             output += &text.top_rule(theme);
             output += &text.text;
-            output += &legend(CATEGORY_LEGEND);
-            if let Some(meanings) = &meanings {
-                output += &legend(meanings);
-            }
+            let legend_lines: Vec<String> = std::iter::once(CATEGORY_LEGEND.to_string())
+                .chain(meanings)
+                .collect();
+            output += &legends(&legend_lines);
             output += &after;
         }
     }
