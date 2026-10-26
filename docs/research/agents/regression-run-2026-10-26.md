@@ -34,6 +34,22 @@ Every correctness gate and every per-task gate passes. Total agent calls, 26 aga
 
 Decision, 2026-10-26, under the owner's delegation: adopted with the calls residual recorded, as for earlier one-call residuals, because the daily interpretation case cost 38% less uncached input in every pair at equal calls and correctness, and total uncached input and context growth fell.
 
+## Second Route: Saving Tables
+
+With the interpretation route, three of four task 13 candidates still read the whole reports guide, while its section on content and destinations is 5 KB. A second sentence, "To save or print tables, read locmetry --guide reports --section choose-content-and-destination.", was tested the same way: protocol `agent-regression-2026-10-26-table-routes-v1`, control `93c64f2` (`main` with the first route), candidate `dd8c4b3` on the unmerged branch `table-routes`, task 13 as the covered task and task 1 as the guard. The audit found the campaign admissible, and the blind review passed all 16 answers.
+
+| Task | Correct (control → candidate) | Median calls | Median uncached input | Median context growth |
+| --- | --- | --- | --- | --- |
+| 1 | 4/4 → 4/4 | 2 → 2 | 9,640 → 11,098 (+15%) | 7,191 → 7,576 (+5%) |
+| 13 | 4/4 → 4/4 | 4 → 4.5 | 14,216 → 13,802 (−3%) | 8,558 → 5,765 (−33%) |
+| All runs, totals | 8/8 → 8/8 | 24 → 26 | 97,397 → 103,538 (+6.3%) | 62,047 → 54,942 (−11%) |
+
+All four task 13 candidates read only the routed section, so the context they built fell by a third, but their uncached input barely moved and two of them ran each table command twice, once to view and once to save. Task 1's rise in uncached input came with a 5% rise in context growth, the signature of a provider cache miss. Total calls, total uncached input and task 1's uncached input fail their gates, and the failed calls gate excluded the confirmation sample.
+
+Decision, 2026-10-26, under the owner's delegation: rejected and not merged, because the benefit appears only in the diagnostic while three primary gates fail. A route pays when the document it replaces dominates the task's reading, as the whole guide did for interpretation; for saving tables the guide was a smaller share of a session that spends more on its own commands.
+
+One candidate's first guide call failed: `--no-user-config --guide reports …` exits 1, because guides are standalone queries that reject even that isolation flag, and the agent retried without it.
+
 ## Limits
 
 - Four pairs per task; the ratios are diagnostic, not statistically established, and no confirmation sample ran.
