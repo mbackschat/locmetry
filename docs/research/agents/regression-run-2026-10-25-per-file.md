@@ -33,7 +33,7 @@ The native view does not replace the join for Codex: a join of two file lists is
 
 The candidate raised the help-size budgets for the option's text, which is not the cost driver. Releasing the feature would have been a decision about value for reviewers, humans included, rather than about agent efficiency, which this run does not show for Codex; see [agent-facing design lesson 9](../../agent-lessons.md#reports-and-vocabulary).
 
-Decision, 2026-10-26, under the owner's delegation: rejected, because agent efficiency is the priority and the feature fails Codex's cost gate without improving correctness or calls. It was never merged; the implementation stays on the branch `per-file-comparison`, and [DEFERRED](../../DEFERRED.md#measurement-and-comparison) keeps the reopening condition.
+Decision, 2026-10-26, under the owner's delegation: rejected, because agent efficiency is the priority and the feature fails Codex's cost gate without improving correctness or calls. It was never merged; the implementation stays on the branch `per-file-comparison`, and [REJECTED](../../REJECTED.md#tested-and-rejected) keeps the reopening condition.
 
 ## Limits
 

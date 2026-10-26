@@ -5,11 +5,11 @@
   "status": "rejected",
   "date": "2026-10-26",
   "summary": "compare --files would report which files changed classification, counts or recorded state; rejected because Codex kept its own join and failed the cost gate.",
-  "evidence": "[agent run](../../research/agents/regression-run-2026-10-25-per-file.md), [DEFERRED](../../DEFERRED.md#measurement-and-comparison)"
+  "evidence": "[agent run](../../research/agents/regression-run-2026-10-25-per-file.md), [REJECTED](../../REJECTED.md#tested-and-rejected)"
 }
 -->
 
-Status: historical decision record — rejected. Accepted on 2026-10-25 under the owner's delegation of the agent-efficiency work and implemented test-first on the branch `per-file-comparison`, it was rejected on 2026-10-26 under the same delegation and never merged: in the [agent run](../../research/agents/regression-run-2026-10-25-per-file.md), Codex agents kept their own join of the two reports and cross-checked it against `compare --files`, failing the uncached-input gate in both tasks at level correctness and calls. [DEFERRED](../../DEFERRED.md#measurement-and-comparison) keeps the reopening condition. The design below describes the reviewed proposal, not current behavior.
+Status: historical decision record — rejected. Accepted on 2026-10-25 under the owner's delegation of the agent-efficiency work and implemented test-first on the branch `per-file-comparison`, it was rejected on 2026-10-26 under the same delegation and never merged: in the [agent run](../../research/agents/regression-run-2026-10-25-per-file.md), Codex agents kept their own join of the two reports and cross-checked it against `compare --files`, failing the uncached-input gate in both tasks at level correctness and calls. [REJECTED](../../REJECTED.md#tested-and-rejected) keeps the reopening condition. The design below describes the reviewed proposal, not current behavior.
 
 ## Problem
 

@@ -11,6 +11,7 @@ Start with the workflow or contract relevant to your task. Status tables in the 
 - [Integration and distribution](tokei-integration.md): embedded backend, packaging and release procedures.
 - [Current work](PLAN.md): open tasks and decision gates.
 - [Deferred work](DEFERRED.md): deferred and unscheduled items, each with the condition that would reopen it.
+- [Rejected designs](REJECTED.md): designs decided against, with the reason and evidence that settled each.
 - [Maintain these docs](documentation-maintenance.md): index ownership, status/date rules and automated checks.
 - [Agent-facing design lessons](agent-lessons.md): rules agents' behavior has established for help, guides, options, output and errors, each with its evidence; read before changing them.
 - [Design CLI help](help-design.md): what belongs in help, examples and references, with experimental rationale and evaluation criteria.

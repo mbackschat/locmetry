@@ -5,7 +5,7 @@
 `locmetry` is a Rust CLI embedding Tokei. Edit this canonical file; preserve `AGENTS.md` as its relative symlink. Project-specific rules below refine the global defaults.
 
 - Implementation: [src](src); synthetic integration tests and the opt-in private regression: [tests](tests).
-- Current requirements: [PRODUCT](docs/PRODUCT.md); open work and history links: [PLAN](docs/PLAN.md); deferred and unscheduled items with their reopening conditions: [DEFERRED](docs/DEFERRED.md).
+- Current requirements: [PRODUCT](docs/PRODUCT.md); open work and history links: [PLAN](docs/PLAN.md); deferred and unscheduled items with their reopening conditions: [DEFERRED](docs/DEFERRED.md); designs decided against, with their reasons: [REJECTED](docs/REJECTED.md).
 - CLI entry points: [README](README.md); counting and selection limits: [measurement semantics](docs/measurement.md).
 - Design provenance: [research](docs/research/README.md); build/distribution decisions: [Tokei integration](docs/tokei-integration.md).
 - CI and releases: [.github/workflows](.github/workflows); Homebrew and Scoop templates: [packaging/homebrew](packaging/homebrew), [packaging/scoop](packaging/scoop).
@@ -44,7 +44,7 @@ Keep PLAN focused on open work. When a plan is complete, transfer open follow-up
 
 Human presentation roles and palettes live in [src/style.rs](src/style.rs). Renderers select semantic roles, emphasis through `Theme::strong`, and pad terminal cells before styling; a palette alone maps roles to colors, so a new look (for example, light backgrounds) is a new palette, not renderer changes; keep escape sequences out of individual renderers and JSON. Configuration for custom themes remains outside the supported interface.
 
-Follow the [proposal retirement procedure](docs/proposals/README.md#retirement-procedure) when an accepted design is verified, rejected or superseded. Move retired records to the archive, transfer open follow-ups to PLAN and deferred ones to DEFERRED, and preserve their evidence and links.
+Follow the [proposal retirement procedure](docs/proposals/README.md#retirement-procedure) when an accepted design is verified, rejected or superseded. Move retired records to the archive, transfer open follow-ups to PLAN, deferred ones to DEFERRED and rejected ones to REJECTED, and preserve their evidence and links.
 
 ### Documentation ownership and checks
 
