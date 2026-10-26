@@ -38,7 +38,7 @@ The runner gained an explicit treatment selector and configurable task/repetitio
 
 ## Supplementary Simple-Rule Probe
 
-The primary configuration cases need exclusions and intentional Other rules beyond the displayed example. A separate [Task 9](../../../tests/fixtures/agent-explorability/task9.json) tests a single production rule, custom category, retained conventional tests and unresolved review work; its required syntax is covered by the recipe. This limitation and the [supplementary definition](../../../tests/fixtures/agent-explorability/help-recipe-simple-study.json) were recorded before primary aggregate results were inspected, although individual primary runs and artifact results had been observed. Its eight new sessions are not pooled with the primary sample and cannot override the original adoption gate. Four pairs alternate launch order; at most two pairs run concurrently. Both frozen native binaries are reused.
+The primary configuration cases need exclusions and intentional Other rules beyond the displayed example. A separate [Task 9](../../../tests/fixtures/agent-explorability/task9.json) tests a single production rule, custom category, retained conventional tests and unresolved review work; its required syntax is covered by the recipe. This limitation and the supplementary definition (removed 2026-10-26; `git show c8ad807:tests/fixtures/agent-explorability/help-recipe-simple-study.json`) were recorded before primary aggregate results were inspected, although individual primary runs and artifact results had been observed. Its eight new sessions are not pooled with the primary sample and cannot override the original adoption gate. Four pairs alternate launch order; at most two pairs run concurrently. Both frozen native binaries are reused.
 
 The supplementary gate requires all B runs to pass and at least three of four paired wins on the improved metric: either one fewer median agent call with uncached input no more than 5% higher, or at least 10% lower median uncached input with calls no higher. The source oracle is Files 3, Lines 5, Code 4; Production/Test/Other Code 2/1/1, with only `notes/probe.py` unresolved. Both native binaries independently reproduce it.
 
@@ -68,7 +68,7 @@ A is current help; B adds the example. Output includes reasoning and must not ha
 
 Every run started with `--help`. All sixteen configuration runs still read `--guide configure` and `--schema config`; the example did not eliminate either retrieval in this sample. Across all primary runs A made 18 guide calls and B 19; each made 10 config-schema calls, including repeats. B made fewer CLI calls overall but consumed more uncached input. These are observed routes, not proof that guide references caused the additional reading.
 
-The [machine-readable results](explorability-help-recipe-results.json) retain per-run costs, medians, ranges, paired wins, guide/schema retrievals and outcomes. Durations are through final delivery, not first verified success. Concurrent execution makes timing diagnostic, and token caching is reported separately rather than treated as a fixed price.
+The machine-readable results (removed 2026-10-26; `git show c8ad807:docs/research/agents/explorability-help-recipe-results.json`) retain per-run costs, medians, ranges, paired wins, guide/schema retrievals and outcomes. Durations are through final delivery, not first verified success. Concurrent execution makes timing diagnostic, and token caching is reported separately rather than treated as a fixed price.
 
 ## Supplementary Results
 
@@ -110,7 +110,7 @@ Uncached input varies with cache behavior and agent trajectories; the observed p
 
 The primary definition and harness were committed before launch as `d2b4723`; the supplementary definition and Task 9 support were committed before its launch as `7e661eb`. Extending the grader to Task 9 happened only after primary artifact checks completed. The primary archive retains the original grader and its matching hash; the supplementary manifest identifies the extended grader. Neither change modifies Locmetry's runtime. A separate documentation correction (`878e1f6`) changed PRODUCT's fallback category wording to `unclaimed`, matching the existing schema and behavior; it did not alter either binary or any embedded guide.
 
-The [results JSON](explorability-help-recipe-results.json) records both native binary hashes and each protocol's hashes. Replaying changed sources, prompts, models or fixtures creates a new campaign. For a replay from the recorded sources, prepare temporary native copies and verify the exact treatment before launching fresh agents. Build the two targets sequentially, retaining build logs:
+The results JSON (removed 2026-10-26; `git show c8ad807:docs/research/agents/explorability-help-recipe-results.json`) records both native binary hashes and each protocol's hashes. Replaying changed sources, prompts, models or fixtures creates a new campaign. For a replay from the recorded sources, prepare temporary native copies and verify the exact treatment before launching fresh agents. Build the two targets sequentially, retaining build logs:
 
 ```sh
 experiment_root=/tmp/locmetry-help-recipe-replay-build

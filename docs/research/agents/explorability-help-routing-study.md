@@ -61,7 +61,7 @@ Executable artifact checks leave interpretation pending. Independently grade all
 
 ## Results
 
-All 36 sessions completed within budget: **12/12 passes in each condition**, with no incomplete or critical-failure runs. Three independent MEDIUM reviewers each graded twelve shuffled answers for one task, with condition/resource labels hidden. Recorded model/effort, context isolation, prompt/task/source/binary hashes, actual arm order and final counters were reconciled. No previous sessions were pooled; no new runs were excluded or replaced. The routing paragraph appeared in the returned tool content of 12 of twelve C sessions. Artifact and semantic outcomes are recorded separately in the [per-run results](explorability-help-routing-results.json).
+All 36 sessions completed within budget: **12/12 passes in each condition**, with no incomplete or critical-failure runs. Three independent MEDIUM reviewers each graded twelve shuffled answers for one task, with condition/resource labels hidden. Recorded model/effort, context isolation, prompt/task/source/binary hashes, actual arm order and final counters were reconciled. No previous sessions were pooled; no new runs were excluded or replaced. The routing paragraph appeared in the returned tool content of 12 of twelve C sessions. Artifact and semantic outcomes are recorded separately in the per-run results (removed 2026-10-26; `git show c8ad807:docs/research/agents/explorability-help-routing-results.json`).
 
 | Task | Median agent calls A / B / C | Median uncached input A / B / C | Median CLI calls A / B / C |
 | --- | --- | --- | --- |

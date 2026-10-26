@@ -115,7 +115,7 @@ Freeze the help treatment before testing it on configuration and an independentl
 | 5 | 6–7 / 7–7 | 40,547–45,126 / 40,708–68,158 |
 | 6 | 5–6 / 3–5 | 28,696–31,165 / 30,058–32,947 |
 
-The [per-run results](explorability-six-task-results.json) preserve every task/discovery metric, outcome, guide/schema route, coverage subscore, and frozen campaign hash. In particular, comparison and workspace input costs vary substantially; neither one favorable run nor the small aggregate difference is a stable cost forecast.
+The per-run results (removed 2026-10-26; `git show c8ad807:docs/research/agents/explorability-six-task-results.json`) preserve every task/discovery metric, outcome, guide/schema route, coverage subscore, and frozen campaign hash. In particular, comparison and workspace input costs vary substantially; neither one favorable run nor the small aggregate difference is a stable cost forecast.
 
 ## Evidence and Replay
 

@@ -16,9 +16,9 @@ The positive reason to adopt still comes from the [original covered-task result]
 
 The three arms remain A current help, B the previous example alone, and C that example plus conditional execution-first routing. Reuse the exact native binary hashes from the prior study after verifying unchanged product source inputs. All prompts, task fixtures, oracles, guide/schema content, model/effort (`gpt-6.1-sol` / `xhigh`) and per-run budgets remain unchanged. No prior sessions are pooled with the new sample.
 
-Stage 1 uses [the broader-configuration protocol](../../../tests/fixtures/agent-explorability/help-routing-replication-broad.json): Task 8, twelve fresh triads, thirty-six sessions. Each of the six arm permutations appears twice in two complete blocks. Each arm therefore occupies each position four times. Arms run sequentially inside a triad, with at most three triads active. The exact order is frozen in the protocol.
+Stage 1 uses the broader-configuration protocol (removed 2026-10-26; `git show c8ad807:tests/fixtures/agent-explorability/help-routing-replication-broad.json`): Task 8, twelve fresh triads, thirty-six sessions. Each of the six arm permutations appears twice in two complete blocks. Each arm therefore occupies each position four times. Arms run sequentially inside a triad, with at most three triads active. The exact order is frozen in the protocol.
 
-Stage 2 uses [the report-understanding protocol](../../../tests/fixtures/agent-explorability/help-routing-replication-report.json): Task 1, six fresh triads, eighteen sessions, every permutation once and each arm in each position twice. It runs only if Stage 1 is admissible and passes correctness and both resource guards. Its purpose is to check the prior cached-input regression with balanced positions. Its entire schedule and definition are frozen before Stage 1; Stage 1 records its hash. If Stage 1 fails, Stage 2 is not run because adoption is already blocked by the bounded decision rule.
+Stage 2 uses the report-understanding protocol (removed 2026-10-26; `git show c8ad807:tests/fixtures/agent-explorability/help-routing-replication-report.json`): Task 1, six fresh triads, eighteen sessions, every permutation once and each arm in each position twice. It runs only if Stage 1 is admissible and passes correctness and both resource guards. Its purpose is to check the prior cached-input regression with balanced positions. Its entire schedule and definition are frozen before Stage 1; Stage 1 records its hash. If Stage 1 fails, Stage 2 is not run because adoption is already blocked by the bounded decision rule.
 
 For each stage:
 
@@ -141,7 +141,7 @@ Neither primary metric failed its guard. Neither had at least nine strict C>A pa
 | Schema calls | 0 | 0 | 0 |
 | Duration, seconds | 167.3 | 141 | 147 |
 
-The [machine-readable results](explorability-routing-replication-results.json) preserve all per-run costs, paired differences, medians, totals, ranges, reference retrievals, outcomes, frozen manifests and gate decisions. Agent calls, shell executions and CLI invocations are distinct units. Uncached input is input minus cached input; output includes reasoning and must not have reasoning added again. Time runs through final delivery, not first verified success. Evaluator/reviewer work is excluded.
+The machine-readable results (removed 2026-10-26; `git show c8ad807:docs/research/agents/explorability-routing-replication-results.json`) preserve all per-run costs, paired differences, medians, totals, ranges, reference retrievals, outcomes, frozen manifests and gate decisions. Agent calls, shell executions and CLI invocations are distinct units. Uncached input is input minus cached input; output includes reasoning and must not have reasoning added again. Time runs through final delivery, not first verified success. Evaluator/reviewer work is excluded.
 
 ## Evidence and Limits
 
