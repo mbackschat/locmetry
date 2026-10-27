@@ -141,7 +141,8 @@ pub(crate) fn report(
                 styling.stderr_message(
                     Severity::Warning,
                     format_args!(
-                        "'--table-category' entry '{entry}' matches no category in this measurement. '--show-categories' lists the measured ones."
+                        "'--table-category' entry '{entry}' matches no category in this measurement. Measured categories: {}.",
+                        entry.measured_keys(&results.rows).join(", ")
                     ),
                 );
             }

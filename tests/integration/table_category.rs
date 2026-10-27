@@ -145,14 +145,38 @@ fn selecting_every_category_is_no_selection() {
     );
 }
 
-/// A purpose typo would silently empty every table, so it is a usage error.
-/// A category is the project's own, case-sensitive name, so an entry that
-/// matches none only warns: the tables still show what the command asked for.
+/// An empty part matches anything, so `:CATEGORY` names a category under any
+/// purpose and `PURPOSE:` all of a purpose's categories.
 #[test]
-fn unknown_purposes_are_rejected_and_unmatched_categories_warn() {
+fn empty_parts_match_any_purpose_or_category() {
+    let tables = |value: &str| {
+        let text = table(&["--table-category", value]);
+        text.split("\nRoot:").next().unwrap().to_string()
+    };
+    let wildcard = tables("*:*tooling");
+    assert_eq!(cells(&wildcard, "Total")[1..4], ["2", "3", "3"]);
+    assert_eq!(tables(":*tooling"), wildcard);
+    let purpose = tables("production");
+    assert_eq!(tables("production:"), purpose);
+    assert_eq!(tables("*ion:"), purpose);
+}
+
+/// A purpose part that can match no purpose would silently empty every table,
+/// so it is a usage error, wildcard or not; the bare form's error names the
+/// category spelling the entry was likely meant as. A category is the
+/// project's own, case-sensitive name, so an entry that matches none only
+/// warns, and the warning names the measured keys because the category table
+/// it filters may be empty.
+#[test]
+fn unmatchable_purposes_are_rejected_and_unmatched_categories_warn() {
     let temp = tempfile::tempdir().unwrap();
     project(temp.path());
-    for value in ["prod:tooling", "tooling", "production:"] {
+    for (value, hint) in [
+        ("prod:tooling", "leave it empty for any purpose"),
+        ("x*:tooling", "leave it empty for any purpose"),
+        ("tooling", "write ':tooling'"),
+        ("*tooling", "write ':*tooling'"),
+    ] {
         let output = run(
             temp.path(),
             &["--format", "table", "--table-category", value],
@@ -160,6 +184,7 @@ fn unknown_purposes_are_rejected_and_unmatched_categories_warn() {
         assert_eq!(output.status.code(), Some(1), "{value}");
         let error = String::from_utf8_lossy(&output.stderr);
         assert!(error.contains(&format!("'{value}'")), "{error}");
+        assert!(error.contains(hint), "{error}");
     }
     let output = run(
         temp.path(),
@@ -175,8 +200,8 @@ fn unknown_purposes_are_rejected_and_unmatched_categories_warn() {
     assert_eq!(
         stderr,
         concat!(
-            "warning: '--table-category' entry 'production:Tooling' matches no category in this measurement. '--show-categories' lists the measured ones.\n",
-            "warning: '--table-category' entry 'other:nope*' matches no category in this measurement. '--show-categories' lists the measured ones.\n",
+            "warning: '--table-category' entry 'production:Tooling' matches no category in this measurement. Measured categories: production:tooling, production:verification-tooling, production:implementation, other:unclaimed, test:test.\n",
+            "warning: '--table-category' entry 'other:nope*' matches no category in this measurement. Measured categories: production:implementation, production:tooling, other:unclaimed, production:verification-tooling, test:test.\n",
         )
     );
     assert!(String::from_utf8_lossy(&output.stdout).contains("(6 code lines)."));

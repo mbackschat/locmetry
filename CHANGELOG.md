@@ -6,6 +6,7 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 
 ### Changed
 
+- `--table-category` accepts an empty part as matching anything: `:*law` selects categories ending in `law` under any purpose, and `test:` selects all of Test. An entry whose purpose part can match no purpose, such as `*law` or `x*:law`, is now an error that suggests the `:CATEGORY` spelling, where a wildcard previously passed and emptied the tables. An entry that matches no category warns with the measured category names instead of pointing to `--show-categories`, whose table the same entry had emptied.
 - Terminal tables, including comparison tables, leave a blank line between their last row and their legend.
 - `locmetry --guide reports --section continuous-integration` includes a file-size gate by purpose, which was previously only in the repository's cookbook.
 

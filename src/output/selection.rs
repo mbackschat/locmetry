@@ -36,7 +36,8 @@ fn purpose_selected(row: &FileRecord, purposes: &[Purpose]) -> bool {
 
 /// One `--table-category` entry: a purpose, which selects all its categories,
 /// or a `purpose:category` key as the category table prints it. `*` in either
-/// part matches any run of characters (docs/proposals/archive/table-category-filter.md).
+/// part matches any run of characters and an empty part matches anything
+/// (docs/proposals/archive/table-category-filter.md).
 #[derive(Clone, Debug)]
 pub struct CategoryPattern {
     purpose: String,
@@ -44,28 +45,36 @@ pub struct CategoryPattern {
 }
 
 impl CategoryPattern {
-    /// Rejects a purpose part that can match no purpose, since that would
-    /// silently empty every table; categories are the project's own names.
+    /// Rejects a purpose part that can match no purpose, wildcard or not,
+    /// since that would silently empty every table; categories are the
+    /// project's own names.
     pub fn parse(text: &str) -> Result<Self, String> {
         let (purpose, category) = match text.split_once(':') {
-            Some((_, "")) => return Err("A category name must follow ':'.".into()),
             Some((purpose, category)) => (purpose, Some(category.to_string())),
             None => (text, None),
         };
-        if !purpose.contains('*') && !Purpose::ALL.iter().any(|p| p.to_string() == purpose) {
-            return Err(format!(
-                "Unknown purpose '{purpose}'. Use 'production', 'test' or 'other', alone or before ':CATEGORY'."
-            ));
-        }
-        Ok(Self {
+        let pattern = Self {
             purpose: purpose.to_string(),
             category,
+        };
+        if Purpose::ALL.iter().any(|purpose| pattern.names(*purpose)) {
+            return Ok(pattern);
+        }
+        let options = "Use 'production', 'test' or 'other', or a '*' pattern matching one of them";
+        Err(match &pattern.category {
+            Some(_) => format!(
+                "Purpose '{purpose}' matches no purpose. {options}, or leave it empty for any purpose, as in ':CATEGORY'."
+            ),
+            None if text.is_empty() => format!("An entry is empty. {options}."),
+            None => format!(
+                "'{text}' matches no purpose. {options}. For a category under any purpose, write ':{text}'."
+            ),
         })
     }
 
     /// Whether this entry can select source of `purpose` at all.
     pub(super) fn names(&self, purpose: Purpose) -> bool {
-        wildcard(&self.purpose, &purpose.to_string())
+        wildcard(any_if_empty(&self.purpose), &purpose.to_string())
     }
 
     /// Whether any source in `rows` falls under this entry; category names
@@ -75,12 +84,46 @@ impl CategoryPattern {
             .any(|row| row.kind == Kind::Source && self.matches(row))
     }
 
+    /// The measured category keys in `rows`, largest code first, with those
+    /// whose category contains a literal part of this entry's category,
+    /// ignoring case, ahead of the rest: a miss is usually a misspelling, and
+    /// the category table that would list the keys is filtered by this entry.
+    pub fn measured_keys(&self, rows: &[FileRecord]) -> Vec<String> {
+        let fragments: Vec<String> = self
+            .category
+            .iter()
+            .flat_map(|category| category.split('*'))
+            .filter(|fragment| !fragment.is_empty())
+            .map(str::to_lowercase)
+            .collect();
+        let mut keys = BTreeMap::<String, (bool, u64)>::new();
+        for row in rows.iter().filter(|row| row.kind == Kind::Source) {
+            let category = &row.classification.category;
+            let likely = fragments
+                .iter()
+                .any(|fragment| category.to_lowercase().contains(fragment.as_str()));
+            let key = crate::report::category_key(row.classification.purpose, category);
+            let entry = keys.entry(key).or_insert((likely, 0));
+            entry.1 += row.counts.code;
+        }
+        let mut keys: Vec<(String, (bool, u64))> = keys.into_iter().collect();
+        keys.sort_by(|a, b| (b.1).cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
+        keys.into_iter().map(|(key, _)| key).collect()
+    }
+
     fn matches(&self, row: &FileRecord) -> bool {
         self.names(row.classification.purpose)
-            && self
-                .category
-                .as_deref()
-                .is_none_or(|category| wildcard(category, &row.classification.category))
+            && self.category.as_deref().is_none_or(|category| {
+                wildcard(any_if_empty(category), &row.classification.category)
+            })
+    }
+}
+
+/// An empty pattern part, as in `:CATEGORY` or `PURPOSE:`, matches anything.
+fn any_if_empty(part: &str) -> &str {
+    match part {
+        "" => "*",
+        part => part,
     }
 }
 

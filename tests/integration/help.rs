@@ -472,7 +472,9 @@ const HELP_BUDGETS: [(&[&str], usize); 8] = [
     (&["-h"], 4_710),
     (&["--help"], 13_540),
     (&["workspace", "-h"], 2_500),
-    (&["workspace", "--help"], 6_900),
+    // Raised from 6,900 by the owner on 2026-10-27, without an agent check,
+    // for the `--table-category` empty-part sentence.
+    (&["workspace", "--help"], 7_000),
     (&["compare", "-h"], 990),
     (&["compare", "--help"], 4_830),
     (&["explain", "-h"], 1_460),
