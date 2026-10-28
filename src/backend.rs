@@ -20,6 +20,7 @@ mod generated;
 mod handlebars;
 mod inline_tests;
 mod languages;
+mod lean;
 mod notebook;
 mod records;
 mod selection;
@@ -32,7 +33,7 @@ pub use selection::*;
 #[derive(Clone, Debug, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ParseFailureReason {
-    /// Readable Handlebars bytes cannot be decoded as UTF-8 or BOM-directed text.
+    /// Readable Handlebars or Lean bytes cannot be decoded as UTF-8 or BOM-directed text.
     InvalidEncoding,
     /// Invalid encoding, JSON or counting structure; includes zero-byte input.
     InvalidNotebook,
@@ -518,6 +519,7 @@ fn parse_file(
     match language {
         Handlebars => handlebars::parse(path),
         Jupyter => notebook::parse(path, config),
+        Lean => lean::parse(path),
         _ => language
             .parse(path.to_owned(), config)
             .map_err(|_| ParseError::Read),

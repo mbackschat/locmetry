@@ -283,6 +283,95 @@ fn handlebars_distinguishes_template_text_from_quoted_syntax() {
     }
 }
 
+/// Lean 4.31.0 accepted every fixture except the unterminated comment on 2026-10-28.
+#[test]
+fn lean_comment_markers_inside_literals_stay_code() {
+    let cases = [
+        (
+            "def opener : String := \"/-\"\n\ndef a : Nat := 1\ndef b : Nat := 2\n",
+            (3, 0, 1),
+        ),
+        (
+            r##"def path : String := "packet/-receipt.json"
+def interp : String := s!"x {"/-"} y"
+def quoteChar : Char := '"'
+def raw : String := r#"a "/-" b"#
+def escaped : String := "a \" /- b"
+/- nested /- comment -/ still comment -/
+/-- doc -/
+def a : Nat := 1
+#eval [path, interp, toString quoteChar, raw, escaped]
+"##,
+            (7, 2, 0),
+        ),
+        ("def a : Nat := 1\n/- open\n\nstill\n", (1, 3, 0)),
+        (
+            "-- line\ndef a : Nat := 1 -- trailing\n\n/-- doc\n  more -/\ndef b : Nat := 2\n/-! module\ndoc -/\n",
+            (2, 5, 1),
+        ),
+        (
+            "def k (f : Char → Char → Nat) (x' : Char) : Nat := f x' '\"'\n-- note\ndef a : Nat := 1\n",
+            (2, 1, 0),
+        ),
+        (
+            "def brace : String := \"{\"\ndef p : String := panic! \"{\"\ndef c : String := \"-/ /-\"\ndef a : Nat := 1\n",
+            (4, 0, 0),
+        ),
+        (
+            r###"def raw : String := r##"a "# /- "##
+-- note
+def a : Nat := 1
+"###,
+            (2, 1, 0),
+        ),
+        (
+            "def «x\"y» : Nat := 1\ndef z : String := \"/-\"\ndef a : Nat := 1\n",
+            (3, 0, 0),
+        ),
+        (
+            "def s : String := \"first\n\nlast /-\"\ndef a : Nat := 1\n",
+            (4, 0, 0),
+        ),
+        (
+            "def q : Char := '\\''\ndef b : Char := '\\\\'\ndef s : String := \"/-\"\ndef a : Nat := 1\n",
+            (4, 0, 0),
+        ),
+        (
+            r#"def m : String := s! "a {"/-"} b {s!"c {"--"}"} d"
+-- note
+def a : Nat := 1
+"#,
+            (2, 1, 0),
+        ),
+        (
+            "def g : String := \"a\\\n  /- b\"\ndef a : Nat := 1\n",
+            (3, 0, 0),
+        ),
+        (
+            "def opener : String := \"/-\"\r\n\r\n-- note\r\n",
+            (1, 1, 1),
+        ),
+        // Mixed lines follow Tokei's rules for other languages.
+        (
+            "/- a\nb -/ def x : Nat := 1\n/- c -/ def y : Nat := 2\ndef z : Nat := 3 /- d\n-/\n/- e -/ /- f\n-/\n",
+            (2, 5, 0),
+        ),
+    ];
+    for (text, expected) in cases {
+        for extension in ["lean", "hlean"] {
+            let rows = scan_rows(&[(&format!("Main.{extension}"), text)]);
+            let row = &rows[0];
+            assert_eq!(row.language, "Lean");
+            assert_eq!(
+                (row.counts.code, row.counts.comments, row.counts.blanks),
+                expected,
+                "{extension}: {text:?}"
+            );
+            assert_eq!(row.counts.lines, text.lines().count() as u64);
+        }
+    }
+}
+
 #[test]
 fn handlebars_preserves_bom_decoding() {
     let text = "Owner's notice\n\n{{! comment }}\n";
@@ -527,4 +616,19 @@ language = "Handlebars"
             .contains("Cannot decode Handlebars encoding"));
         assert!(result.records(&config).unwrap().is_empty());
     }
+}
+
+#[test]
+fn lean_decode_failures_are_content_failures() {
+    let temp = tempfile::tempdir().unwrap();
+    fs::write(temp.path().join("Main.lean"), b"-- caf\xe9\n").unwrap();
+    let config = policy("");
+    let result = scan(temp.path(), &config).unwrap();
+    assert!(result.inaccurate);
+    assert!(result.coverage.unread.is_empty());
+    let failure = &result.coverage.parse_failures[0];
+    assert_eq!(failure.path, "Main.lean");
+    assert_eq!(failure.reason.to_string(), "invalid_encoding");
+    assert!(failure.message.contains("Cannot decode Lean encoding"));
+    assert!(result.records(&config).unwrap().is_empty());
 }

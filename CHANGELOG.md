@@ -10,6 +10,10 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 - Terminal tables, including comparison tables, leave a blank line between their last row and their legend.
 - `locmetry --guide reports --section continuous-integration` includes a file-size gate by purpose, which was previously only in the repository's cookbook.
 
+### Fixed
+
+- Lean files no longer lose code lines to comment markers inside literals: a `/-` in a string such as `"packet/-receipt.json"` used to turn the rest of the file into comment lines. Lean lines inside strings, blank ones included, now count as code, and a Lean file whose bytes cannot be decoded is reported as an `invalid_encoding` parse failure instead of being counted.
+
 ## [0.11.2] - 2026-10-26
 
 ### Changed
