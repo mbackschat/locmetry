@@ -55,4 +55,7 @@ Python's nested f-string quotes rebalance within the line and were counted corre
 
 ## Upstream
 
+The open pull requests [#1389](https://github.com/XAMPPRocky/tokei/pull/1389) for character literals and [#1351](https://github.com/XAMPPRocky/tokei/pull/1351) for Go backtick strings had no review on 2026-10-29; the repository has its issue tracker disabled. [Counting backends](research/counting-backends.md) compares ways to correct the defects in Locmetry.
+
+
 No Tokei issue about Lean existed on 2026-10-28; the Lean definition on Tokei's master branch still declares no quotes. Locmetry pins Tokei exactly, so an upstream fix reaches Locmetry only with a dependency update, and several defects above, such as character literals and raw strings with any number of `#`, cannot be expressed in Tokei's quote model at all.
