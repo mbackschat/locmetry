@@ -28,7 +28,8 @@ Each step is complete when all of these hold for its languages:
 - [ ] Probe files with hand-derived counts cover each construct and pass the language's compiler or syntax checker where one is available; they become tests in the fork.
 - [ ] Public repositories for each language, at recorded commits, are measured against tree-sitter, and every remaining disagreement is explained.
 - [ ] Speed stays within Tokei's on the spike's benchmark set.
-- [ ] [Tokei counting defects](../tokei-defects.md) moves the fixed entries to the corrected section, with the fix commit.
+- [ ] The fork's README lists its changes from upstream, each with its commit and upstream pull request.
+- [ ] [Tokei counting defects](../tokei-defects.md) moves the fixed entries to the corrected section, with the fork and Locmetry commits; [measurement semantics](../measurement.md#counting) states the new counting rules.
 
 ## Step 1: Character Literals and Missing Declarations
 
@@ -42,7 +43,7 @@ Each step is complete when all of these hold for its languages:
 - [ ] Decide whether to replace Tokei's text-based rule that counts a line starting with a comment marker as a comment even inside a literal.
 - [ ] Add repositories for Kotlin, C++, C#, Scala, OCaml, Haskell and PHP to the measurement.
 - [ ] Preserve the tree-sitter reference harness and probes in the fork as development tools.
-- [ ] Switch Locmetry to the fork, keep its Lean, Handlebars and notebook counters, and update [measurement semantics](../measurement.md) and the CHANGELOG.
+- [ ] Switch Locmetry to the fork and keep its Lean, Handlebars and notebook counters. Record the fork, its pinning and its upgrade and upstreaming policy in [Tokei integration](../tokei-integration.md#counting-boundary), adjust the embedded-Tokei statement in [PRODUCT](../PRODUCT.md), and add the CHANGELOG entry.
 - [ ] Create the fork's GitHub repository and pin Locmetry's dependency to a commit; verify the Linux musl, Windows and Homebrew builds.
 - [ ] Offer the character-literal and Go backtick changes upstream, referring to [#1389](https://github.com/XAMPPRocky/tokei/pull/1389) and [#1351](https://github.com/XAMPPRocky/tokei/pull/1351).
 

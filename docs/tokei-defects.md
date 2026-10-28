@@ -1,6 +1,6 @@
 # Tokei Counting Defects
 
-Locmetry counts with the embedded Tokei 15.0.0 ([Tokei integration](tokei-integration.md)). Tokei lexes every language with one generic model from its `languages.json`: line comments, block comments, and quote pairs that protect comment markers. When a language's definition omits a literal form, or declares quotes where the text is not code, comment markers and quotes are misread, and the error can carry on to the end of the file. This page records the defects found, which ones Locmetry corrects, and the evidence for the rest. [Measurement semantics](measurement.md#counting) owns the counting contract.
+Locmetry counts with the embedded Tokei 15.0.0 ([Tokei integration](tokei-integration.md)). Tokei lexes every language with one generic model from its `languages.json`: line comments, block comments, and quote pairs that protect comment markers. When a language's definition omits a literal form, or declares quotes where the text is not code, comment markers and quotes are misread, and the error can carry on to the end of the file. This page is the register of defects found, which ones Locmetry corrects, and the evidence for the rest. [Tokei integration](tokei-integration.md#counting-boundary) owns how corrections replace Tokei's parsing, and [measurement semantics](measurement.md#counting) owns the resulting counting rules.
 
 ## Corrected by Locmetry
 
