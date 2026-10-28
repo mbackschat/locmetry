@@ -4,7 +4,7 @@
 
 ## Next
 
-None at present.
+- [Correct counting in a Tokei fork](plans/tokei-fork.md): five feature steps, starting with character literals and missing quote declarations; decided 2026-10-29.
 
 ## Accepted — Awaiting Verification
 
