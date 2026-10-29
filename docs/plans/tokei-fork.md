@@ -5,7 +5,7 @@
   "status": "active",
   "date": "2026-10-29",
   "summary": "Fix Tokei's literal and comment defects in a fork, in five feature steps that each cover every language with the construct.",
-  "evidence": "[counting backends](../research/counting-backends.md), [Tokei counting defects](../tokei-defects.md), [step 1](../research/tokei-fork-step-1.md) and [step 2](../research/tokei-fork-step-2.md) measurements"
+  "evidence": "[counting backends](../research/counting-backends.md), [Tokei counting defects](../tokei-defects.md), [step 1](../research/tokei-fork-step-1.md), [step 2](../research/tokei-fork-step-2.md) and [step 3](../research/tokei-fork-step-3.md) measurements"
 }
 -->
 
@@ -58,8 +58,10 @@ Each step is complete when all of these hold for its languages:
 
 ## Step 3: Interpolation and Regular Expressions
 
-- [ ] Interpolation whose terms are code and can hold their own strings: JS and TS `` `${…}` ``, Kotlin `"${…}"`, Swift `"\(…)"`, C# `$"{…}"`, Scala `s"${…}"`, Dart `"${…}"` and Ruby `"#{…}"`.
-- [ ] Regular expression literals, recognized by the previous token: JS, TS and Ruby.
+- [x] Interpolation whose terms are code and can hold their own strings: JS and TS `` `${…}` ``, Kotlin `"${…}"`, Swift `"\(…)"`, C# `$"{…}"`, Scala `s"${…}"`, Dart `"${…}"` and Ruby `"#{…}"`.
+- [x] Regular expression literals, recognized by the previous token: JS, TS and Ruby.
+- [x] Shell `"$(…)"` substitutions, verbatim `'…'` strings and word-start `#` comments, and Ruby's `$'`, `$"` and `` $` `` globals, found by the measurement.
+- [ ] Adopted in Locmetry with fork `15.0.0+locmetry.3`; see the [step 3 measurement](../research/tokei-fork-step-3.md).
 
 ## Step 4: Heredocs
 

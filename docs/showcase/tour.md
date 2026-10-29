@@ -21,7 +21,7 @@ locmetry --root immich --config builtin-only.toml --format table --verbose --no-
 ```output
  Not source code: 296 data files (245,954 lines), 210 documentation files (12,521 lines, including 793 code lines in
 embedded snippets). '--files --output -' lists each file's kind.
- Production from build modules: 127,205 code lines in 9 'npm' modules, 59,170 code lines in 2 'dart' modules, 4,102 code
+ Production from build modules: 127,146 code lines in 9 'npm' modules, 59,170 code lines in 2 'dart' modules, 4,102 code
 lines in 1 'gradle' module, 3,037 code lines in 1 'python' module.
  Largest files counted as Production only by a build layout. If one is generated or vendored, exclude or reclassify it
 in '.locmetryrc':
@@ -145,11 +145,11 @@ locmetry compare builtin.json reviewed.json --format table --no-color \
 ```output
  Purpose        before    after   change │  before    after   change
  ────────────────────────────────────────┼──────────────────────────
- Production    227,765  210,697  -17,068 │ 194,232  179,551  -14,681
+ Production    227,765  210,697  -17,068 │ 194,173  179,492  -14,681
  Test           99,381  103,432   +4,051 │  83,595   87,011   +3,416
  Other           6,214   19,173  +12,959 │   4,943   16,165  +11,222
  ────────────────────────────────────────┼──────────────────────────
- Source total  333,360  333,302      -58 │ 282,770  282,727      -43
+ Source total  333,360  333,302      -58 │ 282,711  282,668      -43
 
  Test/prod (Code): 0.43 → 0.48 (before → after)
 ```
@@ -218,7 +218,7 @@ bash "$repository/scripts/compare-locmetry-files.sh" builtin.json reviewed.json 
     "from": "production/implementation",
     "to": "production/distribution",
     "files": 5,
-    "code": 577
+    "code": 567
   },
   {
     "from": "production/implementation",

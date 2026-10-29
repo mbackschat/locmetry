@@ -23,10 +23,10 @@ locmetry --root immich --config builtin-only.toml --format json \
 
 ```output
 {
-  "all_counted": 522776,
-  "source": 282770,
+  "all_counted": 522717,
+  "source": 282711,
   "purposes": {
-    "production": 194232,
+    "production": 194173,
     "test": 83595,
     "other": 4943
   },
@@ -101,7 +101,7 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  ────────────────────────────────────────────────────────────────────────────────────────────
  Language    Files    Lines     Code │ Comments  Blanks │   Prod.    Test   Other │ Test/prod
  ────────────────────────────────────┼──────────────────┼─────────────────────────┼──────────
- TypeScript  1,085  171,956  145,943 │    4,633  21,380 │  70,861  68,616   6,466 │      0.97
+ TypeScript  1,085  171,956  145,884 │    4,676  21,396 │  70,802  68,616   6,466 │      0.97
  Dart          823   90,871   75,726 │    2,779  12,366 │  59,495  16,231       0 │      0.27
  JavaScript     17   23,273   19,746 │      427   3,100 │  19,684      62       0 │      0.00
  Svelte        412   19,014   17,442 │      200   1,372 │  17,420      22       0 │      0.00
@@ -122,7 +122,7 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  CMake           1       13        9 │        0       4 │       9       0       0 │      0.00
  C Header        1        1        1 │        0       0 │       1       0       0 │      0.00
  ────────────────────────────────────┼──────────────────┼─────────────────────────┼──────────
- Total       2,527  333,302  282,727 │    9,149  41,426 │ 179,551  87,011  16,165 │      0.48
+ Total       2,527  333,302  282,668 │    9,192  41,442 │ 179,492  87,011  16,165 │      0.48
 
  Lines = Code + Comments + Blanks · Production + Test + Other = Code · Test/prod = Test / Production (Code)
  Tests written in another language than the code they test skew per-language Test/prod.
@@ -132,7 +132,7 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  ──────────────────────────────────────────────────────
  Category                       Files    Lines     Code
  ──────────────────────────────────────────────────────
- production:implementation      1,828  198,194  169,367
+ production:implementation      1,828  198,194  169,318
  test:test                        450   87,800   73,710
  other:generated                   38   19,173   16,165
  test:end-to-end                   41    9,285    7,871
@@ -141,7 +141,7 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  test:integration                   8    2,296    2,014
  production:build-tooling          18      886      772
  production:deployment             28      938      740
- production:distribution            5      695      577
+ production:distribution            5      695      567
  production:tooling                10      646      507
  production:documentation-site      6      468      382
  test:performance                   1       81       64
@@ -253,14 +253,14 @@ locmetry --root immich --format table --folder-rows 16 --no-color --no-bars --ta
 ```output
  Folder                           Lines     Code │   Prod.    Test   Other │ Test/prod
  ────────────────────────────────────────────────┼─────────────────────────┼──────────
- server/src                     104,285   90,467 │  52,970  27,798   9,699 │      0.52
+ server/src                     104,285   90,418 │  52,921  27,798   9,699 │      0.53
  web                             67,833   58,255 │  52,867   5,388       0 │      0.10
  mobile/lib                      67,419   56,893 │  56,893       0       0 │      0.00
  server/test                     24,611   21,157 │       0  21,157       0 │         -
  mobile/test                     19,170   15,396 │       0  15,396       0 │         -
  e2e                             15,491   13,174 │      61  13,113       0 │    214.97
  mobile (7 more child folders)   13,506   10,894 │  10,059     835       0 │      0.08
- packages                        12,893   10,065 │   2,345   1,254   6,466 │      0.53
+ packages                        12,893   10,055 │   2,335   1,254   6,466 │      0.54
  machine-learning                 6,698    5,291 │   3,221   2,070       0 │      0.64
  docs                               492      401 │     401       0       0 │      0.00
  deployment                         262      225 │     225       0       0 │      0.00
@@ -270,7 +270,7 @@ locmetry --root immich --format table --folder-rows 16 --no-color --no-bars --ta
  .devcontainer/server                85       58 │      58       0       0 │      0.00
  open-api/bin                        26       14 │      14       0       0 │      0.00
  ────────────────────────────────────────────────┼─────────────────────────┼──────────
- Total                          333,302  282,727 │ 179,551  87,011  16,165 │      0.48
+ Total                          333,302  282,668 │ 179,492  87,011  16,165 │      0.48
 ```
 
 ## Look at the code around the product
@@ -289,7 +289,7 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  ─────────────────────────────────────────────────────────────────────────────
  Language    Files  Lines   Code │ Comments  Blanks │ Prod.   Test │ Comment %
  ────────────────────────────────┼──────────────────┼──────────────┼──────────
- TypeScript     34  4,771  4,030 │      223     518 │   688  3,342 │      5.2%
+ TypeScript     34  4,771  4,020 │      223     528 │   678  3,342 │      5.3%
  JavaScript     11    558    502 │       23      33 │   502      0 │      4.4%
  Shell          16    550    395 │       64      91 │   395      0 │     13.9%
  Dart            1    388    343 │        1      44 │   343      0 │      0.3%
@@ -299,12 +299,12 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  Python          2     51     38 │        1      12 │    38      0 │      2.6%
  CMake           1     13      9 │        0       4 │     9      0 │      0.0%
  ────────────────────────────────┼──────────────────┼──────────────┼──────────
- Total          88  7,135  5,948 │      335     852 │ 2,596  3,352 │      5.3%
+ Total          88  7,135  5,938 │      335     862 │ 2,586  3,352 │      5.3%
 
  Lines = Code + Comments + Blanks · Production + Test = Code · Comment % = Comments / (Code + Comments)
  Folded: BASH → Shell.
  Not shown (categories): production:implementation, test:test, other:generated, test:end-to-end, production:native and 3
-more (276,779 code lines).
+more (276,730 code lines).
 
  ─────────────────────────────────────────────
  Category                  Files  Lines   Code
@@ -312,7 +312,7 @@ more (276,779 code lines).
  test:test-support            27  3,970  3,352
  production:build-tooling     18    886    772
  production:deployment        28    938    740
- production:distribution       5    695    577
+ production:distribution       5    695    567
  production:tooling           10    646    507
 
  Source files only. Rows of one purpose add up to that purpose's Code, and all rows add up to the total Code.

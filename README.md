@@ -72,7 +72,7 @@ cd immich && locmetry
  ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
  Language    Files    Lines     Code │ Comments  Blanks │   Prod.    Test   Other │ Test/prod │  Share  Code share
  ────────────────────────────────────┼──────────────────┼─────────────────────────┼───────────┼─────────────────────────
- TypeScript  1,085  171,956  145,943 │    4,633  21,380 │  70,861  68,616   6,466 │      0.97 │  51.6%  ████████▓▓▓▓▓▓▓░
+ TypeScript  1,085  171,956  145,884 │    4,676  21,396 │  70,802  68,616   6,466 │      0.97 │  51.6%  ████████▓▓▓▓▓▓▓░
  Dart          823   90,871   75,726 │    2,779  12,366 │  59,495  16,231       0 │      0.27 │  26.8%  ██████▓▓
  JavaScript     17   23,273   19,746 │      427   3,100 │  19,684      62       0 │      0.00 │   7.0%  ██
  Svelte        412   19,014   17,442 │      200   1,372 │  17,420      22       0 │      0.00 │   6.2%  ██
@@ -93,7 +93,7 @@ cd immich && locmetry
  CMake           1       13        9 │        0       4 │       9       0       0 │      0.00 │   0.0%  ▏
  C Header        1        1        1 │        0       0 │       1       0       0 │      0.00 │   0.0%  ▏
  ────────────────────────────────────┼──────────────────┼─────────────────────────┼───────────┼─────────────────────────
- Total       2,527  333,302  282,727 │    9,149  41,426 │ 179,551  87,011  16,165 │      0.48 │ 100.0%
+ Total       2,527  333,302  282,668 │    9,192  41,442 │ 179,492  87,011  16,165 │      0.48 │ 100.0%
 
  Lines = Code + Comments + Blanks · Production + Test + Other = Code · Test/prod = Test / Production (Code)
  Tests written in another language than the code they test skew per-language Test/prod.
@@ -122,7 +122,7 @@ Built-in conventions already recognize the npm, Gradle, Python and Dart [build m
 <!-- showcase-policy -->
 | Source code | Built-in conventions | Reviewed policy |
 | --- | ---: | ---: |
-| Production | 194,232 | 179,551 |
+| Production | 194,173 | 179,492 |
 | Test | 83,595 | 87,011 |
 | Other: generated | 0 | 16,165 |
 | Other: unclaimed | 4,943 | 0 |
@@ -139,7 +139,7 @@ cd immich && locmetry --show-categories
  ────────────────────────────────────────────────────────────────────────────────────────────────────────
  Category                       Files    Lines     Code │ Share  Code share
  ───────────────────────────────────────────────────────┼────────────────────────────────────────────────
- production:implementation      1,828  198,194  169,367 │ 59.9%  ████████████████████████████████████████
+ production:implementation      1,828  198,194  169,318 │ 59.9%  ████████████████████████████████████████
  test:test                        450   87,800   73,710 │ 26.1%  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
  other:generated                   38   19,173   16,165 │  5.7%  ░░░░
  test:end-to-end                   41    9,285    7,871 │  2.8%  ▓▓
@@ -148,7 +148,7 @@ cd immich && locmetry --show-categories
  test:integration                   8    2,296    2,014 │  0.7%  ▏
  production:build-tooling          18      886      772 │  0.3%  ▏
  production:deployment             28      938      740 │  0.3%  ▏
- production:distribution            5      695      577 │  0.2%  ▏
+ production:distribution            5      695      567 │  0.2%  ▏
  production:tooling                10      646      507 │  0.2%  ▏
  production:documentation-site      6      468      382 │  0.1%  ▏
  test:performance                   1       81       64 │  0.0%  ▏
@@ -184,14 +184,14 @@ locmetry workspace --workspace-file immich/workspace.toml
  ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
  Member              Lines     Code │   Prod.    Test   Other │ Test/prod │  Share  Code share
  ───────────────────────────────────┼─────────────────────────┼───────────┼─────────────────────────────────────────────
- server            129,296  111,950 │  53,296  48,955   9,699 │      0.92 │  39.7%  █████████████████▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░
+ server            129,296  111,901 │  53,247  48,955   9,699 │      0.92 │  39.7%  █████████████████▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░
  mobile            100,095   83,183 │  66,952  16,231       0 │      0.24 │  29.5%  ██████████████████████▓▓▓▓▓
  web                67,833   58,255 │  52,867   5,388       0 │      0.10 │  20.7%  █████████████████▓▓
  e2e                15,491   13,174 │      61  13,113       0 │    214.97 │   4.7%  ▓▓▓▓
- packages           12,893   10,065 │   2,345   1,254   6,466 │      0.53 │   3.6%  █░░
+ packages           12,893   10,055 │   2,335   1,254   6,466 │      0.54 │   3.6%  █░░
  machine-learning    6,698    5,291 │   3,221   2,070       0 │      0.64 │   1.9%  █▓
  ───────────────────────────────────┼─────────────────────────┼───────────┼─────────────────────────────────────────────
- Total             332,306  281,918 │ 178,742  87,011  16,165 │      0.49 │ 100.0%
+ Total             332,306  281,859 │ 178,683  87,011  16,165 │      0.49 │ 100.0%
 
  Production + Test + Other = Code · Test/prod = Test / Production (Code) · Share = Code / workspace Code
  Bars: █ Production  ▓ Test  ░ Other. The largest row fills the bar.
@@ -205,11 +205,11 @@ Compare saved reports of two releases, `v3.2.0` and `v3.3.4`:
                          Lines           │           Code
  Purpose        before    after   change │  before    after  change
  ────────────────────────────────────────┼─────────────────────────
- Production    207,996  210,697   +2,701 │ 177,452  179,551  +2,099
+ Production    207,996  210,697   +2,701 │ 177,403  179,492  +2,089
  Test           96,227  103,432   +7,205 │  81,161   87,011  +5,850
  Other          17,825   19,173   +1,348 │  14,910   16,165  +1,255
  ────────────────────────────────────────┼─────────────────────────
- Source total  322,048  333,302  +11,254 │ 273,523  282,727  +9,204
+ Source total  322,048  333,302  +11,254 │ 273,474  282,668  +9,194
 
  Test/prod (Code): 0.46 → 0.48 (before → after)
 ```
@@ -393,7 +393,7 @@ On Immich, `cd immich && locmetry --verbose` reports what the modules contribute
 
 <!-- showcase-modules -->
 ```text
- Production from build modules: 107,922 code lines in 8 'npm' modules, 59,170 code lines in 2 'dart' modules, 4,102 code lines in 1 'gradle' module, 3,037 code lines in 1 'python' module.
+ Production from build modules: 107,863 code lines in 8 'npm' modules, 59,170 code lines in 2 'dart' modules, 4,102 code lines in 1 'gradle' module, 3,037 code lines in 1 'python' module.
 ```
 
 Tests inside these trees stay tests, and nested modules decide for themselves. Generated code inside these layouts that carries a documented marker, such as Go's `// Code generated … DO NOT EDIT.` line, Roslyn's `*.Designer.cs` names and `<auto-generated>` comments, Java's `@Generated` on a class or a `linguist-generated` declaration in `.gitattributes`, stays production with category `generated`, so `--show-categories` separates it from hand-written code. Before module layouts apply, built-in conventions recognize tests, such as `test/` folders, `*.test.ts`, `*Test.java`, `*_test.go`, `test_*.py` and `*_spec.rb`, and build tooling, such as Gradle, Maven, CMake and Make scripts, build wrappers and the configuration of named JavaScript tools. Detection reads file names only and never runs a build, so custom layouts need configuration. The [built-in detection reference](docs/built-in-detection.md) explains how detectors, markers and conventions decide and lists every one.

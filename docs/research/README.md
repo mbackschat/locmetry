@@ -7,6 +7,7 @@ The [archived implementation record](../plans/archive/measurement-quality-and-ne
 - [Counting tools and classification](loc-counting-tools.md): Tokei reuse, alternatives, configuration requirements, and the evidence behind the built-in conventions.
 - [Counting backends beyond Tokei](counting-backends.md): tree-sitter, hand-written lexers and a Tokei fork compared with Tokei on probes and 14 public repositories for accuracy, speed and size.
 - [Tokei fork step 2 measurement](tokei-fork-step-2.md): raw strings and comments with repeated delimiters in Rust, Swift, C#, C++, Lua and OCaml compared with tree-sitter on 22 public repositories, and speed against upstream.
+- [Tokei fork step 3 measurement](tokei-fork-step-3.md): interpolation holes, regular expression literals and shell quoting in ten languages compared with tree-sitter on 34 public repositories, and speed against upstream.
 - [Tokei fork step 1 measurement](tokei-fork-step-1.md): the fork's character-literal and missing-declaration fixes compared with tree-sitter on 17 public repositories, every remaining disagreement explained, and speed against upstream.
 - [Compare complete counter capabilities](tool-capability-comparison.md): major feature families across Locmetry, scc, cloc, Tokei, gocloc and pygount, with pinned source evidence and measurement differences.
 - [Review configuration and documentation contracts](configuration-and-documentation.md): discovery, precedence, paths, failures, schemas, agent interfaces and concrete documentation drift.
