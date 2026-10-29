@@ -5,7 +5,7 @@
   "status": "active",
   "date": "2026-10-29",
   "summary": "Fix Tokei's literal and comment defects in a fork, in five feature steps that each cover every language with the construct.",
-  "evidence": "[counting backends](../research/counting-backends.md), [Tokei counting defects](../tokei-defects.md), [step 1](../research/tokei-fork-step-1.md), [step 2](../research/tokei-fork-step-2.md), [step 3](../research/tokei-fork-step-3.md), [step 4](../research/tokei-fork-step-4.md) and [step 5](../research/tokei-fork-step-5.md) measurements"
+  "evidence": "[counting backends](../research/counting-backends.md), [Tokei counting defects](../tokei-defects.md), [step 1](../research/tokei-fork-step-1.md), [step 2](../research/tokei-fork-step-2.md), [step 3](../research/tokei-fork-step-3.md), [step 4](../research/tokei-fork-step-4.md) and [step 5](../research/tokei-fork-step-5.md) measurements, and the [step 5 resolution](../research/tokei-fork-step-5-resolution.md)"
 }
 -->
 
@@ -75,16 +75,17 @@ Each step is complete when all of these hold for its languages:
 - [x] Quotes that apply only inside tags or expressions, not in text: HTML, XML, SVG, XAML, Vue, Svelte and ERB tags, JSX elements in JavaScript, JSX and TSX, and YAML plain scalars.
 - [x] YAML block scalars, `''` escapes in `'…'` strings, comments between JSX attributes and TypeScript type arguments in JSX tags, found by the measurement.
 - [x] Adopted in Locmetry `530deed` with fork `15.0.0+locmetry.6`; see the [step 5 measurement](../research/tokei-fork-step-5.md).
+- [x] Every remaining disagreement with tree-sitter corrected in the fork or decided file by file with a second reference, which also corrected Rust doc comments, comment-only lines, embedded script and style tags, JavaScript HTML-like comments, YAML plain scalars and flow collections, Perl POD, data sections, quote-like operators and references, Ruby percent literals, and Blade, Twig and Handlebars text; adopted in Locmetry `b8ca6f4` with fork `15.0.0+locmetry.9`; see the [step 5 resolution](../research/tokei-fork-step-5-resolution.md).
 
 ## Found by the Measurements
 
 Not yet scheduled; each needs the owner's decision before it becomes a step.
 
-- [ ] Perl beyond heredocs: POD sections opened by any `=word` directive, quote-like operators such as `q{}`, `qw()` and `s{}{}`, regular expressions and `__END__` sections, which the [step 4 measurement](../research/tokei-fork-step-4.md) found misread in 220 of 606 Perl files.
-- [ ] Ruby percent literals such as `%w[' "]`, found in three RuboCop files, and `%r{/…}`, which the step-3 regular expression rule misreads where upstream Tokei counted correctly, found in one Mastodon file by the [step 5 measurement](../research/tokei-fork-step-5.md).
-- [ ] Template languages that declare quotes for the whole file, as Handlebars did: Twig, Liquid, Blade, Mustache, Hamlet and Haml, where an apostrophe in text opens a string.
-- [ ] A line holding only a block comment and a line comment, such as `/* a */ // b`, which Tokei's whole-line rule counts as code; found in ten JavaScript and Dart files by the [step 3 measurement](../research/tokei-fork-step-3.md).
+- [ ] Template languages that still declare quotes for the whole file, Liquid, Mustache, Hamlet and Haml, where an apostrophe in text opens a string; none occurs in the measured repositories.
+- [ ] A line such as `/* a */ x; /* b */`, which Tokei's rule that a line opening with a block comment and ending with its closer is a comment counts as a comment; the rule stays because PlantUML block comments are line-based, as the [step 5 resolution](../research/tokei-fork-step-5-resolution.md#assessment) records.
+
+The Perl, Ruby percent-literal, Twig and Blade, and comment-only-line items found by the step 3 to 5 measurements were corrected by the [step 5 resolution](../research/tokei-fork-step-5-resolution.md).
 
 ## Out of Scope
 
-Python, which counted correctly in the spike; and Tokei's rule that reads Rust doc comments as Markdown.
+Python, which counted correctly in the spike. Tokei's rule that read Rust doc comments as Markdown was out of scope until the step 5 resolution, where tree-sitter showed it miscounting empty doc lines; the fork now counts doc comments as comments.
