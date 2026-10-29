@@ -5,7 +5,7 @@
   "status": "active",
   "date": "2026-10-29",
   "summary": "Fix Tokei's literal and comment defects in a fork, in five feature steps that each cover every language with the construct.",
-  "evidence": "[counting backends](../research/counting-backends.md), [Tokei counting defects](../tokei-defects.md), [step 1](../research/tokei-fork-step-1.md), [step 2](../research/tokei-fork-step-2.md), [step 3](../research/tokei-fork-step-3.md) and [step 4](../research/tokei-fork-step-4.md) measurements"
+  "evidence": "[counting backends](../research/counting-backends.md), [Tokei counting defects](../tokei-defects.md), [step 1](../research/tokei-fork-step-1.md), [step 2](../research/tokei-fork-step-2.md), [step 3](../research/tokei-fork-step-3.md), [step 4](../research/tokei-fork-step-4.md) and [step 5](../research/tokei-fork-step-5.md) measurements"
 }
 -->
 
@@ -72,14 +72,16 @@ Each step is complete when all of these hold for its languages:
 
 ## Step 5: Apostrophes in Markup Text
 
-- [ ] Quotes that apply only inside tags or expressions, not in text: HTML, JSX, TSX, Vue, Svelte, XML and YAML plain scalars.
+- [x] Quotes that apply only inside tags or expressions, not in text: HTML, XML, SVG, XAML, Vue, Svelte and ERB tags, JSX elements in JavaScript, JSX and TSX, and YAML plain scalars.
+- [x] YAML block scalars, `''` escapes in `'…'` strings, comments between JSX attributes and TypeScript type arguments in JSX tags, found by the measurement.
 
 ## Found by the Measurements
 
 Not yet scheduled; each needs the owner's decision before it becomes a step.
 
 - [ ] Perl beyond heredocs: POD sections opened by any `=word` directive, quote-like operators such as `q{}`, `qw()` and `s{}{}`, regular expressions and `__END__` sections, which the [step 4 measurement](../research/tokei-fork-step-4.md) found misread in 220 of 606 Perl files.
-- [ ] Ruby percent literals such as `%w[' "]`, found in three RuboCop files.
+- [ ] Ruby percent literals such as `%w[' "]`, found in three RuboCop files, and `%r{/…}`, which the step-3 regular expression rule misreads where upstream Tokei counted correctly, found in one Mastodon file by the [step 5 measurement](../research/tokei-fork-step-5.md).
+- [ ] Template languages that declare quotes for the whole file, as Handlebars did: Twig, Liquid, Blade, Mustache, Hamlet and Haml, where an apostrophe in text opens a string.
 - [ ] A line holding only a block comment and a line comment, such as `/* a */ // b`, which Tokei's whole-line rule counts as code; found in ten JavaScript and Dart files by the [step 3 measurement](../research/tokei-fork-step-3.md).
 
 ## Out of Scope

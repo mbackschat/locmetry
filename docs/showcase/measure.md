@@ -23,7 +23,7 @@ locmetry --root immich --config builtin-only.toml --format json \
 
 ```output
 {
-  "all_counted": 522720,
+  "all_counted": 522763,
   "source": 282714,
   "purposes": {
     "production": 194173,
