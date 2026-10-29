@@ -779,17 +779,17 @@ fn display_names_match_serialized_names() {
 
 /// Reports name the embedded counter's version; `BACKEND` states it by hand
 /// because Cargo exposes no dependency versions to code, so it must follow the
-/// exact pin in Cargo.toml on every upgrade.
+/// locked Tokei fork, whose `+locmetry.N` version rises with each counting change.
 #[test]
-fn backend_name_follows_the_pinned_tokei_version() {
-    let manifest =
-        std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/Cargo.toml")).unwrap();
-    let pin = manifest
-        .lines()
-        .find_map(|line| line.strip_prefix("tokei = { version = \"="))
+fn backend_name_follows_the_locked_tokei_version() {
+    let lock = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/Cargo.lock")).unwrap();
+    let version = lock
+        .split("[[package]]")
+        .find(|package| package.contains("\nname = \"tokei\"\n"))
+        .and_then(|package| package.lines().find_map(|l| l.strip_prefix("version = \"")))
         .and_then(|rest| rest.split('"').next())
-        .expect("Cargo.toml pins tokei exactly");
-    assert_eq!(locmetry::BACKEND, format!("tokei {pin} (embedded)"));
+        .expect("Cargo.lock locks tokei");
+    assert_eq!(locmetry::BACKEND, format!("tokei {version} (embedded)"));
 }
 
 /// Locks the 0.5 clean break: the old purpose name fails with a pointer to its

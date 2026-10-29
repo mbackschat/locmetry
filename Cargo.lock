@@ -1608,9 +1608,8 @@ dependencies = [
 
 [[package]]
 name = "tokei"
-version = "15.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cee2d8d958bbbe166867f95c85eb95ce0c67cdf6377ef8cd3186ce843c3f752c"
+version = "15.0.0+locmetry.1"
+source = "git+https://github.com/mbackschat/tokei?rev=23bde3491c5cd223dd9d0ed9908c7613601057b9#23bde3491c5cd223dd9d0ed9908c7613601057b9"
 dependencies = [
  "aho-corasick",
  "arbitrary",

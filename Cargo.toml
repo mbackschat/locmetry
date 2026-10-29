@@ -26,7 +26,9 @@ schemars = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order"] }
 terminal_size = "0.4"
-tokei = { version = "=15.0.0", default-features = false }
+# Locmetry's Tokei fork corrects literals that Tokei 15.0.0 misreads as
+# comments; docs/tokei-integration.md#counting-boundary owns its pinning.
+tokei = { git = "https://github.com/mbackschat/tokei", rev = "23bde3491c5cd223dd9d0ed9908c7613601057b9", default-features = false }
 toml = "1"
 
 # No doc-tests exist; skipping rustdoc saves about 3 s per run (measured 2026-10-19).

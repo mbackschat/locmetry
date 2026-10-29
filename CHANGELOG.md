@@ -9,6 +9,7 @@ User-visible changes to Locmetry, in the [Keep a Changelog](https://keepachangel
 - `--table-category` accepts an empty part as matching anything: `:*law` selects categories ending in `law` under any purpose, and `test:` selects all of Test. An entry whose purpose part can match no purpose, such as `*law` or `x*:law`, is now an error that suggests the `:CATEGORY` spelling, where a wildcard previously passed and emptied the tables. An entry that matches no category warns with the measured category names instead of pointing to `--show-categories`, whose table the same entry had emptied.
 - Terminal tables, including comparison tables, leave a blank line between their last row and their legend.
 - `locmetry --guide reports --section continuous-integration` includes a file-size gate by purpose, which was previously only in the repository's cookbook.
+- **Breaking:** code, comment and blank counts change wherever Tokei misread a literal, because Locmetry now counts with its own fork of Tokei. A quote in a character literal such as `'"'`, a Go backtick or Rust raw string, a Java text block, `""` inside a C# or F# `@"…"` string, or a string in Haskell, Elm, PureScript, Agda, Racket, Scheme or Lisp no longer turns later comments into code or code into comments; PHP `#[` attribute lines count as code; and a line that starts inside a string counts as code even when it begins with `//`. Reports name the backend `tokei 15.0.0+locmetry.1 (embedded)`, so `compare` notes the changed counter between older and newer reports.
 
 ### Fixed
 
