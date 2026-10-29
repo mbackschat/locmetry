@@ -1,6 +1,6 @@
 # Tokei Fork Step 5 Resolution
 
-Measured 2026-10-29 on macOS arm64, after the [step 5 measurement](tokei-fork-step-5.md) left disagreements whose readings rested on samples. Every file whose fork counts differ from tree-sitter's is now either corrected in the fork, test-first, or explained file by file below, with a second reference wherever tree-sitter cannot parse the file. The fork is [mbackschat/tokei](https://github.com/mbackschat/tokei) at `5e86b70`, version `15.0.0+locmetry.10`; its README cites the specification behind each declaration.
+Measured 2026-10-29 on macOS arm64, after the [step 5 measurement](tokei-fork-step-5.md) left disagreements whose readings rested on samples. Every file whose fork counts differ from tree-sitter's is now either corrected in the fork, test-first, or explained file by file below, with a second reference wherever tree-sitter cannot parse the file. The fork is [mbackschat/tokei](https://github.com/mbackschat/tokei) at `b47e592`, version `15.0.0+locmetry.11`; its README cites the specification behind each declaration.
 
 ## Corrections
 
@@ -17,7 +17,7 @@ Each correction has a regression file in the fork:
 | `ddbcd99`, `56379a6`, `daf1c1d` | Perl POD blocks, data after `__END__` and `__DATA__`, quote-like operators, regular expressions and `\"…"` string references; Ruby data after `__END__` and percent literals. | The 220 Perl files of step 4, three RuboCop files, one Mastodon file, Dancer2's skeleton `Entry.pm` |
 | `598ce84` | Blade, Twig and Handlebars read quotes only in markup tags and skip template expressions inside a tag. | Nine Symfony Twig templates and one Prettier Handlebars file, checked against their blank-line counts because the harness has no template grammar |
 
-`912b759` keeps the new code within Tokei's declared minimum Rust version, 1.71, and `d551ec3` keeps YAML text lines on the per-line fast path, as [Speed](#speed) records; neither changes a count in the corpora.
+`912b759` keeps the new code within Tokei's declared minimum Rust version, 1.71, while `d551ec3` keeps YAML text lines on the per-line fast path and `3296611` passes over bytes that cannot change the analysis, as [Speed](#speed) records; none of the three changes a count in the corpora.
 
 The reference was corrected too, so that the comparison judges the languages' definitions rather than tree-sitter's: `<script>` and `<style>` bodies, including `text/babel` and `text/jsx` scripts, are read with the JavaScript and CSS grammars; quoted attribute values are literals; POD runs to `=cut` or the end of the file; YAML block scalars follow their chomping indicator; a byte order mark is removed as Tokei's reader removes it; and Markdown children fold into comments, as Locmetry folds them. These are fork commits `d8a92bf`, `0150e2f`, `f10cc53` and `33710ed`.
 
@@ -222,24 +222,22 @@ Counts are code/comments/blanks.
 
 ## Speed
 
-hyperfine on one thread, ten runs per repository after two warm-up runs, upstream Tokei 15.0.0 against the fork at `d551ec3`, whose code `5e86b70` releases unchanged; wall time in milliseconds with its standard deviation, and median instructions relative to upstream:
+hyperfine on one thread, ten runs per repository after two warm-up runs, upstream Tokei 15.0.0 against the fork at `3296611`, whose code `b47e592` releases unchanged; wall time in milliseconds with its standard deviation, and median instructions relative to upstream:
 
 | Repository | Upstream | Fork | Wall time | Instructions |
 | --- | --- | --- | --- | --- |
-| tokio | 48 ± 0 | 41 ± 0 | 0.84 | 0.88 |
-| dotnet/aspire | 989 ± 41 | 836 ± 30 | 0.85 | 1.00 |
-| Prettier | 303 ± 14 | 289 ± 2 | 0.95 | 1.01 |
-| React | 397 ± 14 | 382 ± 27 | 0.96 | 1.03 |
-| Excalidraw | 99 ± 3 | 90 ± 1 | 0.91 | 1.06 |
-| Mastodon | 604 ± 19 | 544 ± 13 | 0.90 | 1.00 |
-| Symfony | 1,541 ± 33 | 1,284 ± 34 | 0.83 | 0.94 |
-| RuboCop | 131 ± 1 | 136 ± 9 | 1.04 | 1.06 |
+| tokio | 49 ± 1 | 39 ± 0 | 0.80 | 0.84 |
+| dotnet/aspire | 961 ± 4 | 691 ± 25 | 0.72 | 0.79 |
+| Prettier | 291 ± 8 | 280 ± 10 | 0.96 | 0.98 |
+| React | 397 ± 21 | 327 ± 2 | 0.82 | 0.93 |
+| Excalidraw | 95 ± 1 | 77 ± 0 | 0.80 | 0.92 |
+| Mastodon | 591 ± 17 | 450 ± 7 | 0.76 | 0.84 |
+| Symfony | 1,511 ± 34 | 1,027 ± 38 | 0.68 | 0.79 |
+| RuboCop | 134 ± 6 | 112 ± 1 | 0.83 | 0.89 |
 
-With the commands run in reverse order, the wall-time ratios were 0.85, 0.85, 0.98, 0.92, 0.93, 0.89, 0.85 and 1.00, with instruction ratios within 0.04 of these. Thirty runs of RuboCop measured 131 ± 4 against upstream's 133 ± 6 and, reversed, 133 ± 7 against 134 ± 11, so its wall time is within upstream's variation; on every other repository the fork is faster.
+With the commands run in reverse order, the wall-time ratios were 0.82, 0.70, 0.92, 0.86, 0.78, 0.77, 0.69 and 0.87, with instruction ratios within 0.02 of these. The fork is faster than upstream and executes fewer instructions on every repository.
 
-Before, Mastodon executed 1.09 times upstream's instructions at `944191b`, and its 549 YAML files alone took 1,893M instructions at `296eae1` against upstream's 1,206M: a `[`, `{`, `|` or `>` anywhere in a line, as in a locale string holding `%{name}` or `<strong>`, sent the line from the per-line fast path to the per-byte loop, and the plain-scalar check scanned lines byte by byte. Since `d551ec3` a line leaves the fast path only where a flow collection or block scalar can start, and those lines are scanned with `memchr`; Mastodon's YAML now takes 1,225M instructions, with the same counts in every file of the corpora.
-
-The remaining extra instructions on Excalidraw and RuboCop are the cost of reading what upstream misreads. Built without its JSX declaration, the fork takes 401M instructions on Excalidraw's TSX against upstream's 443M and its own 475M; built without Ruby's heredoc, percent literal, regular expression, interpolation and code token declarations, it takes 1,345M on RuboCop's Ruby against upstream's 1,337M and its own 1,410M. Wall time does not follow, because opening and reading files take most of a run: they were about two thirds of the samples in a profile of RuboCop's Ruby files.
+Two changes brought it there. At `944191b` Mastodon executed 1.09 times upstream's instructions, and its 549 YAML files alone took 1,893M instructions at `296eae1` against upstream's 1,206M: a `[`, `{`, `|` or `>` anywhere in a line, as in a locale string holding `%{name}` or `<strong>`, sent the line from the per-line fast path to the per-byte loop, and the plain-scalar check scanned lines byte by byte. Since `d551ec3` a line leaves the fast path only where a flow collection or block scalar can start, and those lines are scanned with `memchr`, which brought Mastodon's YAML to 1,225M. Excalidraw and RuboCop then still executed 1.06 times upstream's instructions, the cost of reading JSX and Ruby's heredocs, percent literals, regular expressions and interpolations byte by byte. Since `3296611` the per-byte loop passes over every byte that cannot change its state: inside a string, any byte that neither closes nor escapes it nor opens a hole; in code, any byte that starts nothing. Neither changes a count: the 69,295 compared files count the same before and after `d551ec3`, and so do all 91,909 file reports Tokei produces for the 40 corpora before and after `3296611`.
 
 ## Showcase
 
@@ -247,6 +245,6 @@ In the Immich showcase, `web/src/lib/components/TestWrapper.svelte` loses one co
 
 ## Assessment
 
-Verified: on these repositories every file whose fork counts differ from tree-sitter's has a verdict, from a second reference, a minimal patch, or the language's definition applied to the named lines; no file counts worse than upstream Tokei by any reference that parses it; and wall time stays within upstream's variation, with the extra instructions on Excalidraw and RuboCop attributed to the JSX and Ruby literals the fork reads.
+Verified: on these repositories every file whose fork counts differ from tree-sitter's has a verdict, from a second reference, a minimal patch, or the language's definition applied to the named lines; no file counts worse than upstream Tokei by any reference that parses it; and the fork is faster than upstream, in wall time and instructions, on all eight benchmark repositories.
 
 Limits: one machine and one run of each corpus; the references' line rule calls a line that starts and ends in comments a comment even with code between them, which the closure typecast verdict corrects by inspection; template languages are checked by blank-line counts only; Liquid, Mustache, Hamlet and Haml still declare quotes for the whole file and are unmeasured; and a line such as `/* a */ x; /* b */` still counts as a comment, because Tokei's rule that a line opening with a block comment and ending with its closer is a comment stays for languages such as PlantUML, whose block comments are line-based.
