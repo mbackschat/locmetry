@@ -33,10 +33,9 @@ enum State {
 /// misreads only comment markers in strings nested inside their terms:
 /// https://github.com/leanprover/lean4/blob/v4.35.0/src/Lean/Parser/StrInterpolation.lean.
 ///
-/// Lines are classified by Tokei's `line_is_comment` rules, so only lexing
-/// changes: a line inside a literal is code, a line that starts inside a
-/// comment is a comment even with code after its end, and otherwise a line
-/// is a comment when its first and last non-blank characters are comment.
+/// A line is a comment when it holds nothing but comments, as the owner
+/// decided on 2026-10-29; a blank line takes the class of the comment or
+/// literal it lies in.
 fn count(text: &str) -> CodeStats {
     let mut stats = CodeStats::new();
     let mut state = State::default();
@@ -46,9 +45,9 @@ fn count(text: &str) -> CodeStats {
     for line in text.lines() {
         let started_in_literal = in_literal(&state);
         let started_in_comment = matches!(state, State::Comment(_));
-        // Whether the first and the last non-blank characters are comment.
-        let mut first = None;
-        let mut last = false;
+        // Whether the line holds text, and whether all of it is comment.
+        let mut text = false;
+        let mut only_comment = true;
         let mut previous = ' ';
         let mut offset = 0;
         while let Some(current) = line[offset..].chars().next() {
@@ -147,19 +146,18 @@ fn count(text: &str) -> CodeStats {
             }
             let segment = &line[offset..offset + consumed];
             if !segment.trim().is_empty() {
-                first.get_or_insert(comment);
-                last = comment;
+                text = true;
+                only_comment &= comment;
             }
             previous = segment.chars().last().unwrap_or(previous);
             offset += consumed;
         }
-        match first {
-            None if started_in_comment => stats.comments += 1,
-            None if started_in_literal => stats.code += 1,
-            None => stats.blanks += 1,
-            Some(_) if in_literal(&state) => stats.code += 1,
-            Some(first) if started_in_comment || first && last => stats.comments += 1,
-            Some(_) => stats.code += 1,
+        match (text, only_comment) {
+            (false, _) if started_in_comment => stats.comments += 1,
+            (false, _) if started_in_literal => stats.code += 1,
+            (false, _) => stats.blanks += 1,
+            (true, true) => stats.comments += 1,
+            (true, false) => stats.code += 1,
         }
     }
     stats

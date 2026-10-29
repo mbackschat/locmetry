@@ -351,10 +351,11 @@ def a : Nat := 1
             "def opener : String := \"/-\"\r\n\r\n-- note\r\n",
             (1, 1, 1),
         ),
-        // Mixed lines follow Tokei's rules for other languages.
+        // A line is a comment only when it holds nothing but comments, as the
+        // owner decided on 2026-10-29.
         (
-            "/- a\nb -/ def x : Nat := 1\n/- c -/ def y : Nat := 2\ndef z : Nat := 3 /- d\n-/\n/- e -/ /- f\n-/\n",
-            (2, 5, 0),
+            "/- a\nb -/ def x : Nat := 1\n/- c -/ def y : Nat := 2\ndef z : Nat := 3 /- d\n-/\n/- e -/ /- f\n-/\n/- g -/ def w : Nat := 4 /- h -/\n",
+            (4, 4, 0),
         ),
     ];
     for (text, expected) in cases {
