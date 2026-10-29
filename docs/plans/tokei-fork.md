@@ -46,7 +46,8 @@ Each step is complete when all of these hold for its languages:
 - [x] Preserve the tree-sitter reference harness and probes in the fork as development tools.
 - [x] Switch Locmetry to the fork and keep its Lean, Handlebars and notebook counters. Record the fork, its pinning and its upgrade and upstreaming policy in [Tokei integration](../tokei-integration.md#counting-boundary), adjust the embedded-Tokei statement in [PRODUCT](../PRODUCT.md), and add the CHANGELOG entry.
 - [x] Create the fork's GitHub repository and pin Locmetry's dependency to a commit.
-- [ ] Verify the Linux musl, Windows and Homebrew builds.
+- [x] Verify the Linux musl and Homebrew builds with fork `15.0.0+locmetry.11`, on 2026-10-29: static `x86_64` and `aarch64` musl binaries report the same measurement as the macOS build in Debian and Alpine, the public tests pass in Alpine from a clean clone that fetches the fork from GitHub, and the formula's `--HEAD` install and `brew test` pass in the `homebrew/brew` image.
+- [ ] Link the Windows build: Locmetry and the fork compile for `x86_64-pc-windows-msvc`, but linking needs the MSVC toolchain of the release workflow's Windows runner.
 - [ ] Offer the character-literal and Go backtick changes upstream, referring to [#1389](https://github.com/XAMPPRocky/tokei/pull/1389) and [#1351](https://github.com/XAMPPRocky/tokei/pull/1351).
 
 ## Step 2: Raw Strings With Repeated Delimiters
