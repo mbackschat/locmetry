@@ -61,7 +61,7 @@ Each step is complete when all of these hold for its languages:
 - [x] Interpolation whose terms are code and can hold their own strings: JS and TS `` `${…}` ``, Kotlin `"${…}"`, Swift `"\(…)"`, C# `$"{…}"`, Scala `s"${…}"`, Dart `"${…}"` and Ruby `"#{…}"`.
 - [x] Regular expression literals, recognized by the previous token: JS, TS and Ruby.
 - [x] Shell `"$(…)"` substitutions, verbatim `'…'` strings and word-start `#` comments, and Ruby's `$'`, `$"` and `` $` `` globals, found by the measurement.
-- [ ] Adopted in Locmetry with fork `15.0.0+locmetry.3`; see the [step 3 measurement](../research/tokei-fork-step-3.md).
+- [x] Adopted in Locmetry `714f778` with fork `15.0.0+locmetry.3`; see the [step 3 measurement](../research/tokei-fork-step-3.md).
 
 ## Step 4: Heredocs
 
