@@ -117,7 +117,10 @@ def tools_table():
         "scc": subprocess.check_output(["scc", "--version"], text=True).split()[-1],
     }
     tokei = json.loads(subprocess.check_output(["tokei", root, "--output", "json"], text=True))
-    cloc = json.loads(subprocess.check_output(["cloc", "--json", "--quiet", root], text=True))
+    # cloc skips a file whose filter stage takes longer than its line count
+    # divided by 1,000 seconds, so a busy machine lowers its total: 529,600 and
+    # 529,921 instead of 530,430 for Immich v3.3.4 on 2026-10-29.
+    cloc = json.loads(subprocess.check_output(["cloc", "--json", "--quiet", "--timeout", "0", root], text=True))
     scc = json.loads(subprocess.check_output(["scc", "--format", "json", root], text=True))
     counts = {
         "Tokei": (tokei["Total"]["code"], tokei.get("JSON", {}).get("code", 0)),
