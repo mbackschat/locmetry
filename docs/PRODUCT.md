@@ -29,7 +29,7 @@ Release archives and Homebrew installations also include the optional `compare-l
 | Purpose | `production`, `test`, or `other`. Production means maintained non-test source, not necessarily shipped runtime code; `other` is source that counts as neither, whether no stage claimed it or an entry assigned it on purpose. |
 | Category | Optional project-defined label such as implementation, tooling, test-support, example, benchmark, or evidence. It does not change counting. |
 
-Report code, comments, blanks, and total lines separately. Preserve each file's language and classification provenance; a language supplied by a mapping records the mapping ID. Embedded snippets inherit the host file's scope and purpose; documentation snippets do not inflate source totals. Documentation embedded in a non-documentation file, such as Rust `///` doc comments that the backend parses as Markdown, contributes its lines, including doctest code, as comments of the host language. Derive human summaries and versioned JSON from the same records.
+Report code, comments, blanks, and total lines separately. Preserve each file's language and classification provenance; a language supplied by a mapping records the mapping ID. Embedded snippets inherit the host file's scope and purpose; documentation snippets do not inflate source totals. Documentation embedded in a non-documentation file, such as a Vue `<template lang="markdown">`, contributes its lines as comments of the host language; Rust doc comments, doctests included, are comments of their file. Derive human summaries and versioned JSON from the same records.
 
 ## Project Configuration
 

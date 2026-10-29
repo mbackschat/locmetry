@@ -100,9 +100,10 @@ pub(super) fn language_counts(
     let mut counts = stats.own();
     for (child, stats) in &stats.blobs {
         if host != Kind::Documentation && language_kind(child) == Kind::Documentation {
-            // Tokei 15.0.0 parses Rust `///` and `//!` blocks, doctests included,
-            // as Markdown blobs (src/language/embedding.rs:170); physically they
-            // are comments of the host, so they must not add source code.
+            // Tokei reports documentation embedded in source, such as Vue's
+            // `<template lang="markdown">` or an HTML `<script type="text/plain">`,
+            // as a child language; physically it is prose of the host, so it
+            // counts as the host's comments and must not add source code.
             let documentation = stats.subtree();
             counts.comments += documentation.code + documentation.comments;
             counts.blanks += documentation.blanks;

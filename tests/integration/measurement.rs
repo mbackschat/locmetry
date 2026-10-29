@@ -538,9 +538,23 @@ fn rust_doc_comments_and_doctests_count_as_host_comments() {
     let counts = rows[0].counts;
     assert_eq!(
         (counts.code, counts.comments, counts.blanks, counts.lines),
-        (3, 9, 2, 14)
+        (3, 10, 1, 14)
     );
     assert_eq!(rows[0].languages.keys().collect::<Vec<_>>(), ["Rust"]);
+}
+
+#[test]
+fn documentation_embedded_in_source_counts_as_host_comments() {
+    let rows = scan_rows(&[(
+        "src/Page.vue",
+        "<template lang=\"markdown\">\n# Title\n\nSome text.\n</template>\n",
+    )]);
+    let counts = rows[0].counts;
+    assert_eq!(
+        (counts.code, counts.comments, counts.blanks, counts.lines),
+        (2, 2, 1, 5)
+    );
+    assert_eq!(rows[0].languages.keys().collect::<Vec<_>>(), ["Vue"]);
 }
 
 #[test]

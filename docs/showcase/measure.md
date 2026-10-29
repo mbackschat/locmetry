@@ -23,10 +23,10 @@ locmetry --root immich --config builtin-only.toml --format json \
 
 ```output
 {
-  "all_counted": 522763,
-  "source": 282714,
+  "all_counted": 522762,
+  "source": 282713,
   "purposes": {
-    "production": 194173,
+    "production": 194172,
     "test": 83595,
     "other": 4946
   },
@@ -103,7 +103,7 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  ────────────────────────────────────┼──────────────────┼─────────────────────────┼──────────
  TypeScript  1,085  171,956  145,884 │    4,676  21,396 │  70,802  68,616   6,466 │      0.97
  Dart          823   90,871   75,726 │    2,779  12,366 │  59,495  16,231       0 │      0.27
- JavaScript     17   23,273   19,746 │      427   3,100 │  19,684      62       0 │      0.00
+ JavaScript     17   23,272   19,745 │      427   3,100 │  19,683      62       0 │      0.00
  Svelte        412   19,014   17,442 │      200   1,372 │  17,420      22       0 │      0.00
  SQL            37   10,534    9,699 │      436     399 │       0       0   9,699 │         -
  Python         39    6,184    4,888 │       79   1,217 │   2,818   2,070       0 │      0.73
@@ -122,7 +122,7 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  CMake           1       13        9 │        0       4 │       9       0       0 │      0.00
  C Header        1        1        1 │        0       0 │       1       0       0 │      0.00
  ────────────────────────────────────┼──────────────────┼─────────────────────────┼──────────
- Total       2,527  333,302  282,671 │    9,192  41,439 │ 179,495  87,011  16,165 │      0.48
+ Total       2,527  333,301  282,670 │    9,192  41,439 │ 179,494  87,011  16,165 │      0.48
 
  Lines = Code + Comments + Blanks · Production + Test + Other = Code · Test/prod = Test / Production (Code)
  Tests written in another language than the code they test skew per-language Test/prod.
@@ -132,7 +132,7 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  ──────────────────────────────────────────────────────
  Category                       Files    Lines     Code
  ──────────────────────────────────────────────────────
- production:implementation      1,828  198,194  169,318
+ production:implementation      1,828  198,193  169,317
  test:test                        450   87,800   73,710
  other:generated                   38   19,173   16,165
  test:end-to-end                   41    9,285    7,871
@@ -254,7 +254,7 @@ locmetry --root immich --format table --folder-rows 16 --no-color --no-bars --ta
  Folder                           Lines     Code │   Prod.    Test   Other │ Test/prod
  ────────────────────────────────────────────────┼─────────────────────────┼──────────
  server/src                     104,285   90,418 │  52,921  27,798   9,699 │      0.53
- web                             67,833   58,255 │  52,867   5,388       0 │      0.10
+ web                             67,832   58,254 │  52,866   5,388       0 │      0.10
  mobile/lib                      67,419   56,893 │  56,893       0       0 │      0.00
  server/test                     24,611   21,157 │       0  21,157       0 │         -
  mobile/test                     19,170   15,396 │       0  15,396       0 │         -
@@ -270,7 +270,7 @@ locmetry --root immich --format table --folder-rows 16 --no-color --no-bars --ta
  .devcontainer/server                85       58 │      58       0       0 │      0.00
  open-api/bin                        26       14 │      14       0       0 │      0.00
  ────────────────────────────────────────────────┼─────────────────────────┼──────────
- Total                          333,302  282,671 │ 179,495  87,011  16,165 │      0.48
+ Total                          333,301  282,670 │ 179,494  87,011  16,165 │      0.48
 ```
 
 ## Look at the code around the product
@@ -304,7 +304,7 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  Lines = Code + Comments + Blanks · Production + Test = Code · Comment % = Comments / (Code + Comments)
  Folded: BASH → Shell.
  Not shown (categories): production:implementation, test:test, other:generated, test:end-to-end, production:native and 3
-more (276,730 code lines).
+more (276,729 code lines).
 
  ─────────────────────────────────────────────
  Category                  Files  Lines   Code

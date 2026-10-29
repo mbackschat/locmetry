@@ -74,7 +74,7 @@ cd immich && locmetry
  ────────────────────────────────────┼──────────────────┼─────────────────────────┼───────────┼─────────────────────────
  TypeScript  1,085  171,956  145,884 │    4,676  21,396 │  70,802  68,616   6,466 │      0.97 │  51.6%  ████████▓▓▓▓▓▓▓░
  Dart          823   90,871   75,726 │    2,779  12,366 │  59,495  16,231       0 │      0.27 │  26.8%  ██████▓▓
- JavaScript     17   23,273   19,746 │      427   3,100 │  19,684      62       0 │      0.00 │   7.0%  ██
+ JavaScript     17   23,272   19,745 │      427   3,100 │  19,683      62       0 │      0.00 │   7.0%  ██
  Svelte        412   19,014   17,442 │      200   1,372 │  17,420      22       0 │      0.00 │   6.2%  ██
  SQL            37   10,534    9,699 │      436     399 │       0       0   9,699 │         - │   3.4%  ░
  Python         39    6,184    4,888 │       79   1,217 │   2,818   2,070       0 │      0.73 │   1.7%  █
@@ -93,7 +93,7 @@ cd immich && locmetry
  CMake           1       13        9 │        0       4 │       9       0       0 │      0.00 │   0.0%  ▏
  C Header        1        1        1 │        0       0 │       1       0       0 │      0.00 │   0.0%  ▏
  ────────────────────────────────────┼──────────────────┼─────────────────────────┼───────────┼─────────────────────────
- Total       2,527  333,302  282,671 │    9,192  41,439 │ 179,495  87,011  16,165 │      0.48 │ 100.0%
+ Total       2,527  333,301  282,670 │    9,192  41,439 │ 179,494  87,011  16,165 │      0.48 │ 100.0%
 
  Lines = Code + Comments + Blanks · Production + Test + Other = Code · Test/prod = Test / Production (Code)
  Tests written in another language than the code they test skew per-language Test/prod.
@@ -122,7 +122,7 @@ Built-in conventions already recognize the npm, Gradle, Python and Dart [build m
 <!-- showcase-policy -->
 | Source code | Built-in conventions | Reviewed policy |
 | --- | ---: | ---: |
-| Production | 194,173 | 179,495 |
+| Production | 194,172 | 179,494 |
 | Test | 83,595 | 87,011 |
 | Other: generated | 0 | 16,165 |
 | Other: unclaimed | 4,946 | 0 |
@@ -139,7 +139,7 @@ cd immich && locmetry --show-categories
  ────────────────────────────────────────────────────────────────────────────────────────────────────────
  Category                       Files    Lines     Code │ Share  Code share
  ───────────────────────────────────────────────────────┼────────────────────────────────────────────────
- production:implementation      1,828  198,194  169,318 │ 59.9%  ████████████████████████████████████████
+ production:implementation      1,828  198,193  169,317 │ 59.9%  ████████████████████████████████████████
  test:test                        450   87,800   73,710 │ 26.1%  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
  other:generated                   38   19,173   16,165 │  5.7%  ░░░░
  test:end-to-end                   41    9,285    7,871 │  2.8%  ▓▓
@@ -186,12 +186,12 @@ locmetry workspace --workspace-file immich/workspace.toml
  ───────────────────────────────────┼─────────────────────────┼───────────┼─────────────────────────────────────────────
  server            129,296  111,901 │  53,247  48,955   9,699 │      0.92 │  39.7%  █████████████████▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░
  mobile            100,095   83,183 │  66,952  16,231       0 │      0.24 │  29.5%  ██████████████████████▓▓▓▓▓
- web                67,833   58,255 │  52,867   5,388       0 │      0.10 │  20.7%  █████████████████▓▓
+ web                67,832   58,254 │  52,866   5,388       0 │      0.10 │  20.7%  █████████████████▓▓
  e2e                15,491   13,174 │      61  13,113       0 │    214.97 │   4.7%  ▓▓▓▓
  packages           12,893   10,055 │   2,335   1,254   6,466 │      0.54 │   3.6%  █░░
  machine-learning    6,698    5,291 │   3,221   2,070       0 │      0.64 │   1.9%  █▓
  ───────────────────────────────────┼─────────────────────────┼───────────┼─────────────────────────────────────────────
- Total             332,306  281,859 │ 178,683  87,011  16,165 │      0.49 │ 100.0%
+ Total             332,305  281,858 │ 178,682  87,011  16,165 │      0.49 │ 100.0%
 
  Production + Test + Other = Code · Test/prod = Test / Production (Code) · Share = Code / workspace Code
  Bars: █ Production  ▓ Test  ░ Other. The largest row fills the bar.
@@ -205,11 +205,11 @@ Compare saved reports of two releases, `v3.2.0` and `v3.3.4`:
                          Lines           │           Code
  Purpose        before    after   change │  before    after  change
  ────────────────────────────────────────┼─────────────────────────
- Production    207,996  210,697   +2,701 │ 177,406  179,495  +2,089
+ Production    207,995  210,696   +2,701 │ 177,405  179,494  +2,089
  Test           96,227  103,432   +7,205 │  81,161   87,011  +5,850
  Other          17,825   19,173   +1,348 │  14,910   16,165  +1,255
  ────────────────────────────────────────┼─────────────────────────
- Source total  322,048  333,302  +11,254 │ 273,477  282,671  +9,194
+ Source total  322,047  333,301  +11,254 │ 273,476  282,670  +9,194
 
  Test/prod (Code): 0.46 → 0.48 (before → after)
 ```
@@ -393,7 +393,7 @@ On Immich, `cd immich && locmetry --verbose` reports what the modules contribute
 
 <!-- showcase-modules -->
 ```text
- Production from build modules: 107,863 code lines in 8 'npm' modules, 59,170 code lines in 2 'dart' modules, 4,102 code lines in 1 'gradle' module, 3,037 code lines in 1 'python' module.
+ Production from build modules: 107,862 code lines in 8 'npm' modules, 59,170 code lines in 2 'dart' modules, 4,102 code lines in 1 'gradle' module, 3,037 code lines in 1 'python' module.
 ```
 
 Tests inside these trees stay tests, and nested modules decide for themselves. Generated code inside these layouts that carries a documented marker, such as Go's `// Code generated … DO NOT EDIT.` line, Roslyn's `*.Designer.cs` names and `<auto-generated>` comments, Java's `@Generated` on a class or a `linguist-generated` declaration in `.gitattributes`, stays production with category `generated`, so `--show-categories` separates it from hand-written code. Before module layouts apply, built-in conventions recognize tests, such as `test/` folders, `*.test.ts`, `*Test.java`, `*_test.go`, `test_*.py` and `*_spec.rb`, and build tooling, such as Gradle, Maven, CMake and Make scripts, build wrappers and the configuration of named JavaScript tools. Detection reads file names only and never runs a build, so custom layouts need configuration. The [built-in detection reference](docs/built-in-detection.md) explains how detectors, markers and conventions decide and lists every one.
