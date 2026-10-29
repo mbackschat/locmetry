@@ -74,6 +74,7 @@ Each step is complete when all of these hold for its languages:
 
 - [x] Quotes that apply only inside tags or expressions, not in text: HTML, XML, SVG, XAML, Vue, Svelte and ERB tags, JSX elements in JavaScript, JSX and TSX, and YAML plain scalars.
 - [x] YAML block scalars, `''` escapes in `'…'` strings, comments between JSX attributes and TypeScript type arguments in JSX tags, found by the measurement.
+- [x] Adopted in Locmetry `530deed` with fork `15.0.0+locmetry.6`; see the [step 5 measurement](../research/tokei-fork-step-5.md).
 
 ## Found by the Measurements
 

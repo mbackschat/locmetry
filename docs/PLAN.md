@@ -4,7 +4,7 @@
 
 ## Next
 
-- [Correct counting in a Tokei fork](plans/tokei-fork.md): five feature steps, starting with character literals and missing quote declarations; decided 2026-10-29.
+- [Correct counting in a Tokei fork](plans/tokei-fork.md): all five feature steps adopted; open are the release-build checks, the upstream offers and four follow-ups found by the measurements that await a decision; decided 2026-10-29.
 
 ## Accepted — Awaiting Verification
 

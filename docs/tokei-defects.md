@@ -26,13 +26,16 @@ Locmetry counts with its fork of Tokei 15.0.0 ([Tokei integration](tokei-integra
 | Ruby | The `$'`, `$"` and `` $` `` globals opened strings. | Overcount. | Fork `d77916d`. |
 | Shell, Ruby, PHP, Perl | Heredoc bodies were read as code, so an apostrophe in text such as `Don't panic` opened a string and a `#` or `//` line counted as a comment. | Overcount or undercount up to the next misread quote. | Fork `785d277`. |
 | Shell, Bash, Zsh, Korn shell | Quotes inside `"$(…)"` closed the outer string, a backslash before the closing `'` kept a `'…'` string open, and `#` inside a word, as in `${#a}`, opened a comment. | Undercount or overcount. | Fork `aaa4c32`. |
+| HTML, XML, SVG, XAML, Vue, Svelte, Ruby HTML | Quotes declared for the whole file, so an apostrophe in element text opened a string. | Overcount: comment and blank lines up to the next apostrophe counted as code. | Fork `5dd4fd7`. |
+| JavaScript, JSX, TSX | JSX element text was read as code, so an apostrophe in `<p>Don't panic</p>` opened a string and a `//` in text opened a comment. | Overcount or undercount. | Fork `356c845`. |
+| YAML | An apostrophe in a plain scalar such as `name: Don't panic` opened a string, `''` inside `'…'` closed it, and `#` or a quote in a `\|` or `>` block scalar was syntax. | Overcount or undercount. | Fork `d0f5219` and `b6cf65a`. |
 | All | A line whose text starts with a comment marker counted as a comment even when it started inside a literal, such as a `// …` line ending a raw string. | Undercount of one line per occurrence. | Fork `801aae6`. |
 
-Locmetry adopted the fork's corrections in `1e8998c`, its raw-string corrections in `51d9664`, its interpolation, regular expression and shell corrections in `714f778`, and its heredoc corrections in `f9276a7`; the fork's [README](https://github.com/mbackschat/tokei#changes-from-upstream) cites the specification behind each declaration, and the [step 1](research/tokei-fork-step-1.md), [step 2](research/tokei-fork-step-2.md), [step 3](research/tokei-fork-step-3.md) and [step 4](research/tokei-fork-step-4.md) measurements compare the results with tree-sitter on public repositories. The Lean and Handlebars lexers keep Tokei's line classification, so only the lexing changes. One Tokei rule is deliberately kept: a line that starts inside a block comment is a comment even when code follows the comment's end.
+Locmetry adopted the fork's corrections in `1e8998c`, its raw-string corrections in `51d9664`, its interpolation, regular expression and shell corrections in `714f778`, its heredoc corrections in `f9276a7`, and its markup, JSX and YAML corrections in `530deed`; the fork's [README](https://github.com/mbackschat/tokei#changes-from-upstream) cites the specification behind each declaration, and the [step 1](research/tokei-fork-step-1.md), [step 2](research/tokei-fork-step-2.md), [step 3](research/tokei-fork-step-3.md), [step 4](research/tokei-fork-step-4.md) and [step 5](research/tokei-fork-step-5.md) measurements compare the results with tree-sitter on public repositories. The Lean and Handlebars lexers keep Tokei's line classification, so only the lexing changes. One Tokei rule is deliberately kept: a line that starts inside a block comment is a comment even when code follows the comment's end.
 
 ## Uncorrected Defects
 
-Found on 2026-10-28 with synthetic probes measured at `62dea4a`. Probes for Rust, Swift, C, C++, Java, JavaScript, Ruby and Shell were checked with the language's compiler or syntax checker; the others are unchecked against a toolchain. Where a row names several languages, those without a probe share a probed language's Tokei definition. In public repositories, the [step 3 measurement](research/tokei-fork-step-3.md) found apostrophes in JSX text, Ruby percent literals, JavaScript HTML-like comments and the line rule below, and the [step 4 measurement](research/tokei-fork-step-4.md) found Perl's POD sections and quote-like operators; the prevalence of the other rows has not been measured.
+Found on 2026-10-28 with synthetic probes measured at `62dea4a`. Probes for Rust, Swift, C, C++, Java, JavaScript, Ruby and Shell were checked with the language's compiler or syntax checker; the others are unchecked against a toolchain. Where a row names several languages, those without a probe share a probed language's Tokei definition. In public repositories, the [step 3 measurement](research/tokei-fork-step-3.md) found apostrophes in JSX text, Ruby percent literals, JavaScript HTML-like comments and the line rule below, the [step 4 measurement](research/tokei-fork-step-4.md) found Perl's POD sections and quote-like operators, and the [step 5 measurement](research/tokei-fork-step-5.md) found the one-line `<script>` count and the YAML flow indicator below; the template-language row was probed on 2026-10-29 with the fork at `95d1621`; the prevalence of the other rows has not been measured.
 
 An undercount happens when a misread literal exposes a block-comment opener: the rest of the file, or everything up to the next closer, becomes comment. An overcount happens when a misread quote opens a string: comment and blank lines count as code up to the next matching quote. Either effect can follow from the same defect, depending on what comes next in the file.
 
@@ -50,8 +53,8 @@ These are the same class as the Handlebars defect: an apostrophe in prose opens 
 
 | Language | Construct | Probe | Effect |
 | --- | --- | --- | --- |
-| JSX, TSX, HTML, Vue | Apostrophes in element text. | `<p>Don't panic</p>` | Overcount: comments up to the next apostrophe count as code. |
-| YAML | Apostrophes in plain scalars. | `description: Don't panic` | Overcount. |
+| Twig, Liquid, Blade, Mustache, Hamlet, Haml | Apostrophes in template text, since each declares quotes for the whole file. | `<p>Don't panic</p>` | Overcount: comment and blank lines up to the next apostrophe count as code. |
+| YAML | A quote after a flow indicator inside a plain scalar, which the fork reads as the start of a quoted scalar. | `pattern: ["']` | Overcount up to the next matching quote. |
 
 Python's nested f-string quotes rebalance within the line and were counted correctly.
 
@@ -60,6 +63,7 @@ Python's nested f-string quotes rebalance within the line and were counted corre
 | Language | Construct | Probe | Effect |
 | --- | --- | --- | --- |
 | Languages with block and line comments | A line holding only a block comment followed by a line comment counts as code, because Tokei's whole-line rule requires the line to end with the block comment's closer. | `/* c8 ignore next */ // @ts-expect-error` | Overcount of one line per occurrence. |
+| HTML | A `<script>` element that closes on its opening line is counted once for HTML and once for the embedded language. | `<script>var a = 1;</script>` | Overcount of one line per element. |
 
 ## Upstream
 
