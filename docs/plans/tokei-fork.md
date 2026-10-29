@@ -75,7 +75,7 @@ Each step is complete when all of these hold for its languages:
 - [x] Quotes that apply only inside tags or expressions, not in text: HTML, XML, SVG, XAML, Vue, Svelte and ERB tags, JSX elements in JavaScript, JSX and TSX, and YAML plain scalars.
 - [x] YAML block scalars, `''` escapes in `'…'` strings, comments between JSX attributes and TypeScript type arguments in JSX tags, found by the measurement.
 - [x] Adopted in Locmetry `530deed` with fork `15.0.0+locmetry.6`; see the [step 5 measurement](../research/tokei-fork-step-5.md).
-- [x] Every remaining disagreement with tree-sitter corrected in the fork or decided file by file with a second reference, which also corrected Rust doc comments, comment-only lines, embedded script and style tags, JavaScript HTML-like comments, YAML plain scalars and flow collections, Perl POD, data sections, quote-like operators and references, Ruby percent literals, and Blade, Twig and Handlebars text; adopted in Locmetry `b8ca6f4` with fork `15.0.0+locmetry.9`; see the [step 5 resolution](../research/tokei-fork-step-5-resolution.md).
+- [x] Every remaining disagreement with tree-sitter corrected in the fork or decided file by file with a second reference, which also corrected Rust doc comments, comment-only lines, embedded script and style tags, JavaScript HTML-like comments, YAML plain scalars and flow collections, Perl POD, data sections, quote-like operators and references, Ruby percent literals, and Blade, Twig and Handlebars text; adopted in Locmetry `b8ca6f4` with fork `15.0.0+locmetry.9`, and with YAML back at upstream speed in `db13933` with fork `15.0.0+locmetry.10`; see the [step 5 resolution](../research/tokei-fork-step-5-resolution.md).
 
 ## Found by the Measurements
 
