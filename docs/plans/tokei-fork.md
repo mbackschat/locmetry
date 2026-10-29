@@ -20,6 +20,12 @@ Taken by the owner on 2026-10-29:
 - The fork's working copy is `../tokei` next to this repository, on branch `locmetry` from `v15.0.0` (`c14f744`). Create its GitHub repository at the end of step 1, when Locmetry first needs a pinned git dependency; until then Locmetry may depend on the local path. Created on 2026-10-29 as [mbackschat/tokei](https://github.com/mbackschat/tokei), with `locmetry` as its default branch.
 - Counts change for most languages, so the release that ships the fork carries a **Breaking** CHANGELOG entry.
 
+Taken by the owner later on 2026-10-29, for step 6:
+
+- Every popular language counts with no difference from its judge: the language's own lexer or parser wherever one can run, and tree-sitter only where none can and it parses the file without error. A difference is a defect to fix, not to explain.
+- The languages are the 39 top-ranked ones, Python, JavaScript, TypeScript, TSX and JSX, Java, C, C++, C#, Go, Rust, Kotlin, Swift, PHP, Ruby, Shell, PowerShell, SQL, HTML, CSS, SCSS, Markdown, YAML, JSON, XML, TOML, Dart, Scala, Lua, Perl, R, Objective-C, Haskell, Elixir, Groovy, Vue, Svelte, Dockerfile, Makefile and Lean, together with every other language Locmetry reports for the measured repositories.
+- A line counts as a comment only when it holds nothing but comments, so `/* a */ x = 1; /* b */` is code; PlantUML, whose block comments are line-based, keeps Tokei's rule.
+
 ## Every Step
 
 Each step is complete when all of these hold for its languages:
@@ -78,12 +84,18 @@ Each step is complete when all of these hold for its languages:
 - [x] Adopted in Locmetry `530deed` with fork `15.0.0+locmetry.6`; see the [step 5 measurement](../research/tokei-fork-step-5.md).
 - [x] Every remaining disagreement with tree-sitter corrected in the fork or decided file by file with a second reference, which also corrected Rust doc comments, comment-only lines, embedded script and style tags, JavaScript HTML-like comments, YAML plain scalars and flow collections, Perl POD, data sections, quote-like operators and references, Ruby percent literals, and Blade, Twig and Handlebars text; adopted in Locmetry `b8ca6f4` with fork `15.0.0+locmetry.9`, with YAML back at upstream speed in `db13933` with fork `15.0.0+locmetry.10`, and faster than upstream in `1b69b69` with fork `15.0.0+locmetry.11`; see the [step 5 resolution](../research/tokei-fork-step-5-resolution.md).
 
+## Step 6: No Difference From Each Language's Judge
+
+- [ ] Count a line holding code between comments as code, in the fork, in Locmetry's Lean counter and in the judges' line rules.
+- [ ] A judge per language, recorded with its version: Lean's lexer for Lean; Babel and Hermes for JavaScript and Flow; the TypeScript scanner for TypeScript and TSX; `javac`'s tokenizer for Java; the Kotlin compiler's lexer for Kotlin; `rustc_lexer` for Rust; clang's raw lexer for C, C++ and Objective-C; Roslyn for C#; `go/scanner` for Go; `sourcekitd` for Swift; PHP's `token_get_all`; Ruby's Ripper; Python's `tokenize`; the PowerShell tokenizer; parse5 for HTML, Vue and Svelte markup; a CSS Syntax Level 3 tokenizer for CSS and `postcss-scss` for SCSS; CommonMark for Markdown fences; PyYAML for YAML; expat for XML; R's parse data; Elixir's `Code.string_to_quoted_with_comments`; the Dart scanner; the Scala 3 scanner; the Groovy parser; PPI for Perl; GHC's lexer for Haskell; and, where no lexer can run, tree-sitter with checks by the language's own syntax checker.
+- [ ] Corpora: the 40 repositories of step 5, large public repositories for each language, such as rust-lang/rust, JetBrains/kotlin, microsoft/vscode, spring-framework and mathlib4, Locmetry itself, and a12-rulekit, bpmn-lean-experiment and a private Lean project, whose records stay in `docs/research/local/`.
+- [ ] Every file of every corpus counts as its judge counts it, each correction test-first in the fork or in Locmetry's Lean counter.
+
 ## Found by the Measurements
 
 Not yet scheduled; each needs the owner's decision before it becomes a step.
 
 - [ ] Template languages that still declare quotes for the whole file, Liquid, Mustache, Hamlet and Haml, where an apostrophe in text opens a string; none occurs in the measured repositories.
-- [ ] A line such as `/* a */ x; /* b */`, which Tokei's rule that a line opening with a block comment and ending with its closer is a comment counts as a comment; the rule stays because PlantUML block comments are line-based, as the [step 5 resolution](../research/tokei-fork-step-5-resolution.md#assessment) records.
 
 The Perl, Ruby percent-literal, Twig and Blade, and comment-only-line items found by the step 3 to 5 measurements were corrected by the [step 5 resolution](../research/tokei-fork-step-5-resolution.md).
 
