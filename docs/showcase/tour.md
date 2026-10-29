@@ -21,7 +21,7 @@ locmetry --root immich --config builtin-only.toml --format table --verbose --no-
 ```output
  Not source code: 296 data files (245,954 lines), 210 documentation files (12,521 lines, including 793 code lines in
 embedded snippets). '--files --output -' lists each file's kind.
- Production from build modules: 127,145 code lines in 9 'npm' modules, 59,170 code lines in 2 'dart' modules, 4,102 code
+ Production from build modules: 127,142 code lines in 9 'npm' modules, 59,170 code lines in 2 'dart' modules, 4,102 code
 lines in 1 'gradle' module, 3,037 code lines in 1 'python' module.
  Largest files counted as Production only by a build layout. If one is generated or vendored, exclude or reclassify it
 in '.locmetryrc':
@@ -30,11 +30,11 @@ in '.locmetryrc':
    server/src/queries/person.repository.sql                        1,344 code lines  server (npm)
    server/src/schema/migrations/1752267649968-StandardizeNames.ts  1,193 code lines  server (npm)
    server/src/repositories/asset.repository.ts                     1,161 code lines  server (npm)
- Unclaimed source: 4,946 code lines in 89 files, here:
+ Unclaimed source: 4,945 code lines in 89 files, here:
    mobile/ios/Runner           2,272 code lines  21 files
    mobile/ios/WidgetExtension    830 code lines   7 files
    mobile/pigeon                 325 code lines   9 files
-   packages                      266 code lines   8 files
+   packages                      265 code lines   8 files
    machine-learning              248 code lines   4 files
    deployment                    225 code lines  16 files
    server                        218 code lines   6 files
@@ -114,9 +114,9 @@ locmetry --root immich --config draft.toml --format table --verbose --no-color -
 ```
 
 ```output
- Unclaimed source: 1,790 code lines in 57 files, here:
+ Unclaimed source: 1,789 code lines in 57 files, here:
    mobile                413 code lines  12 files
-   packages              266 code lines   8 files
+   packages              265 code lines   8 files
    machine-learning      248 code lines   4 files
    deployment            225 code lines  16 files
    server                218 code lines   6 files
@@ -145,11 +145,11 @@ locmetry compare builtin.json reviewed.json --format table --no-color \
 ```output
  Purpose        before    after   change │  before    after   change
  ────────────────────────────────────────┼──────────────────────────
- Production    227,764  210,696  -17,068 │ 194,172  179,494  -14,678
+ Production    227,764  210,696  -17,068 │ 194,169  179,490  -14,679
  Test           99,381  103,432   +4,051 │  83,595   87,011   +3,416
- Other           6,214   19,173  +12,959 │   4,946   16,165  +11,219
+ Other           6,214   19,173  +12,959 │   4,945   16,165  +11,220
  ────────────────────────────────────────┼──────────────────────────
- Source total  333,359  333,301      -58 │ 282,713  282,670      -43
+ Source total  333,359  333,301      -58 │ 282,709  282,666      -43
 
  Test/prod (Code): 0.43 → 0.48 (before → after)
 ```
@@ -230,7 +230,7 @@ bash "$repository/scripts/compare-locmetry-files.sh" builtin.json reviewed.json 
     "from": "other/unclaimed",
     "to": "production/implementation",
     "files": 10,
-    "code": 327
+    "code": 326
   },
   {
     "from": "other/unclaimed",

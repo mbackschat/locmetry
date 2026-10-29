@@ -38,6 +38,6 @@ pub use report::{
 };
 pub use report_schema::report_schema;
 
-pub const BACKEND: &str = "tokei 15.0.0+locmetry.12 (embedded)";
+pub const BACKEND: &str = "tokei 15.0.0+locmetry.13 (embedded)";
 pub const BACKEND_CONFIGURATION: &str =
     "Explicit defaults; ambient Tokei configuration is not loaded";
