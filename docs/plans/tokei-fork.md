@@ -5,7 +5,7 @@
   "status": "active",
   "date": "2026-10-29",
   "summary": "Fix Tokei's literal and comment defects in a fork, in five feature steps that each cover every language with the construct.",
-  "evidence": "[counting backends](../research/counting-backends.md), [Tokei counting defects](../tokei-defects.md), [step 1 measurement](../research/tokei-fork-step-1.md)"
+  "evidence": "[counting backends](../research/counting-backends.md), [Tokei counting defects](../tokei-defects.md), [step 1](../research/tokei-fork-step-1.md) and [step 2](../research/tokei-fork-step-2.md) measurements"
 }
 -->
 
@@ -51,8 +51,10 @@ Each step is complete when all of these hold for its languages:
 
 ## Step 2: Raw Strings With Repeated Delimiters
 
-- [ ] An engine feature for raw strings whose closing delimiter repeats the opening count or names a label.
-- [ ] Rust `r#…#"` with any count, Swift `#"…"#`, C# `"""…"""`, C++ `R"x(…)x"`, Lua `[==[…]==]` and OCaml `{id|…|id}`.
+- [x] An engine feature for raw strings whose closing delimiter repeats the opening count or names a label.
+- [x] Rust `r#…#"` with any count, Swift `#"…"#`, C# `"""…"""`, C++ `R"x(…)x"`, Lua `[==[…]==]` and OCaml `{id|…|id}`.
+- [x] Lua `--[==[…]==]` long comments and Swift's one-line reading of `#"""#`, found while implementing and measuring.
+- [x] Measured against tree-sitter, adopted in Locmetry `51d9664` with fork `15.0.0+locmetry.2`; see the [step 2 measurement](../research/tokei-fork-step-2.md).
 
 ## Step 3: Interpolation and Regular Expressions
 
