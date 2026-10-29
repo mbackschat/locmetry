@@ -7,7 +7,7 @@ These documents own detailed scope and decision gates. [PLAN](../PLAN.md) owns t
 | Document | Status | Date | Summary |
 | --- | --- | --- | --- |
 | [Agent Explorability Benchmark](agent-explorability-benchmark.md) | completed | 2026-10-20 | Benchmark contract, harness and frozen tasks, built and used through the help studies; later interface changes reuse them in agent regression checks. |
-| [Correct Counting in a Tokei Fork](tokei-fork.md) | planned | 2026-10-29 | Fix Tokei's literal and comment defects in a fork, in five feature steps that each cover every language with the construct. |
+| [Correct Counting in a Tokei Fork](tokei-fork.md) | active | 2026-10-29 | Fix Tokei's literal and comment defects in a fork, in five feature steps that each cover every language with the construct. |
 
 <!-- doc-index:end -->
 
