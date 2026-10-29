@@ -68,7 +68,7 @@ Each step is complete when all of these hold for its languages:
 - [x] An engine change for closing delimiters taken from the file, since Tokei stores them as static strings.
 - [x] Shell, Ruby, PHP and Perl heredocs, including quoted and indented delimiters and here-strings.
 - [x] Ruby regular expressions at the start of a line, found by the measurement.
-- [ ] Adopted in Locmetry with fork `15.0.0+locmetry.4`; see the [step 4 measurement](../research/tokei-fork-step-4.md).
+- [x] Adopted in Locmetry `f9276a7` with fork `15.0.0+locmetry.4`; see the [step 4 measurement](../research/tokei-fork-step-4.md).
 
 ## Step 5: Apostrophes in Markup Text
 
