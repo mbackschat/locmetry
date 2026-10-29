@@ -1,6 +1,6 @@
 # Tokei Fork Step 5 Resolution
 
-Measured 2026-10-29 on macOS arm64, after the [step 5 measurement](tokei-fork-step-5.md) left disagreements whose readings rested on samples. Every file whose fork counts differ from tree-sitter's is now either corrected in the fork, test-first, or explained file by file below, with a second reference wherever tree-sitter cannot parse the file. The fork is [mbackschat/tokei](https://github.com/mbackschat/tokei) at `296eae1`, version `15.0.0+locmetry.9`; its README cites the specification behind each declaration.
+Measured 2026-10-29 on macOS arm64, after the [step 5 measurement](tokei-fork-step-5.md) left disagreements whose readings rested on samples. Every file whose fork counts differ from tree-sitter's is now either corrected in the fork, test-first, or explained file by file below, with a second reference wherever tree-sitter cannot parse the file. The fork is [mbackschat/tokei](https://github.com/mbackschat/tokei) at `5e86b70`, version `15.0.0+locmetry.10`; its README cites the specification behind each declaration.
 
 ## Corrections
 
@@ -10,20 +10,20 @@ Each correction has a regression file in the fork:
 | --- | --- | --- |
 | `5994462` | Rust `///` and `//!` doc comments are comment lines; Tokei re-parsed them as Markdown, which counted an empty `///` as blank and dropped a block's edge lines. | Rust files with doc comments |
 | `5399062` | A line holding only comments, such as `/* a */ // b`, is a comment. | Five JavaScript files of step 5 |
-| `418dd12`, `44f2a48`, `2220fce`, `296eae1` | An embedded `<script>` or `<style>` counts only the lines between its tags, and its tags are read as the HTML tokenizer reads them: case-insensitively, past a `>` inside a quoted attribute value, and with end tags such as `</style >` or `</script type="text/babel">`. | HTML files with one-line scripts, React's scheduler fixture, Immich's `TestWrapper.svelte` |
+| `418dd12`, `44f2a48`, `2220fce`, `61279ab` | An embedded `<script>` or `<style>` counts only the lines between its tags, and its tags are read as the HTML tokenizer reads them: case-insensitively, past a `>` inside a quoted attribute value, and with end tags such as `</style >` or `</script type="text/babel">`. | HTML files with one-line scripts, React's scheduler fixture, Immich's `TestWrapper.svelte` |
 | `de1ab9e` | JavaScript's HTML-like comments, [ECMA-262 Annex B.1.1](https://tc39.es/ecma262/2025/#sec-html-like-comments). | Two Prettier fixtures |
-| `a1a1886` | YAML plain scalars that continue on later lines, quotes after `[`, `{` or `,` only inside flow collections, block scalars after `?`, `-` or at document level, keep chomping, and libyaml's indentation of leading empty lines. | RuboCop's `.rubocop.yml` and YAML test suites |
+| `a1a1886`, `13d1920` | YAML plain scalars that continue on later lines, quotes after `[`, `{` or `,` only inside flow collections, every line of a flow collection that spans lines, block scalars after `?`, `-` or at document level, keep chomping, and libyaml's indentation of leading empty lines. | RuboCop's `.rubocop.yml`, YAML test suites, and a flow collection found while profiling Mastodon's locale files |
 | `d2b0180` | A markup tag that continues on later lines keeps its quoted attribute values. | HTML files |
 | `ddbcd99`, `56379a6`, `daf1c1d` | Perl POD blocks, data after `__END__` and `__DATA__`, quote-like operators, regular expressions and `\"…"` string references; Ruby data after `__END__` and percent literals. | The 220 Perl files of step 4, three RuboCop files, one Mastodon file, Dancer2's skeleton `Entry.pm` |
 | `598ce84` | Blade, Twig and Handlebars read quotes only in markup tags and skip template expressions inside a tag. | Nine Symfony Twig templates and one Prettier Handlebars file, checked against their blank-line counts because the harness has no template grammar |
 
-`912b759` keeps the new code within Tokei's declared minimum Rust version, 1.71, without changing counts.
+`912b759` keeps the new code within Tokei's declared minimum Rust version, 1.71, and `d551ec3` keeps YAML text lines on the per-line fast path, as [Speed](#speed) records; neither changes a count in the corpora.
 
 The reference was corrected too, so that the comparison judges the languages' definitions rather than tree-sitter's: `<script>` and `<style>` bodies, including `text/babel` and `text/jsx` scripts, are read with the JavaScript and CSS grammars; quoted attribute values are literals; POD runs to `=cut` or the end of the file; YAML block scalars follow their chomping indicator; a byte order mark is removed as Tokei's reader removes it; and Markdown children fold into comments, as Locmetry folds them. These are fork commits `d8a92bf`, `0150e2f`, `f10cc53` and `33710ed`.
 
 ## Corpora
 
-The 40 repositories of the step 5 measurement, 69,295 files; that record's count of 41 included Hugo twice.
+The 40 repositories of the step 5 measurement, 69,295 files. That record counts 41, the 37 repositories of steps 1 to 4 plus four, but one of the four, Hugo `c2f9cb8`, is already among the 17 of [step 1](tokei-fork-step-1.md#method), so the corpus holds 40 distinct repositories. All 40 were cloned again at their recorded commits for the final fork, which counts every one of the 69,295 files as `296eae1` did.
 
 ## Second References
 
@@ -68,7 +68,11 @@ Files whose counts differ from tree-sitter's; the last column counts those among
 | XML | 4,869 | 6 | 0 | 0 |
 | YAML | 3,391 | 236 | 4 | 4 |
 
-Three files count differently from upstream Tokei where upstream equals tree-sitter: Hugo's `code-toggle.html`, Symfony's `sfTests.yml` and `ImportMapConfigReader.php`. In all three tree-sitter reports a parse error, and the second reference or the language's definition sides with the fork, as the table below records.
+Three files count differently from upstream Tokei where upstream equals tree-sitter: Hugo's `code-toggle.html`, Symfony's `sfTests.yml` and `ImportMapConfigReader.php`. In all three tree-sitter reports a parse error, so its agreement with upstream is not evidence, and a reference that parses the file equals the fork:
+
+- `code-toggle.html`: parse5 counts 110/0/9, as the fork does; upstream's 116/0/3 opens a string at the apostrophe of `draft='false` in text after `{{<`, which the HTML tokenizer reads as text.
+- `sfTests.yml`: PyYAML, once the YAML 1.0 header `--- %YAML:1.0` is patched to `---`, reads its lines as the fork's 133/0/0; upstream's six blank lines are inside block scalars, whose text they are.
+- `ImportMapConfigReader.php`: tree-sitter-php ends a heredoc body at a line opening with `/*`, which the [PHP manual](https://www.php.net/manual/en/language.types.string.php#language.types.string.syntax.heredoc) makes string text, since heredoc text behaves like a double-quoted string. With `/**` on line 118 patched to `/xx`, tree-sitter parses the file without error and counts 142/29/30, as the fork does; upstream counts the heredoc's 23-line doc comment as comments.
 
 ## Every Remaining File
 
@@ -179,7 +183,7 @@ Counts are code/comments/blanks.
 | PHP | `framework/src/Illuminate/Pagination/resources/views/simple-bootstrap-5.blade.php` | 26/2/1 | 28/0/1 | 26/2/1 |  | Blade `{{-- --}}` and `<!-- -->` comment lines, which tree-sitter-php reads as text |
 | PHP | `framework/src/Illuminate/Pagination/resources/views/tailwind.blade.php` | 95/5/11 | 100/0/11 | 95/5/11 |  | Blade `{{-- --}}` and `<!-- -->` comment lines, which tree-sitter-php reads as text |
 | PHP | `symfony/.agents/skills/sync-translations/scripts/add_message.php` | 117/30/29 | 118/29/29 | 117/30/29 |  | Line 1 `#!/usr/bin/env php`, which the PHP CLI skips, counted as a `#` comment |
-| PHP | `symfony/src/Symfony/Component/AssetMapper/ImportMap/ImportMapConfigReader.php` | 142/29/30 | 117/52/32 | 117/52/32 | yes | Lines 115-143 are a flexible heredoc whose doc comment is string content |
+| PHP | `symfony/src/Symfony/Component/AssetMapper/ImportMap/ImportMapConfigReader.php` | 142/29/30 | 117/52/32 | 117/52/32 | yes | Lines 115-143 are a flexible heredoc whose doc comment is string content; with the `/**` that stops tree-sitter-php patched, tree-sitter equals the fork |
 | PHP | `symfony/src/Symfony/Component/Emoji/Resources/bin/build.php` | 193/19/52 | 194/18/52 | 193/19/52 |  | Line 1 `#!/usr/bin/env php`, which the PHP CLI skips, counted as a `#` comment |
 | PHP | `symfony/src/Symfony/Component/ErrorHandler/Resources/bin/extract-tentative-return-types.php` | 56/13/15 | 57/12/15 | 38/26/20 |  | Line 1 `#!/usr/bin/env php`, which the PHP CLI skips, counted as a `#` comment |
 | PHP | `symfony/src/Symfony/Component/ErrorHandler/Resources/views/exception_full.html.php` | 67/2/9 | 69/0/9 | 67/2/9 |  | `//` comments inside an HTML `<script>` |
@@ -218,20 +222,24 @@ Counts are code/comments/blanks.
 
 ## Speed
 
-hyperfine on one thread, ten runs per repository after two warm-up runs, upstream Tokei 15.0.0 against the fork at `944191b`, before the two start-tag pattern fixes; wall time in milliseconds with its standard deviation, and median instructions relative to upstream:
+hyperfine on one thread, ten runs per repository after two warm-up runs, upstream Tokei 15.0.0 against the fork at `d551ec3`, whose code `5e86b70` releases unchanged; wall time in milliseconds with its standard deviation, and median instructions relative to upstream:
 
 | Repository | Upstream | Fork | Wall time | Instructions |
 | --- | --- | --- | --- | --- |
-| tokio | 51 ± 3 | 43 ± 2 | 0.84 | 0.88 |
-| dotnet/aspire | 998 ± 25 | 823 ± 38 | 0.83 | 0.93 |
-| Prettier | 306 ± 9 | 296 ± 2 | 0.97 | 1.01 |
-| React | 389 ± 5 | 367 ± 18 | 0.94 | 1.03 |
-| Excalidraw | 98 ± 3 | 89 ± 1 | 0.91 | 1.06 |
-| Mastodon | 602 ± 24 | 568 ± 7 | 0.94 | 1.09 |
-| Symfony | 1,510 ± 33 | 1,280 ± 33 | 0.85 | 0.98 |
-| RuboCop | 131 ± 2 | 127 ± 2 | 0.97 | 1.06 |
+| tokio | 48 ± 0 | 41 ± 0 | 0.84 | 0.88 |
+| dotnet/aspire | 989 ± 41 | 836 ± 30 | 0.85 | 1.00 |
+| Prettier | 303 ± 14 | 289 ± 2 | 0.95 | 1.01 |
+| React | 397 ± 14 | 382 ± 27 | 0.96 | 1.03 |
+| Excalidraw | 99 ± 3 | 90 ± 1 | 0.91 | 1.06 |
+| Mastodon | 604 ± 19 | 544 ± 13 | 0.90 | 1.00 |
+| Symfony | 1,541 ± 33 | 1,284 ± 34 | 0.83 | 0.94 |
+| RuboCop | 131 ± 1 | 136 ± 9 | 1.04 | 1.06 |
 
-With the commands run in reverse order, Mastodon measured 0.98, Symfony 0.85 and Excalidraw 0.91 in wall time, with the same instruction ratios. The fork executes up to a tenth more instructions than upstream on Mastodon, Excalidraw and RuboCop, against at most 1.04 at step 5, and its wall time is not slower on any repository.
+With the commands run in reverse order, the wall-time ratios were 0.85, 0.85, 0.98, 0.92, 0.93, 0.89, 0.85 and 1.00, with instruction ratios within 0.04 of these. Thirty runs of RuboCop measured 131 ± 4 against upstream's 133 ± 6 and, reversed, 133 ± 7 against 134 ± 11, so its wall time is within upstream's variation; on every other repository the fork is faster.
+
+Before, Mastodon executed 1.09 times upstream's instructions at `944191b`, and its 549 YAML files alone took 1,893M instructions at `296eae1` against upstream's 1,206M: a `[`, `{`, `|` or `>` anywhere in a line, as in a locale string holding `%{name}` or `<strong>`, sent the line from the per-line fast path to the per-byte loop, and the plain-scalar check scanned lines byte by byte. Since `d551ec3` a line leaves the fast path only where a flow collection or block scalar can start, and those lines are scanned with `memchr`; Mastodon's YAML now takes 1,225M instructions, with the same counts in every file of the corpora.
+
+The remaining extra instructions on Excalidraw and RuboCop are the cost of reading what upstream misreads. Built without its JSX declaration, the fork takes 401M instructions on Excalidraw's TSX against upstream's 443M and its own 475M; built without Ruby's heredoc, percent literal, regular expression, interpolation and code token declarations, it takes 1,345M on RuboCop's Ruby against upstream's 1,337M and its own 1,410M. Wall time does not follow, because opening and reading files take most of a run: they were about two thirds of the samples in a profile of RuboCop's Ruby files.
 
 ## Showcase
 
@@ -239,6 +247,6 @@ In the Immich showcase, `web/src/lib/components/TestWrapper.svelte` loses one co
 
 ## Assessment
 
-Verified: on these repositories every file whose fork counts differ from tree-sitter's has a verdict, from a second reference, a minimal patch, or the language's definition applied to the named lines; no file counts worse than upstream Tokei by any reference that parses it; and wall time stays within upstream's.
+Verified: on these repositories every file whose fork counts differ from tree-sitter's has a verdict, from a second reference, a minimal patch, or the language's definition applied to the named lines; no file counts worse than upstream Tokei by any reference that parses it; and wall time stays within upstream's variation, with the extra instructions on Excalidraw and RuboCop attributed to the JSX and Ruby literals the fork reads.
 
 Limits: one machine and one run of each corpus; the references' line rule calls a line that starts and ends in comments a comment even with code between them, which the closure typecast verdict corrects by inspection; template languages are checked by blank-line counts only; Liquid, Mustache, Hamlet and Haml still declare quotes for the whole file and are unmeasured; and a line such as `/* a */ x; /* b */` still counts as a comment, because Tokei's rule that a line opening with a block comment and ending with its closer is a comment stays for languages such as PlantUML, whose block comments are line-based.
