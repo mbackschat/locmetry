@@ -5,7 +5,7 @@
   "status": "active",
   "date": "2026-10-29",
   "summary": "Fix Tokei's literal and comment defects in a fork, in five feature steps that each cover every language with the construct.",
-  "evidence": "[counting backends](../research/counting-backends.md), [Tokei counting defects](../tokei-defects.md), [step 1](../research/tokei-fork-step-1.md), [step 2](../research/tokei-fork-step-2.md) and [step 3](../research/tokei-fork-step-3.md) measurements"
+  "evidence": "[counting backends](../research/counting-backends.md), [Tokei counting defects](../tokei-defects.md), [step 1](../research/tokei-fork-step-1.md), [step 2](../research/tokei-fork-step-2.md), [step 3](../research/tokei-fork-step-3.md) and [step 4](../research/tokei-fork-step-4.md) measurements"
 }
 -->
 
@@ -65,13 +65,23 @@ Each step is complete when all of these hold for its languages:
 
 ## Step 4: Heredocs
 
-- [ ] An engine change for closing delimiters taken from the file, since Tokei stores them as static strings.
-- [ ] Shell, Ruby, PHP and Perl heredocs, including quoted and indented delimiters and here-strings.
+- [x] An engine change for closing delimiters taken from the file, since Tokei stores them as static strings.
+- [x] Shell, Ruby, PHP and Perl heredocs, including quoted and indented delimiters and here-strings.
+- [x] Ruby regular expressions at the start of a line, found by the measurement.
+- [ ] Adopted in Locmetry with fork `15.0.0+locmetry.4`; see the [step 4 measurement](../research/tokei-fork-step-4.md).
 
 ## Step 5: Apostrophes in Markup Text
 
 - [ ] Quotes that apply only inside tags or expressions, not in text: HTML, JSX, TSX, Vue, Svelte, XML and YAML plain scalars.
 
+## Found by the Measurements
+
+Not yet scheduled; each needs the owner's decision before it becomes a step.
+
+- [ ] Perl beyond heredocs: POD sections opened by any `=word` directive, quote-like operators such as `q{}`, `qw()` and `s{}{}`, regular expressions and `__END__` sections, which the [step 4 measurement](../research/tokei-fork-step-4.md) found misread in 220 of 606 Perl files.
+- [ ] Ruby percent literals such as `%w[' "]`, found in three RuboCop files.
+- [ ] A line holding only a block comment and a line comment, such as `/* a */ // b`, which Tokei's whole-line rule counts as code; found in ten JavaScript and Dart files by the [step 3 measurement](../research/tokei-fork-step-3.md).
+
 ## Out of Scope
 
-Python, which counted correctly in the spike; Tokei's rule that reads Rust doc comments as Markdown; and Perl and Ruby quote operators such as `q{}` and `%q()`, unless measurements show them.
+Python, which counted correctly in the spike; and Tokei's rule that reads Rust doc comments as Markdown.

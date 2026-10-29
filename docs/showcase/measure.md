@@ -23,12 +23,12 @@ locmetry --root immich --config builtin-only.toml --format json \
 
 ```output
 {
-  "all_counted": 522717,
-  "source": 282711,
+  "all_counted": 522720,
+  "source": 282714,
   "purposes": {
     "production": 194173,
     "test": 83595,
-    "other": 4943
+    "other": 4946
   },
   "unclaimed": [
     {
@@ -110,7 +110,7 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  Kotlin         35    4,604    3,810 │      177     617 │   3,810       0       0 │      0.00
  Swift          28    3,874    3,103 │      232     539 │   3,103       0       0 │      0.00
  CSS             2      818      691 │       26     101 │     691       0       0 │      0.00
- Shell          19      565      401 │       69      95 │     401       0       0 │      0.00
+ Shell          19      565      404 │       69      92 │     404       0       0 │      0.00
  Dockerfile      4      369      267 │       12      90 │     257      10       0 │      0.04
  C++             1      295      251 │       11      33 │     251       0       0 │      0.00
  HCL            16      262      225 │        4      33 │     225       0       0 │      0.00
@@ -122,7 +122,7 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  CMake           1       13        9 │        0       4 │       9       0       0 │      0.00
  C Header        1        1        1 │        0       0 │       1       0       0 │      0.00
  ────────────────────────────────────┼──────────────────┼─────────────────────────┼──────────
- Total       2,527  333,302  282,668 │    9,192  41,442 │ 179,492  87,011  16,165 │      0.48
+ Total       2,527  333,302  282,671 │    9,192  41,439 │ 179,495  87,011  16,165 │      0.48
 
  Lines = Code + Comments + Blanks · Production + Test + Other = Code · Test/prod = Test / Production (Code)
  Tests written in another language than the code they test skew per-language Test/prod.
@@ -140,7 +140,7 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  test:test-support                 27    3,970    3,352
  test:integration                   8    2,296    2,014
  production:build-tooling          18      886      772
- production:deployment             28      938      740
+ production:deployment             28      938      743
  production:distribution            5      695      567
  production:tooling                10      646      507
  production:documentation-site      6      468      382
@@ -266,11 +266,11 @@ locmetry --root immich --format table --folder-rows 16 --no-color --no-bars --ta
  deployment                         262      225 │     225       0       0 │      0.00
  server (direct files)              243      200 │     200       0       0 │      0.00
  server/bin                         157      126 │     126       0       0 │      0.00
- (root files)                       131      111 │     111       0       0 │      0.00
+ (root files)                       131      114 │     114       0       0 │      0.00
  .devcontainer/server                85       58 │      58       0       0 │      0.00
  open-api/bin                        26       14 │      14       0       0 │      0.00
  ────────────────────────────────────────────────┼─────────────────────────┼──────────
- Total                          333,302  282,668 │ 179,492  87,011  16,165 │      0.48
+ Total                          333,302  282,671 │ 179,495  87,011  16,165 │      0.48
 ```
 
 ## Look at the code around the product
@@ -291,7 +291,7 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  ────────────────────────────────┼──────────────────┼──────────────┼──────────
  TypeScript     34  4,771  4,020 │      223     528 │   678  3,342 │      5.3%
  JavaScript     11    558    502 │       23      33 │   502      0 │      4.4%
- Shell          16    550    395 │       64      91 │   395      0 │     13.9%
+ Shell          16    550    398 │       64      88 │   398      0 │     13.9%
  Dart            1    388    343 │        1      44 │   343      0 │      0.3%
  Dockerfile      4    369    267 │       12      90 │   257     10 │      4.3%
  HCL            16    262    225 │        4      33 │   225      0 │      1.7%
@@ -299,7 +299,7 @@ locmetry --root immich --format table --show-categories --no-color --no-bars \
  Python          2     51     38 │        1      12 │    38      0 │      2.6%
  CMake           1     13      9 │        0       4 │     9      0 │      0.0%
  ────────────────────────────────┼──────────────────┼──────────────┼──────────
- Total          88  7,135  5,938 │      335     862 │ 2,586  3,352 │      5.3%
+ Total          88  7,135  5,941 │      335     859 │ 2,589  3,352 │      5.3%
 
  Lines = Code + Comments + Blanks · Production + Test = Code · Comment % = Comments / (Code + Comments)
  Folded: BASH → Shell.
@@ -311,7 +311,7 @@ more (276,730 code lines).
  ─────────────────────────────────────────────
  test:test-support            27  3,970  3,352
  production:build-tooling     18    886    772
- production:deployment        28    938    740
+ production:deployment        28    938    743
  production:distribution       5    695    567
  production:tooling           10    646    507
 

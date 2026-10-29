@@ -81,7 +81,7 @@ cd immich && locmetry
  Kotlin         35    4,604    3,810 │      177     617 │   3,810       0       0 │      0.00 │   1.3%  ▏
  Swift          28    3,874    3,103 │      232     539 │   3,103       0       0 │      0.00 │   1.1%  ▏
  CSS             2      818      691 │       26     101 │     691       0       0 │      0.00 │   0.2%  ▏
- Shell          19      565      401 │       69      95 │     401       0       0 │      0.00 │   0.1%  ▏
+ Shell          19      565      404 │       69      92 │     404       0       0 │      0.00 │   0.1%  ▏
  Dockerfile      4      369      267 │       12      90 │     257      10       0 │      0.04 │   0.1%  ▏
  C++             1      295      251 │       11      33 │     251       0       0 │      0.00 │   0.1%  ▏
  HCL            16      262      225 │        4      33 │     225       0       0 │      0.00 │   0.1%  ▏
@@ -93,7 +93,7 @@ cd immich && locmetry
  CMake           1       13        9 │        0       4 │       9       0       0 │      0.00 │   0.0%  ▏
  C Header        1        1        1 │        0       0 │       1       0       0 │      0.00 │   0.0%  ▏
  ────────────────────────────────────┼──────────────────┼─────────────────────────┼───────────┼─────────────────────────
- Total       2,527  333,302  282,668 │    9,192  41,442 │ 179,492  87,011  16,165 │      0.48 │ 100.0%
+ Total       2,527  333,302  282,671 │    9,192  41,439 │ 179,495  87,011  16,165 │      0.48 │ 100.0%
 
  Lines = Code + Comments + Blanks · Production + Test + Other = Code · Test/prod = Test / Production (Code)
  Tests written in another language than the code they test skew per-language Test/prod.
@@ -122,10 +122,10 @@ Built-in conventions already recognize the npm, Gradle, Python and Dart [build m
 <!-- showcase-policy -->
 | Source code | Built-in conventions | Reviewed policy |
 | --- | ---: | ---: |
-| Production | 194,173 | 179,492 |
+| Production | 194,173 | 179,495 |
 | Test | 83,595 | 87,011 |
 | Other: generated | 0 | 16,165 |
-| Other: unclaimed | 4,943 | 0 |
+| Other: unclaimed | 4,946 | 0 |
 | Test/prod | 0.43 | 0.48 |
 
 `--show-categories` breaks each purpose down by category, which shows what the project consists of:
@@ -147,7 +147,7 @@ cd immich && locmetry --show-categories
  test:test-support                 27    3,970    3,352 │  1.2%  ▓
  test:integration                   8    2,296    2,014 │  0.7%  ▏
  production:build-tooling          18      886      772 │  0.3%  ▏
- production:deployment             28      938      740 │  0.3%  ▏
+ production:deployment             28      938      743 │  0.3%  ▏
  production:distribution            5      695      567 │  0.2%  ▏
  production:tooling                10      646      507 │  0.2%  ▏
  production:documentation-site      6      468      382 │  0.1%  ▏
@@ -205,11 +205,11 @@ Compare saved reports of two releases, `v3.2.0` and `v3.3.4`:
                          Lines           │           Code
  Purpose        before    after   change │  before    after  change
  ────────────────────────────────────────┼─────────────────────────
- Production    207,996  210,697   +2,701 │ 177,403  179,492  +2,089
+ Production    207,996  210,697   +2,701 │ 177,406  179,495  +2,089
  Test           96,227  103,432   +7,205 │  81,161   87,011  +5,850
  Other          17,825   19,173   +1,348 │  14,910   16,165  +1,255
  ────────────────────────────────────────┼─────────────────────────
- Source total  322,048  333,302  +11,254 │ 273,474  282,668  +9,194
+ Source total  322,048  333,302  +11,254 │ 273,477  282,671  +9,194
 
  Test/prod (Code): 0.46 → 0.48 (before → after)
 ```
