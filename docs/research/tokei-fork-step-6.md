@@ -2,7 +2,7 @@
 
 Measured from 2026-10-29 on macOS arm64, for [step 6](../plans/tokei-fork.md#step-6-no-difference-from-each-languages-judge): every file of every corpus must count as the language's own lexer or parser counts it. A line is a comment when it holds nothing but comments; a blank line takes the class of the comment or literal it lies in; every other line is code. A file the judge itself rejects as lexically invalid has no correct count, so it is listed rather than matched.
 
-The judges and the comparison tool live in the fork's [judges](https://github.com/mbackschat/tokei/tree/locmetry/judges) folder from `a2a9724`. Each judge reports the comment and literal ranges its lexer found, and `judgecmp` compares the lines they imply with the fork's `line_classes` (fork `238b0c5`), line by line. The fork's results below are those of `15.0.0+locmetry.13`, fork `a55e730`, for Python of `15.0.0+locmetry.14`, fork `701fdaa`, for C, C++, Objective-C, Go, C# and Ruby of `15.0.0+locmetry.15`, fork `40ed432`, and for PHP, Swift, Dart and Scala of `15.0.0+locmetry.16`, fork `eb463fb`. A line of whitespace takes the class of the comment or literal its own bytes lie in, as judgecmp reads it from fork `02345d9`; every earlier result was rechecked under that rule.
+The judges and the comparison tool live in the fork's [judges](https://github.com/mbackschat/tokei/tree/locmetry/judges) folder from `a2a9724`. Each judge reports the comment and literal ranges its lexer found, and `judgecmp` compares the lines they imply with the fork's `line_classes` (fork `238b0c5`), line by line. The fork's results below are those of `15.0.0+locmetry.13`, fork `a55e730`, for Python of `15.0.0+locmetry.14`, fork `701fdaa`, for C, C++, Objective-C, Go, C# and Ruby of `15.0.0+locmetry.15`, fork `40ed432`, for PHP, Swift, Dart and Scala of `15.0.0+locmetry.16`, fork `eb463fb`, and for R of `15.0.0+locmetry.17`, fork `984e57b`. A line of whitespace takes the class of the comment or literal its own bytes lie in, as judgecmp reads it from fork `02345d9`; every earlier result was rechecked under that rule.
 
 ## Lean
 
@@ -219,24 +219,42 @@ Judge: the Scala 3.10.0 compiler's parser and scanner. The parser drives the sca
 
 Every valid file but one matches on every line. Before the fork's corrections, 144 files differed on 6,483 lines: nested block comments, triple-quoted strings ending in a run of more than three quotes, and interpolators other than `s`, `f` and `raw`, such as `em"…"`. The remaining file, Scala 3's `tests/run/dedented-string-literals.scala`, differs on 4 lines inside `'''` strings, which `import language.experimental.dedentedStringLiterals` enables; experimental features are not yet part of the language, so the fork does not read them.
 
+## R
+
+Judge: R's own parser, through the parse data that `parse(keep.source = TRUE)` records for every token, run with R 4.6.1. `COMMENT` tokens are comments and `STR_CONST` tokens, raw strings included, are literals; a file R cannot parse is invalid. The R corpus is a sparse checkout of `src/library` and `tests`.
+
+| Repository | Commit | R files | Lexically invalid |
+| --- | --- | ---: | ---: |
+| [wch/r-source](https://github.com/wch/r-source) | `da12bf8030` | 940 | 3 |
+| [tidyverse/ggplot2](https://github.com/tidyverse/ggplot2) | `b638d654c8` | 360 | 0 |
+| [mlr-org/mlr3](https://github.com/mlr-org/mlr3) | `f0455c65ec` | 301 | 0 |
+| [rstudio/shiny](https://github.com/rstudio/shiny) | `261cbe6e5e` | 278 | 2 |
+| [r-lib/testthat](https://github.com/r-lib/testthat) | `54c0edc932` | 266 | 1 |
+| [tidyverse/dplyr](https://github.com/tidyverse/dplyr) | `d5e94e7fa8` | 195 | 1 |
+| [r-lib/rlang](https://github.com/r-lib/rlang) | `b4a2a057ea` | 160 | 0 |
+| [Rdatatable/data.table](https://github.com/Rdatatable/data.table) | `086c6466d8` | 87 | 0 |
+| [tidyverse/tidyr](https://github.com/tidyverse/tidyr) | `26f83e89a6` | 86 | 0 |
+
+Every valid file matches on every line. Before the fork's correction, 13 files differed on 53 lines: Tokei's R declared no strings, so a `#` inside one started a comment, and a `#line` directive, which R's parser reads as code, counted as a comment. The invalid files are R's and testthat's tests of syntax errors, Shiny's app templates with `{{` placeholders, and a dplyr script whose `[` call in a pipe R 4.6.1 rejects.
+
 ## Speed
 
 The owner decided on 2026-10-30 that the fork must parse within 10% of upstream Tokei 15.0.0's time on every repository below; the fork's [speed gate](https://github.com/mbackschat/tokei/tree/locmetry/judges#speed), `judges/speed/check.py`, measures it before each release is adopted. It parses every file Tokei recognizes from memory, three times, and compares the minimum user CPU time of 15 interleaved runs. Django, Tokio and Prettier are whole checkouts; the other trees hold the files of their judged languages.
 
-| Repository | Commit | Language | Upstream | Fork `55b0c87` | Ratio |
+| Repository | Commit | Language | Upstream | Fork `984e57b` | Ratio |
 | --- | --- | --- | ---: | ---: | ---: |
-| [symfony/symfony](https://github.com/symfony/symfony) | `92216211` | PHP | 3.958 s | 2.094 s | 0.53 |
-| [tokio-rs/tokio](https://github.com/tokio-rs/tokio) | `6470b5e4` | Rust | 0.094 s | 0.054 s | 0.57 |
-| [prettier/prettier](https://github.com/prettier/prettier) | `c7a823c4` | JavaScript, TypeScript | 0.335 s | 0.238 s | 0.71 |
-| [django/django](https://github.com/django/django) | `817df1c4` | Python | 1.258 s | 0.945 s | 0.75 |
-| [felangel/bloc](https://github.com/felangel/bloc) | `b9be1e25` | Dart | 0.194 s | 0.146 s | 0.75 |
-| [spring-projects/spring-framework](https://github.com/spring-projects/spring-framework) | `64861cb3` | Java, Kotlin | 1.375 s | 1.055 s | 0.77 |
-| [rubocop/rubocop](https://github.com/rubocop/rubocop) | `bde5d420` | Ruby | 0.264 s | 0.212 s | 0.80 |
-| [AutoMapper/AutoMapper](https://github.com/AutoMapper/AutoMapper) | `df65f2e3` | C# | 0.028 s | 0.023 s | 0.81 |
-| [gohugoio/hugo](https://github.com/gohugoio/hugo) | `a1668da3` | Go | 0.132 s | 0.107 s | 0.81 |
-| [tidyverse/ggplot2](https://github.com/tidyverse/ggplot2) | `b638d654` | R | 0.171 s | 0.146 s | 0.85 |
-| [apple/swift-nio](https://github.com/apple/swift-nio) | `108daca3` | Swift | 0.097 s | 0.084 s | 0.86 |
-| [curl/curl](https://github.com/curl/curl) | `87c4c6d6` | C | 0.305 s | 0.280 s | 0.92 |
-| [typelevel/cats](https://github.com/typelevel/cats) | `b6c4dbfb` | Scala | 0.094 s | 0.086 s | 0.92 |
+| [symfony/symfony](https://github.com/symfony/symfony) | `92216211` | PHP | 4.744 s | 2.014 s | 0.42 |
+| [tokio-rs/tokio](https://github.com/tokio-rs/tokio) | `6470b5e4` | Rust | 0.087 s | 0.054 s | 0.62 |
+| [django/django](https://github.com/django/django) | `817df1c4` | Python | 1.314 s | 0.894 s | 0.68 |
+| [felangel/bloc](https://github.com/felangel/bloc) | `b9be1e25` | Dart | 0.205 s | 0.142 s | 0.69 |
+| [prettier/prettier](https://github.com/prettier/prettier) | `c7a823c4` | JavaScript, TypeScript | 0.325 s | 0.241 s | 0.74 |
+| [gohugoio/hugo](https://github.com/gohugoio/hugo) | `a1668da3` | Go | 0.136 s | 0.103 s | 0.76 |
+| [AutoMapper/AutoMapper](https://github.com/AutoMapper/AutoMapper) | `df65f2e3` | C# | 0.027 s | 0.021 s | 0.77 |
+| [spring-projects/spring-framework](https://github.com/spring-projects/spring-framework) | `64861cb3` | Java, Kotlin | 1.285 s | 1.046 s | 0.81 |
+| [rubocop/rubocop](https://github.com/rubocop/rubocop) | `bde5d420` | Ruby | 0.292 s | 0.239 s | 0.82 |
+| [tidyverse/ggplot2](https://github.com/tidyverse/ggplot2) | `b638d654` | R | 0.162 s | 0.139 s | 0.86 |
+| [curl/curl](https://github.com/curl/curl) | `87c4c6d6` | C | 0.269 s | 0.231 s | 0.86 |
+| [typelevel/cats](https://github.com/typelevel/cats) | `b6c4dbfb` | Scala | 0.097 s | 0.087 s | 0.90 |
+| [apple/swift-nio](https://github.com/apple/swift-nio) | `108daca3` | Swift | 0.125 s | 0.117 s | 0.94 |
 
-Measured on 2026-10-30 on a loaded machine, where the minimum of interleaved runs varied by about 3% between repetitions.
+Measured on 2026-10-30 on a loaded machine, where the minimum of interleaved runs varied by about 3% between repetitions. An earlier measurement, of fork `55b0c87`, found ratios from 0.53 to 0.92.
