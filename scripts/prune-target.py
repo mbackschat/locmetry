@@ -147,9 +147,11 @@ def cargo_targets(command, cwd):
                 target = options["--target-dir"]
             elif os.environ.get("CARGO_TARGET_DIR"):
                 target = resolve(here, os.environ["CARGO_TARGET_DIR"])
+            elif "--manifest-path" in options:
+                manifest = options["--manifest-path"]
+                target = manifest and project_target(manifest.parent)
             else:
-                manifest = options.get("--manifest-path")
-                target = project_target(manifest.parent if manifest else here)
+                target = project_target(here)
             if target and target not in targets:
                 targets.append(target)
             i = j
@@ -166,8 +168,6 @@ def resolve(base, path):
 def project_target(directory):
     """The `target` beside the nearest `Cargo.toml` at or above `directory`
     that has one, as a workspace member builds into its root's."""
-    if directory is None:
-        return None
     for candidate in [directory, *directory.parents]:
         if (candidate / "Cargo.toml").is_file() and (candidate / "target").is_dir():
             return candidate / "target"
@@ -185,6 +185,10 @@ def main():
     if args.hook:
         event = json.load(sys.stdin)
         command = event.get("tool_input", {}).get("command", "")
+        # Tokenizing takes about a millisecond per KiB of command (measured
+        # 2026-10-30), so commands that cannot run Cargo skip it.
+        if "cargo" not in command:
+            return
         targets = cargo_targets(command, event.get("cwd") or os.getcwd())
     else:
         targets = [args.target]

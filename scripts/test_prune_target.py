@@ -19,19 +19,23 @@ class PruneTargetTests(unittest.TestCase):
         self.addCleanup(self.tmp.cleanup)
         self.target = Path(self.tmp.name) / "target"
 
-    def artifact(self, relative, kib, age_days):
-        path = self.target / relative
+    def artifact(self, relative, kib, age_days, target=None):
+        path = (target or self.target) / relative
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(b"x" * kib * KIB)
         stamp = 1_700_000_000 - age_days * 86_400
         os.utime(path, (stamp, stamp))
         return path
 
-    def prune(self, *args, stdin=None):
+    def run_script(self, *args, stdin=None):
         return subprocess.run(
-            [sys.executable, str(SCRIPT), "--target", str(self.target), *args],
+            [sys.executable, str(SCRIPT), *args],
             input=stdin, capture_output=True, text=True, check=True,
+            env={k: v for k, v in os.environ.items() if k != "CARGO_TARGET_DIR"},
         )
+
+    def prune(self, *args):
+        return self.run_script("--target", str(self.target), *args)
 
     def test_under_the_cap_nothing_is_removed(self):
         kept = self.artifact("debug/deps/libold-1.rlib", 4, age_days=9)
@@ -58,11 +62,7 @@ class PruneTargetTests(unittest.TestCase):
 
     def hook(self, command, cwd):
         event = {"tool_name": "Bash", "cwd": str(cwd), "tool_input": {"command": command}}
-        return subprocess.run(
-            [sys.executable, str(SCRIPT), "--hook", "--max-kib", "4", "--floor-kib", "2"],
-            input=json.dumps(event), capture_output=True, text=True, check=True,
-            env={k: v for k, v in os.environ.items() if k != "CARGO_TARGET_DIR"},
-        )
+        return self.run_script("--hook", "--max-kib", "4", "--floor-kib", "2", stdin=json.dumps(event))
 
     def project(self, name):
         root = Path(self.tmp.name) / name
@@ -70,12 +70,8 @@ class PruneTargetTests(unittest.TestCase):
         (root / "Cargo.toml").write_text("[package]\n")
         return root
 
-    def unit(self, root, kib=8):
-        path = root / "target/debug/deps/libold.rlib"
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(b"x" * kib * KIB)
-        os.utime(path, (1_000_000_000, 1_000_000_000))
-        return path
+    def unit(self, root):
+        return self.artifact("debug/deps/libold.rlib", 8, age_days=9, target=root / "target")
 
     def test_the_hook_ignores_commands_without_cargo(self):
         root = self.project("app")
@@ -106,6 +102,12 @@ class PruneTargetTests(unittest.TestCase):
         self.hook(f"cargo build --manifest-path {fork}/Cargo.toml --target-dir={fork}/speed/target", session)
         self.assertFalse(tool_unit.exists())
         self.assertFalse(speed_unit.exists())
+
+    def test_the_hook_skips_a_manifest_path_it_cannot_resolve(self):
+        root = self.project("app")
+        old = self.unit(root)
+        self.hook("cargo build --manifest-path $LOCMETRY_UNSET_DIR/Cargo.toml", root)
+        self.assertTrue(old.exists())
 
     def test_a_unit_still_read_is_kept_over_one_written_later_but_unused(self):
         read = self.artifact("debug/deps/libregex-a.rlib", 4, age_days=30)
