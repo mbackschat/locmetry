@@ -218,3 +218,25 @@ Judge: the Scala 3.10.0 compiler's parser and scanner. The parser drives the sca
 | [scalameta/scalameta](https://github.com/scalameta/scalameta) | `dae6167bd1` | 761 | 0 |
 
 Every valid file but one matches on every line. Before the fork's corrections, 144 files differed on 6,483 lines: nested block comments, triple-quoted strings ending in a run of more than three quotes, and interpolators other than `s`, `f` and `raw`, such as `em"…"`. The remaining file, Scala 3's `tests/run/dedented-string-literals.scala`, differs on 4 lines inside `'''` strings, which `import language.experimental.dedentedStringLiterals` enables; experimental features are not yet part of the language, so the fork does not read them.
+
+## Speed
+
+The owner decided on 2026-10-30 that the fork must parse within 10% of upstream Tokei 15.0.0's time on every repository below; the fork's [speed gate](https://github.com/mbackschat/tokei/tree/locmetry/judges#speed), `judges/speed/check.py`, measures it before each release is adopted. It parses every file Tokei recognizes from memory, three times, and compares the minimum user CPU time of 15 interleaved runs. Django, Tokio and Prettier are whole checkouts; the other trees hold the files of their judged languages.
+
+| Repository | Commit | Language | Upstream | Fork `55b0c87` | Ratio |
+| --- | --- | --- | ---: | ---: | ---: |
+| [symfony/symfony](https://github.com/symfony/symfony) | `92216211` | PHP | 3.958 s | 2.094 s | 0.53 |
+| [tokio-rs/tokio](https://github.com/tokio-rs/tokio) | `6470b5e4` | Rust | 0.094 s | 0.054 s | 0.57 |
+| [prettier/prettier](https://github.com/prettier/prettier) | `c7a823c4` | JavaScript, TypeScript | 0.335 s | 0.238 s | 0.71 |
+| [django/django](https://github.com/django/django) | `817df1c4` | Python | 1.258 s | 0.945 s | 0.75 |
+| [felangel/bloc](https://github.com/felangel/bloc) | `b9be1e25` | Dart | 0.194 s | 0.146 s | 0.75 |
+| [spring-projects/spring-framework](https://github.com/spring-projects/spring-framework) | `64861cb3` | Java, Kotlin | 1.375 s | 1.055 s | 0.77 |
+| [rubocop/rubocop](https://github.com/rubocop/rubocop) | `bde5d420` | Ruby | 0.264 s | 0.212 s | 0.80 |
+| [AutoMapper/AutoMapper](https://github.com/AutoMapper/AutoMapper) | `df65f2e3` | C# | 0.028 s | 0.023 s | 0.81 |
+| [gohugoio/hugo](https://github.com/gohugoio/hugo) | `a1668da3` | Go | 0.132 s | 0.107 s | 0.81 |
+| [tidyverse/ggplot2](https://github.com/tidyverse/ggplot2) | `b638d654` | R | 0.171 s | 0.146 s | 0.85 |
+| [apple/swift-nio](https://github.com/apple/swift-nio) | `108daca3` | Swift | 0.097 s | 0.084 s | 0.86 |
+| [curl/curl](https://github.com/curl/curl) | `87c4c6d6` | C | 0.305 s | 0.280 s | 0.92 |
+| [typelevel/cats](https://github.com/typelevel/cats) | `b6c4dbfb` | Scala | 0.094 s | 0.086 s | 0.92 |
+
+Measured on 2026-10-30 on a loaded machine, where the minimum of interleaved runs varied by about 3% between repetitions.

@@ -33,7 +33,7 @@ Each step is complete when all of these hold for its languages:
 - [ ] Each declaration cites the language's specification or reference lexer, as the [research rules](../../CLAUDE.md#research-and-experiments) require.
 - [ ] Probe files with hand-derived counts cover each construct and pass the language's compiler or syntax checker where one is available; they become tests in the fork.
 - [ ] Public repositories for each language, at recorded commits, are measured against tree-sitter, and every remaining disagreement is explained.
-- [ ] Speed on the spike's benchmark set shows no material regression; a correction that needs some slowdown is not held back by it.
+- [ ] Parsing stays within 10% of upstream Tokei 15.0.0's time on every [benchmark repository](../research/tokei-fork-step-6.md#speed), by the fork's speed gate, `judges/speed/check.py`, before the release is adopted; a correction that needs more must first win back the time elsewhere. Decided 2026-10-30 by the owner.
 - [ ] The fork's README lists its changes from upstream, each with its commit and upstream pull request.
 - [ ] [Tokei counting defects](../tokei-defects.md) moves the fixed entries to the corrected section, with the fork and Locmetry commits; [measurement semantics](../measurement.md#counting) states the new counting rules.
 
