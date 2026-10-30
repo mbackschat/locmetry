@@ -19,7 +19,7 @@ locmetry --root immich --config builtin-only.toml --format table --verbose --no-
 ```
 
 ```output
- Not source code: 296 data files (245,954 lines), 210 documentation files (12,521 lines, including 793 code lines in
+ Not source code: 296 data files (245,954 lines), 210 documentation files (12,477 lines, including 749 code lines in
 embedded snippets). '--files --output -' lists each file's kind.
  Production from build modules: 127,140 code lines in 9 'npm' modules, 59,170 code lines in 2 'dart' modules, 4,102 code
 lines in 1 'gradle' module, 3,037 code lines in 1 'python' module.
