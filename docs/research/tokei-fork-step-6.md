@@ -2,7 +2,7 @@
 
 Measured from 2026-10-29 on macOS arm64, for [step 6](../plans/tokei-fork.md#step-6-no-difference-from-each-languages-judge): every file of every corpus must count as the language's own lexer or parser counts it. A line is a comment when it holds nothing but comments; a blank line takes the class of the comment or literal it lies in; every other line is code. A file the judge itself rejects as lexically invalid has no correct count, so it is listed rather than matched.
 
-The judges and the comparison tool live in the fork's [judges](https://github.com/mbackschat/tokei/tree/locmetry/judges) folder from `a2a9724`. Each judge reports the comment and literal ranges its lexer found, and `judgecmp` compares the lines they imply with the fork's `line_classes` (fork `238b0c5`), line by line. The fork's results below are those of `15.0.0+locmetry.13`, fork `a55e730`, and for Python of `15.0.0+locmetry.14`, fork `701fdaa`.
+The judges and the comparison tool live in the fork's [judges](https://github.com/mbackschat/tokei/tree/locmetry/judges) folder from `a2a9724`. Each judge reports the comment and literal ranges its lexer found, and `judgecmp` compares the lines they imply with the fork's `line_classes` (fork `238b0c5`), line by line. The fork's results below are those of `15.0.0+locmetry.13`, fork `a55e730`, for Python of `15.0.0+locmetry.14`, fork `701fdaa`, and for C, C++, Objective-C, Go, C# and Ruby of `15.0.0+locmetry.15`, fork `40ed432`. A line of whitespace takes the class of the comment or literal its own bytes lie in, as judgecmp reads it from fork `02345d9`; every earlier result was rechecked under that rule.
 
 ## Lean
 
@@ -86,3 +86,67 @@ Judge: CPython 3.14.10's `tokenize`, which reads f-strings and t-strings as PEP 
 | [numpy/numpy](https://github.com/numpy/numpy) | `39f66c0` | 496 |
 
 Every file is valid and matches on every line. Before the fork's correction, one file differed on one line: in cpython's `Lib/test/test_fstring.py`, a line holding only a comment inside a multi-line replacement field counted as code. The correction declares Python's f-string and t-string prefixes, each with its replacement fields, which made Django's parse 24% slower until the fork tried prefixed openers only where their first two bytes can start one (fork `05c5eff`); Django then parsed 7% slower than with `15.0.0+locmetry.13`, and Tokio and Prettier no slower, as the minimum of interleaved runs on a loaded machine.
+
+## C, C++, Objective-C and Objective-C++
+
+Judge: clang's raw lexer, `clang -cc1 -dump-raw-tokens` from Apple clang 21.0.0, which lexes without preprocessing, as the counts read the text that was written. Headers (`.h`) are lexed as C++. A line splice, a backslash before a newline, belongs to no token, since translation phase 2 deletes it before lexing (C23 §5.1.1.2).
+
+| Repository | Commit | Files |
+| --- | --- | ---: |
+| [godotengine/godot](https://github.com/godotengine/godot) | `5e5b0a3` | 8,444 |
+| [php/php-src](https://github.com/php/php-src) | `b3c2d717` | 2,314 |
+| [protocolbuffers/protobuf](https://github.com/protocolbuffers/protobuf) | `6ce965a` | 1,437 |
+| [curl/curl](https://github.com/curl/curl) | `87c4c6d` | 1,062 |
+| [git/git](https://github.com/git/git) | `b9e5cff` | 986 |
+| [abseil/abseil-cpp](https://github.com/abseil/abseil-cpp) | `8e4c6fc` | 879 |
+| [redis/redis](https://github.com/redis/redis) | `4188839` | 854 |
+| [TextureGroup/Texture](https://github.com/TextureGroup/Texture) | `d8aa8c7` | 848 |
+| [nlohmann/json](https://github.com/nlohmann/json) | `2aecd86` | 619 |
+| [catchorg/Catch2](https://github.com/catchorg/Catch2) | `76dd8f5` | 418 |
+| [nginx/nginx](https://github.com/nginx/nginx) | `67290bf` | 411 |
+| [CocoaLumberjack/CocoaLumberjack](https://github.com/CocoaLumberjack/CocoaLumberjack) | `2106aaf` | 225 |
+| [SDWebImage/SDWebImage](https://github.com/SDWebImage/SDWebImage) | `c3ad5e1` | 200 |
+| [google/leveldb](https://github.com/google/leveldb) | `bb74ef7` | 133 |
+| [AFNetworking/AFNetworking](https://github.com/AFNetworking/AFNetworking) | `d9f589c` | 80 |
+| [fmtlib/fmt](https://github.com/fmtlib/fmt) | `f87a75e` | 74 |
+
+Every file is valid and matches on every line. Before the fork's correction, 265 files differed on 2,218 lines, each at a line splice: a line holding comments and a splice, or only a splice, inside a macro. The repositories hold no Objective-C character literal holding a quote and no Objective-C++ raw string; fixtures checked by the same judge cover them.
+
+## Go
+
+Judge: the standard library's `go/scanner` from Go 1.25.14.
+
+| Repository | Commit | Go files | Lexically invalid |
+| --- | --- | ---: | ---: |
+| [kubernetes/kubernetes](https://github.com/kubernetes/kubernetes) | `a972b672` | 18,096 | 0 |
+| [golang/go](https://github.com/golang/go) | `9586e4b6` | 11,867 | 15 |
+| [gohugoio/hugo](https://github.com/gohugoio/hugo) | `a1668da` | 912 | 0 |
+| [prometheus/prometheus](https://github.com/prometheus/prometheus) | `a87694b` | 755 | 0 |
+
+Every valid file matched on every line before any Go correction. The invalid files are the compiler's test data.
+
+## C#
+
+Judge: Roslyn's parser, `Microsoft.CodeAnalysis.CSharp` 5.9.0. Roslyn reads text in an inactive `#if` region as disabled text without comments or literals, so the judge parses each run of it on its own, as its author wrote it.
+
+| Repository | Commit | C# files | Lexically invalid |
+| --- | --- | ---: | ---: |
+| [dotnet/roslyn](https://github.com/dotnet/roslyn) | `dcfa99c3` | 18,289 | 68 |
+| [dotnet/aspnetcore](https://github.com/dotnet/aspnetcore) | `69e6bd52` | 10,729 | 16 |
+| [JamesNK/Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json) | `52fa3ae` | 951 | 0 |
+| [AutoMapper/AutoMapper](https://github.com/AutoMapper/AutoMapper) | `df65f2e` | 517 | 0 |
+
+Every valid file matches on every line. Before the fork's correction, 2 files differed on 269 lines, each after a `{{{` inside a `$$"""…"""` string, whose innermost braces open the hole.
+
+## Ruby
+
+Judge: Prism, `Prism.lex` from Ruby 3.4.12, Ruby's default parser since 3.4.
+
+| Repository | Commit | Ruby files |
+| --- | --- | ---: |
+| [discourse/discourse](https://github.com/discourse/discourse) | `3c9c7ba6` | 13,022 |
+| [rails/rails](https://github.com/rails/rails) | `8ebac2f` | 3,481 |
+| [Homebrew/brew](https://github.com/Homebrew/brew) | `9226bdf` | 2,419 |
+| [rubocop/rubocop](https://github.com/rubocop/rubocop) | `bde5d42` | 1,791 |
+
+Every file is valid and matches on every line. Before the fork's corrections, 17 files differed on 143 lines: regular expressions spanning lines, `%{…}` and `/…/` arguments after a method name, `<< /…/`, and `?/` character literals. Telling a local variable from a method name before ` /` or ` %{` takes a parser; the fork reads a method name, and no measured file holds the other case.
