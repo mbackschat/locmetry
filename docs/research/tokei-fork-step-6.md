@@ -2,7 +2,7 @@
 
 Measured from 2026-10-29 on macOS arm64, for [step 6](../plans/tokei-fork.md#step-6-no-difference-from-each-languages-judge): every file of every corpus must count as the language's own lexer or parser counts it. A line is a comment when it holds nothing but comments; a blank line takes the class of the comment or literal it lies in; every other line is code. A file the judge itself rejects as lexically invalid has no correct count, so it is listed rather than matched.
 
-The judges and the comparison tool live in the fork's [judges](https://github.com/mbackschat/tokei/tree/locmetry/judges) folder from `a2a9724`. Each judge reports the comment and literal ranges its lexer found, and `judgecmp` compares the lines they imply with the fork's `line_classes` (fork `238b0c5`), line by line. The fork's results below are those of `15.0.0+locmetry.13`, fork `a55e730`, for Python of `15.0.0+locmetry.14`, fork `701fdaa`, and for C, C++, Objective-C, Go, C# and Ruby of `15.0.0+locmetry.15`, fork `40ed432`. A line of whitespace takes the class of the comment or literal its own bytes lie in, as judgecmp reads it from fork `02345d9`; every earlier result was rechecked under that rule.
+The judges and the comparison tool live in the fork's [judges](https://github.com/mbackschat/tokei/tree/locmetry/judges) folder from `a2a9724`. Each judge reports the comment and literal ranges its lexer found, and `judgecmp` compares the lines they imply with the fork's `line_classes` (fork `238b0c5`), line by line. The fork's results below are those of `15.0.0+locmetry.13`, fork `a55e730`, for Python of `15.0.0+locmetry.14`, fork `701fdaa`, for C, C++, Objective-C, Go, C# and Ruby of `15.0.0+locmetry.15`, fork `40ed432`, and for PHP, Swift, Dart and Scala of `15.0.0+locmetry.16`, fork `eb463fb`. A line of whitespace takes the class of the comment or literal its own bytes lie in, as judgecmp reads it from fork `02345d9`; every earlier result was rechecked under that rule.
 
 ## Lean
 
@@ -150,3 +150,71 @@ Judge: Prism, `Prism.lex` from Ruby 3.4.12, Ruby's default parser since 3.4.
 | [rubocop/rubocop](https://github.com/rubocop/rubocop) | `bde5d42` | 1,791 |
 
 Every file is valid and matches on every line. Before the fork's corrections, 17 files differed on 143 lines: regular expressions spanning lines, `%{…}` and `/…/` arguments after a method name, `<< /…/`, and `?/` character literals. Telling a local variable from a method name before ` /` or ` %{` takes a parser; the fork reads a method name, and no measured file holds the other case.
+
+## PHP
+
+Judge: PHP's `token_get_all` with `TOKEN_PARSE` from PHP 8.4.27, whose default enables short `<?` tags. Text outside the PHP tags is inline HTML, in no comment or literal, so it counts as code. Blade templates (`.blade.php`) are not PHP and were left out.
+
+| Repository | Commit | PHP files | Lexically invalid |
+| --- | --- | ---: | ---: |
+| [symfony/symfony](https://github.com/symfony/symfony) | `92216211` | 12,949 | 1 |
+| [nextcloud/server](https://github.com/nextcloud/server) | `c7e435c` | 5,928 | 0 |
+| [laravel/framework](https://github.com/laravel/framework) | `5a787ee` | 3,043 | 1 |
+| [WordPress/WordPress](https://github.com/WordPress/WordPress) | `702368b` | 2,083 | 0 |
+
+Every valid file matches on every line. Before the fork's correction, 44 files differed on 228 lines: apostrophes and `#` in inline HTML opened strings and comments, and a `?>` inside a `//` comment did not end PHP. Inline `<script>` and `<style>` text in PHP output stays code, as PHP reads it.
+
+## Swift
+
+Judge: swift-syntax, the parser of the Swift compiler, as the Xcode toolchain of Apple Swift 6.4 ships it for macros. The compiler corpus is a sparse checkout of `stdlib`, `test/StringProcessing`, `test/Parse`, `test/Interpreter`, `test/stdlib`, `test/IDE`, `test/Macros` and `validation-test/stdlib`.
+
+| Repository | Commit | Swift files | Lexically invalid |
+| --- | --- | ---: | ---: |
+| [swiftlang/swift](https://github.com/swiftlang/swift) | `6d943a0687` | 2,959 | 300 |
+| [kickstarter/ios-oss](https://github.com/kickstarter/ios-oss) | `0c22209f2c` | 2,085 | 0 |
+| [swiftlang/swift-package-manager](https://github.com/swiftlang/swift-package-manager) | `1df2f93f7e` | 1,889 | 0 |
+| [pointfreeco/swift-composable-architecture](https://github.com/pointfreeco/swift-composable-architecture) | `bb175b544d` | 798 | 2 |
+| [realm/SwiftLint](https://github.com/realm/SwiftLint) | `ec4691d9e8` | 778 | 0 |
+| [swiftlang/swift-syntax](https://github.com/swiftlang/swift-syntax) | `237beba662` | 768 | 0 |
+| [apple/swift-collections](https://github.com/apple/swift-collections) | `f96b909e1a` | 739 | 0 |
+| [ReactiveX/RxSwift](https://github.com/ReactiveX/RxSwift) | `3e33f90c1b` | 588 | 0 |
+| [apple/swift-nio](https://github.com/apple/swift-nio) | `108daca35d` | 556 | 0 |
+| [swiftlang/swift-foundation](https://github.com/swiftlang/swift-foundation) | `8177931533` | 523 | 0 |
+| [vapor/vapor](https://github.com/vapor/vapor) | `0f2a8ee9f3` | 278 | 0 |
+| [swiftlang/swift-format](https://github.com/swiftlang/swift-format) | `77e88e4a03` | 264 | 0 |
+| [Alamofire/Alamofire](https://github.com/Alamofire/Alamofire) | `bda9ed57d7` | 101 | 0 |
+
+Every valid file matched on every line before any Swift correction. The invalid files are the parser's error tests and documentation snippets.
+
+## Dart
+
+Judge: the scanner of the Dart SDK's front end, `_fe_analyzer_shared` 111.0.0, run with Dart 3.13.7. An unterminated string or comment makes a file invalid. The SDK corpus is a sparse checkout of `pkg/analyzer/lib`, `pkg/front_end/lib`, `pkg/_fe_analyzer_shared/lib`, `sdk/lib` and `tests/language`, and Flutter's of `packages` and `dev`.
+
+| Repository | Commit | Dart files | Lexically invalid |
+| --- | --- | ---: | ---: |
+| [dart-lang/sdk](https://github.com/dart-lang/sdk) | `113b1b454f` | 5,951 | 16 |
+| [flutter/flutter](https://github.com/flutter/flutter) | `d555faf800` | 5,718 | 0 |
+| [flutter/packages](https://github.com/flutter/packages) | `3258d45ac0` | 4,113 | 0 |
+| [rrousselGit/riverpod](https://github.com/rrousselGit/riverpod) | `33af1e8122` | 1,311 | 0 |
+| [felangel/bloc](https://github.com/felangel/bloc) | `b9be1e252e` | 616 | 0 |
+| [dart-lang/http](https://github.com/dart-lang/http) | `c76dfb3a2a` | 340 | 0 |
+
+Every valid file matches on every line. Before the fork's correction, 2 files differed on 9 lines, each inside a nested block comment. The invalid files are the language tests of lexical errors.
+
+## Scala
+
+Judge: the Scala 3.10.0 compiler's parser and scanner. The parser drives the scanner, since XML literals are read by the parser and are code; where the parser gives up, as on Scala 2's early definitions, the scanner reads on to the end of the file. Scala 2 code is read as Scala 3, whose lexical syntax differs from Scala 2's only in forms no measured file uses. The compiler corpora are sparse checkouts: Scala 3's `compiler`, `library`, `tests/pos` and `tests/run`, Scala 2's `src/library`, `src/compiler`, `test/files/pos` and `test/files/run`, and Spark's `core`, `sql/core/src/main`, `mllib/src/main` and `streaming`.
+
+| Repository | Commit | Scala files | Lexically invalid |
+| --- | --- | ---: | ---: |
+| [scala/scala3](https://github.com/scala/scala3) | `5edef6d5ac` | 7,965 | 0 |
+| [scala/scala](https://github.com/scala/scala) | `cee0672ed8` | 5,251 | 0 |
+| [apache/pekko](https://github.com/apache/pekko) | `8f3d71b90e` | 2,838 | 0 |
+| [apache/spark](https://github.com/apache/spark) | `a8e363406b` | 2,385 | 0 |
+| [sbt/sbt](https://github.com/sbt/sbt) | `4bcdaa9f79` | 2,255 | 1 |
+| [zio/zio](https://github.com/zio/zio) | `846696c625` | 976 | 0 |
+| [playframework/playframework](https://github.com/playframework/playframework) | `d6f230d447` | 856 | 0 |
+| [typelevel/cats](https://github.com/typelevel/cats) | `b6c4dbfbb3` | 835 | 0 |
+| [scalameta/scalameta](https://github.com/scalameta/scalameta) | `dae6167bd1` | 761 | 0 |
+
+Every valid file but one matches on every line. Before the fork's corrections, 144 files differed on 6,483 lines: nested block comments, triple-quoted strings ending in a run of more than three quotes, and interpolators other than `s`, `f` and `raw`, such as `em"…"`. The remaining file, Scala 3's `tests/run/dedented-string-literals.scala`, differs on 4 lines inside `'''` strings, which `import language.experimental.dedentedStringLiterals` enables; experimental features are not yet part of the language, so the fork does not read them.
