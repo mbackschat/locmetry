@@ -25,12 +25,12 @@ Keep [Cargo.lock](Cargo.lock) with the application. Tokei is embedded with its d
 
 ## Disk Hygiene
 
-Temporary files belong to the command that creates them. Use `TemporaryDirectory` in Python or `mktemp -d` with an exit trap in shell scripts; remove only that invocation's directory. Do not sweep `/tmp`, `$TMPDIR`, agent session folders or arbitrary `locmetry-*` paths. There are no session cleanup hooks or registration steps.
+Temporary files belong to the command that creates them. Use `TemporaryDirectory` in Python or `mktemp -d` with an exit trap in shell scripts; remove only that invocation's directory. Do not sweep `/tmp`, `$TMPDIR`, agent session folders or arbitrary `locmetry-*` paths. There are no session cleanup hooks or registration steps for temporary files.
 
 - [Recorded-guide verification](scripts/check-recorded-guides.py) discards its default temporary files when the run ends, including on failure. Diagnostics remain in the terminal. Use `--artifacts-dir PATH` to retain evidence deliberately; CI uses its own artifact retention.
 - [Demo recording](scripts/record-demo.sh) stages in `/tmp/locmetry-demo`, whose fixed name keeps the GIF stable; it refuses a leftover stage rather than delete it, and removes its own on exit. The example helpers and parity verifiers likewise own and clean their temporary directories.
 - Keep campaign evidence until it is archived. [Campaign preparation](scripts/agent-explorability.py) owns subject-home retirement, including credential refresh handling. After moving a campaign into the archive, `python3 scripts/compact-campaign.py CAMPAIGN` replaces its binaries with hashes and compresses its logs.
-- Build into the repository's `target/` for normal development. Cargo owns this reusable cache; it is not automatically pruned by project scripts. For disposable revision builds, scope their temporary build directories to the invoking command and keep campaign evidence outside that scope.
+- Build into the repository's `target/` for normal development. Cargo never removes units it no longer uses, so every Tokei pin move leaves a full build behind. [Target pruning](scripts/prune-target.py) removes the least recently written units once `target/` passes 10 GiB, down to 6 GiB, skipping a profile a running Cargo holds; the checked-in [Claude Code hook](.claude/settings.json) runs it after every Bash command that invokes Cargo, and `python3 scripts/prune-target.py` runs it by hand. For disposable revision builds, scope their temporary build directories to the invoking command and keep campaign evidence outside that scope.
 
 Exit cleanup cannot run after a forced kill or power loss. Existing temporary trees are not deleted by these writers.
 

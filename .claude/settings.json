@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/scripts/prune-target.py\" --hook",
+            "timeout": 120,
+            "statusMessage": "Pruning old build units"
+          }
+        ]
+      }
+    ]
+  }
+}

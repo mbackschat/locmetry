@@ -33,6 +33,7 @@ jobs:
           python3 scripts/test_file_sizes.py
           python3 scripts/test_agent_regression_trend.py
           python3 scripts/test_compact_campaign.py
+          python3 scripts/test_prune_target.py
           python3 scripts/doc-indexes.py check
           python3 scripts/agent-regression-trend.py check
       - name: Gate source file sizes with Locmetry's own measurement
