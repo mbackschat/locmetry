@@ -2,7 +2,7 @@
 
 Measured from 2026-10-29 on macOS arm64, for [step 6](../plans/tokei-fork.md#step-6-no-difference-from-each-languages-judge): every file of every corpus must count as the language's own lexer or parser counts it. A line is a comment when it holds nothing but comments; a blank line takes the class of the comment or literal it lies in; every other line is code. A file the judge itself rejects as lexically invalid has no correct count, so it is listed rather than matched.
 
-The judges and the comparison tool live in the fork's [judges](https://github.com/mbackschat/tokei/tree/locmetry/judges) folder from `a2a9724`. Each judge reports the comment and literal ranges its lexer found, and `judgecmp` compares the lines they imply with the fork's `line_classes` (fork `238b0c5`), line by line. The fork's results below are those of `15.0.0+locmetry.13`, fork `a55e730`, for Python of `15.0.0+locmetry.14`, fork `701fdaa`, for C, C++, Objective-C, Go, C# and Ruby of `15.0.0+locmetry.15`, fork `40ed432`, for PHP, Swift, Dart and Scala of `15.0.0+locmetry.16`, fork `eb463fb`, and for R of `15.0.0+locmetry.17`, fork `984e57b`. A line of whitespace takes the class of the comment or literal its own bytes lie in, as judgecmp reads it from fork `02345d9`; every earlier result was rechecked under that rule.
+The judges and the comparison tool live in the fork's [judges](https://github.com/mbackschat/tokei/tree/locmetry/judges) folder from `a2a9724`. Each judge reports the comment and literal ranges its lexer found, and `judgecmp` compares the lines they imply with the fork's `line_classes` (fork `238b0c5`), line by line. The fork's results below are those of `15.0.0+locmetry.13`, fork `a55e730`, for Python of `15.0.0+locmetry.14`, fork `701fdaa`, for C, C++, Objective-C, Go, C# and Ruby of `15.0.0+locmetry.15`, fork `40ed432`, for PHP, Swift, Dart and Scala of `15.0.0+locmetry.16`, fork `eb463fb`, for R of `15.0.0+locmetry.17`, fork `984e57b`, and for Elixir and PowerShell of `15.0.0+locmetry.18`, fork `687cb25`. A line of whitespace takes the class of the comment or literal its own bytes lie in, as judgecmp reads it from fork `02345d9`; every earlier result was rechecked under that rule.
 
 ## Lean
 
@@ -237,24 +237,69 @@ Judge: R's own parser, through the parse data that `parse(keep.source = TRUE)` r
 
 Every valid file matches on every line. Before the fork's correction, 13 files differed on 53 lines: Tokei's R declared no strings, so a `#` inside one started a comment, and a `#line` directive, which R's parser reads as code, counted as a comment. The invalid files are R's and testthat's tests of syntax errors, Shiny's app templates with `{{` placeholders, and a dplyr script whose `[` call in a pipe R 4.6.1 rejects.
 
+## Elixir
+
+Judge: Elixir's own tokenizer, `:elixir_tokenizer`, the one `Code.string_to_quoted_with_comments/2` runs, with Elixir 1.20.4 on OTP 29. Its tokens record where they start, so a literal ends where the next token or comment starts, less the whitespace before it; character literals keep their own text. A file the tokenizer rejects is invalid.
+
+| Repository | Commit | Elixir files | Lexically invalid |
+| --- | --- | ---: | ---: |
+| [plausible/analytics](https://github.com/plausible/analytics) | `02cfac1517` | 1,315 | 0 |
+| [ash-project/ash](https://github.com/ash-project/ash) | `2d0f8f52a3` | 1,118 | 0 |
+| [elixir-lsp/elixir-ls](https://github.com/elixir-lsp/elixir-ls) | `328a1c08c4` | 1,014 | 2 |
+| [hexpm/hexpm](https://github.com/hexpm/hexpm) | `9d810e6f6b` | 1,011 | 0 |
+| [elixir-lang/elixir](https://github.com/elixir-lang/elixir) | `c17c7c66a7` | 568 | 0 |
+| [absinthe-graphql/absinthe](https://github.com/absinthe-graphql/absinthe) | `68486bc958` | 552 | 0 |
+| [rrrene/credo](https://github.com/rrrene/credo) | `b113eb2e5f` | 489 | 0 |
+| [livebook-dev/livebook](https://github.com/livebook-dev/livebook) | `ef1b666f92` | 443 | 0 |
+| [phoenixframework/phoenix_live_view](https://github.com/phoenixframework/phoenix_live_view) | `d700eec809` | 238 | 0 |
+| [phoenixframework/phoenix](https://github.com/phoenixframework/phoenix) | `c9065a8956` | 207 | 0 |
+| [elixir-nx/nx](https://github.com/elixir-nx/nx) | `ebe2b9fad5` | 176 | 0 |
+| [elixir-ecto/ecto](https://github.com/elixir-ecto/ecto) | `4a1bedf1d2` | 126 | 0 |
+| [sorentwo/oban](https://github.com/sorentwo/oban) | `c5aa59b352` | 124 | 0 |
+| [elixir-plug/plug](https://github.com/elixir-plug/plug) | `575a8454a2` | 78 | 0 |
+| [elixir-explorer/explorer](https://github.com/elixir-explorer/explorer) | `5e75adb6a7` | 50 | 0 |
+| [dashbitco/broadway](https://github.com/dashbitco/broadway) | `8debff6f4e` | 33 | 0 |
+
+Every valid file matches on every line. Before the fork's correction, 60 of the 3,001 files in the ten repositories measured first, all but Plausible, Ash, ElixirLS, Hexpm, Explorer and Broadway, differed on 3,322 lines: character literals such as `?"` opened strings, sigils such as `~S{…}` were code, and a heredoc inside a `#{…}` hole closed the heredoc around it. The invalid files are ElixirLS fixtures of lexical errors.
+
+## PowerShell
+
+Judge: PowerShell's own parser, `Parser.ParseFile`, with PowerShell 7.5.0. Comment tokens are comments and quoted strings and here-strings literals; bare words, which the parser also types as strings, are code, and the `$(…)` subexpressions and variables inside an expandable string are code. Only errors that leave a string or comment open make a file invalid. Its offsets count UTF-16 code units.
+
+| Repository | Commit | PowerShell files | Lexically invalid |
+| --- | --- | ---: | ---: |
+| [dataplat/dbatools](https://github.com/dataplat/dbatools) | `ae7f09539a` | 1,795 | 0 |
+| [PowerShell/PowerShell](https://github.com/PowerShell/PowerShell) | `2725d6aaa6` | 555 | 0 |
+| [chocolatey/choco](https://github.com/chocolatey/choco) | `43c0b3ae12` | 355 | 0 |
+| [pester/Pester](https://github.com/pester/Pester) | `98e56d65da` | 272 | 0 |
+| [PowerShell/PSScriptAnalyzer](https://github.com/PowerShell/PSScriptAnalyzer) | `0151b9dafd` | 271 | 0 |
+| [ScoopInstaller/Scoop](https://github.com/ScoopInstaller/Scoop) | `e6aa3b366b` | 82 | 0 |
+| [microsoft/PowerShellForGitHub](https://github.com/microsoft/PowerShellForGitHub) | `fd4fa65f23` | 69 | 0 |
+| [PowerShell/platyPS](https://github.com/PowerShell/platyPS) | `66dbe279b6` | 33 | 0 |
+| [PowerShell/PSReadLine](https://github.com/PowerShell/PSReadLine) | `a2d143f789` | 10 | 0 |
+
+The files are the `.ps1`, `.psm1` and `.psd1` files; Tokei also maps `.ps1xml` and `.cdxml`, which are XML. Every valid file matches on every line, except 17 PSScriptAnalyzer test files in UTF-16 or other encodings, which judgecmp does not read. Before the fork's correction, 233 files differed on 10,411 lines, nearly all because `"@(…)"` opened the backwards-declared here-string; the last difference was a string that a `“` closes.
+
 ## Speed
 
-The owner decided on 2026-10-30 that the fork must parse within 10% of upstream Tokei 15.0.0's time on every repository below; the fork's [speed gate](https://github.com/mbackschat/tokei/tree/locmetry/judges#speed), `judges/speed/check.py`, measures it before each release is adopted. It parses every file Tokei recognizes from memory, three times, and compares the minimum user CPU time of 15 interleaved runs. Django, Tokio and Prettier are whole checkouts; the other trees hold the files of their judged languages.
+The owner decided on 2026-10-30 that the fork must parse within 10% of upstream Tokei 15.0.0's time on every repository below; the fork's [speed gate](https://github.com/mbackschat/tokei/tree/locmetry/judges#speed), `judges/speed/check.py`, measures it before each release is adopted. It parses every file Tokei recognizes from memory, three times, and compares the minimum user CPU time of 15 interleaved runs. Django, Tokio, Prettier, Phoenix and Pester are whole checkouts; the other trees hold the files of their judged languages.
 
-| Repository | Commit | Language | Upstream | Fork `984e57b` | Ratio |
+| Repository | Commit | Language | Upstream | Fork `687cb25` | Ratio |
 | --- | --- | --- | ---: | ---: | ---: |
-| [symfony/symfony](https://github.com/symfony/symfony) | `92216211` | PHP | 4.744 s | 2.014 s | 0.42 |
-| [tokio-rs/tokio](https://github.com/tokio-rs/tokio) | `6470b5e4` | Rust | 0.087 s | 0.054 s | 0.62 |
-| [django/django](https://github.com/django/django) | `817df1c4` | Python | 1.314 s | 0.894 s | 0.68 |
-| [felangel/bloc](https://github.com/felangel/bloc) | `b9be1e25` | Dart | 0.205 s | 0.142 s | 0.69 |
-| [prettier/prettier](https://github.com/prettier/prettier) | `c7a823c4` | JavaScript, TypeScript | 0.325 s | 0.241 s | 0.74 |
-| [gohugoio/hugo](https://github.com/gohugoio/hugo) | `a1668da3` | Go | 0.136 s | 0.103 s | 0.76 |
-| [AutoMapper/AutoMapper](https://github.com/AutoMapper/AutoMapper) | `df65f2e3` | C# | 0.027 s | 0.021 s | 0.77 |
-| [spring-projects/spring-framework](https://github.com/spring-projects/spring-framework) | `64861cb3` | Java, Kotlin | 1.285 s | 1.046 s | 0.81 |
-| [rubocop/rubocop](https://github.com/rubocop/rubocop) | `bde5d420` | Ruby | 0.292 s | 0.239 s | 0.82 |
-| [tidyverse/ggplot2](https://github.com/tidyverse/ggplot2) | `b638d654` | R | 0.162 s | 0.139 s | 0.86 |
-| [curl/curl](https://github.com/curl/curl) | `87c4c6d6` | C | 0.269 s | 0.231 s | 0.86 |
-| [typelevel/cats](https://github.com/typelevel/cats) | `b6c4dbfb` | Scala | 0.097 s | 0.087 s | 0.90 |
-| [apple/swift-nio](https://github.com/apple/swift-nio) | `108daca3` | Swift | 0.125 s | 0.117 s | 0.94 |
+| [symfony/symfony](https://github.com/symfony/symfony) | `92216211` | PHP | 4.216 s | 1.887 s | 0.45 |
+| [tokio-rs/tokio](https://github.com/tokio-rs/tokio) | `6470b5e4` | Rust | 0.185 s | 0.094 s | 0.51 |
+| [pester/Pester](https://github.com/pester/Pester) | `98e56d65` | PowerShell | 0.122 s | 0.073 s | 0.60 |
+| [phoenixframework/phoenix](https://github.com/phoenixframework/phoenix) | `c9065a89` | Elixir | 0.104 s | 0.071 s | 0.68 |
+| [django/django](https://github.com/django/django) | `817df1c4` | Python | 1.332 s | 0.978 s | 0.73 |
+| [felangel/bloc](https://github.com/felangel/bloc) | `b9be1e25` | Dart | 0.194 s | 0.144 s | 0.75 |
+| [prettier/prettier](https://github.com/prettier/prettier) | `c7a823c4` | JavaScript, TypeScript | 0.388 s | 0.303 s | 0.78 |
+| [rubocop/rubocop](https://github.com/rubocop/rubocop) | `bde5d420` | Ruby | 0.365 s | 0.295 s | 0.81 |
+| [gohugoio/hugo](https://github.com/gohugoio/hugo) | `a1668da3` | Go | 0.182 s | 0.148 s | 0.81 |
+| [spring-projects/spring-framework](https://github.com/spring-projects/spring-framework) | `64861cb3` | Java, Kotlin | 1.105 s | 0.906 s | 0.82 |
+| [tidyverse/ggplot2](https://github.com/tidyverse/ggplot2) | `b638d654` | R | 0.161 s | 0.137 s | 0.85 |
+| [AutoMapper/AutoMapper](https://github.com/AutoMapper/AutoMapper) | `df65f2e3` | C# | 0.040 s | 0.035 s | 0.88 |
+| [curl/curl](https://github.com/curl/curl) | `87c4c6d6` | C | 0.257 s | 0.228 s | 0.89 |
+| [apple/swift-nio](https://github.com/apple/swift-nio) | `108daca3` | Swift | 0.130 s | 0.124 s | 0.95 |
+| [typelevel/cats](https://github.com/typelevel/cats) | `b6c4dbfb` | Scala | 0.091 s | 0.088 s | 0.96 |
 
-Measured on 2026-10-30 on a loaded machine, where the minimum of interleaved runs varied by about 3% between repetitions. An earlier measurement, of fork `55b0c87`, found ratios from 0.53 to 0.92.
+Measured on 2026-10-30 on a loaded machine, where the minimum of interleaved runs varied by about 3% between repetitions. Earlier measurements found ratios from 0.53 to 0.92 for fork `55b0c87` and from 0.42 to 0.94 for fork `984e57b`.
