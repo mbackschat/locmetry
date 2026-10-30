@@ -2,7 +2,7 @@
 
 Measured from 2026-10-29 on macOS arm64, for [step 6](../plans/tokei-fork.md#step-6-no-difference-from-each-languages-judge): every file of every corpus must count as the language's own lexer or parser counts it. A line is a comment when it holds nothing but comments; a blank line takes the class of the comment or literal it lies in; every other line is code. A file the judge itself rejects as lexically invalid has no correct count, so it is listed rather than matched.
 
-The judges and the comparison tool live in the fork's [judges](https://github.com/mbackschat/tokei/tree/locmetry/judges) folder from `a2a9724`. Each judge reports the comment and literal ranges its lexer found, and `judgecmp` compares the lines they imply with the fork's `line_classes` (fork `238b0c5`), line by line. The fork's results below are those of `15.0.0+locmetry.13`, fork `a55e730`, for Python of `15.0.0+locmetry.14`, fork `701fdaa`, for C, C++, Objective-C, Go, C# and Ruby of `15.0.0+locmetry.15`, fork `40ed432`, for PHP, Swift, Dart and Scala of `15.0.0+locmetry.16`, fork `eb463fb`, for R of `15.0.0+locmetry.17`, fork `984e57b`, for Elixir and PowerShell of `15.0.0+locmetry.18`, fork `687cb25`, for Haskell of `15.0.0+locmetry.19`, fork `ffb6076`, for XML, SVG, CSS, SCSS, HTML and Vue of `15.0.0+locmetry.20`, fork `397da12`, for Svelte of `15.0.0+locmetry.21`, fork `9c85621`, for Lua and SQL of `15.0.0+locmetry.22`, fork `a6c2728`, for YAML of `15.0.0+locmetry.23`, fork `1806dc8`, and for Markdown of `15.0.0+locmetry.24`, fork `99502cb`. A line of whitespace takes the class of the comment or literal its own bytes lie in, as judgecmp reads it from fork `02345d9`; every earlier result was rechecked under that rule.
+The judges and the comparison tool live in the fork's [judges](https://github.com/mbackschat/tokei/tree/locmetry/judges) folder from `a2a9724`. Each judge reports the comment and literal ranges its lexer found, and `judgecmp` compares the lines they imply with the fork's `line_classes` (fork `238b0c5`), line by line. The fork's results below are those of `15.0.0+locmetry.13`, fork `a55e730`, for Python of `15.0.0+locmetry.14`, fork `701fdaa`, for C, C++, Objective-C, Go, C# and Ruby of `15.0.0+locmetry.15`, fork `40ed432`, for PHP, Swift, Dart and Scala of `15.0.0+locmetry.16`, fork `eb463fb`, for R of `15.0.0+locmetry.17`, fork `984e57b`, for Elixir and PowerShell of `15.0.0+locmetry.18`, fork `687cb25`, for Haskell of `15.0.0+locmetry.19`, fork `ffb6076`, for XML, SVG, CSS, SCSS, HTML and Vue of `15.0.0+locmetry.20`, fork `397da12`, for Svelte of `15.0.0+locmetry.21`, fork `9c85621`, for Lua and SQL of `15.0.0+locmetry.22`, fork `a6c2728`, for YAML of `15.0.0+locmetry.23`, fork `1806dc8`, and for Markdown of `15.0.0+locmetry.24`, fork `99502cb`. A line of whitespace takes the class of the comment or literal its own bytes lie in, as judgecmp reads it from fork `02345d9`; every earlier result was rechecked under that rule. File counts count each file of a repository at one commit once, however many checkouts of that commit the corpora hold; on 2026-10-30 that recount corrected the TOML, Dockerfile, Makefile and INI tables.
 
 ## Lean
 
@@ -560,7 +560,7 @@ Judge: the lexer of `toml_parser` 1.1.5, under the `toml` crate 0.9.12 that Carg
 | [toml-lang/toml-test](https://github.com/toml-lang/toml-test) | `96fd088448` | 776 | 499 |
 | [helix-editor/helix](https://github.com/helix-editor/helix) | `ba40e54742` | 242 | 0 |
 | [astral-sh/ruff](https://github.com/astral-sh/ruff) | `16cffe4a80` | 150 | 0 |
-| 33 other checkouts of the corpora above | | 134 | 0 |
+| 42 other checkouts of the corpora above | | 128 | 0 |
 
 Every valid file matches on every line. The 499 invalid files are toml-test's invalid cases, which exist to be rejected. Fork `2b00d58` differed on 1 file, on 5 lines: a backslash in a `'…'` or `'''…'''` literal string, which has no escapes, hid its closing quote. Fork `485bcb3` declares literal strings as verbatim and lets one or two quotes before a multi-line string's closing delimiter belong to the string ([TOML 1.0, String](https://toml.io/en/v1.0.0#string)).
 
@@ -579,7 +579,7 @@ Judge: BuildKit's Dockerfile parser, `github.com/moby/buildkit/frontend/dockerfi
 | [docker-library/postgres](https://github.com/docker-library/postgres) | `dfc76bb299` | 24 | 0 |
 | [docker-library/golang](https://github.com/docker-library/golang) | `4b919ec6b2` | 20 | 0 |
 | [nodejs/docker-node](https://github.com/nodejs/docker-node) | `14b1d124e2` | 18 | 0 |
-| 21 other checkouts of the corpora above | | 100 | 0 |
+| 45 other checkouts of the corpora above | | 93 | 0 |
 
 Every valid file matches on every line. The four invalid files are BuildKit's negative parser tests. Fork `2b00d58` differed on 19 files, on 54 lines: a `#` anywhere started a comment, and quotes, which belong to the shell in `RUN` and to JSON in exec form, opened strings across lines, as the apostrophe in `echo it's` did. Fork `5ab59ff` reads `#` comments only at the start of a line, declares no strings, and reads `<<WORD` heredocs.
 
@@ -594,9 +594,9 @@ GNU make has no tokenizer to call. Judge: a port of GNU make 4.4.1's reading rul
 | [postgres/postgres](https://github.com/postgres/postgres) | `328a9a1731` | 197 | 0 |
 | [kubernetes/kubernetes](https://github.com/kubernetes/kubernetes) | `f2a57ac2b9` | 48 | 0 |
 | [git/git](https://github.com/git/git) | `b9e5cff180` | 21 | 0 |
-| 27 other checkouts of the corpora above | | 170 | 3 |
+| 46 other checkouts of the corpora above | | 142 | 3 |
 
-Every valid file matches on every line. The three invalid files are perl5's nmake `win32/Makefile` and two files that make rejects: Dancer2's, which indents recipes with spaces, and a prose file in ack3's test tree. Fork `2b00d58` differed on 13 files, on 45 lines: recipe lines such as `@# …`, most of them, were code, and a comment ending in a backslash did not continue on the next line, as in VS Code's makefile grammar fixture. Fork `9f25025` continues makefile comments over odd runs of backslashes, but not in a recipe or `define` body, whose comments the shell may read; reads `\#` as text and a `#` inside a reference as part of it; and counts `@#`, `-#` and `+#` lines as comments ([GNU make manual, 3.1 What Makefiles Contain](https://www.gnu.org/software/make/manual/html_node/Makefile-Contents.html), [5.1.1 Splitting Recipe Lines](https://www.gnu.org/software/make/manual/html_node/Splitting-Recipe-Lines.html)). Since that fork, an escaped line comment marker outside literals is text in every language, and, since fork `a022f12`, a comment after any run of make's `@`, `-` and `+` recipe flags with blanks among them, such as `@-#` or `+ #`, counts as one, as `start_job_command` in GNU make 4.4.1's `src/job.c` strips them all; a synthetic recipe found that gap, and no judged corpus changed.
+Every valid file matches on every line. The three invalid files are perl5's nmake `win32/Makefile` and two files that make rejects: Dancer2's, which indents recipes with spaces, and a prose file in ack3's test tree. Fork `2b00d58` differed on 10 files, on 40 lines: recipe lines such as `@# …`, most of them, were code, and a comment ending in a backslash did not continue on the next line, as in VS Code's makefile grammar fixture. Fork `9f25025` continues makefile comments over odd runs of backslashes, but not in a recipe or `define` body, whose comments the shell may read; reads `\#` as text and a `#` inside a reference as part of it; and counts `@#`, `-#` and `+#` lines as comments ([GNU make manual, 3.1 What Makefiles Contain](https://www.gnu.org/software/make/manual/html_node/Makefile-Contents.html), [5.1.1 Splitting Recipe Lines](https://www.gnu.org/software/make/manual/html_node/Splitting-Recipe-Lines.html)). Since that fork, an escaped line comment marker outside literals is text in every language, and, since fork `a022f12`, a comment after any run of make's `@`, `-` and `+` recipe flags with blanks among them, such as `@-#` or `+ #`, counts as one, as `start_job_command` in GNU make 4.4.1's `src/job.c` strips them all; a synthetic recipe found that gap, and no judged corpus changed.
 
 ## Batch
 
@@ -619,7 +619,7 @@ Judge: Python's `configparser`, run with CPython 3.13, since INI has no standard
 
 | Repository | Commit | INI files | Lexically invalid |
 | --- | --- | ---: | ---: |
-| [ansible/ansible](https://github.com/ansible/ansible) | `efb06653bb` | 28 | 6 |
+| [ansible/ansible](https://github.com/ansible/ansible) | `efb06653bb` | 27 | 6 |
 | [miyagawa/cpanminus](https://github.com/miyagawa/cpanminus) | `c034dd1d38` | 5 | 2 |
 | 10 other checkouts of the corpora above | | 15 | 5 |
 
