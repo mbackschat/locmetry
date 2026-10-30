@@ -73,6 +73,7 @@ Candidates from the 2026-10-16 measurement review; the [retired follow-up record
 - An MCP interface, which would have to share policy and result semantics with the CLI. Reopen when a client cannot use the CLI, JSON and schemas adequately.
 - HTML, CSV, SQL and OpenMetrics output. Reopen with a named consumer whose needs existing output cannot meet.
 - Streaming and resource limits, which change ordering and detail and must never truncate scope silently. Reopen with a reproducible memory, latency or oversized-file problem on a representative corpus.
+- Comments after non-ASCII whitespace, such as an INI `;` after a no-break space or a Rust `//` after U+200E, count as code: the fork skips only ASCII blanks before a comment, and its blank symbols cannot all be skipped there, as C's `\` is no blank before `//`. No judged corpus holds one ([step 6 record](research/tokei-fork-step-6.md#ini)). Reopen when a measured file does.
 - Archive or remote input, custom lexers and more platforms. Reopen with a representative use case and a feasible test and release matrix.
 
 ## Command-Line Options
