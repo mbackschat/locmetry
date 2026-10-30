@@ -2,7 +2,7 @@
 
 Measured from 2026-10-29 on macOS arm64, for [step 6](../plans/tokei-fork.md#step-6-no-difference-from-each-languages-judge): every file of every corpus must count as the language's own lexer or parser counts it. A line is a comment when it holds nothing but comments; a blank line takes the class of the comment or literal it lies in; every other line is code. A file the judge itself rejects as lexically invalid has no correct count, so it is listed rather than matched.
 
-The judges and the comparison tool live in the fork's [judges](https://github.com/mbackschat/tokei/tree/locmetry/judges) folder from `a2a9724`. Each judge reports the comment and literal ranges its lexer found, and `judgecmp` compares the lines they imply with the fork's `line_classes` (fork `238b0c5`), line by line. The fork's results below are those of `15.0.0+locmetry.13`, fork `a55e730`, for Python of `15.0.0+locmetry.14`, fork `701fdaa`, for C, C++, Objective-C, Go, C# and Ruby of `15.0.0+locmetry.15`, fork `40ed432`, for PHP, Swift, Dart and Scala of `15.0.0+locmetry.16`, fork `eb463fb`, for R of `15.0.0+locmetry.17`, fork `984e57b`, for Elixir and PowerShell of `15.0.0+locmetry.18`, fork `687cb25`, and for Haskell of `15.0.0+locmetry.19`, fork `ffb6076`. A line of whitespace takes the class of the comment or literal its own bytes lie in, as judgecmp reads it from fork `02345d9`; every earlier result was rechecked under that rule.
+The judges and the comparison tool live in the fork's [judges](https://github.com/mbackschat/tokei/tree/locmetry/judges) folder from `a2a9724`. Each judge reports the comment and literal ranges its lexer found, and `judgecmp` compares the lines they imply with the fork's `line_classes` (fork `238b0c5`), line by line. The fork's results below are those of `15.0.0+locmetry.13`, fork `a55e730`, for Python of `15.0.0+locmetry.14`, fork `701fdaa`, for C, C++, Objective-C, Go, C# and Ruby of `15.0.0+locmetry.15`, fork `40ed432`, for PHP, Swift, Dart and Scala of `15.0.0+locmetry.16`, fork `eb463fb`, for R of `15.0.0+locmetry.17`, fork `984e57b`, for Elixir and PowerShell of `15.0.0+locmetry.18`, fork `687cb25`, for Haskell of `15.0.0+locmetry.19`, fork `ffb6076`, and for XML, SVG, CSS, SCSS, HTML and Vue of `15.0.0+locmetry.20`, fork `397da12`. A line of whitespace takes the class of the comment or literal its own bytes lie in, as judgecmp reads it from fork `02345d9`; every earlier result was rechecked under that rule.
 
 ## Lean
 
@@ -301,30 +301,130 @@ Judge: GHC's own lexer, `lexTokenStream` from the `ghc` library of GHC 9.14.1, w
 
 Every valid file matches on every line. Before the fork's correction, 386 files differed on 3,955 lines: pragmas that GHC reads as code counted as comments, a string gap's closing backslash escaped the quote after it, and quasi-quotes such as `[r|…|]` were read as code. The 94 invalid files all use CPP.
 
+## XML and SVG
+
+Judge: expat 2.2.8 through Python's `xml.parsers.expat`, which reports where each comment and start tag begins; quoted attribute values of an accepted tag are literals, comments, those of the internal DTD subset included, comments, and character data, CDATA sections included, code. External DTDs are not read. A file expat rejects as not well formed is invalid.
+
+| Repository | Commit | XML and SVG files | Lexically invalid |
+| --- | --- | ---: | ---: |
+| [FortAwesome/Font-Awesome](https://github.com/FortAwesome/Font-Awesome) | `14c65a3747` | 11,544 | 0 |
+| [mastodon/mastodon](https://github.com/mastodon/mastodon) | `b4076a6671` | 4,294 | 0 |
+| [apache/maven](https://github.com/apache/maven) | `b46f9353aa` | 3,272 | 5 |
+| [hibernate/hibernate-orm](https://github.com/hibernate/hibernate-orm) | `d6c1a87f14` | 1,122 | 4 |
+| [spring-projects/spring-framework](https://github.com/spring-projects/spring-framework) | `64861cb395` | 705 | 1 |
+| [apache/ant](https://github.com/apache/ant) | `dbb01a2d52` | 516 | 6 |
+| [mybatis/mybatis-3](https://github.com/mybatis/mybatis-3) | `bd5915a997` | 441 | 0 |
+| [apache/tomcat](https://github.com/apache/tomcat) | `8c164da347` | 236 | 2 |
+| [WordPress/WordPress](https://github.com/WordPress/WordPress) | `1e68f9f454` | 147 | 1 |
+| [android/nowinandroid](https://github.com/android/nowinandroid) | `2982e63cb6` | 69 | 1 |
+| [discourse/discourse](https://github.com/discourse/discourse) | `3b80490392` | 29 | 1 |
+| [primer/css](https://github.com/primer/css) | `c990fb1e44` | 7 | 0 |
+| [twbs/bootstrap](https://github.com/twbs/bootstrap) | `c967e2cbe9` | 3 | 0 |
+
+Every valid file matches on every line. Before the fork's correction, 19 files differed on 197 lines, all inside CDATA sections: `<!--` there opened a comment, and the section read as a tag, so an apostrophe in it opened a string. The invalid files are empty, deliberately malformed test fixtures, templates with placeholders, and one ISO-2022-JP file expat cannot decode.
+
+## CSS
+
+Judge: tinycss2 1.5.1, an implementation of CSS Syntax Level 3. Comments are comments, and strings and unquoted `url(…)` tokens literals; a bad string or URL, or a comment, string or URL that the end of the file cuts off, makes a file invalid.
+
+| Repository | Commit | CSS files | Lexically invalid |
+| --- | --- | ---: | ---: |
+| [WordPress/WordPress](https://github.com/WordPress/WordPress) | `1e68f9f454` | 1,073 | 0 |
+| [picocss/pico](https://github.com/picocss/pico) | `a07563ddc8` | 238 | 0 |
+| [animate-css/animate.css](https://github.com/animate-css/animate.css) | `3f8ab233db` | 106 | 0 |
+| [foundation/foundation-sites](https://github.com/foundation/foundation-sites) | `a15a9775e1` | 69 | 0 |
+| [jgthms/bulma](https://github.com/jgthms/bulma) | `c5cd04baf0` | 69 | 0 |
+| [FortAwesome/Font-Awesome](https://github.com/FortAwesome/Font-Awesome) | `14c65a3747` | 41 | 0 |
+| [twbs/bootstrap](https://github.com/twbs/bootstrap) | `c967e2cbe9` | 33 | 0 |
+| [spring-projects/spring-framework](https://github.com/spring-projects/spring-framework) | `64861cb395` | 23 | 2 |
+| [mastodon/mastodon](https://github.com/mastodon/mastodon) | `b4076a6671` | 11 | 0 |
+| [apache/tomcat](https://github.com/apache/tomcat) | `8c164da347` | 6 | 0 |
+| [mybatis/mybatis-3](https://github.com/mybatis/mybatis-3) | `bd5915a997` | 6 | 0 |
+| [discourse/discourse](https://github.com/discourse/discourse) | `3b80490392` | 6 | 0 |
+
+Every valid file matches on every line. Tokei declared `//` line comments for CSS, which has none; no file in the corpus starts a line with `//`, and the fork's correction is checked by a test. The invalid files are Spring's tests of an unclosed `url(`.
+
+## SCSS
+
+Judge: the tokenizer of postcss-scss 4.0.9, with which stylelint parses SCSS. `/* */` and `//` comments are comments and quoted strings literals; an unclosed string or comment makes a file invalid. The three `.sass` files of the indented syntax in Bulma are not judged.
+
+| Repository | Commit | SCSS files | Lexically invalid |
+| --- | --- | ---: | ---: |
+| [discourse/discourse](https://github.com/discourse/discourse) | `3b80490392` | 731 | 1 |
+| [jgthms/bulma](https://github.com/jgthms/bulma) | `c5cd04baf0` | 179 | 0 |
+| [WordPress/WordPress](https://github.com/WordPress/WordPress) | `1e68f9f454` | 157 | 0 |
+| [twbs/bootstrap](https://github.com/twbs/bootstrap) | `c967e2cbe9` | 138 | 0 |
+| [mastodon/mastodon](https://github.com/mastodon/mastodon) | `b4076a6671` | 131 | 0 |
+| [primer/css](https://github.com/primer/css) | `c990fb1e44` | 113 | 0 |
+| [picocss/pico](https://github.com/picocss/pico) | `a07563ddc8` | 54 | 0 |
+| [FortAwesome/Font-Awesome](https://github.com/FortAwesome/Font-Awesome) | `14c65a3747` | 40 | 0 |
+
+Every valid file matches on every line; the invalid file is Discourse's broken-SCSS fixture.
+
+## HTML
+
+Judge: parse5 7, the HTML Standard's tokenizer, through its SAX parser. Comments, bogus ones such as `<?xml …?>` included, are comments, quoted attribute values literals, and text code. Scripts of a JavaScript type are read by Babel and styles by PostCSS's tokenizer, keeping their offsets in the file; scripts of other types are data blocks, whose text is code. The fork classes the lines of a script or style element as its own language counts them from fork `3eda0aa`; until then, files holding one could not be compared.
+
+| Repository | Commit | HTML files | Lexically invalid |
+| --- | --- | ---: | ---: |
+| [GoogleChrome/samples](https://github.com/GoogleChrome/samples) | `8c3a755f75` | 882 | 2 |
+| [jgthms/bulma](https://github.com/jgthms/bulma) | `c5cd04baf0` | 356 | 0 |
+| [tastejs/todomvc](https://github.com/tastejs/todomvc) | `ff43b02e59` | 259 | 1 |
+| [apache/ant](https://github.com/apache/ant) | `dbb01a2d52` | 232 | 0 |
+| [mdn/dom-examples](https://github.com/mdn/dom-examples) | `03ae1ffb32` | 199 | 0 |
+| [discourse/discourse](https://github.com/discourse/discourse) | `3b80490392` | 199 | 0 |
+| [mdn/learning-area](https://github.com/mdn/learning-area) | `21973263ba` | 154 | 0 |
+| [foundation/foundation-sites](https://github.com/foundation/foundation-sites) | `a15a9775e1` | 116 | 0 |
+| [apache/tomcat](https://github.com/apache/tomcat) | `8c164da347` | 102 | 0 |
+| [WordPress/WordPress](https://github.com/WordPress/WordPress) | `1e68f9f454` | 78 | 0 |
+| [jquery/jquery](https://github.com/jquery/jquery) | `c2f27864e4` | 59 | 1 |
+| [twbs/bootstrap](https://github.com/twbs/bootstrap) | `c967e2cbe9` | 16 | 0 |
+| [mdn/webgl-examples](https://github.com/mdn/webgl-examples) | `17a7484b5b` | 9 | 0 |
+| [mastodon/mastodon](https://github.com/mastodon/mastodon) | `b4076a6671` | 9 | 0 |
+| [spring-projects/spring-framework](https://github.com/spring-projects/spring-framework) | `64861cb395` | 9 | 0 |
+| [h5bp/html5-boilerplate](https://github.com/h5bp/html5-boilerplate) | `b6597338e6` | 4 | 0 |
+
+Every valid file matches on every line. Before the fork's corrections, three files differed: an `<!-->` inside a conditional comment did not close it, because the engine skipped a comment opener inside a comment; a `<script type="text/ractive">` template was read as JavaScript; and an `<?xml …?>` declaration counted as code. The invalid files are Jekyll and Riot templates and a jQuery fixture whose scripts Babel rejects.
+
+## Vue
+
+Judge: Vue's own parser, `@vue/compiler-dom` 3 in its single-file-component mode. Comments at the top level and in the template are comments, attribute values, directives' included, literals, and template text and interpolations code. Script blocks are read by Babel, as TypeScript for `lang="ts"`, and style blocks by postcss-scss for `lang="scss"`, `"sass"` or `"less"` and by PostCSS otherwise.
+
+| Repository | Commit | Vue files | Lexically invalid |
+| --- | --- | ---: | ---: |
+| [element-plus/element-plus](https://github.com/element-plus/element-plus) | `a8d102a91b` | 1,022 | 0 |
+| [PanJiaChen/vue-element-admin](https://github.com/PanJiaChen/vue-element-admin) | `6858a9ad67` | 131 | 0 |
+| [vuejs/docs](https://github.com/vuejs/docs) | `40aa88af00` | 60 | 0 |
+
+Every valid file matches on every line. Once CSS lost its `//` comments, five files differed on 27 lines, because `<style lang="scss">` blocks were read as CSS; the fork now resolves a `lang` attribute by file extension too.
+
 ## Speed
 
-The owner decided on 2026-10-30 that the fork must parse within 10% of upstream Tokei 15.0.0's time on every repository below; the fork's [speed gate](https://github.com/mbackschat/tokei/tree/locmetry/judges#speed), `judges/speed/check.py`, measures it before each release is adopted. It parses every file Tokei recognizes from memory, three times, and compares the minimum user CPU time of 15 interleaved runs. Django, Tokio, Prettier, Phoenix, Pester, pandoc and cabal are whole checkouts; the other trees hold the files of their judged languages.
+The owner decided on 2026-10-30 that the fork must parse within 10% of upstream Tokei 15.0.0's time on every repository below; the fork's [speed gate](https://github.com/mbackschat/tokei/tree/locmetry/judges#speed), `judges/speed/check.py`, measures it before each release is adopted. It parses every file Tokei recognizes from memory, three times, and compares the minimum user CPU time of 15 interleaved runs. Django, Tokio, Prettier, Phoenix, Pester, pandoc, cabal, Tomcat, Bootstrap and Element Plus are whole checkouts; the other trees hold the files of their judged languages.
 
 Upstream's Haskell declares no strings, so it never analyses the lines holding them, a quarter of cabal's Haskell lines and a third of pandoc's; against it, fork `994df39` took 1.10 times as long on pandoc and 1.38 times on cabal, and upstream's own engine took 3.4 times its time on cabal's Haskell files once given the quotes. The owner decided on 2026-10-30 that the gate gives upstream the string quotes of languages whose upstream definition has none, listed in the gate's `baseline-quotes.json`, so it measures the fork's own overhead; the Haskell rows below are measured that way.
 
-| Repository | Commit | Language | Upstream | Fork `ffb6076` | Ratio |
+| Repository | Commit | Language | Upstream | Fork `397da12` | Ratio |
 | --- | --- | --- | ---: | ---: | ---: |
-| [symfony/symfony](https://github.com/symfony/symfony) | `92216211` | PHP | 4.532 s | 1.144 s | 0.25 |
-| [pester/Pester](https://github.com/pester/Pester) | `98e56d65` | PowerShell | 0.143 s | 0.056 s | 0.40 |
-| [felangel/bloc](https://github.com/felangel/bloc) | `b9be1e25` | Dart | 0.211 s | 0.100 s | 0.47 |
-| [prettier/prettier](https://github.com/prettier/prettier) | `c7a823c4` | JavaScript, TypeScript | 0.390 s | 0.199 s | 0.51 |
-| [tidyverse/ggplot2](https://github.com/tidyverse/ggplot2) | `b638d654` | R | 0.169 s | 0.087 s | 0.51 |
-| [gohugoio/hugo](https://github.com/gohugoio/hugo) | `a1668da3` | Go | 0.154 s | 0.080 s | 0.52 |
-| [phoenixframework/phoenix](https://github.com/phoenixframework/phoenix) | `c9065a89` | Elixir | 0.106 s | 0.056 s | 0.53 |
-| [tokio-rs/tokio](https://github.com/tokio-rs/tokio) | `6470b5e4` | Rust | 0.104 s | 0.057 s | 0.55 |
-| [jgm/pandoc](https://github.com/jgm/pandoc) | `75ebbfa7` | Haskell | 0.181 s | 0.105 s | 0.58 |
-| [django/django](https://github.com/django/django) | `817df1c4` | Python | 1.396 s | 0.829 s | 0.59 |
-| [rubocop/rubocop](https://github.com/rubocop/rubocop) | `bde5d420` | Ruby | 0.388 s | 0.248 s | 0.64 |
-| [haskell/cabal](https://github.com/haskell/cabal) | `07e003b3` | Haskell | 0.248 s | 0.161 s | 0.65 |
-| [AutoMapper/AutoMapper](https://github.com/AutoMapper/AutoMapper) | `df65f2e3` | C# | 0.029 s | 0.020 s | 0.68 |
-| [spring-projects/spring-framework](https://github.com/spring-projects/spring-framework) | `64861cb3` | Java, Kotlin | 1.113 s | 0.778 s | 0.70 |
-| [curl/curl](https://github.com/curl/curl) | `87c4c6d6` | C | 0.270 s | 0.209 s | 0.77 |
-| [typelevel/cats](https://github.com/typelevel/cats) | `b6c4dbfb` | Scala | 0.095 s | 0.077 s | 0.81 |
-| [apple/swift-nio](https://github.com/apple/swift-nio) | `108daca3` | Swift | 0.141 s | 0.117 s | 0.83 |
+| [symfony/symfony](https://github.com/symfony/symfony) | `92216211` | PHP | 4.151 s | 1.113 s | 0.27 |
+| [twbs/bootstrap](https://github.com/twbs/bootstrap) | `c967e2cb` | SCSS, CSS | 0.157 s | 0.066 s | 0.42 |
+| [element-plus/element-plus](https://github.com/element-plus/element-plus) | `a8d102a9` | Vue | 0.389 s | 0.164 s | 0.42 |
+| [pester/Pester](https://github.com/pester/Pester) | `98e56d65` | PowerShell | 0.138 s | 0.060 s | 0.43 |
+| [phoenixframework/phoenix](https://github.com/phoenixframework/phoenix) | `c9065a89` | Elixir | 0.109 s | 0.051 s | 0.47 |
+| [felangel/bloc](https://github.com/felangel/bloc) | `b9be1e25` | Dart | 0.202 s | 0.101 s | 0.50 |
+| [tidyverse/ggplot2](https://github.com/tidyverse/ggplot2) | `b638d654` | R | 0.159 s | 0.080 s | 0.51 |
+| [tokio-rs/tokio](https://github.com/tokio-rs/tokio) | `6470b5e4` | Rust | 0.144 s | 0.076 s | 0.53 |
+| [gohugoio/hugo](https://github.com/gohugoio/hugo) | `a1668da3` | Go | 0.191 s | 0.110 s | 0.57 |
+| [jgm/pandoc](https://github.com/jgm/pandoc) | `75ebbfa7` | Haskell | 0.170 s | 0.099 s | 0.58 |
+| [prettier/prettier](https://github.com/prettier/prettier) | `c7a823c4` | JavaScript, TypeScript | 0.454 s | 0.284 s | 0.63 |
+| [django/django](https://github.com/django/django) | `817df1c4` | Python | 1.423 s | 0.891 s | 0.63 |
+| [rubocop/rubocop](https://github.com/rubocop/rubocop) | `bde5d420` | Ruby | 0.386 s | 0.249 s | 0.65 |
+| [apache/tomcat](https://github.com/apache/tomcat) | `8c164da3` | XML, HTML | 0.663 s | 0.438 s | 0.66 |
+| [spring-projects/spring-framework](https://github.com/spring-projects/spring-framework) | `64861cb3` | Java, Kotlin | 1.089 s | 0.754 s | 0.69 |
+| [AutoMapper/AutoMapper](https://github.com/AutoMapper/AutoMapper) | `df65f2e3` | C# | 0.033 s | 0.023 s | 0.70 |
+| [curl/curl](https://github.com/curl/curl) | `87c4c6d6` | C | 0.251 s | 0.177 s | 0.70 |
+| [haskell/cabal](https://github.com/haskell/cabal) | `07e003b3` | Haskell | 0.246 s | 0.174 s | 0.71 |
+| [apple/swift-nio](https://github.com/apple/swift-nio) | `108daca3` | Swift | 0.110 s | 0.082 s | 0.75 |
+| [typelevel/cats](https://github.com/typelevel/cats) | `b6c4dbfb` | Scala | 0.087 s | 0.071 s | 0.82 |
 
-Measured on 2026-10-30 on a loaded machine, where the minimum of interleaved runs varied by about 3% between repetitions. Fork `994df39` passes over runs of bytes that change nothing at once, which cut the ratios from 0.45–0.96 for fork `687cb25`; earlier measurements found ratios from 0.53 to 0.92 for fork `55b0c87` and from 0.42 to 0.94 for fork `984e57b`.
+Measured on 2026-10-30 on a loaded machine, where the minimum of interleaved runs varied by about 3% between repetitions. Fork `ffb6076` measured from 0.25 to 0.83 on the first seventeen. Fork `994df39` passes over runs of bytes that change nothing at once, which cut the ratios from 0.45–0.96 for fork `687cb25`; earlier measurements found ratios from 0.53 to 0.92 for fork `55b0c87` and from 0.42 to 0.94 for fork `984e57b`.
