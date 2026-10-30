@@ -2,7 +2,7 @@
 
 Measured from 2026-10-29 on macOS arm64, for [step 6](../plans/tokei-fork.md#step-6-no-difference-from-each-languages-judge): every file of every corpus must count as the language's own lexer or parser counts it. A line is a comment when it holds nothing but comments; a blank line takes the class of the comment or literal it lies in; every other line is code. A file the judge itself rejects as lexically invalid has no correct count, so it is listed rather than matched.
 
-The judges and the comparison tool live in the fork's [judges](https://github.com/mbackschat/tokei/tree/locmetry/judges) folder from `a2a9724`. Each judge reports the comment and literal ranges its lexer found, and `judgecmp` compares the lines they imply with the fork's `line_classes` (fork `238b0c5`), line by line. The fork's results below are those of `15.0.0+locmetry.13`, fork `a55e730`, for Python of `15.0.0+locmetry.14`, fork `701fdaa`, for C, C++, Objective-C, Go, C# and Ruby of `15.0.0+locmetry.15`, fork `40ed432`, for PHP, Swift, Dart and Scala of `15.0.0+locmetry.16`, fork `eb463fb`, for R of `15.0.0+locmetry.17`, fork `984e57b`, for Elixir and PowerShell of `15.0.0+locmetry.18`, fork `687cb25`, for Haskell of `15.0.0+locmetry.19`, fork `ffb6076`, and for XML, SVG, CSS, SCSS, HTML and Vue of `15.0.0+locmetry.20`, fork `397da12`. A line of whitespace takes the class of the comment or literal its own bytes lie in, as judgecmp reads it from fork `02345d9`; every earlier result was rechecked under that rule.
+The judges and the comparison tool live in the fork's [judges](https://github.com/mbackschat/tokei/tree/locmetry/judges) folder from `a2a9724`. Each judge reports the comment and literal ranges its lexer found, and `judgecmp` compares the lines they imply with the fork's `line_classes` (fork `238b0c5`), line by line. The fork's results below are those of `15.0.0+locmetry.13`, fork `a55e730`, for Python of `15.0.0+locmetry.14`, fork `701fdaa`, for C, C++, Objective-C, Go, C# and Ruby of `15.0.0+locmetry.15`, fork `40ed432`, for PHP, Swift, Dart and Scala of `15.0.0+locmetry.16`, fork `eb463fb`, for R of `15.0.0+locmetry.17`, fork `984e57b`, for Elixir and PowerShell of `15.0.0+locmetry.18`, fork `687cb25`, for Haskell of `15.0.0+locmetry.19`, fork `ffb6076`, for XML, SVG, CSS, SCSS, HTML and Vue of `15.0.0+locmetry.20`, fork `397da12`, and for Svelte of `15.0.0+locmetry.21`, fork `9c85621`. A line of whitespace takes the class of the comment or literal its own bytes lie in, as judgecmp reads it from fork `02345d9`; every earlier result was rechecked under that rule.
 
 ## Lean
 
@@ -398,33 +398,46 @@ Judge: Vue's own parser, `@vue/compiler-dom` 3 in its single-file-component mode
 
 Every valid file matches on every line. Once CSS lost its `//` comments, five files differed on 27 lines, because `<style lang="scss">` blocks were read as CSS; the fork now resolves a `lang` attribute by file extension too.
 
+## Svelte
+
+Judge: Svelte's own parser, `parse` from svelte 5.57.3 in its modern mode. Markup comments are comments, quoted attribute values literals, and text and `{…}` expressions code, except for the JavaScript comments the parser lists, those between a tag's attributes included. Script elements, in the markup too, are read by Babel, as TypeScript for `lang="ts"`, and style blocks by postcss-scss for `lang="scss"`, `"sass"` or `"less"` and by PostCSS otherwise; Svelte's parser reads style blocks only as CSS, so their text is blanked, keeping its offsets, before the component is parsed.
+
+| Repository | Commit | Svelte files | Lexically invalid |
+| --- | --- | ---: | ---: |
+| [sveltejs/svelte](https://github.com/sveltejs/svelte) | `fe21fce019` | 4,611 | 107 |
+| [sveltejs/kit](https://github.com/sveltejs/kit) | `04aac59bad` | 1,022 | 3 |
+
+Every valid file matches on every line. Most invalid files are the compiler's tests of input it rejects. Fork `397da12` differed on 20 files and 75 lines, all JavaScript comments or apostrophes inside `{…}` expressions, which the fork now reads with TypeScript's syntax up to their closing brace, and on one more file of 15 lines, Svelte's test of the comments between attributes that Svelte 5.53.0 allows.
+
 ## Speed
 
-The owner decided on 2026-10-30 that the fork must parse within 10% of upstream Tokei 15.0.0's time on every repository below; the fork's [speed gate](https://github.com/mbackschat/tokei/tree/locmetry/judges#speed), `judges/speed/check.py`, measures it before each release is adopted. It parses every file Tokei recognizes from memory, three times, and compares the minimum user CPU time of 15 interleaved runs. Django, Tokio, Prettier, Phoenix, Pester, pandoc, cabal, Tomcat, Bootstrap and Element Plus are whole checkouts; the other trees hold the files of their judged languages.
+The owner decided on 2026-10-30 that the fork must parse within 10% of upstream Tokei 15.0.0's time on every repository below; the fork's [speed gate](https://github.com/mbackschat/tokei/tree/locmetry/judges#speed), `judges/speed/check.py`, measures it before each release is adopted. It parses every file Tokei recognizes from memory, three times, and compares the minimum user CPU time of 15 interleaved runs. Django, Tokio, Prettier, Swift NIO, bloc, Cats, ggplot2, Phoenix, Pester, pandoc, cabal, Tomcat, Bootstrap, Element Plus, SvelteKit and Svelte are whole checkouts; the other trees hold the files of their judged languages.
 
 Upstream's Haskell declares no strings, so it never analyses the lines holding them, a quarter of cabal's Haskell lines and a third of pandoc's; against it, fork `994df39` took 1.10 times as long on pandoc and 1.38 times on cabal, and upstream's own engine took 3.4 times its time on cabal's Haskell files once given the quotes. The owner decided on 2026-10-30 that the gate gives upstream the string quotes of languages whose upstream definition has none, listed in the gate's `baseline-quotes.json`, so it measures the fork's own overhead; the Haskell rows below are measured that way.
 
-| Repository | Commit | Language | Upstream | Fork `397da12` | Ratio |
+| Repository | Commit | Language | Upstream | Fork `9c85621` | Ratio |
 | --- | --- | --- | ---: | ---: | ---: |
-| [symfony/symfony](https://github.com/symfony/symfony) | `92216211` | PHP | 4.151 s | 1.113 s | 0.27 |
-| [twbs/bootstrap](https://github.com/twbs/bootstrap) | `c967e2cb` | SCSS, CSS | 0.157 s | 0.066 s | 0.42 |
-| [element-plus/element-plus](https://github.com/element-plus/element-plus) | `a8d102a9` | Vue | 0.389 s | 0.164 s | 0.42 |
-| [pester/Pester](https://github.com/pester/Pester) | `98e56d65` | PowerShell | 0.138 s | 0.060 s | 0.43 |
-| [phoenixframework/phoenix](https://github.com/phoenixframework/phoenix) | `c9065a89` | Elixir | 0.109 s | 0.051 s | 0.47 |
-| [felangel/bloc](https://github.com/felangel/bloc) | `b9be1e25` | Dart | 0.202 s | 0.101 s | 0.50 |
-| [tidyverse/ggplot2](https://github.com/tidyverse/ggplot2) | `b638d654` | R | 0.159 s | 0.080 s | 0.51 |
-| [tokio-rs/tokio](https://github.com/tokio-rs/tokio) | `6470b5e4` | Rust | 0.144 s | 0.076 s | 0.53 |
-| [gohugoio/hugo](https://github.com/gohugoio/hugo) | `a1668da3` | Go | 0.191 s | 0.110 s | 0.57 |
-| [jgm/pandoc](https://github.com/jgm/pandoc) | `75ebbfa7` | Haskell | 0.170 s | 0.099 s | 0.58 |
-| [prettier/prettier](https://github.com/prettier/prettier) | `c7a823c4` | JavaScript, TypeScript | 0.454 s | 0.284 s | 0.63 |
-| [django/django](https://github.com/django/django) | `817df1c4` | Python | 1.423 s | 0.891 s | 0.63 |
-| [rubocop/rubocop](https://github.com/rubocop/rubocop) | `bde5d420` | Ruby | 0.386 s | 0.249 s | 0.65 |
-| [apache/tomcat](https://github.com/apache/tomcat) | `8c164da3` | XML, HTML | 0.663 s | 0.438 s | 0.66 |
-| [spring-projects/spring-framework](https://github.com/spring-projects/spring-framework) | `64861cb3` | Java, Kotlin | 1.089 s | 0.754 s | 0.69 |
-| [AutoMapper/AutoMapper](https://github.com/AutoMapper/AutoMapper) | `df65f2e3` | C# | 0.033 s | 0.023 s | 0.70 |
-| [curl/curl](https://github.com/curl/curl) | `87c4c6d6` | C | 0.251 s | 0.177 s | 0.70 |
-| [haskell/cabal](https://github.com/haskell/cabal) | `07e003b3` | Haskell | 0.246 s | 0.174 s | 0.71 |
-| [apple/swift-nio](https://github.com/apple/swift-nio) | `108daca3` | Swift | 0.110 s | 0.082 s | 0.75 |
-| [typelevel/cats](https://github.com/typelevel/cats) | `b6c4dbfb` | Scala | 0.087 s | 0.071 s | 0.82 |
+| [symfony/symfony](https://github.com/symfony/symfony) | `92216211` | PHP | 4.197 s | 1.103 s | 0.26 |
+| [twbs/bootstrap](https://github.com/twbs/bootstrap) | `c967e2cb` | SCSS, CSS | 0.159 s | 0.067 s | 0.42 |
+| [element-plus/element-plus](https://github.com/element-plus/element-plus) | `a8d102a9` | Vue | 0.370 s | 0.161 s | 0.44 |
+| [pester/Pester](https://github.com/pester/Pester) | `98e56d65` | PowerShell | 0.136 s | 0.068 s | 0.50 |
+| [tidyverse/ggplot2](https://github.com/tidyverse/ggplot2) | `b638d654` | R | 0.158 s | 0.080 s | 0.50 |
+| [phoenixframework/phoenix](https://github.com/phoenixframework/phoenix) | `c9065a89` | Elixir | 0.092 s | 0.047 s | 0.52 |
+| [felangel/bloc](https://github.com/felangel/bloc) | `b9be1e25` | Dart | 0.181 s | 0.096 s | 0.53 |
+| [tokio-rs/tokio](https://github.com/tokio-rs/tokio) | `6470b5e4` | Rust | 0.118 s | 0.069 s | 0.58 |
+| [gohugoio/hugo](https://github.com/gohugoio/hugo) | `a1668da3` | Go | 0.194 s | 0.112 s | 0.58 |
+| [rubocop/rubocop](https://github.com/rubocop/rubocop) | `bde5d420` | Ruby | 0.307 s | 0.180 s | 0.59 |
+| [prettier/prettier](https://github.com/prettier/prettier) | `c7a823c4` | JavaScript, TypeScript | 0.444 s | 0.262 s | 0.59 |
+| [jgm/pandoc](https://github.com/jgm/pandoc) | `75ebbfa7` | Haskell | 0.167 s | 0.099 s | 0.59 |
+| [django/django](https://github.com/django/django) | `817df1c4` | Python | 1.363 s | 0.824 s | 0.60 |
+| [sveltejs/svelte](https://github.com/sveltejs/svelte) | `fe21fce0` | Svelte | 0.318 s | 0.200 s | 0.63 |
+| [sveltejs/kit](https://github.com/sveltejs/kit) | `04aac59b` | Svelte | 0.187 s | 0.120 s | 0.64 |
+| [apache/tomcat](https://github.com/apache/tomcat) | `8c164da3` | XML, HTML | 0.654 s | 0.435 s | 0.67 |
+| [AutoMapper/AutoMapper](https://github.com/AutoMapper/AutoMapper) | `df65f2e3` | C# | 0.034 s | 0.023 s | 0.69 |
+| [spring-projects/spring-framework](https://github.com/spring-projects/spring-framework) | `64861cb3` | Java, Kotlin | 1.076 s | 0.744 s | 0.69 |
+| [haskell/cabal](https://github.com/haskell/cabal) | `07e003b3` | Haskell | 0.248 s | 0.173 s | 0.69 |
+| [curl/curl](https://github.com/curl/curl) | `87c4c6d6` | C | 0.255 s | 0.195 s | 0.77 |
+| [apple/swift-nio](https://github.com/apple/swift-nio) | `108daca3` | Swift | 0.105 s | 0.084 s | 0.80 |
+| [typelevel/cats](https://github.com/typelevel/cats) | `b6c4dbfb` | Scala | 0.092 s | 0.076 s | 0.83 |
 
-Measured on 2026-10-30 on a loaded machine, where the minimum of interleaved runs varied by about 3% between repetitions. Fork `ffb6076` measured from 0.25 to 0.83 on the first seventeen. Fork `994df39` passes over runs of bytes that change nothing at once, which cut the ratios from 0.45–0.96 for fork `687cb25`; earlier measurements found ratios from 0.53 to 0.92 for fork `55b0c87` and from 0.42 to 0.94 for fork `984e57b`.
+Measured on 2026-10-30 on a loaded machine, where the minimum of interleaved runs varied by about 3% between repetitions. Swift NIO, bloc, Cats and ggplot2 were measured as files of their judged languages until fork `397da12`, which measured from 0.27 to 0.82 on the first twenty, and as whole checkouts since, after the gate was found passing roots that no longer existed; it fails them since fork `47e6301`. Fork `ffb6076` measured from 0.25 to 0.83 on the first seventeen. Fork `994df39` passes over runs of bytes that change nothing at once, which cut the ratios from 0.45–0.96 for fork `687cb25`; earlier measurements found ratios from 0.53 to 0.92 for fork `55b0c87` and from 0.42 to 0.94 for fork `984e57b`.
