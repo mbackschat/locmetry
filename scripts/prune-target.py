@@ -1,12 +1,15 @@
-"""Prunes Cargo's target directory oldest-first once it exceeds a size cap.
+"""Prunes the build units of Cargo's target directory that no current build uses.
 
 Cargo never removes build units it no longer uses: every move of the pinned
 Tokei revision leaves a complete set of dependent units, test binaries and
-incremental state behind (31 GB of `target/`, 2026-10-30). Cargo has no stable
-garbage collection for target directories, so this removes whole units, the
-least recently used first, until the directory is under the floor. Cargo
-rebuilds any unit whose outputs or fingerprint are missing, so a pruned unit
-that is still needed costs one rebuild, not a broken build. A profile whose
+incremental state behind (31 GB of `target/`, 2026-10-30), and Cargo has no
+stable garbage collection for target directories. A newer build of a local
+package with the same kind, profile, features and flags supersedes the older
+one; this removes superseded units and every unit only they reach, whatever
+the directory's size. As a backstop it then removes whole units, the least
+recently used first, while the directory exceeds a size cap. Cargo rebuilds
+any unit whose outputs or fingerprint are missing, so a pruned unit that is
+still needed costs one rebuild, not a broken build. A profile whose
 `.cargo-lock` a running Cargo holds is left alone.
 
 With `--hook` it runs as a Claude Code PostToolUse hook: it reads the event on
@@ -21,6 +24,7 @@ import fcntl
 import json
 import os
 from pathlib import Path
+import re
 import shlex
 import shutil
 import sys
@@ -41,6 +45,13 @@ def last_use(info):
     return max(info.st_atime, info.st_mtime)
 
 
+def allocated(info):
+    """A file's share of its allocated bytes: Cargo hard-links each built
+    binary from `deps/` into the profile, and the bytes are counted once
+    across the links."""
+    return info.st_blocks * 512 // info.st_nlink
+
+
 def disk_usage(path):
     """Allocated bytes and latest file use of a file or tree.
 
@@ -49,12 +60,12 @@ def disk_usage(path):
     """
     if path.is_symlink() or not path.is_dir():
         info = path.lstat()
-        return info.st_blocks * 512, last_use(info)
+        return allocated(info), last_use(info)
     total, newest = 0, 0.0
     for root, _, files in os.walk(path):
         for name in files:
             info = os.lstat(os.path.join(root, name))
-            total += info.st_blocks * 512
+            total += allocated(info)
             newest = max(newest, last_use(info))
     return total, newest
 
@@ -80,17 +91,135 @@ def unlocked(profile, held):
     return True
 
 
+UNIT_HASH = re.compile(r"-([0-9a-f]{16})(?:\.|$)")
+
+
+def remove(path):
+    if path.is_dir() and not path.is_symlink():
+        shutil.rmtree(path)
+    else:
+        path.unlink()
+
+
+def read_units(profile):
+    """Each unit's fingerprints under `.fingerprint/<package>-<hash>/`: the
+    `<kind>-<target>` file holds the fingerprint value that dependents'
+    `deps` entries name, its `.json` the inputs, and `invoked.timestamp` dates
+    the compile's start. Cargo empties the value when a compile starts and
+    writes it once the compile succeeds (checked with Cargo 1.98 on
+    2026-10-30), so an empty value marks a compile that has not finished and
+    reads as `None`. A directory without fingerprints yet is `None`."""
+    units = {}
+    for directory in (profile / ".fingerprint").iterdir():
+        unit_hash = directory.name.rsplit("-", 1)[-1]
+        stamp = directory / "invoked.timestamp"
+        started = stamp.stat().st_mtime if stamp.exists() else 0.0
+        fingerprints = []
+        for record in directory.glob("*.json"):
+            value_file = record.with_suffix("")
+            try:
+                fingerprint = json.loads(record.read_text())
+                # Cargo writes the value's little-endian bytes in hex (`to_hex`
+                # in cargo's `util/hex.rs`), while `deps` gives it as an integer.
+                text = value_file.read_text().strip()
+                value = int.from_bytes(bytes.fromhex(text), "little") if text else None
+                built = value_file.stat().st_mtime
+            except (OSError, ValueError):
+                continue
+            fingerprints.append((value_file.name, fingerprint, value, built))
+        units[unit_hash] = (directory.name.rsplit("-", 1)[0], started, fingerprints) if fingerprints else None
+    return units
+
+
+def current_units(units):
+    """Hashes of the units the newest build of each local package reaches.
+
+    Local packages, whose fingerprints check their sources' dep-info, root the
+    builds; of their units with the same kind, profile, features, target
+    platform and flags only the latest started is current. The toolchain is
+    left out of that identity, so an upgrade supersedes the old builds.
+    """
+    by_value, newest = {}, {}
+    for unit_hash, unit in units.items():
+        if unit is None:
+            continue
+        name, started, fingerprints = unit
+        for kind, fingerprint, value, _ in fingerprints:
+            if value is not None:
+                by_value[value] = unit_hash
+            if any("CheckDepInfo" in local for local in fingerprint.get("local", [])):
+                identity = (name, kind, fingerprint.get("profile"), fingerprint.get("features"),
+                            fingerprint.get("compile_kind"), json.dumps(fingerprint.get("rustflags")))
+                if identity not in newest or started > newest[identity][0]:
+                    newest[identity] = (started, unit_hash)
+    current = {unit_hash for unit_hash, unit in units.items() if unit is None}
+    pending = [unit_hash for _, unit_hash in newest.values()]
+    while pending:
+        unit_hash = pending.pop()
+        if unit_hash in current:
+            continue
+        current.add(unit_hash)
+        for _, fingerprint, _, _ in units[unit_hash][2]:
+            pending.extend(by_value[dep[3]] for dep in fingerprint.get("deps", []) if dep[3] in by_value)
+    return current
+
+
+def compile_windows(profile, units, current):
+    """When each current unit's crate last compiled, by crate name.
+
+    rustc names incremental directories after the crate and a hash Cargo does
+    not record, so a session is matched by time: it ends between the
+    compile's start and its fingerprint value's write, or after the start of
+    a compile that has not finished.
+    """
+    windows = {}
+    for output in (profile / "deps").glob("*.d") if (profile / "deps").is_dir() else []:
+        crate, _, unit_hash = output.stem.rpartition("-")
+        if unit_hash in current and units.get(unit_hash):
+            _, started, fingerprints = units[unit_hash]
+            finished = all(f[2] is not None for f in fingerprints)
+            built = max(f[3] for f in fingerprints) if finished else float("inf")
+            windows.setdefault(crate, []).append((started - 2, built + 2))
+    return windows
+
+
+def prune_superseded(profile):
+    """Removes the units of `profile` no current build reaches."""
+    if not (profile / ".fingerprint").is_dir():
+        return
+    units = read_units(profile)
+    current = current_units(units)
+    if not current:
+        return
+    windows = compile_windows(profile, units, current)
+    for folder in ("deps", "build", "examples", ".fingerprint"):
+        for entry in (profile / folder).iterdir() if (profile / folder).is_dir() else []:
+            match = UNIT_HASH.search(entry.name)
+            if match and match.group(1) not in current:
+                remove(entry)
+    for session in (profile / "incremental").iterdir() if (profile / "incremental").is_dir() else []:
+        ended = session.stat().st_mtime
+        crate = session.name.rpartition("-")[0]
+        if not any(start <= ended <= end for start, end in windows.get(crate, [])):
+            remove(session)
+
+
 def prune(target, max_bytes, floor_bytes):
-    """Removes the oldest units when `target` exceeds `max_bytes`; returns the bytes freed."""
-    total, _ = disk_usage(target) if target.is_dir() else (0, 0)
-    if total <= max_bytes:
-        return 0
+    """Removes superseded units, then the oldest units while `target` exceeds
+    `max_bytes`; returns the bytes each step freed."""
+    if not target.is_dir():
+        return 0, 0
     held = []
     try:
+        before, _ = disk_usage(target)
+        open_profiles = [profile for profile in profiles(target) if unlocked(profile, held)]
+        for profile in open_profiles:
+            prune_superseded(profile)
+        total, _ = disk_usage(target)
+        if total <= max_bytes:
+            return before - total, 0
         units = []
-        for profile in profiles(target):
-            if not unlocked(profile, held):
-                continue
+        for profile in open_profiles:
             for folder in UNIT_FOLDERS:
                 if (profile / folder).is_dir():
                     for unit in (profile / folder).iterdir():
@@ -100,12 +229,9 @@ def prune(target, max_bytes, floor_bytes):
         for _, size, unit in sorted(units, key=lambda u: u[0]):
             if total - freed <= floor_bytes:
                 break
-            if unit.is_dir() and not unit.is_symlink():
-                shutil.rmtree(unit)
-            else:
-                unit.unlink()
+            remove(unit)
             freed += size
-        return freed
+        return before - total, total - disk_usage(target)[0]
     finally:
         for lock in held:
             lock.close()
@@ -194,9 +320,11 @@ def main():
         targets = [args.target]
     messages = []
     for target in targets:
-        freed = prune(target, args.max_kib * 1024, args.floor_kib * 1024)
-        if freed:
-            messages.append(f"pruned {freed / GIB:.1f} GiB of old build units from {target}")
+        superseded, oldest = prune(target, args.max_kib * 1024, args.floor_kib * 1024)
+        if superseded:
+            messages.append(f"pruned {superseded / GIB:.2f} GiB of superseded build units from {target}")
+        if oldest:
+            messages.append(f"pruned {oldest / GIB:.1f} GiB of old build units from {target}")
     if messages and args.hook:
         print(json.dumps({"systemMessage": "prune-target: " + "; ".join(messages)}))
     elif messages:
