@@ -1,6 +1,6 @@
 # Tokei Fork Step 3 Measurement
 
-Measured 2026-10-29 on macOS arm64, for step 3 of the [Tokei fork plan](../plans/tokei-fork.md): interpolation holes whose contents are code, and regular expression literals. The fork is [mbackschat/tokei](https://github.com/mbackschat/tokei) at `139b5d2`, version `15.0.0+locmetry.3`; its README cites the specification or reference documentation behind each declaration. The method and harness are those of [step 1](tokei-fork-step-1.md), with tree-sitter grammars for Dart 0.3.0, Ruby 0.23.1 and TSX added, and with interpolation holes in tree-sitter's string nodes read as code, as the fork reads them.
+Measured 2026-10-29 on macOS arm64, for step 3 of the [Tokei fork plan](../plans/archive/tokei-fork.md): interpolation holes whose contents are code, and regular expression literals. The fork is [mbackschat/tokei](https://github.com/mbackschat/tokei) at `139b5d2`, version `15.0.0+locmetry.3`; its README cites the specification or reference documentation behind each declaration. The method and harness are those of [step 1](tokei-fork-step-1.md), with tree-sitter grammars for Dart 0.3.0, Ruby 0.23.1 and TSX added, and with interpolation holes in tree-sitter's string nodes read as code, as the fork reads them.
 
 ## Change
 

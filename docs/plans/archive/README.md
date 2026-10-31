@@ -11,5 +11,6 @@ These records preserve implementation evidence and decisions at retirement. Thei
 | [Conditional Measurement and Comparison Follow-ups](measurement-follow-ups.md) | historical | 2026-10-26 | Retired list of conditional measurement and comparison capabilities; live candidates moved to DEFERRED, decisions to REJECTED. |
 | [Measurement Quality and Net Change Work Plan](measurement-quality-and-net-change.md) | historical | 2026-10-16 | Retired implementation and review record; remaining designs have separate owners. |
 | [Deferred Test-to-Production Ratio Presentation](test-production-ratios.md) | completed | 2026-10-18 | Neutral language Test/prod ratios implemented; reviewed design and research preserved. |
+| [Correct Counting in a Tokei Fork](tokei-fork.md) | completed | 2026-10-31 | Fix Tokei's literal and comment defects in a fork, in five feature steps that each cover every language with the construct. |
 
 <!-- doc-index:end -->

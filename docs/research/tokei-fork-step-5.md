@@ -1,6 +1,6 @@
 # Tokei Fork Step 5 Measurement
 
-Measured 2026-10-29 on macOS arm64, for step 5 of the [Tokei fork plan](../plans/tokei-fork.md): quotes that open strings only inside tags or expressions, not in text. The fork is [mbackschat/tokei](https://github.com/mbackschat/tokei) at `95d1621`, version `15.0.0+locmetry.6`; its README cites the specification behind each declaration. The method and harness are those of [step 4](tokei-fork-step-4.md), with tree-sitter grammars for HTML 0.23.2, XML 0.7.0 and YAML 0.7.2 added, and YAML's quoted scalars and block scalars read as literals.
+Measured 2026-10-29 on macOS arm64, for step 5 of the [Tokei fork plan](../plans/archive/tokei-fork.md): quotes that open strings only inside tags or expressions, not in text. The fork is [mbackschat/tokei](https://github.com/mbackschat/tokei) at `95d1621`, version `15.0.0+locmetry.6`; its README cites the specification behind each declaration. The method and harness are those of [step 4](tokei-fork-step-4.md), with tree-sitter grammars for HTML 0.23.2, XML 0.7.0 and YAML 0.7.2 added, and YAML's quoted scalars and block scalars read as literals.
 
 ## Change
 

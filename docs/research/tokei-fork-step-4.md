@@ -1,6 +1,6 @@
 # Tokei Fork Step 4 Measurement
 
-Measured 2026-10-29 on macOS arm64, for step 4 of the [Tokei fork plan](../plans/tokei-fork.md): heredocs, whose closing line names a word taken from the opener. The fork is [mbackschat/tokei](https://github.com/mbackschat/tokei) at `ecc48f4`, version `15.0.0+locmetry.4`; its README cites the specification or reference documentation behind each declaration. The method and harness are those of [step 3](tokei-fork-step-3.md), with the tree-sitter-perl grammar 2.0.3 added and Perl's `heredoc_content` nodes read as literals.
+Measured 2026-10-29 on macOS arm64, for step 4 of the [Tokei fork plan](../plans/archive/tokei-fork.md): heredocs, whose closing line names a word taken from the opener. The fork is [mbackschat/tokei](https://github.com/mbackschat/tokei) at `ecc48f4`, version `15.0.0+locmetry.4`; its README cites the specification or reference documentation behind each declaration. The method and harness are those of [step 3](tokei-fork-step-3.md), with the tree-sitter-perl grammar 2.0.3 added and Perl's `heredoc_content` nodes read as literals.
 
 ## Change
 

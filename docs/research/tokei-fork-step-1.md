@@ -1,6 +1,6 @@
 # Tokei Fork Step 1 Measurement
 
-Measured 2026-10-29 on macOS arm64, for step 1 of the [Tokei fork plan](../plans/tokei-fork.md): character literals, missing quote declarations, Go backtick strings, Java text blocks, Rust raw strings with up to three `#`, comment-marker exceptions, and two defects this measurement found. The fork is [mbackschat/tokei](https://github.com/mbackschat/tokei) at `23bde34`, version `15.0.0+locmetry.1`; its README lists each change with the specification or reference lexer it follows. [Counting backends](counting-backends.md) describes the harness and why tree-sitter serves as the reference.
+Measured 2026-10-29 on macOS arm64, for step 1 of the [Tokei fork plan](../plans/archive/tokei-fork.md): character literals, missing quote declarations, Go backtick strings, Java text blocks, Rust raw strings with up to three `#`, comment-marker exceptions, and two defects this measurement found. The fork is [mbackschat/tokei](https://github.com/mbackschat/tokei) at `23bde34`, version `15.0.0+locmetry.1`; its README lists each change with the specification or reference lexer it follows. [Counting backends](counting-backends.md) describes the harness and why tree-sitter serves as the reference.
 
 ## Method
 

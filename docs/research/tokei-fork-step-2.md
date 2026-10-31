@@ -1,6 +1,6 @@
 # Tokei Fork Step 2 Measurement
 
-Measured 2026-10-29 on macOS arm64, for step 2 of the [Tokei fork plan](../plans/tokei-fork.md): raw strings and comments whose closing delimiter repeats a count or label from the opener. The fork is [mbackschat/tokei](https://github.com/mbackschat/tokei) at `62ec728`, version `15.0.0+locmetry.2`; its README cites the specification or reference lexer behind each declaration. The method and harness are those of [step 1](tokei-fork-step-1.md), with tree-sitter grammars for Swift 0.7.4 and Lua 0.5.0 added.
+Measured 2026-10-29 on macOS arm64, for step 2 of the [Tokei fork plan](../plans/archive/tokei-fork.md): raw strings and comments whose closing delimiter repeats a count or label from the opener. The fork is [mbackschat/tokei](https://github.com/mbackschat/tokei) at `62ec728`, version `15.0.0+locmetry.2`; its README cites the specification or reference lexer behind each declaration. The method and harness are those of [step 1](tokei-fork-step-1.md), with tree-sitter grammars for Swift 0.7.4 and Lua 0.5.0 added.
 
 ## Change
 
