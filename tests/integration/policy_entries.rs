@@ -539,7 +539,10 @@ language = "Plain Text"
 
 const MAPPED: &[(&str, &str)] = &[
     ("bin/launch", "console.log(1)\n"),
-    ("pkg/app.spec", "Name: app\n"),
+    (
+        "pkg/app.spec",
+        "Name: app\nVersion: 1\n\n%description\nAn app.\n",
+    ),
 ];
 
 /// Feedback of 2026-10-25 on 0.11.1: a mapping of `*.spec` files, which the

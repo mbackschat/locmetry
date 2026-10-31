@@ -697,48 +697,144 @@ Judge: GNU gettext's tokenizer, `gettext-tools/src/read-po-lex.c`, ported: outsi
 
 Every file matches on every line, and fork `f8826bd` already did.
 
+## Build-Language File Names
+
+Before the build languages below were judged, fork `e42f092` stopped Tokei's claims on shared extensions: every `.in` file had been Autoconf, every `.inc` file Bitbake, every `.spec` file an RPM spec and every `.rules` file Snakemake, and Bazel's `BUILD`, `WORKSPACE` and `MODULE` matched in any case. In the corpora measured here those claims took 3,836 templates, such as Kconfig `Config.in` and `*.cmake.in`, 620 PHP, C and Pascal includes, 237 PostgreSQL isolation test specs and 20 udev rule files. Autoconf now claims `configure.ac` and `configure.in`, Bazel its names in their own case, and a shared extension only files whose text has the language's syntax, following [GitHub Linguist's heuristics](https://github.com/github-linguist/linguist/blob/73ee9a3b27/lib/linguist/heuristics.yml) where it has them. The tables below count the files the fork attributes to each language.
+
+## Meson
+
+Judge: Meson's own lexer, `mesonbuild.mparser.Lexer` from Meson 1.9.1, which `meson setup` reads build files with; strings, f-strings and their `'''` forms are literals, and `#` comments are comments.
+
+| Repository | Commit | Meson files | Lexically invalid |
+| --- | --- | ---: | ---: |
+| [mesonbuild/meson](https://github.com/mesonbuild/meson) | `0ef4bf221d` | 1,660 | 5 |
+| [postgres/postgres](https://github.com/postgres/postgres) | `328a9a1731` | 183 | 0 |
+| [git/git](https://github.com/git/git) | `b9e5cff180` | 40 | 0 |
+| 2 other checkouts of the corpora above | | 2 | 0 |
+
+Every valid file matches on every line. The five invalid files are Meson's tests of build files it must reject. Fork `e42f092` differed on 1 file, on 4 lines: a backslash before the closing `'''` of a multi-line string, which processes no escapes ([Meson, Syntax](https://mesonbuild.com/Syntax.html#strings)), kept the string open, as in Meson's own string-operation test. Fork `61f32a1` declares the multi-line strings verbatim and recognizes `meson.options`, the options file since Meson 1.1.
+
+## Nextflow
+
+Judge: the [Groovy](#groovy) judge, since Nextflow scripts are Groovy.
+
+| Repository | Commit | Nextflow files | Lexically invalid |
+| --- | --- | ---: | ---: |
+| [nextflow-io/nextflow](https://github.com/nextflow-io/nextflow) | `a8bcfb2f04` | 350 | 0 |
+
+Every file matches on every line. Fork `61f32a1` differed on 184 files, on 277 lines: Nextflow declared only `"…"` strings, so shebangs, `'…'` strings holding `#` or `//`, and slashy strings were misread. Fork `5312a2e` reads Nextflow with Groovy's syntax, which a language now names in `syntax_of` instead of copying its fields.
+
+## Snakemake
+
+Judge: the [Python](#python) judge, since Snakemake's parser reads Snakefiles with Python's `tokenize` (measured with CPython 3.14).
+
+| Repository | Commit | Snakemake files | Lexically invalid |
+| --- | --- | ---: | ---: |
+| [snakemake/snakemake](https://github.com/snakemake/snakemake) | `184ad191db` | 527 | 1 |
+| [nvim-treesitter/nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter) | `a2f694478b` | 2 | 0 |
+
+Every valid file matches on every line; the invalid file is Snakemake's lint test of mixed tabs, which `tokenize` rejects. Fork `61f32a1` already matched every file, but declared no prefixed or f-strings, so a comment in an f-string's replacement field would have been misread; fork `5312a2e` reads Snakefiles with Python's syntax.
+
+## Automake
+
+Judge: the [Makefile](#makefile) judge, since `automake` passes a `Makefile.am` on to make; in `.am` files it also reads Automake's `if COND` conditionals and bare `@NAME@` substitutions as automake and `configure` do ([GNU Automake manual](https://www.gnu.org/software/automake/manual/automake.html#Conditionals)).
+
+| Repository | Commit | Automake files | Lexically invalid |
+| --- | --- | ---: | ---: |
+| [util-linux/util-linux](https://github.com/util-linux/util-linux) | `becdb8ba9f` | 46 | 0 |
+| [strace/strace](https://github.com/strace/strace) | `be6eb508a5` | 6 | 0 |
+| [mesonbuild/meson](https://github.com/mesonbuild/meson) | `0ef4bf221d` | 5 | 2 |
+| [openembedded-core](https://git.openembedded.org/openembedded-core) | `b62d5e6817` | 1 | 0 |
+
+Every valid file matches on every line. The two invalid files are C++ templates in Meson's tests that only share the `.am` extension. Fork `5312a2e` differed on none of the 53 files the judge could read before it read Automake's conditionals, but declared only `#` comments; fork `5df7a24` reads `.am` files with make's syntax, so comments continued by a backslash and recipe comments after make's `@`, `-` and `+` flags count as they do in makefiles.
+
+## Bazel
+
+Judge: starlark-go `4f4267fb140d`, the Go implementation of [Starlark](https://github.com/bazelbuild/starlark/blob/master/spec.md), the language of BUILD and `.bzl` files; its parser with every dialect option on and comments retained; string and bytes literals are literals.
+
+| Repository | Commit | Bazel files | Lexically invalid |
+| --- | --- | ---: | ---: |
+| [bazelbuild/rules_python](https://github.com/bazelbuild/rules_python) | `e9734b5ff9` | 840 | 1 |
+| [bazelbuild/bazel-skylib](https://github.com/bazelbuild/bazel-skylib) | `5f88ea649f` | 137 | 0 |
+| [Kong/kong](https://github.com/Kong/kong) | `21032122ab` | 66 | 0 |
+| [kubernetes/kubernetes](https://github.com/kubernetes/kubernetes) | `f2a57ac2b9` | 33 | 0 |
+| 3 other checkouts of the corpora above | | 12 | 0 |
+
+Every valid file matches on every line, and fork `5df7a24` already did; the invalid file is a template that holds placeholders.
+
+## RPM Specfile
+
+rpm has no tokenizer to call. Judge: rpmbuild's reading rules, ported from rpm 6's `build/parseSpec.cc`: in the preamble and text sections a line whose first non-blank character is `#` is a comment, and the build scripts and scriptlets, without the `%if` and `%include` lines rpm consumes, are read by the [Shell](#shell) judge; a scriptlet for another interpreter makes the file invalid ([RPM spec file format](https://rpm-software-management.github.io/rpm/manual/spec.html)).
+
+| Repository | Commit | Spec files | Lexically invalid |
+| --- | --- | ---: | ---: |
+| [terrapkg/packages](https://github.com/terrapkg/packages) | `b1f34f6415` | 1,308 | 9 |
+| [rpm-software-management/rpm](https://github.com/rpm-software-management/rpm) | `4f7be32ef2` | 116 | 8 |
+| 2 other checkouts of the corpora above | | 2 | 0 |
+
+Every valid file matches on every line. The invalid files hold a scriptlet for another interpreter, such as Lua, or a script the Shell judge rejects; eight are rpm's own test specs. Fork `d72a599` differed on 31 files, on 93 lines: the whole spec was read with one set of rules, so `#` lines in the heredocs and multi-line strings of build scripts, such as a generated script's shebang, counted as comments. Fork `f26b942` splits a spec at rpm's section headers and reads each script by its interpreter.
+
+## Autoconf and M4
+
+Judge: GNU m4 1.4.19's tokenizer, ported from `next_token` in `src/input.c`, since m4 expands as it reads: `#` comments and `dnl` remarks run to the end of their line, and quoted strings nest, with Autoconf's `[` and `]` or m4's `` ` `` and `'` ([GNU m4 manual, Quoted strings](https://www.gnu.org/software/m4/manual/m4.html#Quoted-strings)); text a later expansion rescans is not followed, and a file that changes its quotes or comment delimiters is invalid.
+
+| Repository | Commit | Autoconf files | Lexically invalid |
+| --- | --- | ---: | ---: |
+| [autoconf-archive/autoconf-archive](https://github.com/autoconf-archive/autoconf-archive) | `92c33ce5c3` | 587 | 19 |
+| [strace/strace](https://github.com/strace/strace) | `be6eb508a5` | 15 | 0 |
+| [postgres/postgres](https://github.com/postgres/postgres) | `328a9a1731` | 13 | 0 |
+| [util-linux/util-linux](https://github.com/util-linux/util-linux) | `becdb8ba9f` | 9 | 0 |
+| 6 other checkouts of the corpora above | | 13 | 1 |
+
+| Repository | Commit | M4 files | Lexically invalid |
+| --- | --- | ---: | ---: |
+| [freebsd/freebsd-src](https://github.com/freebsd/freebsd-src) `contrib/sendmail/cf` | `53dd6b7760` | 151 | 1 |
+| [autotools-mirror/m4](https://github.com/autotools-mirror/m4) | `e0e0f6eacc` | 46 | 4 |
+
+Every valid file matches on every line. Of the 25 invalid files, 24 change their quotes with `changequote` or their comments with `changecom`, which the judge does not follow, and m4's tokenizer rejects the other. Fork `f26b942` differed on 364 of the 617 valid Autoconf files, on 6,134 lines: Autoconf declared no quotes and M4's quotes did not nest, so `#` lines, `dnl` remarks and blank lines in quoted macro bodies counted as comments and blanks. Fork `ea47c6a` reads m4's nesting quotes, and counts a `.m4` file as Autoconf when it uses Autoconf or m4sugar macros, as Linguist decides; 625 of the 637 Autoconf files are `.m4` files, which Tokei had counted as M4.
+
 ## Speed
 
 The owner decided on 2026-10-30 that the fork must parse within 10% of upstream Tokei 15.0.0's time on every repository below; the fork's [speed gate](https://github.com/mbackschat/tokei/tree/locmetry/judges#speed), `judges/speed/check.py`, measures it before each release is adopted. It parses every file Tokei recognizes from memory, three times, and compares the minimum user CPU time of 15 interleaved runs. Django, Tokio, Prettier, Swift NIO, bloc, Cats, ggplot2, Phoenix, Pester, pandoc, cabal, Tomcat, Bootstrap, Element Plus, SvelteKit, Svelte, KOReader, Citus, Prometheus's Helm charts, perl5, Moose, termux-packages, acme.sh, Buildroot and Git are whole checkouts, GitHub's docs are measured on their `content` folder, Linux on its makefiles, and the other trees hold the files of their judged languages.
 
-Upstream's Haskell declares no strings, so it never analyses the lines holding them, a quarter of cabal's Haskell lines and a third of pandoc's; against it, fork `994df39` took 1.10 times as long on pandoc and 1.38 times on cabal, and upstream's own engine took 3.4 times its time on cabal's Haskell files once given the quotes. The owner decided on 2026-10-30 that the gate gives upstream the string quotes of languages whose upstream definition has none, listed in the gate's `baseline-quotes.json`, so it measures the fork's own overhead; the Haskell rows below are measured that way.
+Upstream's Haskell declares no strings, so it never analyses the lines holding them, a quarter of cabal's Haskell lines and a third of pandoc's; against it, fork `994df39` took 1.10 times as long on pandoc and 1.38 times on cabal, and upstream's own engine took 3.4 times its time on cabal's Haskell files once given the quotes. The owner decided on 2026-10-30 that the gate gives upstream the string quotes of languages whose upstream definition has none, listed in the gate's `baseline-quotes.json`, so it measures the fork's own overhead; the Haskell rows below are measured that way. Upstream's JSON declares no strings either, and since fork `fc28619` reads the comments of JSON with Comments, the fork must read JSON's strings too: vcpkg, whose 6,200 JSON files dominate its time, took 1.41 times upstream's time, and 0.81 times once upstream was given JSON's quotes (fork `69cc49b`, measured 2026-10-30); the vcpkg row is measured that way.
 
-| Repository | Commit | Language | Upstream | Fork `59523f1` | Ratio |
+| Repository | Commit | Language | Upstream | Fork `85e6ed1` | Ratio |
 | --- | --- | --- | ---: | ---: | ---: |
-| [symfony/symfony](https://github.com/symfony/symfony) | `92216211` | PHP | 4.119 s | 1.142 s | 0.28 |
-| [koreader/koreader](https://github.com/koreader/koreader) | `80127739` | Lua | 0.344 s | 0.136 s | 0.40 |
-| [pester/Pester](https://github.com/pester/Pester) | `98e56d65` | PowerShell | 0.133 s | 0.054 s | 0.41 |
-| [twbs/bootstrap](https://github.com/twbs/bootstrap) | `c967e2cb` | SCSS, CSS | 0.170 s | 0.077 s | 0.45 |
-| [element-plus/element-plus](https://github.com/element-plus/element-plus) | `a8d102a9` | Vue | 0.360 s | 0.167 s | 0.46 |
-| [django/django](https://github.com/django/django) | `817df1c4` | Python | 1.328 s | 0.637 s | 0.48 |
-| [prometheus-community/helm-charts](https://github.com/prometheus-community/helm-charts) | `77d25d4b` | YAML | 0.328 s | 0.157 s | 0.48 |
-| [torvalds/linux](https://github.com/torvalds/linux) makefiles | `d89e1d18` | Makefile | 0.041 s | 0.020 s | 0.49 |
-| [acmesh-official/acme.sh](https://github.com/acmesh-official/acme.sh) | `37d064f7` | Shell | 0.104 s | 0.053 s | 0.51 |
-| [prettier/prettier](https://github.com/prettier/prettier) | `c7a823c4` | JavaScript, TypeScript | 0.370 s | 0.203 s | 0.55 |
-| [phoenixframework/phoenix](https://github.com/phoenixframework/phoenix) | `c9065a89` | Elixir | 0.118 s | 0.065 s | 0.55 |
-| [buildroot/buildroot](https://github.com/buildroot/buildroot) | `93156d58` | Makefile | 0.312 s | 0.172 s | 0.55 |
-| [jgm/pandoc](https://github.com/jgm/pandoc) | `75ebbfa7` | Haskell | 0.184 s | 0.103 s | 0.56 |
-| [felangel/bloc](https://github.com/felangel/bloc) | `b9be1e25` | Dart | 0.197 s | 0.110 s | 0.56 |
-| [git/git](https://github.com/git/git) | `b9e5cff1` | C, Shell, Makefile | 0.983 s | 0.546 s | 0.56 |
-| [npocmaka/batch.scripts](https://github.com/npocmaka/batch.scripts) | `7e784303` | Batch | 0.007 s | 0.004 s | 0.57 |
-| [tidyverse/ggplot2](https://github.com/tidyverse/ggplot2) | `b638d654` | R | 0.167 s | 0.097 s | 0.58 |
-| [tokio-rs/tokio](https://github.com/tokio-rs/tokio) | `6470b5e4` | Rust | 0.124 s | 0.074 s | 0.60 |
-| [moose/Moose](https://github.com/moose/Moose) | `98ec7dda` | Perl | 0.072 s | 0.043 s | 0.60 |
-| [sveltejs/svelte](https://github.com/sveltejs/svelte) | `fe21fce0` | Svelte | 0.368 s | 0.228 s | 0.62 |
-| [termux/termux-packages](https://github.com/termux/termux-packages) | `34a8c84d` | Shell | 0.511 s | 0.324 s | 0.63 |
-| [Perl/perl5](https://github.com/Perl/perl5) | `b3e8681e` | Perl | 1.186 s | 0.763 s | 0.64 |
-| [gohugoio/hugo](https://github.com/gohugoio/hugo) | `a1668da3` | Go | 0.197 s | 0.132 s | 0.67 |
-| [sveltejs/kit](https://github.com/sveltejs/kit) | `04aac59b` | Svelte | 0.181 s | 0.124 s | 0.69 |
-| [apache/tomcat](https://github.com/apache/tomcat) | `8c164da3` | XML, HTML | 0.677 s | 0.467 s | 0.69 |
-| [rubocop/rubocop](https://github.com/rubocop/rubocop) | `bde5d420` | Ruby | 0.362 s | 0.261 s | 0.72 |
-| [citusdata/citus](https://github.com/citusdata/citus) | `843ef6f0` | SQL, C | 0.412 s | 0.301 s | 0.73 |
-| [spring-projects/spring-framework](https://github.com/spring-projects/spring-framework) | `64861cb3` | Java, Kotlin | 1.090 s | 0.791 s | 0.73 |
-| [curl/curl](https://github.com/curl/curl) | `87c4c6d6` | C | 0.263 s | 0.200 s | 0.76 |
-| [AutoMapper/AutoMapper](https://github.com/AutoMapper/AutoMapper) | `df65f2e3` | C# | 0.047 s | 0.037 s | 0.79 |
-| [typelevel/cats](https://github.com/typelevel/cats) | `b6c4dbfb` | Scala | 0.092 s | 0.078 s | 0.85 |
-| [github/docs](https://github.com/github/docs) `content` | `59fde2de` | Markdown | 0.149 s | 0.130 s | 0.87 |
-| [microsoft/vcpkg](https://github.com/microsoft/vcpkg) | `d186940b` | CMake | 0.409 s | 0.362 s | 0.89 |
-| [apple/swift-nio](https://github.com/apple/swift-nio) | `108daca3` | Swift | 0.122 s | 0.110 s | 0.90 |
-| [haskell/cabal](https://github.com/haskell/cabal) | `07e003b3` | Haskell | 0.230 s | 0.211 s | 0.92 |
+| [symfony/symfony](https://github.com/symfony/symfony) | `92216211` | PHP | 4.394 s | 1.150 s | 0.26 |
+| [koreader/koreader](https://github.com/koreader/koreader) | `80127739` | Lua | 0.326 s | 0.132 s | 0.40 |
+| [twbs/bootstrap](https://github.com/twbs/bootstrap) | `c967e2cb` | SCSS, CSS | 0.188 s | 0.086 s | 0.46 |
+| [element-plus/element-plus](https://github.com/element-plus/element-plus) | `a8d102a9` | Vue | 0.404 s | 0.185 s | 0.46 |
+| [prometheus-community/helm-charts](https://github.com/prometheus-community/helm-charts) | `77d25d4b` | YAML | 0.346 s | 0.160 s | 0.46 |
+| [pester/Pester](https://github.com/pester/Pester) | `98e56d65` | PowerShell | 0.143 s | 0.070 s | 0.49 |
+| [django/django](https://github.com/django/django) | `817df1c4` | Python | 1.579 s | 0.783 s | 0.50 |
+| [tokio-rs/tokio](https://github.com/tokio-rs/tokio) | `6470b5e4` | Rust | 0.140 s | 0.072 s | 0.52 |
+| [jgm/pandoc](https://github.com/jgm/pandoc) | `75ebbfa7` | Haskell | 0.184 s | 0.099 s | 0.54 |
+| [felangel/bloc](https://github.com/felangel/bloc) | `b9be1e25` | Dart | 0.214 s | 0.116 s | 0.54 |
+| [torvalds/linux](https://github.com/torvalds/linux) makefiles | `d89e1d18` | Makefile | 0.040 s | 0.022 s | 0.55 |
+| [phoenixframework/phoenix](https://github.com/phoenixframework/phoenix) | `c9065a89` | Elixir | 0.117 s | 0.068 s | 0.58 |
+| [Perl/perl5](https://github.com/Perl/perl5) | `b3e8681e` | Perl | 1.253 s | 0.735 s | 0.59 |
+| [buildroot/buildroot](https://github.com/buildroot/buildroot) | `93156d58` | Makefile | 0.331 s | 0.195 s | 0.59 |
+| [tidyverse/ggplot2](https://github.com/tidyverse/ggplot2) | `b638d654` | R | 0.160 s | 0.095 s | 0.59 |
+| [moose/Moose](https://github.com/moose/Moose) | `98ec7dda` | Perl | 0.074 s | 0.045 s | 0.60 |
+| [gohugoio/hugo](https://github.com/gohugoio/hugo) | `a1668da3` | Go | 0.164 s | 0.100 s | 0.61 |
+| [sveltejs/svelte](https://github.com/sveltejs/svelte) | `fe21fce0` | Svelte | 0.378 s | 0.231 s | 0.61 |
+| [git/git](https://github.com/git/git) | `b9e5cff1` | C, Shell, Makefile | 0.987 s | 0.607 s | 0.61 |
+| [acmesh-official/acme.sh](https://github.com/acmesh-official/acme.sh) | `37d064f7` | Shell | 0.118 s | 0.073 s | 0.62 |
+| [termux/termux-packages](https://github.com/termux/termux-packages) | `34a8c84d` | Shell | 0.568 s | 0.355 s | 0.62 |
+| [haskell/cabal](https://github.com/haskell/cabal) | `07e003b3` | Haskell | 0.308 s | 0.198 s | 0.64 |
+| [prettier/prettier](https://github.com/prettier/prettier) | `c7a823c4` | JavaScript, TypeScript | 0.450 s | 0.295 s | 0.66 |
+| [sveltejs/kit](https://github.com/sveltejs/kit) | `04aac59b` | Svelte | 0.200 s | 0.133 s | 0.66 |
+| [github/docs](https://github.com/github/docs) `content` | `59fde2de` | Markdown | 0.260 s | 0.174 s | 0.67 |
+| [rubocop/rubocop](https://github.com/rubocop/rubocop) | `bde5d420` | Ruby | 0.394 s | 0.269 s | 0.68 |
+| [apache/tomcat](https://github.com/apache/tomcat) | `8c164da3` | XML, HTML | 0.663 s | 0.462 s | 0.70 |
+| [spring-projects/spring-framework](https://github.com/spring-projects/spring-framework) | `64861cb3` | Java, Kotlin | 1.088 s | 0.795 s | 0.73 |
+| [citusdata/citus](https://github.com/citusdata/citus) | `843ef6f0` | SQL, C | 0.453 s | 0.339 s | 0.75 |
+| [microsoft/vcpkg](https://github.com/microsoft/vcpkg) | `d186940b` | CMake, JSON | 1.042 s | 0.781 s | 0.75 |
+| [curl/curl](https://github.com/curl/curl) | `87c4c6d6` | C | 0.257 s | 0.204 s | 0.79 |
+| [apple/swift-nio](https://github.com/apple/swift-nio) | `108daca3` | Swift | 0.142 s | 0.118 s | 0.83 |
+| [npocmaka/batch.scripts](https://github.com/npocmaka/batch.scripts) | `7e784303` | Batch | 0.007 s | 0.006 s | 0.86 |
+| [typelevel/cats](https://github.com/typelevel/cats) | `b6c4dbfb` | Scala | 0.095 s | 0.082 s | 0.86 |
+| [AutoMapper/AutoMapper](https://github.com/AutoMapper/AutoMapper) | `df65f2e3` | C# | 0.045 s | 0.041 s | 0.89 |
 
-Measured on 2026-10-30 on a loaded machine, where the minimum of interleaved runs varied by about 3% between repetitions. Fork `1806dc8` found Markdown's code blocks with pulldown-cmark, whose first pass also scans inline syntax: on GitHub's `content`, 3,796 Markdown files, it took 1.05 and 1.07 times upstream's time in two runs, but 1.37 in a later run in which upstream ran faster, so it failed the gate, and its first pass alone took 28 of the 48 ms that upstream's whole count of those files took. Fork `72d47d8` reads only CommonMark's block structure, ported from commonmark.js, and took 0.79, but from 0.97 to above 1.10 over 30 runs once the machine was quiet; fork `6758800` counts Markdown's lines straight from the block list instead of the generic line loop, skips the block pass for files without three backticks or tildes in a row, 2,806 of the 3,796, and finds line ends with a vectorized search, and took 0.92 over 30 runs and 0.71 in an earlier run of the table, 0.74 in that of fork `f8826bd` and 0.87 in that of fork `59523f1`. Cabal ranged from 0.64 to 0.95 between runs of unchanged Haskell code and measured 0.69 and 0.71 over 30 runs. Fork `a6c2728` measured from 0.27 to 0.83 on the first twenty-four. Fork `9c85621` measured from 0.26 to 0.83 on the first twenty-two. Swift NIO, bloc, Cats and ggplot2 were measured as files of their judged languages until fork `397da12`, which measured from 0.27 to 0.82 on the first twenty, and as whole checkouts since, after the gate was found passing roots that no longer existed; it fails them since fork `47e6301`. Fork `ffb6076` measured from 0.25 to 0.83 on the first seventeen. Fork `994df39` passes over runs of bytes that change nothing at once, which cut the ratios from 0.45–0.96 for fork `687cb25`; earlier measurements found ratios from 0.53 to 0.92 for fork `55b0c87` and from 0.42 to 0.94 for fork `984e57b`.
+Measured on 2026-10-31 on a lightly loaded machine, with a load average of about 3 on 8 cores. Fork `59523f1` measured from 0.28 to 0.92 on 2026-10-30 on a loaded machine, where the minimum of interleaved runs varied by about 3% between repetitions. Fork `1806dc8` found Markdown's code blocks with pulldown-cmark, whose first pass also scans inline syntax: on GitHub's `content`, 3,796 Markdown files, it took 1.05 and 1.07 times upstream's time in two runs, but 1.37 in a later run in which upstream ran faster, so it failed the gate, and its first pass alone took 28 of the 48 ms that upstream's whole count of those files took. Fork `72d47d8` reads only CommonMark's block structure, ported from commonmark.js, and took 0.79, but from 0.97 to above 1.10 over 30 runs once the machine was quiet; fork `6758800` counts Markdown's lines straight from the block list instead of the generic line loop, skips the block pass for files without three backticks or tildes in a row, 2,806 of the 3,796, and finds line ends with a vectorized search, and took 0.92 over 30 runs and 0.71 in an earlier run of the table, 0.74 in that of fork `f8826bd`, 0.87 in that of fork `59523f1` and 0.67 in that of fork `85e6ed1`. Cabal ranged from 0.64 to 0.95 between runs of unchanged Haskell code and measured 0.69 and 0.71 over 30 runs. Fork `a6c2728` measured from 0.27 to 0.83 on the first twenty-four. Fork `9c85621` measured from 0.26 to 0.83 on the first twenty-two. Swift NIO, bloc, Cats and ggplot2 were measured as files of their judged languages until fork `397da12`, which measured from 0.27 to 0.82 on the first twenty, and as whole checkouts since, after the gate was found passing roots that no longer existed; it fails them since fork `47e6301`. Fork `ffb6076` measured from 0.25 to 0.83 on the first seventeen. Fork `994df39` passes over runs of bytes that change nothing at once, which cut the ratios from 0.45–0.96 for fork `687cb25`; earlier measurements found ratios from 0.53 to 0.92 for fork `55b0c87` and from 0.42 to 0.94 for fork `984e57b`.
