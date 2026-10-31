@@ -72,7 +72,7 @@ Inspect `result.file.language_mapping`, `purpose`, `category` and `rule`. Withou
 
 ## Correct a Misrecognized Language
 
-The counter recognizes languages by file name and extension, and some extensions belong to several formats: LaTeX class files (`.cls`) are read as Visual Basic 6, Tree-sitter query files (`.scm`) as Scheme, and C++ headers as C Header. A mapping cannot change a recognized file, and an exclusion would hide the file instead of answering the question. After inspecting the file, correct its language in the project configuration:
+The counter recognizes languages by file name and extension, and some extensions belong to several formats: LaTeX class files (`.cls`) are read as VB6/VBA, Tree-sitter query files (`.scm`) as Scheme, and C++ headers as C Header. A mapping cannot change a recognized file, and an exclusion would hide the file instead of answering the question. After inspecting the file, correct its language in the project configuration:
 
 ```toml
 version = 1

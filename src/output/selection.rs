@@ -46,9 +46,14 @@ pub struct CategoryPattern {
 
 impl CategoryPattern {
     /// Rejects a purpose part that can match no purpose, wildcard or not,
-    /// since that would silently empty every table; categories are the
-    /// project's own names.
+    /// since that would silently empty every table, and a wholly empty entry,
+    /// which an empty part's "anything" would silently turn into everything;
+    /// categories are the project's own names.
     pub fn parse(text: &str) -> Result<Self, String> {
+        let options = "Use 'production', 'test' or 'other', or a '*' pattern matching one of them";
+        if text.is_empty() {
+            return Err(format!("An entry is empty. {options}."));
+        }
         let (purpose, category) = match text.split_once(':') {
             Some((purpose, category)) => (purpose, Some(category.to_string())),
             None => (text, None),
@@ -60,12 +65,10 @@ impl CategoryPattern {
         if Purpose::ALL.iter().any(|purpose| pattern.names(*purpose)) {
             return Ok(pattern);
         }
-        let options = "Use 'production', 'test' or 'other', or a '*' pattern matching one of them";
         Err(match &pattern.category {
             Some(_) => format!(
                 "Purpose '{purpose}' matches no purpose. {options}, or leave it empty for any purpose, as in ':CATEGORY'."
             ),
-            None if text.is_empty() => format!("An entry is empty. {options}."),
             None => format!(
                 "'{text}' matches no purpose. {options}. For a category under any purpose, write ':{text}'."
             ),

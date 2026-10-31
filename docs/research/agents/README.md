@@ -13,6 +13,7 @@ How agents use Locmetry's help, guides, reports and errors. [Agent regression ch
 
 ## Regression Checks
 
+- [Agent regression desk review, 0.12.0](regression-desk-review-0.12.0.md): no regression and no agent run needed; help +0.3% and guides +0.8%, and a wholly empty `--table-category` entry that selected everything silently, fixed before the release.
 - [Agent regression desk review, 0.7.0 to 0.8.0](regression-desk-review-2026-10-21.md): no broken flag, example or route; reading-cost growth and two risks on measured tasks.
 - [Agent regression run, category reference](regression-run-2026-10-24.md): tasks 3, 8 and the new naming task 12 against `bd820b7`; correctness 24/24, identical reference names in every candidate run, and task 12's uncached input 1.2 points over its bound; a correction run with a shorter guide repeated the names and failed uncached input by more, mostly through provider cache misses.
 - [Agent regression run, guide sections](regression-run-2026-10-24-sections.md): tasks 1, 3, 8 and 12 against `bd820b7`; correctness 32/32 and 11.8% less uncached input, but task 8's uncached input and total calls over their bounds.

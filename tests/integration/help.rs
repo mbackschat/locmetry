@@ -472,8 +472,8 @@ const HELP_BUDGETS: [(&[&str], usize); 8] = [
     (&["-h"], 4_710),
     (&["--help"], 13_540),
     (&["workspace", "-h"], 2_500),
-    // Raised from 6,900 by the owner on 2026-10-27, without an agent check,
-    // for the `--table-category` empty-part sentence.
+    // Raised from 6,900 by the owner on 2026-10-27 for the `--table-category`
+    // empty-part sentence; reviewed in docs/research/agents/regression-desk-review-0.12.0.md (D9).
     (&["workspace", "--help"], 7_000),
     (&["compare", "-h"], 990),
     (&["compare", "--help"], 4_830),

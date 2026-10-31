@@ -161,6 +161,24 @@ fn empty_parts_match_any_purpose_or_category() {
     assert_eq!(tables("*ion:"), purpose);
 }
 
+/// An empty part matches anything, but a wholly empty entry, as from a stray
+/// comma or an unset shell variable, would silently widen the selection to
+/// everything (desk review D1, docs/research/agents/regression-desk-review-0.12.0.md).
+#[test]
+fn empty_entries_are_rejected() {
+    let temp = tempfile::tempdir().unwrap();
+    project(temp.path());
+    for value in ["", "test,", ",test"] {
+        let output = run(
+            temp.path(),
+            &["--format", "table", "--table-category", value],
+        );
+        assert_eq!(output.status.code(), Some(1), "{value:?}");
+        let error = String::from_utf8_lossy(&output.stderr);
+        assert!(error.contains("An entry is empty."), "{error}");
+    }
+}
+
 /// A purpose part that can match no purpose would silently empty every table,
 /// so it is a usage error, wildcard or not; the bare form's error names the
 /// category spelling the entry was likely meant as. A category is the
