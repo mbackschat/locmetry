@@ -1055,61 +1055,92 @@ Judge: a reference judge by NASM's lexical rules, from the NASM 2.16 manual (sec
 
 Upstream let a backslash escape the quote in `"\"`, which NASM and MASM read verbatim, and kept an unclosed quote, as in `title DOS entry to the KWC's 'C' programs`, open into the following lines: fork `901313f` differed on 79 of 6,411 files, on 9,412 lines. Fork `347319e` closes strings as NASM does and reads MASM's `COMMENT` blocks. Fifteen lines in 11 MS-DOS files still differ, each after a comment ending in a backslash, which NASM continues onto the next line; the MASM releases that built MS-DOS had no line continuation, and no NASM file in the corpus ends a comment so, so the fork does not continue them. On the assembly repositories, GNU-style and NASM together, the fork takes 0.95 times upstream's time. Sixty-five MS-DOS files and eight of NASM's test files are not UTF-8.
 
+## Bitbake
+
+BitBake has no tokenizer to call. Judge: BitBake 2.16's reading rules, ported from `lib/bb/parse/parse_py/BBHandler.py` and `ConfHandler.py` at bitbake `7412853430`, which `lib/bb/parse/ast.py` also applies to `.bbappend` files: a statement, its lines joined by trailing backslashes, whose first character is `#` is a comment; an assignment's quoted value, which must end its statement, is a literal; and the bodies of `name() {` and `def` functions are read by the [Shell](#shell) and [Python](#python) judges, a braced function as Python when `python` comes first or, as `MethodNode.eval` in `ast.py` makes it, when it has no name ([BitBake User Manual, Syntax and Operators](https://docs.yoctoproject.org/bitbake/bitbake-user-manual/bitbake-user-manual-metadata.html)). A statement BitBake does not know makes a file invalid. `.inc` files count when Tokei's content rule claims them for BitBake.
+
+| Repository | Commit | BitBake files | Lexically invalid |
+| --- | --- | ---: | ---: |
+| [openembedded/meta-openembedded](https://github.com/openembedded/meta-openembedded) | `eaa6d03a72` | 2,646 | 0 |
+| [openembedded/openembedded-core](https://github.com/openembedded/openembedded-core) | `5ffd9e0554` | 1,639 | 1 |
+| [lgirdk/meta-virtualization](https://github.com/lgirdk/meta-virtualization), a mirror of the Yocto Project's layer | `b12fb49843` | 228 | 0 |
+| [agherzan/meta-raspberrypi](https://github.com/agherzan/meta-raspberrypi) | `96d0b6dadf` | 93 | 0 |
+
+Every valid file matches on every line, 240,608 lines in all. The invalid file, `kernel.bbclass`, appends a body to `do_create_spdx`, which another class declares as a Python function, so the file alone does not tell its interpreter; the judge reads it as shell, which rejects it. Fork `cb12c3b` differed on 45 files, on 217 lines: every line was read with BitBake's top-level `#` and quote rules, so heredocs and nested quoting in shell functions, and triple-quoted strings holding apostrophes in Python functions, turned comments into code and code into comments. Fork `f50b63c` reads BitBake's statements as BBHandler does and each function body as its interpreter does; on these repositories it takes 0.32 times upstream's time.
+
+## Just
+
+Judge: just 1.59.0's lexer, `src/lexer.rs`, vendored verbatim since just exports none, with just's recipe runner (`Recipe::run_linewise` and `Recipe::run_script` in `src/recipe.rs`; [Just Programming Language manual](https://just.systems/man/en/)). Outside recipe bodies, comment tokens are comments and strings, backticks and the text of format strings are literals. just hands each body line to the shell after its `-`, `@` and `?` sigils, so a line whose command starts with `#` is a comment, and so is the line a comment's trailing backslash continues. A script recipe runs its body as one script, without the recipe's indentation, for the command of its `[script]` attribute or the `script-interpreter` setting, or for the interpreter its `#!` line names; the [Shell](#shell) or [Python](#python) judge reads it, with each `{{…}}` interpolation replaced by `x` characters, and a script for another interpreter makes the file invalid.
+
+| Repository | Commit | Justfiles | Lexically invalid |
+| --- | --- | ---: | ---: |
+| [ublue-os/bazzite](https://github.com/ublue-os/bazzite) | `3a46cd99bc` | 27 | 0 |
+| [casey/just](https://github.com/casey/just) | `2638e9c094` | 8 | 3 |
+| [pop-os/cosmic-files](https://github.com/pop-os/cosmic-files) | `09bdd8251d` | 2 | 0 |
+| [pop-os/cosmic-comp](https://github.com/pop-os/cosmic-comp) | `eeca8b09cb` | 2 | 0 |
+| [ublue-os/aurora](https://github.com/ublue-os/aurora) | `71dbbd7716` | 1 | 0 |
+| [ublue-os/bluefin](https://github.com/ublue-os/bluefin) | `af07fd46dc` | 1 | 0 |
+| 1,889 repositories that GitHub code search returned for justfile names on 2026-10-31, each file at the commit the search reported, [listed with their paths](tokei-fork-step-6-just-search.tsv) | | 2,230 | 78 |
+
+The 2,271 files hold 2,100 distinct contents. Every valid file matches on every line, 170,241 lines in all. Of the 81 invalid files, 59 run a script recipe with an interpreter no judge reads, such as PowerShell, `cmd.exe`, Bun, Node.js, Perl or Nushell; 17 are not files just's lexer accepts, such as cookiecutter and Liquid templates; and 5 hold a script the Shell judge rejects. Fork `cb12c3b` differed on 56 files, on 215 lines: Just declared no strings, so `#` lines in strings that span lines counted as comments, and script recipes were read line by line, so heredocs and quoting that span lines turned code into comments and blank lines. Fork `8dfaf47` reads strings as just's lexer does, the lines of a body as just runs them, and a script recipe's body as the language of its `[script]` command, `script-interpreter` setting or `#!` line. Fork `a069406` counts `.justfile` files, which just reads as it reads `justfile` (`JUSTFILE_NAMES` in `src/search.rs`) and Tokei did not count; 768 of the files above are named so. Upstream declares no strings for Just, so the speed gate gives upstream Just's quotes, as for Haskell and JSON; on these files the fork takes 0.65 times its time.
+
 ## Speed
 
 The owner decided on 2026-10-30 that the fork must parse within 10% of upstream Tokei 15.0.0's time on every repository below; the fork's [speed gate](https://github.com/mbackschat/tokei/tree/locmetry/judges#speed), `judges/speed/check.py`, measures it before each release is adopted. It parses every file Tokei recognizes from memory, three times, and compares the minimum user CPU time of 15 interleaved runs. Django, Tokio, Prettier, Swift NIO, bloc, Cats, ggplot2, Phoenix, Pester, pandoc, cabal, Tomcat, Bootstrap, Element Plus, SvelteKit, Svelte, KOReader, Citus, Prometheus's Helm charts, perl5, Moose, termux-packages, acme.sh, Buildroot and Git are whole checkouts, GitHub's docs are measured on their `content` folder, Linux on its makefiles, and the other trees hold the files of their judged languages.
 
-Upstream's Haskell declares no strings, so it never analyses the lines holding them, a quarter of cabal's Haskell lines and a third of pandoc's; against it, fork `994df39` took 1.10 times as long on pandoc and 1.38 times on cabal, and upstream's own engine took 3.4 times its time on cabal's Haskell files once given the quotes. The owner decided on 2026-10-30 that the gate gives upstream the string quotes of languages whose upstream definition has none, listed in the gate's `baseline-quotes.json`, so it measures the fork's own overhead; the Haskell rows below are measured that way. Upstream's JSON declares no strings either, and since fork `fc28619` reads the comments of JSON with Comments, the fork must read JSON's strings too: vcpkg, whose 6,200 JSON files dominate its time, took 1.41 times upstream's time, and 0.81 times once upstream was given JSON's quotes (fork `69cc49b`, measured 2026-10-30); the vcpkg row is measured that way.
+Upstream's Haskell declares no strings, so it never analyses the lines holding them, a quarter of cabal's Haskell lines and a third of pandoc's; against it, fork `994df39` took 1.10 times as long on pandoc and 1.38 times on cabal, and upstream's own engine took 3.4 times its time on cabal's Haskell files once given the quotes. The owner decided on 2026-10-30 that the gate gives upstream the string quotes of languages whose upstream definition has none, listed in the gate's `baseline-quotes.json`, so it measures the fork's own overhead; the Haskell rows below are measured that way. Upstream's JSON declares no strings either, and since fork `fc28619` reads the comments of JSON with Comments, the fork must read JSON's strings too: vcpkg, whose 6,200 JSON files dominate its time, took 1.41 times upstream's time, and 0.81 times once upstream was given JSON's quotes (fork `69cc49b`, measured 2026-10-30); the vcpkg row is measured that way. Upstream's Just declares no strings either; the Just row is measured with Just's quotes given to upstream, and against upstream without them the fork took 1.47 times its time on those files (fork `8dfaf47`, measured 2026-10-31).
 
-| Repository | Commit | Language | Upstream | Fork `cb12c3b` | Ratio |
+| Repository | Commit | Language | Upstream | Fork `e483fc8` | Ratio |
 | --- | --- | --- | ---: | ---: | ---: |
-| [symfony/symfony](https://github.com/symfony/symfony) | `92216211` | PHP | 4.332 s | 1.212 s | 0.28 |
-| [pester/Pester](https://github.com/pester/Pester) | `98e56d65` | PowerShell | 0.114 s | 0.045 s | 0.39 |
-| [koreader/koreader](https://github.com/koreader/koreader) | `80127739` | Lua | 0.347 s | 0.137 s | 0.39 |
-| [rubocop/rubocop](https://github.com/rubocop/rubocop) | `bde5d420` | Ruby | 0.370 s | 0.154 s | 0.42 |
-| [twbs/bootstrap](https://github.com/twbs/bootstrap) | `c967e2cb` | SCSS, CSS | 0.193 s | 0.083 s | 0.43 |
-| [microsoft/vcpkg](https://github.com/microsoft/vcpkg) | `d186940b` | CMake, JSON | 0.777 s | 0.341 s | 0.44 |
-| [element-plus/element-plus](https://github.com/element-plus/element-plus) | `a8d102a9` | Vue | 0.367 s | 0.162 s | 0.44 |
-| [prometheus-community/helm-charts](https://github.com/prometheus-community/helm-charts) | `77d25d4b` | YAML | 0.342 s | 0.152 s | 0.44 |
-| [gohugoio/hugo](https://github.com/gohugoio/hugo) | `a1668da3` | Go | 0.194 s | 0.088 s | 0.45 |
-| [django/django](https://github.com/django/django) | `817df1c4` | Python | 1.391 s | 0.662 s | 0.48 |
-| [termux/termux-packages](https://github.com/termux/termux-packages) | `34a8c84d` | Shell | 0.404 s | 0.195 s | 0.48 |
-| [felangel/bloc](https://github.com/felangel/bloc) | `b9be1e25` | Dart | 0.184 s | 0.089 s | 0.48 |
-| [dotnet/fsharp](https://github.com/dotnet/fsharp) F# files | `fbc9be3a` | F# | 0.944 s | 0.463 s | 0.49 |
-| [git/git](https://github.com/git/git) | `b9e5cff1` | C, Shell, Makefile | 1.009 s | 0.507 s | 0.50 |
-| [fpc/FPCSource](https://github.com/fpc/FPCSource) Pascal files | `fb4143a1` | Pascal | 4.083 s | 2.054 s | 0.50 |
-| [erlang/otp](https://github.com/erlang/otp) Erlang files | `4ba5448a` | Erlang | 1.488 s | 0.751 s | 0.50 |
-| [buildroot/buildroot](https://github.com/buildroot/buildroot) | `93156d58` | Makefile | 0.279 s | 0.145 s | 0.52 |
-| [phoenixframework/phoenix](https://github.com/phoenixframework/phoenix) | `c9065a89` | Elixir | 0.091 s | 0.048 s | 0.53 |
-| [fpc/Lazarus](https://github.com/fpc/Lazarus) Pascal files | `709a56c0` | Pascal | 2.010 s | 1.062 s | 0.53 |
-| [prettier/prettier](https://github.com/prettier/prettier) | `c7a823c4` | JavaScript, TypeScript | 0.344 s | 0.185 s | 0.54 |
-| [torvalds/linux](https://github.com/torvalds/linux) makefiles | `d89e1d18` | Makefile | 0.042 s | 0.023 s | 0.55 |
-| [dotnet/roslyn](https://github.com/dotnet/roslyn), [dotnet/docs](https://github.com/dotnet/docs), [dotnet/samples](https://github.com/dotnet/samples) and [icsharpcode/CodeConverter](https://github.com/icsharpcode/CodeConverter) Visual Basic files | `dcfa99c3`, `bcbe167f`, `ab42c8a4`, `a166046e` | Visual Basic | 1.377 s | 0.756 s | 0.55 |
-| [tidyverse/ggplot2](https://github.com/tidyverse/ggplot2) | `b638d654` | R | 0.169 s | 0.095 s | 0.56 |
-| [jgm/pandoc](https://github.com/jgm/pandoc) | `75ebbfa7` | Haskell | 0.171 s | 0.097 s | 0.57 |
-| [crystal-lang/crystal](https://github.com/crystal-lang/crystal) Crystal files | `9400d45c` | Crystal | 0.363 s | 0.206 s | 0.57 |
-| [JuliaLang/julia](https://github.com/JuliaLang/julia) Julia files | `3a061696` | Julia | 0.378 s | 0.218 s | 0.58 |
-| [Perl/perl5](https://github.com/Perl/perl5) | `b3e8681e` | Perl | 1.295 s | 0.750 s | 0.58 |
-| [haskell/cabal](https://github.com/haskell/cabal) | `07e003b3` | Haskell | 0.235 s | 0.144 s | 0.61 |
-| [acmesh-official/acme.sh](https://github.com/acmesh-official/acme.sh) | `37d064f7` | Shell | 0.106 s | 0.066 s | 0.62 |
-| [sveltejs/kit](https://github.com/sveltejs/kit) | `04aac59b` | Svelte | 0.162 s | 0.104 s | 0.64 |
-| [tokio-rs/tokio](https://github.com/tokio-rs/tokio) | `6470b5e4` | Rust | 0.099 s | 0.064 s | 0.65 |
-| [apache/tomcat](https://github.com/apache/tomcat) | `8c164da3` | XML, HTML | 0.694 s | 0.469 s | 0.68 |
-| [nim-lang/Nim](https://github.com/nim-lang/Nim) Nim files | `9a4192cc` | Nim | 0.250 s | 0.171 s | 0.68 |
-| The nine repositories of the [COBOL](#cobol) section, COBOL files | as listed there | COBOL | 0.324 s | 0.223 s | 0.69 |
-| [spring-projects/spring-framework](https://github.com/spring-projects/spring-framework) | `64861cb3` | Java, Kotlin | 1.128 s | 0.781 s | 0.69 |
-| [sveltejs/svelte](https://github.com/sveltejs/svelte) | `fe21fce0` | Svelte | 0.270 s | 0.190 s | 0.70 |
-| [citusdata/citus](https://github.com/citusdata/citus) | `843ef6f0` | SQL, C | 0.372 s | 0.267 s | 0.72 |
-| [curl/curl](https://github.com/curl/curl) | `87c4c6d6` | C | 0.237 s | 0.174 s | 0.73 |
-| The eight repositories of the [Solidity](#solidity) section, Solidity files | as listed there | Solidity | 0.212 s | 0.162 s | 0.76 |
-| [Reference-LAPACK/lapack](https://github.com/Reference-LAPACK/lapack) Fortran files | `472b3a0f` | FORTRAN Legacy, FORTRAN Modern | 0.593 s | 0.460 s | 0.78 |
-| [github/docs](https://github.com/github/docs) `content` | `59fde2de` | Markdown | 0.136 s | 0.108 s | 0.79 |
-| [apple/swift-nio](https://github.com/apple/swift-nio) | `108daca3` | Swift | 0.137 s | 0.116 s | 0.85 |
-| [typelevel/cats](https://github.com/typelevel/cats) | `b6c4dbfb` | Scala | 0.087 s | 0.074 s | 0.85 |
-| [ocaml/ocaml](https://github.com/ocaml/ocaml) OCaml files | `a76fb1de` | OCaml | 0.392 s | 0.334 s | 0.85 |
-| [AutoMapper/AutoMapper](https://github.com/AutoMapper/AutoMapper) | `df65f2e3` | C# | 0.035 s | 0.030 s | 0.86 |
+| [symfony/symfony](https://github.com/symfony/symfony) | `92216211` | PHP | 4.173 s | 1.152 s | 0.28 |
+| The four repositories of the [Bitbake](#bitbake) section, BitBake files | as listed there | Bitbake | 0.408 s | 0.130 s | 0.32 |
+| [koreader/koreader](https://github.com/koreader/koreader) | `80127739` | Lua | 0.328 s | 0.132 s | 0.40 |
+| [pester/Pester](https://github.com/pester/Pester) | `98e56d65` | PowerShell | 0.141 s | 0.060 s | 0.43 |
+| [django/django](https://github.com/django/django) | `817df1c4` | Python | 1.417 s | 0.608 s | 0.43 |
+| [element-plus/element-plus](https://github.com/element-plus/element-plus) | `a8d102a9` | Vue | 0.389 s | 0.174 s | 0.45 |
+| [twbs/bootstrap](https://github.com/twbs/bootstrap) | `c967e2cb` | SCSS, CSS | 0.185 s | 0.085 s | 0.46 |
+| The justfiles of the [Just](#just) section | as listed there | Just | 0.203 s | 0.095 s | 0.47 |
+| [JuliaLang/julia](https://github.com/JuliaLang/julia) Julia files | `3a061696` | Julia | 0.376 s | 0.177 s | 0.47 |
+| [prometheus-community/helm-charts](https://github.com/prometheus-community/helm-charts) | `77d25d4b` | YAML | 0.337 s | 0.161 s | 0.48 |
+| [dotnet/fsharp](https://github.com/dotnet/fsharp) F# files | `fbc9be3a` | F# | 1.130 s | 0.544 s | 0.48 |
+| [prettier/prettier](https://github.com/prettier/prettier) | `c7a823c4` | JavaScript, TypeScript | 0.395 s | 0.199 s | 0.50 |
+| [termux/termux-packages](https://github.com/termux/termux-packages) | `34a8c84d` | Shell | 0.555 s | 0.281 s | 0.51 |
+| [fpc/FPCSource](https://github.com/fpc/FPCSource) Pascal files | `fb4143a1` | Pascal | 3.948 s | 2.009 s | 0.51 |
+| [buildroot/buildroot](https://github.com/buildroot/buildroot) | `93156d58` | Makefile | 0.281 s | 0.144 s | 0.51 |
+| [dotnet/roslyn](https://github.com/dotnet/roslyn), [dotnet/docs](https://github.com/dotnet/docs), [dotnet/samples](https://github.com/dotnet/samples) and [icsharpcode/CodeConverter](https://github.com/icsharpcode/CodeConverter) Visual Basic files | `dcfa99c3`, `bcbe167f`, `ab42c8a4`, `a166046e` | Visual Basic | 1.422 s | 0.739 s | 0.52 |
+| [felangel/bloc](https://github.com/felangel/bloc) | `b9be1e25` | Dart | 0.200 s | 0.104 s | 0.52 |
+| [phoenixframework/phoenix](https://github.com/phoenixframework/phoenix) | `c9065a89` | Elixir | 0.097 s | 0.051 s | 0.53 |
+| [torvalds/linux](https://github.com/torvalds/linux) makefiles | `d89e1d18` | Makefile | 0.040 s | 0.022 s | 0.55 |
+| [jgm/pandoc](https://github.com/jgm/pandoc) | `75ebbfa7` | Haskell | 0.176 s | 0.099 s | 0.56 |
+| [crystal-lang/crystal](https://github.com/crystal-lang/crystal) Crystal files | `9400d45c` | Crystal | 0.355 s | 0.200 s | 0.56 |
+| [fpc/Lazarus](https://github.com/fpc/Lazarus) Pascal files | `709a56c0` | Pascal | 2.062 s | 1.173 s | 0.57 |
+| [acmesh-official/acme.sh](https://github.com/acmesh-official/acme.sh) | `37d064f7` | Shell | 0.097 s | 0.056 s | 0.58 |
+| [sveltejs/kit](https://github.com/sveltejs/kit) | `04aac59b` | Svelte | 0.185 s | 0.108 s | 0.58 |
+| [tidyverse/ggplot2](https://github.com/tidyverse/ggplot2) | `b638d654` | R | 0.161 s | 0.094 s | 0.58 |
+| [Perl/perl5](https://github.com/Perl/perl5) | `b3e8681e` | Perl | 1.241 s | 0.734 s | 0.59 |
+| [erlang/otp](https://github.com/erlang/otp) Erlang files | `4ba5448a` | Erlang | 1.535 s | 0.909 s | 0.59 |
+| [haskell/cabal](https://github.com/haskell/cabal) | `07e003b3` | Haskell | 0.283 s | 0.170 s | 0.60 |
+| [git/git](https://github.com/git/git) | `b9e5cff1` | C, Shell, Makefile | 0.951 s | 0.583 s | 0.61 |
+| [rubocop/rubocop](https://github.com/rubocop/rubocop) | `bde5d420` | Ruby | 0.300 s | 0.184 s | 0.61 |
+| [sveltejs/svelte](https://github.com/sveltejs/svelte) | `fe21fce0` | Svelte | 0.322 s | 0.204 s | 0.63 |
+| [citusdata/citus](https://github.com/citusdata/citus) | `843ef6f0` | SQL, C | 0.434 s | 0.282 s | 0.65 |
+| [nim-lang/Nim](https://github.com/nim-lang/Nim) Nim files | `9a4192cc` | Nim | 0.284 s | 0.190 s | 0.67 |
+| [apache/tomcat](https://github.com/apache/tomcat) | `8c164da3` | XML, HTML | 0.664 s | 0.446 s | 0.67 |
+| The nine repositories of the [COBOL](#cobol) section, COBOL files | as listed there | COBOL | 0.308 s | 0.212 s | 0.69 |
+| [gohugoio/hugo](https://github.com/gohugoio/hugo) | `a1668da3` | Go | 0.195 s | 0.135 s | 0.69 |
+| [spring-projects/spring-framework](https://github.com/spring-projects/spring-framework) | `64861cb3` | Java, Kotlin | 1.091 s | 0.764 s | 0.70 |
+| [tokio-rs/tokio](https://github.com/tokio-rs/tokio) | `6470b5e4` | Rust | 0.136 s | 0.099 s | 0.73 |
+| [Reference-LAPACK/lapack](https://github.com/Reference-LAPACK/lapack) Fortran files | `472b3a0f` | FORTRAN Legacy, FORTRAN Modern | 0.649 s | 0.473 s | 0.73 |
+| [apple/swift-nio](https://github.com/apple/swift-nio) | `108daca3` | Swift | 0.117 s | 0.087 s | 0.74 |
+| [moose/Moose](https://github.com/moose/Moose) | `98ec7dda` | Perl | 0.059 s | 0.045 s | 0.76 |
+| [curl/curl](https://github.com/curl/curl) | `87c4c6d6` | C | 0.257 s | 0.200 s | 0.78 |
+| [microsoft/vcpkg](https://github.com/microsoft/vcpkg) | `d186940b` | CMake, JSON | 0.876 s | 0.683 s | 0.78 |
+| [typelevel/cats](https://github.com/typelevel/cats) | `b6c4dbfb` | Scala | 0.096 s | 0.078 s | 0.81 |
+| The eight repositories of the [Solidity](#solidity) section, Solidity files | as listed there | Solidity | 0.241 s | 0.203 s | 0.84 |
+| [ocaml/ocaml](https://github.com/ocaml/ocaml) OCaml files | `a76fb1de` | OCaml | 0.399 s | 0.337 s | 0.84 |
+| [AutoMapper/AutoMapper](https://github.com/AutoMapper/AutoMapper) | `df65f2e3` | C# | 0.047 s | 0.040 s | 0.85 |
 | [npocmaka/batch.scripts](https://github.com/npocmaka/batch.scripts) | `7e784303` | Batch | 0.007 s | 0.006 s | 0.86 |
-| [moose/Moose](https://github.com/moose/Moose) | `98ec7dda` | Perl | 0.049 s | 0.046 s | 0.94 |
-| The eleven repositories of the [GNU Style Assembly](#gnu-style-assembly) and [Assembly](#assembly) sections, assembly files | as listed there | GNU Style Assembly, Assembly | 0.844 s | 0.806 s | 0.95 |
+| [github/docs](https://github.com/github/docs) `content` | `59fde2de` | Markdown | 0.119 s | 0.113 s | 0.95 |
+| The eleven repositories of the [GNU Style Assembly](#gnu-style-assembly) and [Assembly](#assembly) sections, assembly files | as listed there | GNU Style Assembly, Assembly | 0.819 s | 0.807 s | 0.99 |
 
-Measured on 2026-10-31. The gate's run measured all Solidity repositories at 1.48 while two Lean builds and Spotlight indexing kept the machine busy; three reruns of that root alone measured 1.03, 0.84 and 0.77, and the row gives the last. Fork `8ca1543` measured from 0.30 to 0.86 earlier that day, before COBOL and assembly were added. Earlier, on ethereum/solidity alone, about 0.1 s of work, the ratio ranged from 0.90 to 1.22 over eight runs, four of them above 1.10, while Spotlight indexing kept the load average near 8 on 8 cores and upstream's minimum moved from 0.107 s to 0.165 s between runs; the Solidity row therefore measures all eight Solidity repositories together, which measured 0.94, 0.94 and 1.09 in three separate runs before this table's. Fork `c18e585` measured from 0.23 to 0.87 earlier that day, before Pascal, Nim, Crystal and Solidity were added, and fork `3343fdb` measured from 0.27 to 0.88 earlier that day, before OCaml and Fortran were added, and fork `9043f73` from 0.28 to 0.90 on a lightly loaded machine, with a load average of about 3 on 8 cores, before F#, Julia and Erlang were added, and fork `85e6ed1` from 0.26 to 0.89, before Visual Basic was added. Fork `59523f1` measured from 0.28 to 0.92 on 2026-10-30 on a loaded machine, where the minimum of interleaved runs varied by about 3% between repetitions. Fork `1806dc8` found Markdown's code blocks with pulldown-cmark, whose first pass also scans inline syntax: on GitHub's `content`, 3,796 Markdown files, it took 1.05 and 1.07 times upstream's time in two runs, but 1.37 in a later run in which upstream ran faster, so it failed the gate, and its first pass alone took 28 of the 48 ms that upstream's whole count of those files took. Fork `72d47d8` reads only CommonMark's block structure, ported from commonmark.js, and took 0.79, but from 0.97 to above 1.10 over 30 runs once the machine was quiet; fork `6758800` counts Markdown's lines straight from the block list instead of the generic line loop, skips the block pass for files without three backticks or tildes in a row, 2,806 of the 3,796, and finds line ends with a vectorized search, and took 0.92 over 30 runs and 0.71 in an earlier run of the table, 0.74 in that of fork `f8826bd`, 0.87 in that of fork `59523f1`, 0.67 in that of fork `85e6ed1`, 0.90 in that of fork `9043f73`, 0.78 in that of fork `3343fdb`, 0.67 in that of fork `c18e585` and 0.69 in that of fork `8ca1543`. Cabal ranged from 0.64 to 0.95 between runs of unchanged Haskell code and measured 0.69 and 0.71 over 30 runs. Fork `a6c2728` measured from 0.27 to 0.83 on the first twenty-four. Fork `9c85621` measured from 0.26 to 0.83 on the first twenty-two. Swift NIO, bloc, Cats and ggplot2 were measured as files of their judged languages until fork `397da12`, which measured from 0.27 to 0.82 on the first twenty, and as whole checkouts since, after the gate was found passing roots that no longer existed; it fails them since fork `47e6301`. Fork `ffb6076` measured from 0.25 to 0.83 on the first seventeen. Fork `994df39` passes over runs of bytes that change nothing at once, which cut the ratios from 0.45–0.96 for fork `687cb25`; earlier measurements found ratios from 0.53 to 0.92 for fork `55b0c87` and from 0.42 to 0.94 for fork `984e57b`.
+Measured on 2026-10-31, in one run of the gate. Fork `cb12c3b` measured from 0.28 to 0.95 earlier that day, before BitBake and Just were added; its run measured all Solidity repositories at 1.48 while two Lean builds and Spotlight indexing kept the machine busy, and three reruns of that root alone measured 1.03, 0.84 and 0.77. Fork `8ca1543` measured from 0.30 to 0.86 earlier that day, before COBOL and assembly were added. Earlier, on ethereum/solidity alone, about 0.1 s of work, the ratio ranged from 0.90 to 1.22 over eight runs, four of them above 1.10, while Spotlight indexing kept the load average near 8 on 8 cores and upstream's minimum moved from 0.107 s to 0.165 s between runs; the Solidity row therefore measures all eight Solidity repositories together, which measured 0.94, 0.94 and 1.09 in three separate runs before this table's. Fork `c18e585` measured from 0.23 to 0.87 earlier that day, before Pascal, Nim, Crystal and Solidity were added, and fork `3343fdb` measured from 0.27 to 0.88 earlier that day, before OCaml and Fortran were added, and fork `9043f73` from 0.28 to 0.90 on a lightly loaded machine, with a load average of about 3 on 8 cores, before F#, Julia and Erlang were added, and fork `85e6ed1` from 0.26 to 0.89, before Visual Basic was added. Fork `59523f1` measured from 0.28 to 0.92 on 2026-10-30 on a loaded machine, where the minimum of interleaved runs varied by about 3% between repetitions. Fork `1806dc8` found Markdown's code blocks with pulldown-cmark, whose first pass also scans inline syntax: on GitHub's `content`, 3,796 Markdown files, it took 1.05 and 1.07 times upstream's time in two runs, but 1.37 in a later run in which upstream ran faster, so it failed the gate, and its first pass alone took 28 of the 48 ms that upstream's whole count of those files took. Fork `72d47d8` reads only CommonMark's block structure, ported from commonmark.js, and took 0.79, but from 0.97 to above 1.10 over 30 runs once the machine was quiet; fork `6758800` counts Markdown's lines straight from the block list instead of the generic line loop, skips the block pass for files without three backticks or tildes in a row, 2,806 of the 3,796, and finds line ends with a vectorized search, and took 0.92 over 30 runs and 0.71 in an earlier run of the table, 0.74 in that of fork `f8826bd`, 0.87 in that of fork `59523f1`, 0.67 in that of fork `85e6ed1`, 0.90 in that of fork `9043f73`, 0.78 in that of fork `3343fdb`, 0.67 in that of fork `c18e585` and 0.69 in that of fork `8ca1543`. Cabal ranged from 0.64 to 0.95 between runs of unchanged Haskell code and measured 0.69 and 0.71 over 30 runs. Fork `a6c2728` measured from 0.27 to 0.83 on the first twenty-four. Fork `9c85621` measured from 0.26 to 0.83 on the first twenty-two. Swift NIO, bloc, Cats and ggplot2 were measured as files of their judged languages until fork `397da12`, which measured from 0.27 to 0.82 on the first twenty, and as whole checkouts since, after the gate was found passing roots that no longer existed; it fails them since fork `47e6301`. Fork `ffb6076` measured from 0.25 to 0.83 on the first seventeen. Fork `994df39` passes over runs of bytes that change nothing at once, which cut the ratios from 0.45–0.96 for fork `687cb25`; earlier measurements found ratios from 0.53 to 0.92 for fork `55b0c87` and from 0.42 to 0.94 for fork `984e57b`.
