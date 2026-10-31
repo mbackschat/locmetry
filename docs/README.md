@@ -8,8 +8,8 @@ Start with the workflow or contract relevant to your task. Status tables in the 
 - [Measurement semantics](measurement.md): counting, selection boundaries and private regression instructions.
 - [Measure Locmetry itself](self-measurement.md): the root configuration's scope, classification decisions and verification.
 - [Saved report compatibility](report-compatibility.md): historical fields and comparison evidence.
-- [Integration and distribution](tokei-integration.md): embedded backend, packaging and release procedures.
-- [Tokei counting defects](tokei-defects.md): where Tokei misreads literals or comments, which defects Locmetry corrects and the probes for the rest.
+- [Integration and distribution](tokei-integration.md): the embedded [Tokei fork](https://github.com/mbackschat/tokei/tree/locmetry#why-this-fork), packaging and release procedures.
+- [Tokei counting defects](tokei-defects.md): where Tokei misreads literals or comments, which defects Locmetry's Tokei fork corrects and the probes for the rest.
 - [Current work](PLAN.md): open tasks and decision gates.
 - [Deferred work](DEFERRED.md): deferred and unscheduled items, each with the condition that would reopen it.
 - [Rejected designs](REJECTED.md): designs decided against, with the reason and evidence that settled each.

@@ -7,11 +7,11 @@
 [![Latest release](https://img.shields.io/github/v/release/mbackschat/locmetry)](https://github.com/mbackschat/locmetry/releases/latest)
 [![Licence: MIT](https://img.shields.io/github/license/mbackschat/locmetry)](LICENSE)
 
-Line counters such as Tokei, cloc and scc report how many lines of each language a repository holds. Locmetry reports what those lines are for: it counts with Tokei, then classifies every file as production, test or other code and by category, such as generated code or tooling, keeps data and documentation out of source totals, and records the rule behind each classification so you can check it.
+Line counters such as Tokei, cloc and scc report how many lines of each language a repository holds. Locmetry reports what those lines are for: it counts with [its own fork of Tokei](https://github.com/mbackschat/tokei/tree/locmetry#why-this-fork), then classifies every file as production, test or other code and by category, such as generated code or tooling, keeps data and documentation out of source totals, and records the rule behind each classification so you can check it.
 
 | | Line counters (Tokei, cloc, scc) | Locmetry |
 | --- | --- | --- |
-| Code, comments and blanks per language | Yes | Yes, counted by Tokei |
+| Code, comments and blanks per language | Yes | Yes, counted by a Tokei fork that reads strings and comments as each language's own lexer does |
 | Production, test and other code | Not built in; scc can map file patterns to custom categories | Built in from build modules and test conventions, refined by a reviewed policy |
 | Data and documentation | Counted next to source: JSON counts as code | Reported apart from source code |
 | Why a file counts where it does | No classification to explain | `locmetry explain PATH` names the deciding rule |
@@ -332,7 +332,7 @@ For file-level recognition and classification changes, run `compare-locmetry-fil
 
 ## How classification works
 
-Locmetry embeds Tokei for counting and applies project policy to each file. Purpose, category and content kind are separate dimensions, as [Terms](#terms) explains. Kind follows the physical file, so a fenced code block in Markdown or other documentation counts as documentation, never as source; `--verbose` shows how many code lines such snippets hold. Rust doc comments, doctests included, stay comments of their file.
+Locmetry embeds [a fork of Tokei 15.0.0](https://github.com/mbackschat/tokei/tree/locmetry#why-this-fork) for counting and applies project policy to each file. Tokei misreads literals it does not know, such as `'"'`, raw strings or interpolation holes, and then counts the comments after them as code; the fork reads them as each language's own lexer or parser does, checked on public repositories, and decides by content the extensions several languages share. [Tokei defects](docs/tokei-defects.md) lists what it corrects. Purpose, category and content kind are separate dimensions, as [Terms](#terms) explains. Kind follows the physical file, so a fenced code block in Markdown or other documentation counts as documentation, never as source; `--verbose` shows how many code lines such snippets hold. Rust doc comments, doctests included, stay comments of their file.
 
 - **Module context:** selected build descriptors, such as npm, Gradle, Cargo, Go, Python or .NET project files, and framework descriptors, such as `next.config.ts` or Laravel's `artisan`, identify conventional source layouts, as [build modules](#build-modules) describes. The innermost module supplies context, so nested projects do not inherit an outer project's layout blindly.
 - **Ordered decisions:** explicit overrides precede test and build conventions, ordinary project rules, module inference and fallback. Tests inside production source trees remain tests; overrides can express exceptions. Refinements then give decided files a finer category without changing their purpose. Every counted file records the deciding rule, and reports count what each policy entry decided.
