@@ -5,7 +5,7 @@ usage() {
     cat <<'HELP'
 Usage: compare-locmetry-files.sh BEFORE.json AFTER.json
 
-Compare two full single-root Locmetry reports captured with --files.
+Compare two full single-root LOCmetry reports captured with --files.
 Writes changed file records, both captures' metadata and native comparison
 findings as JSON to stdout. No source directories are scanned.
 
@@ -24,7 +24,7 @@ if [[ $# != 2 ]]; then
     exit 1
 fi
 if ! command -v jq >/dev/null; then
-    printf '%s\n' 'This optional helper requires jq. Install it with `brew install jq` on macOS, your system package manager on Linux, or `winget install jqlang.jq` on Windows. Locmetry itself does not require jq.' >&2
+    printf '%s\n' 'This optional helper requires jq. Install it with `brew install jq` on macOS, your system package manager on Linux, or `winget install jqlang.jq` on Windows. LOCmetry itself does not require jq.' >&2
     exit 1
 fi
 

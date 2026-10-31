@@ -222,7 +222,7 @@ impl Policy {
         let generated = *config.classification.builtin_generated.get_or_insert(true);
         ensure!(
             config.version == 1,
-            "Unsupported configuration version {}. Locmetry {} reads version 1. A newer release may read this file.",
+            "Unsupported configuration version {}. LOCmetry {} reads version 1. A newer release may read this file.",
             config.version,
             env!("CARGO_PKG_VERSION")
         );

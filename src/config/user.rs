@@ -1,7 +1,7 @@
 //! Personal defaults, which widen exclusions and language mappings for every project.
 use super::*;
 
-/// Locmetry personal defaults: TOML in `$XDG_CONFIG_HOME/locmetry/config.toml`, else `~/.config/locmetry/config.toml`, or `%APPDATA%\locmetry\config.toml` on Windows, applied to every project.
+/// LOCmetry personal defaults: TOML in `$XDG_CONFIG_HOME/locmetry/config.toml`, else `~/.config/locmetry/config.toml`, or `%APPDATA%\locmetry\config.toml` on Windows, applied to every project.
 ///
 /// They may only narrow scope and teach languages, never classify by purpose or category. Personal mappings can still change recognition and content kind. `--no-user-config` ignores them, and reports name the file as `metadata.user_config_path`.
 #[derive(Debug, Deserialize, JsonSchema)]

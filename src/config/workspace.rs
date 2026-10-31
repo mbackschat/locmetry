@@ -1,7 +1,7 @@
 //! Workspace files: the roots or project folders one workspace measurement merges.
 use super::*;
 
-/// Locmetry workspace: TOML naming what `locmetry workspace --workspace-file` measures as one virtual monorepo.
+/// LOCmetry workspace: TOML naming what `locmetry workspace --workspace-file` measures as one virtual monorepo.
 ///
 /// Name either independent repositories with `roots`, each measured with its own `.locmetryrc`, or folders of one repository with `project` and `folders`, all measured with the project's `.locmetryrc` as `--subfolder` would measure them. Each member becomes a top-level folder of the report, named after its root's or folder's last segment. The file is read only when `--workspace-file` names it, never discovered, and a member that contains it does not measure it.
 #[derive(Debug, Deserialize, JsonSchema)]

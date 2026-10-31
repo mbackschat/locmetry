@@ -174,7 +174,7 @@ pub(super) fn measurement_notes(c: &Comparison) -> Vec<(Role, String)> {
 
     for (name, a, b) in [
         (
-            "Locmetry version",
+            "LOCmetry version",
             &before.locmetry_version,
             &after.locmetry_version,
         ),

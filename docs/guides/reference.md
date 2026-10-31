@@ -1,6 +1,6 @@
 # Reference
 
-The facts every task shares: what exit statuses mean, which environment variables and files Locmetry reads, and how to install its man page and shell completions. [PRODUCT](../PRODUCT.md) owns these guarantees; this page states them for reading. `locmetry --generate man` renders its first three sections into the man page.
+The facts every task shares: what exit statuses mean, which environment variables and files LOCmetry reads, and how to install its man page and shell completions. [PRODUCT](../PRODUCT.md) owns these guarantees; this page states them for reading. `locmetry --generate man` renders its first three sections into the man page.
 
 ## Exit Status
 
@@ -12,7 +12,7 @@ Help, version, guide, schema and generation queries exit 0 when they succeed. Di
 
 ## Environment
 
-Locmetry itself reads these variables; variables that only its libraries read are not listed.
+LOCmetry itself reads these variables; variables that only its libraries read are not listed.
 
 - `NO_COLOR`: when set and not empty, turns off colors and emphasis, as `--no-color` does. Share bars and Markdown emphasis stay.
 - `TERM`: `dumb` turns off colors and emphasis.
@@ -41,7 +41,7 @@ locmetry --generate complete-fish > ~/.config/fish/completions/locmetry.fish
 locmetry --generate complete-zsh > ~/.zfunc/_locmetry
 ```
 
-If `man locmetry` finds no entry after installing the page, as on macOS, add `export MANPATH="$HOME/.local/share/man:"` to your shell profile; the trailing colon keeps the system's pages. For zsh, add `fpath=(~/.zfunc $fpath)` before `compinit` in `~/.zshrc`. Completions offer commands, options and the values Locmetry knows, such as `--format` and `--guide` topics, but not section ids or category names.
+If `man locmetry` finds no entry after installing the page, as on macOS, add `export MANPATH="$HOME/.local/share/man:"` to your shell profile; the trailing colon keeps the system's pages. For zsh, add `fpath=(~/.zfunc $fpath)` before `compinit` in `~/.zshrc`. Completions offer commands, options and the values LOCmetry knows, such as `--format` and `--guide` topics, but not section ids or category names.
 
 On Windows, PowerShell completes commands and options, not values. Scoop installs no profile changes; add this line to the file `$PROFILE` names:
 

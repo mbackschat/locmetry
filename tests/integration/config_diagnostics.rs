@@ -45,7 +45,7 @@ fn unknown_fields_suggest_the_field_meant() {
     ));
     assert!(
         stderr.contains(&format!(
-            "Locmetry {} does not know this field. A newer release may.",
+            "LOCmetry {} does not know this field. A newer release may.",
             env!("CARGO_PKG_VERSION")
         )),
         "{stderr}"
@@ -57,7 +57,7 @@ fn an_unsupported_version_names_the_one_this_release_reads() {
     let stderr = error("version = 2\n");
     assert!(
         stderr.contains(&format!(
-            "Unsupported configuration version 2. Locmetry {} reads version 1. A newer release may read this file.",
+            "Unsupported configuration version 2. LOCmetry {} reads version 1. A newer release may read this file.",
             env!("CARGO_PKG_VERSION")
         )),
         "{stderr}"
@@ -121,7 +121,7 @@ fn id_errors_say_which_rule_an_id_breaks() {
         "version = 1\n[[rules]]\nid = \"builtin:x\"\nmatch = [\"a/**\"]\npurpose = \"test\"\n",
     );
     assert!(
-        stderr.contains("Entry ID 'builtin:x' is reserved. 'fallback' and IDs starting with 'builtin:' name Locmetry's own stages."),
+        stderr.contains("Entry ID 'builtin:x' is reserved. 'fallback' and IDs starting with 'builtin:' name LOCmetry's own stages."),
         "{stderr}"
     );
 }

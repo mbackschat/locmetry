@@ -126,7 +126,7 @@ fn options(command: &clap::Command) -> clap::Command {
 }
 
 /// The page as it is assembled from clap_mangen's section renderers and
-/// Locmetry's own sections.
+/// LOCmetry's own sections.
 #[derive(Default)]
 struct Page {
     text: String,

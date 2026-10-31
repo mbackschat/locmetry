@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Gate source file sizes by purpose with Locmetry's own measurement; policy: docs/self-measurement.md."""
+"""Gate source file sizes by purpose with LOCmetry's own measurement; policy: docs/self-measurement.md."""
 
 import argparse
 import json

@@ -15,7 +15,7 @@ Build the current executable with `cargo build --locked`. From the repository ro
 
 Commands and captured output are real. `jq` projections select meaningful JSON fields, and visible `sed` expressions omit variable location/time footers or select report sections. `demo_wrap` wraps displayed text at whitespace to 120 characters; JSON is pretty-printed with jq. The verifier enforces a 120-character limit on fenced commands and output. Complete exported files retain their original metadata. These projections are part of the recorded command, not edits to its output. Explicit formats avoid depending on whether stdout is a terminal. Styling suppression is demonstrated; the guides do not verify visual palettes.
 
-Bash and jq are needed to execute the examples. Showboat is needed only for recording or replay. Use the pinned commands below to obtain this optional development tool through uv's external cache. Locmetry's Rust dependencies, runtime and releases do not include them. No virtual environment, installed package, Python dependency manifest or lockfile belongs in Git.
+Bash and jq are needed to execute the examples. Showboat is needed only for recording or replay. Use the pinned commands below to obtain this optional development tool through uv's external cache. LOCmetry's Rust dependencies, runtime and releases do not include them. No virtual environment, installed package, Python dependency manifest or lockfile belongs in Git.
 
 ## Option coverage
 

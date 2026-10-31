@@ -29,7 +29,7 @@ pub enum Detail {
     Headline,
 }
 
-/// Locmetry measurement: --format json emits the full report; --format headline emits compact JSON.
+/// LOCmetry measurement: --format json emits the full report; --format headline emits compact JSON.
 /// Full reports add review, breakdown,
 /// kinds, modules, unrecognized paths and effective policy; --files adds file detail.
 /// Missing optional detail is not measured zero. Aggregate summary omissions alone mean zero.
@@ -78,7 +78,7 @@ pub struct MeasurementReport {
 pub struct Metadata {
     pub measured_at_unix_seconds: u64,
     pub locmetry_version: String,
-    /// Embedded counter name and version; Locmetry version also matters for local corrections.
+    /// Embedded counter name and version; LOCmetry version also matters for local corrections.
     pub backend: String,
     /// True means partial counts and measurement exit 2, even without identified failure paths. Historical false does not certify notebook correctness.
     pub backend_inaccurate: bool,

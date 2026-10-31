@@ -7,9 +7,9 @@
 [![Latest release](https://img.shields.io/github/v/release/mbackschat/locmetry)](https://github.com/mbackschat/locmetry/releases/latest)
 [![Licence: MIT](https://img.shields.io/github/license/mbackschat/locmetry)](LICENSE)
 
-Line counters such as Tokei, cloc and scc report how many lines of each language a repository holds. Locmetry reports what those lines are for: it counts with [its own fork of Tokei](https://github.com/mbackschat/tokei/tree/locmetry#why-this-fork), then classifies every file as production, test or other code and by category, such as generated code or tooling, keeps data and documentation out of source totals, and records the rule behind each classification so you can check it.
+Line counters such as Tokei, cloc and scc report how many lines of each language a repository holds. LOCmetry reports what those lines are for: it counts with [its own fork of Tokei](https://github.com/mbackschat/tokei/tree/locmetry#why-this-fork), then classifies every file as production, test or other code and by category, such as generated code or tooling, keeps data and documentation out of source totals, and records the rule behind each classification so you can check it.
 
-| | Line counters (Tokei, cloc, scc) | Locmetry |
+| | Line counters (Tokei, cloc, scc) | LOCmetry |
 | --- | --- | --- |
 | Code, comments and blanks per language | Yes | Yes, counted by a Tokei fork that reads strings and comments as each language's own lexer does |
 | Production, test and other code | Not built in; scc can map file patterns to custom categories | Built in from build modules and test conventions, refined by a reviewed policy |
@@ -19,9 +19,9 @@ Line counters such as Tokei, cloc and scc report how many lines of each language
 
 The [comparison on Immich](#compared-with-a-line-counter-how-much-text-per-language) shows what that changes: the counters count its database schemas, OpenAPI specification and translations as code.
 
-![Locmetry measures Immich by language and purpose, adds its folder and category tables, explains why a generated SDK client counts as other code, and compares two Immich releases](docs/assets/demo.gif)
+![LOCmetry measures Immich by language and purpose, adds its folder and category tables, explains why a generated SDK client counts as other code, and compares two Immich releases](docs/assets/demo.gif)
 
-It needs no configuration to start: Locmetry recognizes the [build modules](#build-modules) of npm, Gradle, Maven, Cargo, Go, Python, Lake, Swift, Dart, .NET, Composer and RubyGems projects and of Next.js, Nuxt, React Router, Symfony, Laravel, Rails and Django applications, counts their conventional source layouts as production and finds tests by built-in conventions, so even a multi-language monorepo gets a production/test split on the first run.
+It needs no configuration to start: LOCmetry recognizes the [build modules](#build-modules) of npm, Gradle, Maven, Cargo, Go, Python, Lake, Swift, Dart, .NET, Composer and RubyGems projects and of Next.js, Nuxt, React Router, Symfony, Laravel, Rails and Django applications, counts their conventional source layouts as production and finds tests by built-in conventions, so even a multi-language monorepo gets a production/test split on the first run.
 
 ## Install
 
@@ -31,7 +31,7 @@ With Homebrew on macOS arm64 or Linux x86_64 and aarch64:
 brew install mbackschat/tap/locmetry
 ```
 
-Or download a binary from the [latest release](https://github.com/mbackschat/locmetry/releases/latest); releases after 0.7.6 also include a zip for Windows x86_64. Locmetry is a self-contained executable with no separately installed runtime or counter. Linux binaries are static, the Windows binary needs no Visual C++ runtime, and macOS uses operating-system libraries. Releases after 0.9.0 also include `.deb` and `.rpm` packages for Debian, Ubuntu, Fedora and other Linux distributions. See [manual installation, Linux packages and source builds](docs/tokei-integration.md#installation) for alternatives.
+Or download a binary from the [latest release](https://github.com/mbackschat/locmetry/releases/latest); releases after 0.7.6 also include a zip for Windows x86_64. LOCmetry is a self-contained executable with no separately installed runtime or counter. Linux binaries are static, the Windows binary needs no Visual C++ runtime, and macOS uses operating-system libraries. Releases after 0.9.0 also include `.deb` and `.rpm` packages for Debian, Ubuntu, Fedora and other Linux distributions. See [manual installation, Linux packages and source builds](docs/tokei-integration.md#installation) for alternatives.
 
 Homebrew and the Linux packages also install the `locmetry(1)` man page and bash, zsh and fish completions, and release archives include them. For other installations, `locmetry --guide reference --section man-page-and-completions` shows how to generate and install them.
 
@@ -44,7 +44,7 @@ scoop bucket add mbackschat https://github.com/mbackschat/scoop-bucket
 scoop install mbackschat/locmetry
 ```
 
-Run Locmetry from PowerShell; the [common commands](#common-commands) work there as written, including globs in single quotes such as `--exclude 'vendor/**'`.
+Run LOCmetry from PowerShell; the [common commands](#common-commands) work there as written, including globs in single quotes such as `--exclude 'vendor/**'`.
 
 - Save reports with `--output FILE` rather than `>`. Windows PowerShell 5.1 redirects as UTF-16; `locmetry compare` reads that, but other tools may not.
 - Personal defaults live in `%APPDATA%\locmetry\config.toml`.
@@ -53,7 +53,7 @@ Run Locmetry from PowerShell; the [common commands](#common-commands) work there
 
 ## What you see
 
-These excerpts measure [Immich](https://github.com/immich-app/immich) `v3.3.4`, a popular self-hosted photo platform with a TypeScript server, a Svelte web client, a Flutter app and a Python machine-learning service. Locmetry measures it with a short [reviewed policy](examples/showcase/immich/README.md) kept in this repository; the [refresh script](scripts/refresh-readme-showcase.py) regenerates every excerpt from the pinned checkout.
+These excerpts measure [Immich](https://github.com/immich-app/immich) `v3.3.4`, a popular self-hosted photo platform with a TypeScript server, a Svelte web client, a Flutter app and a Python machine-learning service. LOCmetry measures it with a short [reviewed policy](examples/showcase/immich/README.md) kept in this repository; the [refresh script](scripts/refresh-readme-showcase.py) regenerates every excerpt from the pinned checkout.
 
 New to the vocabulary? [Terms](#terms) explains purpose, category, unclaimed and the other words in these excerpts.
 
@@ -61,7 +61,7 @@ New to the vocabulary? [Terms](#terms) explains purpose, category, unclaimed and
 
 ▶️ **The [showcase recordings](docs/showcase/README.md) replay measurement, workspace and comparison on Immich; the [command guides](docs/cli/README.md) cover every option on a small fixture.**
 
-### Locmetry answers "how much source, and how much of it is tests"
+### LOCmetry answers "how much source, and how much of it is tests"
 
 ```sh
 cd immich && locmetry
@@ -106,7 +106,7 @@ Code is split by purpose; comments and blanks stay separate. Data and documentat
 
 #### Compared with a line counter: "how much text, per language"
 
-Line counters are good at counting, and Locmetry counts with Tokei too. Their totals for the same checkout run to almost twice the code above, because they count data as code: about 40% is JSON alone, such as database schemas, the OpenAPI specification and translations.
+Line counters are good at counting, and LOCmetry counts with Tokei too. Their totals for the same checkout run to almost twice the code above, because they count data as code: about 40% is JSON alone, such as database schemas, the OpenAPI specification and translations.
 
 <!-- showcase-tools -->
 | Tool | Reported code | of which JSON | Production / test split |
@@ -328,11 +328,11 @@ Check `Member: service` and its `Source total`; the folder table shows changes i
 
 The [comparison guide](docs/guides/compare.md) covers changed scope, producer versions, partial inputs and workspace changes. Reports describe measured working copies, not Git commits. For automated policies, use the [CI recipes](docs/guides/reports.md#continuous-integration), which preserve measurement failure and partial-result status before querying JSON, including a file-size gate by purpose; the [file-size gate cookbook](docs/cookbooks/file-size-gate.md) adds soft limits and frozen sizes for existing large files.
 
-For file-level recognition and classification changes, run `compare-locmetry-files.sh before.json after.json`. This optional Bash [helper](scripts/compare-locmetry-files.sh) accepts two full `--files` reports and ships in release archives and Homebrew installations starting with 0.7.3. Only the helper requires `jq`; install it separately if needed. Locmetry's native commands remain independent of `jq`. See the [transition workflow](docs/guides/compare.md#inspect-configuration-transitions) for setup, output and evidence limits.
+For file-level recognition and classification changes, run `compare-locmetry-files.sh before.json after.json`. This optional Bash [helper](scripts/compare-locmetry-files.sh) accepts two full `--files` reports and ships in release archives and Homebrew installations starting with 0.7.3. Only the helper requires `jq`; install it separately if needed. LOCmetry's native commands remain independent of `jq`. See the [transition workflow](docs/guides/compare.md#inspect-configuration-transitions) for setup, output and evidence limits.
 
 ## How classification works
 
-Locmetry embeds [a fork of Tokei 15.0.0](https://github.com/mbackschat/tokei/tree/locmetry#why-this-fork) for counting and applies project policy to each file. Tokei misreads literals it does not know, such as `'"'`, raw strings or interpolation holes, and then counts the comments after them as code; the fork reads them as each language's own lexer or parser does, checked on public repositories, and decides by content the extensions several languages share. [Tokei defects](docs/tokei-defects.md) lists what it corrects. Purpose, category and content kind are separate dimensions, as [Terms](#terms) explains. Kind follows the physical file, so a fenced code block in Markdown or other documentation counts as documentation, never as source; `--verbose` shows how many code lines such snippets hold. Rust doc comments, doctests included, stay comments of their file.
+LOCmetry embeds [a fork of Tokei 15.0.0](https://github.com/mbackschat/tokei/tree/locmetry#why-this-fork) for counting and applies project policy to each file. Tokei misreads literals it does not know, such as `'"'`, raw strings or interpolation holes, and then counts the comments after them as code; the fork reads them as each language's own lexer or parser does, checked on public repositories, and decides by content the extensions several languages share. [Tokei defects](docs/tokei-defects.md) lists what it corrects. Purpose, category and content kind are separate dimensions, as [Terms](#terms) explains. Kind follows the physical file, so a fenced code block in Markdown or other documentation counts as documentation, never as source; `--verbose` shows how many code lines such snippets hold. Rust doc comments, doctests included, stay comments of their file.
 
 - **Module context:** selected build descriptors, such as npm, Gradle, Cargo, Go, Python or .NET project files, and framework descriptors, such as `next.config.ts` or Laravel's `artisan`, identify conventional source layouts, as [build modules](#build-modules) describes. The innermost module supplies context, so nested projects do not inherit an outer project's layout blindly.
 - **Ordered decisions:** explicit overrides precede test and build conventions, ordinary project rules, module inference and fallback. Tests inside production source trees remain tests; overrides can express exceptions. Refinements then give decided files a finer category without changing their purpose. Every counted file records the deciding rule, and reports count what each policy entry decided.
@@ -365,7 +365,7 @@ Classification applies to whole files, so inline tests cannot receive a separate
 
 ### Build modules
 
-Locmetry recognizes build modules by their descriptors and counts each one's conventional source layout as production, with no configuration and across any mix of build systems in one tree:
+LOCmetry recognizes build modules by their descriptors and counts each one's conventional source layout as production, with no configuration and across any mix of build systems in one tree:
 
 | Build system | Descriptor | Production source |
 | --- | --- | --- |
@@ -400,7 +400,7 @@ Tests inside these trees stay tests, and nested modules decide for themselves. G
 
 ### Configuration
 
-No configuration is required to start. Add `.locmetryrc` when conventions cannot know local intent: which code is vendored, which scripts are maintained tooling, or which experiments should explicitly count as `other`. Locmetry does not automatically recognize vendored or generated code.
+No configuration is required to start. Add `.locmetryrc` when conventions cannot know local intent: which code is vendored, which scripts are maintained tooling, or which experiments should explicitly count as `other`. LOCmetry does not automatically recognize vendored or generated code.
 
 Three entries of the Immich policy show the shape: a rule that takes generated code from the npm module layout, a rule for code no build descriptor declares, and a refinement that relabels code without changing its purpose. Each restricts itself to source, records its evidence, and says in a comment why it uses its stage:
 
@@ -443,7 +443,7 @@ Tests still win over ordinary rules; an override is needed only to change the pu
 
 The [configuration guide](docs/guides/configure.md) covers overrides, refinements, `except` lists, custom categories, language mappings and evidence-based review. [Personal defaults](docs/PRODUCT.md#user-defaults) can supply exclusions and language mappings across projects; they cannot assign purposes or categories.
 
-Locmetry's own [.locmetryrc](.locmetryrc) is a maintained example: it excludes the synthetic demonstration workspace, distinguishes operational tooling, distribution and verification infrastructure, and splits its tests into unit, integration and test support with refinements, all named from the category reference. The [Immich policy](examples/showcase/immich/overlay/.locmetryrc) is the larger example, and [its README](examples/showcase/immich/README.md#how-the-policy-is-built) explains why each entry uses its stage. [Self-measurement design](docs/self-measurement.md) explains the decisions and how to verify them.
+LOCmetry's own [.locmetryrc](.locmetryrc) is a maintained example: it excludes the synthetic demonstration workspace, distinguishes operational tooling, distribution and verification infrastructure, and splits its tests into unit, integration and test support with refinements, all named from the category reference. The [Immich policy](examples/showcase/immich/overlay/.locmetryrc) is the larger example, and [its README](examples/showcase/immich/README.md#how-the-policy-is-built) explains why each entry uses its stage. [Self-measurement design](docs/self-measurement.md) explains the decisions and how to verify them.
 
 For a production-rule change covered by the example in `locmetry --help`, inspect existing configuration and measure current decisions, adapt the paths and category, then run the displayed verification command. Reading a guide or schema first is optional for that route. For other needs, read only the section that answers them: `locmetry --guide index` routes each task to its guide sections and schema definitions, such as `locmetry --guide configure --section refine-categories`. Verify per-file decisions and unresolved review items before concluding. Guides and schemas are available from the installed binary without a network connection.
 

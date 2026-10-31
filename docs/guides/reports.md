@@ -62,11 +62,11 @@ This exits 2 and warns on stderr. The following checked projection retains cover
 }
 ```
 
-For one path, use `locmetry --guide selection`. For historical evidence and partial comparisons, use `locmetry --guide compare`. JSON Schema validates structure; Locmetry's reader also checks arithmetic and comparison eligibility. Schema validity alone does not make a headline a full baseline.
+For one path, use `locmetry --guide selection`. For historical evidence and partial comparisons, use `locmetry --guide compare`. JSON Schema validates structure; LOCmetry's reader also checks arithmetic and comparison eligibility. Schema validity alone does not make a headline a full baseline.
 
 ## Common issues and useful queries
 
-These queries use a small synthetic project named `acme-orders`, with a `prototypes/` folder, run from the directory containing it. They require the optional external `jq` tool, not a Locmetry runtime dependency. Personal defaults are disabled for the synthetic examples. These are interactive inspection pipelines; the [CI recipe](#continuous-integration) demonstrates preserving partial status.
+These queries use a small synthetic project named `acme-orders`, with a `prototypes/` folder, run from the directory containing it. They require the optional external `jq` tool, not a LOCmetry runtime dependency. Personal defaults are disabled for the synthetic examples. These are interactive inspection pipelines; the [CI recipe](#continuous-integration) demonstrates preserving partial status.
 
 ### Which files are unclaimed source?
 
@@ -188,7 +188,7 @@ jq '.review[]' report.json
 
 ## Continuous integration
 
-Capture the measurement before applying a policy check, preserving Locmetry's exit status. This script refuses partial reports, fails when more than 50 source lines remain unclaimed, and prints the test/production ratio only when production code is nonzero. `jq -e` fails when the policy expression is false:
+Capture the measurement before applying a policy check, preserving LOCmetry's exit status. This script refuses partial reports, fails when more than 50 source lines remain unclaimed, and prints the test/production ratio only when production code is nonzero. `jq -e` fails when the policy expression is false:
 
 ```sh
 set -eu
@@ -223,4 +223,4 @@ Add `.language == "Rust"` to the selection to limit one language. The [file-size
 
 ## Analyze saved measurements
 
-Full schema-3 measurements identify their document type and projection explicitly, so any JSON tool, such as jq, DuckDB or pandas, can read them. The `breakdown` rows add up to the summary, and `--files` adds one record per file. These are optional external workflows; Locmetry has no analytics runtime dependency.
+Full schema-3 measurements identify their document type and projection explicitly, so any JSON tool, such as jq, DuckDB or pandas, can read them. The `breakdown` rows add up to the summary, and `--files` adds one record per file. These are optional external workflows; LOCmetry has no analytics runtime dependency.

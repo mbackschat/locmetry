@@ -3,7 +3,7 @@
 *2026-10-21T03:17:02Z by Showboat 0.6.1*
 <!-- showboat-id: 0b1f7748-841c-441a-b682-63cf1a407f87 -->
 
-Run each Bash block from the Locmetry repository root after `cargo build --locked` and `bash scripts/fetch-showcase.sh`; the [showcase index](README.md) explains the environment. The comparison spans one minor release line of real development, from `v3.2.0` to `v3.3.4`, both measured with the same reviewed policy.
+Run each Bash block from the LOCmetry repository root after `cargo build --locked` and `bash scripts/fetch-showcase.sh`; the [showcase index](README.md) explains the environment. The comparison spans one minor release line of real development, from `v3.2.0` to `v3.3.4`, both measured with the same reviewed policy.
 
 ## Compare two releases
 

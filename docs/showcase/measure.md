@@ -3,7 +3,7 @@
 *2026-10-21T03:19:57Z by Showboat 0.6.1*
 <!-- showboat-id: c6f79590-fe17-40b8-86ab-c5ea0d8918d1 -->
 
-Run each Bash block from the Locmetry repository root after `cargo build --locked` and `bash scripts/fetch-showcase.sh`. `source scripts/showcase-env.sh` links the pinned [Immich](https://github.com/immich-app/immich) checkouts into a fresh temporary directory, with `immich` as the `v3.3.4` showcase release, applies Locmetry's [reviewed policy](../../examples/showcase/immich/README.md) and isolates personal defaults. The [showcase index](README.md) explains replay and projections.
+Run each Bash block from the LOCmetry repository root after `cargo build --locked` and `bash scripts/fetch-showcase.sh`. `source scripts/showcase-env.sh` links the pinned [Immich](https://github.com/immich-app/immich) checkouts into a fresh temporary directory, with `immich` as the `v3.3.4` showcase release, applies LOCmetry's [reviewed policy](../../examples/showcase/immich/README.md) and isolates personal defaults. The [showcase index](README.md) explains replay and projections.
 
 ## Start from built-in conventions
 
@@ -50,7 +50,7 @@ locmetry --root immich --config builtin-only.toml --format json \
 }
 ```
 
-Almost half of the counted code is data, chiefly JSON database schemas, the OpenAPI specification and translations; Locmetry keeps it out of the source total. Module descriptors and test conventions already classify most source: npm, Gradle, Python and Dart modules are production, and unit, Flutter integration and `*.e2e-spec.ts` suites are tests. No descriptor declares the iOS app, so its Swift code stays unclaimed and is listed for review rather than guessed.
+Almost half of the counted code is data, chiefly JSON database schemas, the OpenAPI specification and translations; LOCmetry keeps it out of the source total. Module descriptors and test conventions already classify most source: npm, Gradle, Python and Dart modules are production, and unit, Flutter integration and `*.e2e-spec.ts` suites are tests. No descriptor declares the iOS app, so its Swift code stays unclaimed and is listed for review rather than guessed.
 
 ## Check the evidence behind a decision
 

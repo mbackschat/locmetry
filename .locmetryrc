@@ -1,6 +1,6 @@
 version = 1
 
-# Locmetry's policy for measuring itself; docs/self-measurement.md explains
+# LOCmetry's policy for measuring itself; docs/self-measurement.md explains
 # every decision and how to verify it. Category names come from the category
 # reference (locmetry --guide categories).
 #
@@ -16,7 +16,7 @@ version = 1
 # Every entry is limited to source files and records its evidence as `reason`.
 
 [scope]
-# The synthetic application is measurement input, not Locmetry's own code.
+# The synthetic application is measurement input, not LOCmetry's own code.
 exclude = ["examples/cli-workspace/**"]
 
 [categories]

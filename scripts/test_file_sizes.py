@@ -1,4 +1,4 @@
-"""Regression checks for the file-size gate over a saved Locmetry report."""
+"""Regression checks for the file-size gate over a saved LOCmetry report."""
 
 import json
 from pathlib import Path

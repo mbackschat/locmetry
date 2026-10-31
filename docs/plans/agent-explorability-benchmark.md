@@ -9,7 +9,7 @@
 }
 -->
 
-This is the working specification and continuation record for an experiment-driven assessment of Locmetry's agent-facing interface. It preserves the discussion and exploratory evidence from 2026-10-19 and the subsequent experiments from 2026-10-20. After the first pilot, the owner delegated experiment design, recording, and evaluation. The [six-task study](../research/agents/explorability-six-task-study.md) owns the frozen campaign definitions, results, separate discovery track, and recommendation. The draft prompts below preserve design context; use the linked executable task definitions to replay the measured campaign. The experiments used temporary binaries; the owner subsequently authorized production adoption of the tested help routing, as recorded below.
+This is the working specification and continuation record for an experiment-driven assessment of LOCmetry's agent-facing interface. It preserves the discussion and exploratory evidence from 2026-10-19 and the subsequent experiments from 2026-10-20. After the first pilot, the owner delegated experiment design, recording, and evaluation. The [six-task study](../research/agents/explorability-six-task-study.md) owns the frozen campaign definitions, results, separate discovery track, and recommendation. The draft prompts below preserve design context; use the linked executable task definitions to replay the measured campaign. The experiments used temporary binaries; the owner subsequently authorized production adoption of the tested help routing, as recorded below.
 
 It stays outside the archive although complete, because its metrics, scoring rule and replay contract are the live contract the [agent regression checks](../agent-regression-checks.md) reuse. [PLAN](../PLAN.md) owns the open-work index. [PRODUCT](../PRODUCT.md) owns supported behavior; this document owns the experiment, not a competing product contract. The earlier [embedded-guidance checkpoint](archive/measurement-quality-and-net-change.md#embedded-guidance-implementation--2026-10-16) preserves prior implementation evidence.
 
@@ -93,7 +93,7 @@ Rule used in the pilot and frozen campaign: a mistaken command or hypothesis tha
 
 An assertion of certainty unsupported by the available evidence can be a critical error. An explicit, justified statement of uncertainty is not. Unresolved required work still makes the task incomplete; uncertainty must not become a way to earn a pass without doing the work.
 
-Do not silently repair an explorer's artifact before scoring it. Verify it independently, retain the failure evidence, and distinguish an explorer error from a harness failure or an actual Locmetry defect. All three matter, but they have different causes.
+Do not silently repair an explorer's artifact before scoring it. Verify it independently, retain the failure evidence, and distinguish an explorer error from a harness failure or an actual LOCmetry defect. All three matter, but they have different causes.
 
 Do not impose hidden prose requirements. A task must request the interpretations that its oracle grades. Extra volunteered claims can be checked for harmful misinformation, but an agent should not have to recite every product caveat to pass an ordinary task.
 
@@ -202,7 +202,7 @@ Correctness is the gate. Do not combine accuracy and resource use into a weighte
 | --- | --- |
 | Outcome and critical-error IDs | Score each run against the frozen task oracle. Preserve the assertions and evidence supporting the judgment. |
 | Agent-facing tool calls | Count actual calls issued by the model, including non-shell tools. A batch counts as one agent-facing call. |
-| Nested actions and CLI invocations | Separately count shell executions, file edits, and individual Locmetry invocations so batching cannot hide work. |
+| Nested actions and CLI invocations | Separately count shell executions, file edits, and individual LOCmetry invocations so batching cannot hide work. |
 | Uncached input tokens | Record provider-reported input minus cached input where those fields have that relationship. Includes task and framework context, not just product documentation. |
 | Cached input tokens | Record separately; repeated cached context is not equivalent to fresh reading and must not disappear from the cost record. |
 | Output tokens | Include reasoning according to the provider's telemetry definition; record reasoning as a subset when available, without double-counting it. |
@@ -244,7 +244,7 @@ Keep at least one independently constructed fixture variant for checking whether
 
 This is diagnostic evidence predating the frozen benchmark, not a controlled guide-removal result. The clean run used `gpt-6.1-sol` with `xhigh` effort. The binary was built from the working state at commit `7ca98cb` (`fix(output): clarify code ratios and style comparison summaries`), with SHA-256 `907013df0cbb49b58e1b8fcfe5a1e4d9f910ceba9187315368a3453b5ffe9469`. The project working tree was clean after the assessment.
 
-Initially, both LOW and MEDIUM agents completed six tasks, but transcript inspection revealed inherited repository guidance. Those runs were excluded from the clean numerical comparison. MEDIUM was rerun outside the repository; transcript inspection confirmed that Locmetry repository instructions were absent. General user/framework instructions remained and contribute to token usage.
+Initially, both LOW and MEDIUM agents completed six tasks, but transcript inspection revealed inherited repository guidance. Those runs were excluded from the clean numerical comparison. MEDIUM was rerun outside the repository; transcript inspection confirmed that LOCmetry repository instructions were absent. General user/framework instructions remained and contribute to token usage.
 
 The clean run first received a help-only discovery task, then a sequential six-task assignment. Its task prompts explicitly requested several semantics and detailed evidence. Consequently, it cannot establish unprompted discovery of those semantics or the cost of a minimal ordinary request.
 
@@ -254,7 +254,7 @@ The clean run first received a help-only discovery task, then a sequential six-t
 | --- | ---: | ---: |
 | Agent-facing tool calls | 1 | 13 |
 | Shell executions inside those calls | 1 | 21 |
-| Locmetry invocations | 1 | 40 |
+| LOCmetry invocations | 1 | 40 |
 | Uncached input tokens | 13,174 | 85,193 |
 | Cached input tokens | 35,584 | 766,848 |
 | Output tokens, including reasoning | 1,721 | 17,517 |
@@ -262,7 +262,7 @@ The clean run first received a help-only discovery task, then a sequential six-t
 
 The full output count includes 5,799 reasoning tokens; do not add those again. Total input was 852,041 tokens. The 13 agent-facing calls also orchestrated five file-edit actions. These are explorer-session costs, including framework context, task prompts, evidence preparation, and final reporting. They exclude the parent evaluator's setup/audit and discarded contaminated trials.
 
-Of 40 Locmetry invocations, 17 were discovery queries: seven help requests, four guides, and six schemas. Three help requests repeated previously read subcommand help to retain evidence, leaving 14 distinct discovery queries. The remaining invocations were nine single-root measurements, five comparisons, two workspace measurements, and seven explanations. Summed executable time was about 1.46 seconds, excluding agent reasoning and surrounding tool overhead.
+Of 40 LOCmetry invocations, 17 were discovery queries: seven help requests, four guides, and six schemas. Three help requests repeated previously read subcommand help to retain evidence, leaving 14 distinct discovery queries. The remaining invocations were nine single-root measurements, five comparisons, two workspace measurements, and seven explanations. Summed executable time was about 1.46 seconds, excluding agent reasoning and surrounding tool overhead.
 
 The only nonzero CLI exit was the deliberately unsuitable headline comparison. There were no accidental CLI failures or shell mistakes. Combined documentation output was truncated, causing selective rereading. The agent read all four guides, read the workspace schema fully, and queried the other schemas selectively rather than comprehending every emitted enumeration.
 

@@ -3,7 +3,7 @@
 *2026-10-21T03:19:50Z by Showboat 0.6.1*
 <!-- showboat-id: 6e44268b-01d8-47f4-8396-719e682e3925 -->
 
-This tour builds a Locmetry policy for [Immich](https://github.com/immich-app/immich) `v3.3.4` the way a maintainer or an agent would: measure with built-in conventions, review what they cannot know, record evidence-based entries and check what changed. Run each Bash block from the Locmetry repository root after `cargo build --locked` and `bash scripts/fetch-showcase.sh`; the [showcase index](README.md) explains the environment. `--config` with a file containing only `version = 1` hides the checkout's reviewed `.locmetryrc`, so the tour starts from built-in conventions alone.
+This tour builds a LOCmetry policy for [Immich](https://github.com/immich-app/immich) `v3.3.4` the way a maintainer or an agent would: measure with built-in conventions, review what they cannot know, record evidence-based entries and check what changed. Run each Bash block from the LOCmetry repository root after `cargo build --locked` and `bash scripts/fetch-showcase.sh`; the [showcase index](README.md) explains the environment. `--config` with a file containing only `version = 1` hides the checkout's reviewed `.locmetryrc`, so the tour starts from built-in conventions alone.
 
 ## Review what built-in conventions decide
 
@@ -45,7 +45,7 @@ in '.locmetryrc':
 
 ```
 
-Data and documentation are already separate, including the code examples inside the documentation, and four build systems claim most production source. A module layout makes everything in it production without review, so the note lists the largest files the layouts claimed: the SDK client and two SQL query snapshots dwarf the hand-written code around them. The unclaimed list is the other review queue: the iOS app has no build descriptor Locmetry reads, and smaller folders hold configuration and scripts.
+Data and documentation are already separate, including the code examples inside the documentation, and four build systems claim most production source. A module layout makes everything in it production without review, so the note lists the largest files the layouts claimed: the SDK client and two SQL query snapshots dwarf the hand-written code around them. The unclaimed list is the other review queue: the iOS app has no build descriptor LOCmetry reads, and smaller folders hold configuration and scripts.
 
 ## Look for generated code
 

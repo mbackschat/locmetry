@@ -1,4 +1,4 @@
-//! Locmetry's own documents, help and policies name categories from the
+//! LOCmetry's own documents, help and policies name categories from the
 //! reference in docs/guides/categories.md, so they model what the guide
 //! recommends (docs/proposals/archive/category-reference.md). The guards parse TOML
 //! instead of searching text, so reasons and captured output never trigger them.
@@ -69,7 +69,7 @@ struct Exception {
 /// why no reference name fits.
 const EXCEPTIONS: &[Exception] = &[];
 
-/// Labels Locmetry assigns itself and policies never should.
+/// Labels LOCmetry assigns itself and policies never should.
 const ASSIGNED_ONLY: &[&str] = &["unclaimed", "third-party-wrapper"];
 
 const FORBIDDEN_SUFFIXES: &[&str] = &["-test", "-tests", "-source", "-code", "-data"];

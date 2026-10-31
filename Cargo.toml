@@ -26,7 +26,7 @@ schemars = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order"] }
 terminal_size = "0.4"
-# Locmetry's Tokei fork corrects literals that Tokei 15.0.0 misreads as
+# LOCmetry's Tokei fork corrects literals that Tokei 15.0.0 misreads as
 # comments; docs/tokei-integration.md#counting-boundary owns its pinning.
 tokei = { git = "https://github.com/mbackschat/tokei", rev = "4b1c21a1e57100493a298de21d6381af293cb45e", default-features = false }
 toml = "1"
@@ -47,7 +47,7 @@ section = "devel"
 depends = []
 suggests = "jq"
 license-file = ["LICENSE", "0"]
-extended-description = "Locmetry counts code, comments and blank lines, classifies files as production, test or other, and records the rule behind each classification. Reports show results by language and folder and compare saved reports across projects and workspaces."
+extended-description = "LOCmetry counts code, comments and blank lines, classifies files as production, test or other, and records the rule behind each classification. Reports show results by language and folder and compare saved reports across projects and workspaces."
 assets = [
     ["target/release/locmetry", "usr/bin/", "755"],
     ["scripts/compare-locmetry-files.sh", "usr/bin/", "755"],

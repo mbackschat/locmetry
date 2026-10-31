@@ -135,7 +135,7 @@ const RETIRED_SPELLINGS: [(&str, &str, &str); 7] = [
     ("--workspace", "explain --workspace", "--workspace-file"),
 ];
 
-/// Replaces clap's tips for an unknown option that Locmetry knows elsewhere:
+/// Replaces clap's tips for an unknown option that LOCmetry knows elsewhere:
 /// a retired spelling gets the spelling that replaced it, and a root option
 /// given to a command gets where it applies.
 ///

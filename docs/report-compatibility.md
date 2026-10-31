@@ -4,13 +4,13 @@
 
 ## Version 3
 
-Locmetry 0.6.0 introduces measurement schema 3. Current measurements require `document_type: "measurement"`, `schema_version: "3"` and `detail: "full"` or `"headline"`. This identifies the document and its projection before loading nested data into SQL or dataframes. Full reports require their aggregate detail and policy evidence; headline reports must omit it. Optional `files` still means file detail was requested, not whether the measurement was empty. The schema and internal semantic validator enforce that projection agreement. The obsolete measurement `report` pointer is rejected.
+LOCmetry 0.6.0 introduces measurement schema 3. Current measurements require `document_type: "measurement"`, `schema_version: "3"` and `detail: "full"` or `"headline"`. This identifies the document and its projection before loading nested data into SQL or dataframes. Full reports require their aggregate detail and policy evidence; headline reports must omit it. Optional `files` still means file detail was requested, not whether the measurement was empty. The schema and internal semantic validator enforce that projection agreement. The obsolete measurement `report` pointer is rejected.
 
 Earlier measurement schemas are not read: a report with another `schema_version` is rejected as an invalid measurement report naming its version, and must be recaptured with the current executable. No migration can recover an earlier source state. Report formats may change before 1.0; retain producer identity and inspect the executable's schema. Schema 3 grows by optional fields: a newer producer's report adds them, a current reader treats their absence in older reports as not recorded, and an older executable rejects the unknown field, so read reports with an executable at least as new as their producer. `summary.largest_module_files` is the first such field after 0.7.3, `summary.inline_tests` with the file records' `inline_tests` followed after 0.7.6, comparisons gained `detail` after 0.8.0, and file records gained `module` after 0.9.0, when `summary.build_modules` changed to credit modules by layout coverage; the [release fixtures](../tests/fixtures/reports/README.md) lock that 0.7.3 reports stay valid and comparable. Comparison and explanation documents use the same version 3; until this change they carried schema version 2 with the same content. The [analytics research](research/report-analytics.md) records why the envelope is tool-neutral.
 
 ## Earlier schemas
 
-Schema 1 (Locmetry 0.1–0.4) and schema 2 (0.5.x) used a vocabulary that 0.5 and 0.6 renamed, such as purpose `unclassified`, and no current executable reads them. Their field inventories remain in Git history up to commit `63250d8`.
+Schema 1 (LOCmetry 0.1–0.4) and schema 2 (0.5.x) used a vocabulary that 0.5 and 0.6 renamed, such as purpose `unclassified`, and no current executable reads them. Their field inventories remain in Git history up to commit `63250d8`.
 
 ## Validation boundaries
 

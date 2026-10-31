@@ -32,7 +32,7 @@ Find the section that answers your task and read only that. This page is embedde
 | Compare one workspace member | `locmetry --guide compare --section compare-saved-measurements --section inspect-one-workspace-member` |
 | Review what a configuration change moved | `locmetry --guide compare --section inspect-configuration-transitions` |
 | Know what an exit status means | `locmetry --guide reference --section exit-status` |
-| Know which environment variables and files Locmetry reads | `locmetry --guide reference --section environment --section files` |
+| Know which environment variables and files LOCmetry reads | `locmetry --guide reference --section environment --section files` |
 | Install the man page or shell completions | `locmetry --guide reference --section man-page-and-completions` |
 
 Whole guides, for reading a workflow end to end:

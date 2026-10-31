@@ -266,7 +266,7 @@ check_recipe invalid 1 '' 'Invalid configuration'
 check_recipe unclaimed 1 'false' ''
 
 # The file-size gate limits each purpose separately: a production file over 1,000 code lines fails,
-# a test file of 1,500 passes, and a partial measurement keeps Locmetry's exit status.
+# a test file of 1,500 passes, and a partial measurement keeps LOCmetry's exit status.
 extract_blocks 'Continuous integration' "$temporary/recipe.sh" 2 0 "$repository/docs/guides/reports.md"
 mkdir -p "$temporary/oversized" "$temporary/large-tests/tests"
 cp "$temporary/healthy/.locmetryrc" "$temporary/oversized/.locmetryrc"

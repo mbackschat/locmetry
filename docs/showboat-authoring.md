@@ -12,7 +12,7 @@ Showboat 0.6.1 is an optional development tool. Use the pinned uv commands in th
 
 Create a document with `showboat init`, add explanations with `showboat note`, and capture commands with `showboat exec`. Preserve the generated timestamp/byline and `showboat-id` header. Keep native `bash` and `output` fences. Never invent or hand-edit captured output. Pass multiline command text through stdin or a structured subprocess argument to preserve quoting.
 
-For example, from the repository root after building Locmetry:
+For example, from the repository root after building LOCmetry:
 
 ```sh
 showboat init /tmp/locmetry-example.md 'Measure the sample'
@@ -31,7 +31,7 @@ showboat verify /tmp/locmetry-example.md
 
 Start each Bash block with `source scripts/cli-demo-env.sh`, run from the repository root. The [helper](../scripts/cli-demo-env.sh) supplies a fresh temporary copy of the [shared fixture](../examples/cli-workspace/README.md), the current executable, isolated personal configuration and a fixed display width. It cleans the copy on exit. Showboat starts a fresh shell for each block; never depend on variables or files left by another block.
 
-Showcase recordings start with `source scripts/showcase-env.sh` instead. It verifies the pinned Immich checkouts without fetching, applies Locmetry's policy overlay, fails on any other change to a checkout and links the checkouts into the temporary directory; it never copies them. Commands measure them in place and write reports to the temporary directory.
+Showcase recordings start with `source scripts/showcase-env.sh` instead. It verifies the pinned Immich checkouts without fetching, applies LOCmetry's policy overlay, fails on any other change to a checkout and links the checkouts into the temporary directory; it never copies them. Commands measure them in place and write reports to the temporary directory.
 
 Make edits visible in the recorded command, and keep exports beside the measured roots. Do not measure private projects, install fixture dependencies, or modify the checked-in fixture during replay. A comparison example should have a small change whose expected result can be explained independently.
 
@@ -51,7 +51,7 @@ locmetry --root acme-orders --no-user-config \
 
 `demo_wrap` wraps long displayed text at whitespace using Python's standard library and a 120-character width. It runs inside the recorded command, so replay applies the same transformation. Use it for text, legends and diagnostics; keep JSON pretty-printed with jq. Prefer a narrower meaningful report section over folding wide Markdown table rows. Never change or trim the saved report itself to make its displayed excerpt fit.
 
-The [verification script](../scripts/check-recorded-guides.py) rejects long fenced command/output lines and missing Showboat headers. Ordinary Markdown prose remains one paragraph per physical line. These conventions follow the owner's requested pattern from a12-rulekit's Showboat examples, adapted to Locmetry's timestamped reports.
+The [verification script](../scripts/check-recorded-guides.py) rejects long fenced command/output lines and missing Showboat headers. Ordinary Markdown prose remains one paragraph per physical line. These conventions follow the owner's requested pattern from a12-rulekit's Showboat examples, adapted to LOCmetry's timestamped reports.
 
 ## Keep changing metadata visible in the source command
 

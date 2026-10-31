@@ -1,6 +1,6 @@
 # Built-in Detection
 
-Locmetry classifies a project on its first run, without configuration, through built-in detection: conventions recognize tests and build tooling by their paths, module detectors recognize build and framework files and count the source folders those tools document as production, and generated-code markers set generated code in those folders apart. This page explains how they decide and lists every one. The [product contract](PRODUCT.md#matching-and-precedence) owns the precedence and compatibility guarantees.
+LOCmetry classifies a project on its first run, without configuration, through built-in detection: conventions recognize tests and build tooling by their paths, module detectors recognize build and framework files and count the source folders those tools document as production, and generated-code markers set generated code in those folders apart. This page explains how they decide and lists every one. The [product contract](PRODUCT.md#matching-and-precedence) owns the precedence and compatibility guarantees.
 
 ## How Detection Works
 

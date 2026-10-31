@@ -1,33 +1,33 @@
 # Tokei Integration and Distribution
 
-Decision: implement Locmetry in Rust and embed the Tokei library to minimize installation dependencies. Upstream references checked on 2026-10-15.
+Decision: implement LOCmetry in Rust and embed the Tokei library to minimize installation dependencies. Upstream references checked on 2026-10-15.
 
 ## Counting Boundary
 
 ```text
 Configuration + scan root
-  → Locmetry selects files using root-relative scope and ignore rules
+  → LOCmetry selects files using root-relative scope and ignore rules
   → embedded Tokei recognizes languages; supported counters measure readable content
-  → Locmetry maps unrecognized files, classifies, aggregates, and emits a terminal table, JSON, or Markdown
+  → LOCmetry maps unrecognized files, classifies, aggregates, and emits a terminal table, JSON, or Markdown
 ```
 
-[Cargo.toml](../Cargo.toml) pins Locmetry's fork of Tokei, [mbackschat/tokei](https://github.com/mbackschat/tokei), to a commit on its `locmetry` branch, with `default-features = false` disabling its default CLI feature. [Cargo.lock](../Cargo.lock) locks transitive dependencies. Cargo compiles the counter into Locmetry; there is no Tokei subprocess or runtime executable discovery. [Upstream crate manifest](https://github.com/XAMPPRocky/tokei/blob/v15.0.0/Cargo.toml)
+[Cargo.toml](../Cargo.toml) pins LOCmetry's fork of Tokei, [mbackschat/tokei](https://github.com/mbackschat/tokei), to a commit on its `locmetry` branch, with `default-features = false` disabling its default CLI feature. [Cargo.lock](../Cargo.lock) locks transitive dependencies. Cargo compiles the counter into LOCmetry; there is no Tokei subprocess or runtime executable discovery. [Upstream crate manifest](https://github.com/XAMPPRocky/tokei/blob/v15.0.0/Cargo.toml)
 
-The fork is Tokei 15.0.0 with corrected lexing of literals and comment markers, decided on 2026-10-29 after the [counting backends](research/counting-backends.md) comparison; its README lists every change with the specification it follows and its upstream pull request. Each change to its counting raises the build metadata of its version, `15.0.0+locmetry.N`, which reports name as the backend, so `compare` flags reports counted by different fork versions. A fork change reaches Locmetry only by moving the pinned commit in a Locmetry commit, with the fork's tests and Locmetry's full suite passing. Changes general enough for upstream are offered there as pull requests; the fork stays on its own branch until upstream accepts them and releases a version Locmetry can adopt. [Tokei counting defects](tokei-defects.md) records what is corrected and what remains, and the [fork plan](plans/archive/tokei-fork.md) owns the remaining work.
+The fork is Tokei 15.0.0 with corrected lexing of literals and comment markers, decided on 2026-10-29 after the [counting backends](research/counting-backends.md) comparison; its [change list](https://github.com/mbackschat/tokei/blob/locmetry/CHANGES-FROM-UPSTREAM.md) gives every change with the specification it follows and its upstream pull request. Each change to its counting raises the build metadata of its version, `15.0.0+locmetry.N`, which reports name as the backend, so `compare` flags reports counted by different fork versions. A fork change reaches LOCmetry only by moving the pinned commit in a LOCmetry commit, with the fork's tests and LOCmetry's full suite passing. Changes general enough for upstream are offered there as pull requests; the fork stays on its own branch until upstream accepts them and releases a version LOCmetry can adopt. [Tokei counting defects](tokei-defects.md) records what is corrected and what remains, and the [fork plan](plans/archive/tokei-fork.md) owns the remaining work.
 
-The adapter recognizes selected files with Tokei's `LanguageType::from_path` and counts them through its per-file `LanguageType::parse` API, retaining the local corrections described below. Locmetry first selects paths using the `ignore` crate with normal ignore-file behavior and a scan-root-based exclusion matcher. This avoids Tokei 15's exclusion builder being anchored to the current working directory. Selected files are parsed in parallel using the Rayon pool already used by Tokei, without the second filesystem traversal performed by `Languages::get_statistics`. Language totals and embedded reports retain Tokei's aggregation semantics. [Backend implementation](../src/backend.rs), [upstream traversal](https://github.com/XAMPPRocky/tokei/blob/v15.0.0/src/utils/fs.rs)
+The adapter recognizes selected files with Tokei's `LanguageType::from_path` and counts them through its per-file `LanguageType::parse` API, retaining the local corrections described below. LOCmetry first selects paths using the `ignore` crate with normal ignore-file behavior and a scan-root-based exclusion matcher. This avoids Tokei 15's exclusion builder being anchored to the current working directory. Selected files are parsed in parallel using the Rayon pool already used by Tokei, without the second filesystem traversal performed by `Languages::get_statistics`. Language totals and embedded reports retain Tokei's aggregation semantics. [Backend implementation](../src/backend.rs), [upstream traversal](https://github.com/XAMPPRocky/tokei/blob/v15.0.0/src/utils/fs.rs)
 
 Handlebars is counted by a [local lexical correction](../src/backend/handlebars.rs) before reports are normalized. Tokei 15.0.0's global quote handling mistakes apostrophes in template text for strings, corrupting subsequent blank and comment counts. The correction keeps Tokei's language recognition, report shape, BOM-aware decoding, and unreadable-file reporting; mapped Handlebars files use it too. Its syntax boundaries follow the [reference Handlebars lexer](https://github.com/handlebars-lang/handlebars.js/blob/v4.7.8/src/handlebars.l), with HTML comments and quoted attributes retained for HTML templates. [Measurement semantics](measurement.md#counting) defines the line categories. The decoder dependency is already in Tokei's dependency graph; no runtime executable is added.
 
 Lean is counted by a [local lexical correction](../src/backend/lean.rs) for the same reason: Tokei 15.0.0, and the fork so far, declare no Lean quotes, so a comment opener inside a string turns the rest of the file into comment lines. The correction follows the token rules of [Lean's lexer](https://github.com/leanprover/lean4/blob/v4.35.0/src/Lean/Parser/Basic.lean) and keeps Tokei's line classification, language recognition, decoding boundary and failure reporting; mapped Lean files use it too. [Measurement semantics](measurement.md#counting) defines the line categories.
 
-Notebooks use a [local container decoder](../src/backend/notebook.rs), with Tokei counting code-cell text. Tokei 15's private notebook parser both overlaps parent/blob totals and discards decoding failures. Locmetry constructs disjoint cell contributions and reports malformed or unsupported content as unavailable. Recognized and mapped notebook paths share this boundary; [notebook semantics](measurement.md#notebooks) owns supported shapes, cell treatment and language selection.
+Notebooks use a [local container decoder](../src/backend/notebook.rs), with Tokei counting code-cell text. Tokei 15's private notebook parser both overlaps parent/blob totals and discards decoding failures. LOCmetry constructs disjoint cell contributions and reports malformed or unsupported content as unavailable. Recognized and mapped notebook paths share this boundary; [notebook semantics](measurement.md#notebooks) owns supported shapes, cell treatment and language selection.
 
 Use `Config::default()` with explicit counting settings, never `Config::from_config_files()`. Ambient `tokei.toml` and `.tokeirc` settings therefore cannot silently change counting. Repository, parent, and global ignore rules still participate in scope; this is not a hermetic filesystem snapshot. [Tokei configuration](https://github.com/XAMPPRocky/tokei/blob/v15.0.0/src/config.rs)
 
 Normalize original reports to root-relative paths and count direct statistics plus nested language blobs once. Aggregate `children` and `Total` views are not additional files. Selected files Tokei does not recognize are counted with the parser of a matching language mapping, or else listed as coverage gaps. Traversal/configuration failures and backend inaccuracy follow the shared [command-outcome contract](PRODUCT.md#command-outcomes), including inaccuracy without identified paths.
 
-A Tokei upgrade, whether a fork commit or a rebase onto a new upstream release, requires rebuilding and releasing Locmetry and rerunning counting regressions; it cannot arrive through an independent runtime Tokei upgrade.
+A Tokei upgrade, whether a fork commit or a rebase onto a new upstream release, requires rebuilding and releasing LOCmetry and rerunning counting regressions; it cannot arrive through an independent runtime Tokei upgrade.
 
 ## Installation
 
@@ -80,7 +80,7 @@ locmetry --version
 
 Checkout documentation describes that checkout; `locmetry --guide configure` and the other embedded guides describe the installed executable. Installing a checkout does not publish a release.
 
-On Linux distributions with an older toolchain, such as Ubuntu 22.04, Homebrew also installs its own gcc and glibc for this formula; Locmetry itself is a static binary and uses neither.
+On Linux distributions with an older toolchain, such as Ubuntu 22.04, Homebrew also installs its own gcc and glibc for this formula; LOCmetry itself is a static binary and uses neither.
 
 ## Distribution
 

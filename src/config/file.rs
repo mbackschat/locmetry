@@ -170,7 +170,7 @@ pub(super) struct LanguageMapping {
     pub(super) language: LanguageType,
 }
 
-/// Locmetry project configuration: TOML in `.locmetryrc` at the scan root, or the file `--config` names.
+/// LOCmetry project configuration: TOML in `.locmetryrc` at the scan root, or the file `--config` names.
 ///
 /// Every measured file gets one purpose (`production`, `test`, or `other`) and a category from the first stage that matches: (1) `overrides`, in order; (2) built-in test conventions, then built-in build conventions; (3) `rules`, in order; (4) build modules, conventional source layouts inferred from descriptors; (5) the fallback. Then the first matching `refinements` entry for the file's purpose may replace its category, never its purpose; it skips files that reached the fallback and files a generated-code marker refined. Scope exclusions apply before all stages. The stage order is fixed, so where `[[overrides]]` and `[[rules]]` appear in the file does not matter; only the order within each list decides between entries that match the same file. A broad rule never swallows conventional tests or build scripts, and an override beats the conventions; but a rule does take source a build module would claim, so match only the folders a rule is about. Each file records the deciding stage in its `rule` field: an entry ID, `builtin:<convention>`, `builtin:<detector>-module`, or `fallback`.
 ///

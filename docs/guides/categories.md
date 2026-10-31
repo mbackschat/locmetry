@@ -1,6 +1,6 @@
 # Choose Category Names
 
-Use this non-binding reference to name new categories of a `.locmetryrc` policy, so that projects, people and agents name the same kind of code alike. Locmetry accepts any declared name.
+Use this non-binding reference to name new categories of a `.locmetryrc` policy, so that projects, people and agents name the same kind of code alike. LOCmetry accepts any declared name.
 
 ## What the Reference Decides
 
@@ -37,7 +37,7 @@ Use the names the owner asks for, and propose rather than apply a rename of a ca
 | other | `prototype` | Unmaintained experiments | | `research`, `incubator` |
 | other | `example` | Unmaintained examples and snippets | | `snippet`, `doc-snippet` |
 
-`third-party-wrapper` and `unclaimed` are assigned by Locmetry, never by a policy. Leave undecided code unclaimed, so it stays on the review list. A test file spanning several kinds takes the widest. A check written as a test case, such as a JUnit class that guards the repository's structure, is a test by convention, so give it a test category through a refinement; `verification-tooling` is for programs that run checks without being one.
+`third-party-wrapper` and `unclaimed` are assigned by LOCmetry, never by a policy. Leave undecided code unclaimed, so it stays on the review list. A test file spanning several kinds takes the widest. A check written as a test case, such as a JUnit class that guards the repository's structure, is a test by convention, so give it a test category through a refinement; `verification-tooling` is for programs that run checks without being one.
 
 ## Worked Cases
 
@@ -64,4 +64,4 @@ Use one when no row fits, such as proofs in a Lean project, or when a row would 
 - Name known files and folders, and state exceptions with `except` rather than entry order.
 - Leave no unexplained item in `summary.policy_entries`.
 
-Locmetry's own [policy](../../.locmetryrc) and the [Immich showcase policy](../../examples/showcase/immich/overlay/.locmetryrc) follow this reference.
+LOCmetry's own [policy](../../.locmetryrc) and the [Immich showcase policy](../../examples/showcase/immich/overlay/.locmetryrc) follow this reference.

@@ -48,4 +48,6 @@ Root `-h` (72 / 4,573), `workspace -h`, `compare -h`, `compare --help`, `explain
 
 ## Limits
 
+After the review, the owner renamed the product LOCmetry in human-facing text on 2026-10-31. That changes the capitalization of the name in help, messages, guides and schema descriptions, and no flag, route, example or byte count; the recorded guides replay identically.
+
 All captures are macOS. The reviewer ran 106 public tests of the affected modules, not the full suite, and not the documentation scripts; the release command runs those. Counts were re-measured only on Locmetry's own source, shell completions were captured but not exercised, and the man page was not rendered.

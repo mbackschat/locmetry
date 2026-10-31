@@ -1,6 +1,6 @@
 # Create or Evaluate Project Configuration
 
-Use this guide to create `.locmetryrc` or review an existing one. Start at the intended project root and inspect any existing configuration before proposing edits. Preserve policy unless repository evidence or the owner's intent justifies a change. Locmetry validates syntax and reports observed decisions; it cannot decide what the project ought to measure.
+Use this guide to create `.locmetryrc` or review an existing one. Start at the intended project root and inspect any existing configuration before proposing edits. Preserve policy unless repository evidence or the owner's intent justifies a change. LOCmetry validates syntax and reports observed decisions; it cannot decide what the project ought to measure.
 
 ## Start with Evidence
 

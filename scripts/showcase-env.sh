@@ -11,7 +11,7 @@ showcase_tag=$(showcase_pin showcase)
 baseline_tag=$(showcase_pin baseline)
 for checkout in "$showcase"/*/immich; do
     [[ -d $checkout/.git ]] || continue
-    # The overlay is Locmetry's policy; anything else changed in the checkout
+    # The overlay is LOCmetry's policy; anything else changed in the checkout
     # would make the recorded numbers describe a different tree. Untracked
     # files can only be earlier overlay copies, which a removed overlay file
     # would otherwise leave behind.

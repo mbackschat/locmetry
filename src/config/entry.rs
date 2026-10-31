@@ -213,7 +213,7 @@ pub(super) fn check_ids<'a>(ids: impl IntoIterator<Item = &'a str>) -> Result<()
         );
         ensure!(
             id != FALLBACK && !id.starts_with(BUILTIN),
-            "Entry ID '{id}' is reserved. '{FALLBACK}' and IDs starting with '{BUILTIN}' name Locmetry's own stages."
+            "Entry ID '{id}' is reserved. '{FALLBACK}' and IDs starting with '{BUILTIN}' name LOCmetry's own stages."
         );
     }
     Ok(())

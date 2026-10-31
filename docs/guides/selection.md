@@ -84,7 +84,7 @@ For a report made with `--subfolder`, keep the project root and use the file's p
 | Observation | Meaning and next step |
 | --- | --- |
 | `counted`, unexpected purpose | Inspect `file.rule`, `decision.stage`, matching patterns and the optional entry reason. First-match precedence is overrides → conventions → rules → module → fallback. Change the deciding policy; a later rule cannot beat an earlier stage. |
-| `counted`, module evidence | The selected descriptor triggered a conventional source layout. Its module path and detector identify the inference. Confirm that layout fits the project; Locmetry does not read the build configuration's contents. |
+| `counted`, module evidence | The selected descriptor triggered a conventional source layout. Its module path and detector identify the inference. Confirm that layout fits the project; LOCmetry does not read the build configuration's contents. |
 | `counted`, unexpected language | `file.language` is the host parser; `file.language_mapping`, when present, identifies the fallback mapping. Mappings only apply when the backend does not recognize the path. Embedded-language detail remains in `file.languages`. |
 | `excluded` | The ordinary walk recorded a matching scope exclusion at the file or a pruned ancestor. `at` identifies that path; `patterns` lists the matching globs. Loaded configuration files also have literal exclusions. |
 | `not_selected`, `ignore_policy` | A probe that disables only ignore filtering selects the file. The walker does not expose the winning ignore filename or line; inspect the applicable ignore files. |

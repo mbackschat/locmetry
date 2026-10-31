@@ -1,6 +1,6 @@
 # Immich Showcase Recordings
 
-These executable demonstrations measure [Immich](https://github.com/immich-app/immich), a popular self-hosted photo platform, at pinned releases. They show what Locmetry adds on a real multi-language project: content kinds separated from source, production and test told apart, and a reviewed policy that records what only the project knows. The [command guides](../cli/README.md) remain the option-by-option reference on the small checked-in fixture.
+These executable demonstrations measure [Immich](https://github.com/immich-app/immich), a popular self-hosted photo platform, at pinned releases. They show what LOCmetry adds on a real multi-language project: content kinds separated from source, production and test told apart, and a reviewed policy that records what only the project knows. The [command guides](../cli/README.md) remain the option-by-option reference on the small checked-in fixture.
 
 - [Tour: build a policy for Immich](tour.md): built-in conventions, review, a draft policy from evidence and the resulting transitions.
 - [Measure Immich](measure.md): built-in conventions alone, the evidence behind a decision, the reviewed policy, explanations, a review of every policy entry, folder detail, a category selection and the mobile app.
@@ -9,7 +9,7 @@ These executable demonstrations measure [Immich](https://github.com/immich-app/i
 
 ## Run an example
 
-Build the current executable with `cargo build --locked` and fetch the pinned checkouts once with `bash scripts/fetch-showcase.sh`; the [showcase inputs](../../examples/showcase/immich/README.md) describe pinning, cache location and Locmetry's policy. From the repository root, run a recording's complete Bash block. Its first line sources [showcase-env.sh](../../scripts/showcase-env.sh), which verifies the checkouts, applies the policy overlay and links `immich` (the `v3.3.4` showcase release) and `<tag>/immich` for each pinned release into a new temporary directory. Personal defaults are isolated there, so the commands omit `--no-user-config`; add it to your own runs if your numbers differ from the recorded ones.
+Build the current executable with `cargo build --locked` and fetch the pinned checkouts once with `bash scripts/fetch-showcase.sh`; the [showcase inputs](../../examples/showcase/immich/README.md) describe pinning, cache location and LOCmetry's policy. From the repository root, run a recording's complete Bash block. Its first line sources [showcase-env.sh](../../scripts/showcase-env.sh), which verifies the checkouts, applies the policy overlay and links `immich` (the `v3.3.4` showcase release) and `<tag>/immich` for each pinned release into a new temporary directory. Personal defaults are isolated there, so the commands omit `--no-user-config`; add it to your own runs if your numbers differ from the recorded ones.
 
 Commands and captured output are real. `jq` projections select fields, `sed` expressions omit measurement-time and location lines or select report sections, and `demo_wrap` wraps displayed text at 120 characters, as the [authoring guidelines](../showboat-authoring.md) require.
 

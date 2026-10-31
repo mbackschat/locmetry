@@ -3,7 +3,7 @@
 *2026-10-21T03:17:22Z by Showboat 0.6.1*
 <!-- showboat-id: 84efac68-5dbe-4a98-9f39-dbd87e4303ea -->
 
-Run each Bash block from the Locmetry repository root after `cargo build --locked` and `bash scripts/fetch-showcase.sh`; the [showcase index](README.md) explains the environment. Immich's application components live side by side in one repository. A [workspace file](../../examples/showcase/immich/overlay/workspace.toml) names six of them as folders of the project, so each is measured as `--subfolder` would measure it, under the checkout's single `.locmetryrc`.
+Run each Bash block from the LOCmetry repository root after `cargo build --locked` and `bash scripts/fetch-showcase.sh`; the [showcase index](README.md) explains the environment. Immich's application components live side by side in one repository. A [workspace file](../../examples/showcase/immich/overlay/workspace.toml) names six of them as folders of the project, so each is measured as `--subfolder` would measure it, under the checkout's single `.locmetryrc`.
 
 ## Measure the components together
 

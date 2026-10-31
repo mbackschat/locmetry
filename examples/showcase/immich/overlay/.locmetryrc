@@ -1,7 +1,7 @@
 version = 1
 
-# Locmetry's reviewed policy for the whole Immich checkout; upstream ships no
-# Locmetry configuration. workspace.toml measures six folders of the checkout
+# LOCmetry's reviewed policy for the whole Immich checkout; upstream ships no
+# LOCmetry configuration. workspace.toml measures six folders of the checkout
 # under this same policy. The showcase README explains each decision and how
 # to review a change: examples/showcase/immich/README.md. Category names come
 # from the category reference (locmetry --guide categories).

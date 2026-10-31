@@ -393,7 +393,7 @@ fn human_producer_notes_show_each_changed_field_without_asserting_counting_behav
     report["metadata"]["locmetry_version"] = json!("new");
     let version = save(temp.path(), "version.json", &report);
     for text in human_comparisons(&before, &version, 0) {
-        assert!(text.contains("Locmetry version: old → new."), "{text}");
+        assert!(text.contains("LOCmetry version: old → new."), "{text}");
         assert!(text.contains("Counting corrections can differ between versions. The reports cannot show whether they did."), "{text}");
         assert!(!text.contains("counter_changed"), "{text}");
         assert!(!text.contains("No recorded differences"), "{text}");

@@ -82,7 +82,7 @@ fn unknown_field_hint(text: &str) -> Option<String> {
     synonym.or(typo).or_else(|| {
         field.then(|| {
             format!(
-                "Locmetry {} does not know this field. A newer release may.",
+                "LOCmetry {} does not know this field. A newer release may.",
                 env!("CARGO_PKG_VERSION")
             )
         })

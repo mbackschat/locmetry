@@ -17,7 +17,7 @@ fn help() -> String {
     )
 }
 
-/// The names Locmetry's own source looks up: direct `env::var` and `var_os`
+/// The names LOCmetry's own source looks up: direct `env::var` and `var_os`
 /// reads, and the injected lookup of the personal defaults file, whose
 /// `var(...)` and `absolute(...)` calls cover both platform branches.
 fn variables_read() -> BTreeSet<String> {

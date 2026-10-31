@@ -1,6 +1,6 @@
 # File-Size Gate Cookbook
 
-Locmetry can gate source file sizes in CI. Generic line counters see paths and lines; Locmetry also records what each file is for, so a gate can hold production code to a tighter limit than tests and leave generated code alone, without maintaining path patterns. Locmetry itself enforces no limit: its exit status reports the measurement, and these scripts apply the limits to its per-file JSON.
+LOCmetry can gate source file sizes in CI. Generic line counters see paths and lines; LOCmetry also records what each file is for, so a gate can hold production code to a tighter limit than tests and leave generated code alone, without maintaining path patterns. LOCmetry itself enforces no limit: its exit status reports the measurement, and these scripts apply the limits to its per-file JSON.
 
 The recipes need `jq` and a full report with per-file records. Each record carries `path`, `kind`, `language`, `purpose`, `category` and `counts`; the [report contract](../PRODUCT.md#report-content) owns those fields.
 
@@ -39,7 +39,7 @@ printf '%s\n' "$report" | jq -r --slurpfile policy file-size-limits.json '
   ([$findings[] | .error // empty] | if length == 0 then empty else join("\n") + "\n" | halt_error(1) end)'
 ```
 
-Lower a ceiling in the same change that shrinks its file, and remove it once the file fits the hard limit; otherwise the file can grow back unnoticed. [Locmetry's own gate](../self-measurement.md#file-sizes) also reports ceilings that can be lowered or that name files no longer measured.
+Lower a ceiling in the same change that shrinks its file, and remove it once the file fits the hard limit; otherwise the file can grow back unnoticed. [LOCmetry's own gate](../self-measurement.md#file-sizes) also reports ceilings that can be lowered or that name files no longer measured.
 
 ## Choose what to count
 
@@ -49,8 +49,8 @@ Lower a ceiling in the same change that shrinks its file, and remove it once the
 - **Languages.** Select `.language` to limit one language. Per-file records keep the backend's language names, so TSX files are `TSX`, not `TypeScript` as in folded tables.
 - **Workspaces.** `locmetry workspace` records paths prefixed by member name, so the same scripts gate several repositories at once.
 
-## Locmetry's own gate
+## LOCmetry's own gate
 
-Locmetry gates its repository with a Python version of the soft-limit and ceiling recipe that also reports stale ceilings; [self-measurement](../self-measurement.md#file-sizes) records its limits and ceiling policy.
+LOCmetry gates its repository with a Python version of the soft-limit and ceiling recipe that also reports stale ceilings; [self-measurement](../self-measurement.md#file-sizes) records its limits and ceiling policy.
 
 [CI executes this recipe and the guide's](../../scripts/check-doc-examples.sh) against synthetic projects: within limits, over a limit, a larger test file under the test limit, a soft-limit warning, a ceiling that holds and one that is exceeded, and a partial measurement.
