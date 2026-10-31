@@ -4,7 +4,7 @@
 
 ## Next
 
-- [Correct counting in a Tokei fork](plans/tokei-fork.md): all five feature steps adopted and every remaining tree-sitter disagreement resolved; open are the release-build checks, the upstream offers and two follow-ups found by the measurements that await a decision; decided 2026-10-29.
+- [Correct counting in a Tokei fork](plans/tokei-fork.md): all five feature steps adopted, every remaining tree-sitter disagreement resolved, and step 6's judges matched on every valid file of each language in its scope; open are the release-build checks and the upstream offers; decided 2026-10-29.
 
 ## Accepted — Awaiting Verification
 
