@@ -48,6 +48,7 @@ match = [
     "scripts/record-demo.sh",
     "scripts/agent-regression-trend.py",
     "scripts/compact-campaign.py",
+    "scripts/prune-target.py",
 ]
 kind = ["source"]
 purpose = "production"
