@@ -229,12 +229,6 @@ category = "test-support"
 reason = "Fixtures, generators, API response mocks and helpers of the suites, with no test cases"
 
 [[languages.corrections]]
-id = "proguard-rules"
-match = ["mobile/android/app/proguard-rules.pro"]
-language = "unrecognized"
-reason = "ProGuard keep rules, which the counter reads as Prolog by their .pro extension. No counter language shares their syntax"
-
-[[languages.corrections]]
 id = "release-notes-template"
 match = ["misc/release/notes.tmpl"]
 language = "Markdown"

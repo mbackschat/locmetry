@@ -72,22 +72,22 @@ Inspect `result.file.language_mapping`, `purpose`, `category` and `rule`. Withou
 
 ## Correct a Misrecognized Language
 
-The counter recognizes languages by file name and extension, and some extensions belong to several formats: ProGuard rules named `proguard-rules.pro` are read as Prolog, Helm's Go templates (`.tpl`) as Pan, and C++ headers as C Header. A mapping cannot change a recognized file, and an exclusion would hide the file instead of answering the question. After inspecting the file, correct its language in the project configuration:
+The counter recognizes languages by file name and extension, and some extensions belong to several formats: LaTeX class files (`.cls`) are read as Visual Basic 6, Tree-sitter query files (`.scm`) as Scheme, and C++ headers as C Header. A mapping cannot change a recognized file, and an exclusion would hide the file instead of answering the question. After inspecting the file, correct its language in the project configuration:
 
 ```toml
 version = 1
 
 [[languages.corrections]]
-id = "helm-templates"
-match = ["deploy/helm/**/*.tpl"]
-language = "Go HTML"
-reason = "Helm Go templates; Go HTML shares their {{/* */}} comments"
+id = "latex-classes"
+match = ["doc/latex/*.cls"]
+language = "TeX"
+reason = "LaTeX document classes; TeX shares their % comments"
 
 [[languages.corrections]]
-id = "proguard-rules"
-match = ["android/app/proguard-rules.pro"]
+id = "tree-sitter-queries"
+match = ["queries/**/*.scm"]
 language = "unrecognized"
-reason = "ProGuard keep rules; no counter language shares their syntax"
+reason = "Tree-sitter queries, not Scheme programs"
 ```
 
 Choose a counter language only when its comment syntax matches the file's, because the counts follow that syntax; otherwise use `"unrecognized"`, which leaves the file selected but uncounted. Remeasure and explain a corrected file: `result.file.language_correction` and `result.correction` name the correction, and an unused correction appears in `summary.unused_entries`. Corrections are project knowledge, so personal defaults cannot set them.

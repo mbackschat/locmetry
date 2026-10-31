@@ -14,50 +14,54 @@ fn file<'a>(document: &'a Value, path: &str) -> Option<&'a Value> {
         .find(|file| file["path"] == path)
 }
 
-const HELM: &str =
-    "{{/* Chart name. */}}\n{{- define \"name\" -}}\n{{ .Chart.Name }}\n{{- end -}}\n";
+const LATEX_CLASS: &str =
+    "% A report class.\n\\NeedsTeXFormat{LaTeX2e}\n\\ProvidesClass{report}\n\\LoadClass{article}\n";
 
-/// Go templates misread as Pan count their `{{/* */}}` comments as code; Go
-/// HTML shares the template comment syntax.
+/// LaTeX classes misread as Visual Basic 6 count their `%` comments as code;
+/// TeX shares their comment syntax.
 #[test]
 fn a_correction_counts_the_file_with_the_named_language() {
     let document = measured(
-        "version = 1\n[[languages.corrections]]\nid = \"helm\"\nmatch = [\"chart/**/*.tpl\"]\nlanguage = \"Go HTML\"\nreason = \"Helm Go templates\"\n",
-        &[("chart/templates/_helpers.tpl", HELM), ("other/x.tpl", HELM)],
+        "version = 1\n[[languages.corrections]]\nid = \"latex\"\nmatch = [\"tex/**/*.cls\"]\nlanguage = \"TeX\"\nreason = \"LaTeX document classes\"\n",
+        &[("tex/classes/report.cls", LATEX_CLASS), ("other/x.cls", LATEX_CLASS)],
     );
-    let corrected = file(&document, "chart/templates/_helpers.tpl").unwrap();
-    assert_eq!(corrected["language"], "Go HTML");
-    assert_eq!(corrected["kind"], "source");
-    assert_eq!(corrected["language_correction"], "helm");
+    let corrected = file(&document, "tex/classes/report.cls").unwrap();
+    assert_eq!(corrected["language"], "TeX");
+    // The corrected language's content kind applies, as for a mapping.
+    assert_eq!(corrected["kind"], "documentation");
+    assert_eq!(corrected["language_correction"], "latex");
     assert!(corrected.get("language_mapping").is_none());
     assert_eq!(corrected["counts"]["comments"], 1);
     assert_eq!(corrected["counts"]["code"], 3);
-    let untouched = file(&document, "other/x.tpl").unwrap();
-    assert_eq!(untouched["language"], "Pan");
+    let untouched = file(&document, "other/x.cls").unwrap();
+    assert_eq!(untouched["language"], "VB6/VBA");
     assert!(untouched.get("language_correction").is_none());
     assert_eq!(
         document["metadata"]["config"]["languages"]["corrections"][0]["id"],
-        "helm"
+        "latex"
     );
 }
 
 #[test]
 fn a_correction_to_unrecognized_lists_the_file_as_unrecognized() {
     let document = measured(
-        "version = 1\n[[languages.corrections]]\nid = \"proguard-rules\"\nmatch = [\"app/proguard-rules.pro\"]\nlanguage = \"unrecognized\"\n",
+        "version = 1\n[[languages.corrections]]\nid = \"tree-sitter-queries\"\nmatch = [\"app/queries/*.scm\"]\nlanguage = \"unrecognized\"\n",
         &[
-            ("app/proguard-rules.pro", "# keep\n-keep class a.B\n"),
+            ("app/queries/highlights.scm", "; Keywords\n(identifier) @variable\n"),
             ("app/Main.kt", "fun main() {}\n"),
         ],
     );
-    assert!(file(&document, "app/proguard-rules.pro").is_none());
+    assert!(file(&document, "app/queries/highlights.scm").is_none());
     let coverage = &document["metadata"]["coverage"];
-    assert_eq!(coverage["unrecognized"], json!(["app/proguard-rules.pro"]));
+    assert_eq!(
+        coverage["unrecognized"],
+        json!(["app/queries/highlights.scm"])
+    );
     assert_eq!(coverage["unrecognized_files"], 1);
     assert_eq!(coverage["selected_files"], 2);
     assert_eq!(coverage["counted_files"], 1);
     assert!(document["summary"]["source_languages"]
-        .get("Prolog")
+        .get("Scheme")
         .is_none());
 }
 
@@ -138,12 +142,12 @@ language = "unrecognized"
 
 #[test]
 fn personal_defaults_cannot_correct_languages() {
-    let temp = project(&[("a.pro", "x.\n")]);
+    let temp = project(&[("a.scm", "(x) @y\n")]);
     let home = temp.path().join("home");
     fs::create_dir_all(home.join("locmetry")).unwrap();
     fs::write(
         home.join("locmetry/config.toml"),
-        "version = 1\n[[languages.corrections]]\nid = \"pro\"\nmatch = [\"**/*.pro\"]\nlanguage = \"unrecognized\"\n",
+        "version = 1\n[[languages.corrections]]\nid = \"scm\"\nmatch = [\"**/*.scm\"]\nlanguage = \"unrecognized\"\n",
     )
     .unwrap();
     let output = locmetry()
@@ -159,11 +163,11 @@ fn personal_defaults_cannot_correct_languages() {
 
 #[test]
 fn explain_shows_the_correction_and_its_reason() {
-    let config = "version = 1\n[[languages.corrections]]\nid = \"helm\"\nmatch = [\"chart/*.tpl\"]\nlanguage = \"Go HTML\"\nreason = \"Helm Go templates\"\n\n[[languages.corrections]]\nid = \"proguard\"\nmatch = [\"proguard-rules.pro\"]\nlanguage = \"unrecognized\"\n";
+    let config = "version = 1\n[[languages.corrections]]\nid = \"latex\"\nmatch = [\"tex/*.cls\"]\nlanguage = \"TeX\"\nreason = \"LaTeX document classes\"\n\n[[languages.corrections]]\nid = \"queries\"\nmatch = [\"queries/*.scm\"]\nlanguage = \"unrecognized\"\n";
     let temp = project(&[
         (".locmetryrc", config),
-        ("chart/_helpers.tpl", HELM),
-        ("proguard-rules.pro", "-keep class a.B\n"),
+        ("tex/report.cls", LATEX_CLASS),
+        ("queries/highlights.scm", "(identifier) @variable\n"),
     ]);
     let root = temp.path().join("project");
     let explain = |path: &str, format: &str| {
@@ -179,20 +183,20 @@ fn explain_shows_the_correction_and_its_reason() {
         );
         String::from_utf8(output.stdout).unwrap()
     };
-    let json: Value = serde_json::from_str(&explain("chart/_helpers.tpl", "json")).unwrap();
-    assert_eq!(json["result"]["file"]["language_correction"], "helm");
+    let json: Value = serde_json::from_str(&explain("tex/report.cls", "json")).unwrap();
+    assert_eq!(json["result"]["file"]["language_correction"], "latex");
     assert_eq!(
         json["result"]["correction"],
-        json!({"id": "helm", "reason": "Helm Go templates"})
+        json!({"id": "latex", "reason": "LaTeX document classes"})
     );
-    let text = explain("chart/_helpers.tpl", "table");
+    let text = explain("tex/report.cls", "table");
     assert!(
-        text.contains("Language correction: helm (Helm Go templates)\n"),
+        text.contains("Language correction: latex (LaTeX document classes)\n"),
         "{text}"
     );
-    let json: Value = serde_json::from_str(&explain("proguard-rules.pro", "json")).unwrap();
+    let json: Value = serde_json::from_str(&explain("queries/highlights.scm", "json")).unwrap();
     assert_eq!(json["result"]["state"], "unrecognized");
-    assert_eq!(json["result"]["correction"], json!({"id": "proguard"}));
-    let text = explain("proguard-rules.pro", "table");
-    assert!(text.contains("Language correction: proguard\n"), "{text}");
+    assert_eq!(json["result"]["correction"], json!({"id": "queries"}));
+    let text = explain("queries/highlights.scm", "table");
+    assert!(text.contains("Language correction: queries\n"), "{text}");
 }

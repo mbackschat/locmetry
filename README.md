@@ -125,7 +125,7 @@ Built-in conventions already recognize the npm, Gradle, Python and Dart [build m
 | Production | 194,167 | 179,488 |
 | Test | 83,595 | 87,011 |
 | Other: generated | 0 | 16,165 |
-| Other: unclaimed | 4,945 | 0 |
+| Other: unclaimed | 4,908 | 0 |
 | Test/prod | 0.43 | 0.48 |
 
 `--show-categories` breaks each purpose down by category, which shows what the project consists of:

@@ -30,7 +30,7 @@ in '.locmetryrc':
    server/src/queries/person.repository.sql                        1,344 code lines  server (npm)
    server/src/schema/migrations/1752267649968-StandardizeNames.ts  1,193 code lines  server (npm)
    server/src/repositories/asset.repository.ts                     1,161 code lines  server (npm)
- Unclaimed source: 4,945 code lines in 89 files, here:
+ Unclaimed source: 4,908 code lines in 88 files, here:
    mobile/ios/Runner           2,272 code lines  21 files
    mobile/ios/WidgetExtension    830 code lines   7 files
    mobile/pigeon                 325 code lines   9 files
@@ -39,9 +39,9 @@ in '.locmetryrc':
    deployment                    225 code lines  16 files
    server                        218 code lines   6 files
    docs                          213 code lines   2 files
-   and 10 more folders (349 code lines)
+   and 9 more folders (312 code lines)
  To inspect or refine purpose classification, use '--guide configure'. '--files --output -' shows each file's rule.
- Unrecognized files: 436 (png: 165, webp: 146, no extension: 61, ttf: 19, lock: 10). Their lines are unknown, not zero.
+ Unrecognized files: 437 (png: 165, webp: 146, no extension: 61, ttf: 19, lock: 10). Their lines are unknown, not zero.
 
 ```
 
@@ -114,8 +114,8 @@ locmetry --root immich --config draft.toml --format table --verbose --no-color -
 ```
 
 ```output
- Unclaimed source: 1,789 code lines in 57 files, here:
-   mobile                413 code lines  12 files
+ Unclaimed source: 1,752 code lines in 56 files, here:
+   mobile                376 code lines  11 files
    packages              265 code lines   8 files
    machine-learning      248 code lines   4 files
    deployment            225 code lines  16 files
@@ -147,9 +147,9 @@ locmetry compare builtin.json reviewed.json --format table --no-color \
  ────────────────────────────────────────┼──────────────────────────
  Production    227,764  210,696  -17,068 │ 194,167  179,488  -14,679
  Test           99,381  103,432   +4,051 │  83,595   87,011   +3,416
- Other           6,214   19,173  +12,959 │   4,945   16,165  +11,220
+ Other           6,167   19,173  +13,006 │   4,908   16,165  +11,257
  ────────────────────────────────────────┼──────────────────────────
- Source total  333,359  333,301      -58 │ 282,707  282,664      -43
+ Source total  333,312  333,301      -11 │ 282,670  282,664       -6
 
  Test/prod (Code): 0.43 → 0.48 (before → after)
 ```

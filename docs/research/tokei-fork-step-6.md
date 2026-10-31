@@ -1331,82 +1331,134 @@ Judge: shakespeare 2.1.7.1's line rules, ported from `Text.Hamlet.Parse.parseLin
 
 Every valid file matches on every line, 7,254 lines in all counting the invalid files, which indent with tabs. Release `15.0.0+locmetry.40`, fork `572c903`, differed on 11 files, on 35 lines: Hamlet declared quotes for the whole template, so an apostrophe in text opened a string, and `$#` comments were unknown. Fork `637e8b0` reads `$#` at a line's start as a comment and declares no strings; on these repositories it takes 0.23 times upstream's time.
 
+## Extensions shared by several languages
+
+After the build languages, every extension that Tokei gave to one language and [GitHub Linguist's heuristics](https://github.com/github-linguist/linguist/blob/73ee9a3b27/lib/linguist/heuristics.yml) assign to several was checked on public repositories of each language that writes it. Eleven extensions put files of one language into another's counts, so release `15.0.0+locmetry.42`, forks `819319f` and `e065129`, decides them by content: a file goes to a language only when its text matches that language's pattern, and otherwise to the language that still lists the extension plainly, if any. The patterns start from Linguist's rules and were narrowed until no measured file of another language matched: Linguist's Prolog rule, a `:-` on a line without a `#` before it, claimed six Perl files, and a bare fact such as `otherwise.` claimed 30 perl5 files through lines of POD prose, so a Prolog fact needs arguments; an Objective-C file needs an `@` directive or an `#import`, of any file, as protobuf's unity builds import only `.m` files; Phix needs `include`, `constant`, `namespace`, `enum` or `end function` in its own form, without lookahead, which the `regex` crate lacks.
+
+| Extension | Repository | Commit | Written in | Files | Release `.42` gives |
+| --- | --- | --- | --- | ---: | --- |
+| `.v` | [rocq-prover/rocq](https://github.com/rocq-prover/rocq) | `a1f37202b9` | Coq | 2,931 | Coq 2,872, unrecognized 59, of which 16 are empty |
+| `.v` | [math-comp/math-comp](https://github.com/math-comp/math-comp) | `cc79906a94` | Coq | 147 | Coq 147 |
+| `.v` | [alexforencich/verilog-ethernet](https://github.com/alexforencich/verilog-ethernet) | `77320a9471` | Verilog | 461 | Verilog 461 |
+| `.v` | [openrisc/mor1kx](https://github.com/openrisc/mor1kx) | `f46074a885` | Verilog | 55 | Verilog 55 |
+| `.v` | [ZipCPU/zipcpu](https://github.com/ZipCPU/zipcpu) | `42606d2d6e` | Verilog | 80 | Verilog 80 |
+| `.v` | [vlang/v](https://github.com/vlang/v) | `92cf0f51a5` | V | 9,675 | unrecognized 9,675 |
+| `.fs` | [forthy42/gforth](https://github.com/forthy42/gforth) | `1c5764501d` | Forth | 546 | Forth 544, F# 2 |
+| `.fs` | [freedreno-zz/freedreno](https://github.com/freedreno-zz/freedreno) | `f300d3c0cc` | GLSL | 54 | GLSL 54 |
+| `.fs` | [tangrams/tangram-es](https://github.com/tangrams/tangram-es) | `ebe6e4df79` | GLSL | 9 | GLSL 9 |
+| `.fs` | [dotnet/fsharp](https://github.com/dotnet/fsharp) | `fbc9be3aa8` | F# | 5,639 | F# 5,639 |
+| `.e` | [petelomax/Phix](https://github.com/petelomax/Phix) | `a4fba6d9a5` | Phix | 483 | Phix 476, unrecognized 7 |
+| `.e` | [OpenEuphoria/euphoria](https://github.com/OpenEuphoria/euphoria) | `fdac8fd9a5` | Euphoria | 369 | Phix 366, unrecognized 3 |
+| `.e` | [gobo-eiffel/gobo](https://github.com/gobo-eiffel/gobo) | `0f70feb6df` | Eiffel | 6,457 | unrecognized 6,457 |
+| `.mc` | [freebsd/freebsd-src](https://github.com/freebsd/freebsd-src) | `1fb5d8265b` | M4 | 37 | M4 37 |
+| `.mc` | [warmsound/crystal-face](https://github.com/warmsound/crystal-face) | `bcc340484b` | Monkey C | 14 | Monkey C 14 |
+| `.mc` | [house-of-abbey/GarminHomeAssistant](https://github.com/house-of-abbey/GarminHomeAssistant) | `35d7adf69c` | Monkey C | 28 | Monkey C 28 |
+| `.mc` | [memen45/SubMusic](https://github.com/memen45/SubMusic) | `3f6830d6cd` | Monkey C | 75 | Monkey C 75 |
+| `.mc` | [microsoft/Windows-driver-samples](https://github.com/microsoft/Windows-driver-samples) | `f4c1ff842b` | Windows message texts | 4 | unrecognized 4 |
+| `.pro` | [qt/qtbase](https://github.com/qt/qtbase) | `c68297f665` | QMake | 1,766 | unrecognized 1,766 |
+| `.pro` | [android/nowinandroid](https://github.com/android/nowinandroid) | `2982e63cb6` | ProGuard | 3 | unrecognized 3 |
+| `.pro` | [signalapp/Signal-Android](https://github.com/signalapp/Signal-Android) | `515db93fb4` | ProGuard | 30 | unrecognized 30 |
+| `.pl` | [SWI-Prolog/swipl-devel](https://github.com/SWI-Prolog/swipl-devel) | `08abe65e9d` | Prolog | 538 | Prolog 535, Perl 3 |
+| `.pl` | Fifteen Perl repositories, listed below | | Perl | 908 | Perl 908 |
+| `.ts` | [keepassxreboot/keepassxc](https://github.com/keepassxreboot/keepassxc) | `0491ec6f06` | Qt translations | 48 | XML 48 |
+| `.ts` | [qbittorrent/qBittorrent](https://github.com/qbittorrent/qBittorrent) | `62259b84b3` | Qt translations | 122 | XML 122 |
+| `.ts` | Seven TypeScript repositories, listed below | | TypeScript | 18,456 | TypeScript 18,456 |
+| `.pan` | [quattor/template-library-core](https://github.com/quattor/template-library-core) | `d6825c6375` | Pan | 618 | Pan 618 |
+| `.tpl` | [PrestaShop/PrestaShop](https://github.com/PrestaShop/PrestaShop) | `f706d3cf2d` | Smarty | 366 | unrecognized 366 |
+| `.tpl` | [prometheus-community/helm-charts](https://github.com/prometheus-community/helm-charts) | `77d25d4bcd` | Go templates | 47 | unrecognized 47 |
+| `.m` | [AFNetworking/AFNetworking](https://github.com/AFNetworking/AFNetworking) | `d9f589cc2c` | Objective-C | 49 | Objective-C 49 |
+| `.m` | [SDWebImage/SDWebImage](https://github.com/SDWebImage/SDWebImage) | `c3ad5e1a9b` | Objective-C | 104 | Objective-C 104 |
+| `.m` | [protocolbuffers/protobuf](https://github.com/protocolbuffers/protobuf) | `6ce965aab3` | Objective-C | 85 | Objective-C 85 |
+| `.m` | [gnu-octave/octave](https://github.com/gnu-octave/octave) | `9335a54f30` | MATLAB | 1,593 | unrecognized 1,593 |
+| `.m` | [Psychtoolbox-3/Psychtoolbox-3](https://github.com/Psychtoolbox-3/Psychtoolbox-3) | `8f952b4cae` | MATLAB | 4,265 | unrecognized 4,265 |
+| `.m` | [Mercury-Language/mercury](https://github.com/Mercury-Language/mercury) | `3377edc909` | Mercury | 4,185 | unrecognized 4,185 |
+| `.pp` | [fpc/FPCSource](https://github.com/fpc/FPCSource) | `bd63f90e11` | Pascal | 12,643 | Pascal 12,634, Puppet 9 |
+| `.pp` | [puppetlabs/puppetlabs-apache](https://github.com/puppetlabs/puppetlabs-apache) | `688f56b2b6` | Puppet | 145 | Puppet 145 |
+| `.pp` | [puppetlabs/puppetlabs-stdlib](https://github.com/puppetlabs/puppetlabs-stdlib) | `388def1a9a` | Puppet | 69 | Puppet 69 |
+| `.srt` | [emacs-mirror/emacs](https://github.com/emacs-mirror/emacs) | `553e6e2d1f` | SRecode | 18 | SRecode 18 |
+
+The Perl repositories are [ack3](https://github.com/beyondgrep/ack3) `11d698f940`, [cpanminus](https://github.com/miyagawa/cpanminus) `c034dd1d38`, [Dancer2](https://github.com/PerlDancer/Dancer2) `64218bec27`, [exiftool](https://github.com/exiftool/exiftool) `980409314f`, [ExtUtils-MakeMaker](https://github.com/Perl-Toolchain-Gang/ExtUtils-MakeMaker) `55834fc274`, [mojo](https://github.com/mojolicious/mojo) `4146e40249`, [Moose](https://github.com/moose/Moose) `98ec7dda05`, [Perl-Critic](https://github.com/Perl-Critic/Perl-Critic) `368a20326a`, [perl5](https://github.com/Perl/perl5) `b3e8681e59`, [rt](https://github.com/bestpractical/rt) `f1ba6d9250`, [postgres](https://github.com/postgres/postgres) `328a9a1731`, [citus](https://github.com/citusdata/citus) `843ef6f049`, [pgvector](https://github.com/pgvector/pgvector) `44624c1f8d`, [timescaledb](https://github.com/timescale/timescaledb) `21b65abd94` and [git](https://github.com/git/git) `b9e5cff180`. The TypeScript repositories are [vscode](https://github.com/microsoft/vscode) `e219e7c0b2`, [react](https://github.com/facebook/react) `c5ec5c6d18`, [supabase](https://github.com/supabase/supabase) `65217161af`, [element-plus](https://github.com/element-plus/element-plus) `a8d102a91b`, [kit](https://github.com/sveltejs/kit) `04aac59bad`, [svelte](https://github.com/sveltejs/svelte) `fe21fce019` and [prettier](https://github.com/prettier/prettier) `c7a823c43b`.
+
+The release's own binary produced every row except the Coq and V rows, which the same patterns gave in a Python harness before those checkouts were removed; the fork checks Coq before Verilog, and no Verilog file above matches the Coq pattern. Before the release, Tokei gave each extension's files to the one language that listed it, so every row whose language differs from that one was miscounted, as [Tokei defects](../tokei-defects.md) records. The files the release misses are small or hold no defining construct: the two Forth files are an opcode table and a constant table without a colon definition or `\` comment, the ten Phix and Euphoria files are empty, comments only, tests of a line or two or inline assembly, the three Prolog files hold only bare facts or a comment, and the nine Pascal files are compiler tests of a statement or two, several meant to fail. Phix reads Euphoria, its ancestor, with the same comments and strings. Specman e is now reachable, as `.e` files that open a `<'` code block, but no public corpus was found to measure it; SubRip subtitles were checked only with synthetic files. Reading a file whose extension carries a check costs a second read of its text: VS Code, with 15,059 TypeScript files, took 2.134 s against upstream's 5.761 s.
+
+Linguist also disambiguates extensions Tokei still gives to one language, such as `.cls`, `.cl`, `.re`, `.ftl`, `.l`, `.x`, `.p`, `.scm` and `.ml`. None of the corpora measured for step 6 held a file of another language with them, except 21 Tree-sitter query files read as Scheme, whose `;` comments Scheme shares, and seven Standard ML files read as OCaml.
+
 ## Speed
 
 The owner decided on 2026-10-30 that the fork must parse within 10% of upstream Tokei 15.0.0's time on every repository below; the fork's [speed gate](https://github.com/mbackschat/tokei/tree/locmetry/judges#speed), `judges/speed/check.py`, measures it before each release is adopted. It parses every file Tokei recognizes from memory, three times, and compares the minimum user CPU time of 15 interleaved runs. Django, Tokio, Prettier, Swift NIO, bloc, Cats, ggplot2, Phoenix, Pester, pandoc, cabal, Tomcat, Bootstrap, Element Plus, SvelteKit, Svelte, KOReader, Citus, Prometheus's Helm charts, perl5, Moose, termux-packages, acme.sh, Buildroot and Git are whole checkouts, GitHub's docs are measured on their `content` folder, Linux on its makefiles, and the other trees hold the files of their judged languages.
 
 Upstream's Haskell declares no strings, so it never analyses the lines holding them, a quarter of cabal's Haskell lines and a third of pandoc's; against it, fork `994df39` took 1.10 times as long on pandoc and 1.38 times on cabal, and upstream's own engine took 3.4 times its time on cabal's Haskell files once given the quotes. The owner decided on 2026-10-30 that the gate gives upstream the string quotes of languages whose upstream definition has none, listed in the gate's `baseline-quotes.json`, so it measures the fork's own overhead; the Haskell rows below are measured that way. Upstream's JSON declares no strings either, and since fork `fc28619` reads the comments of JSON with Comments, the fork must read JSON's strings too: vcpkg, whose 6,200 JSON files dominate its time, took 1.41 times upstream's time, and 0.81 times once upstream was given JSON's quotes (fork `69cc49b`, measured 2026-10-30); the vcpkg row is measured that way. Upstream's Just declares no strings either; the Just row is measured with Just's quotes given to upstream, and against upstream without them the fork took 1.47 times its time on those files (fork `8dfaf47`, measured 2026-10-31).
 
-| Repository | Commit | Language | Upstream | Fork `f1b0b53` | Ratio |
+| Repository | Commit | Language | Upstream | Fork `819319f` | Ratio |
 | --- | --- | --- | ---: | ---: | ---: |
-| The nine repositories of the [Apache Velocity](#apache-velocity) section, Velocity files | as listed there | Apache Velocity | 0.212 s | 0.035 s | 0.16 |
-| The eight repositories of the [PlantUML](#plantuml) section, `.puml` files | as listed there | PlantUML | 0.299 s | 0.065 s | 0.22 |
-| The thirteen repositories of the [Hamlet](#hamlet) section, Hamlet files | as listed there | Hamlet | 0.019 s | 0.004 s | 0.23 |
-| The two repositories of the [Module-Definition](#module-definition) section, `.def` files | as listed there | Module-Definition | 0.081 s | 0.021 s | 0.26 |
-| [OpenAPITools/openapi-generator](https://github.com/OpenAPITools/openapi-generator) Mustache files | as listed there | Mustache | 0.356 s | 0.093 s | 0.26 |
-| The four repositories of the [Haml](#haml) section, Haml files | as listed there | Haml | 0.188 s | 0.058 s | 0.31 |
-| The eight repositories of the [Liquid](#liquid) section, Liquid files | as listed there | Liquid | 0.148 s | 0.046 s | 0.31 |
-| [symfony/symfony](https://github.com/symfony/symfony) | `92216211` | PHP | 3.701 s | 1.218 s | 0.33 |
-| [twbs/bootstrap](https://github.com/twbs/bootstrap) | `c967e2cb` | SCSS, CSS | 0.187 s | 0.067 s | 0.36 |
-| [pester/Pester](https://github.com/pester/Pester) | `98e56d65` | PowerShell | 0.150 s | 0.055 s | 0.37 |
-| The four repositories of the [Bitbake](#bitbake) section, BitBake files | as listed there | Bitbake | 0.446 s | 0.173 s | 0.39 |
-| The six repositories of the [Jsonnet](#jsonnet) section, Jsonnet files | as listed there | Jsonnet | 1.017 s | 0.397 s | 0.39 |
-| [koreader/koreader](https://github.com/koreader/koreader) | `80127739` | Lua | 0.348 s | 0.136 s | 0.39 |
-| [prometheus-community/helm-charts](https://github.com/prometheus-community/helm-charts) | `77d25d4b` | YAML | 0.369 s | 0.164 s | 0.44 |
-| [torvalds/linux](https://github.com/torvalds/linux) makefiles | `d89e1d18` | Makefile | 0.044 s | 0.020 s | 0.45 |
-| The three repositories of the [Bicep](#bicep) section, Bicep files | as listed there | Bicep | 0.536 s | 0.246 s | 0.46 |
-| [felangel/bloc](https://github.com/felangel/bloc) | `b9be1e25` | Dart | 0.220 s | 0.104 s | 0.47 |
-| [element-plus/element-plus](https://github.com/element-plus/element-plus) | `a8d102a9` | Vue | 0.319 s | 0.152 s | 0.47 |
-| [django/django](https://github.com/django/django) | `817df1c4` | Python | 1.365 s | 0.656 s | 0.48 |
-| The justfiles of the [Just](#just) section | as listed there | Just | 0.194 s | 0.094 s | 0.48 |
-| [npocmaka/batch.scripts](https://github.com/npocmaka/batch.scripts) | `7e784303` | Batch | 0.007 s | 0.004 s | 0.49 |
-| [microsoft/vcpkg](https://github.com/microsoft/vcpkg) | `d186940b` | CMake, JSON | 1.003 s | 0.493 s | 0.49 |
-| [dotnet/fsharp](https://github.com/dotnet/fsharp) F# files | `fbc9be3a` | F# | 1.260 s | 0.620 s | 0.49 |
-| [dotnet/roslyn](https://github.com/dotnet/roslyn), [dotnet/docs](https://github.com/dotnet/docs), [dotnet/samples](https://github.com/dotnet/samples) and [icsharpcode/CodeConverter](https://github.com/icsharpcode/CodeConverter) Visual Basic files | `dcfa99c3`, `bcbe167f`, `ab42c8a4`, `a166046e` | Visual Basic | 1.673 s | 0.831 s | 0.50 |
-| [tidyverse/ggplot2](https://github.com/tidyverse/ggplot2) | `b638d654` | R | 0.174 s | 0.087 s | 0.50 |
-| [fpc/FPCSource](https://github.com/fpc/FPCSource) Pascal files | `fb4143a1` | Pascal | 4.456 s | 2.256 s | 0.51 |
-| [phoenixframework/phoenix](https://github.com/phoenixframework/phoenix) | `c9065a89` | Elixir | 0.121 s | 0.061 s | 0.51 |
-| [jgm/pandoc](https://github.com/jgm/pandoc) | `75ebbfa7` | Haskell | 0.179 s | 0.092 s | 0.52 |
-| [crystal-lang/crystal](https://github.com/crystal-lang/crystal) Crystal files | `9400d45c` | Crystal | 0.391 s | 0.206 s | 0.53 |
-| [gohugoio/hugo](https://github.com/gohugoio/hugo) | `a1668da3` | Go | 0.128 s | 0.069 s | 0.54 |
-| [prettier/prettier](https://github.com/prettier/prettier) | `c7a823c4` | JavaScript, TypeScript | 0.471 s | 0.254 s | 0.54 |
-| [buildroot/buildroot](https://github.com/buildroot/buildroot) | `93156d58` | Makefile | 0.377 s | 0.206 s | 0.55 |
-| [fpc/Lazarus](https://github.com/fpc/Lazarus) Pascal files | `709a56c0` | Pascal | 2.137 s | 1.173 s | 0.55 |
-| [AutoMapper/AutoMapper](https://github.com/AutoMapper/AutoMapper) | `df65f2e3` | C# | 0.030 s | 0.017 s | 0.55 |
-| [erlang/otp](https://github.com/erlang/otp) Erlang files | `4ba5448a` | Erlang | 1.672 s | 0.950 s | 0.57 |
-| [Perl/perl5](https://github.com/Perl/perl5) | `b3e8681e` | Perl | 1.416 s | 0.818 s | 0.58 |
-| [moose/Moose](https://github.com/moose/Moose) | `98ec7dda` | Perl | 0.080 s | 0.047 s | 0.58 |
-| [JuliaLang/julia](https://github.com/JuliaLang/julia) Julia files | `3a061696` | Julia | 0.458 s | 0.266 s | 0.58 |
-| [nim-lang/Nim](https://github.com/nim-lang/Nim) Nim files | `9a4192cc` | Nim | 0.248 s | 0.145 s | 0.58 |
-| [ziglang/zig](https://codeberg.org/ziglang/zig) Zig files | `24fdd5b7` | Zig | 0.622 s | 0.364 s | 0.58 |
-| [rubocop/rubocop](https://github.com/rubocop/rubocop) | `bde5d420` | Ruby | 0.258 s | 0.153 s | 0.59 |
-| [git/git](https://github.com/git/git) | `b9e5cff1` | C, Shell, Makefile | 1.194 s | 0.729 s | 0.61 |
-| [ghostty-org/ghostty](https://github.com/ghostty-org/ghostty) Zig files | `ae0dc1b7` | Zig | 0.168 s | 0.107 s | 0.64 |
-| [tokio-rs/tokio](https://github.com/tokio-rs/tokio) | `6470b5e4` | Rust | 0.120 s | 0.077 s | 0.64 |
-| [acmesh-official/acme.sh](https://github.com/acmesh-official/acme.sh) | `37d064f7` | Shell | 0.132 s | 0.085 s | 0.64 |
-| [haskell/cabal](https://github.com/haskell/cabal) | `07e003b3` | Haskell | 0.235 s | 0.154 s | 0.65 |
-| The nine repositories of the [COBOL](#cobol) section, COBOL files | as listed there | COBOL | 0.311 s | 0.207 s | 0.67 |
-| The three repositories of the [Device Tree](#device-tree) section, Device Tree files | as listed there | Device Tree | 1.055 s | 0.704 s | 0.67 |
-| [termux/termux-packages](https://github.com/termux/termux-packages) | `34a8c84d` | Shell | 0.572 s | 0.389 s | 0.68 |
-| [apache/tomcat](https://github.com/apache/tomcat) | `8c164da3` | XML, HTML | 0.702 s | 0.490 s | 0.70 |
-| [tigerbeetle/tigerbeetle](https://github.com/tigerbeetle/tigerbeetle) Zig files | `0450c32b` | Zig | 0.065 s | 0.046 s | 0.70 |
-| [sveltejs/kit](https://github.com/sveltejs/kit) | `04aac59b` | Svelte | 0.163 s | 0.117 s | 0.71 |
-| [citusdata/citus](https://github.com/citusdata/citus) | `843ef6f0` | SQL, C | 0.423 s | 0.303 s | 0.72 |
-| The six repositories of the [CUE](#cue) section, CUE files | as listed there | CUE | 0.205 s | 0.148 s | 0.72 |
-| [spring-projects/spring-framework](https://github.com/spring-projects/spring-framework) | `64861cb3` | Java, Kotlin | 1.151 s | 0.859 s | 0.75 |
-| [curl/curl](https://github.com/curl/curl) | `87c4c6d6` | C | 0.240 s | 0.181 s | 0.75 |
-| The five repositories of the [Nix](#nix) section, Nix files | as listed there | Nix | 2.029 s | 1.594 s | 0.79 |
-| [Reference-LAPACK/lapack](https://github.com/Reference-LAPACK/lapack) Fortran files | `472b3a0f` | FORTRAN Legacy, FORTRAN Modern | 1.050 s | 0.845 s | 0.80 |
-| [sveltejs/svelte](https://github.com/sveltejs/svelte) | `fe21fce0` | Svelte | 0.275 s | 0.222 s | 0.81 |
-| [apple/swift-nio](https://github.com/apple/swift-nio) | `108daca3` | Swift | 0.101 s | 0.083 s | 0.82 |
-| [github/docs](https://github.com/github/docs) `content` | `59fde2de` | Markdown | 0.204 s | 0.170 s | 0.83 |
-| [typelevel/cats](https://github.com/typelevel/cats) | `b6c4dbfb` | Scala | 0.090 s | 0.076 s | 0.84 |
-| The seven repositories of the [HCL](#hcl) section, HCL files | as listed there | HCL | 0.621 s | 0.530 s | 0.85 |
-| [ocaml/ocaml](https://github.com/ocaml/ocaml) OCaml files | `a76fb1de` | OCaml | 0.409 s | 0.354 s | 0.86 |
-| The six repositories of the [LD Script](#ld-script) section, linker scripts | as listed there | LD Script | 0.278 s | 0.241 s | 0.87 |
-| The eight repositories of the [Solidity](#solidity) section, Solidity files | as listed there | Solidity | 0.213 s | 0.202 s | 0.95 |
-| The eleven repositories of the [GNU Style Assembly](#gnu-style-assembly) and [Assembly](#assembly) sections, assembly files | as listed there | GNU Style Assembly, Assembly | 0.765 s | 0.768 s | 1.00 |
-| The debops, Ansible and Salt repositories of the [Jinja2](#jinja2) section, Jinja2 files | as listed there | Jinja2 | 0.020 s | 0.020 s | 1.03 |
-| The three repositories of the [FreeMarker](#freemarker) section, FreeMarker files | as listed there | FreeMarker | 0.042 s | 0.043 s | 1.04 |
+| The nine repositories of the [Apache Velocity](#apache-velocity) section, Velocity files | as listed there | Apache Velocity | 0.251 s | 0.042 s | 0.17 |
+| The eight repositories of the [Liquid](#liquid) section, Liquid files | as listed there | Liquid | 0.142 s | 0.031 s | 0.22 |
+| [OpenAPITools/openapi-generator](https://github.com/OpenAPITools/openapi-generator) Mustache files | as listed there | Mustache | 0.426 s | 0.100 s | 0.23 |
+| The two repositories of the [Module-Definition](#module-definition) section, `.def` files | as listed there | Module-Definition | 0.084 s | 0.021 s | 0.25 |
+| The thirteen repositories of the [Hamlet](#hamlet) section, Hamlet files | as listed there | Hamlet | 0.018 s | 0.005 s | 0.26 |
+| [symfony/symfony](https://github.com/symfony/symfony) | `92216211` | PHP | 4.011 s | 1.176 s | 0.29 |
+| The eight repositories of the [PlantUML](#plantuml) section, `.puml` files | as listed there | PlantUML | 0.260 s | 0.091 s | 0.35 |
+| The six repositories of the [Jsonnet](#jsonnet) section, Jsonnet files | as listed there | Jsonnet | 1.013 s | 0.367 s | 0.36 |
+| The four repositories of the [Bitbake](#bitbake) section, BitBake files | as listed there | Bitbake | 0.449 s | 0.169 s | 0.38 |
+| The four repositories of the [Haml](#haml) section, Haml files | as listed there | Haml | 0.135 s | 0.052 s | 0.39 |
+| [koreader/koreader](https://github.com/koreader/koreader) | `80127739` | Lua | 0.347 s | 0.134 s | 0.39 |
+| [prometheus-community/helm-charts](https://github.com/prometheus-community/helm-charts) | `77d25d4b` | YAML | 0.331 s | 0.142 s | 0.43 |
+| [pester/Pester](https://github.com/pester/Pester) | `98e56d65` | PowerShell | 0.146 s | 0.063 s | 0.43 |
+| [twbs/bootstrap](https://github.com/twbs/bootstrap) | `c967e2cb` | SCSS, CSS | 0.197 s | 0.087 s | 0.44 |
+| [torvalds/linux](https://github.com/torvalds/linux) makefiles | `d89e1d18` | Makefile | 0.046 s | 0.020 s | 0.45 |
+| [element-plus/element-plus](https://github.com/element-plus/element-plus) | `a8d102a9` | Vue | 0.376 s | 0.169 s | 0.45 |
+| [git/git](https://github.com/git/git) | `b9e5cff1` | C, Shell, Makefile | 1.050 s | 0.478 s | 0.46 |
+| [buildroot/buildroot](https://github.com/buildroot/buildroot) | `93156d58` | Makefile | 0.325 s | 0.148 s | 0.46 |
+| The three repositories of the [Bicep](#bicep) section, Bicep files | as listed there | Bicep | 0.520 s | 0.238 s | 0.46 |
+| [crystal-lang/crystal](https://github.com/crystal-lang/crystal) Crystal files | `9400d45c` | Crystal | 0.395 s | 0.187 s | 0.47 |
+| [erlang/otp](https://github.com/erlang/otp) Erlang files | `4ba5448a` | Erlang | 1.623 s | 0.773 s | 0.48 |
+| [npocmaka/batch.scripts](https://github.com/npocmaka/batch.scripts) | `7e784303` | Batch | 0.007 s | 0.003 s | 0.48 |
+| [tokio-rs/tokio](https://github.com/tokio-rs/tokio) | `6470b5e4` | Rust | 0.193 s | 0.093 s | 0.48 |
+| [felangel/bloc](https://github.com/felangel/bloc) | `b9be1e25` | Dart | 0.214 s | 0.105 s | 0.49 |
+| [microsoft/vcpkg](https://github.com/microsoft/vcpkg) | `d186940b` | CMake, JSON | 0.796 s | 0.391 s | 0.49 |
+| [django/django](https://github.com/django/django) | `817df1c4` | Python | 1.434 s | 0.707 s | 0.49 |
+| [phoenixframework/phoenix](https://github.com/phoenixframework/phoenix) | `c9065a89` | Elixir | 0.120 s | 0.061 s | 0.51 |
+| [ziglang/zig](https://codeberg.org/ziglang/zig) Zig files | `24fdd5b7` | Zig | 0.645 s | 0.336 s | 0.52 |
+| [fpc/FPCSource](https://github.com/fpc/FPCSource) Pascal files | `fb4143a1` | Pascal | 4.126 s | 2.168 s | 0.53 |
+| [acmesh-official/acme.sh](https://github.com/acmesh-official/acme.sh) | `37d064f7` | Shell | 0.102 s | 0.053 s | 0.53 |
+| [prettier/prettier](https://github.com/prettier/prettier) | `c7a823c4` | JavaScript, TypeScript | 0.435 s | 0.231 s | 0.53 |
+| [jgm/pandoc](https://github.com/jgm/pandoc) | `75ebbfa7` | Haskell | 0.179 s | 0.097 s | 0.54 |
+| [tidyverse/ggplot2](https://github.com/tidyverse/ggplot2) | `b638d654` | R | 0.161 s | 0.090 s | 0.56 |
+| [fpc/Lazarus](https://github.com/fpc/Lazarus) Pascal files | `709a56c0` | Pascal | 2.116 s | 1.214 s | 0.57 |
+| [sveltejs/svelte](https://github.com/sveltejs/svelte) | `fe21fce0` | Svelte | 0.371 s | 0.215 s | 0.58 |
+| The justfiles of the [Just](#just) section | as listed there | Just | 0.159 s | 0.093 s | 0.58 |
+| The seven repositories of the [HCL](#hcl) section, HCL files | as listed there | HCL | 0.647 s | 0.387 s | 0.60 |
+| [dotnet/roslyn](https://github.com/dotnet/roslyn), [dotnet/docs](https://github.com/dotnet/docs), [dotnet/samples](https://github.com/dotnet/samples) and [icsharpcode/CodeConverter](https://github.com/icsharpcode/CodeConverter) Visual Basic files | `dcfa99c3`, `bcbe167f`, `ab42c8a4`, `a166046e` | Visual Basic | 1.460 s | 0.884 s | 0.60 |
+| [JuliaLang/julia](https://github.com/JuliaLang/julia) Julia files | `3a061696` | Julia | 0.470 s | 0.287 s | 0.61 |
+| [nim-lang/Nim](https://github.com/nim-lang/Nim) Nim files | `9a4192cc` | Nim | 0.267 s | 0.163 s | 0.61 |
+| [ghostty-org/ghostty](https://github.com/ghostty-org/ghostty) Zig files | `ae0dc1b7` | Zig | 0.146 s | 0.089 s | 0.61 |
+| [sveltejs/kit](https://github.com/sveltejs/kit) | `04aac59b` | Svelte | 0.176 s | 0.108 s | 0.61 |
+| The six repositories of the [CUE](#cue) section, CUE files | as listed there | CUE | 0.183 s | 0.114 s | 0.62 |
+| The three repositories of the [Device Tree](#device-tree) section, Device Tree files | as listed there | Device Tree | 1.031 s | 0.648 s | 0.63 |
+| [Perl/perl5](https://github.com/Perl/perl5) | `b3e8681e` | Perl | 1.248 s | 0.802 s | 0.64 |
+| [gohugoio/hugo](https://github.com/gohugoio/hugo) | `a1668da3` | Go | 0.201 s | 0.129 s | 0.64 |
+| [termux/termux-packages](https://github.com/termux/termux-packages) | `34a8c84d` | Shell | 0.478 s | 0.307 s | 0.64 |
+| [haskell/cabal](https://github.com/haskell/cabal) | `07e003b3` | Haskell | 0.306 s | 0.200 s | 0.65 |
+| [moose/Moose](https://github.com/moose/Moose) | `98ec7dda` | Perl | 0.075 s | 0.050 s | 0.66 |
+| [rubocop/rubocop](https://github.com/rubocop/rubocop) | `bde5d420` | Ruby | 0.308 s | 0.205 s | 0.67 |
+| The nine repositories of the [COBOL](#cobol) section, COBOL files | as listed there | COBOL | 0.321 s | 0.214 s | 0.67 |
+| [apache/tomcat](https://github.com/apache/tomcat) | `8c164da3` | XML, HTML | 0.690 s | 0.478 s | 0.69 |
+| [tigerbeetle/tigerbeetle](https://github.com/tigerbeetle/tigerbeetle) Zig files | `0450c32b` | Zig | 0.074 s | 0.052 s | 0.71 |
+| [AutoMapper/AutoMapper](https://github.com/AutoMapper/AutoMapper) | `df65f2e3` | C# | 0.043 s | 0.030 s | 0.71 |
+| [citusdata/citus](https://github.com/citusdata/citus) | `843ef6f0` | SQL, C | 0.442 s | 0.314 s | 0.71 |
+| The five repositories of the [Nix](#nix) section, Nix files | as listed there | Nix | 1.405 s | 0.998 s | 0.71 |
+| [Reference-LAPACK/lapack](https://github.com/Reference-LAPACK/lapack) Fortran files | `472b3a0f` | FORTRAN Legacy, FORTRAN Modern | 0.691 s | 0.513 s | 0.74 |
+| [spring-projects/spring-framework](https://github.com/spring-projects/spring-framework) | `64861cb3` | Java, Kotlin | 1.120 s | 0.837 s | 0.75 |
+| [apple/swift-nio](https://github.com/apple/swift-nio) | `108daca3` | Swift | 0.114 s | 0.086 s | 0.76 |
+| The eight repositories of the [Solidity](#solidity) section, Solidity files | as listed there | Solidity | 0.225 s | 0.171 s | 0.76 |
+| [curl/curl](https://github.com/curl/curl) | `87c4c6d6` | C | 0.261 s | 0.206 s | 0.79 |
+| [typelevel/cats](https://github.com/typelevel/cats) | `b6c4dbfb` | Scala | 0.104 s | 0.088 s | 0.84 |
+| [github/docs](https://github.com/github/docs) `content` | `59fde2de` | Markdown | 0.167 s | 0.143 s | 0.85 |
+| [ocaml/ocaml](https://github.com/ocaml/ocaml) OCaml files | `a76fb1de` | OCaml | 0.392 s | 0.338 s | 0.86 |
+| The six repositories of the [LD Script](#ld-script) section, linker scripts | as listed there | LD Script | 0.273 s | 0.239 s | 0.87 |
+| [dotnet/fsharp](https://github.com/dotnet/fsharp) F# files | `fbc9be3a` | F# | 1.184 s | 1.035 s | 0.87 |
+| The eleven repositories of the [GNU Style Assembly](#gnu-style-assembly) and [Assembly](#assembly) sections, assembly files | as listed there | GNU Style Assembly, Assembly | 0.882 s | 0.849 s | 0.96 |
+| The debops, Ansible and Salt repositories of the [Jinja2](#jinja2) section, Jinja2 files | as listed there | Jinja2 | 0.021 s | 0.021 s | 1.01 |
+| The three repositories of the [FreeMarker](#freemarker) section, FreeMarker files | as listed there | FreeMarker | 0.046 s | 0.047 s | 1.01 |
 
-Measured on 2026-10-31, in one run of the gate, but for two roots: FreeMarker measured 1.13 in that run and again above 1.10 in a rerun, then 1.07 and 1.05 in two more and 1.04 over 45 runs, which the row shows, while the load average stayed near 8 on 8 cores; the code a FreeMarker file runs differs from fork `572c903`'s only by two comparisons per file. The Liquid row is a rerun, since Liquid files were added to that root during the run. Fork `572c903` measured from 0.18 to 1.04 earlier that day, before Liquid, Haml and Hamlet were added. Fork `9dcc6ea` measured from 0.18 to 1.03 earlier that day, before Zig was added, while Spotlight indexing and two other processes kept the load average between 8 and 15 on 8 cores. Fork `9b24e4d` measured Jinja2 at 1.15, FreeMarker at 1.13 and Solidity at 1.15 earlier that day; a tree of one Jinja2 file took 3.4 times upstream's time, since the fork's first detection of a file with an extension compiled the patterns of every content check, about 4 ms, the whole count of those small corpora. Fork `6486e48` compiles a check's patterns only when its extension comes up, and measured that tree at 1.04, Jinja2 at 1.00, FreeMarker at 1.05 and Solidity at 1.00; Solidity had also measured 0.89 in a rerun before the change. Fork `cb12c3b` measured from 0.28 to 0.95 earlier that day, before BitBake and Just were added; its run measured all Solidity repositories at 1.48 while two Lean builds and Spotlight indexing kept the machine busy, and three reruns of that root alone measured 1.03, 0.84 and 0.77. Fork `8ca1543` measured from 0.30 to 0.86 earlier that day, before COBOL and assembly were added. Earlier, on ethereum/solidity alone, about 0.1 s of work, the ratio ranged from 0.90 to 1.22 over eight runs, four of them above 1.10, while Spotlight indexing kept the load average near 8 on 8 cores and upstream's minimum moved from 0.107 s to 0.165 s between runs; the Solidity row therefore measures all eight Solidity repositories together, which measured 0.94, 0.94 and 1.09 in three separate runs before this table's. Fork `c18e585` measured from 0.23 to 0.87 earlier that day, before Pascal, Nim, Crystal and Solidity were added, and fork `3343fdb` measured from 0.27 to 0.88 earlier that day, before OCaml and Fortran were added, and fork `9043f73` from 0.28 to 0.90 on a lightly loaded machine, with a load average of about 3 on 8 cores, before F#, Julia and Erlang were added, and fork `85e6ed1` from 0.26 to 0.89, before Visual Basic was added. Fork `59523f1` measured from 0.28 to 0.92 on 2026-10-30 on a loaded machine, where the minimum of interleaved runs varied by about 3% between repetitions. Fork `1806dc8` found Markdown's code blocks with pulldown-cmark, whose first pass also scans inline syntax: on GitHub's `content`, 3,796 Markdown files, it took 1.05 and 1.07 times upstream's time in two runs, but 1.37 in a later run in which upstream ran faster, so it failed the gate, and its first pass alone took 28 of the 48 ms that upstream's whole count of those files took. Fork `72d47d8` reads only CommonMark's block structure, ported from commonmark.js, and took 0.79, but from 0.97 to above 1.10 over 30 runs once the machine was quiet; fork `6758800` counts Markdown's lines straight from the block list instead of the generic line loop, skips the block pass for files without three backticks or tildes in a row, 2,806 of the 3,796, and finds line ends with a vectorized search, and took 0.92 over 30 runs and 0.71 in an earlier run of the table, 0.74 in that of fork `f8826bd`, 0.87 in that of fork `59523f1`, 0.67 in that of fork `85e6ed1`, 0.90 in that of fork `9043f73`, 0.78 in that of fork `3343fdb`, 0.67 in that of fork `c18e585` and 0.69 in that of fork `8ca1543`. Cabal ranged from 0.64 to 0.95 between runs of unchanged Haskell code and measured 0.69 and 0.71 over 30 runs. Fork `a6c2728` measured from 0.27 to 0.83 on the first twenty-four. Fork `9c85621` measured from 0.26 to 0.83 on the first twenty-two. Swift NIO, bloc, Cats and ggplot2 were measured as files of their judged languages until fork `397da12`, which measured from 0.27 to 0.82 on the first twenty, and as whole checkouts since, after the gate was found passing roots that no longer existed; it fails them since fork `47e6301`. Fork `ffb6076` measured from 0.25 to 0.83 on the first seventeen. Fork `994df39` passes over runs of bytes that change nothing at once, which cut the ratios from 0.45–0.96 for fork `687cb25`; earlier measurements found ratios from 0.53 to 0.92 for fork `55b0c87` and from 0.42 to 0.94 for fork `984e57b`.
+Measured on 2026-10-31, in one run of the gate, from 0.17 to 1.01. Fork `f1b0b53` measured FreeMarker at 1.13 earlier that day and again above 1.10 in a rerun, then 1.07 and 1.05 in two more and 1.04 over 45 runs, while the load average stayed near 8 on 8 cores; the code a FreeMarker file runs differs from fork `572c903`'s only by two comparisons per file. Its Liquid row was a rerun, since Liquid files were added to that root during its run. Fork `572c903` measured from 0.18 to 1.04 earlier that day, before Liquid, Haml and Hamlet were added. Fork `9dcc6ea` measured from 0.18 to 1.03 earlier that day, before Zig was added, while Spotlight indexing and two other processes kept the load average between 8 and 15 on 8 cores. Fork `9b24e4d` measured Jinja2 at 1.15, FreeMarker at 1.13 and Solidity at 1.15 earlier that day; a tree of one Jinja2 file took 3.4 times upstream's time, since the fork's first detection of a file with an extension compiled the patterns of every content check, about 4 ms, the whole count of those small corpora. Fork `6486e48` compiles a check's patterns only when its extension comes up, and measured that tree at 1.04, Jinja2 at 1.00, FreeMarker at 1.05 and Solidity at 1.00; Solidity had also measured 0.89 in a rerun before the change. Fork `cb12c3b` measured from 0.28 to 0.95 earlier that day, before BitBake and Just were added; its run measured all Solidity repositories at 1.48 while two Lean builds and Spotlight indexing kept the machine busy, and three reruns of that root alone measured 1.03, 0.84 and 0.77. Fork `8ca1543` measured from 0.30 to 0.86 earlier that day, before COBOL and assembly were added. Earlier, on ethereum/solidity alone, about 0.1 s of work, the ratio ranged from 0.90 to 1.22 over eight runs, four of them above 1.10, while Spotlight indexing kept the load average near 8 on 8 cores and upstream's minimum moved from 0.107 s to 0.165 s between runs; the Solidity row therefore measures all eight Solidity repositories together, which measured 0.94, 0.94 and 1.09 in three separate runs before this table's. Fork `c18e585` measured from 0.23 to 0.87 earlier that day, before Pascal, Nim, Crystal and Solidity were added, and fork `3343fdb` measured from 0.27 to 0.88 earlier that day, before OCaml and Fortran were added, and fork `9043f73` from 0.28 to 0.90 on a lightly loaded machine, with a load average of about 3 on 8 cores, before F#, Julia and Erlang were added, and fork `85e6ed1` from 0.26 to 0.89, before Visual Basic was added. Fork `59523f1` measured from 0.28 to 0.92 on 2026-10-30 on a loaded machine, where the minimum of interleaved runs varied by about 3% between repetitions. Fork `1806dc8` found Markdown's code blocks with pulldown-cmark, whose first pass also scans inline syntax: on GitHub's `content`, 3,796 Markdown files, it took 1.05 and 1.07 times upstream's time in two runs, but 1.37 in a later run in which upstream ran faster, so it failed the gate, and its first pass alone took 28 of the 48 ms that upstream's whole count of those files took. Fork `72d47d8` reads only CommonMark's block structure, ported from commonmark.js, and took 0.79, but from 0.97 to above 1.10 over 30 runs once the machine was quiet; fork `6758800` counts Markdown's lines straight from the block list instead of the generic line loop, skips the block pass for files without three backticks or tildes in a row, 2,806 of the 3,796, and finds line ends with a vectorized search, and took 0.92 over 30 runs and 0.71 in an earlier run of the table, 0.74 in that of fork `f8826bd`, 0.87 in that of fork `59523f1`, 0.67 in that of fork `85e6ed1`, 0.90 in that of fork `9043f73`, 0.78 in that of fork `3343fdb`, 0.67 in that of fork `c18e585` and 0.69 in that of fork `8ca1543`. Cabal ranged from 0.64 to 0.95 between runs of unchanged Haskell code and measured 0.69 and 0.71 over 30 runs. Fork `a6c2728` measured from 0.27 to 0.83 on the first twenty-four. Fork `9c85621` measured from 0.26 to 0.83 on the first twenty-two. Swift NIO, bloc, Cats and ggplot2 were measured as files of their judged languages until fork `397da12`, which measured from 0.27 to 0.82 on the first twenty, and as whole checkouts since, after the gate was found passing roots that no longer existed; it fails them since fork `47e6301`. Fork `ffb6076` measured from 0.25 to 0.83 on the first seventeen. Fork `994df39` passes over runs of bytes that change nothing at once, which cut the ratios from 0.45–0.96 for fork `687cb25`; earlier measurements found ratios from 0.53 to 0.92 for fork `55b0c87` and from 0.42 to 0.94 for fork `984e57b`.

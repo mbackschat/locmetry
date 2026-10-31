@@ -234,30 +234,30 @@ fn corrections_report_their_files_and_what_an_earlier_correction_took() {
     let document = measured(
         r#"version = 1
 [[languages.corrections]]
-id = "proguard"
-match = ["app/proguard-rules.pro"]
+id = "queries"
+match = ["app/highlights.scm"]
 language = "unrecognized"
 [[languages.corrections]]
-id = "helm"
-match = ["app/**", "chart/**"]
-language = "Go HTML"
+id = "latex"
+match = ["app/**", "tex/**"]
+language = "TeX"
 "#,
         &[
-            ("app/proguard-rules.pro", "-keep class a.B\n"),
-            ("app/x.tpl", "{{ .A }}\n"),
+            ("app/highlights.scm", "(identifier) @variable\n"),
+            ("app/x.cls", "\\ProvidesClass{x}\n"),
         ],
     );
     let summary = &document["summary"];
     assert_eq!(
-        entry(summary, "proguard"),
-        &json!({"id": "proguard", "stage": "correction", "files": 1, "code": 0})
+        entry(summary, "queries"),
+        &json!({"id": "queries", "stage": "correction", "files": 1, "code": 0})
     );
     assert_eq!(
-        entry(summary, "helm"),
+        entry(summary, "latex"),
         &json!({
-            "id": "helm", "stage": "correction", "files": 1, "code": 1,
-            "preempted": [{"by": "proguard", "files": 1}],
-            "unused_patterns": ["chart/**"]
+            "id": "latex", "stage": "correction", "files": 1, "code": 1,
+            "preempted": [{"by": "queries", "files": 1}],
+            "unused_patterns": ["tex/**"]
         })
     );
 }

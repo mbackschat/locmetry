@@ -95,9 +95,10 @@ Each step is complete when all of these hold for its languages:
 
 ## Found by the Measurements
 
-Each needed the owner's decision before it became a step; the owner's approval to work through template languages covered the last one.
+Each needed the owner's decision before it became a step: the owner's approval to work through template languages covered the template item, and the owner's instruction to resolve the task list autonomously covered the extension item.
 
 - [x] Template languages that declared quotes for the whole file, Liquid, Mustache, Hamlet and Haml, where an apostrophe in text opened a string: Mustache corrected with fork `15.0.0+locmetry.39`, and Liquid, Haml and Hamlet with fork `15.0.0+locmetry.41`, each against its own judge in the [step 6 record](../research/tokei-fork-step-6.md).
+- [x] Extensions that several languages share, which Tokei gave to one language whatever a file held: `.in`, `.inc`, `.spec` and `.rules` corrected with fork `15.0.0+locmetry.32`, and `.v`, `.fs`, `.e`, `.mc`, `.pro`, `.pl`, `.ts`, `.tpl`, `.m`, `.pp` and `.srt` with fork `15.0.0+locmetry.42`, each measured in both directions in the [step 6 record](../research/tokei-fork-step-6.md#extensions-shared-by-several-languages).
 
 The Perl, Ruby percent-literal, Twig and Blade, and comment-only-line items found by the step 3 to 5 measurements were corrected by the [step 5 resolution](../research/tokei-fork-step-5-resolution.md).
 

@@ -23,12 +23,12 @@ locmetry --root immich --config builtin-only.toml --format json \
 
 ```output
 {
-  "all_counted": 522712,
-  "source": 282707,
+  "all_counted": 522662,
+  "source": 282670,
   "purposes": {
     "production": 194167,
     "test": 83595,
-    "other": 4945
+    "other": 4908
   },
   "unclaimed": [
     {
@@ -320,8 +320,6 @@ more (276,723 code lines).
 ```
 
 About 2% of the source code builds, ships and tests the product, yet it spans 9 languages: TypeScript support code for the end-to-end suites and the release command, JavaScript bundler and lint configuration, Shell and Dockerfile for deployment, HCL for the Terraform modules and Groovy for Gradle. Comment % replaces Test/prod because the selection holds only part of Production and Test, and the note names the categories left out.
-
-No Prolog row appears, although the counter reads `mobile/android/app/proguard-rules.pro` as Prolog by its extension: the file holds ProGuard keep rules, and the policy's language correction leaves it unrecognized, because no counter language shares their syntax.
 
 ## Focus on the mobile app
 

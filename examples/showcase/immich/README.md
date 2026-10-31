@@ -45,7 +45,6 @@ The overlay is meant as a model policy. Each entry uses the weakest stage that e
 | `android-app` | refinement | Production / `native` | The Gradle layout already counts the Android runner as production; a refinement relabels it without touching purpose or module credit. |
 | `release-scripts`, `documentation-site-pages` | refinements | Production / `distribution`, `documentation-site` | The npm layouts count the release command in `packages/scripts/` and the documentation site's pages and components as production, which they are, but label them `implementation`, which the category reference reserves for product functionality. |
 | `end-to-end`, `web-client-integration`, `end-to-end-support` | refinements | Test / `end-to-end`, `integration`, `test-support` | The suites under `e2e/src/specs/` drive the running server and web client without mocks; every web-client spec under `e2e/src/ui/specs/` mocks the API, so it tests short of the whole system; the remaining files hold no test cases. The refinements apply whether the convention or the `end-to-end-suites` rule made a file a test, and `except` states the split instead of entry order. |
-| `proguard-rules` | language correction | uncounted | The counter reads the ProGuard rules as Prolog, and no counter language shares their syntax. |
 | `release-notes-template` | language correction | Markdown documentation | The counter reads the Markdown release-notes template in `misc/release/` as Templ source by its `.tmpl` extension. |
 
 There are no overrides: no decision has to beat a test or build convention.
