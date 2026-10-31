@@ -27,6 +27,9 @@ guide reports look-inside-large-folders
 guide reports measure-several-repositories-together
 guide reports query-a-saved-report
 guide reports continuous-integration
+guide reports gate-file-sizes
+guide reports warn-before-failing-and-freeze-existing-large-files
+guide reports choose-what-to-count
 guide reports analyze-saved-measurements
 guide compare a-small-example
 guide compare comparable-scope-and-evidence

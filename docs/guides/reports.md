@@ -203,7 +203,15 @@ printf '%s\n' "$report" | jq -r '
   end'
 ```
 
-To gate source file sizes by purpose, apply limits to the per-file records of `--files`. This script fails on every production file over 1,000 code lines and every test file over 2,000, listing them on stderr. A purpose without a limit is not checked, so generated and unclaimed code in Other never fails the gate:
+To gate source file sizes by purpose, use the recipes in [Gate file sizes](#gate-file-sizes).
+
+[CI executes these blocks and the comparison/explanation workflows](../../scripts/check-doc-examples.sh) against synthetic projects. The policy scenarios check stdout and stderr as well as status, so invalid configuration cannot masquerade as an unclaimed-code rejection. The Cargo tests separately guard its JSON and exit-code assumptions without requiring `jq`.
+
+[Command outcomes](../PRODUCT.md#command-outcomes) defines exit statuses for measurement, comparison and explanation, including backend inaccuracy without identified failure paths.
+
+## Gate file sizes
+
+LOCmetry records what each file is for, so a gate can hold production code to a tighter limit than tests and leave generated code alone, without maintaining path patterns. LOCmetry itself enforces no limit: its exit status reports the measurement, and these scripts apply limits to the per-file records of `--files`, whose fields the [report contract](../PRODUCT.md#report-content) owns. This script fails on every production file over 1,000 code lines and every test file over 2,000, listing them on stderr. A purpose without a limit is not checked, so generated and unclaimed code in Other never fails the gate:
 
 ```sh
 set -eu
@@ -215,11 +223,51 @@ printf '%s\n' "$report" | jq -e '
   if length == 0 then true else (join("\n") + "\n" | halt_error(1)) end'
 ```
 
-Add `.language == "Rust"` to the selection to limit one language. The [file-size gate cookbook](../cookbooks/file-size-gate.md) adds soft limits and frozen sizes for existing large files.
+Add `.language == "Rust"` to the selection to limit one language. A purpose without a limit is not checked; name `other` in `$limit` to check generated and unclaimed code too.
 
-[CI executes these blocks and the comparison/explanation workflows](../../scripts/check-doc-examples.sh) against synthetic projects. The policy scenarios check stdout and stderr as well as status, so invalid configuration cannot masquerade as an unclaimed-code rejection. The Cargo tests separately guard its JSON and exit-code assumptions without requiring `jq`.
+### Warn before failing and freeze existing large files
 
-[Command outcomes](../PRODUCT.md#command-outcomes) defines exit statuses for measurement, comparison and explanation, including backend inaccuracy without identified failure paths.
+A soft limit warns while a split is still cheap. A ceiling lets a file that predates the limits keep its current size, and fails as soon as it grows. Keep both in a policy file beside the script, for example `file-size-limits.json`:
+
+```json
+{
+  "limits": {
+    "production": {"soft": 600, "hard": 1000},
+    "test": {"soft": 1000, "hard": 2000}
+  },
+  "ceilings": {"src/legacy.rs": 2400}
+}
+```
+
+The script prints warnings on stdout and fails with the errors on stderr:
+
+```sh
+set -eu
+report=$(locmetry --files --output -) || exit "$?"
+printf '%s\n' "$report" | jq -r --slurpfile policy file-size-limits.json '
+  $policy[0] as $p |
+  [.files[] | select(.kind == "source" and $p.limits[.purpose] != null)
+   | $p.limits[.purpose] as $l | ($p.ceilings[.path] // $l.hard) as $max |
+   if .counts.code > $max then {error: "\(.path): \(.counts.code) code lines over \($max)"}
+   elif .counts.code > $l.soft and $p.ceilings[.path] == null
+   then {warning: "\(.path): \(.counts.code) code lines over the \(.purpose) soft limit of \($l.soft)"}
+   else empty end] as $findings |
+  ($findings[] | .warning // empty),
+  ([$findings[] | .error // empty] | if length == 0 then empty else join("\n") + "\n" | halt_error(1) end)'
+```
+
+Lower a ceiling in the same change that shrinks its file, and remove it once the file fits the hard limit; otherwise the file can grow back unnoticed.
+
+### Choose what to count
+
+- **Code lines.** `counts.code` excludes comments and blank lines, so explanatory comments never count against a file. Use `counts.lines` to limit physical length instead.
+- **Nonblank lines.** A limit in nonblank lines, such as `awk 'NF'` counts, has no exact equivalent: a blank line inside a comment or a multi-line string counts as a comment or code line, so `counts.lines - counts.blanks` can exceed a file's nonblank lines by those few lines, never fall below them.
+- **Purpose, not paths.** The project's classification policy (`locmetry --guide configure`) decides the purpose, so a file moved into a test folder or claimed by a rule changes its limit without editing the gate.
+- **Embedded tests.** Inline unit tests count with the file that contains them. Rust unit tests in `src/` therefore count as production, and so does a `tests.rs` submodule there, because Cargo module inference claims every file under `src/`; add a project rule if such files should be tests.
+- **Languages.** Per-file records keep the backend's language names, so TSX files are `TSX`, not `TypeScript` as in folded tables.
+- **Workspaces.** `locmetry workspace` records paths prefixed by member name, so the same scripts gate several repositories at once.
+
+[CI executes these recipes](../../scripts/check-doc-examples.sh) against synthetic projects: within limits, over a limit, a larger test file under the test limit, a soft-limit warning, a ceiling that holds and one that is exceeded, and a partial measurement.
 
 ## Analyze saved measurements
 

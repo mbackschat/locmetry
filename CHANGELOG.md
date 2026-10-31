@@ -4,6 +4,10 @@ User-visible changes to LOCmetry, in the [Keep a Changelog](https://keepachangel
 
 ## [Unreleased]
 
+### Changed
+
+- `locmetry --guide reports --section gate-file-sizes` serves the file-size gate recipes, including soft limits and frozen sizes for existing large files, which were previously only in the repository's cookbook, and explains how a nonblank-line limit relates to the counts.
+
 ## [0.12.0] - 2026-10-31
 
 ### Changed

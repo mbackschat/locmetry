@@ -26,7 +26,8 @@ Find the section that answers your task and read only that. This page is embedde
 | Look inside large folders | `locmetry --guide reports --section look-inside-large-folders` |
 | Measure several repositories together | `locmetry --guide reports --section measure-several-repositories-together`, `locmetry --schema workspace --section overview` |
 | Query a saved report | `locmetry --guide reports --section query-a-saved-report`, `locmetry --schema report --section overview` |
-| Gate measurements or source file sizes in continuous integration | `locmetry --guide reports --section continuous-integration` |
+| Gate measurements in continuous integration | `locmetry --guide reports --section continuous-integration` |
+| Limit source file sizes by purpose, with soft limits and frozen sizes for existing large files | `locmetry --guide reports --section gate-file-sizes` |
 | Analyze saved measurements | `locmetry --guide reports --section analyze-saved-measurements` |
 | Compare two measurements | `locmetry --guide compare --section a-small-example --section comparable-scope-and-evidence --section compare-saved-measurements` |
 | Compare one workspace member | `locmetry --guide compare --section compare-saved-measurements --section inspect-one-workspace-member` |
