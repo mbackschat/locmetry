@@ -1608,8 +1608,8 @@ dependencies = [
 
 [[package]]
 name = "tokei"
-version = "15.0.0+locmetry.32"
-source = "git+https://github.com/mbackschat/tokei?rev=85e6ed159b84f669eac4b0b721360f1521d993fc#85e6ed159b84f669eac4b0b721360f1521d993fc"
+version = "15.0.0+locmetry.33"
+source = "git+https://github.com/mbackschat/tokei?rev=9043f73ba54abf8a1e2b75a5f1dea3478f04a368#9043f73ba54abf8a1e2b75a5f1dea3478f04a368"
 dependencies = [
  "aho-corasick",
  "arbitrary",
