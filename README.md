@@ -1,6 +1,6 @@
-<img src="docs/assets/locmetry.svg" alt="locmetry logo" width="96">
+<img src="docs/assets/locmetry.svg" alt="LOCmetry logo" width="96">
 
-# locmetry
+# LOCmetry
 
 [![CI](https://github.com/mbackschat/locmetry/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/mbackschat/locmetry/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/mbackschat/locmetry/actions/workflows/github-code-scanning/codeql/badge.svg?branch=main)](https://github.com/mbackschat/locmetry/actions/workflows/github-code-scanning/codeql)

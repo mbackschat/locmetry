@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
-  <title id="title">locmetry</title>
+  <title id="title">LOCmetry</title>
   <rect width="64" height="64" rx="14" fill="#1e293b"/>
   <!-- The rim separates the tile from dark pages: 3.9:1 on GitHub dark, 3.1:1 on dimmed, 4.8:1 on white. -->
   <rect x="0.75" y="0.75" width="62.5" height="62.5" rx="13.25" fill="none" stroke="#64748b" stroke-width="1.5"/>
