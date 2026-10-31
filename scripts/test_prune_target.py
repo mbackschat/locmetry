@@ -94,6 +94,34 @@ class PruneTargetTests(unittest.TestCase):
         self.assertFalse(old.exists())
         self.assertIn("pruned", json.loads(result.stdout)["systemMessage"])
 
+    def test_codex_hook_runs_from_the_repo_root_and_subdirectories_without_claude_env(self):
+        repo = SCRIPT.resolve().parent.parent
+        for cwd in (repo, repo / "scripts"):
+            with self.subTest(cwd=cwd):
+                self.configured_hook(".codex/hooks.json", cwd)
+
+    def test_claude_hook_keeps_using_its_project_directory(self):
+        self.configured_hook(".claude/settings.json", Path(self.tmp.name),
+                             CLAUDE_PROJECT_DIR=str(SCRIPT.resolve().parent.parent))
+
+    def configured_hook(self, config, cwd, **environment):
+        repo = SCRIPT.resolve().parent.parent
+        group = json.loads((repo / config).read_text())["hooks"]["PostToolUse"][0]
+        self.assertEqual(group["matcher"], "Bash")
+        root = self.project(cwd.name)
+        old = self.unit(root)
+        event = {"hook_event_name": "PostToolUse", "tool_name": "Bash",
+                 "cwd": str(root), "tool_input": {"command": "cargo test --locked"}}
+        result = subprocess.run(
+            group["hooks"][0]["command"] + " --max-kib 4 --floor-kib 2",
+            shell=True, cwd=cwd, input=json.dumps(event), capture_output=True, text=True,
+            env={**{k: v for k, v in os.environ.items()
+                    if k not in ("CLAUDE_PROJECT_DIR", "CARGO_TARGET_DIR")}, **environment},
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertFalse(old.exists())
+        self.assertIn("pruned", json.loads(result.stdout)["systemMessage"])
+
     def test_the_hook_prunes_the_project_the_command_entered_not_the_session_one(self):
         session, sibling = self.project("app"), self.project("fork")
         kept, pruned = self.unit(session), self.unit(sibling)

@@ -12,7 +12,7 @@ any unit whose outputs or fingerprint are missing, so a pruned unit that is
 still needed costs one rebuild, not a broken build. A profile whose
 `.cargo-lock` a running Cargo holds is left alone.
 
-With `--hook` it runs as a Claude Code PostToolUse hook: it reads the event on
+With `--hook` it runs as a Claude Code or Codex PostToolUse hook: it reads the event on
 stdin and, after a Bash command that ran Cargo, prunes the target directory of
 each project Cargo ran in, following `cd`, `--manifest-path` and
 `--target-dir`, since commands also build sibling checkouts such as the Tokei
