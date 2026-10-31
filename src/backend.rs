@@ -304,10 +304,19 @@ pub(crate) fn scan_selection(
         ..Default::default()
     };
     let languages = count_selected(&root, &paths, &config, &mut coverage)?;
+    let rust_files: Vec<PathBuf> = languages
+        .get(&LanguageType::Rust)
+        .map(|rust| {
+            rust.reports
+                .iter()
+                .map(|report| report.name.clone())
+                .collect()
+        })
+        .unwrap_or_default();
     let mut inaccurate = languages.values().any(|language| language.inaccurate);
     let mut payload = serde_json::to_value(languages)?;
     let counted = normalize_reports(&mut payload, &root, policy)?;
-    let inline_tests = inline_rust_tests(&root, &paths, &counted, &config)?;
+    let inline_tests = inline_rust_tests(&root, &rust_files, &config)?;
     let failed: BTreeSet<_> = coverage
         .parse_failures
         .iter()
@@ -388,24 +397,17 @@ pub(crate) fn scan_selection(
     ))
 }
 
-/// Inline test counts of the counted Rust files among `paths`. The text is read
+/// Inline test counts of the counted Rust files `rust_files`. The text is read
 /// again because Tokei parses files itself; an unreadable file is already
 /// reported by counting, so it adds nothing here.
 fn inline_rust_tests(
     root: &Path,
-    paths: &[PathBuf],
-    counted: &BTreeSet<String>,
+    rust_files: &[PathBuf],
     config: &tokei::Config,
 ) -> Result<BTreeMap<String, Counts>> {
-    let rust: Vec<(String, &PathBuf)> = paths
+    let rust: Vec<(String, &PathBuf)> = rust_files
         .iter()
-        .filter(|path| LanguageType::from_path(path, config) == Some(LanguageType::Rust))
         .map(|path| Ok((relative_path(path.strip_prefix(root)?)?, path)))
-        .filter(|entry| {
-            entry
-                .as_ref()
-                .map_or(true, |(name, _)| counted.contains(name))
-        })
         .collect::<Result<_>>()?;
     Ok(rust
         .par_iter()
@@ -430,8 +432,10 @@ fn count_selected(
     let parsed: Vec<_> = paths
         .par_iter()
         .filter_map(|path| {
-            LanguageType::from_path(path, config)
-                .map(|kind| (path, kind, parse_file(kind, path, config)))
+            // A file whose extension several languages share is read to
+            // decide its language; counting reuses those bytes.
+            LanguageType::from_path_with_bytes(path, config)
+                .map(|(kind, bytes)| (path, kind, parse_file(kind, path, bytes, config)))
         })
         .collect();
     for (path, kind, result) in parsed {
@@ -491,7 +495,7 @@ fn count_as(
     counted: &mut BTreeMap<LanguageType, tokei::Language>,
     coverage: &mut Coverage,
 ) -> bool {
-    match parse_file(language, path, config) {
+    match parse_file(language, path, None, config) {
         Ok(report) => {
             counted.entry(language).or_default().add_report(report);
             true
@@ -511,16 +515,21 @@ fn count_as(
     }
 }
 
+/// Counts `path` as `language`, from `bytes` when detection already read them.
 fn parse_file(
     language: LanguageType,
     path: &Path,
+    bytes: Option<Vec<u8>>,
     config: &tokei::Config,
 ) -> std::result::Result<tokei::Report, ParseError> {
-    match language {
-        Handlebars => handlebars::parse(path),
-        Jupyter => notebook::parse(path, config),
-        Lean => lean::parse(path),
-        _ => language
+    match (language, bytes) {
+        (Handlebars, _) => handlebars::parse(path),
+        (Jupyter, _) => notebook::parse(path, config),
+        (Lean, _) => lean::parse(path),
+        (_, Some(bytes)) => language
+            .parse_bytes(path.to_owned(), bytes, config)
+            .map_err(|_| ParseError::Read),
+        (_, None) => language
             .parse(path.to_owned(), config)
             .map_err(|_| ParseError::Read),
     }

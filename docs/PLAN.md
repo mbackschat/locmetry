@@ -17,7 +17,7 @@ The [proposal index](proposals/README.md) distinguishes active designs from hist
 - Accepted proposals implemented on 2026-10-23, in the owner's order: [framework layouts](proposals/archive/framework-layouts.md), [module credit by layout coverage](proposals/archive/module-credit-by-coverage.md), [language corrections](proposals/archive/language-corrections.md) and [generated-code markers](proposals/archive/generated-code-markers.md); each archived record links its verification.
 - [CLI option clarity and applicability](proposals/archive/cli-option-clarity.md): reviewed naming and output-view contract, owner amendment and verification.
 - [Windows support](proposals/archive/windows-support.md): reviewed platform contract and its verification.
-- [Correct counting in a Tokei fork](plans/archive/tokei-fork.md): the fork's six steps, completed 2026-10-31 with fork `15.0.0+locmetry.42`; [Tokei defects](tokei-defects.md) owns what it corrects.
+- [Correct counting in a Tokei fork](plans/archive/tokei-fork.md): the fork's six steps, completed 2026-10-31 with fork `15.0.0+locmetry.43`; [Tokei defects](tokei-defects.md) owns what it corrects.
 
 - [Complete CLI help coverage](plans/archive/full-help-coverage.md): implementation scope and experiment evidence; [help design](help-design.md) owns the current feature inventory and contributor guidance.
 - [Default report output decision](proposals/archive/default-report-output-proposal-redacted.md): reviewed design and acceptance evidence.
