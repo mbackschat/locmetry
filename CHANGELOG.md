@@ -7,6 +7,7 @@ User-visible changes to LOCmetry, in the [Keep a Changelog](https://keepachangel
 ### Changed
 
 - `locmetry --guide reports --section gate-file-sizes` serves the file-size gate recipes, including soft limits and frozen sizes for existing large files, which were previously only in the repository's cookbook, and explains how a nonblank-line limit relates to the counts.
+- **Breaking:** more files count in the language they are written in. Compiled gettext `.mo` catalogs, such as Django's, no longer count as Modelica. Yacc and Bison grammars, such as PostgreSQL's `gram.y`, count as Yacc with their `/* */` and `//` comments instead of as Happy without comments, `.yy` and `.yacc` grammars are counted, and only `.y` and `.ly` files that declare `%tokentype` count as Happy, so LilyPond `.ly` scores are unrecognized. PowerShell's `.ps1xml`, `.cdxml` and `.psc1` files count as XML, with their `<!-- -->` comments. Reports name the backend `tokei 15.0.0+locmetry.44 (embedded)`.
 
 ## [0.12.0] - 2026-10-31
 
