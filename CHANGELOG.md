@@ -4,6 +4,8 @@ User-visible changes to LOCmetry, in the [Keep a Changelog](https://keepachangel
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-10-31
+
 ### Changed
 
 - Help, messages, guides and the README name the product LOCmetry; the command, packages, configuration files and report fields keep `locmetry`.
@@ -209,7 +211,8 @@ User-visible changes to LOCmetry, in the [Keep a Changelog](https://keepachangel
 - **Breaking:** presentation options are named for what they show: `--folders`, `--categories`, `--bars`, `--purpose` and `--depth` became `--show-folders`, `--show-categories`, `--show-bars`, `--table-purpose` and `--markdown-depth`. `workspace --file` and `explain --workspace` became `--workspace-file`. The former spellings are rejected.
 - `--files` adds per-file records to every full JSON view, whether saved or printed.
 
-[Unreleased]: https://github.com/mbackschat/locmetry/compare/v0.11.2...HEAD
+[Unreleased]: https://github.com/mbackschat/locmetry/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/mbackschat/locmetry/compare/v0.11.2...v0.12.0
 [0.11.2]: https://github.com/mbackschat/locmetry/compare/v0.11.1...v0.11.2
 [0.11.1]: https://github.com/mbackschat/locmetry/compare/v0.11.0...v0.11.1
 [0.11.0]: https://github.com/mbackschat/locmetry/compare/v0.10.0...v0.11.0
