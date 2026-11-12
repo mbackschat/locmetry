@@ -1,5 +1,5 @@
 use crate::common;
-use common::write;
+use common::{write, write_all};
 use serde_json::{json, Value};
 use std::{fs, path::Path, process::Output};
 
@@ -286,6 +286,45 @@ fn configuration_category_example_refines_without_changing_purpose() {
         helper["result"]["decision"]["refinement"]["id"],
         "test-helpers"
     );
+}
+
+#[test]
+fn configuration_content_example_separates_files_by_their_code_lines() {
+    let root = tempfile::tempdir().unwrap();
+    write_all(
+        root.path(),
+        &[
+            (
+                "src/test/A.java",
+                "@Tag(\"integration\")\n@Test\nclass A {}\n",
+            ),
+            ("src/test/B.java", "@Test\nclass B {}\n"),
+            ("src/test/C.java", "// @Test\nclass C {}\n"),
+        ],
+    );
+    let guide = source("configure");
+    write(
+        root.path(),
+        ".locmetryrc",
+        block(&guide, "category-content-refinement", "toml"),
+    );
+    let report = document(
+        root.path(),
+        &["--no-user-config", "--files", "--output", "-"],
+        0,
+    );
+    let category = |path: &str| {
+        report["files"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|file| file["path"] == path)
+            .unwrap()["category"]
+            .clone()
+    };
+    assert_eq!(category("src/test/A.java"), "integration");
+    assert_eq!(category("src/test/B.java"), "unit");
+    assert_eq!(category("src/test/C.java"), "test");
 }
 
 #[test]

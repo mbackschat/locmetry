@@ -98,6 +98,7 @@ schema report PolicyEntry
 schema report EntryStage
 schema report Preemption
 schema report Displacement
+schema report ContentUnmatched
 schema report MemberCoverage
 schema report ReportSummary
 schema report Counts
@@ -145,6 +146,7 @@ schema comparison PolicyEntry
 schema comparison EntryStage
 schema comparison Preemption
 schema comparison Displacement
+schema comparison ContentUnmatched
 schema comparison MemberCoverage
 schema comparison Summary
 schema comparison CountChange
@@ -188,6 +190,7 @@ schema explanation Decision
 schema explanation Stage
 schema explanation GeneratedEvidence
 schema explanation RefinementEvidence
+schema explanation MatchedLine
 schema explanation Correction
 schema explanation FilterReason
 schema explanation ParseFailure

@@ -112,7 +112,15 @@ pub fn inspect(root: &Path, path: &Path, policy: &mut Policy) -> Result<(String,
         reason: policy.correction_reason(id).map(String::from),
     });
     let result = if let Some(file) = scan.records(policy)?.into_iter().next() {
-        let decision = policy.decision(&path, file.kind, scan.marker(&file).as_ref());
+        let decision = {
+            let lines = || scan.code_lines(&file);
+            policy.decision(
+                &path,
+                file.kind,
+                scan.marker(&file).as_ref(),
+                &crate::config::CodeLines::new(&lines),
+            )
+        };
         PathResult::Counted {
             file: Box::new(contract::File::from(&file)),
             decision: Box::new(decision),
@@ -253,6 +261,12 @@ impl Explanation {
                             refinement.matched_patterns.join(", ")
                         ),
                     ));
+                    if let Some(line) = &refinement.matched_line {
+                        rows.push((
+                            "Refinement line",
+                            format!("line {}, {}", line.number, output::quoted(&line.text)),
+                        ));
+                    }
                     if let Some(reason) = &refinement.reason {
                         rows.push(("Refinement reason", reason.clone()));
                     }

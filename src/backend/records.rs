@@ -1,5 +1,6 @@
 //! File records from backend statistics, with embedded documentation folded into its host.
 use super::*;
+use crate::config::MatchedLine;
 
 /// Rewrites report paths to the public root-relative form and returns them.
 ///
@@ -118,16 +119,19 @@ pub(super) fn language_counts(
 }
 
 pub fn file_records(payload: &Value, policy: &Policy) -> Result<Vec<FileRecord>> {
-    file_records_with(payload, policy, |_, _| None)
+    file_records_with(payload, policy, |_, _| None, |_| None)
 }
 
 /// File records, with `marker` asked for the generated-code evidence of each
 /// source file a module layout decided, given its path and language; files
 /// are read for markers in parallel and only when a marker could apply.
+/// `code_lines` reads the code lines of a file a content refinement asks
+/// about.
 pub(super) fn file_records_with(
     payload: &Value,
     policy: &Policy,
     marker: impl Fn(&str, &str) -> Option<GeneratedEvidence> + Sync,
+    code_lines: impl Fn(&FileRecord) -> Option<Vec<MatchedLine>> + Sync,
 ) -> Result<Vec<FileRecord>> {
     let groups = payload
         .as_object()
@@ -181,9 +185,10 @@ pub(super) fn file_records_with(
                 row.classification = evidence.classification();
             }
         });
-    for row in &mut rows {
-        policy.refine(row);
-    }
+    // Files are read only for a content refinement their other conditions
+    // matched, so a policy without one reads nothing.
+    rows.par_iter_mut()
+        .for_each(|row| policy.refine(row, &code_lines));
     rows.sort_by(|a, b| a.path.cmp(&b.path));
     Ok(rows)
 }

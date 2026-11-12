@@ -24,7 +24,7 @@ const INVENTORY: &[(&str, &[Kind])] = &[
     ("docs/cli/root.md", &[Policy, Policy, Policy]),
     (
         "docs/guides/configure.md",
-        &[Policy, Policy, Policy, Policy, Policy],
+        &[Policy, Policy, Policy, Policy, Policy, Policy],
     ),
     ("docs/guides/reports.md", &[Workspace, Workspace]),
     ("docs/showcase/tour.md", &[Policy]),

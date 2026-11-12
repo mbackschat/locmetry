@@ -17,6 +17,8 @@ pub(super) struct Entry {
     pub(super) purpose: Purpose,
     pub(super) category: String,
     pub(super) reason: Option<String>,
+    /// A refinement's condition on the file's code lines.
+    pub(super) content: Option<regex::Regex>,
 }
 
 impl Entry {
@@ -65,7 +67,7 @@ impl Entry {
     /// A refinement compiles like an entry, with `purpose` as the decided
     /// purpose it applies to rather than the one it assigns.
     pub(super) fn from_refinement(refinement: &RefinementConfig) -> Result<Self> {
-        Self::compile(
+        let mut entry = Self::compile(
             &refinement.id,
             &refinement.patterns,
             refinement.except.as_deref(),
@@ -73,7 +75,13 @@ impl Entry {
             refinement.purpose,
             refinement.category.clone(),
             refinement.reason.clone(),
-        )
+        )?;
+        entry.content = refinement
+            .content
+            .as_deref()
+            .map(|pattern| compile_content(&refinement.id, pattern))
+            .transpose()?;
+        Ok(entry)
     }
 
     pub(super) fn compile(
@@ -109,8 +117,25 @@ impl Entry {
             purpose,
             category,
             reason,
+            content: None,
         })
     }
+}
+
+/// Compiles a refinement's `content` expression, naming the regex parser's
+/// reason and the syntax it accepts.
+fn compile_content(id: &str, pattern: &str) -> Result<regex::Regex> {
+    regex::Regex::new(pattern).map_err(|error| {
+        let reason = error.to_string();
+        let reason = reason
+            .lines()
+            .last()
+            .and_then(|line| line.strip_prefix("error: "))
+            .unwrap_or(&reason);
+        anyhow!(
+            "In 'content' of refinement '{id}': {reason}. Fix the expression; 'content' takes Rust regex syntax, without look-around or backreferences."
+        )
+    })
 }
 
 /// Rejects entry categories that a declared `[categories]` list does not

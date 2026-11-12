@@ -1,5 +1,5 @@
 use crate::{
-    config::{CorrectedLanguage, GeneratedEvidence},
+    config::{CorrectedLanguage, GeneratedEvidence, MatchedLine},
     modules, Counts, FileRecord, Kind, Module, Policy, Purpose,
 };
 use anyhow::{bail, ensure, Context, Result};
@@ -16,6 +16,7 @@ use tokei::LanguageType;
 
 use LanguageType::*;
 
+mod code_lines;
 mod generated;
 mod handlebars;
 mod inline_tests;
@@ -174,6 +175,8 @@ pub struct Scan {
     /// markers are off or no module was detected, since a marker refines
     /// only what a module layout decides.
     markers: Option<generated::Markers>,
+    /// The canonical scan root the file paths are relative to.
+    root: PathBuf,
 }
 
 impl Scan {
@@ -186,6 +189,11 @@ impl Scan {
             .evidence(&file.path, &file.language, recognized)
     }
 
+    /// The code lines of a counted `file`, read from disk when asked.
+    pub(crate) fn code_lines(&self, file: &FileRecord) -> Option<Vec<MatchedLine>> {
+        code_lines::code_lines(&self.root, &file.path, &file.language)
+    }
+
     /// File records from backend and mapped statistics, sorted by path.
     pub fn records(&self, policy: &Policy) -> Result<Vec<FileRecord>> {
         let marker = |recognized| {
@@ -193,8 +201,12 @@ impl Scan {
                 self.markers.as_ref()?.evidence(path, language, recognized)
             }
         };
-        let mut rows = file_records_with(&self.payload, policy, marker(true))?;
-        for mut row in file_records_with(&self.mapped, policy, marker(false))? {
+        let mut rows = file_records_with(&self.payload, policy, marker(true), |file| {
+            self.code_lines(file)
+        })?;
+        for mut row in file_records_with(&self.mapped, policy, marker(false), |file| {
+            self.code_lines(file)
+        })? {
             row.language_mapping = self.mappings.get(&row.path).cloned();
             row.language_correction = self.corrections.get(&row.path).cloned();
             rows.push(row);
@@ -392,6 +404,7 @@ pub(crate) fn scan_selection(
             unused_exclusions,
             inline_tests,
             markers,
+            root,
         },
         exclusion,
     ))

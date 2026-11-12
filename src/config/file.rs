@@ -241,6 +241,9 @@ pub(super) struct RefinementConfig {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[schemars(length(min = 1))]
     pub(super) kind: Option<Vec<Kind>>,
+    /// One Rust `regex` expression; the refinement then matches a file only when at least one of its code lines, as the counter classifies them, matches it, so comment-only and blank lines never do. `^` and `$` anchor each line. A file whose lines another language counts, a Jupyter notebook, never matches. An invalid expression fails loading.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(super) content: Option<String>,
     /// The category matching files get instead of the one their deciding stage gave.
     pub(super) category: String,
     /// Why the refinement exists, for reviewers; `explain` shows it.

@@ -123,6 +123,29 @@ reason = "Shared setup for the test suites"
 
 Verify with `locmetry explain __test__/helpers/setup.js --root . --format json`: `result.file.rule` still names the test-directory convention, `result.file.category` becomes `test-support`, and `result.decision.refinement` names the refinement with its matching patterns and reason. The first matching refinement decides; use `except` to leave files to a later one. Refinements never change files that reached the fallback, which stay `unclaimed` for review, or files a generated-code marker refined, which stay `generated`. `summary.policy_entries` reports for each refinement the files it relabeled, under `displaced` the categories it replaced, and under `preempted` the earlier refinements that took matching files. A category subtotal covers files assigned that label; it is not proof that all conceptual helper code has been identified.
 
+When files in one folder differ by what they hold, a refinement may add `content`, one Rust regular expression, which must match at least one line the counter counts as code; comments and blank lines are never tested, and `^` and `$` anchor each line. The first matching refinement decides, so put the narrower pattern first. This one separates JUnit tests tagged as integration tests from the rest:
+
+<!-- category-content-refinement -->
+```toml
+version = 1
+
+[[refinements]]
+id = "tagged-integration"
+purpose = "test"
+match = ["src/test/**/*.java"]
+content = '^\s*@Tag\("integration"\)'
+category = "integration"
+
+[[refinements]]
+id = "unit-tests"
+purpose = "test"
+match = ["src/test/**/*.java"]
+content = '^\s*@Test\b'
+category = "unit"
+```
+
+`result.decision.refinement.matched_line` in `explain` names the line that matched, and `content_unmatched` in `summary.policy_entries` counts the files a content refinement's globs matched but its expression did not, so a pattern that misses some targets stays visible. Notebooks and Markdown files whose code blocks another language counts never match.
+
 Then check the whole policy rather than one file. Measure the unrestricted project with `--format table --verbose`, which lists entries that decided nothing and the unused patterns and exceptions of the others, or read `summary.policy_entries` in full JSON. To list which files changed category, capture full reports with `--files` before and after the policy change and run the file-transition helper in `locmetry --guide compare --section inspect-configuration-transitions`. Finish with `locmetry --guide configure --section validate-and-hand-back`.
 
 Use an override only when the purpose itself must change, such as archived tests counted as `other`.

@@ -850,6 +850,7 @@ dependencies = [
  "ignore",
  "jsonschema",
  "rayon",
+ "regex",
  "same-file",
  "schemars",
  "serde",
