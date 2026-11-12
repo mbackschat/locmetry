@@ -144,7 +144,7 @@ content = '^\s*@Test\b'
 category = "unit"
 ```
 
-`result.decision.refinement.matched_line` in `explain` names the line that matched, and `content_unmatched` in `summary.policy_entries` counts the files a content refinement's globs matched but its expression did not, so a pattern that misses some targets stays visible. Notebooks and Markdown files whose code blocks another language counts never match.
+`result.decision.refinement.matched_line` in `explain` names the line that matched, cut to 200 characters, and `content_unmatched` in `summary.policy_entries` counts the files a content refinement's globs matched but its expression did not, so a pattern that misses some targets stays visible. Notebooks and Markdown files whose code blocks another language counts never match.
 
 Then check the whole policy rather than one file. Measure the unrestricted project with `--format table --verbose`, which lists entries that decided nothing and the unused patterns and exceptions of the others, or read `summary.policy_entries` in full JSON. To list which files changed category, capture full reports with `--files` before and after the policy change and run the file-transition helper in `locmetry --guide compare --section inspect-configuration-transitions`. Finish with `locmetry --guide configure --section validate-and-hand-back`.
 

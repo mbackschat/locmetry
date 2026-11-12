@@ -225,12 +225,54 @@ pub(super) fn subtree(subfolder: Option<&str>) -> &'static str {
 
 /// Names configuration entries that decided no file, which usually means a
 /// glob that matches nothing or an entry an earlier stage preempts.
-pub(super) fn unused_entries_note(entries: &[String], subfolder: Option<&str>) -> Option<String> {
-    (!entries.is_empty()).then(|| {
+/// An entry whose `content` expression left out the files its globs selected
+/// has its own note.
+pub(super) fn unused_entries_note(
+    entries: &[String],
+    policy_entries: &[crate::PolicyEntry],
+    subfolder: Option<&str>,
+) -> Option<String> {
+    let found: Vec<&str> = entries
+        .iter()
+        .filter(|id| {
+            !policy_entries
+                .iter()
+                .any(|entry| &entry.id == *id && entry.content_unmatched.is_some())
+        })
+        .map(String::as_str)
+        .collect();
+    (!found.is_empty()).then(|| {
         format!(
             "Entries that decided no file{}: {}.",
             subtree(subfolder),
-            entries.join(", ")
+            found.join(", ")
+        )
+    })
+}
+
+/// Names, per refinement, the files its globs selected that its `content`
+/// expression did not match, so a reader learns the expression, not the glob,
+/// left them out.
+pub(super) fn content_unmatched_note(
+    entries: &[crate::PolicyEntry],
+    subfolder: Option<&str>,
+) -> Option<String> {
+    let found: Vec<String> = entries
+        .iter()
+        .filter_map(|entry| {
+            let left_out = entry.content_unmatched.as_ref()?;
+            Some(format!(
+                "{} ({})",
+                entry.id,
+                counted(left_out.files, "file")
+            ))
+        })
+        .collect();
+    (!found.is_empty()).then(|| {
+        format!(
+            "Entries whose 'content' expression matched no code line in files their globs selected{}: {}.",
+            subtree(subfolder),
+            found.join(", ")
         )
     })
 }
@@ -243,7 +285,11 @@ pub(super) fn unused_globs_notes(
     unused_entries: &[String],
     subfolder: Option<&str>,
 ) -> Vec<String> {
-    let partly_used = || entries.iter().filter(|e| !unused_entries.contains(&e.id));
+    let partly_used = || {
+        entries
+            .iter()
+            .filter(|e| !unused_entries.contains(&e.id) || e.content_unmatched.is_some())
+    };
     let listed = |globs: fn(&crate::PolicyEntry) -> &Vec<String>| -> Vec<String> {
         partly_used()
             .filter(|entry| !globs(entry).is_empty())

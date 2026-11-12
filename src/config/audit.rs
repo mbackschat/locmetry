@@ -151,6 +151,16 @@ impl Tally {
         }
     }
 
+    /// Records a file whose path the entry matched but whose code lines did
+    /// not satisfy its `content`; its globs still did their work.
+    fn content_failed(&mut self, matcher: &GlobSet, path: &str, code: u64) {
+        for i in matcher.matches(path) {
+            self.patterns[i] = true;
+        }
+        self.content_unmatched.0 += 1;
+        self.content_unmatched.1 += code;
+    }
+
     fn preempted_by(&mut self, by: &str) {
         *self.preempted.entry(by.to_owned()).or_default() += 1;
     }
@@ -279,8 +289,7 @@ impl Policy {
                 {
                     // No code line satisfied the expression; a later
                     // refinement may still have decided the file.
-                    tally.content_unmatched.0 += 1;
-                    tally.content_unmatched.1 += row.counts.code;
+                    tally.content_failed(&refinement.matcher, path, row.counts.code);
                 } else if row.refinement.as_ref() == Some(&refinement.id) {
                     let replaced = self.classify(path, kind);
                     tally.decided(&refinement.matcher, path, row.counts.code, Some(replaced));

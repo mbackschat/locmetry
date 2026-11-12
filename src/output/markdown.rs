@@ -438,6 +438,11 @@ pub(super) fn render_coverage(output: &mut String, findings: &Findings) {
         .into_iter()
         .chain(unused_entries_note(
             findings.unused_entries,
+            findings.policy_entries,
+            findings.subfolder,
+        ))
+        .chain(content_unmatched_note(
+            findings.policy_entries,
             findings.subfolder,
         ))
         .chain(unused_globs_notes(

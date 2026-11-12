@@ -113,12 +113,12 @@ pub fn inspect(root: &Path, path: &Path, policy: &mut Policy) -> Result<(String,
     });
     let result = if let Some(file) = scan.records(policy)?.into_iter().next() {
         let decision = {
-            let lines = || scan.code_lines(&file);
+            let text = || scan.code_text(&file);
             policy.decision(
                 &path,
                 file.kind,
                 scan.marker(&file).as_ref(),
-                &crate::config::CodeLines::new(&lines),
+                &crate::config::CodeLines::new(&text),
             )
         };
         PathResult::Counted {

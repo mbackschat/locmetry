@@ -1,6 +1,6 @@
 //! File records from backend statistics, with embedded documentation folded into its host.
 use super::*;
-use crate::config::MatchedLine;
+use crate::config::CodeText;
 
 /// Rewrites report paths to the public root-relative form and returns them.
 ///
@@ -118,20 +118,28 @@ pub(super) fn language_counts(
     total.files = 1;
 }
 
-pub fn file_records(payload: &Value, policy: &Policy) -> Result<Vec<FileRecord>> {
-    file_records_with(payload, policy, |_, _| None, |_| None)
+/// File records of `payload`, whose paths are relative to `root`, where the
+/// code lines a content refinement asks about are read from.
+pub fn file_records(payload: &Value, policy: &Policy, root: &Path) -> Result<Vec<FileRecord>> {
+    let config = counter_config();
+    file_records_with(
+        payload,
+        policy,
+        |_, _| None,
+        |file| code_lines::code_text(root, &file.path, &file.language, &config),
+    )
 }
 
 /// File records, with `marker` asked for the generated-code evidence of each
 /// source file a module layout decided, given its path and language; files
 /// are read for markers in parallel and only when a marker could apply.
-/// `code_lines` reads the code lines of a file a content refinement asks
+/// `code_text` reads the text and line classes of a file a content refinement asks
 /// about.
 pub(super) fn file_records_with(
     payload: &Value,
     policy: &Policy,
     marker: impl Fn(&str, &str) -> Option<GeneratedEvidence> + Sync,
-    code_lines: impl Fn(&FileRecord) -> Option<Vec<MatchedLine>> + Sync,
+    code_text: impl Fn(&FileRecord) -> Option<CodeText> + Sync,
 ) -> Result<Vec<FileRecord>> {
     let groups = payload
         .as_object()
@@ -188,7 +196,7 @@ pub(super) fn file_records_with(
     // Files are read only for a content refinement their other conditions
     // matched, so a policy without one reads nothing.
     rows.par_iter_mut()
-        .for_each(|row| policy.refine(row, &code_lines));
+        .for_each(|row| policy.refine(row, &code_text));
     rows.sort_by(|a, b| a.path.cmp(&b.path));
     Ok(rows)
 }

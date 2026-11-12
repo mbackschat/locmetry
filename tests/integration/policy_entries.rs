@@ -798,3 +798,104 @@ fn a_content_refinement_that_relabels_nothing_is_listed_as_unused() {
         json!({"files": 1, "code": 1})
     );
 }
+
+fn explained_line(temp: &tempfile::TempDir, path: &str) -> Value {
+    let output = locmetry()
+        .current_dir(temp.path().join("project"))
+        .args(["explain", path])
+        .output()
+        .unwrap();
+    crate::common::json(&output, 0)["result"]["decision"]["refinement"]["matched_line"].clone()
+}
+
+#[test]
+fn content_refinements_apply_through_every_record_builder() {
+    let temp = facades();
+    let root = temp.path().join("project");
+    let config = locmetry::Policy::from_toml(FACADES).unwrap();
+    let scan = locmetry::scan(&root, &config).unwrap();
+    let rows = locmetry::file_records(&scan.payload, &config, &root).unwrap();
+    let row = rows.iter().find(|row| row.path == "src/mixed.ts").unwrap();
+    assert_eq!(row.classification.category, "logic");
+}
+
+#[test]
+fn a_matched_line_is_capped_in_json_and_in_the_table() {
+    let long = format!("const a = \"{}\";\n", "é".repeat(500));
+    let temp = project(&[
+        (
+            ".locmetryrc",
+            "version = 1\n[[rules]]\nid = \"all\"\nmatch = [\"**\"]\npurpose = \"production\"\n[[refinements]]\nid = \"consts\"\npurpose = \"production\"\nmatch = [\"**\"]\ncontent = \"const\"\ncategory = \"x\"\n",
+        ),
+        ("a.ts", &long),
+    ]);
+    let line = explained_line(&temp, "a.ts");
+    let text = line["text"].as_str().unwrap();
+    assert_eq!(text.chars().count(), 201, "{text}");
+    assert!(text.ends_with('…'));
+    assert!(text.starts_with("const a = \"éé"));
+    let table = crate::common::stdout(run(
+        &temp.path().join("project"),
+        &["explain", "--format", "table", "a.ts"],
+    ));
+    let row = table
+        .lines()
+        .find(|l| l.contains("Refinement line"))
+        .unwrap();
+    assert!(row.contains('…') && row.chars().count() < 260, "{row}");
+}
+
+#[test]
+fn line_numbers_follow_the_counter_for_crlf_files_and_lone_carriage_returns() {
+    let temp = project(&[
+        (".locmetryrc", FACADES),
+        (
+            "src/crlf.ts",
+            "// note\r\nconst a = 1;\r\nif (a) {\r\n}\r\n",
+        ),
+        ("src/lone.ts", "const a = 1;\rconst b = 2;\nif (a) {\n}\n"),
+    ]);
+    assert_eq!(
+        explained_line(&temp, "src/crlf.ts"),
+        json!({"number": 3, "text": "if (a) {"})
+    );
+    assert_eq!(
+        explained_line(&temp, "src/lone.ts"),
+        json!({"number": 2, "text": "if (a) {"})
+    );
+}
+
+#[test]
+fn a_glob_whose_files_failed_the_content_is_not_an_unused_pattern() {
+    let document = measured(
+        "version = 1\n[[refinements]]\nid = \"never\"\npurpose = \"production\"\nmatch = [\"**\", \"gone/**\"]\ncontent = \"zzz\"\ncategory = \"x\"\n[[rules]]\nid = \"all\"\nmatch = [\"**\"]\npurpose = \"production\"\n",
+        &[("a.ts", "export const a = 1;\n")],
+    );
+    assert_eq!(
+        entry(&document["summary"], "never")["unused_patterns"],
+        json!(["gone/**"])
+    );
+}
+
+#[test]
+fn verbose_notes_blame_the_content_expression_not_the_glob() {
+    let temp = project(&[
+        (
+            ".locmetryrc",
+            "version = 1\n[[rules]]\nid = \"all\"\nmatch = [\"**\"]\npurpose = \"production\"\n[[refinements]]\nid = \"never\"\npurpose = \"production\"\nmatch = [\"**\"]\ncontent = \"zzz\"\ncategory = \"x\"\n",
+        ),
+        ("a.ts", "export const a = 1;\n"),
+    ]);
+    let root = temp.path().join("project");
+    for format in ["table", "markdown"] {
+        let text = crate::common::stdout(run(&root, &["--format", format, "--verbose"]));
+        assert!(
+            text.contains(
+                "Entries whose 'content' expression matched no code line in files their globs selected: never (1 file)."
+            ),
+            "{text}"
+        );
+        assert!(!text.contains("decided no file: never"), "{text}");
+        assert!(!text.contains("Patterns that decided no file"), "{text}");
+    }
+}

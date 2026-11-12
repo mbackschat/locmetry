@@ -1,5 +1,5 @@
 use crate::{
-    config::{CorrectedLanguage, GeneratedEvidence, MatchedLine},
+    config::{CodeText, CorrectedLanguage, GeneratedEvidence},
     modules, Counts, FileRecord, Kind, Module, Policy, Purpose,
 };
 use anyhow::{bail, ensure, Context, Result};
@@ -177,6 +177,8 @@ pub struct Scan {
     markers: Option<generated::Markers>,
     /// The canonical scan root the file paths are relative to.
     root: PathBuf,
+    /// The counter configuration the files were counted with.
+    config: tokei::Config,
 }
 
 impl Scan {
@@ -189,9 +191,9 @@ impl Scan {
             .evidence(&file.path, &file.language, recognized)
     }
 
-    /// The code lines of a counted `file`, read from disk when asked.
-    pub(crate) fn code_lines(&self, file: &FileRecord) -> Option<Vec<MatchedLine>> {
-        code_lines::code_lines(&self.root, &file.path, &file.language)
+    /// The text and line classes of a counted `file`, read from disk when asked.
+    pub(crate) fn code_text(&self, file: &FileRecord) -> Option<CodeText> {
+        code_lines::code_text(&self.root, &file.path, &file.language, &self.config)
     }
 
     /// File records from backend and mapped statistics, sorted by path.
@@ -201,12 +203,9 @@ impl Scan {
                 self.markers.as_ref()?.evidence(path, language, recognized)
             }
         };
-        let mut rows = file_records_with(&self.payload, policy, marker(true), |file| {
-            self.code_lines(file)
-        })?;
-        for mut row in file_records_with(&self.mapped, policy, marker(false), |file| {
-            self.code_lines(file)
-        })? {
+        let text = |file: &FileRecord| self.code_text(file);
+        let mut rows = file_records_with(&self.payload, policy, marker(true), text)?;
+        for mut row in file_records_with(&self.mapped, policy, marker(false), text)? {
             row.language_mapping = self.mappings.get(&row.path).cloned();
             row.language_correction = self.corrections.get(&row.path).cloned();
             rows.push(row);
@@ -306,11 +305,7 @@ pub(crate) fn scan_selection(
             None => paths.push(path),
         }
     }
-    let config = tokei::Config {
-        hidden: Some(true),
-        no_ignore: Some(true),
-        ..Default::default()
-    };
+    let config = counter_config();
     let mut coverage = Coverage {
         selected_files,
         ..Default::default()
@@ -405,9 +400,19 @@ pub(crate) fn scan_selection(
             inline_tests,
             markers,
             root,
+            config,
         },
         exclusion,
     ))
+}
+
+/// The counter configuration every file is counted, and its lines classified, with.
+fn counter_config() -> tokei::Config {
+    tokei::Config {
+        hidden: Some(true),
+        no_ignore: Some(true),
+        ..Default::default()
+    }
 }
 
 /// Inline test counts of the counted Rust files `rust_files`. The text is read

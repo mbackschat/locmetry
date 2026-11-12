@@ -35,8 +35,8 @@ use builtin::{
 };
 pub use corrections::{CorrectedLanguage, UNRECOGNIZED};
 use corrections::{CorrectionConfig, LanguageCorrection};
-pub(crate) use decision::CodeLines;
 pub(crate) use decision::Resolution;
+pub(crate) use decision::{CodeLines, CodeText};
 pub use decision::{Decision, MatchedLine, RefinementEvidence, Stage};
 use entry::{check_categories, check_entry_ids, check_ids, Entry};
 pub use file::*;
@@ -486,17 +486,20 @@ impl Policy {
     pub(crate) fn refine(
         &self,
         row: &mut crate::FileRecord,
-        read: &dyn Fn(&crate::FileRecord) -> Option<Vec<MatchedLine>>,
+        read: &dyn Fn(&crate::FileRecord) -> Option<CodeText>,
     ) {
+        if self.refinements.is_empty() {
+            return;
+        }
         let refined = {
-            let lines = || read(row);
-            let code = CodeLines::new(&lines);
+            let text = || read(row);
+            let code = CodeLines::new(&text);
             self.refinement_for(&row.path, row.kind, &row.classification, &code)
-                .map(|(refinement, _)| (refinement.category.clone(), refinement.id.clone()))
+                .map(|(refinement, _)| refinement)
         };
-        if let Some((category, id)) = refined {
-            row.classification.category = category;
-            row.refinement = Some(id);
+        if let Some(refinement) = refined {
+            row.classification.category.clone_from(&refinement.category);
+            row.refinement = Some(refinement.id.clone());
         }
     }
 
