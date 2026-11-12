@@ -306,7 +306,15 @@ pub fn render_table_with_options(
             notes.push(TerminalNote::Unclaimed(folders));
         }
         notes.extend(
-            unused_entries_note(findings.unused_entries, findings.subfolder)
+            unused_entries_note(
+                findings.unused_entries,
+                findings.policy_entries,
+                findings.subfolder,
+            )
+            .map(TerminalNote::Text),
+        );
+        notes.extend(
+            content_unmatched_note(findings.policy_entries, findings.subfolder)
                 .map(TerminalNote::Text),
         );
         notes.extend(

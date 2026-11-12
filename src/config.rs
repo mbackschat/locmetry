@@ -27,8 +27,8 @@ mod scope;
 mod user;
 mod workspace;
 pub use audit::{
-    merged_policy_entries, unused_entries, Displacement, EntryStage, PolicyEntry, Preemption,
-    RECOGNITION,
+    merged_policy_entries, unused_entries, ContentUnmatched, Displacement, EntryStage, PolicyEntry,
+    Preemption, RECOGNITION,
 };
 use builtin::{
     Convention, BUILTIN_BUILD_V1, BUILTIN_LANGUAGES_V1, BUILTIN_TESTS_V1, DEFAULT_EXCLUDES,
@@ -36,7 +36,8 @@ use builtin::{
 pub use corrections::{CorrectedLanguage, UNRECOGNIZED};
 use corrections::{CorrectionConfig, LanguageCorrection};
 pub(crate) use decision::Resolution;
-pub use decision::{Decision, RefinementEvidence, Stage};
+pub(crate) use decision::{CodeLines, CodeText};
+pub use decision::{Decision, MatchedLine, RefinementEvidence, Stage};
 use entry::{check_categories, check_entry_ids, check_ids, Entry};
 pub use file::*;
 use generated::GENERATED_CATEGORY;
@@ -155,6 +156,12 @@ impl Classification {
     pub fn is_fallback(&self) -> bool {
         self.rule == FALLBACK
     }
+
+    /// Whether a generated-code marker decided this file's evidence.
+    pub(crate) fn is_marked(&self) -> bool {
+        let id = self.rule.strip_prefix(BUILTIN);
+        GeneratedMarker::V1.iter().any(|m| id == Some(m.id()))
+    }
 }
 
 /// Provenance of files a build module of `detector` classifies.
@@ -266,6 +273,7 @@ impl Policy {
                     purpose: convention.purpose,
                     category: convention.category.into(),
                     reason: None,
+                    content: None,
                 })
             })
             .collect::<Result<Vec<_>>>()?;
@@ -426,6 +434,7 @@ impl Policy {
                     purpose: Purpose::Production,
                     category: MODULE_CATEGORY.into(),
                     reason: None,
+                    content: None,
                 };
                 Ok((module.clone(), entry))
             })
@@ -441,29 +450,55 @@ impl Policy {
         Ok(())
     }
 
-    /// The first refinement for a file decided as `decided`. Files that
-    /// reached the fallback stay `unclaimed` for review, and files a
-    /// generated-code marker refined keep that documented evidence.
-    fn refinement_for(&self, path: &str, kind: Kind, decided: &Classification) -> Option<&Entry> {
+    /// The first refinement for a file decided as `decided`, with the code
+    /// line that satisfied its `content`. Files that reached the fallback stay
+    /// `unclaimed` for review, and files a generated-code marker refined keep
+    /// that documented evidence.
+    fn refinement_for(
+        &self,
+        path: &str,
+        kind: Kind,
+        decided: &Classification,
+        code: &CodeLines,
+    ) -> Option<(&Entry, Option<MatchedLine>)> {
         // Runs for every counted file, so the common case without refinements
         // returns before comparing marker provenance.
-        let marked = || {
-            let id = decided.rule.strip_prefix(BUILTIN);
-            GeneratedMarker::V1.iter().any(|m| id == Some(m.id()))
-        };
-        if self.refinements.is_empty() || decided.is_fallback() || marked() {
+        if self.refinements.is_empty() || decided.is_fallback() || decided.is_marked() {
             return None;
         }
-        self.refinements.iter().find(|refinement| {
-            refinement.purpose == decided.purpose && refinement.matches(path, kind)
+        self.refinements.iter().find_map(|refinement| {
+            if refinement.purpose != decided.purpose || !refinement.matches(path, kind) {
+                return None;
+            }
+            match &refinement.content {
+                None => Some((refinement, None)),
+                Some(pattern) => code
+                    .first_match(pattern)
+                    .map(|line| (refinement, Some(line))),
+            }
         })
     }
 
     /// Replaces the category of a decided file with its first refinement's,
-    /// recording the refinement; purpose and `rule` stay.
-    pub(crate) fn refine(&self, row: &mut crate::FileRecord) {
-        if let Some(refinement) = self.refinement_for(&row.path, row.kind, &row.classification) {
-            row.classification.category = refinement.category.clone();
+    /// recording the refinement; purpose and `rule` stay. `read` supplies the
+    /// file's code lines, and runs only when a content refinement's other
+    /// conditions match.
+    pub(crate) fn refine(
+        &self,
+        row: &mut crate::FileRecord,
+        read: &dyn Fn(&crate::FileRecord) -> Option<CodeText>,
+    ) {
+        if self.refinements.is_empty() {
+            return;
+        }
+        let refined = {
+            let text = || read(row);
+            let code = CodeLines::new(&text);
+            self.refinement_for(&row.path, row.kind, &row.classification, &code)
+                .map(|(refinement, _)| refinement)
+        };
+        if let Some(refinement) = refined {
+            row.classification.category.clone_from(&refinement.category);
             row.refinement = Some(refinement.id.clone());
         }
     }
@@ -558,6 +593,7 @@ impl Policy {
         path: &str,
         kind: Kind,
         evidence: Option<&GeneratedEvidence>,
+        code: &CodeLines,
     ) -> Decision {
         let Some((stage, entry, module)) = self.deciding_entry(path, kind) else {
             return Decision {
@@ -574,12 +610,13 @@ impl Policy {
             .cloned();
         let refinement = match generated {
             Some(_) => None,
-            None => self.refinement_for(path, kind, &entry.classification()),
+            None => self.refinement_for(path, kind, &entry.classification(), code),
         }
-        .map(|refinement| RefinementEvidence {
+        .map(|(refinement, matched_line)| RefinementEvidence {
             id: refinement.id.clone(),
             matched_patterns: refinement.matched_patterns(path),
             reason: refinement.reason.clone(),
+            matched_line,
         });
         Decision {
             stage,

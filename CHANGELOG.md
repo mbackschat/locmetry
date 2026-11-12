@@ -4,6 +4,10 @@ User-visible changes to LOCmetry, in the [Keep a Changelog](https://keepachangel
 
 ## [Unreleased]
 
+### Added
+
+- A refinement accepts `content`, one Rust regular expression, and then matches a file only when at least one of its code lines matches, as the counter counts them: comment-only and blank lines never match, and `^` and `$` anchor each line. It separates files that share a folder but differ in what they hold, such as TypeScript modules that only delegate to a Kotlin implementation from those that still hold logic. An invalid expression fails loading with the parser's message, `explain` shows the matching line under `decision.refinement.matched_line`, and `summary.policy_entries` reports under `content_unmatched` the files a content refinement's globs matched but its expression did not. Jupyter notebooks and Markdown files whose code blocks another language counts never match.
+
 ### Changed
 
 - `locmetry --guide reports --section gate-file-sizes` serves the file-size gate recipes, including soft limits and frozen sizes for existing large files, which were previously only in the repository's cookbook, and explains how a nonblank-line limit relates to the counts.

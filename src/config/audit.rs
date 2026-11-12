@@ -49,6 +49,16 @@ pub struct PolicyEntry {
     /// The decided files by the `purpose:category` that later stages would give them without the entry, before generated-code markers, largest code first; for a refinement, the decision it recategorized. Files that would reach the fallback are left out: claiming unclaimed code replaces no decision.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub displaced: Vec<Displacement>,
+    /// For a refinement with `content`: the files its other conditions matched that no code line of satisfied the expression, so a pattern that misses some of its targets stays visible. Absent when the content left out no file.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub content_unmatched: Option<ContentUnmatched>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct ContentUnmatched {
+    pub files: u64,
+    pub code: u64,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
@@ -96,6 +106,7 @@ struct Tally {
     patterns: Vec<bool>,
     exceptions: Vec<bool>,
     displaced: BTreeMap<String, (u64, u64)>,
+    content_unmatched: (u64, u64),
 }
 
 impl Tally {
@@ -140,6 +151,16 @@ impl Tally {
         }
     }
 
+    /// Records a file whose path the entry matched but whose code lines did
+    /// not satisfy its `content`; its globs still did their work.
+    fn content_failed(&mut self, matcher: &GlobSet, path: &str, code: u64) {
+        for i in matcher.matches(path) {
+            self.patterns[i] = true;
+        }
+        self.content_unmatched.0 += 1;
+        self.content_unmatched.1 += code;
+    }
+
     fn preempted_by(&mut self, by: &str) {
         *self.preempted.entry(by.to_owned()).or_default() += 1;
     }
@@ -169,6 +190,10 @@ impl Tally {
             unused_patterns: unused(&self.patterns, patterns),
             unused_exceptions: unused(&self.exceptions, exceptions),
             displaced: displacements(self.displaced),
+            content_unmatched: (self.content_unmatched.0 > 0).then_some(ContentUnmatched {
+                files: self.content_unmatched.0,
+                code: self.content_unmatched.1,
+            }),
         }
     }
 }
@@ -244,9 +269,13 @@ impl Policy {
 
     fn refinement_entries(&self, rows: &[FileRecord]) -> Vec<PolicyEntry> {
         let mut tallies = tallies(&self.refinements);
+        let position = |id: &str| self.refinements.iter().position(|entry| entry.id == id);
         for row in rows.iter().filter(|row| !row.classification.is_fallback()) {
             let (path, kind) = (row.path.as_str(), row.kind);
-            for (refinement, tally) in self.refinements.iter().zip(&mut tallies) {
+            let decider = row.refinement.as_deref().and_then(position);
+            for (index, (refinement, tally)) in
+                self.refinements.iter().zip(&mut tallies).enumerate()
+            {
                 if refinement.purpose != row.classification.purpose
                     || !refinement.has_kind(kind)
                     || !refinement.matcher.is_match(path)
@@ -254,7 +283,14 @@ impl Policy {
                 {
                     continue;
                 }
-                if row.refinement.as_ref() == Some(&refinement.id) {
+                if refinement.content.is_some()
+                    && !row.classification.is_marked()
+                    && decider.is_none_or(|decider| decider > index)
+                {
+                    // No code line satisfied the expression; a later
+                    // refinement may still have decided the file.
+                    tally.content_failed(&refinement.matcher, path, row.counts.code);
+                } else if row.refinement.as_ref() == Some(&refinement.id) {
                     let replaced = self.classify(path, kind);
                     tally.decided(&refinement.matcher, path, row.counts.code, Some(replaced));
                 } else {
@@ -432,6 +468,13 @@ pub fn merged_policy_entries(lists: Vec<Vec<PolicyEntry>>) -> Vec<PolicyEntry> {
                     counts.1 += item.code;
                 }
                 entry.displaced = displacements(displaced);
+                entry.content_unmatched = match (entry.content_unmatched, other.content_unmatched) {
+                    (Some(a), Some(b)) => Some(ContentUnmatched {
+                        files: a.files + b.files,
+                        code: a.code + b.code,
+                    }),
+                    (a, b) => a.or(b),
+                };
                 entry
                     .unused_patterns
                     .retain(|glob| other.unused_patterns.contains(glob));

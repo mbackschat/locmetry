@@ -49,7 +49,7 @@ fn fixture(root: &Path) {
     write(
         &project,
         ".locmetryrc",
-        "version = 1\n[scope]\nexclude = [\"nothing-here/**\", \"skipped/**\"]\n[[rules]]\nid = \"ghost\"\nmatch = [\"ghost/**\"]\npurpose = \"production\"\n[[overrides]]\nid = \"model-fixture\"\nmatch = [\"web/src/model.ts\"]\npurpose = \"test\"\n[[refinements]]\nid = \"core-lib\"\npurpose = \"production\"\nmatch = [\"src/lib.rs\", \"src/gone/**\"]\ncategory = \"core\"\nreason = \"Library entry point\"\n[[refinements]]\nid = \"library\"\npurpose = \"production\"\nmatch = [\"src/**\"]\ncategory = \"library\"\n",
+        "version = 1\n[scope]\nexclude = [\"nothing-here/**\", \"skipped/**\"]\n[[rules]]\nid = \"ghost\"\nmatch = [\"ghost/**\"]\npurpose = \"production\"\n[[overrides]]\nid = \"model-fixture\"\nmatch = [\"web/src/model.ts\"]\npurpose = \"test\"\n[[refinements]]\nid = \"core-lib\"\npurpose = \"production\"\nmatch = [\"src/lib.rs\", \"src/gone/**\"]\ncategory = \"core\"\nreason = \"Library entry point\"\n[[refinements]]\nid = \"library\"\npurpose = \"production\"\nmatch = [\"src/**\"]\ncategory = \"library\"\n[[refinements]]\nid = \"hooks\"\npurpose = \"production\"\nmatch = [\"web/src/**\"]\ncontent = \"zzz\"\ncategory = \"hooks\"\n",
     );
     let worker = root.join("worker");
     write(&worker, "go.mod", "module worker\n\ngo 1.21\n");
