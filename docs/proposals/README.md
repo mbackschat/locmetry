@@ -6,7 +6,9 @@ Active designs live directly in this directory. Retired records live in `archive
 
 <!-- doc-index:start -->
 
-No documents in this directory.
+| Document | Status | Date | Summary |
+| --- | --- | --- | --- |
+| [Content Conditions on Refinements](content-refinements.md) | draft | 2026-11-12 | An optional `content` regex on refinements, tested against the lines the counter classifies as code, for categories that paths cannot express. |
 
 <!-- doc-index:end -->
 
